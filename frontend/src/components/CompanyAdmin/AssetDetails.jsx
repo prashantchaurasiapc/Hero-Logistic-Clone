@@ -10,17 +10,7 @@ import {
 , File as FileIcon, ChevronLeft, MoreVertical, Zap, Settings, ShieldAlert, Upload, Code , Printer } from 'lucide-react';
 
 
-const assetDocuments = [
-  { id: 1, name: 'Registration Certificate', file: 'AST-0001_REG.pdf', category: 'Registration', type: 'Registration', issueDate: '15 Mar 2022', expiryDate: '15 Mar 2027', status: 'Active', expiryStatus: 'Compliant', uploader: 'Sarah Mitchell', uploadDate: '15 Mar 2022' },
-  { id: 2, name: 'Service & Maintenance Record', file: 'AST-0001_SRV.pdf', category: 'Maintenance', type: 'Service Record', issueDate: '24 May 2025', expiryDate: '24 Jun 2025', status: 'Active', expiryStatus: 'Expiring Soon', uploader: 'James Patel', uploadDate: '24 May 2025' },
-  { id: 3, name: 'Annual Inspection Report', file: 'AST-0001_INSP.pdf', category: 'Inspection', type: 'Inspection Report', issueDate: '24 Aug 2024', expiryDate: '24 Aug 2025', status: 'Active', expiryStatus: 'Expiring Soon', uploader: 'Robert Taylor', uploadDate: '24 Aug 2024' },
-  { id: 4, name: 'Operating Licence', file: 'AST-0001_LIC.pdf', category: 'Licence', type: 'Operating Licence', issueDate: '10 Jan 2022', expiryDate: '10 Jan 2026', status: 'Active', expiryStatus: 'Compliant', uploader: 'Sarah Mitchell', uploadDate: '10 Jan 2022' },
-  { id: 5, name: 'Insurance Certificate', file: 'AST-0001_INS.pdf', category: 'Insurance', type: 'Insurance', issueDate: '01 Jan 2025', expiryDate: '01 Jan 2026', status: 'Active', expiryStatus: 'Compliant', uploader: 'Sarah Mitchell', uploadDate: '01 Jan 2025' },
-  { id: 6, name: 'Load Test Certificate', file: 'AST-0001_LOAD.pdf', category: 'Compliance', type: 'Compliance Certificate', issueDate: '14 Feb 2024', expiryDate: '14 Feb 2025', status: 'Expired', expiryStatus: 'Expired', uploader: 'James Patel', uploadDate: '14 Feb 2024' },
-  { id: 7, name: 'Manufacturer Manual', file: 'AST-0001_MAN.pdf', category: 'Other', type: 'Manual', issueDate: '10 Mar 2022', expiryDate: '-', status: 'Active', expiryStatus: 'Not Required', uploader: 'Sarah Mitchell', uploadDate: '10 Mar 2022' },
-  { id: 8, name: 'Safety Compliance Checklist', file: 'AST-0001_CHK.pdf', category: 'Compliance', type: 'Checklist', issueDate: '20 May 2025', expiryDate: '-', status: 'Active', expiryStatus: 'Not Required', uploader: 'Robert Taylor', uploadDate: '20 May 2025' },
-  { id: 9, name: 'Warranty Certificate', file: 'AST-0001_WTY.pdf', category: 'Warranty', type: 'Warranty', issueDate: '15 Mar 2022', expiryDate: '15 Mar 2023', status: 'Expired', expiryStatus: 'Expired', uploader: 'Sarah Mitchell', uploadDate: '15 Mar 2022' },
-];
+const assetDocuments = [];
 
 
 const mockMaintenanceTasks = [];
@@ -68,19 +58,7 @@ export default function AssetDetails({ assetData, onBack }) {
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
 
   // Costs Mock Data
-  const [costsList, setCostsList] = useState([
-    { date: '24 May 2025', category: 'Maintenance', type: 'Service', desc: 'Service & Maintenance', ref: 'INV-2025-056', loc: 'Sydney Head Office', amount: '$450.00', tax: '$45.00', total: '$495.00', color: 'purple' },
-    { date: '24 May 2025', category: 'Maintenance', type: 'Parts', desc: 'Oil Filter & Lubricants', ref: 'INV-2025-057', loc: 'Sydney Head Office', amount: '$120.00', tax: '$12.00', total: '$132.00', color: 'purple' },
-    { date: '10 May 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-1021', loc: 'Sydney Head Office', amount: '$200.00', tax: '$20.00', total: '$220.00', color: 'emerald' },
-    { date: '25 Apr 2025', category: 'Maintenance', type: 'Repair', desc: 'Hydraulic Pump Repair', ref: 'INV-2025-041', loc: 'Sydney Head Office', amount: '$780.00', tax: '$78.00', total: '$858.00', color: 'purple' },
-    { date: '15 Apr 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-0985', loc: 'Sydney Head Office', amount: '$190.00', tax: '$19.00', total: '$209.00', color: 'emerald' },
-    { date: '01 Apr 2025', category: 'Insurance', type: 'Insurance', desc: 'Asset Insurance', ref: 'INS-2025-088', loc: 'Sydney Head Office', amount: '$250.00', tax: '$0.00', total: '$250.00', color: 'blue' },
-    { date: '31 Mar 2025', category: 'Registration', type: 'Registration', desc: 'Registration Fee', ref: 'REG-2025-033', loc: 'Sydney Head Office', amount: '$91.00', tax: '$9.10', total: '$100.10', color: 'orange' },
-    { date: '20 Mar 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-0820', loc: 'Sydney Head Office', amount: '$180.00', tax: '$18.00', total: '$198.00', color: 'emerald' },
-    { date: '05 Mar 2025', category: 'Maintenance', type: 'Service', desc: 'Routine Service', ref: 'INV-2025-020', loc: 'Sydney Head Office', amount: '$320.00', tax: '$32.00', total: '$352.00', color: 'purple' },
-    { date: '15 Feb 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-0615', loc: 'Sydney Head Office', amount: '$170.00', tax: '$17.00', total: '$187.00', color: 'emerald' },
-    { date: '11 Nov 2024', category: 'Other', type: 'Other', desc: 'Safety Equipment', ref: 'INV-2024-211', loc: 'Sydney Head Office', amount: '$50.00', tax: '$5.00', total: '$55.00', color: 'slate' },
-  ]);
+  const [costsList, setCostsList] = useState([]);
 
   // States for More Actions dropdown modals
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -125,22 +103,22 @@ export default function AssetDetails({ assetData, onBack }) {
   };
 
   const initialAsset = { ...defaultAsset, ...(assetData || {}) };
-  if (!initialAsset.fullName) initialAsset.fullName = `${initialAsset.name || 'Toyota 8FD25'} Forklift`;
-  if (!initialAsset.bookValue) initialAsset.bookValue = '$26,950.00 AUD';
-  if (!initialAsset.purchasePrice) initialAsset.purchasePrice = '$38,500.00 AUD';
-  if (!initialAsset.purchaseDate) initialAsset.purchaseDate = '15 Mar 2022';
-  if (!initialAsset.supplier) initialAsset.supplier = 'Toyota Material Handling';
-  if (!initialAsset.operatingHours) initialAsset.operatingHours = '1,256.5 Hrs';
-  if (!initialAsset.odometer) initialAsset.odometer = '1,256.5 Hrs';
-  if (!initialAsset.serialNumberFull) initialAsset.serialNumberFull = 'XHD25-12345';
-  if (!initialAsset.serialNo) initialAsset.serialNo = '8FD25-12345';
-  if (!initialAsset.assetTag) initialAsset.assetTag = initialAsset.id || 'AST-0001';
-  if (!initialAsset.currentLocation) initialAsset.currentLocation = 'Warehouse 1 - Bay A3';
-  if (!initialAsset.warrantyExpiry) initialAsset.warrantyExpiry = '15 Mar 2026';
-  if (!initialAsset.warrantyDaysLeft) initialAsset.warrantyDaysLeft = '(in 243 days)';
+  if (!initialAsset.fullName) initialAsset.fullName = initialAsset.name || 'Unnamed Asset';
+  if (!initialAsset.bookValue) initialAsset.bookValue = '$0.00';
+  if (!initialAsset.purchasePrice) initialAsset.purchasePrice = '$0.00';
+  if (!initialAsset.purchaseDate) initialAsset.purchaseDate = 'N/A';
+  if (!initialAsset.supplier) initialAsset.supplier = 'N/A';
+  if (!initialAsset.operatingHours) initialAsset.operatingHours = '0.0 Hrs';
+  if (!initialAsset.odometer) initialAsset.odometer = '0.0 Hrs';
+  if (!initialAsset.serialNumberFull) initialAsset.serialNumberFull = 'N/A';
+  if (!initialAsset.serialNo) initialAsset.serialNo = 'N/A';
+  if (!initialAsset.assetTag) initialAsset.assetTag = initialAsset.id || 'N/A';
+  if (!initialAsset.currentLocation) initialAsset.currentLocation = 'Yard';
+  if (!initialAsset.warrantyExpiry) initialAsset.warrantyExpiry = 'N/A';
+  if (!initialAsset.warrantyDaysLeft) initialAsset.warrantyDaysLeft = '';
   if (!initialAsset.usageType) initialAsset.usageType = 'Operational';
-  if (!initialAsset.description) initialAsset.description = 'General purpose forklift used for warehouse operations including loading, unloading and pallet movement. Fitted with side shift and solid pneumatic tyres.';
-  if (!initialAsset.notes) initialAsset.notes = 'Keep forks properly lubricated. Daily pre-start inspection required.';
+  if (!initialAsset.description) initialAsset.description = 'No description recorded for this asset.';
+  if (!initialAsset.notes) initialAsset.notes = 'No additional notes.';
 
   // Main Live State for Asset
   const [asset, setAsset] = useState(initialAsset);
@@ -166,14 +144,7 @@ export default function AssetDetails({ assetData, onBack }) {
   const [deactivateReason, setDeactivateReason] = useState('Scheduled Retirement / End of Life');
 
   // Mock Assignment History Table Data matching Screenshot 2 & 3
-  const [assignmentsList, setAssignmentsList] = useState([
-    { id: 'ASG-0006', assignedTo: 'Warehouse 1', branchLocation: 'Sydney Head Office\nWarehouse 1', purpose: 'Daily Operations\nGeneral Use', assignedBy: 'Sarah Mitchell', assignedByAvatar: 'SM', fromDate: '24 May 2025\n09:15 AM', toDate: '-\nOngoing', duration: '-', status: 'Current' },
-    { id: 'ASG-0005', assignedTo: 'Dispatch Team', branchLocation: 'Sydney Head Office\nDispatch Yard', purpose: 'Loading / Dispatch\nSupport', assignedBy: 'Sarah Mitchell', assignedByAvatar: 'SM', fromDate: '10 May 2025\n07:30 AM', toDate: '23 May 2025\n04:45 PM', duration: '13 days\n9.2 Hrs/Day', status: 'Completed' },
-    { id: 'ASG-0004', assignedTo: 'Warehouse 2', branchLocation: 'Sydney Head Office\nWarehouse 2', purpose: 'Stock Movement\nInternal Transfer', assignedBy: 'James Patel', assignedByAvatar: 'JP', fromDate: '25 Apr 2025\n08:00 AM', toDate: '09 May 2025\n05:00 PM', duration: '15 days\n8.1 Hrs/Day', status: 'Completed' },
-    { id: 'ASG-0003', assignedTo: 'Maintenance Team', branchLocation: 'Sydney Head Office\nWorkshop', purpose: 'Maintenance Use\nTesting', assignedBy: 'James Patel', assignedByAvatar: 'JP', fromDate: '20 Apr 2025\n02:00 PM', toDate: '24 Apr 2025\n11:00 AM', duration: '4 days\n2.2 Hrs/Day', status: 'Completed' },
-    { id: 'ASG-0002', assignedTo: 'Warehouse 1', branchLocation: 'Sydney Head Office\nWarehouse 1', purpose: 'Daily Operations\nGeneral Use', assignedBy: 'Sarah Mitchell', assignedByAvatar: 'SM', fromDate: '05 Apr 2025\n07:45 AM', toDate: '19 Apr 2025\n04:30 PM', duration: '15 days\n8.3 Hrs/Day', status: 'Completed' },
-    { id: 'ASG-0001', assignedTo: 'Dispatch Team', branchLocation: 'Sydney Head Office\nDispatch Yard', purpose: 'Loading / Dispatch\nSupport', assignedBy: 'Sarah Mitchell', assignedByAvatar: 'SM', fromDate: '15 Mar 2025\n08:10 AM', toDate: '04 Apr 2025\n05:15 PM', duration: '21 days\n7.6 Hrs/Day', status: 'Completed' },
-  ]);
+  const [assignmentsList, setAssignmentsList] = useState([]);
 
   const filteredAssignments = assignmentsList.filter(item =>
     item.id.toLowerCase().includes(assignmentSearch.toLowerCase()) ||
@@ -675,7 +646,7 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-1.5">
                   <Clock size={16} />
                 </div>
-                <span className="text-xs font-black text-slate-900">{asset.operatingHours}</span>
+                <span className="text-xs font-black text-slate-900">{asset.operatingHours || '0.0 Hrs'}</span>
                 <span className="text-[9px] font-semibold text-slate-400 mt-0.5">Operating Hours</span>
               </div>
 
@@ -683,7 +654,7 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center mb-1.5">
                   <DollarSign size={16} />
                 </div>
-                <span className="text-xs font-black text-slate-900">$26,950.00</span>
+                <span className="text-xs font-black text-slate-900">{asset.bookValue || '$0.00'}</span>
                 <span className="text-[9px] font-semibold text-slate-400 mt-0.5">Book Value</span>
               </div>
             </div>
@@ -945,23 +916,8 @@ export default function AssetDetails({ assetData, onBack }) {
                   <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-4">
                     LAST MAINTENANCE
                   </h3>
-
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-bold text-slate-900">Oil & Filter Change</span>
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-wider">
-                      Completed
-                    </span>
-                  </div>
-
-                  <div className="space-y-1 text-xs text-slate-600 font-medium mb-4">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Date</span>
-                      <span className="font-bold text-slate-800">25 Apr 2025 <span className="text-slate-400 font-normal">in 18 days</span></span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">By</span>
-                      <span className="font-bold text-slate-800">James Patel</span>
-                    </div>
+                  <div className="text-xs font-bold text-slate-400 py-4 text-center">
+                    No maintenance history recorded for this asset.
                   </div>
                 </div>
 
@@ -985,19 +941,19 @@ export default function AssetDetails({ assetData, onBack }) {
                   <div className="space-y-2 text-xs font-medium text-slate-600">
                     <div className="flex justify-between">
                       <span>Total Maintenance Cost</span>
-                      <span className="font-bold text-slate-900">$1,250.00</span>
+                      <span className="font-bold text-slate-900">$0.00</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Total Repair Cost</span>
-                      <span className="font-bold text-slate-900">$450.00</span>
+                      <span className="font-bold text-slate-900">$0.00</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Total Fuel / Operating Cost</span>
-                      <span className="font-bold text-slate-900">$2,150.00</span>
+                      <span className="font-bold text-slate-900">$0.00</span>
                     </div>
                     <div className="border-t border-slate-100 pt-2 flex justify-between font-bold text-slate-900">
                       <span>Total Cost (YTD)</span>
-                      <span>$3,850.00</span>
+                      <span>$0.00</span>
                     </div>
                   </div>
                 </div>
@@ -1018,30 +974,30 @@ export default function AssetDetails({ assetData, onBack }) {
                   <div className="space-y-3 text-xs font-medium text-slate-600">
                     <div className="flex justify-between">
                       <span>Operating Hours (This Month)</span>
-                      <span className="font-bold text-slate-900">120.5 Hrs</span>
+                      <span className="font-bold text-slate-900">0.0 Hrs</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Operating Hours (YTD)</span>
-                      <span className="font-bold text-slate-900">1,256.5 Hrs</span>
+                      <span className="font-bold text-slate-900">0.0 Hrs</span>
                     </div>
 
                     <div className="space-y-1">
                       <div className="flex justify-between text-[11px]">
                         <span>Utilisation (This Month)</span>
-                        <span className="font-bold text-slate-900">66%</span>
+                        <span className="font-bold text-slate-900">0%</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-purple-600 rounded-full" style={{ width: '66%' }}></div>
+                        <div className="h-full bg-purple-600 rounded-full" style={{ width: '0%' }}></div>
                       </div>
                     </div>
 
                     <div className="space-y-1">
                       <div className="flex justify-between text-[11px]">
                         <span>Utilisation (YTD)</span>
-                        <span className="font-bold text-slate-900">84%</span>
+                        <span className="font-bold text-slate-900">0%</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-purple-600 rounded-full" style={{ width: '84%' }}></div>
+                        <div className="h-full bg-purple-600 rounded-full" style={{ width: '0%' }}></div>
                       </div>
                     </div>
                   </div>
@@ -1101,39 +1057,8 @@ export default function AssetDetails({ assetData, onBack }) {
                 </button>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs p-2 bg-amber-50/50 rounded-xl border border-amber-100">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle size={14} className="text-amber-500" />
-                    <div>
-                      <div className="font-bold text-slate-900">Service Due</div>
-                      <div className="text-[10px] text-slate-500 font-semibold">24 Jun 2025</div>
-                    </div>
-                  </div>
-                  <span className="text-[9px] font-bold text-amber-600">in 18 days</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs p-2 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <Wrench size={14} className="text-slate-500" />
-                    <div>
-                      <div className="font-bold text-slate-900">Oil & Filter Change</div>
-                      <div className="text-[10px] text-slate-500 font-semibold">24 Jun 2025</div>
-                    </div>
-                  </div>
-                  <span className="text-[9px] font-bold text-slate-500">in 18 days</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs p-2 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle size={14} className="text-slate-500" />
-                    <div>
-                      <div className="font-bold text-slate-900">Full Inspection</div>
-                      <div className="text-[10px] text-slate-500 font-semibold">24 Aug 2025</div>
-                    </div>
-                  </div>
-                  <span className="text-[9px] font-bold text-slate-500">in 79 days</span>
-                </div>
+              <div className="text-xs font-bold text-slate-400 py-3 text-center">
+                No upcoming maintenance scheduled.
               </div>
             </div>
 
@@ -1175,30 +1100,8 @@ export default function AssetDetails({ assetData, onBack }) {
                 </button>
               </div>
 
-              <div className="relative pl-4 space-y-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-purple-600 border-2 border-white"></div>
-                  <div className="text-xs font-bold text-slate-900">Asset assigned to Warehouse 1</div>
-                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">By Sarah M. • 10 May 2025</div>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-purple-600 border-2 border-white"></div>
-                  <div className="text-xs font-bold text-slate-900">Maintenance completed - Oil & Filter Change</div>
-                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">By James P. • 25 Apr 2025</div>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-purple-600 border-2 border-white"></div>
-                  <div className="text-xs font-bold text-slate-900">Inspection completed - Daily Check</div>
-                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">By Robert T. • 10 Apr 2025</div>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-purple-600 border-2 border-white"></div>
-                  <div className="text-xs font-bold text-slate-900">Asset created</div>
-                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">By Sarah M. • 15 Mar 2022</div>
-                </div>
+              <div className="text-xs font-bold text-slate-400 py-3 text-center">
+                No recent activity recorded for this asset.
               </div>
             </div>
 

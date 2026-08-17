@@ -13,6 +13,22 @@ import {
   Menu, CheckCircle, Award, Filter, Columns, ArrowUpDown, AlertTriangle, Copy, Scale, Palette, Briefcase, Terminal, Cpu, Database, Wind, UploadCloud
 } from 'lucide-react';
 
+const DEFAULT_VEHICLE_IMG = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
+
+const getVehicleImgUrl = (src) => {
+  if (!src || typeof src !== 'string') return DEFAULT_VEHICLE_IMG;
+  const trimmed = src.trim();
+  if (trimmed.startsWith('/uploads/')) {
+    const rawBase = api.defaults?.baseURL || 'http://localhost:5000';
+    const baseUrl = rawBase.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '').replace(/\/+$/, '');
+    return `${baseUrl}${trimmed}`;
+  }
+  if (trimmed.includes('...') || trimmed.endsWith('..') || trimmed === 'https://pravatar.cc/150?u...') {
+    return DEFAULT_VEHICLE_IMG;
+  }
+  return trimmed;
+};
+
 // Helper upload components moved outside to prevent unmounting on re-renders
 const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
   const defaultPhoto = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop";
@@ -34,12 +50,28 @@ const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        updatePhoto(reader.result);
+      reader.onloadend = async () => {
+        const base64Data = reader.result;
+        updatePhoto(base64Data);
+        try {
+          const res = await api.post('/upload', { image: base64Data, filename: file.name });
+          if (res.data && res.data.success && res.data.data?.url) {
+            updatePhoto(res.data.data.url);
+          }
+        } catch (err) {
+          console.error('Error uploading vehicle photo:', err);
+        }
       };
       reader.readAsDataURL(file);
     }
   };
+
+  let resolvedPhotoUrl = photoUrl;
+  if (resolvedPhotoUrl && typeof resolvedPhotoUrl === 'string' && resolvedPhotoUrl.startsWith('/uploads/')) {
+    const rawBase = api.defaults?.baseURL || 'http://localhost:5000';
+    const baseUrl = rawBase.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '').replace(/\/+$/, '');
+    resolvedPhotoUrl = `${baseUrl}${resolvedPhotoUrl}`;
+  }
 
   return (
     <div className="flex flex-col items-center gap-2 w-32 shrink-0">
@@ -54,7 +86,7 @@ const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
           <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
         </div>
         <img 
-          src={photoUrl || defaultPhoto} 
+          src={resolvedPhotoUrl} 
           onError={(e) => {
             e.target.onerror = null;
             e.target.src = defaultPhoto;
@@ -76,7 +108,7 @@ const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
         placeholder="https://images.unsplash.com..." 
         value={photoUrl} 
         onChange={(e) => updatePhoto(e.target.value)} 
-        className="w-full text-center text-[9px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded mt-2 focus:outline-none focus:border-purple-400 text-gray-500 overflow-hidden text-ellipsis" 
+        className="w-full text-center text-[9px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded mt-2 focus:outline-none focus:border-purple-400 text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap" 
       />
     </div>
   );
@@ -284,8 +316,8 @@ const Vehicles = () => {
           compliance: v.compliance || 'Compliant',
           nextServiceDate: v.maintenanceDueKm ? `${v.maintenanceDueKm.toLocaleString()} km` : '—',
           nextServiceDays: '',
-          img: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || (((v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.category && v.category.toLowerCase().includes('car'))) ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60"),
-          photoUrl: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || (((v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.category && v.category.toLowerCase().includes('car'))) ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60"),
+          img: getVehicleImgUrl(v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.split('Photo:')[1].split('|')[0].trim() : '')),
+          photoUrl: getVehicleImgUrl(v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.split('Photo:')[1].split('|')[0].trim() : '')),
           color: v.color || '',
           vin: v.vin || '',
           engineNumber: v.engineNumber || '',
@@ -686,15 +718,29 @@ const Vehicles = () => {
     e.preventDefault();
     const fd = new FormData(e.target);
     try {
-      const photoVal = fd.get('photoUrl') || null;
+      const regInput = (fd.get('reg') || fd.get('id') || '').trim();
+      const photoVal = fd.get('photoUrl') || '';
+      
+      let finalPhotoUrl = photoVal;
+      if (finalPhotoUrl && typeof finalPhotoUrl === 'string' && finalPhotoUrl.startsWith('data:image/')) {
+        try {
+          const upRes = await api.post('/upload', { image: finalPhotoUrl });
+          if (upRes.data && upRes.data.success && upRes.data.data?.url) {
+            finalPhotoUrl = upRes.data.data.url;
+          }
+        } catch (upErr) {
+          console.error('Pre-upload vehicle photo error:', upErr);
+        }
+      }
+
       const payload = {
-        rego: (fd.get('reg') || '').toUpperCase(),
+        rego: regInput ? regInput.toUpperCase() : `VEH-${Math.floor(1000 + Math.random() * 9000)}`,
         make: fd.get('make') || '',
         model: fd.get('model') || '',
         year: fd.get('year') ? parseInt(fd.get('year')) : undefined,
         category: fd.get('type') || 'TRUCK',
         color: fd.get('color') || '',
-        vin: fd.get('vin') || '',
+        vin: (fd.get('vin') || `VIN-${Math.floor(10000 + Math.random() * 90000)}`).trim(),
         engineNumber: fd.get('engine') || '',
         odometerKm: fd.get('odometer') ? parseInt(String(fd.get('odometer')).replace(/[^0-9]/g, '')) : 0,
         fuelType: fd.get('fuelType') || 'Diesel',
@@ -705,7 +751,7 @@ const Vehicles = () => {
         preferredRegions: fd.get('preferredRegions') || '',
         maxDistPerTripKm: fd.get('maxDist') ? parseInt(fd.get('maxDist')) : undefined,
         dgCertified: fd.get('dgCertified') === 'Yes',
-        photoUrl: photoVal,
+        photoUrl: finalPhotoUrl,
         notes: fd.get('notes') || ''
       };
       await api.post('/vehicles', payload);
@@ -714,7 +760,9 @@ const Vehicles = () => {
       showToast('Vehicle added successfully!');
     } catch (err) {
       console.error('Error creating vehicle:', err);
-      showToast('Failed to save vehicle to database.', 'error');
+      const errMsg = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to save vehicle to database.';
+      showToast(errMsg, 'error');
+      alert(`Error saving vehicle: ${errMsg}`);
     }
   };
 
@@ -911,8 +959,12 @@ const Vehicles = () => {
               <div className="flex flex-col gap-2 shrink-0">
                 <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100">
                    <img 
-                     src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null) || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} 
-                     alt="Vehicle Main" 
+                     src={getVehicleImgUrl(managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null))} 
+                     alt="Vehicle Main"
+                     onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = DEFAULT_VEHICLE_IMG;
+                     }}
                      className="w-full h-full object-cover" 
                    />
                 </div>
@@ -920,8 +972,12 @@ const Vehicles = () => {
                    {[1, 2, 3].map((num) => (
                      <div key={num} className="h-16 rounded-lg overflow-hidden cursor-pointer opacity-70 hover:opacity-100 transition-opacity border border-gray-100">
                         <img 
-                          src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null) || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} 
-                          alt="Thumb" 
+                          src={getVehicleImgUrl(managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null))} 
+                          alt="Thumb"
+                          onError={(e) => {
+                             e.target.onerror = null;
+                             e.target.src = DEFAULT_VEHICLE_IMG;
+                          }}
                           className="w-full h-full object-cover" 
                         />
                      </div>
@@ -3630,8 +3686,17 @@ const Vehicles = () => {
               <button onClick={closeEditModal} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
               <button onClick={async (e) => {
                 try {
-                  const photoStr = editVehicleModal.img || editVehicleModal.photoUrl || null;
-                  const cleanNotes = editVehicleModal.notes ? editVehicleModal.notes.split('Photo:')[0].trim() : '';
+                  let photoStr = editVehicleModal.img || editVehicleModal.photoUrl || '';
+                  if (photoStr && typeof photoStr === 'string' && photoStr.startsWith('data:image/')) {
+                    try {
+                      const upRes = await api.post('/upload', { image: photoStr });
+                      if (upRes.data && upRes.data.success && upRes.data.data?.url) {
+                        photoStr = upRes.data.data.url;
+                      }
+                    } catch (upErr) {
+                      console.error('Pre-upload edit photo error:', upErr);
+                    }
+                  }
 
                   const payload = {
                     rego: editVehicleModal.reg || editVehicleModal.rego,
@@ -3641,20 +3706,20 @@ const Vehicles = () => {
                     status: editVehicleModal.status,
                     category: editVehicleModal.type,
                     odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
-                    photoUrl: photoStr,
-                    notes: cleanNotes
+                    photoUrl: photoStr
                   };
                   await api.put(`/vehicles/${editVehicleModal.id}`, payload);
                   fetchVehicles();
+                  const resolvedImgUrl = getVehicleImgUrl(photoStr || editVehicleModal.img);
                   const updatedVehicleObj = {
                     ...editVehicleModal,
                     reg: payload.rego,
                     rego: payload.rego,
                     make: editVehicleModal.make,
                     model: editVehicleModal.model || '',
-                    img: editVehicleModal.img || editVehicleModal.photoUrl,
-                    photoUrl: editVehicleModal.img || editVehicleModal.photoUrl,
-                    name: editVehicleModal.make ? editVehicleModal.make : editVehicleModal.name,
+                    img: resolvedImgUrl,
+                    photoUrl: photoStr || editVehicleModal.photoUrl,
+                    name: editVehicleModal.make ? `${editVehicleModal.make} ${editVehicleModal.model || ''}`.trim() : editVehicleModal.name,
                     status: editVehicleModal.status || 'ACTIVE'
                   };
                   if (managingVehicle && managingVehicle.id === editVehicleModal.id) {
@@ -3664,7 +3729,8 @@ const Vehicles = () => {
                   showToast('Vehicle updated successfully!');
                 } catch (err) {
                   console.error('Failed to update vehicle:', err);
-                  showToast('Failed to update vehicle.', 'error');
+                  const errMsg = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to update vehicle.';
+                  showToast(errMsg, 'error');
                 }
               }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
             </div>
@@ -3732,7 +3798,7 @@ const Vehicles = () => {
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VEHICLE ID * (MANUAL EDIT OPTION)</label>
-                  <input name="id" type="text" defaultValue="VEH009" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-bold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                  <input name="id" type="text" defaultValue={`VEH-${Math.floor(1000 + Math.random() * 9000)}`} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-bold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
                 
                 <div>
@@ -4120,14 +4186,13 @@ const Vehicles = () => {
                            <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
                                  <img 
-                                      src={v.photoUrl || v.img} 
-                                      alt="Vehicle" 
-                                      onError={(e) => {
-                                         e.target.onerror = null; 
-                                         const isCar = (v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.category && v.category.toLowerCase().includes('car'));
-                                         e.target.src = isCar ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
-                                      }}
-                                      className="w-10 h-8 rounded object-cover border border-gray-200 shadow-sm" 
+                                     src={getVehicleImgUrl(v.img || v.photoUrl)} 
+                                     alt="Vehicle" 
+                                     onError={(e) => {
+                                        e.target.onerror = null; 
+                                        e.target.src = DEFAULT_VEHICLE_IMG;
+                                     }}
+                                     className="w-10 h-8 rounded object-cover border border-gray-200 shadow-sm" 
                                   />
                                  <div>
                                     <div className="text-[12px] font-bold text-gray-900 whitespace-nowrap">{v.displayId || v.reg || v.id} - {v.make}</div>
