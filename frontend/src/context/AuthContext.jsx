@@ -105,6 +105,8 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
+};
+
 const defaultAuthValue = {
   user: null,
   isAuthenticated: false,
