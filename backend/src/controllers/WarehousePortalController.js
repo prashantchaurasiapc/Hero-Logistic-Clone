@@ -302,6 +302,10 @@ exports.getStock = async (req, res, next) => {
       typeBadge: item.vehicleType === 'Pallet' ? 'General Freight' : 'Car Carrying',
       typeColor: item.vehicleType === 'Pallet' ? 'green' : 'blue',
       location: item.zone || 'Yard',
+      zone: item.zone || '-',
+      row: item.row || '-',
+      bay: item.bay || '-',
+      position: item.position || '-',
       locationDetail: `${item.zone || 'Yard'} / ${item.row || '-'} / ${item.bay || '-'} / ${item.position || '-'}`,
       rowBayPos: `${item.row || '-'} / ${item.bay || '-'} / ${item.position || '-'}`,
       status: item.stockStatus?.replace(/_/g, ' ') || 'In Storage',
@@ -2173,6 +2177,42 @@ exports.printManifest = async (req, res, next) => {
 
     return sendSuccess(res, { manifest: manifestData }, HTTP_STATUS.OK);
 
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getShiftStatus = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let realUserId = userId;
+    const driverCheck = await prisma.driver.findFirst({ where: { OR: [{ id: userId }, { userId: userId }] } });
+    if (driverCheck) {
+      realUserId = driverCheck.id;
+    } else {
+      const firstDriver = await prisma.driver.findFirst();
+      if (firstDriver) realUserId = firstDriver.id;
+    }
+
+    const timesheet = await prisma.timesheet.findFirst({
+      where: {
+        driverId: realUserId,
+        date: today
+      }
+    });
+
+    const isClockedIn = !!(timesheet && timesheet.clockInAt && !timesheet.clockOutAt);
+
+    return sendSuccess(res, {
+      clockedIn: isClockedIn,
+      clockInTime: timesheet?.clockInAt || null,
+      clockOutTime: timesheet?.clockOutAt || null,
+      timesheet
+    });
   } catch (error) {
     next(error);
   }
