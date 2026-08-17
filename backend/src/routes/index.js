@@ -213,9 +213,6 @@ router.use('/dashboard-metrics', SuperAdminDashboardRoutes);
 // Warehouse Portal routes & aliases
 router.use('/warehouse-portal', WarehousePortalRoutes);
 
-// Driver Portal dedicated routes
-const DriverPortalRoutes = require('./DriverPortalRoutes');
-router.use('/driver-portal', DriverPortalRoutes);
 
 // Accounts Portal dedicated routes
 const AccountsPortalRoutes = require('./AccountsPortalRoutes');
