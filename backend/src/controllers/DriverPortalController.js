@@ -2937,7 +2937,13 @@ exports.submitChecklist = async (req, res, next) => {
         : failedCount > 0
           ? 'Safety Checklist submitted with defects logged.'
           : 'Safety Checklist submitted successfully! All clear.'
-=======
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Helper to resolve the driver record for the request
  */
 const resolveDriver = async (req) => {
