@@ -13,6 +13,7 @@ import WarehouseMap from './pages/Layout/Dashboard/WarehouseMap';
 import WarehouseHoldingAreas from './pages/Layout/Dashboard/WarehouseHoldingAreas';
 import WarehouseLoadLanes from './pages/Layout/Dashboard/WarehouseLoadLanes';
 import WarehouseReports from './pages/Layout/Dashboard/WarehouseReports';
+import WarehouseShift from './pages/Layout/Dashboard/WarehouseShift';
 import WarehouseScanning from './pages/Layout/Dashboard/WarehouseScanning';
 import WarehouseLabels from './pages/Layout/Dashboard/WarehouseLabels';
 import WarehouseMovements from './pages/Layout/Dashboard/WarehouseMovements';
@@ -44,7 +45,7 @@ import SalesDashboard from './components/SalesDashboard/SalesDashboard';
 import CompanyAdminDashboard from './pages/Layout/Dashboard/CompanyAdminDashboard';
 import DispatcherDashboard from './pages/Layout/Dashboard/DispatcherDashboard';
 import DriverDashboard from './components/DriverDashboard/DriverDashboard';
-import StartWorkFinish from './components/DriverDashboard/StartWorkFinish';
+import StartWorkFinish from './DriverDashboard/StartWorkFinish';
 import Jobs from './components/DriverDashboard/Jobs';
 import NearbyServices from './components/DriverDashboard/NearbyServices';
 import Notifications from './components/DriverDashboard/Notifications';
@@ -357,7 +358,7 @@ function App() {
             <Route path="dispatch-ready" element={<WarehouseOutbound />} />
             <Route path="outbound" element={<WarehouseOutbound />} />
             <Route path="messages" element={<Messages />} />
-            <Route path="my-shift" element={<WarehouseMyShift />} />
+            <Route path="my-shift" element={<WarehouseShift />} />
             <Route path="warehouse-yard-map" element={<WarehouseMap />} />
             <Route path="map" element={<WarehouseMap />} />
             <Route path="holding-areas" element={<WarehouseHoldingAreas />} />
@@ -365,6 +366,8 @@ function App() {
             <Route path="scanning" element={<WarehouseScanning />} />
             <Route path="labels" element={<WarehouseLabels />} />
             <Route path="reports" element={<WarehouseReports />} />
+            <Route path="tools/labels" element={<WarehouseLabels />} />
+            <Route path="tools/qr-scanner" element={<WarehouseScanning />} />
             <Route path="tools" element={<Tools />} />
             <Route path="tools/:tab" element={<Tools />} />
             <Route path="profile" element={<WarehouseProfile />} />

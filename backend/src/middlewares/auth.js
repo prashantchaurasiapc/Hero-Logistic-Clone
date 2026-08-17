@@ -180,3 +180,20 @@ exports.denySalesFromLogistics = (req, res, next) => {
   }
   next();
 };
+
+/**
+ * Checks if user has one of the allowed roles
+ * Usage: router.get('/something', verifyToken, authorizeRoles(['WAREHOUSE', 'SUPER_ADMIN']), controller.method)
+ */
+exports.authorizeRoles = (roles) => {
+  return (req, res, next) => {
+    if (req.user && (roles.includes(req.user.role) || req.user.role === 'SUPER_ADMIN' || req.user.role === 'COMPANY_ADMIN')) {
+      return next();
+    }
+    
+    return sendError(res, {
+      code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+      message: `Access denied. Role ${req.user?.role || 'Unknown'} is not authorized for this action.`
+    }, HTTP_STATUS.FORBIDDEN);
+  };
+};

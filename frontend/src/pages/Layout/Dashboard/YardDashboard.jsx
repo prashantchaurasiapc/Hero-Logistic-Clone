@@ -158,77 +158,51 @@ export default function YardDashboard() {
   const [noteText, setNoteText] = useState('');
   const [taskSearch, setTaskSearch] = useState('');
 
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: 'Spot Trailer TR-9410 to Gate 4',
-      priority: 'High',
-      status: 'PENDING',
-      desc: 'Dock unloading request from warehouse team',
-      time: '14:00',
-      gate: 'Gate 4',
-      unit: 'TR-9410',
-      notes: ''
-    },
-    {
-      id: 2,
-      title: 'Audit Seal locks for TR-1102',
-      priority: 'High',
-      status: 'IN_PROGRESS',
-      desc: 'Verify container security codes before departure',
-      time: '15:30',
-      gate: 'Gate 2',
-      unit: 'TR-1102',
-      notes: ''
-    },
-    {
-      id: 3,
-      title: 'Check damage report for TR-4809',
-      priority: 'Medium',
-      status: 'COMPLETED',
-      desc: 'Verify reported rear bumper dent specs',
-      time: '12:00',
-      gate: 'Gate 1',
-      unit: 'TR-4809',
-      notes: 'Minor surface scratch noted.'
-    }
-  ]);
+  const [tasks, setTasks] = useState([]);
+  const [stats, setStats] = useState({
+    trailersSpotted: 0,
+    gateEvents: 0,
+    yardCapacityPercent: 0
+  });
 
-  // Notification states
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: 'New Task Assigned',
-      desc: 'Spot Trailer TR-5540 to Gate 1 by 15:00',
-      time: '2 min ago',
-      unread: true,
-      type: 'task'
-    },
-    {
-      id: 2,
-      title: 'Supervisor Message',
-      desc: 'Keep Gate 3 clear — heavy inbound scheduled at 14:30.',
-      time: '10 min ago',
-      unread: true,
-      type: 'message'
-    },
-    {
-      id: 3,
-      title: 'Emergency Alert',
-      desc: 'Fuel spill near Dock B2. Avoid area. Safety team dispatched.',
-      time: '22 min ago',
-      unread: true,
-      type: 'emergency'
-    },
-    {
-      id: 4,
-      title: 'Task Completed',
-      desc: 'Audit for TR-1102 marked complete by supervisor.',
-      time: '1 hr ago',
-      unread: false,
-      type: 'info'
-    }
-  ]);
+  useEffect(() => {
+    const fetchTasksAndStats = async () => {
+      try {
+        const [tasksRes, statsRes] = await Promise.all([
+          api.get('/follow-up-tasks'),
+          api.get('/warehouse-portal/dashboard')
+        ]);
+        if (tasksRes.data?.success && tasksRes.data.data?.length > 0) {
+          const fetched = tasksRes.data.data.map(t => ({
+            id: t.id,
+            title: t.description || 'Yard Task',
+            priority: t.priority || 'Medium',
+            status: t.status || 'PENDING',
+            desc: t.notes || '',
+            time: t.dueDate ? new Date(t.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            gate: '',
+            unit: '',
+            notes: ''
+          }));
+          setTasks(fetched);
+        }
+        if (statsRes.data?.success && statsRes.data.data) {
+          const d = statsRes.data.data;
+          setStats({
+            trailersSpotted: d.overview?.inYard || 0,
+            gateEvents: (d.overview?.receivedInbound || 0) + (d.overview?.dispatchedOutbound || 0) || 4,
+            yardCapacityPercent: d.overview?.yardCapacity?.usedPercent || 0
+          });
+        }
+      } catch (err) {
+        console.warn('Could not fetch yard data:', err.message);
+      }
+    };
+    fetchTasksAndStats();
+  }, []);
+
+  // Notification states — loaded from API
+  const [notifications, setNotifications] = useState([]);
 
   // Toast notifications state
   const [toast, setToast] = useState(null);
@@ -638,6 +612,7 @@ export default function YardDashboard() {
           style={getStatCardStyle('trailers')}
         >
           <div>
+
             <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>ITEMS / TRAILERS IN YARD</span>
             <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>{dbMetrics.inYard}</span>
           </div>
@@ -648,6 +623,7 @@ export default function YardDashboard() {
             </div>
             <div style={{ width: '100%', height: 5, backgroundColor: '#f1f5f9', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
               <div style={{ width: `${dbMetrics.yardCapacityPct}%`, height: '100%', backgroundColor: '#ffcc00' }}></div>
+
             </div>
             <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Active parking spots</span>
           </div>
@@ -660,12 +636,14 @@ export default function YardDashboard() {
           style={getStatCardStyle('gate-events')}
         >
           <div>
+
             <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>INBOUND DELIVERIES</span>
             <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>{dbMetrics.inbound}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Inward/Outward today</span>
             <span style={{ fontSize: 10, fontWeight: '800', color: '#047857', backgroundColor: '#d1fae5', padding: '2px 6px', borderRadius: 4 }}>Live DB</span>
+
           </div>
         </div>
 
@@ -677,6 +655,7 @@ export default function YardDashboard() {
         >
           <div>
             <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>YARD CAPACITY</span>
+
             <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>{dbMetrics.yardCapacityPct}%</span>
           </div>
           <div>
@@ -686,6 +665,7 @@ export default function YardDashboard() {
             </div>
             <div style={{ width: '100%', height: 5, backgroundColor: '#f1f5f9', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
               <div style={{ width: `${dbMetrics.yardCapacityPct}%`, height: '100%', backgroundColor: '#ffcc00' }}></div>
+
             </div>
             <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Slots occupied</span>
           </div>

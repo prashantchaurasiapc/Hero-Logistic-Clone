@@ -579,6 +579,8 @@ exports.createVehicle = async (req, res, next) => {
     const regoVal = rawPayload.rego && String(rawPayload.rego).trim() ? String(rawPayload.rego).trim() : `REG-${Math.floor(10000 + Math.random() * 90000)}`;
     const vinVal = rawPayload.vin && String(rawPayload.vin).trim() ? String(rawPayload.vin).trim() : `VIN-${Math.floor(100000 + Math.random() * 900000)}`;
 
+    const photoUrlVal = rawPayload.photoUrl || rawPayload.avatarUrl || rawPayload.img || rawPayload.photoPreview || null;
+
     const vehicleData = {
       rego: regoVal,
       vin: vinVal,
@@ -591,6 +593,7 @@ exports.createVehicle = async (req, res, next) => {
       fuelType: rawPayload.fuelType || 'Diesel',
       odometerKm: rawPayload.odometerKm && !isNaN(rawPayload.odometerKm) ? parseInt(rawPayload.odometerKm) : 0,
       maintenanceDueKm: rawPayload.maintenanceDueKm && !isNaN(rawPayload.maintenanceDueKm) ? parseInt(rawPayload.maintenanceDueKm) : null,
+      photoUrl: photoUrlVal,
       companyId: effectiveCompanyId
     };
 

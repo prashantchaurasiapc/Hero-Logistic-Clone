@@ -214,9 +214,9 @@ router.get('/payroll/:id', DriverPortalController.getPayrollDetails);
  * GET /driver-portal/payroll/:id/payslip
  * Retrieves or downloads the payslip PDF for a specific pay period.
  */
-router.get('/payroll/:id/payslip', DriverPortalController.downloadPayslip);
+// Dashboard & direct status/messages routes
+router.get('/dashboard', DriverPortalController.getDashboard);
+router.post('/status', DriverPortalController.updateStatus);
+router.post('/messages', DriverPortalController.sendQuickMessage);
 
 module.exports = router;
-
-
-

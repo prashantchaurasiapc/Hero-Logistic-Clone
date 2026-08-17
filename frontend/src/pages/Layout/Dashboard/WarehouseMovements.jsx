@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   MapPin, Calendar, ChevronDown, ChevronLeft, ChevronRight, Plus, ArrowRight,
@@ -7,140 +8,10 @@ import {
   CheckCircle2, X, FileSpreadsheet, Download, AlertTriangle, Search,
   Printer, Eye, Filter, ArrowUpRight, Clock, RefreshCw, FileText, CheckCircle, Truck
 } from 'lucide-react';
-import api from '../../../services/api';
 
-/* ============================================================
-   MOCK DATA FOR MOVE / TRANSFER FORM
-   ============================================================ */
-const IMPORT_MANIFEST = [
-  {
-    id: 'imp-1',
-    image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=120&q=80',
-    title: 'Nissan X-Trail',
-    vin: 'JN1TCNT31U0098765',
-    rego: 'MNO345',
-    type: 'Vehicle',
-    subtype: 'Car Carrying',
-    fromZone: 'Zone A',
-    fromRow: 'Row 3 / Bay 08',
-    fromPos: 'Position 02',
-    toZone: 'Zone B',
-    toRow: 'Row 2 / Bay 05',
-    toPos: 'Position 06',
-    condition: 'Good',
-  },
-  {
-    id: 'imp-2',
-    image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=120&q=80',
-    title: 'Hyundai Tucson',
-    vin: 'KM8J33A45JU112233',
-    rego: 'PQR678',
-    type: 'Vehicle',
-    subtype: 'Car Carrying',
-    fromZone: 'Zone A',
-    fromRow: 'Row 1 / Bay 03',
-    fromPos: 'Position 01',
-    toZone: 'Zone B',
-    toRow: 'Row 2 / Bay 05',
-    toPos: 'Position 07',
-    condition: 'Good',
-  },
-  {
-    id: 'imp-3',
-    image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0729?auto=format&fit=crop&w=120&q=80',
-    title: 'Ford Ranger',
-    vin: '1FTER4FH4MLD12345',
-    rego: 'STU901',
-    type: 'Vehicle',
-    subtype: 'Car Carrying',
-    fromZone: 'Zone A',
-    fromRow: 'Row 2 / Bay 06',
-    fromPos: 'Position 03',
-    toZone: 'Zone B',
-    toRow: 'Row 3 / Bay 07',
-    toPos: 'Position 02',
-    condition: 'Good',
-  },
-  {
-    id: 'imp-4',
-    image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=120&q=80',
-    title: 'Toyota RAV4',
-    vin: 'JTMBFREV40J123456',
-    rego: 'VWX234',
-    type: 'Vehicle',
-    subtype: 'Car Carrying',
-    fromZone: 'Zone C',
-    fromRow: 'Row 1 / Bay 01',
-    fromPos: 'Position 05',
-    toZone: 'Zone B',
-    toRow: 'Row 2 / Bay 05',
-    toPos: 'Position 08',
-    condition: 'Good',
-  },
-];
-
-const initialFormItems = [
-  {
-    id: '1',
-    image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=120&q=80',
-    title: 'Toyota Camry',
-    vin: 'JTDBE32K203456789',
-    rego: 'ABC123',
-    type: 'Vehicle',
-    subtype: 'Car Carrying',
-    fromZone: 'Zone A',
-    fromRow: 'Row 4 / Bay 12',
-    fromPos: 'Position 01',
-    toZone: 'Zone B',
-    toRow: 'Row 2 / Bay 05',
-    toPos: 'Position 03',
-    condition: 'Good',
-  },
-  {
-    id: '2',
-    image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=120&q=80',
-    title: 'Mazda 3',
-    vin: 'JM0BL10F200123456',
-    rego: 'DEF456',
-    type: 'Vehicle',
-    subtype: 'Car Carrying',
-    fromZone: 'Zone A',
-    fromRow: 'Row 4 / Bay 12',
-    fromPos: 'Position 02',
-    toZone: 'Zone B',
-    toRow: 'Row 2 / Bay 05',
-    toPos: 'Position 04',
-    condition: 'Good',
-  },
-  {
-    id: '3',
-    image: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=120&q=80',
-    title: 'Honda Accord',
-    vin: '1HGCM82633A123456',
-    rego: 'GHI789',
-    type: 'Vehicle',
-    subtype: 'Car Carrying',
-    fromZone: 'Zone A',
-    fromRow: 'Row 4 / Bay 12',
-    fromPos: 'Position 03',
-    toZone: 'Zone B',
-    toRow: 'Row 2 / Bay 05',
-    toPos: 'Position 05',
-    condition: 'Good',
-  },
-];
-
-const recentMovements = [
-  { date: '21/07/2026 08:15 AM', label: 'Received', detail: 'ABC Motors' },
-  { date: '21/07/2026 09:42 AM', label: 'Moved', detail: 'Zone A / Row 4 / Bay 12' },
-  { date: '21/07/2026 10:05 AM', label: 'Staged', detail: 'Load Lane 4' },
-];
-
-/* ============================================================
-   MOCK DATA FOR MOVEMENT HISTORY AUDIT LOG (Removed)
-   ============================================================ */
+const initialFormItems = [];
+const recentMovements = [];
 const initialHistoryLogs = [];
-
 export default function WarehouseMovements() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -149,9 +20,9 @@ export default function WarehouseMovements() {
 
   // ── FORM VIEW STATES ──
   const [movementType, setMovementType] = useState('within');
-  const [refNo, setRefNo] = useState('MT-1045');
-  const [dateTime, setDateTime] = useState('21/07/2026 11:35 AM');
-  const [reason, setReason] = useState('Repositioning');
+  const [refNo, setRefNo] = useState('');
+  const [dateTime, setDateTime] = useState('');
+  const [reason, setReason] = useState('');
   const [priority, setPriority] = useState('Normal');
   const [notes, setNotes] = useState('');
   const [scanInput, setScanInput] = useState('');
@@ -210,6 +81,9 @@ export default function WarehouseMovements() {
         }
       };
       fetchHistory();
+    } else {
+      setRefNo(`TRF-${Math.floor(100000 + Math.random() * 900000)}`);
+      setDateTime(new Date().toLocaleString('en-GB'));
     }
   }, [isHistoryView]);
 
@@ -235,56 +109,64 @@ export default function WarehouseMovements() {
     setFormItems(updated);
   };
 
-  const handleAddFormItem = () => {
-    const val = scanInput.trim();
+  const handleAddFormItem = async (valArg) => {
+    const val = (typeof valArg === 'string' ? valArg : (scanInput || formSearchQuery)).trim();
     if (!val) {
-      setScanError('Please enter a VIN, barcode, or item description.');
+      setScanError('Please enter a VIN, rego, or ref number.');
       setTimeout(() => setScanError(''), 3000);
       return;
     }
-    if (formItems.some(i => i.vin.toLowerCase() === val.toLowerCase())) {
-      setScanError(`Item with VIN "${val}" is already in the move list.`);
-      setTimeout(() => setScanError(''), 3000);
-      return;
+    
+    try {
+      const res = await api.get('/warehouse-portal/stock', {
+        params: { search: val }
+      });
+      const stockItems = res.data?.data || [];
+      if (stockItems.length === 0) {
+        setScanError(`Item "${val}" not found in current warehouse stock.`);
+        setTimeout(() => setScanError(''), 4000);
+        return;
+      }
+      
+      const matched = stockItems[0];
+      if (formItems.some(i => i.itemId === matched.id)) {
+        setScanError(`Item "${matched.vin || matched.stockRef}" is already in the move list.`);
+        setTimeout(() => setScanError(''), 3000);
+        return;
+      }
+
+      const newItem = {
+        id: String(Date.now()),
+        itemId: matched.id,
+        image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=120&q=80',
+        title: matched.make ? `${matched.make} ${matched.model || ''}` : (matched.description || 'Stock Item'),
+        vin: matched.vin || matched.stockRef || '-',
+        rego: matched.rego || '—',
+        type: matched.vehicleType || 'Vehicle',
+        subtype: matched.category || 'Car Carrying',
+        fromZone: matched.zone || 'Zone A',
+        fromRow: matched.row || 'Row 1',
+        fromBay: matched.bay || 'Bay 1',
+        fromPos: matched.position || 'P01',
+        toZone: matched.zone || 'Zone A',
+        toRow: matched.row || 'Row 1',
+        toBay: matched.bay || 'Bay 1',
+        toPos: matched.position || 'P01',
+        condition: matched.status || 'Good',
+      };
+      setFormItems(prev => [...prev, newItem]);
+      setScanInput('');
+      setFormSearchQuery('');
+      setScanError('');
+      setSelectedFormItem(newItem);
+      showToast(`✓ Added ${newItem.title} to move list.`);
+    } catch (err) {
+      console.error('Failed to search stock:', err);
+      setScanError('Failed to search stock database.');
     }
-    const posNum = String(formItems.length + 4).padStart(2, '0');
-    const newItem = {
-      id: String(Date.now()),
-      image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=120&q=80',
-      title: val.length > 8 ? `Vehicle (${val.slice(0, 8)}...)` : `Vehicle (${val})`,
-      vin: val.toUpperCase(),
-      rego: 'PENDING',
-      type: 'Vehicle',
-      subtype: 'Car Carrying',
-      fromZone: 'Zone A',
-      fromRow: 'Row 4 / Bay 12',
-      fromPos: `Position ${posNum}`,
-      toZone: 'Zone B',
-      toRow: 'Row 2 / Bay 05',
-      toPos: `Position ${posNum}`,
-      condition: 'Good',
-    };
-    setFormItems(prev => [...prev, newItem]);
-    setScanInput('');
-    setScanError('');
-    setSelectedFormItem(newItem);
-    showToast(`✓ Item "${newItem.vin}" added to move list!`);
   };
 
-  const handleConfirmImport = () => {
-    const toAdd = IMPORT_MANIFEST
-      .filter(m => importSelected.includes(m.id))
-      .filter(m => !formItems.some(i => i.vin === m.vin));
-    if (toAdd.length === 0) {
-      showToast('No new items selected. All may already be in the list.', 'warn');
-      return;
-    }
-    const timestamped = toAdd.map(m => ({ ...m, id: String(Date.now() + Math.random()) }));
-    setFormItems(prev => [...prev, ...timestamped]);
-    setSelectedFormItem(timestamped[0]);
-    setImportModalOpen(false);
-    showToast(`✓ ${toAdd.length} item(s) imported into move list!`);
-  };
+
 
   const handleClearAllForm = () => {
     if (formItems.length === 0) return;
@@ -295,31 +177,8 @@ export default function WarehouseMovements() {
     }
   };
 
-  const handleAddAnotherDefaultItem = () => {
-    const newId = String(Date.now());
-    const count = formItems.length + 1;
-    const newItem = {
-      id: newId,
-      image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0729?auto=format&fit=crop&w=120&q=80',
-      title: `Vehicle Item #${count}`,
-      vin: `VIN${Math.floor(1000000000000000 + Math.random() * 9000000000000000)}`,
-      rego: `REG${Math.floor(100 + Math.random() * 900)}`,
-      type: 'Vehicle',
-      subtype: 'Car Carrying',
-      fromZone: 'Zone A',
-      fromRow: 'Row 4 / Bay 12',
-      fromPos: `Position ${String(count).padStart(2, '0')}`,
-      toZone: 'Zone B',
-      toRow: 'Row 2 / Bay 05',
-      toPos: `Position ${String(count + 2).padStart(2, '0')}`,
-      condition: 'Good',
-    };
-    setFormItems(prev => [...prev, newItem]);
-    setSelectedFormItem(newItem);
-    showToast(`✓ Added Item #${count} to list.`);
-  };
 
-  const handleCreateTransfer = () => {
+  const handleCreateTransfer = async () => {
     if (formItems.length === 0) {
       showToast('Add at least one item to the move list before creating a transfer.', 'warn');
       return;
@@ -328,9 +187,66 @@ export default function WarehouseMovements() {
       showToast('Please tick the confirmation checkbox before creating transfer.', 'warn');
       return;
     }
-    showToast(`✓ Transfer ${refNo} created! ${formItems.length} item(s) queued for movement.`);
-    setTimeout(() => navigate(isYard ? '/yard/movements' : '/warehouse/movement-history'), 1800);
+    
+    try {
+      showToast('Creating transfer and updating stock locations...', 'info');
+      
+      // Post all relocations in parallel
+      await Promise.all(
+        formItems.map(item =>
+          api.post('/warehouse-portal/stock/move', {
+            itemId: item.itemId,
+            toZone: item.toZone,
+            toRow: item.toRow,
+            toBay: item.toBay,
+            toPosition: item.toPos,
+            reason: reason || 'Internal Depot Move'
+          })
+        )
+      );
+
+      showToast(`✓ Transfer ${refNo} created! ${formItems.length} item(s) moved successfully.`);
+      setTimeout(() => navigate(isYard ? '/yard/movements' : '/warehouse/movement-history'), 1800);
+    } catch (err) {
+      console.error('Failed to execute transfer:', err);
+      showToast('Failed to create transfer: ' + (err.response?.data?.message || err.message), 'error');
+    }
   };
+
+  useEffect(() => {
+    if (isHistoryView) {
+      const fetchHistory = async () => {
+        try {
+          const res = await api.get('/warehouse-portal/movements', {
+            params: {
+              type: historyTypeFilter === 'All' ? undefined : historyTypeFilter,
+              result: historyResultFilter === 'All' ? undefined : historyResultFilter,
+              search: historySearch || undefined
+            }
+          });
+          const data = res.data?.data || res.data;
+          const list = Array.isArray(data) ? data : (data.list || data.data || []);
+          
+          const mappedLogs = list.map(m => ({
+            id: m.id,
+            dateTime: m.dateTime || m.timestamp,
+            movementType: m.type || 'Move',
+            itemTitle: m.item || 'Item',
+            vin: m.vinRego || m.item || '-',
+            fromLoc: m.fromLocation || '-',
+            toLoc: m.toLocation || '-',
+            loadRef: m.loadRef || '-',
+            byName: m.by || 'Staff',
+            result: m.result || 'Completed'
+          }));
+          setHistoryLogs(mappedLogs);
+        } catch (err) {
+          console.error('Failed to fetch movement history:', err);
+        }
+      };
+      fetchHistory();
+    }
+  }, [isHistoryView, historyTypeFilter, historyResultFilter, historySearch]);
 
   // ── HISTORY FILTER HANDLERS ──
   const filteredHistory = historyLogs.filter(log => {
@@ -1383,8 +1299,6 @@ export default function WarehouseMovements() {
         .mvt-qr-icon-right { position: absolute; right: 8px; color: #94A3B8; cursor: pointer; }
 
         /* Header Buttons */
-        .mvt-btn-import-list { display: flex; align-items: center; gap: 5px; height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #FCD34D; background: #FEF3C7; color: #B45309; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
-        .mvt-btn-import-list:hover { background: #FDE68A; }
         .mvt-btn-clear-all { height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #FCA5A5; background: #FEF2F2; color: #DC2626; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
         .mvt-btn-clear-all:hover { background: #FEE2E2; }
 
@@ -1629,18 +1543,14 @@ export default function WarehouseMovements() {
                   value={formSearchQuery}
                   onChange={e => setFormSearchQuery(e.target.value)}
                   onKeyDown={e => {
-                    if (e.key === 'Enter' && scanInput) handleAddFormItem();
+                    if (e.key === 'Enter' && formSearchQuery) handleAddFormItem(formSearchQuery);
                   }}
                   className="mvt-search-bar-input"
                 />
-                <QrCode size={14} className="mvt-qr-icon-right" onClick={handleAddFormItem} title="Scan / Add" />
+                <QrCode size={14} className="mvt-qr-icon-right" onClick={() => handleAddFormItem(formSearchQuery)} title="Scan / Add" />
               </div>
 
               <div className="flex items-center gap-2">
-                <button onClick={() => setImportModalOpen(true)} className="mvt-btn-import-list">
-                  <Download size={13} />
-                  <span>Import from List</span>
-                </button>
                 <button onClick={handleClearAllForm} className="mvt-btn-clear-all">
                   Clear All
                 </button>
@@ -1838,10 +1748,7 @@ export default function WarehouseMovements() {
 
             {/* Footer matching Screenshot 2 */}
             <div className="mvt-table-footer">
-              <button onClick={handleAddAnotherDefaultItem} className="mvt-btn-add-another">
-                <Plus size={14} />
-                <span>Add Another Item</span>
-              </button>
+              <div />
               <div className="mvt-total-counter">
                 Total Items: <strong>{formItems.length}</strong>
               </div>
@@ -1991,64 +1898,7 @@ export default function WarehouseMovements() {
 
       </div>
 
-      {/* IMPORT MODAL */}
-      {importModalOpen && (
-        <div className="wh-modal-overlay" onClick={() => setImportModalOpen(false)}>
-          <div className="wh-modal-box" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-4 border-b border-slate-200">
-              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                <Download size={16} className="text-amber-500" />
-                Import Items from Inventory / Manifest
-              </h3>
-              <button onClick={() => setImportModalOpen(false)}><X size={16} className="text-slate-400" /></button>
-            </div>
-            <div className="p-4 flex flex-col gap-3">
-              <input
-                type="text"
-                placeholder="Filter manifest items by title, VIN, rego..."
-                value={importSearch}
-                onChange={e => setImportSearch(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-amber-400 font-medium"
-              />
-              <div className="max-h-64 overflow-y-auto flex flex-col gap-2 pr-1">
-                {IMPORT_MANIFEST
-                  .filter(m => !importSearch || m.title.toLowerCase().includes(importSearch.toLowerCase()) || m.vin.toLowerCase().includes(importSearch.toLowerCase()))
-                  .map(m => {
-                    const isSel = importSelected.includes(m.id);
-                    const alreadyAdded = formItems.some(i => i.vin === m.vin);
-                    return (
-                      <div
-                        key={m.id}
-                        onClick={() => {
-                          if (alreadyAdded) return;
-                          setImportSelected(prev => isSel ? prev.filter(x => x !== m.id) : [...prev, m.id]);
-                        }}
-                        className={`p-2.5 border rounded-lg flex items-center justify-between cursor-pointer transition-colors ${alreadyAdded ? 'bg-slate-50 opacity-60 border-slate-200' : isSel ? 'bg-amber-50 border-amber-400' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <img src={m.image} alt={m.title} className="w-10 h-8 rounded object-cover border border-slate-200" />
-                          <div>
-                            <div className="font-extrabold text-xs text-slate-900">{m.title}</div>
-                            <div className="text-[10px] text-slate-500 font-mono">VIN: {m.vin} • REGO: {m.rego}</div>
-                          </div>
-                        </div>
-                        {alreadyAdded ? (
-                          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">In Move List</span>
-                        ) : (
-                          <input type="checkbox" checked={isSel} readOnly className="accent-amber-500" />
-                        )}
-                      </div>
-                    );
-                  })}
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <button onClick={() => setImportModalOpen(false)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
-                <button onClick={handleConfirmImport} className="px-4 py-1.5 bg-amber-400 text-slate-900 font-extrabold rounded-lg text-xs hover:bg-amber-500 shadow-sm">Import Selected ({importSelected.length})</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* EDIT ITEM MODAL POPUP */}
       {editingItem && (

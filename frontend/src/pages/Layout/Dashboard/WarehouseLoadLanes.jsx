@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
 import {
   Search, Filter, Plus, ArrowRight, MoreVertical,
   CheckCircle2, Clock, AlertTriangle, Box, Truck,
@@ -7,9 +8,8 @@ import {
   Layers, SlidersHorizontal, ArrowUpDown, Eye, Tag, UserCheck,
   ShieldAlert, FileText, Trash2, ArrowUpRight, Check, User
 } from 'lucide-react';
-import api from '../../../services/api';
 
-// Mock data removed in favor of dynamic API data
+
 const initialLanes = [];
 
 export default function WarehouseLoadLanes() {
@@ -17,49 +17,62 @@ export default function WarehouseLoadLanes() {
   const location = useLocation();
   const isYard = location.pathname.startsWith('/yard');
 
-  const [lanes, setLanes] = useState(initialLanes);
-  const [summary, setSummary] = useState({
+
+  const [lanes, setLanes] = useState([]);
+  const [summaryData, setSummaryData] = useState({
+
     totalLanes: 0,
     activeLanes: 0,
     loadsInProgress: 0,
     readyToDispatch: 0,
-    overdueHold: 0,
-    readyCount: 0,
-    inProgressCount: 0,
-    holdCount: 0,
-    emptyCount: 0
+
+    overdueHold: 0
   });
-  const [upcomingDispatches, setUpcomingDispatches] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+
+  const [dbDrivers, setDbDrivers] = useState([]);
+  const [dbVehicles, setDbVehicles] = useState([]);
 
   const fetchLanes = async () => {
-    setLoading(true);
     try {
       const res = await api.get('/warehouse-portal/load-lanes');
-      if (res.data && res.data.success && res.data.data) {
-        const d = res.data.data;
-        if (d.lanes) setLanes(d.lanes);
-        if (d.summary) setSummary(d.summary);
-        if (d.upcomingDispatches) setUpcomingDispatches(d.upcomingDispatches);
+      const data = res.data?.data || res.data;
+      if (data) {
+        if (data.lanes) setLanes(data.lanes);
+        if (data.summary) setSummaryData(data.summary);
       }
     } catch (err) {
       console.error('Failed to fetch load lanes:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchLanes();
+
+    const fetchOptions = async () => {
+      try {
+        const optionsRes = await api.get('/warehouse-portal/inbound/form-options');
+        if (optionsRes.data?.success) {
+          const { drivers, vehicles } = optionsRes.data.data;
+          setDbDrivers(drivers || []);
+          setDbVehicles(vehicles || []);
+        }
+      } catch (err) {
+        console.warn('Failed to load form options:', err.message);
+      }
+    };
+    fetchOptions();
   }, []);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newLaneName, setNewLaneName] = useState('');
   const [newLaneArea, setNewLaneArea] = useState('Main Yard');
   const [moveModalOpen, setMoveModalOpen] = useState(false);
-  const [selectedLaneToMove, setSelectedLaneToMove] = useState('Lane 1');
+  const [selectedLaneToMove, setSelectedLaneToMove] = useState('');
+  const [sourceLaneIdToMove, setSourceLaneIdToMove] = useState(null);
   const [toast, setToast] = useState(null);
 
   const [viewLaneModal, setViewLaneModal] = useState(null);
@@ -74,131 +87,76 @@ export default function WarehouseLoadLanes() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const handlePrintManifest = (laneData) => {
-    const lane = laneData || viewLaneModal;
-    if (!lane) return;
+  const handlePrintManifest = async (lane) => {
+    try {
+      showToast(`🖨️ Generating manifest for ${lane.name}...`);
+      const res = await api.get(`/warehouse-portal/load-lanes/${lane.id}/manifest`);
+      if (res.data.success) {
+        const manifest = res.data.data || res.data.manifest;
+        const printWindow = window.open('', '', 'width=800,height=600');
+        if (!printWindow) {
+          showToast('⚠️ Pop-up blocked! Please allow pop-ups to print manifest.', 'error');
+          return;
+        }
 
-    const printWindow = window.open('', '_blank', 'width=800,height=900');
-    if (!printWindow) {
-      showToast('⚠️ Pop-up blocked! Please allow pop-ups to print manifest.', 'error');
-      return;
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Manifest - ${manifest.laneName}</title>
+              <style>
+                body { font-family: Arial, sans-serif; padding: 20px; }
+                h1 { color: #333; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+                th { background-color: #f9f9f9; }
+                .summary { margin-bottom: 20px; padding: 15px; background: #f0f4f8; border-radius: 8px; }
+              </style>
+            </head>
+            <body>
+              <h1>Load Lane Manifest: ${manifest.laneName}</h1>
+              <div class="summary">
+                <p><strong>Status:</strong> ${manifest.status}</p>
+                <p><strong>Driver:</strong> ${manifest.driverName}</p>
+                <p><strong>Vehicle:</strong> ${manifest.vehicleLicense}</p>
+                <p><strong>Total Items:</strong> ${manifest.totalItems}</p>
+                <p><strong>Date:</strong> ${new Date(manifest.date).toLocaleString()}</p>
+              </div>
+              <h2>Items</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>VIN</th>
+                    <th>Make</th>
+                    <th>Model</th>
+                    <th>Condition</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${manifest.items.map(i => `
+                    <tr>
+                      <td>${i.vin}</td>
+                      <td>${i.make || 'N/A'}</td>
+                      <td>${i.model || 'N/A'}</td>
+                      <td>${i.condition || 'N/A'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+              <script>
+                window.onload = () => {
+                  window.print();
+                  setTimeout(() => window.close(), 500);
+                }
+              </script>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Failed to generate manifest', 'error');
     }
-
-    const items = [
-      { name: 'Toyota Hilux SRS #01', sub: 'VIN: JTDKB3...9901', status: 'Ready' },
-      { name: 'Pallet - Auto Spare Parts (4x)', sub: 'SKU: PAL-778811', status: 'Ready' }
-    ];
-
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Manifest - ${lane.name} (${lane.area})</title>
-          <style>
-            body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 32px; color: #0F172A; line-height: 1.5; }
-            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0F172A; padding-bottom: 16px; margin-bottom: 24px; }
-            .company { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #0F172A; }
-            .badge { background: var(--primary-color); color: #0F172A; padding: 6px 14px; font-size: 12px; font-weight: 800; border-radius: 6px; display: inline-block; text-transform: uppercase; }
-            .meta-date { font-size: 11px; color: #64748B; margin-top: 6px; text-align: right; }
-            .title-area { margin-bottom: 24px; background: #F8FAFC; padding: 16px; border-radius: 8px; border: 1px solid #E2E8F0; }
-            .title-area h2 { font-size: 20px; font-weight: 900; margin: 0 0 4px 0; color: #0F172A; }
-            .title-area p { font-size: 12px; color: #64748B; margin: 0; }
-            .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
-            .box { border: 1px solid #CBD5E1; padding: 14px; border-radius: 8px; background: #FFFFFF; }
-            .box-title { font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-            .box-value { font-size: 15px; font-weight: 800; color: #0F172A; }
-            .table { width: 100%; border-collapse: collapse; margin-bottom: 36px; margin-top: 12px; }
-            .table th { background: #F1F5F9; font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; padding: 10px 12px; text-align: left; border-bottom: 2px solid #CBD5E1; }
-            .table td { padding: 10px 12px; border-bottom: 1px solid #E2E8F0; font-size: 12.5px; }
-            .status-badge { background: #DCFCE7; color: #15803D; font-weight: 800; font-size: 10.5px; padding: 3px 8px; border-radius: 4px; }
-            .signatures { display: grid; grid-template-columns: repeat(2, 1fr); gap: 48px; margin-top: 60px; page-break-inside: avoid; }
-            .sig-box { border-top: 2px solid #0F172A; padding-top: 8px; font-size: 12px; font-weight: 800; color: #334155; }
-            .footer-note { margin-top: 40px; text-align: center; font-size: 10px; color: #94A3B8; border-top: 1px solid #F1F5F9; padding-top: 12px; }
-            @media print {
-              body { padding: 0; }
-              @page { size: auto; margin: 15mm; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div>
-              <div class="company">HERO LOGISTICS WMS</div>
-              <div style="font-size: 12px; color: #475569; font-weight: 600; margin-top: 2px;">Official Warehouse Dispatch Manifest</div>
-            </div>
-            <div>
-              <span class="badge">${lane.name}</span>
-              <div class="meta-date">Date: ${new Date().toLocaleDateString('en-GB')} | ${new Date().toLocaleTimeString()}</div>
-            </div>
-          </div>
-
-          <div class="title-area">
-            <h2>${lane.name} - ${lane.area}</h2>
-            <p>Status: <strong>${lane.status}</strong> &bull; Est. Dispatch: <strong>${lane.estDispatch}</strong> &bull; Loads Staged: <strong>${lane.loadsCount}</strong></p>
-          </div>
-
-          <div class="grid">
-            <div class="box">
-              <div class="box-title">LOAD & REFERENCE DETAILS</div>
-              <div class="box-value">${lane.loadRef}</div>
-              <div style="font-size: 11.5px; color: #64748B; margin-top: 4px; font-family: monospace;">Sub-Ref: ${lane.subRef}</div>
-              <div style="font-size: 11px; color: #16A34A; font-weight: 700; margin-top: 6px;">Staging Status: Verified & Sealed</div>
-            </div>
-            <div class="box">
-              <div class="box-title">ASSIGNED DRIVER & VEHICLE</div>
-              <div class="box-value">${lane.driver !== '-' ? lane.driver : 'Unassigned'}</div>
-              <div style="font-size: 11.5px; color: #475569; margin-top: 4px;">Vehicle: ${lane.vehicle !== '-' ? lane.vehicle : 'Pending'}</div>
-              <div style="font-size: 11px; color: #64748B; margin-top: 2px;">Type: ${lane.vehicleType}</div>
-            </div>
-          </div>
-
-          <div style="font-size: 13px; font-weight: 900; color: #0F172A; text-transform: uppercase; letter-spacing: 0.3px;">STAGED CARGO & ITEMS MANIFEST</div>
-          <table class="table">
-            <thead>
-              <tr>
-                <th>ITEM DESCRIPTION</th>
-                <th>IDENTIFIER / VIN / SKU</th>
-                <th>VERIFICATION STATUS</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${items.map(item => `
-                <tr>
-                  <td><strong>${item.name}</strong></td>
-                  <td style="font-family: monospace; color: #475569;">${item.sub}</td>
-                  <td><span class="status-badge">${item.status}</span></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-
-          <div class="signatures">
-            <div>
-              <div style="height: 40px;"></div>
-              <div class="sig-box">Warehouse Dispatcher Signature</div>
-            </div>
-            <div>
-              <div style="height: 40px;"></div>
-              <div class="sig-box">Driver Acceptance Signature</div>
-            </div>
-          </div>
-
-          <div class="footer-note">
-            Hero Logistics Multi-Tenant WMS Platform &bull; System Generated Manifest &bull; Page 1 of 1
-          </div>
-
-          <script>
-            window.onload = function() {
-              window.print();
-            };
-          </script>
-        </body>
-      </html>
-    `;
-
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-    showToast(`🖨️ Printing manifest for ${lane.name}...`);
   };
 
   const filteredLanes = lanes.filter(lane => {
@@ -214,53 +172,77 @@ export default function WarehouseLoadLanes() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleCreateLane = (e) => {
+  const handleCreateLane = async (e) => {
     e.preventDefault();
     if (!newLaneName.trim()) return;
-    const newLane = {
-      id: String(Date.now()),
-      name: newLaneName,
-      area: newLaneArea,
-      status: 'Empty',
-      loadsCount: 0,
-      loadRef: '-',
-      subRef: '-',
-      vehicle: '-',
-      vehicleType: '',
-      driver: '-',
-      estDispatch: '-'
-    };
-    setLanes([...lanes, newLane]);
-    setNewLaneName('');
-    setCreateModalOpen(false);
-    showToast(`✓ New Load Lane "${newLane.name}" created successfully!`);
+    try {
+      await api.post('/warehouse-portal/load-lanes', {
+        name: newLaneName,
+        area: newLaneArea
+      });
+      setNewLaneName('');
+      setCreateModalOpen(false);
+      showToast(`✓ New Load Lane "${newLaneName}" created successfully!`);
+      fetchLanes();
+    } catch (err) {
+      showToast('❌ Failed to create load lane', 'error');
+    }
   };
 
-  const handleMoveItems = (e) => {
+  const handleMoveItems = async (e) => {
     e.preventDefault();
-    setMoveModalOpen(false);
-    showToast(`✓ Items reassigned to ${selectedLaneToMove} successfully!`);
+    if (!sourceLaneIdToMove || !selectedLaneToMove) return;
+
+    const targetLane = lanes.find(l => l.name === selectedLaneToMove);
+    if (!targetLane) {
+      showToast('❌ Target lane not found', 'error');
+      return;
+    }
+
+    try {
+      const res = await api.post('/warehouse-portal/load-lanes/move-items', {
+        sourceLaneId: sourceLaneIdToMove,
+        targetLaneId: targetLane.id
+      });
+      if (res.data.success) {
+        setMoveModalOpen(false);
+        showToast(`✓ Items reassigned to ${selectedLaneToMove} successfully!`);
+        fetchLanes();
+      }
+    } catch (error) {
+      console.error(error);
+      showToast('❌ Failed to move items', 'error');
+    }
   };
 
-  const handleAssignDriver = (e) => {
+  const handleAssignDriver = async (e) => {
     e.preventDefault();
     if (!assignDriverModal) return;
-    setLanes(lanes.map(l => l.id === assignDriverModal.id ? {
-      ...l,
-      driver: driverInput || 'Assigned Driver',
-      vehicle: vehicleInput || 'TRK-880 / TRL-102'
-    } : l));
-    showToast(`✓ Driver & Vehicle updated for ${assignDriverModal.name}!`);
-    setAssignDriverModal(null);
-    setDriverInput('');
-    setVehicleInput('');
+    try {
+      await api.patch(`/warehouse-portal/load-lanes/${assignDriverModal.id}/assign`, {
+        driverId: driverInput,
+        vehicleId: vehicleInput
+      });
+      showToast(`✓ Driver & Vehicle updated for ${assignDriverModal.name}!`);
+      setAssignDriverModal(null);
+      setDriverInput('');
+      setVehicleInput('');
+      fetchLanes();
+    } catch (err) {
+      showToast('❌ Failed to assign driver', 'error');
+    }
   };
 
-  const handleUpdateStatus = (newStatus) => {
+  const handleUpdateStatus = async (newStatus) => {
     if (!editStatusModal) return;
-    setLanes(lanes.map(l => l.id === editStatusModal.id ? { ...l, status: newStatus } : l));
-    showToast(`✓ Status updated to "${newStatus}" for ${editStatusModal.name}`);
-    setEditStatusModal(null);
+    try {
+      await api.patch(`/warehouse-portal/load-lanes/${editStatusModal.id}/status`, { status: newStatus });
+      showToast(`✓ Status updated to "${newStatus}" for ${editStatusModal.name}`);
+      setEditStatusModal(null);
+      fetchLanes();
+    } catch (err) {
+      showToast('❌ Failed to update status', 'error');
+    }
   };
 
   const getStatusBadgeClass = (status) => {
@@ -846,8 +828,10 @@ export default function WarehouseLoadLanes() {
           </div>
           <div>
             <div className="wh-stat-title">TOTAL LOAD LANES</div>
-            <div className="wh-stat-num">{summary.totalLanes}</div>
-            <div className="wh-stat-sub">{summary.activeLanes} Active lanes</div>
+
+            <div className="wh-stat-num">{summaryData.totalLanes}</div>
+            <div className="wh-stat-sub">Active lanes</div>
+
           </div>
         </div>
 
@@ -857,7 +841,9 @@ export default function WarehouseLoadLanes() {
           </div>
           <div>
             <div className="wh-stat-title">LOADS IN PROGRESS</div>
-            <div className="wh-stat-num">{summary.loadsInProgress}</div>
+
+            <div className="wh-stat-num">{summaryData.loadsInProgress}</div>
+
             <div className="wh-stat-sub">Across all lanes</div>
           </div>
         </div>
@@ -868,7 +854,9 @@ export default function WarehouseLoadLanes() {
           </div>
           <div>
             <div className="wh-stat-title">READY TO DISPATCH</div>
-            <div className="wh-stat-num">{summary.readyToDispatch}</div>
+
+            <div className="wh-stat-num">{summaryData.readyToDispatch}</div>
+
             <div className="wh-stat-sub">Waiting for pickup</div>
           </div>
         </div>
@@ -879,7 +867,9 @@ export default function WarehouseLoadLanes() {
           </div>
           <div>
             <div className="wh-stat-title">OVERDUE / HOLD</div>
-            <div className="wh-stat-num">{summary.overdueHold}</div>
+
+            <div className="wh-stat-num">{summaryData.overdueHold}</div>
+
             <div className="wh-stat-sub">Requires attention</div>
           </div>
         </div>
@@ -1005,7 +995,6 @@ export default function WarehouseLoadLanes() {
                           {lane.driver !== '-' ? (
                             <span 
                               className="font-semibold text-slate-900 cursor-pointer hover:underline"
-                              onClick={() => alert(`Driver Details for ${lane.driver}`)}
                             >
                               {lane.driver}
                             </span>
@@ -1064,34 +1053,41 @@ export default function WarehouseLoadLanes() {
                                   <span>View Lane Details</span>
                                 </div>
 
-                                <div
-                                  className="wh-dropdown-item"
-                                  onClick={() => {
-                                    setAssignDriverModal(lane);
-                                    setDriverInput(lane.driver !== '-' ? lane.driver : '');
-                                    setVehicleInput(lane.vehicle !== '-' ? lane.vehicle : '');
-                                    setActionMenuLaneId(null);
-                                  }}
-                                >
-                                  <UserCheck size={13} className="text-emerald-600" />
-                                  <span>Assign Driver & Vehicle</span>
-                                </div>
+                                {!isYard && (
+                                  <div
+                                    className="wh-dropdown-item"
+                                    onClick={() => {
+                                      setAssignDriverModal(lane);
+                                      setDriverInput(lane.driverId || '');
+                                      setVehicleInput(lane.vehicleId || '');
+                                      setActionMenuLaneId(null);
+                                    }}
+                                  >
+                                    <UserCheck size={13} className="text-emerald-600" />
+                                    <span>Assign Driver & Vehicle</span>
+                                  </div>
+                                )}
+                                {!isYard && (
+                                  <div
+                                    className="wh-dropdown-item"
+                                    onClick={() => {
+                                      setEditStatusModal(lane);
+                                      setActionMenuLaneId(null);
+                                    }}
+                                  >
+                                    <Tag size={13} className="text-amber-600" />
+                                    <span>Update Lane Status</span>
+                                  </div>
+                                )}
 
                                 <div
                                   className="wh-dropdown-item"
                                   onClick={() => {
-                                    setEditStatusModal(lane);
-                                    setActionMenuLaneId(null);
-                                  }}
-                                >
-                                  <Tag size={13} className="text-amber-600" />
-                                  <span>Update Lane Status</span>
-                                </div>
-
-                                <div
-                                  className="wh-dropdown-item"
-                                  onClick={() => {
-                                    setSelectedLaneToMove(lane.name);
+                                    setSourceLaneIdToMove(lane.id);
+                                    if (lanes.length > 1) {
+                                      const otherLane = lanes.find(l => l.id !== lane.id);
+                                      setSelectedLaneToMove(otherLane ? otherLane.name : '');
+                                    }
                                     setMoveModalOpen(true);
                                     setActionMenuLaneId(null);
                                   }}
@@ -1114,15 +1110,22 @@ export default function WarehouseLoadLanes() {
                                 <div style={{ height: '1px', background: '#F1F5F9', margin: '4px 0' }} />
 
                                 <div
-                                  className="wh-dropdown-item danger"
-                                  onClick={() => {
-                                    setLanes(lanes.map(l => l.id === lane.id ? { ...l, status: 'Empty', loadRef: '-', subRef: '-', driver: '-', vehicle: '-', estDispatch: '-' } : l));
-                                    showToast(`Cleared & released ${lane.name}`);
+                                  className="wh-dropdown-item text-red-600"
+                                  onClick={async () => {
                                     setActionMenuLaneId(null);
+                                    if (window.confirm(`Are you sure you want to clear ${lane.name}?`)) {
+                                      try {
+                                        await api.post(`/warehouse-portal/load-lanes/${lane.id}/clear`);
+                                        showToast(`Cleared & released ${lane.name}`);
+                                        fetchLanes();
+                                      } catch (err) {
+                                        showToast('Failed to clear lane', 'error');
+                                      }
+                                    }
                                   }}
                                 >
-                                  <Trash2 size={13} className="text-red-500" />
-                                  <span>Clear / Release Lane</span>
+                                  <LogOut size={13} />
+                                  <span>Clear & Release</span>
                                 </div>
                               </div>
                             )}
@@ -1163,19 +1166,12 @@ export default function WarehouseLoadLanes() {
             <div className="wh-donut-wrap">
               <div className="wh-donut-chart">
                 <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                  {summary.totalLanes > 0 ? (
-                    <>
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray={`${Math.round((summary.readyCount / summary.totalLanes) * 100)} 100`} />
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray={`${Math.round((summary.inProgressCount / summary.totalLanes) * 100)} 100`} strokeDashoffset={`-${Math.round((summary.readyCount / summary.totalLanes) * 100)}`} />
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray={`${Math.round((summary.holdCount / summary.totalLanes) * 100)} 100`} strokeDashoffset={`-${Math.round(((summary.readyCount + summary.inProgressCount) / summary.totalLanes) * 100)}`} />
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#94A3B8" strokeWidth="4" strokeDasharray={`${Math.round((summary.emptyCount / summary.totalLanes) * 100)} 100`} strokeDashoffset={`-${Math.round(((summary.readyCount + summary.inProgressCount + summary.holdCount) / summary.totalLanes) * 100)}`} />
-                    </>
-                  ) : (
-                    <circle cx="18" cy="18" r="14" fill="none" stroke="#E2E8F0" strokeWidth="4" strokeDasharray="100 100" />
-                  )}
+
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#E2E8F0" strokeWidth="4" strokeDasharray="100 100" />
                 </svg>
                 <div className="wh-donut-center">
-                  <span style={{ fontSize: '13px', fontWeight: 900 }}>{summary.totalLanes}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 900 }}>{summaryData.totalLanes}</span>
+
                   <span style={{ fontSize: '7px', color: '#64748B' }}>Lanes</span>
                 </div>
               </div>
@@ -1183,19 +1179,17 @@ export default function WarehouseLoadLanes() {
               <div className="wh-legend-list">
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#22C55E' }} />
-                  <span>Ready <strong>{summary.readyCount} ({summary.totalLanes ? Math.round((summary.readyCount / summary.totalLanes) * 100) : 0}%)</strong></span>
+
+                  <span>Ready <strong>{summaryData.readyToDispatch}</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#3B82F6' }} />
-                  <span>In Progress <strong>{summary.inProgressCount} ({summary.totalLanes ? Math.round((summary.inProgressCount / summary.totalLanes) * 100) : 0}%)</strong></span>
+                  <span>In Progress <strong>{summaryData.loadsInProgress}</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#F59E0B' }} />
-                  <span>Hold <strong>{summary.holdCount} ({summary.totalLanes ? Math.round((summary.holdCount / summary.totalLanes) * 100) : 0}%)</strong></span>
-                </div>
-                <div className="wh-legend-item">
-                  <div className="wh-legend-dot" style={{ background: '#94A3B8' }} />
-                  <span>Empty <strong>{summary.emptyCount} ({summary.totalLanes ? Math.round((summary.emptyCount / summary.totalLanes) * 100) : 0}%)</strong></span>
+                  <span>Hold <strong>{summaryData.overdueHold}</strong></span>
+
                 </div>
               </div>
             </div>
@@ -1219,16 +1213,18 @@ export default function WarehouseLoadLanes() {
             </div>
 
             <div style={{ marginTop: '8px' }}>
-              {upcomingDispatches.length === 0 ? (
-                <div className="text-[11px] text-slate-400 py-3 text-center">No upcoming dispatches</div>
+
+              {lanes.filter(l => l.status === 'In Progress' || l.status === 'Ready').slice(0, 5).length === 0 ? (
+                <p style={{ fontSize: '11px', color: '#94A3B8', textAlign: 'center', padding: '12px 0' }}>No upcoming dispatches</p>
               ) : (
-                upcomingDispatches.map((disp, idx) => (
-                  <div key={idx} className="wh-disp-row">
+                lanes.filter(l => l.status === 'In Progress' || l.status === 'Ready').slice(0, 5).map((l, i) => (
+                  <div className="wh-disp-row" key={i}>
                     <div>
-                      <div className="wh-disp-load">{disp.loadRef}</div>
-                      <div className="wh-disp-lane">{disp.lane}</div>
+                      <div className="wh-disp-load">{l.loadRef || l.name}</div>
+                      <div className="wh-disp-lane">{l.name}</div>
                     </div>
-                    <div className="wh-disp-time">{disp.time}</div>
+                    <div className="wh-disp-time">{l.estDispatch || '—'}</div>
+
                   </div>
                 ))
               )}
@@ -1392,47 +1388,42 @@ export default function WarehouseLoadLanes() {
               <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px' }}>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-extrabold text-slate-900 uppercase">Staged Cargo & Items</span>
-                  <span className="text-[10px] font-bold text-slate-500">3 Items Staged</span>
+                  <span className="text-[10px] font-bold text-slate-500">{viewLaneModal.currentItemsCount || 0} Items Staged</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
-                    <div className="flex items-center gap-2">
-                      <Box size={14} className="text-amber-500" />
-                      <div>
-                        <div className="font-bold text-slate-900">Toyota Hilux SRS #01</div>
-                        <div className="text-[9.5px] text-slate-500 font-mono">VIN: JTDKB3...9901</div>
+                  {viewLaneModal.assignedItems && viewLaneModal.assignedItems.length > 0 ? viewLaneModal.assignedItems.map((item, idx) => (
+                    <div key={idx} style={{ padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                      <div className="flex items-center gap-2">
+                        <Box size={14} className="text-amber-500" />
+                        <div>
+                          <div className="font-bold text-slate-900">{item.title || item.name}</div>
+                          <div className="text-[9.5px] text-slate-500 font-mono">{item.vin || item.sku || ''}</div>
+                        </div>
                       </div>
+                      <span className="badge-ready">{item.status || 'Ready'}</span>
                     </div>
-                    <span className="badge-ready">Ready</span>
-                  </div>
-
-                  <div style={{ padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
-                    <div className="flex items-center gap-2">
-                      <Box size={14} className="text-amber-500" />
-                      <div>
-                        <div className="font-bold text-slate-900">Pallet - Auto Spare Parts (4x)</div>
-                        <div className="text-[9.5px] text-slate-500 font-mono">SKU: PAL-778811</div>
-                      </div>
-                    </div>
-                    <span className="badge-ready">Ready</span>
-                  </div>
+                  )) : (
+                    <div className="text-xs text-slate-500 italic py-2 text-center">No items currently staged in this lane.</div>
+                  )}
                 </div>
               </div>
 
               {/* QUICK ACTIONS INSIDE VIEW MODAL */}
               <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
-                <button
-                  className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 text-slate-900 rounded-lg font-extrabold text-xs flex items-center justify-center gap-1.5 transition"
-                  onClick={() => {
-                    setAssignDriverModal(viewLaneModal);
-                    setDriverInput(viewLaneModal.driver !== '-' ? viewLaneModal.driver : '');
-                    setVehicleInput(viewLaneModal.vehicle !== '-' ? viewLaneModal.vehicle : '');
-                    setViewLaneModal(null);
-                  }}
-                >
-                  <UserCheck size={14} />
-                  <span>Assign / Update Driver</span>
-                </button>
+                {!isYard && (
+                  <button 
+                    className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 text-slate-900 rounded-lg font-extrabold text-xs flex items-center justify-center gap-1.5 transition"
+                    onClick={() => {
+                      setAssignDriverModal(viewLaneModal);
+                      setDriverInput(viewLaneModal.driverId || '');
+                      setVehicleInput(viewLaneModal.vehicleId || '');
+                      setViewLaneModal(null);
+                    }}
+                  >
+                    <UserCheck size={14} />
+                    <span>Assign / Update Driver</span>
+                  </button>
+                )}
 
                 <button
                   className="px-3 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs flex items-center gap-1.5 transition"
@@ -1466,25 +1457,31 @@ export default function WarehouseLoadLanes() {
             <form onSubmit={handleAssignDriver} className="wh-modal-body">
               <div>
                 <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">Driver Name *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. John Smith"
+                <select
                   value={driverInput}
                   onChange={e => setDriverInput(e.target.value)}
                   className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
                   required
-                />
+                >
+                  <option value="">-- Select Driver --</option>
+                  {dbDrivers.map(d => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">Vehicle / Trailer *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. TRK-101 / TRL-309"
+                <select
                   value={vehicleInput}
                   onChange={e => setVehicleInput(e.target.value)}
                   className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
                   required
-                />
+                >
+                  <option value="">-- Select Vehicle --</option>
+                  {dbVehicles.map(v => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))}
+                </select>
               </div>
               <div className="wh-modal-footer">
                 <button type="button" className="px-3 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-600" onClick={() => setAssignDriverModal(null)}>Cancel</button>

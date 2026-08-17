@@ -7,15 +7,16 @@ import {
   Calendar, Package, History, ExternalLink, CheckCircle2, Clock, Grid, List, Box
 } from 'lucide-react';
 
-/* Mock stock data (Removed to use only API data) */
-const initialStockItems = [];
+
+/* Stock data initialized empty */
+/* Stock data initialized empty */
+
 
 export default function CurrentStock() {
   const navigate = useNavigate();
   const location = useLocation();
   const isYard = location.pathname ? location.pathname.startsWith('/yard') : false;
-
-  // Phase A: start with empty — never show mock data as a fallback
+  // Phase A: start with empty - never show mock data as a fallback
   const [stockItems, setStockItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
@@ -112,21 +113,28 @@ export default function CurrentStock() {
     fetchStock();
     const fetchLanesAndHolding = async () => {
       try {
-        const lanesRes = await api.get('/warehouse-portal/load-lanes');
-        if (lanesRes.data?.success && lanesRes.data.data?.lanes) {
-          setLoadLanes(lanesRes.data.data.lanes);
-        }
-        const holdingRes = await api.get('/warehouse-portal/holding-areas');
-        if (holdingRes.data?.success && holdingRes.data.data?.holdingAreas) {
-          setHoldingAreas(holdingRes.data.data.holdingAreas);
+
+        const res = await api.get('/warehouse-portal/stock');
+        const data = res.data?.data || res.data;
+        if (Array.isArray(data)) {
+          setStockItems(data);
+          if (data.length > 0) setSelectedItem(data[0]);
+        } else if (data && data.items) {
+          setStockItems(data.items);
+          if (data.items.length > 0) setSelectedItem(data.items[0]);
+        } else {
+          setStockItems([]);
         }
       } catch (err) {
-        console.error('Error fetching load lanes or holding areas:', err);
+        console.warn('Error fetching stock items:', err.message);
+        setStockItems([]);
+      } finally {
+        setLoading(false);
+
       }
     };
     fetchLanesAndHolding();
   }, []);
-
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('All Types');
@@ -1137,11 +1145,6 @@ export default function CurrentStock() {
                     <label>Location</label>
                     <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)}>
                       <option value="All Locations">All Locations</option>
-                      <option value="Yard A">Yard A</option>
-                      <option value="Yard B">Yard B</option>
-                      <option value="Yard C">Yard C</option>
-                      <option value="Warehouse 1">Warehouse 1</option>
-                      <option value="DG Store">DG Store</option>
                     </select>
                   </div>
 
@@ -1160,11 +1163,6 @@ export default function CurrentStock() {
                     <label>Load / Job</label>
                     <select value={selectedLoad} onChange={(e) => setSelectedLoad(e.target.value)}>
                       <option value="All Loads">All Loads</option>
-                      <option value="LD-3987">LD-3987</option>
-                      <option value="LD-3986">LD-3986</option>
-                      <option value="LD-3921">LD-3921</option>
-                      <option value="LD-3940">LD-3940</option>
-                      <option value="LD-3951">LD-3951</option>
                     </select>
                   </div>
 
@@ -1172,12 +1170,6 @@ export default function CurrentStock() {
                     <label>Customer</label>
                     <select value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)}>
                       <option value="All Customers">All Customers</option>
-                      <option value="ABC Motors">ABC Motors</option>
-                      <option value="XYZ Imports">XYZ Imports</option>
-                      <option value="Tech Supplies">Tech Supplies</option>
-                      <option value="Retail Hub">Retail Hub</option>
-                      <option value="Fuel Co">Fuel Co</option>
-                      <option value="Oceanic Freight">Oceanic Freight</option>
                     </select>
                   </div>
                 </div>
@@ -1199,8 +1191,6 @@ export default function CurrentStock() {
                     <label>Zone</label>
                     <select value={selectedZone} onChange={(e) => setSelectedZone(e.target.value)}>
                       <option value="All Zones">All Zones</option>
-                      <option value="Zone A">Zone A</option>
-                      <option value="Zone B">Zone B</option>
                     </select>
                   </div>
 
@@ -1208,8 +1198,6 @@ export default function CurrentStock() {
                     <label>Row#</label>
                     <select value={selectedRow} onChange={(e) => setSelectedRow(e.target.value)}>
                       <option value="All Rows">All Rows</option>
-                      <option value="Row 1">Row 1</option>
-                      <option value="Row 4">Row 4</option>
                     </select>
                   </div>
 
@@ -1217,8 +1205,6 @@ export default function CurrentStock() {
                     <label>Bay#</label>
                     <select value={selectedBay} onChange={(e) => setSelectedBay(e.target.value)}>
                       <option value="All Bays">All Bays</option>
-                      <option value="Bay 03">Bay 03</option>
-                      <option value="Bay 12">Bay 12</option>
                     </select>
                   </div>
 
@@ -1226,8 +1212,6 @@ export default function CurrentStock() {
                     <label>Staging Area</label>
                     <select value={selectedStaging} onChange={(e) => setSelectedStaging(e.target.value)}>
                       <option value="All Staging Areas">All Staging Areas</option>
-                      <option value="Load Lane 3">Load Lane 3</option>
-                      <option value="Load Lane 4">Load Lane 4</option>
                     </select>
                   </div>
                 </div>
@@ -1658,14 +1642,10 @@ export default function CurrentStock() {
 
               <div className="modal-form-group">
                 <label>Select Target Yard / Warehouse Location Spot</label>
-                <select value={targetLocation} onChange={(e) => setTargetLocation(e.target.value)} disabled={moveSubmitting}>
-                  <option value="Yard A / Row 2 / Bay 05">Yard A / Row 2 / Bay 05</option>
-                  <option value="Yard B / Row 1 / Bay 03">Yard B / Row 1 / Bay 03</option>
-                  {loadLanes.map(lane => (
-                    <option key={lane.id} value={`${lane.name} (Staging)`}>{lane.name} (Staging)</option>
-                  ))}
-                  <option value="Warehouse 1 / Aisle 12 / Bay 5">Warehouse 1 / Aisle 12 / Bay 5</option>
-                  <option value="DG Store / Zone A / Bay 03">DG Store / Zone A / Bay 03</option>
+
+                <select value={targetLocation} onChange={(e) => setTargetLocation(e.target.value)}>
+                  <option value="">Select Target Location...</option>
+
                 </select>
               </div>
 

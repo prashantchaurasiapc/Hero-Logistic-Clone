@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
+
 import { 
   User, Phone, Mail, MapPin, Settings, Globe, Clock, Calendar,
   Shield, Check, Monitor, Smartphone, Camera, ChevronRight, 
@@ -7,6 +7,7 @@ import {
   Warehouse, QrCode, FileText, CheckCircle2, AlertTriangle, Layers, Home,
   ShieldCheck, CheckCircle, ExternalLink, Activity, Eye, Award
 } from 'lucide-react';
+import api from '../../services/api';
 
 export default function Profile() {
   const [toast, setToast] = useState(null);
@@ -16,6 +17,7 @@ export default function Profile() {
   };
 
   // Profile Main States
+
   const [name, setName] = useState('Staff');
   const [role, setRole] = useState('Warehouse Staff');
   const [status, setStatus] = useState('Available');
@@ -57,16 +59,49 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
+
   // Contact & Address
-  const [address, setAddress] = useState('12 Logistics Way, Eastern Creek NSW 2766, Australia');
-  const [workEmail, setWorkEmail] = useState('wsmith@herologistics.com');
-  const [mobilePhone, setMobilePhone] = useState('+61 412 345 678');
-  const [workPhone, setWorkPhone] = useState('+61 2 8765 4321');
+  const [address, setAddress] = useState('');
+  const [workEmail, setWorkEmail] = useState('');
+  const [mobilePhone, setMobilePhone] = useState('');
+  const [workPhone, setWorkPhone] = useState('');
 
   // Emergency Contact
-  const [emergencyName, setEmergencyName] = useState('Komal Smith');
-  const [emergencyRelation, setEmergencyRelation] = useState('Spouse');
-  const [emergencyPhone, setEmergencyPhone] = useState('+61 400 987 654');
+  const [emergencyName, setEmergencyName] = useState('');
+  const [emergencyRelation, setEmergencyRelation] = useState('');
+  const [emergencyPhone, setEmergencyPhone] = useState('');
+
+  // Fetch real profile from API on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/warehouse-portal/profile');
+        const p = res.data?.data?.profile || res.data?.data || res.data;
+        if (p) {
+          setName(p.name || '');
+          setRole(p.role || 'Warehouse Staff');
+          setStatus(p.status || p.shiftStatus || 'On Shift');
+          setEmployeeId(p.employeeId || '');
+          setEmail(p.email || '');
+          setPhone(p.phone || '');
+          setDepartment(p.department || 'Warehouse Operations');
+          setDepot(p.depot || 'Sydney Depot');
+          setReportsTo(p.reportsTo || 'Michael Lee');
+          setJoinedOn(p.joinedOn || '15 Mar 2024');
+          setAddress(p.address || '');
+          setWorkEmail(p.email || '');
+          setMobilePhone(p.phone || '');
+          setWorkPhone(p.workPhone || '');
+          setEmergencyName(p.emergencyContact?.name || '');
+          setEmergencyRelation(p.emergencyContact?.relation || p.emergencyContact?.relationship || '');
+          setEmergencyPhone(p.emergencyContact?.phone || '');
+        }
+      } catch (err) {
+        console.warn('Could not load profile:', err.message);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   // Preferences
   const [language, setLanguage] = useState('English (Australia)');

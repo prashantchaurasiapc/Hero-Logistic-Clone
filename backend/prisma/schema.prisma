@@ -1115,6 +1115,7 @@ model Vehicle {
   vin              String?         @unique
   odometerKm       Int             @default(0)
   maintenanceDueKm Int?
+  photoUrl         String?         @db.Text
 
   // Registration
   regType       String?
