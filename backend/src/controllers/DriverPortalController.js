@@ -3630,3 +3630,5 @@ exports.downloadPayslip = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getPayslip = exports.downloadPayslip;

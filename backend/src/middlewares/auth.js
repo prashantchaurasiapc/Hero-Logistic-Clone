@@ -13,10 +13,6 @@ exports.verifyToken = async (req, res, next) => {
   }
 
   if (!token) {
-    if (process.env.NODE_ENV !== 'production') {
-      req.user = { id: 'dev-user-id', role: 'COMPANY_ADMIN', permissions: [] };
-      return next();
-    }
     return sendError(res, {
       code: ERROR_CODES.UNAUTHORIZED_ACCESS,
       message: 'Access token is required.'
@@ -148,7 +144,7 @@ exports.requireSalesAccess = (req, res, next) => {
   const role = req.user.role;
   const accessProfile = req.user.accessProfile;
 
-  if (role === 'SUPER_ADMIN' || role === 'COMPANY_ADMIN' || accessProfile === 'SALES_FULL_ACCESS' || role === 'YARD_ATTENDANT' || role === 'DRIVER') {
+  if (role === 'SUPER_ADMIN' || role === 'COMPANY_ADMIN' || accessProfile === 'SALES_FULL_ACCESS' || role === 'YARD' || role === 'YARD_ATTENDANT' || role === 'WAREHOUSE' || role === 'DRIVER') {
     req.salesScope = 'TEAM';
     return next();
   }

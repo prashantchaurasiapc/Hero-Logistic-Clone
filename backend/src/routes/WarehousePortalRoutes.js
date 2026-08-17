@@ -5,7 +5,7 @@ const { verifyToken, authorizeRoles } = require('../middlewares/auth');
 const { resolveTenant } = require('../middlewares/tenantResolver');
 
 // Apply auth & tenant resolver middleware across all Warehouse Portal routes
-router.use(verifyToken, resolveTenant, authorizeRoles(['WAREHOUSE', 'YARD', 'COMPANY_ADMIN', 'SUPER_ADMIN']));
+router.use(verifyToken, resolveTenant, authorizeRoles(['WAREHOUSE', 'YARD', 'DRIVER', 'COMPANY_ADMIN', 'SUPER_ADMIN']));
 
 // 1. Warehouse Overview & Dashboard
 router.get('/overview', ctrl.getDashboard);
@@ -52,8 +52,8 @@ router.get('/map', ctrl.getYardMap);
 router.get('/yard-map', ctrl.getYardMap);
 
 // 9. Reports & Analytics (Managers Only)
-router.get('/reports/overview', authorizeRoles(['WAREHOUSE', 'COMPANY_ADMIN', 'SUPER_ADMIN']), ctrl.getReportsOverview);
-router.get('/reports', authorizeRoles(['WAREHOUSE', 'COMPANY_ADMIN', 'SUPER_ADMIN']), ctrl.getReportsOverview);
+router.get('/reports/overview', authorizeRoles(['WAREHOUSE', 'YARD', 'COMPANY_ADMIN', 'SUPER_ADMIN']), ctrl.getReportsOverview);
+router.get('/reports', authorizeRoles(['WAREHOUSE', 'YARD', 'COMPANY_ADMIN', 'SUPER_ADMIN']), ctrl.getReportsOverview);
 
 // 10. Labels, Tools & Spooler
 router.get('/labels', ctrl.getLabels);

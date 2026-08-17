@@ -5,9 +5,7 @@ const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 
 const checkManagerAccess = (req) => {
   const role = req.user?.role;
-  const email = req.user?.email;
-  if (role === 'SUPER_ADMIN' || role === 'PLATFORM_OWNER' || role === 'COMPANY_ADMIN') return true;
-  if (email === 'warehouse@hero.com') return true;
+  if (role === 'SUPER_ADMIN' || role === 'PLATFORM_OWNER' || role === 'COMPANY_ADMIN' || role === 'WAREHOUSE' || role === 'YARD') return true;
   if (req.user?.permissions?.includes('warehouse.overrides.use')) return true;
   return false;
 };
@@ -763,12 +761,13 @@ exports.getLoadLanes = async (req, res, next) => {
     const upcomingLoads = await prisma.load.findMany({
       where: {
         loadLaneId: { not: null },
-        status: { in: ['ASSIGNED', 'IN_PROGRESS', 'READY_FOR_PICKUP'] }
+        status: { in: ['ASSIGNED', 'IN_TRANSIT', 'ACTIVE', 'PLANNED'] },
+        ...(tenantId && { companyId: tenantId })
       },
       include: {
         loadLane: true
       },
-      orderBy: { scheduledPickupTime: 'asc' },
+      orderBy: { createdAt: 'desc' },
       take: 5
     });
 
@@ -786,7 +785,7 @@ exports.getLoadLanes = async (req, res, next) => {
       },
       lanes: formattedLanes,
       upcomingDispatches: upcomingLoads.map(l => ({
-        loadRef: l.loadNumber || l.id,
+        loadRef: l.loadRef || l.id,
         lane: l.loadLane?.name || 'Unassigned',
         time: l.scheduledPickupTime ? new Date(l.scheduledPickupTime).toLocaleString() : 'Pending'
       }))
@@ -1071,7 +1070,11 @@ exports.dispatchLoad = async (req, res, next) => {
 
 exports.getHoldingAreas = async (req, res, next) => {
   try {
+    const tenantId = req.tenantId;
     const areas = await prisma.stagingArea.findMany({
+      where: {
+        ...(tenantId && { warehouse: { branch: { companyId: tenantId } } })
+      },
       include: {
         loadItems: true,
         warehouse: true
@@ -1081,7 +1084,8 @@ exports.getHoldingAreas = async (req, res, next) => {
 
     const stagedItemsCount = await prisma.loadItem.count({
       where: {
-        stagingAreaId: { not: null }
+        stagingAreaId: { not: null },
+        ...(tenantId && { warehouse: { branch: { companyId: tenantId } } })
       }
     });
 
@@ -1090,12 +1094,13 @@ exports.getHoldingAreas = async (req, res, next) => {
 
     const recentStaged = await prisma.loadItem.findMany({
       where: {
-        stagingAreaId: { not: null }
+        stagingAreaId: { not: null },
+        ...(tenantId && { warehouse: { branch: { companyId: tenantId } } })
       },
       include: {
         stagingArea: true
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { id: 'desc' },
       take: 5
     });
 
@@ -1336,7 +1341,7 @@ exports.getReportsOverview = async (req, res, next) => {
       }),
       prisma.loadItem.count({
         where: {
-          stockStatus: 'IN_TRANSIT',
+          stockStatus: 'TO_MOVE',
           ...(tenantId && { warehouse: { branch: { companyId: tenantId } } })
         }
       }),
@@ -1777,7 +1782,6 @@ exports.getStaffProfile = async (req, res, next) => {
       where: { id: userId },
       include: {
         company: true,
-        branch: true,
         customRole: true
       }
     });
@@ -1920,7 +1924,20 @@ async function resolveYardDriver(req, res) {
     }
   });
 
-  const companyId = driver?.companyId || user.companyId;
+  let companyId = req.tenantId || driver?.companyId || user.companyId;
+  if (!companyId) {
+    const primaryCompany = await prisma.company.findFirst({
+      where: { status: 'ACTIVE' },
+      orderBy: { createdAt: 'asc' }
+    });
+    companyId = primaryCompany?.id;
+  }
+
+  if (!companyId) {
+    sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Valid company context is required.' }, HTTP_STATUS.FORBIDDEN);
+    return null;
+  }
+
   const fullName = driver
     ? [driver.firstName, driver.lastName].filter(Boolean).join(' ') || user.email
     : user.email;
