@@ -242,7 +242,6 @@ export default function YardWorkStatus() {
     } finally {
       setShiftActionLoading(false);
     }
-    }
   };
 
   const handleMarkAllRead = () => {

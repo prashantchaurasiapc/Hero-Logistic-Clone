@@ -148,7 +148,7 @@ exports.requireSalesAccess = (req, res, next) => {
   const role = req.user.role;
   const accessProfile = req.user.accessProfile;
 
-  if (role === 'SUPER_ADMIN' || role === 'COMPANY_ADMIN' || accessProfile === 'SALES_FULL_ACCESS') {
+  if (role === 'SUPER_ADMIN' || role === 'COMPANY_ADMIN' || accessProfile === 'SALES_FULL_ACCESS' || role === 'YARD_ATTENDANT' || role === 'DRIVER') {
     req.salesScope = 'TEAM';
     return next();
   }

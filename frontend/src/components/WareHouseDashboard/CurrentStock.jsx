@@ -126,10 +126,6 @@ export default function CurrentStock() {
     };
     fetchLanesAndHolding();
   }, []);
-      }
-    };
-    fetchLanesAndHolding();
-  }, []);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
