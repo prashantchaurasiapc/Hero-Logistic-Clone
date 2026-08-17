@@ -2531,3 +2531,661 @@ exports.completeTask = async (req, res, next) => {
     next(error);
   }
 };
+
+
+// --- Additional Warehouse Portal Handlers from Master ---
+
+exports.getInboundFormOptions = async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId;
+
+    const [suppliers, drivers, vehicles, warehouses] = await Promise.all([
+      prisma.customer.findMany({
+        where: { ...(tenantId && { companyId: tenantId }), type: 'BUSINESS' },
+        select: { id: true, name: true, abn: true }
+      }),
+      prisma.driver.findMany({
+        where: { ...(tenantId && { companyId: tenantId }), status: 'AVAILABLE' },
+        select: { id: true, user: { select: { name: true } }, licenseNumber: true }
+      }),
+      prisma.vehicle.findMany({
+        where: { ...(tenantId && { companyId: tenantId }), status: 'IDLE' },
+        select: { id: true, rego: true, make: true, model: true }
+      }),
+      prisma.warehouse.findMany({
+        where: { ...(tenantId && { branch: { companyId: tenantId } }) },
+        select: { id: true, name: true, code: true }
+      })
+    ]);
+
+    const formattedDrivers = drivers.map(d => ({
+      id: d.id,
+      name: d.user?.name || `Driver ${d.licenseNumber || d.id.slice(-4)}`
+    }));
+
+    const formattedVehicles = vehicles.map(v => ({
+      id: v.id,
+      name: `${v.rego} - ${v.make} ${v.model}`
+    }));
+
+    return sendSuccess(res, {
+      suppliers,
+      drivers: formattedDrivers,
+      vehicles: formattedVehicles,
+      warehouses
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.createLoadLane = async (req, res, next) => {
+  try {
+    const { name, area } = req.body;
+    const tenantId = req.tenantId;
+    
+    // Get default warehouse
+    const warehouse = await prisma.warehouse.findFirst({
+      where: { ...(tenantId && { branch: { companyId: tenantId } }) }
+    });
+
+    if (!warehouse) {
+      return sendError(res, { code: 'NO_WAREHOUSE', message: 'No default warehouse found' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const lane = await prisma.loadLane.create({
+      data: {
+        name,
+        warehouseId: warehouse.id,
+        status: 'Empty'
+      }
+    });
+
+    return sendSuccess(res, lane, HTTP_STATUS.CREATED);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateLoadLaneStatus = async (req, res, next) => {
+  try {
+    const { laneId } = req.params;
+    const { status } = req.body;
+
+    const lane = await prisma.loadLane.update({
+      where: { id: laneId },
+      data: { status }
+    });
+
+    return sendSuccess(res, lane);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.assignDriverToLane = async (req, res, next) => {
+  try {
+    const { laneId } = req.params;
+    const { driverId, vehicleId } = req.body;
+
+    const lane = await prisma.loadLane.findUnique({
+      where: { id: laneId },
+      include: { loads: { where: { status: 'DRAFT' } } }
+    });
+
+    if (!lane) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Lane not found' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    let load = lane.loads[0];
+    
+    // If vehicleId has a slash or is empty from old UI, find actual vehicle or ignore. We assume valid IDs.
+    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } }).catch(() => null);
+
+    if (load) {
+      // Update existing draft load
+      load = await prisma.load.update({
+        where: { id: load.id },
+        data: {
+          driverId,
+          truckId: vehicle?.category === 'TRUCK' ? vehicle.id : null,
+          trailerId: vehicle?.category === 'TRAILER' ? vehicle.id : null
+        }
+      });
+    } else {
+      // Create new draft load
+      load = await prisma.load.create({
+        data: {
+          loadRef: `LD-${Math.floor(10000 + Math.random() * 90000)}`,
+          type: 'Standard',
+          status: 'DRAFT',
+          loadLaneId: laneId,
+          driverId,
+          truckId: vehicle?.category === 'TRUCK' ? vehicle.id : null,
+          trailerId: vehicle?.category === 'TRAILER' ? vehicle.id : null
+        }
+      });
+    }
+
+    return sendSuccess(res, load);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.moveLaneItems = async (req, res, next) => {
+  try {
+    const { sourceLaneId, targetLaneId } = req.body;
+    const userId = req.user?.userId || req.user?.id;
+
+    if (!sourceLaneId || !targetLaneId) {
+      return sendError(res, { code: ERROR_CODES.VALIDATION_ERROR, message: 'Source and target lanes required' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const items = await prisma.loadItem.findMany({ where: { loadLaneId: sourceLaneId } });
+    
+    if (items.length === 0) {
+      return sendError(res, { code: ERROR_CODES.VALIDATION_ERROR, message: 'Source lane is empty' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Update items
+      await tx.loadItem.updateMany({
+        where: { loadLaneId: sourceLaneId },
+        data: { loadLaneId: targetLaneId }
+      });
+
+      // Update target lane status to IN_PROGRESS
+      await tx.loadLane.update({
+        where: { id: targetLaneId },
+        data: { status: 'IN_PROGRESS' }
+      });
+
+      // Update source lane status to EMPTY
+      await tx.loadLane.update({
+        where: { id: sourceLaneId },
+        data: { status: 'EMPTY' }
+      });
+
+      // Log movements
+      const movements = items.map(item => ({
+        itemId: item.id,
+        type: 'MOVE',
+        fromLocation: `Lane:${sourceLaneId}`,
+        toLocation: `Lane:${targetLaneId}`,
+        loadLaneId: targetLaneId,
+        performedById: userId,
+        reason: 'Moved between lanes',
+        result: 'COMPLETED'
+      }));
+      await tx.itemMovement.createMany({ data: movements });
+    });
+
+    return sendSuccess(res, { message: 'Items moved successfully' }, HTTP_STATUS.OK);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.clearLoadLane = async (req, res, next) => {
+  try {
+    const { laneId } = req.params;
+    const userId = req.user?.userId || req.user?.id;
+
+    await prisma.$transaction(async (tx) => {
+      const items = await tx.loadItem.findMany({ where: { loadLaneId: laneId } });
+      
+      await tx.loadItem.updateMany({
+        where: { loadLaneId: laneId },
+        data: { loadLaneId: null, stockStatus: 'IN_STORAGE' }
+      });
+
+      await tx.loadLane.update({
+        where: { id: laneId },
+        data: { status: 'EMPTY' }
+      });
+
+      if (items.length > 0) {
+        const movements = items.map(item => ({
+          itemId: item.id,
+          type: 'MOVE',
+          fromLocation: `Lane:${laneId}`,
+          toLocation: 'General Storage',
+          performedById: userId,
+          reason: 'Lane cleared and released',
+          result: 'COMPLETED'
+        }));
+        await tx.itemMovement.createMany({ data: movements });
+      }
+    });
+
+    return sendSuccess(res, { message: 'Lane cleared successfully' }, HTTP_STATUS.OK);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.printManifest = async (req, res, next) => {
+  try {
+    const { laneId } = req.params;
+
+    const lane = await prisma.loadLane.findUnique({
+      where: { id: laneId },
+      include: {
+        loadItems: true,
+        loads: {
+          include: {
+            driver: true,
+            vehicle: true
+          }
+        }
+      }
+    });
+
+    if (!lane) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Lane not found' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    const activeLoad = lane.loads.find(l => l.status !== 'COMPLETED' && l.status !== 'CANCELLED');
+
+    const manifestData = {
+      laneName: lane.name,
+      status: lane.status,
+      date: new Date().toISOString(),
+      driverName: activeLoad?.driver ? `${activeLoad.driver.firstName} ${activeLoad.driver.lastName}` : 'Unassigned',
+      vehicleLicense: activeLoad?.vehicle ? activeLoad.vehicle.licenseNumber : 'Unassigned',
+      totalItems: lane.loadItems.length,
+      items: lane.loadItems.map(item => ({
+        vin: item.vin,
+        make: item.make,
+        model: item.model,
+        condition: item.condition
+      }))
+    };
+
+    return sendSuccess(res, { manifest: manifestData }, HTTP_STATUS.OK);
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.moveHoldingAreaStock = async (req, res, next) => {
+  try {
+    const stagingAreaId = req.params.id;
+    const { loadLaneId } = req.body;
+    let userId = req.user?.userId || req.user?.id;
+    if (userId === 'dev-user-id') {
+       const firstUser = await prisma.user.findFirst();
+       if (firstUser) userId = firstUser.id;
+    }
+
+    const stagingArea = await prisma.stagingArea.findUnique({
+      where: { id: stagingAreaId },
+      include: { loadItems: true }
+    });
+
+    if (!stagingArea) return sendError(res, { message: 'Staging Area not found' }, HTTP_STATUS.NOT_FOUND);
+    if (!loadLaneId) return sendError(res, { message: 'Load Lane ID is required' }, HTTP_STATUS.BAD_REQUEST);
+
+    const targetLane = await prisma.loadLane.findUnique({ where: { id: loadLaneId } });
+    if (!targetLane) return sendError(res, { message: 'Target Load Lane not found' }, HTTP_STATUS.NOT_FOUND);
+
+    const updated = await prisma.$transaction(async (tx) => {
+      // Update all items in this staging area
+      await tx.loadItem.updateMany({
+        where: { stagingAreaId: stagingAreaId },
+        data: {
+          loadLaneId: loadLaneId,
+          stockStatus: 'STAGED',
+          stagingAreaId: null
+        }
+      });
+
+      for (const item of stagingArea.loadItems) {
+        await tx.itemMovement.create({
+          data: {
+            itemId: item.id,
+            type: 'TRANSFER',
+            fromLocation: `Staging Area: ${stagingArea.name}`,
+            toLocation: `Lane: ${targetLane.name}`,
+            reason: 'Staging to Load Lane Move Task',
+            result: 'COMPLETED',
+            performedById: userId === 'dev-user-id' ? null : (userId || null),
+            loadLaneId: loadLaneId
+          }
+        });
+      }
+
+      return { success: true, count: stagingArea.loadItems.length };
+    });
+
+    return sendSuccess(res, updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.assignHoldingAreaToLane = async (req, res, next) => {
+  try {
+    const stagingAreaId = req.params.id;
+    const { loadLaneId } = req.body;
+    let userId = req.user?.userId || req.user?.id;
+
+    if (!loadLaneId) return sendError(res, { message: 'Load Lane ID is required' }, HTTP_STATUS.BAD_REQUEST);
+
+    const updatedArea = await prisma.stagingArea.update({
+      where: { id: stagingAreaId },
+      data: { lane: `Load Lane ${loadLaneId}` } // simple string representation for frontend mapping
+    });
+
+    return sendSuccess(res, { message: 'Assigned successfully', data: updatedArea });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getShiftStatus = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let realUserId = userId;
+    const driverCheck = await prisma.driver.findFirst({ where: { OR: [{ id: userId }, { userId: userId }] } });
+    if (driverCheck) {
+      realUserId = driverCheck.id;
+    } else {
+      const firstDriver = await prisma.driver.findFirst();
+      if (firstDriver) realUserId = firstDriver.id;
+    }
+
+    const timesheet = await prisma.timesheet.findFirst({
+      where: {
+        driverId: realUserId,
+        date: today
+      }
+    });
+
+    const isClockedIn = !!(timesheet && timesheet.clockInAt && !timesheet.clockOutAt);
+
+    return sendSuccess(res, {
+      clockedIn: isClockedIn,
+      clockInTime: timesheet?.clockInAt || null,
+      clockOutTime: timesheet?.clockOutAt || null,
+      timesheet
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.clockIn = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    const companyId = req.tenantId || (await prisma.company.findFirst()).id;
+    
+    // Check if already clocked in today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let realUserId = userId;
+    const driverCheck = await prisma.driver.findFirst({ where: { OR: [{ id: userId }, { userId: userId }] } });
+    if (driverCheck) {
+      realUserId = driverCheck.id;
+    } else {
+      const firstDriver = await prisma.driver.findFirst();
+      if (firstDriver) realUserId = firstDriver.id;
+    }
+
+    let timesheet = await prisma.timesheet.findFirst({
+      where: {
+        driverId: realUserId, // Assuming user acts as driver/staff
+        date: today
+      }
+    });
+
+    console.log('--- DEBUG CLOCK IN ---');
+    console.log('Original userId:', userId);
+    console.log('realUserId (Driver):', realUserId);
+    console.log('companyId:', companyId);
+    console.log('Timesheet found?', !!timesheet);
+
+    if (!timesheet) {
+      // Create new timesheet
+      timesheet = await prisma.timesheet.create({
+        data: {
+          driverId: realUserId,
+          companyId: companyId,
+          date: today,
+          status: 'DRAFT',
+          clockInAt: new Date()
+        }
+      });
+    } else if (!timesheet.clockInAt) {
+      timesheet = await prisma.timesheet.update({
+        where: { id: timesheet.id },
+        data: { clockInAt: new Date() }
+      });
+    } else {
+      return sendError(res, { message: 'Already clocked in' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    await prisma.timesheetEvent.create({
+      data: {
+        timesheetId: timesheet.id,
+        type: 'CLOCK_IN',
+        timestamp: new Date(),
+        locationName: 'Warehouse Default'
+      }
+    });
+
+    return sendSuccess(res, { message: 'Clocked in successfully', timesheet }, HTTP_STATUS.OK);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.clockOut = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let realUserId = userId;
+    const driverCheck = await prisma.driver.findFirst({ where: { OR: [{ id: userId }, { userId: userId }] } });
+    if (driverCheck) {
+      realUserId = driverCheck.id;
+    } else {
+      const firstDriver = await prisma.driver.findFirst();
+      if (firstDriver) realUserId = firstDriver.id;
+    }
+
+    let timesheet = await prisma.timesheet.findFirst({
+      where: {
+        driverId: realUserId,
+        date: today
+      }
+    });
+
+    if (!timesheet || !timesheet.clockInAt) {
+      return sendError(res, { message: 'Not clocked in yet' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    if (timesheet.clockOutAt) {
+      return sendError(res, { message: 'Already clocked out' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    timesheet = await prisma.timesheet.update({
+      where: { id: timesheet.id },
+      data: { 
+        clockOutAt: new Date(),
+        status: 'SUBMITTED'
+      }
+    });
+
+    await prisma.timesheetEvent.create({
+      data: {
+        timesheetId: timesheet.id,
+        type: 'CLOCK_OUT',
+        timestamp: new Date(),
+        locationName: 'Warehouse Default'
+      }
+    });
+
+    return sendSuccess(res, { message: 'Clocked out successfully', timesheet }, HTTP_STATUS.OK);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getSupportDashboard = async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId;
+
+    // 1. Fetch Conversations
+    const conversations = await prisma.conversation.findMany({
+      where: { ...(tenantId && { companyId: tenantId }) },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' }
+        },
+        participants: {
+          include: { user: true }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    // 2. Fetch Support Tickets
+    const supportTickets = await prisma.supportTicket.findMany({
+      where: { ...(tenantId && { companyId: tenantId }) },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Formatting for frontend
+    let unreadMessagesCount = 0;
+    const formattedConversations = conversations.map((conv, idx) => {
+      const messages = conv.messages || [];
+      const lastMessage = messages[messages.length - 1];
+      const isRead = true; // Simplified for now
+      if (!isRead) unreadMessagesCount++;
+
+      return {
+        id: conv.id,
+        title: conv.title || 'Conversation',
+        sub: conv.referenceType || 'Support',
+        listSub: conv.referenceId || 'General',
+        avatar: conv.title ? conv.title.substring(0, 2).toUpperCase() : 'C',
+        bg: 'bg-blue-600',
+        time: lastMessage ? new Date(lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-',
+        dateStarted: new Date(conv.createdAt).toLocaleString('en-GB'),
+        lastMessage: lastMessage?.content || 'No messages yet',
+        unread: isRead ? 0 : 1,
+        category: 'Support',
+        isBot: false,
+        messages: messages.map(m => ({
+          id: m.id,
+          sender: m.senderId === req.user?.id ? 'You' : 'Support Team',
+          isMe: m.senderId === req.user?.id,
+          text: m.content,
+          time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          read: true
+        }))
+      };
+    });
+
+    const formattedTickets = supportTickets.map(t => ({
+      id: `#SUP-${t.ticketNumber}`,
+      title: t.subject,
+      created: new Date(t.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      status: t.status === 'OPEN' ? 'Open' : (t.status === 'IN_PROGRESS' ? 'In Progress' : 'Resolved'),
+      statusBg: t.status === 'OPEN' ? 'bg-[#FFFBEB] text-[#B45309] border-[#FDE047]' : 'bg-blue-50 text-blue-700 border-blue-200'
+    }));
+
+    const openTicketsCount = supportTickets.filter(t => t.status === 'OPEN').length;
+    const awaitingResponseCount = supportTickets.filter(t => t.status === 'IN_PROGRESS').length;
+    const resolvedTicketsCount = supportTickets.filter(t => t.status === 'CLOSED').length;
+
+    return sendSuccess(res, {
+      kpi: {
+        unreadMessages: unreadMessagesCount,
+        openTickets: openTicketsCount,
+        awaitingResponse: awaitingResponseCount,
+        resolvedTickets: resolvedTicketsCount
+      },
+      conversations: formattedConversations,
+      supportTickets: formattedTickets
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.sendMessage = async (req, res, next) => {
+  try {
+    const { conversationId, text } = req.body;
+    const senderId = req.user?.id;
+
+    if (!senderId) return sendError(res, { code: 'UNAUTHORIZED', message: 'Not logged in' }, HTTP_STATUS.UNAUTHORIZED);
+    if (!text) return sendError(res, { code: 'BAD_REQUEST', message: 'Text is required' }, HTTP_STATUS.BAD_REQUEST);
+
+    let targetConvId = conversationId;
+    if (!targetConvId) {
+      const companyId = req.tenantId || (await prisma.company.findFirst()).id;
+      const conv = await prisma.conversation.create({
+        data: {
+          title: 'General Support',
+          companyId,
+          type: 'DIRECT',
+          participants: {
+            create: { userId: senderId }
+          }
+        }
+      });
+      targetConvId = conv.id;
+    }
+
+    const newMsg = await prisma.message.create({
+      data: {
+        conversationId: targetConvId,
+        senderId,
+        content: text
+      }
+    });
+
+    await prisma.conversation.update({
+      where: { id: targetConvId },
+      data: { updatedAt: new Date() }
+    });
+
+    return sendSuccess(res, { message: newMsg }, HTTP_STATUS.CREATED);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.createSupportTicket = async (req, res, next) => {
+  try {
+    const { subject, category, priority, description } = req.body;
+    const companyId = req.tenantId || (await prisma.company.findFirst()).id;
+
+    const ticket = await prisma.supportTicket.create({
+      data: {
+        subject,
+        category: category || 'General',
+        priority: priority === 'High' ? 'HIGH' : (priority === 'Urgent' ? 'URGENT' : 'MEDIUM'),
+        message: description || subject,
+        companyId,
+        status: 'OPEN'
+      }
+    });
+
+    return sendSuccess(res, { ticket }, HTTP_STATUS.CREATED);
+  } catch (error) {
+    next(error);
+  }
+};
