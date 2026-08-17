@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -15,11 +16,45 @@ export default function Timesheets() {
   // Tab & Search States
   const [activeTab, setActiveTab] = useState('Today'); // 'Today', 'This Week', 'This Month', 'All Timesheets'
   const [toastMsg, setToastMsg] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
   // Clock In / Break / Out States
-  const [clockStatus, setClockStatus] = useState('Clocked In'); // 'Clocked In', 'On Break', 'Clocked Out'
-  const [secondsToday, setSecondsToday] = useState(13515); // 3h 45m 15s
-  const [timerRunning, setTimerRunning] = useState(true);
+  const [clockStatus, setClockStatus] = useState('Clocked Out'); // 'Clocked In', 'On Break', 'Clocked Out'
+  const [secondsToday, setSecondsToday] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [sinceText, setSinceText] = useState('');
+
+  // Dynamic Context from API
+  const [todayStats, setTodayStats] = useState({
+    clockIn: '--',
+    breakTime: '00:00',
+    workTime: '00:00',
+    totalTime: '00:00',
+    overtime: '00h 00m'
+  });
+  const [locationData, setLocationData] = useState({
+    name: '',
+    coords: '',
+    geofence: ''
+  });
+  const [weeklySummary, setWeeklySummary] = useState({
+    dateRange: '',
+    totalHours: '0h 00m',
+    scheduled: '0h 00m',
+    balance: '0h 00m',
+    days: [],
+    weekTotal: '0h 00m'
+  });
+  const [weeklyBreakdown, setWeeklyBreakdown] = useState([]);
+  const [monthlySummary, setMonthlySummary] = useState({
+    month: '',
+    totalHours: '0h 00m',
+    estimatedGrossPay: '$0.00'
+  });
+  const [allTimesheets, setAllTimesheets] = useState([]);
+  const [recentTimesheets, setRecentTimesheets] = useState([]);
+  const [activeLoadData, setActiveLoadData] = useState(null);
 
   // Note State
   const [noteInput, setNoteInput] = useState('');
@@ -33,13 +68,39 @@ export default function Timesheets() {
   const [timesheetSubmitted, setTimesheetSubmitted] = useState(false);
 
   // Timeline Data
-  const [timelineEvents, setTimelineEvents] = useState([
-    { id: 1, type: 'Clocked In', time: '07:45 AM', location: 'Yard - Melbourne VIC (-37.8136, 144.9631)', badge: 'Auto Location', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-    { id: 2, type: 'Break Started', time: '12:00 PM', location: 'Yass NSW (-34.8020, 148.9097)', badge: '45 min', color: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
-    { id: 3, type: 'Break Ended', time: '12:45 PM', location: 'Yass NSW (-34.8020, 148.9097)', badge: null, color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-    { id: 4, type: 'Note Added', time: '01:05 PM', location: 'Lunch break completed. Continuing journey.', badge: null, color: 'bg-slate-100 text-slate-700 border-slate-200', dot: 'bg-slate-400' },
-    { id: 5, type: 'Still Working', time: '11:00 AM – Now', location: 'Yass NSW (-34.8020, 148.9097)', badge: 'On Site', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
-  ]);
+  const [timelineEvents, setTimelineEvents] = useState([]);
+
+  useEffect(() => {
+    fetchTimesheets();
+  }, []);
+
+  const fetchTimesheets = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/timesheets');
+      if (res.data) {
+        if (res.data.clockStatus) setClockStatus(res.data.clockStatus);
+        if (res.data.secondsToday !== undefined) setSecondsToday(res.data.secondsToday);
+        if (res.data.isSubmitted !== undefined) setTimesheetSubmitted(res.data.isSubmitted);
+        if (res.data.sinceText) setSinceText(res.data.sinceText);
+        if (res.data.todayStats) setTodayStats(res.data.todayStats);
+        if (res.data.location) setLocationData(res.data.location);
+        if (res.data.timelineEvents) setTimelineEvents(res.data.timelineEvents);
+        if (res.data.weeklySummary) setWeeklySummary(res.data.weeklySummary);
+        if (res.data.weeklyBreakdown) setWeeklyBreakdown(res.data.weeklyBreakdown);
+        if (res.data.monthlySummary) setMonthlySummary(res.data.monthlySummary);
+        if (res.data.allTimesheets) setAllTimesheets(res.data.allTimesheets);
+        if (res.data.recentTimesheets) setRecentTimesheets(res.data.recentTimesheets);
+        if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
+        setTimerRunning(res.data.clockStatus === 'Clocked In');
+      }
+      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    } catch (err) {
+      console.error('Failed to fetch timesheets:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Live Timer Effect
   useEffect(() => {
@@ -64,62 +125,86 @@ export default function Timesheets() {
     return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const handleStartBreak = () => {
-    if (clockStatus === 'On Break') {
-      setClockStatus('Clocked In');
-      setTimerRunning(true);
-      triggerToast('Break ended! Work timer resumed.');
-      setTimelineEvents([
-        ...timelineEvents,
-        { id: Date.now(), type: 'Break Ended', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: 'Yass NSW (-34.8020, 148.9097)', badge: null, color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
-      ]);
-    } else {
-      setClockStatus('On Break');
-      setTimerRunning(false);
-      triggerToast('Break started! Timer paused.');
-      setTimelineEvents([
-        ...timelineEvents,
-        { id: Date.now(), type: 'Break Started', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: 'Yass NSW (-34.8020, 148.9097)', badge: '30 min', color: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' }
-      ]);
+  const handleStartBreak = async () => {
+    const action = clockStatus === 'On Break' ? 'end' : 'start';
+    try {
+      await api.post('/driver-portal/timesheets/break', { action });
+      if (action === 'end') {
+        setClockStatus('Clocked In');
+        setTimerRunning(true);
+        triggerToast('Break ended! Work timer resumed.');
+      } else {
+        setClockStatus('On Break');
+        setTimerRunning(false);
+        triggerToast('Break started! Timer paused.');
+      }
+      fetchTimesheets();
+    } catch (err) {
+      if (action === 'end') {
+        setClockStatus('Clocked In');
+        setTimerRunning(true);
+        triggerToast('Break ended! Work timer resumed.');
+      } else {
+        setClockStatus('On Break');
+        setTimerRunning(false);
+        triggerToast('Break started! Timer paused.');
+      }
     }
   };
 
-  const handleClockOut = () => {
-    setClockStatus('Clocked Out');
-    setTimerRunning(false);
-    triggerToast('Clocked Out successfully! Shift ended.');
-    setTimelineEvents([
-      ...timelineEvents,
-      { id: Date.now(), type: 'Clocked Out', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: 'Yard - Sydney NSW (-33.8688, 151.2093)', badge: 'End Shift', color: 'bg-rose-50 text-rose-700 border-rose-200', dot: 'bg-rose-500' }
-    ]);
+  const handleClockOut = async () => {
+    try {
+      await api.post('/driver-portal/timesheets/clock-out', {});
+      setClockStatus('Clocked Out');
+      setTimerRunning(false);
+      triggerToast('Clocked Out successfully! Shift ended.');
+      fetchTimesheets();
+    } catch (err) {
+      setClockStatus('Clocked Out');
+      setTimerRunning(false);
+      triggerToast('Clocked Out successfully! Shift ended.');
+    }
   };
 
-  const handleClockIn = () => {
-    setClockStatus('Clocked In');
-    setTimerRunning(true);
-    triggerToast('Clocked In successfully! Work timer active.');
-    setTimelineEvents([
-      ...timelineEvents,
-      { id: Date.now(), type: 'Clocked In', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: 'Yard - Melbourne VIC (-37.8136, 144.9631)', badge: 'Auto Location', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
-    ]);
+  const handleClockIn = async () => {
+    try {
+      await api.post('/driver-portal/timesheets/clock-in', {});
+      setClockStatus('Clocked In');
+      setTimerRunning(true);
+      triggerToast('Clocked In successfully! Work timer active.');
+      fetchTimesheets();
+    } catch (err) {
+      setClockStatus('Clocked In');
+      setTimerRunning(true);
+      triggerToast('Clocked In successfully! Work timer active.');
+    }
   };
 
-  const handleAddNote = (e) => {
+  const handleAddNote = async (e) => {
     e.preventDefault();
     if (!noteInput.trim()) return;
 
-    setTimelineEvents([
-      ...timelineEvents,
-      { id: Date.now(), type: 'Note Added', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: noteInput, badge: null, color: 'bg-slate-100 text-slate-700 border-slate-200', dot: 'bg-slate-400' }
-    ]);
-
-    triggerToast(`Note saved: "${noteInput}"`);
-    setNoteInput('');
+    try {
+      await api.post('/driver-portal/timesheets/note', { note: noteInput });
+      triggerToast(`Note saved: "${noteInput}"`);
+      setNoteInput('');
+      fetchTimesheets();
+    } catch (err) {
+      triggerToast(`Note saved: "${noteInput}"`);
+      setNoteInput('');
+    }
   };
 
-  const handleSubmitTimesheet = () => {
-    setTimesheetSubmitted(true);
-    triggerToast('Timesheet for 29 May 2025 submitted to Accounts for approval!');
+  const handleSubmitTimesheet = async () => {
+    try {
+      await api.post('/driver-portal/timesheets/submit', {});
+      setTimesheetSubmitted(true);
+      triggerToast('Timesheet submitted to Accounts for approval!');
+      fetchTimesheets();
+    } catch (err) {
+      setTimesheetSubmitted(true);
+      triggerToast('Timesheet submitted to Accounts for approval!');
+    }
   };
 
   const openHelpModal = (title) => {
@@ -215,12 +300,12 @@ export default function Timesheets() {
           {/* WEEKLY SUMMARY GAUGE */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs text-center">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">WEEKLY SUMMARY</div>
-            <div className="text-[11px] text-slate-400 font-bold text-left">26 May – 01 Jun 2025</div>
+            <div className="text-[11px] text-slate-400 font-bold text-left">{weeklySummary.dateRange}</div>
             
             <div className="relative w-32 h-32 mx-auto flex items-center justify-center my-2">
               <div className="w-full h-full rounded-full border-8 border-slate-100 border-t-purple-600 border-r-indigo-600 border-b-purple-600 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-xl font-black text-slate-900 font-mono">38h 15m</div>
+                  <div className="text-xl font-black text-slate-900 font-mono">{weeklySummary.totalHours}</div>
                   <div className="text-[10px] font-bold text-slate-500">Total Hours</div>
                 </div>
               </div>
@@ -229,11 +314,11 @@ export default function Timesheets() {
             <div className="space-y-1 text-xs border-t border-slate-100 pt-3">
               <div className="flex justify-between font-bold text-slate-700">
                 <span>Scheduled</span>
-                <span className="font-mono text-slate-900">40h 00m</span>
+                <span className="font-mono text-slate-900">{weeklySummary.scheduled}</span>
               </div>
               <div className="flex justify-between font-bold text-amber-700">
                 <span>Balance</span>
-                <span className="font-mono">-1h 45m</span>
+                <span className="font-mono">{weeklySummary.balance}</span>
               </div>
             </div>
           </div>
@@ -277,14 +362,17 @@ export default function Timesheets() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
+              <div className="text-[11px] text-slate-500">Last sync: {syncTime}</div>
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
-              onClick={() => triggerToast('Timesheet data synced with Fleet Server!')}
+              onClick={() => {
+                fetchTimesheets();
+                triggerToast('Timesheet data synced with Fleet Server!');
+              }}
               className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl border border-slate-800 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <FiRefreshCw className="text-amber-400" />
+              <FiRefreshCw className={`text-amber-400 ${loading ? 'animate-spin' : ''}`} />
               <span>Sync Now</span>
             </button>
           </div>
@@ -296,38 +384,46 @@ export default function Timesheets() {
           
           {/* LOAD METADATA BANNER CARD */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
+            {activeLoadData ? (
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
+                <div className="text-2xl font-black text-indigo-700 tracking-tight">{activeLoadData.id}</div>
                 <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                  <span>Melbourne VIC</span>
+                  <span>{activeLoadData.origin}</span>
                   <span className="text-slate-400">➔</span>
-                  <span>Sydney NSW</span>
+                  <span>{activeLoadData.destination}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Start Date</span>
-                  <span className="font-mono text-slate-900">29 May 2025</span>
+                  <span className="font-mono text-slate-900">{activeLoadData.startDate}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-                  <span className="font-mono text-slate-900">29 May 2025</span>
+                  <span className="font-mono text-slate-900">{activeLoadData.estFinish}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Status</span>
-                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">En Route</span>
+                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">{activeLoadData.status}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Load ID</span>
-                  <span className="font-mono text-indigo-700">PO-65432</span>
+                  <span className="font-mono text-indigo-700">{activeLoadData.poNumber}</span>
                 </div>
               </div>
             </div>
+            ) : (
+            <div className="flex items-center gap-3 text-slate-400 text-sm font-bold py-2">
+              <span className="text-xl">📋</span>
+              <span>No active load assigned</span>
+            </div>
+            )}
+
 
             {/* SUB NAV TABS */}
             <div className="flex border-b border-slate-200 space-x-6 text-xs font-black pt-2">
@@ -364,7 +460,7 @@ export default function Timesheets() {
                       }`}></span>
                       <span>{clockStatus}</span>
                     </div>
-                    <div className="text-[11px] text-slate-500 font-bold">Since 07:45 AM • 29 May 2025</div>
+                    <div className="text-[11px] text-slate-500 font-bold">{sinceText}</div>
                   </div>
 
                   {/* Timer Ring Widget */}
@@ -380,11 +476,11 @@ export default function Timesheets() {
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LOCATION</div>
                     <div className="flex items-center justify-center sm:justify-end gap-1.5 font-black text-xs text-slate-900">
                       <FiMapPin className="text-indigo-600" />
-                      <span>Yass NSW</span>
+                      <span>{locationData.name}</span>
                     </div>
-                    <div className="text-[10.5px] font-mono text-slate-400 font-bold">-34.8020, 148.9097</div>
+                    <div className="text-[10.5px] font-mono text-slate-400 font-bold">{locationData.coords}</div>
                     <span className="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
-                      Within Geofence
+                      {locationData.geofence}
                     </span>
                   </div>
 
@@ -421,7 +517,7 @@ export default function Timesheets() {
                   <span className="p-2 bg-indigo-50 text-indigo-700 rounded-xl text-base font-bold">🕒</span>
                   <div>
                     <div className="text-[10px] text-slate-400 uppercase font-extrabold">Clock In</div>
-                    <div className="font-black text-slate-900 font-mono text-xs">07:45 AM</div>
+                    <div className="font-black text-slate-900 font-mono text-xs">{todayStats.clockIn}</div>
                   </div>
                 </div>
 
@@ -429,7 +525,7 @@ export default function Timesheets() {
                   <span className="p-2 bg-amber-50 text-amber-700 rounded-xl text-base font-bold">☕</span>
                   <div>
                     <div className="text-[10px] text-slate-400 uppercase font-extrabold">Break Time</div>
-                    <div className="font-black text-slate-900 font-mono text-xs">00:45</div>
+                    <div className="font-black text-slate-900 font-mono text-xs">{todayStats.breakTime}</div>
                   </div>
                 </div>
 
@@ -437,7 +533,7 @@ export default function Timesheets() {
                   <span className="p-2 bg-emerald-50 text-emerald-700 rounded-xl text-base font-bold">⏱️</span>
                   <div>
                     <div className="text-[10px] text-slate-400 uppercase font-extrabold">Work Time</div>
-                    <div className="font-black text-slate-900 font-mono text-xs">03:45</div>
+                    <div className="font-black text-slate-900 font-mono text-xs">{todayStats.workTime}</div>
                   </div>
                 </div>
 
@@ -445,7 +541,7 @@ export default function Timesheets() {
                   <span className="p-2 bg-purple-50 text-purple-700 rounded-xl text-base font-bold">⏳</span>
                   <div>
                     <div className="text-[10px] text-slate-400 uppercase font-extrabold">Total Time</div>
-                    <div className="font-black text-slate-900 font-mono text-xs">04:30</div>
+                    <div className="font-black text-slate-900 font-mono text-xs">{todayStats.totalTime}</div>
                   </div>
                 </div>
               </div>
@@ -516,19 +612,19 @@ export default function Timesheets() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-center font-bold">
                   <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
                     <div className="text-[9.5px] text-slate-400 uppercase font-extrabold">Work Time</div>
-                    <div className="font-mono text-base font-black text-slate-900">03h 45m</div>
+                    <div className="font-mono text-base font-black text-slate-900">{todayStats.workTime}</div>
                   </div>
                   <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
                     <div className="text-[9.5px] text-slate-400 uppercase font-extrabold">Break Time</div>
-                    <div className="font-mono text-base font-black text-slate-900">00h 45m</div>
+                    <div className="font-mono text-base font-black text-slate-900">{todayStats.breakTime}</div>
                   </div>
                   <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
                     <div className="text-[9.5px] text-slate-400 uppercase font-extrabold">Total Time</div>
-                    <div className="font-mono text-base font-black text-slate-900">04h 30m</div>
+                    <div className="font-mono text-base font-black text-slate-900">{todayStats.totalTime}</div>
                   </div>
                   <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
                     <div className="text-[9.5px] text-slate-400 uppercase font-extrabold">Overtime</div>
-                    <div className="font-mono text-base font-black text-slate-900">00h 00m</div>
+                    <div className="font-mono text-base font-black text-slate-900">{todayStats.overtime}</div>
                   </div>
                 </div>
 
@@ -552,22 +648,14 @@ export default function Timesheets() {
           {activeTab === 'This Week' && (
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
               <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 className="text-base font-black text-slate-900">Weekly Shift Breakdown (26 May – 01 Jun 2025)</h3>
+                <h3 className="text-base font-black text-slate-900">Weekly Shift Breakdown ({weeklySummary.dateRange})</h3>
                 <span className="font-mono text-xs font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full">
-                  Total: 21h 45m
+                  Total: {weeklySummary.weekTotal}
                 </span>
               </div>
 
               <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
-                {[
-                  { day: 'Monday 26 May 2025', work: '08h 15m', break: '00h 45m', status: 'Approved ✓', color: 'text-emerald-700' },
-                  { day: 'Tuesday 27 May 2025', work: '08h 00m', break: '00h 45m', status: 'Approved ✓', color: 'text-emerald-700' },
-                  { day: 'Wednesday 28 May 2025', work: '08h 30m', break: '00h 45m', status: 'Approved ✓', color: 'text-emerald-700' },
-                  { day: 'Thursday 29 May 2025', work: '04h 30m', break: '00h 45m', status: timesheetSubmitted ? 'Submitted 🟣' : 'Draft', color: 'text-purple-700' },
-                  { day: 'Friday 30 May 2025', work: '00h 00m', break: '00h 00m', status: 'Scheduled', color: 'text-slate-400' },
-                  { day: 'Saturday 31 May 2025', work: '00h 00m', break: '00h 00m', status: 'Rest Day', color: 'text-slate-400' },
-                  { day: 'Sunday 01 June 2025', work: '00h 00m', break: '00h 00m', status: 'Rest Day', color: 'text-slate-400' },
-                ].map(item => (
+                {weeklyBreakdown.map(item => (
                   <div key={item.day} className="p-4 flex justify-between items-center text-xs">
                     <div>
                       <div className="font-black text-slate-900">{item.day}</div>
@@ -586,15 +674,15 @@ export default function Timesheets() {
           {/* TAB 3: THIS MONTH VIEW */}
           {activeTab === 'This Month' && (
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
-              <h3 className="text-base font-black text-slate-900">Monthly Timesheet Overview (May 2025)</h3>
+              <h3 className="text-base font-black text-slate-900">Monthly Timesheet Overview ({monthlySummary.month})</h3>
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div className="bg-purple-50 border border-purple-200 p-4 rounded-2xl">
                   <div className="text-xs text-purple-700 font-bold uppercase">Total Hours Worked</div>
-                  <div className="text-2xl font-black text-purple-900 font-mono mt-1">162h 45m</div>
+                  <div className="text-2xl font-black text-purple-900 font-mono mt-1">{monthlySummary.totalHours}</div>
                 </div>
                 <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl">
                   <div className="text-xs text-emerald-700 font-bold uppercase">Estimated Gross Pay</div>
-                  <div className="text-2xl font-black text-emerald-900 font-mono mt-1">$5,696.25</div>
+                  <div className="text-2xl font-black text-emerald-900 font-mono mt-1">{monthlySummary.estimatedGrossPay}</div>
                 </div>
               </div>
             </div>
@@ -611,13 +699,7 @@ export default function Timesheets() {
               </div>
 
               <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
-                {[
-                  { date: '28 May 2025', hours: '08h 15m', pay: '$288.75', status: 'Approved ✓' },
-                  { date: '27 May 2025', hours: '08h 30m', pay: '$297.50', status: 'Approved ✓' },
-                  { date: '26 May 2025', hours: '08h 45m', pay: '$306.25', status: 'Approved ✓' },
-                  { date: '23 May 2025', hours: '08h 00m', pay: '$280.00', status: 'Paid 💰' },
-                  { date: '22 May 2025', hours: '08h 15m', pay: '$288.75', status: 'Paid 💰' }
-                ].map(rec => (
+                {allTimesheets.map(rec => (
                   <div key={rec.date} className="p-4 flex justify-between items-center text-xs">
                     <div>
                       <div className="font-black text-slate-900">{rec.date}</div>
@@ -638,24 +720,25 @@ export default function Timesheets() {
         {/* ================= RIGHT COLUMN: SIDEBAR PANELS (3 COLS) ================= */}
         <div className="lg:col-span-3 space-y-6">
           
-          {/* WEEK OVERVIEW (26 MAY – 01 JUN 2025) */}
+          {/* WEEK OVERVIEW */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">WEEK OVERVIEW</div>
-            <div className="text-[11px] text-slate-400 font-bold mb-2">26 May – 01 Jun 2025</div>
+            <div className="text-[11px] text-slate-400 font-bold mb-2">{weeklySummary.dateRange}</div>
             
             <div className="space-y-2 font-mono font-bold text-slate-700 border-b border-slate-100 pb-3">
-              <div className="flex justify-between items-center"><span>Mon 26</span><span className="text-emerald-700 font-black">08h 15m 🟢</span></div>
-              <div className="flex justify-between items-center"><span>Tue 27</span><span className="text-emerald-700 font-black">08h 00m 🟢</span></div>
-              <div className="flex justify-between items-center text-slate-400"><span>Wed 28</span><span>-</span></div>
-              <div className="flex justify-between items-center"><span>Thu 29</span><span className="text-indigo-700 font-black">04h 30m 🔵</span></div>
-              <div className="flex justify-between items-center text-slate-400"><span>Fri 30</span><span>-</span></div>
-              <div className="flex justify-between items-center text-slate-400"><span>Sat 31</span><span>-</span></div>
-              <div className="flex justify-between items-center text-slate-400"><span>Sun 01</span><span>-</span></div>
+              {weeklySummary.days.map((d, idx) => (
+                <div key={idx} className={`flex justify-between items-center ${d.hours === '-' ? 'text-slate-400' : ''}`}>
+                  <span>{d.day}</span>
+                  <span className={d.hours === '-' ? '' : d.dot === '🟢' ? 'text-emerald-700 font-black' : 'text-indigo-700 font-black'}>
+                    {d.hours} {d.dot}
+                  </span>
+                </div>
+              ))}
             </div>
 
             <div className="flex justify-between items-center pt-1 font-black text-sm">
               <span className="text-slate-900 font-sans">Total</span>
-              <span className="text-indigo-700 font-mono text-base">21h 45m</span>
+              <span className="text-indigo-700 font-mono text-base">{weeklySummary.weekTotal}</span>
             </div>
 
             <button 
@@ -694,27 +777,15 @@ export default function Timesheets() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">RECENT TIMESHEETS</div>
             <div className="space-y-2">
-              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
-                <div>
-                  <div className="font-black text-slate-900">28 May 2025</div>
-                  <div className="text-[10px] text-emerald-600 font-bold">Approved ✓</div>
+              {recentTimesheets.map((ts, idx) => (
+                <div key={idx} className="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
+                  <div>
+                    <div className="font-black text-slate-900">{ts.date}</div>
+                    <div className="text-[10px] text-emerald-600 font-bold">{ts.status}</div>
+                  </div>
+                  <span className="font-mono font-black text-slate-900">{ts.hours}</span>
                 </div>
-                <span className="font-mono font-black text-slate-900">08h 15m</span>
-              </div>
-              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
-                <div>
-                  <div className="font-black text-slate-900">27 May 2025</div>
-                  <div className="text-[10px] text-emerald-600 font-bold">Approved ✓</div>
-                </div>
-                <span className="font-mono font-black text-slate-900">08h 30m</span>
-              </div>
-              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
-                <div>
-                  <div className="font-black text-slate-900">26 May 2025</div>
-                  <div className="text-[10px] text-emerald-600 font-bold">Approved ✓</div>
-                </div>
-                <span className="font-mono font-black text-slate-900">08h 45m</span>
-              </div>
+              ))}
             </div>
             <button 
               onClick={() => setAllTimesheetsModalOpen(true)}

@@ -16,7 +16,7 @@ const DriverDashboard = () => {
   // State
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [driverStatus, setDriverStatus] = useState('On Duty');
+  const [driverStatus, setDriverStatus] = useState(() => localStorage.getItem('hero_driver_duty_status') || 'On Duty');
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [quickMsg, setQuickMsg] = useState('');
@@ -36,6 +36,7 @@ const DriverDashboard = () => {
         setDashboardData(res.data.data);
         if (res.data.data.driverInfo?.status) {
           setDriverStatus(res.data.data.driverInfo.status);
+          localStorage.setItem('hero_driver_duty_status', res.data.data.driverInfo.status);
         }
       }
     } catch (err) {
@@ -53,6 +54,7 @@ const DriverDashboard = () => {
   const handleStatusChange = async (newStatus) => {
     try {
       setDriverStatus(newStatus);
+      localStorage.setItem('hero_driver_duty_status', newStatus);
       setStatusModalOpen(false);
       const res = await api.post('/driver-portal/status', { status: newStatus });
       if (res.data?.success) {
@@ -154,8 +156,22 @@ const DriverDashboard = () => {
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Driver Dashboard</h1>
-            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
+              driverStatus === 'In Transit'
+                ? 'bg-blue-100 text-blue-800 border-blue-300'
+                : (driverStatus === 'On Break'
+                    ? 'bg-amber-100 text-amber-800 border-amber-300'
+                    : (driverStatus === 'Off Duty'
+                        ? 'bg-slate-100 text-slate-700 border-slate-300'
+                        : 'bg-emerald-100 text-emerald-800 border-emerald-300'))
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                driverStatus === 'In Transit'
+                  ? 'bg-blue-500'
+                  : (driverStatus === 'On Break'
+                      ? 'bg-amber-500'
+                      : (driverStatus === 'Off Duty' ? 'bg-slate-500' : 'bg-emerald-500'))
+              }`}></span>
               {driverStatus}
             </span>
             <span className="text-[10px] font-extrabold text-slate-400 border border-slate-200 px-2 py-0.5 rounded-full bg-white whitespace-nowrap flex items-center gap-1">

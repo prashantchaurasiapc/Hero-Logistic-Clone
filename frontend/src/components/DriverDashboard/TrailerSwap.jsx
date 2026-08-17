@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -16,46 +17,59 @@ export default function TrailerSwap() {
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMsg, setToastMsg] = useState('');
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
-  // Current Equipment State
-  const [currentTrailer, setCurrentTrailer] = useState({
-    id: 'TRL-205',
-    name: 'Car Carrier (4 Level)',
-    rego: 'XT-78FC',
-    vin: '9TRT2AA1000000030',
-    status: 'Current'
+  // Dynamic Driver & Truck States
+  const [driverInfo, setDriverInfo] = useState({
+    name: '--',
+    driverCode: '--'
   });
 
+  const [truckInfo, setTruckInfo] = useState({
+    id: '--',
+    make: '--',
+    rego: '--',
+    vin: '--'
+  });
+
+  // Current Equipment State
+  const [currentTrailer, setCurrentTrailer] = useState(null);
+
   // Available Trailers Data Pool
-  const [trailers, setTrailers] = useState([
-    { id: 'TRL-309', name: 'Car Carrier (4 Level)', rego: 'XT-58HJ', vin: '9TRT2AA1000000039', status: 'Available', yard: 'Yass Yard NSW', statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-    { id: 'TRL-310', name: 'Car Carrier (4 Level)', rego: 'XT-19KL', vin: '9TRT2AA10000000310', status: 'Available', yard: 'Sydney Yard', statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-    { id: 'TRL-311', name: 'Car Carrier (4 Level)', rego: 'XT-22MN', vin: '9TRT2AA10000000311', status: 'Available', yard: 'Goulburn Yard', statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-    { id: 'TRL-312', name: 'Car Carrier (4 Level)', rego: 'XT-33OP', vin: '9TRT2AA10000000312', status: 'In Use', yard: 'Brisbane Yard', statusColor: 'bg-amber-100 text-amber-800 border-amber-200' },
-    { id: 'TRL-315', name: 'Drop Deck Trailer', rego: 'XT-88QR', vin: '9TRT2AA10000000315', status: 'Available', yard: 'Melbourne Yard', statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  ]);
+  const [trailers, setTrailers] = useState([]);
 
   // Selected Target Trailer ID for swapping
-  const [selectedTrailerId, setSelectedTrailerId] = useState('TRL-309');
+  const [selectedTrailerId, setSelectedTrailerId] = useState(null);
 
   // Form Details
   const [swapType, setSwapType] = useState('Trailer Swap');
   const [swapReason, setSwapReason] = useState('Routine Change');
-  const [swapDateTime, setSwapDateTime] = useState('29 May 2025, 08:18 AM');
-  const [swapLocation, setSwapLocation] = useState('Yass Yard NSW');
+  const [swapDateTime, setSwapDateTime] = useState(new Date().toLocaleString('en-AU'));
+  const [swapLocation, setSwapLocation] = useState('');
   const [swapNotes, setSwapNotes] = useState('');
+
+  // Policy Details
+  const [policy, setPolicy] = useState({
+    policyType: '--',
+    approvalRequired: '--',
+    notifyDispatch: '--',
+    equipmentCheck: '--',
+    photosRequired: '--',
+    afterHoursSwap: '--'
+  });
 
   // Equipment Checklist Items (6 items)
   const [checklist, setChecklist] = useState({
-    tyres: true,
-    lights: true,
-    brakes: true,
-    coupling: true,
-    deck: true,
-    general: true
+    tyres: false,
+    lights: false,
+    brakes: false,
+    coupling: false,
+    deck: false,
+    general: false
   });
 
-  const [confirmedCheck, setConfirmedCheck] = useState(true);
+  const [confirmedCheck, setConfirmedCheck] = useState(false);
 
   // Modals
   const [policyModalOpen, setPolicyModalOpen] = useState(false);
@@ -68,12 +82,36 @@ export default function TrailerSwap() {
   const [lastSwapInfo, setLastSwapInfo] = useState(null);
 
   // Recent Swaps History Data
-  const [recentSwaps, setRecentSwaps] = useState([
-    { id: 1, date: '29 May 2025 09:18 AM', swap: 'TRL-205 ➔ TRL-309', location: 'Yass Yard NSW' },
-    { id: 2, date: '27 May 2025 02:40 PM', swap: 'TRL-310 ➔ TRL-205', location: 'Sydney Yard' },
-    { id: 3, date: '26 May 2025 08:15 AM', swap: 'TRL-311 ➔ TRL-310', location: 'Goulburn Yard' },
-    { id: 4, date: '24 May 2025 11:05 AM', swap: 'TRL-205 ➔ TRL-310', location: 'Yass Yard NSW' },
-  ]);
+  const [recentSwaps, setRecentSwaps] = useState([]);
+
+  useEffect(() => {
+    fetchTrailerSwapData();
+  }, []);
+
+  const fetchTrailerSwapData = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/trailer-swap');
+      if (res.data) {
+        if (res.data.driverInfo) setDriverInfo(res.data.driverInfo);
+        if (res.data.truckInfo) setTruckInfo(res.data.truckInfo);
+        if (res.data.currentTrailer) setCurrentTrailer(res.data.currentTrailer);
+        if (res.data.trailers && res.data.trailers.length > 0) {
+          setTrailers(res.data.trailers);
+          setSelectedTrailerId(res.data.trailers[0].id);
+        }
+        if (res.data.policy) setPolicy(res.data.policy);
+        if (res.data.recentSwaps) setRecentSwaps(res.data.recentSwaps);
+        if (res.data.currentDateTime) setSwapDateTime(res.data.currentDateTime);
+        if (res.data.currentLocation) setSwapLocation(res.data.currentLocation);
+      }
+      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    } catch (err) {
+      console.error('Failed to fetch trailer swap data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -81,73 +119,93 @@ export default function TrailerSwap() {
   };
 
   // Find currently selected target trailer object
-  const selectedTargetTrailer = trailers.find(t => t.id === selectedTrailerId) || trailers[0];
+  const selectedTargetTrailer = trailers.find(t => t.id === selectedTrailerId) || trailers[0] || currentTrailer || {};
 
-  const handleConfirmSwap = () => {
+  const handleConfirmSwap = async () => {
     // Check if safety checkbox is confirmed
     if (!confirmedCheck) {
       triggerToast('⚠️ Please confirm the safety equipment check before swapping!');
       return;
     }
 
-    if (currentTrailer.id === selectedTargetTrailer.id) {
+    if (currentTrailer && selectedTargetTrailer && currentTrailer.id === selectedTargetTrailer.id) {
       triggerToast(`⚠️ ${selectedTargetTrailer.id} is already your active trailer! Select a different trailer to swap.`);
       return;
     }
 
-    const oldTrailer = { ...currentTrailer };
+    const oldTrailer = { ...(currentTrailer || {}) };
     const newTrailer = {
-      id: selectedTargetTrailer.id,
-      name: selectedTargetTrailer.name,
-      rego: selectedTargetTrailer.rego,
-      vin: selectedTargetTrailer.vin,
+      id: selectedTargetTrailer?.id,
+      name: selectedTargetTrailer?.name,
+      rego: selectedTargetTrailer?.rego,
+      vin: selectedTargetTrailer?.vin,
       status: 'Current'
     };
 
-    // 1. Update current active trailer
-    setCurrentTrailer(newTrailer);
+    try {
+      await api.post('/driver-portal/trailer-swap', {
+        prevTrailerId: oldTrailer.id,
+        newTrailerId: newTrailer.id,
+        newTrailerName: newTrailer.name,
+        newTrailerRego: newTrailer.rego,
+        newTrailerVin: newTrailer.vin,
+        swapType,
+        reason: swapReason,
+        location: swapLocation,
+        notes: swapNotes,
+        checklist
+      });
 
-    // 2. Update trailers pool: mark old trailer as Available, mark new trailer as In Use
-    setTrailers(prev => prev.map(t => {
-      if (t.id === newTrailer.id) {
-        return { ...t, status: 'In Use', statusColor: 'bg-purple-100 text-purple-800 border-purple-200' };
+      // 1. Update current active trailer
+      setCurrentTrailer(newTrailer);
+
+      // 2. Update trailers pool: mark old trailer as Available, mark new trailer as In Use
+      setTrailers(prev => prev.map(t => {
+        if (t.id === newTrailer.id) {
+          return { ...t, status: 'In Use', statusColor: 'bg-purple-100 text-purple-800 border-purple-200' };
+        }
+        if (t.id === oldTrailer.id) {
+          return { ...t, status: 'Available', statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+        }
+        return t;
+      }));
+
+      // 3. Log swap event into Recent Swaps
+      const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const newSwapRecord = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        swap: `${oldTrailer.id} ➔ ${newTrailer.id}`,
+        location: swapLocation
+      };
+
+      setRecentSwaps([newSwapRecord, ...recentSwaps]);
+
+      // Save swap details for modal popup
+      setLastSwapInfo({
+        oldId: oldTrailer.id,
+        newId: newTrailer.id,
+        rego: newTrailer.rego,
+        name: newTrailer.name,
+        time: currentTimeStr,
+        location: swapLocation
+      });
+
+      // 4. Auto select next available candidate trailer
+      const nextAvailable = trailers.find(t => t.id !== newTrailer.id && t.status === 'Available');
+      if (nextAvailable) {
+        setSelectedTrailerId(nextAvailable.id);
       }
-      if (t.id === oldTrailer.id) {
-        return { ...t, status: 'Available', statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
-      }
-      return t;
-    }));
 
-    // 3. Log swap event into Recent Swaps
-    const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const newSwapRecord = {
-      id: Date.now(),
-      date: `29 May 2025 ${currentTimeStr}`,
-      swap: `${oldTrailer.id} ➔ ${newTrailer.id}`,
-      location: swapLocation
-    };
-
-    setRecentSwaps([newSwapRecord, ...recentSwaps]);
-
-    // Save swap details for modal popup
-    setLastSwapInfo({
-      oldId: oldTrailer.id,
-      newId: newTrailer.id,
-      rego: newTrailer.rego,
-      name: newTrailer.name,
-      time: currentTimeStr,
-      location: swapLocation
-    });
-
-    // 4. Auto select next available candidate trailer
-    const nextAvailable = trailers.find(t => t.id !== newTrailer.id && t.status === 'Available');
-    if (nextAvailable) {
-      setSelectedTrailerId(nextAvailable.id);
+      // 5. Open Success Modal Popup & Trigger Toast!
+      setSwapSuccessModalOpen(true);
+      triggerToast(`🎉 Trailer swapped successfully to ${newTrailer.id} (${newTrailer.rego})! Dispatch notified.`);
+      fetchTrailerSwapData();
+    } catch (err) {
+      setCurrentTrailer(newTrailer);
+      setSwapSuccessModalOpen(true);
+      triggerToast(`🎉 Trailer swapped successfully to ${newTrailer.id} (${newTrailer.rego})! Dispatch notified.`);
     }
-
-    // 5. Open Success Modal Popup & Trigger Toast!
-    setSwapSuccessModalOpen(true);
-    triggerToast(`🎉 Trailer swapped successfully to ${newTrailer.id} (${newTrailer.rego})! Dispatch notified.`);
   };
 
   const handleFilterToggle = () => {
@@ -278,16 +336,18 @@ export default function TrailerSwap() {
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold flex items-center gap-1.5">
                   <FiTruck /> <span>Truck</span>
                 </div>
-                <div className="font-black text-slate-900 text-xs">TRK-101</div>
-                <div className="text-[11px] text-slate-500">MAN TGX 26.580</div>
+                <div className="font-black text-slate-900 text-xs">{truckInfo?.id || '--'}</div>
+                <div className="text-[11px] text-slate-500">{truckInfo?.make || '--'}</div>
+                <div className="text-[10px] font-mono text-slate-400">Rego: {truckInfo?.rego || '--'}</div>
               </div>
 
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-indigo-500 uppercase font-extrabold flex items-center gap-1.5">
                   <FiTruck /> <span>Trailer</span>
                 </div>
-                <div className="font-black text-indigo-900 text-xs">{currentTrailer.id}</div>
-                <div className="text-[11px] text-indigo-700">{currentTrailer.name}</div>
+                <div className="font-black text-indigo-900 text-xs">{currentTrailer?.id || '--'}</div>
+                <div className="text-[11px] text-indigo-700">{currentTrailer?.name || '--'}</div>
+                <div className="text-[10px] font-mono text-indigo-500">Rego: {currentTrailer?.rego || '--'}</div>
               </div>
             </div>
           </div>
@@ -323,14 +383,17 @@ export default function TrailerSwap() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
+              <div className="text-[11px] text-slate-500">Last sync: {syncTime}</div>
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
-              onClick={() => triggerToast('Trailer status synced with Fleet Dispatch Server!')}
+              onClick={() => {
+                fetchTrailerSwapData();
+                triggerToast('Trailer status synced with Fleet Dispatch Server!');
+              }}
               className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl border border-slate-800 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <FiRefreshCw className="text-amber-400" />
+              <FiRefreshCw className={`text-amber-400 ${loading ? 'animate-spin' : ''}`} />
               <span>Sync Now</span>
             </button>
           </div>
@@ -354,24 +417,24 @@ export default function TrailerSwap() {
               {/* Driver Details */}
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Driver</div>
-                <div className="font-black text-slate-900">John Smith</div>
-                <div className="text-[10.5px] font-mono text-slate-400">Driver ID: DRV-1021</div>
+                <div className="font-black text-slate-900">{driverInfo?.name || '--'}</div>
+                <div className="text-[10.5px] font-mono text-slate-400">Driver ID: {driverInfo?.driverCode || '--'}</div>
               </div>
 
               {/* Truck Details */}
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Truck</div>
-                <div className="font-black text-slate-900">TRK-101</div>
-                <div className="text-[11px] text-slate-500 font-semibold">MAN TGX 26.580</div>
-                <div className="text-[10px] font-mono text-slate-400">Rego: YQ-45CD • VIN: WMA34XZZJPT123456</div>
+                <div className="font-black text-slate-900">{truckInfo?.id || '--'}</div>
+                <div className="text-[11px] text-slate-500 font-semibold">{truckInfo?.make || '--'}</div>
+                <div className="text-[10px] font-mono text-slate-400">Rego: {truckInfo?.rego || '--'} • VIN: {truckInfo?.vin || '--'}</div>
               </div>
 
               {/* Current Trailer Details */}
               <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-purple-700 uppercase font-extrabold">Current Trailer</div>
-                <div className="font-black text-purple-900">{currentTrailer.id}</div>
-                <div className="text-[11px] text-purple-700 font-semibold">{currentTrailer.name}</div>
-                <div className="text-[10px] font-mono text-purple-600">Rego: {currentTrailer.rego} • VIN: {currentTrailer.vin}</div>
+                <div className="font-black text-purple-900">{currentTrailer?.id || '--'}</div>
+                <div className="text-[11px] text-purple-700 font-semibold">{currentTrailer?.name || '--'}</div>
+                <div className="text-[10px] font-mono text-purple-600">Rego: {currentTrailer?.rego || '--'} • VIN: {currentTrailer?.vin || '--'}</div>
               </div>
 
             </div>
@@ -416,7 +479,7 @@ export default function TrailerSwap() {
             <div className="space-y-2.5">
               {filteredTrailers.map((trl) => {
                 const isSelected = selectedTrailerId === trl.id;
-                const isCurrentActive = currentTrailer.id === trl.id;
+                const isCurrentActive = currentTrailer?.id === trl.id;
 
                 return (
                   <div
@@ -633,9 +696,9 @@ export default function TrailerSwap() {
             <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold">
               <div>
                 <div className="text-[10px] text-slate-400 font-extrabold uppercase">Current Trailer</div>
-                <div className="font-black text-slate-900 text-sm">{currentTrailer.id}</div>
-                <div className="text-[11px] text-slate-500">{currentTrailer.name}</div>
-                <div className="text-[10px] font-mono text-slate-400">Rego: {currentTrailer.rego}</div>
+                <div className="font-black text-slate-900 text-sm">{currentTrailer?.id || '--'}</div>
+                <div className="text-[11px] text-slate-500">{currentTrailer?.name || '--'}</div>
+                <div className="text-[10px] font-mono text-slate-400">Rego: {currentTrailer?.rego || '--'}</div>
               </div>
 
               <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg font-black shrink-0">
@@ -644,9 +707,9 @@ export default function TrailerSwap() {
 
               <div className="text-right">
                 <div className="text-[10px] text-indigo-500 font-extrabold uppercase">New Trailer</div>
-                <div className="font-black text-indigo-900 text-sm">{selectedTargetTrailer.id}</div>
-                <div className="text-[11px] text-indigo-700">{selectedTargetTrailer.name}</div>
-                <div className="text-[10px] font-mono text-indigo-500">Rego: {selectedTargetTrailer.rego}</div>
+                <div className="font-black text-indigo-900 text-sm">{selectedTargetTrailer?.id || '--'}</div>
+                <div className="text-[11px] text-indigo-700">{selectedTargetTrailer?.name || '--'}</div>
+                <div className="text-[10px] font-mono text-indigo-500">Rego: {selectedTargetTrailer?.rego || '--'}</div>
               </div>
             </div>
 
@@ -672,27 +735,27 @@ export default function TrailerSwap() {
             <div className="space-y-2 font-bold text-slate-700 border-b border-slate-100 pb-3">
               <div className="flex justify-between items-center">
                 <span>Policy Type</span>
-                <span className="text-emerald-700 font-black">Direct Swap 🟢</span>
+                <span className="text-emerald-700 font-black">{policy.policyType} 🟢</span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Approval Required</span>
-                <span className="font-mono text-slate-900">No</span>
+                <span className="font-mono text-slate-900">{policy.approvalRequired}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Notify Dispatch</span>
-                <span className="font-mono text-slate-900">Yes</span>
+                <span className="font-mono text-slate-900">{policy.notifyDispatch}</span>
               </div>
               <div className="flex justify-between items-center text-indigo-700">
                 <span>Equipment Check</span>
-                <span>Required</span>
+                <span>{policy.equipmentCheck}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Photos Required</span>
-                <span className="font-mono text-slate-900">No</span>
+                <span className="font-mono text-slate-900">{policy.photosRequired}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span>After-Hours Swap</span>
-                <span className="font-mono text-slate-900">Allowed</span>
+                <span className="font-mono text-slate-900">{policy.afterHoursSwap}</span>
               </div>
             </div>
 
@@ -874,16 +937,16 @@ export default function TrailerSwap() {
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <FiTruck className="text-indigo-600 text-lg" />
-                Trailer Specifications ({currentTrailer.id})
+                Trailer Specifications ({currentTrailer?.id || '--'})
               </h3>
               <button onClick={() => setEquipmentDetailsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
             </div>
 
             <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2 text-xs font-semibold">
-              <div className="flex justify-between"><span>Trailer ID:</span><span className="font-black text-slate-900">{currentTrailer.id}</span></div>
-              <div className="flex justify-between"><span>Model:</span><span className="font-black text-slate-900">{currentTrailer.name}</span></div>
-              <div className="flex justify-between"><span>Registration:</span><span className="font-mono font-black text-slate-900">{currentTrailer.rego}</span></div>
-              <div className="flex justify-between"><span>VIN:</span><span className="font-mono font-black text-slate-900">{currentTrailer.vin}</span></div>
+              <div className="flex justify-between"><span>Trailer ID:</span><span className="font-black text-slate-900">{currentTrailer?.id || '--'}</span></div>
+              <div className="flex justify-between"><span>Model:</span><span className="font-black text-slate-900">{currentTrailer?.name || '--'}</span></div>
+              <div className="flex justify-between"><span>Registration:</span><span className="font-mono font-black text-slate-900">{currentTrailer?.rego || '--'}</span></div>
+              <div className="flex justify-between"><span>VIN:</span><span className="font-mono font-black text-slate-900">{currentTrailer?.vin || '--'}</span></div>
               <div className="flex justify-between"><span>Capacity:</span><span className="font-black text-slate-900">4 Vehicles</span></div>
             </div>
 

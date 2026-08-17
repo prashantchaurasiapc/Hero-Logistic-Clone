@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import {
   FiPackage, FiTruck, FiClock, FiCheckCircle,
   FiUpload, FiMessageSquare,
@@ -10,81 +11,6 @@ import {
   FiMoreVertical, FiEye, FiEdit2, FiTrash2,
   FiTrendingUp,
 } from 'react-icons/fi';
-
-const ALL_JOBS = [
-  {
-    id: 'LD-3987', subTitle: 'Car Carrier (4 Level)',
-    status: 'UPCOMING', statusText: 'Upcoming',
-    date: 'Today', time: '06:00 AM', timeColor: '#0f172a',
-    origin: 'Melbourne VIC', destination: 'Sydney NSW',
-    pickupName: 'ABC Car Yard', pickupAddress: '123 Sunshine Rd, Melbourne VIC 3000',
-    deliveryName: 'Auto World Sydney', deliveryAddress: '45 Parramatta Rd, Sydney NSW 2150',
-    loadType: 'Car Carrier', reference: 'PO-65432', stops: '1 Stop', distance: '845 km',
-  },
-  {
-    id: 'LD-3988', subTitle: 'Car Carrier (4 Level)',
-    status: 'UPCOMING', statusText: 'Upcoming',
-    date: 'Tomorrow', time: '07:30 AM', timeColor: '#0f172a',
-    origin: 'Brisbane QLD', destination: 'Perth WA',
-    pickupName: 'Brisbane Port Terminal', pickupAddress: 'Port Dr, Brisbane QLD 4178',
-    deliveryName: 'Perth Freight Hub', deliveryAddress: '12 Freight Ave, Perth WA 6100',
-    loadType: 'Car Carrier', reference: 'PO-65456', stops: '2 Stops', distance: '4,374 km',
-  },
-  {
-    id: 'LD-3986', subTitle: 'Car Carrier (4 Level)',
-    status: 'IN_PROGRESS', statusText: 'In Progress',
-    date: 'Today', time: 'In Transit', timeColor: '#d97706',
-    origin: 'Melbourne VIC', destination: 'Adelaide SA',
-    pickupName: 'Melbourne Vehicle Hub', pickupAddress: '88 Western Hwy, Deer Park VIC 3023',
-    deliveryName: 'Adelaide Vehicle Hub', deliveryAddress: '55 Chief St, Wingfield SA 5013',
-    loadType: 'Car Carrier', reference: 'PO-65421', stops: '1 Stop', distance: '731 km',
-  },
-  {
-    id: 'LD-3985', subTitle: 'Car Carrier (4 Level)',
-    status: 'IN_PROGRESS', statusText: 'In Progress',
-    date: 'Yesterday', time: 'Delivered', timeColor: '#059669',
-    origin: 'Sydney NSW', destination: 'Newcastle NSW',
-    pickupName: 'Sydney Yard', pickupAddress: '10-12 Forsyth St, South Granville NSW 2142',
-    deliveryName: 'Newcastle Yard', deliveryAddress: '61 Munibung Rd, Cardiff NSW 2285',
-    loadType: 'Car Carrier', reference: 'PO-65410', stops: '1 Stop', distance: '170 km',
-  },
-  {
-    id: 'LD-3984', subTitle: 'Car Carrier (4 Level)',
-    status: 'COMPLETED', statusText: 'Completed',
-    date: '27 May 2025', time: 'Completed', timeColor: '#059669',
-    origin: 'Brisbane QLD', destination: 'Gold Coast QLD',
-    pickupName: 'Brisbane Yard', pickupAddress: '12 Trade St, Lytton QLD 4178',
-    deliveryName: 'Gold Coast Yard', deliveryAddress: '24 Bailey Cres, Southport QLD 4215',
-    loadType: 'Car Carrier', reference: 'PO-65398', stops: '1 Stop', distance: '95 km',
-  },
-  {
-    id: 'LD-3983', subTitle: 'Car Carrier (4 Level)',
-    status: 'COMPLETED', statusText: 'Completed',
-    date: '25 May 2025', time: 'Completed', timeColor: '#059669',
-    origin: 'Melbourne VIC', destination: 'Geelong VIC',
-    pickupName: 'Laverton Depot', pickupAddress: '5 Industrial Blvd, Laverton VIC 3028',
-    deliveryName: 'Geelong Auto Hub', deliveryAddress: '18 Port Rd, Geelong VIC 3220',
-    loadType: 'Car Carrier', reference: 'PO-65380', stops: '1 Stop', distance: '75 km',
-  },
-  {
-    id: 'LD-3982', subTitle: 'Car Carrier (4 Level)',
-    status: 'COMPLETED', statusText: 'Completed',
-    date: '23 May 2025', time: 'Completed', timeColor: '#059669',
-    origin: 'Sydney NSW', destination: 'Wollongong NSW',
-    pickupName: 'Sydney South Depot', pickupAddress: '41 Botany Rd, Waterloo NSW 2017',
-    deliveryName: 'Wollongong Freight Park', deliveryAddress: '9 Port Kembla Rd, Wollongong NSW 2500',
-    loadType: 'Car Carrier', reference: 'PO-65361', stops: '1 Stop', distance: '83 km',
-  },
-  {
-    id: 'LD-3981', subTitle: 'Car Carrier (4 Level)',
-    status: 'CANCELLED', statusText: 'Cancelled',
-    date: '22 May 2025', time: 'Cancelled', timeColor: '#e11d48',
-    origin: 'Adelaide SA', destination: 'Darwin NT',
-    pickupName: 'Adelaide South Yard', pickupAddress: '3 Regency Rd, Kilburn SA 5084',
-    deliveryName: 'Darwin Freight Terminal', deliveryAddress: '10 Frances Bay Dr, Darwin NT 0800',
-    loadType: 'Car Carrier', reference: 'PO-65340', stops: '1 Stop', distance: '3,021 km',
-  },
-];
 
 const STATUS_META = {
   UPCOMING:    { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },
@@ -97,7 +23,8 @@ const PAGE_SIZE = 5;
 
 export default function Jobs() {
   const navigate = useNavigate();
-  const [jobs, setJobs]                 = useState(ALL_JOBS);
+  const [jobs, setJobs]                 = useState([]);
+  const [loading, setLoading]           = useState(true);
   const [activeTab, setActiveTab]       = useState('ALL');
   const [searchQuery, setSearchQuery]   = useState('');
   const [page, setPage]                 = useState(1);
@@ -113,6 +40,25 @@ export default function Jobs() {
     pickupTime: '', deliveryTime: '', customer: '', reference: '',
     loadType: 'Car Carrier (4 Level)', stops: '1 Stop', notes: '',
   });
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/jobs');
+      if (res.data?.success) {
+        setJobs(res.data.data.jobs || []);
+      }
+    } catch (error) {
+      console.error('Failed to load jobs', error);
+      showToast('❌ Failed to load jobs.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
 
   useEffect(() => {
     const handler = e => {
@@ -145,13 +91,14 @@ export default function Jobs() {
     return tabOk && searchOk;
   });
 
-  const totalPages = Math.ceil(filtered.length / perPage);
+  const totalPages = Math.ceil(filtered.length / perPage) || 1;
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   const handleTabChange = t => { setActiveTab(t); setPage(1); };
   const handleSearch    = e => { setSearchQuery(e.target.value); setPage(1); };
 
   const handleDeleteConfirm = () => {
+    // Optimistic delete
     setJobs(prev => prev.filter(j => j.id !== deleteJob.id));
     showToast(`🗑️ Job ${deleteJob.id} deleted successfully!`);
     setDeleteJob(null);
@@ -164,11 +111,20 @@ export default function Jobs() {
     setEditJob(null);
   };
 
-  const handleNewLoadSubmit = e => {
+  const handleNewLoadSubmit = async e => {
     e.preventDefault();
-    showToast('✅ New load submitted to Dispatch for scheduling!');
-    setNewLoadOpen(false);
-    setNewLoad({ origin: '', destination: '', pickupAddress: '', deliveryAddress: '', pickupTime: '', deliveryTime: '', customer: '', reference: '', loadType: 'Car Carrier (4 Level)', stops: '1 Stop', notes: '' });
+    try {
+      const res = await api.post('/driver-portal/jobs', newLoad);
+      if (res.data?.success) {
+         showToast('✅ New load submitted to Dispatch for scheduling!');
+         setNewLoadOpen(false);
+         setNewLoad({ origin: '', destination: '', pickupAddress: '', deliveryAddress: '', pickupTime: '', deliveryTime: '', customer: '', reference: '', loadType: 'Car Carrier (4 Level)', stops: '1 Stop', notes: '' });
+         fetchJobs();
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Failed to submit load request.');
+    }
   };
 
   const inputStyle = {
@@ -462,7 +418,7 @@ export default function Jobs() {
             <h3 style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 900, color: '#0f172a' }}>Key Actions</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'Refresh List',     icon: FiRefreshCw,     action: () => showToast('Refreshing job list...') },
+                { label: 'Refresh List',     icon: FiRefreshCw,     action: () => { showToast('Refreshing job list...'); fetchJobs(); } },
                 { label: 'Message Dispatch', icon: FiMessageSquare, action: () => navigate('/driver/contact-dispatch') },
                 { label: 'View Calendar',    icon: FiCalendar,      action: () => showToast('Opening calendar...') },
               ].map(({ label, icon: Icon, action }) => (
@@ -479,7 +435,7 @@ export default function Jobs() {
             <div style={{ display: 'flex', gap: 32 }}>
               <div>
                 <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Last sync</div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginTop: 2 }}>29 May 2025, 10:15 AM</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginTop: 2 }}>{new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
               </div>
               <div>
                 <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Auto refresh</div>
@@ -490,7 +446,7 @@ export default function Jobs() {
               <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 800, color: '#10b981' }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }}></span> Online
               </span>
-              <button onClick={() => showToast('Syncing with server...')}
+              <button onClick={() => { showToast('Syncing with server...'); fetchJobs(); }}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', background: '#0f172a', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 800, color: '#fff', cursor: 'pointer' }}>
                 <FiRefreshCw size={12} /> Sync Now
               </button>
@@ -506,7 +462,7 @@ export default function Jobs() {
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }}></span>
             Data auto-refreshes every 5 minutes
           </span>
-          <span>Last updated: 29 May 2025, 10:15 AM &nbsp; ↻</span>
+          <span>Last updated: {new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} &nbsp; ↻</span>
         </div>
       </div>
 

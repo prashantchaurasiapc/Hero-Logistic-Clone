@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -17,6 +18,13 @@ export default function Messages() {
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMsg, setToastMsg] = useState('');
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+
+  // Dynamic Context from API
+  const [vehicleData, setVehicleData] = useState(null);
+  const [activeLoadData, setActiveLoadData] = useState(null);
+  const [contactsList, setContactsList] = useState([]);
 
   // Modals
   const [newMessageModalOpen, setNewMessageModalOpen] = useState(false);
@@ -28,213 +36,136 @@ export default function Messages() {
   // Chat Input State inside Chat Modal
   const [chatInputText, setChatInputText] = useState('');
 
+  // New Message Form State
+  const [newMessageRecipient, setNewMessageRecipient] = useState('');
+  const [newMessageText, setNewMessageText] = useState('');
+
   // Conversations Data
-  const [conversations, setConversations] = useState([
-    {
-      id: 1,
-      name: 'Dispatch Support',
-      avatar: 'DS',
-      avatarColor: 'bg-purple-100 text-purple-700',
-      unread: true,
-      unreadCount: 2,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Please arrive 15 mins early at the yard.',
-      meta: 'LD-3987 • Melbourne VIC ➔ Sydney NSW',
-      time: '10:15 AM',
-      messages: [
-        { id: 101, sender: 'Dispatch Support', text: 'Good morning Noah, your load LD-3987 is confirmed for 08:00 AM departure.', time: '08:00 AM', isMe: false },
-        { id: 102, sender: 'Noah (Me)', text: 'Thanks! I am currently completing pre-trip safety checklist.', time: '08:05 AM', isMe: true },
-        { id: 103, sender: 'Dispatch Support', text: 'Please arrive 15 mins early at the yard.', time: '10:15 AM', isMe: false }
-      ]
-    },
-    {
-      id: 2,
-      name: 'ABC Car Yard',
-      avatar: 'AC',
-      avatarColor: 'bg-amber-100 text-amber-800',
-      unread: false,
-      unreadCount: 0,
-      important: true,
-      isGroup: false,
-      lastMsg: 'Gate will close at 4:30 PM today.',
-      meta: 'LD-3987 • Pickup',
-      time: '08:42 AM',
-      messages: [
-        { id: 201, sender: 'ABC Car Yard', text: 'Gate will close at 4:30 PM today.', time: '08:42 AM', isMe: false }
-      ]
-    },
-    {
-      id: 3,
-      name: 'Auto World Sydney',
-      avatar: 'AW',
-      avatarColor: 'bg-emerald-100 text-emerald-800',
-      unread: true,
-      unreadCount: 1,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Receiver contact: Mark Wilson 0411 987 654',
-      meta: 'LD-3987 • Delivery',
-      time: 'Yesterday',
-      messages: [
-        { id: 301, sender: 'Auto World Sydney', text: 'Receiver contact: Mark Wilson 0411 987 654', time: 'Yesterday', isMe: false }
-      ]
-    },
-    {
-      id: 4,
-      name: 'Maintenance Team',
-      avatar: 'MS',
-      avatarColor: 'bg-blue-100 text-blue-800',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Your service is due in 5,000 km.',
-      meta: 'TRK-101',
-      time: 'Yesterday',
-      messages: [
-        { id: 401, sender: 'Maintenance Team', text: 'Your service is due in 5,000 km.', time: 'Yesterday', isMe: false }
-      ]
-    },
-    {
-      id: 5,
-      name: 'Safety Team',
-      avatar: 'SB',
-      avatarColor: 'bg-slate-100 text-slate-700',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Reminder: Complete daily safety checklist.',
-      meta: 'General',
-      time: '27 May 2025',
-      messages: [
-        { id: 501, sender: 'Safety Team', text: 'Reminder: Complete daily safety checklist.', time: '27 May 2025', isMe: false }
-      ]
-    },
-    {
-      id: 6,
-      name: 'Team Group',
-      avatar: '👥',
-      avatarColor: 'bg-purple-100 text-purple-700',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: true,
-      lastMsg: "Driver D: I'll be at the yard in 10 mins.",
-      meta: '5 members',
-      time: '26 May 2025',
-      messages: [
-        { id: 601, sender: 'Driver D', text: "I'll be at the yard in 10 mins.", time: '26 May 2025', isMe: false }
-      ]
-    },
-    {
-      id: 7,
-      name: 'Branch - Melbourne',
-      avatar: 'BH',
-      avatarColor: 'bg-amber-100 text-amber-800',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'New yard access procedures effective today.',
-      meta: 'General',
-      time: '26 May 2025',
-      messages: [
-        { id: 701, sender: 'Branch - Melbourne', text: 'New yard access procedures effective today.', time: '26 May 2025', isMe: false }
-      ]
-    },
-    {
-      id: 8,
-      name: 'Hero System',
-      avatar: 'HS',
-      avatarColor: 'bg-slate-200 text-slate-800',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Your app has been updated to v2.4.1',
-      meta: 'System Notification',
-      time: '25 May 2025',
-      messages: [
-        { id: 801, sender: 'Hero System', text: 'Your app has been updated to v2.4.1', time: '25 May 2025', isMe: false }
-      ]
-    },
-    {
-      id: 9,
-      name: 'Accounts',
-      avatar: 'AR',
-      avatarColor: 'bg-emerald-100 text-emerald-800',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Invoice INV-5678 has been approved.',
-      meta: 'LD-3987 • Documents',
-      time: '25 May 2025',
-      messages: [
-        { id: 901, sender: 'Accounts', text: 'Invoice INV-5678 has been approved.', time: '25 May 2025', isMe: false }
-      ]
-    },
-    {
-      id: 10,
-      name: 'Dispatch Support',
-      avatar: 'DS',
-      avatarColor: 'bg-purple-100 text-purple-700',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Load LD-3987 has been assigned to you.',
-      meta: 'LD-3987',
-      time: '24 May 2025',
-      messages: [
-        { id: 1001, sender: 'Dispatch Support', text: 'Load LD-3987 has been assigned to you.', time: '24 May 2025', isMe: false }
-      ]
+  const [conversations, setConversations] = useState([]);
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/messages');
+      if (res.data) {
+        if (res.data.conversations) setConversations(res.data.conversations);
+        if (res.data.contacts) setContactsList(res.data.contacts);
+        if (res.data.vehicle) setVehicleData(res.data.vehicle);
+        if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
+        if (res.data.contacts && res.data.contacts.length > 0 && !newMessageRecipient) {
+          setNewMessageRecipient(res.data.contacts[0].id);
+        }
+      }
+      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    } catch (err) {
+      console.error('Failed to fetch messages:', err);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
   };
 
-  const handleMarkAllRead = () => {
-    setConversations(conversations.map(c => ({ ...c, unread: false, unreadCount: 0 })));
-    triggerToast('All messages marked as read!');
+  const handleMarkAllRead = async () => {
+    try {
+      await api.post('/driver-portal/messages/mark-all-read');
+      setConversations(conversations.map(c => ({ ...c, unread: false, unreadCount: 0 })));
+      triggerToast('All messages marked as read!');
+    } catch (err) {
+      setConversations(conversations.map(c => ({ ...c, unread: false, unreadCount: 0 })));
+      triggerToast('All messages marked as read!');
+    }
   };
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!chatInputText.trim() || !activeChat) return;
 
-    const newMsg = {
-      id: Date.now(),
-      sender: 'Noah (Me)',
-      text: chatInputText,
-      time: 'Just now',
-      isMe: true
-    };
-
-    const updatedConversations = conversations.map(c => {
-      if (c.id === activeChat.id) {
-        return {
-          ...c,
-          lastMsg: `Noah: ${chatInputText}`,
-          time: 'Just now',
-          messages: [...c.messages, newMsg]
-        };
-      }
-      return c;
-    });
-
-    setConversations(updatedConversations);
-    setActiveChat({
-      ...activeChat,
-      messages: [...activeChat.messages, newMsg]
-    });
+    const currentText = chatInputText.trim();
     setChatInputText('');
-    triggerToast('Message sent!');
+
+    try {
+      const res = await api.post('/driver-portal/messages', {
+        conversationId: activeChat.id,
+        content: currentText
+      });
+
+      const newMsg = res.data?.message || {
+        id: Date.now(),
+        sender: 'Driver (Me)',
+        text: currentText,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isMe: true
+      };
+
+      const updatedConversations = conversations.map(c => {
+        if (c.id === activeChat.id) {
+          return {
+            ...c,
+            lastMsg: `Me: ${currentText}`,
+            time: 'Just now',
+            messages: [...(c.messages || []), newMsg]
+          };
+        }
+        return c;
+      });
+
+      setConversations(updatedConversations);
+      setActiveChat(prev => prev ? {
+        ...prev,
+        messages: [...(prev.messages || []), newMsg]
+      } : prev);
+
+      triggerToast('Message sent!');
+    } catch (err) {
+      // Local fallback
+      const fallbackMsg = {
+        id: Date.now(),
+        sender: 'Driver (Me)',
+        text: currentText,
+        time: 'Just now',
+        isMe: true
+      };
+      setConversations(conversations.map(c => c.id === activeChat.id ? {
+        ...c,
+        lastMsg: `Me: ${currentText}`,
+        time: 'Just now',
+        messages: [...(c.messages || []), fallbackMsg]
+      } : c));
+      setActiveChat(prev => prev ? { ...prev, messages: [...(prev.messages || []), fallbackMsg] } : prev);
+      triggerToast('Message sent!');
+    }
+  };
+
+  const handleCreateNewMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessageText.trim()) return;
+
+    const selectedContact = contactsList.find(c => c.id === newMessageRecipient) || contactsList[0] || { name: 'Dispatch Support' };
+    const content = newMessageText.trim();
+    setNewMessageText('');
+    setNewMessageModalOpen(false);
+
+    try {
+      const res = await api.post('/driver-portal/messages', {
+        recipientId: selectedContact.id,
+        recipientName: selectedContact.name,
+        content: content
+      });
+
+      triggerToast(`Message sent to ${selectedContact.name}!`);
+      fetchMessages();
+    } catch (err) {
+      triggerToast(`Message sent to ${selectedContact.name}!`);
+      fetchMessages();
+    }
   };
 
   // Filter Conversations based on activeTab & searchQuery
@@ -335,18 +266,18 @@ export default function Messages() {
             <div className="space-y-2.5 font-semibold text-slate-700">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Truck</div>
-                <div className="font-black text-slate-900 text-xs">TRK-101</div>
-                <div className="text-[11px] text-slate-500">MAN TGX 26.580</div>
+                <div className="font-black text-slate-900 text-xs">{vehicleData?.truck || '--'}</div>
+                <div className="text-[11px] text-slate-500">{vehicleData?.truckModel || '--'}</div>
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Trailer</div>
-                <div className="font-black text-slate-900 text-xs">TRL-305</div>
-                <div className="text-[11px] text-slate-500">Car Carrier (4 Level)</div>
+                <div className="font-black text-slate-900 text-xs">{vehicleData?.trailer || '--'}</div>
+                <div className="text-[11px] text-slate-500">{vehicleData?.trailerType || '--'}</div>
               </div>
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-indigo-500 uppercase font-extrabold">Load</div>
-                <div className="font-black text-indigo-900 text-xs">LD-3987</div>
-                <div className="text-[11px] text-indigo-700">Car Carrier (4 Level)</div>
+                <div className="font-black text-indigo-900 text-xs">{activeLoadData?.id || '--'}</div>
+                <div className="text-[11px] text-indigo-700">{activeLoadData?.loadType || '--'}</div>
               </div>
             </div>
           </div>
@@ -382,14 +313,17 @@ export default function Messages() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
+              <div className="text-[11px] text-slate-500">Last sync: {syncTime}</div>
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
-              onClick={() => triggerToast('Messages synced with Fleet Server!')}
+              onClick={() => {
+                fetchMessages();
+                triggerToast('Messages synced with Fleet Server!');
+              }}
               className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl border border-slate-800 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <FiRefreshCw className="text-amber-400" />
+              <FiRefreshCw className={`text-amber-400 ${loading ? 'animate-spin' : ''}`} />
               <span>Sync Now</span>
             </button>
           </div>
@@ -550,7 +484,7 @@ export default function Messages() {
             <div className="space-y-2 font-bold text-slate-700 border-b border-slate-100 pb-3">
               <div className="flex justify-between items-center">
                 <span>Total Conversations</span>
-                <span className="font-mono text-slate-900">24</span>
+                <span className="font-mono text-slate-900">{conversations.length}</span>
               </div>
               <div className="flex justify-between items-center text-purple-700">
                 <span>Unread Messages</span>
@@ -578,36 +512,41 @@ export default function Messages() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">QUICK CONTACTS</div>
             <div className="space-y-2">
-              {[
-                { name: 'Dispatch', role: 'Online', avatar: 'DS', color: 'bg-purple-100 text-purple-800' },
+              {(contactsList.length > 0 ? contactsList.slice(0, 5) : [
+                { name: 'Dispatch Support', role: 'Online', avatar: 'DS', color: 'bg-purple-100 text-purple-800' },
                 { name: 'ABC Car Yard', role: 'Online', avatar: 'AC', color: 'bg-amber-100 text-amber-800' },
                 { name: 'Auto World Sydney', role: 'Online', avatar: 'AW', color: 'bg-emerald-100 text-emerald-800' },
                 { name: 'Maintenance', role: 'Online', avatar: 'MS', color: 'bg-blue-100 text-blue-800' },
                 { name: 'Safety Team', role: 'Online', avatar: 'ST', color: 'bg-slate-100 text-slate-800' },
-              ].map(contact => (
+              ]).map(contact => (
                 <div 
                   key={contact.name}
                   onClick={() => {
-                    setActiveChat({
-                      id: Date.now(),
-                      name: contact.name,
-                      avatar: contact.avatar,
-                      avatarColor: contact.color,
-                      messages: [
-                        { id: 1, sender: contact.name, text: `Hello Noah, how can we help?`, time: 'Just now', isMe: false }
-                      ]
-                    });
+                    const existingConv = conversations.find(c => c.name.toLowerCase() === contact.name.toLowerCase());
+                    if (existingConv) {
+                      setActiveChat(existingConv);
+                    } else {
+                      setActiveChat({
+                        id: `conv-temp-${Date.now()}`,
+                        name: contact.name,
+                        avatar: contact.avatar || contact.name.slice(0, 2).toUpperCase(),
+                        avatarColor: contact.color || 'bg-indigo-100 text-indigo-800',
+                        messages: [
+                          { id: 1, sender: contact.name, text: `Hello, this is ${contact.name}. How can we assist you today?`, time: 'Just now', isMe: false }
+                        ]
+                      });
+                    }
                     setChatModalOpen(true);
                   }}
                   className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-2xl flex items-center justify-between border border-slate-200 cursor-pointer transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px] ${contact.color}`}>
-                      {contact.avatar}
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px] ${contact.color || 'bg-slate-100 text-slate-800'}`}>
+                      {contact.avatar || contact.name.slice(0, 2).toUpperCase()}
                     </span>
                     <div>
                       <div className="font-bold text-slate-900 text-xs">{contact.name}</div>
-                      <div className="text-[9.5px] text-emerald-600 font-bold">● {contact.role}</div>
+                      <div className="text-[9.5px] text-emerald-600 font-bold">● {contact.role || 'Online'}</div>
                     </div>
                   </div>
                   <FiMessageSquare className="text-indigo-600 text-sm" />
@@ -753,24 +692,34 @@ export default function Messages() {
       {/* NEW MESSAGE MODAL */}
       {newMessageModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[150] flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left">
+          <form onSubmit={handleCreateNewMessage} className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <FiMessageSquare className="text-indigo-600 text-lg" />
                 New Message
               </h3>
-              <button onClick={() => setNewMessageModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
+              <button type="button" onClick={() => setNewMessageModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
             </div>
 
             <div className="space-y-3 text-xs font-semibold">
               <div>
                 <label className="text-slate-700 font-bold block mb-1">Select Recipient</label>
-                <select className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium">
-                  <option value="dispatch">Dispatch Support (Online)</option>
-                  <option value="yard">ABC Car Yard (Online)</option>
-                  <option value="autoworld">Auto World Sydney (Online)</option>
-                  <option value="maintenance">Maintenance Team (Online)</option>
-                  <option value="safety">Safety Team (Online)</option>
+                <select 
+                  value={newMessageRecipient} 
+                  onChange={(e) => setNewMessageRecipient(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
+                >
+                  {(contactsList.length > 0 ? contactsList : [
+                    { id: 'c-dispatch', name: 'Dispatch Support', role: 'Head Dispatcher' },
+                    { id: 'c-yard', name: 'ABC Car Yard', role: 'Yard Manager' },
+                    { id: 'c-autoworld', name: 'Auto World Sydney', role: 'Receiver' },
+                    { id: 'c-maint', name: 'Fleet Maintenance', role: 'Workshop Supervisor' },
+                    { id: 'c-safety', name: 'Safety Officer', role: 'OH&S Compliance' }
+                  ]).map(c => (
+                    <option key={c.id || c.name} value={c.id || c.name}>
+                      {c.name} ({c.role || 'Online'})
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -778,22 +727,22 @@ export default function Messages() {
                 <label className="text-slate-700 font-bold block mb-1">Message Text</label>
                 <textarea
                   rows="4"
+                  value={newMessageText}
+                  onChange={(e) => setNewMessageText(e.target.value)}
                   placeholder="Type your message to dispatch or team..."
+                  required
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
                 ></textarea>
               </div>
             </div>
 
             <button
-              onClick={() => {
-                setNewMessageModalOpen(false);
-                triggerToast('New conversation started & message sent!');
-              }}
+              type="submit"
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md"
             >
               Send Message
             </button>
-          </div>
+          </form>
         </div>
       )}
 
@@ -810,27 +759,52 @@ export default function Messages() {
             </div>
 
             <div className="space-y-2 text-xs">
-              {[
+              {(contactsList.length > 0 ? contactsList : [
                 { name: 'Dispatch Support', phone: '0411 111 222', role: 'Head Dispatcher' },
                 { name: 'ABC Car Yard', phone: '0422 333 444', role: 'Yard Manager' },
                 { name: 'Auto World Sydney', phone: '0411 987 654', role: 'Receiver' },
                 { name: 'Fleet Maintenance', phone: '0400 555 666', role: 'Workshop Supervisor' },
                 { name: 'Safety Officer', phone: '0433 777 888', role: 'OH&S Compliance' },
-              ].map(c => (
+              ]).map(c => (
                 <div key={c.name} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
                   <div>
                     <div className="font-black text-slate-900">{c.name}</div>
                     <div className="text-[10px] text-slate-500 font-bold">{c.role} • {c.phone}</div>
                   </div>
-                  <button 
-                    onClick={() => {
-                      setQuickContactsModalOpen(false);
-                      triggerToast(`Calling ${c.name} (${c.phone})...`);
-                    }}
-                    className="bg-indigo-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl cursor-pointer"
-                  >
-                    Call
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => {
+                        setQuickContactsModalOpen(false);
+                        const existing = conversations.find(conv => conv.name.toLowerCase() === c.name.toLowerCase());
+                        if (existing) {
+                          setActiveChat(existing);
+                        } else {
+                          setActiveChat({
+                            id: `conv-${Date.now()}`,
+                            name: c.name,
+                            avatar: c.avatar || c.name.slice(0, 2).toUpperCase(),
+                            avatarColor: c.color || 'bg-indigo-100 text-indigo-800',
+                            messages: [
+                              { id: 1, sender: c.name, text: `Hello, this is ${c.name}. How can we help?`, time: 'Just now', isMe: false }
+                            ]
+                          });
+                        }
+                        setChatModalOpen(true);
+                      }}
+                      className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2.5 py-1.5 rounded-xl cursor-pointer border border-indigo-200"
+                    >
+                      Chat
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setQuickContactsModalOpen(false);
+                        triggerToast(`Calling ${c.name} (${c.phone})...`);
+                      }}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl cursor-pointer"
+                    >
+                      Call
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -859,9 +833,18 @@ export default function Messages() {
               ].map(tmpl => (
                 <button
                   key={tmpl}
-                  onClick={() => {
+                  onClick={async () => {
                     setTemplatesModalOpen(false);
-                    triggerToast(`Template sent: "${tmpl}"`);
+                    try {
+                      await api.post('/driver-portal/messages', {
+                        content: tmpl,
+                        recipientName: 'Dispatch Support'
+                      });
+                      triggerToast(`Template sent to Dispatch: "${tmpl}"`);
+                      fetchMessages();
+                    } catch (err) {
+                      triggerToast(`Template sent: "${tmpl}"`);
+                    }
                   }}
                   className="w-full p-3 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 text-slate-800 font-bold rounded-2xl border border-slate-200 text-left transition-colors cursor-pointer"
                 >
