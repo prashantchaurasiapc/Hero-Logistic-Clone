@@ -31,22 +31,11 @@ export default function LoadLane({
     actions: true
   });
 
-  // State for active lanes with live database sync
-  const [lanes, setLanes] = useState([
-    { id: 'L-1', name: 'Lane 1', units: 6, status: 'LOADING' },
-    { id: 'L-2', name: 'Lane 2', units: 4, status: 'LOADING' },
-    { id: 'L-3', name: 'Lane 3', units: 6, status: 'LOADING' },
-    { id: 'L-4', name: 'Lane 4', units: 3, status: 'LOADING' },
-    { id: 'L-5', name: 'Lane 5', units: 4, status: 'STAGING' },
-    { id: 'L-6', name: 'Lane 6', units: 2, status: 'LOADING' }
-  ]);
+  // State for active lanes — populated from API
+  const [lanes, setLanes] = useState([]);
 
-  // State for queueing assets
-  const [queueAssets, setQueueAssets] = useState([
-    { id: 'VIN-1', code: 'Toyota Camry (ABC123)', targetLane: 'Lane 4', status: 'Staged', assigned: false },
-    { id: 'VIN-2', code: 'Mazda 3 (DEF456)', targetLane: 'Lane 4', status: 'Staged', assigned: false },
-    { id: 'VIN-3', code: 'Honda Accord (GHI789)', targetLane: 'Lane 3', status: 'Ready', assigned: false }
-  ]);
+  // State for queueing assets — populated from API
+  const [queueAssets, setQueueAssets] = useState([]);
 
   React.useEffect(() => {
     const fetchLanes = async () => {
@@ -54,9 +43,10 @@ export default function LoadLane({
         const apiMod = await import('../../services/api');
         const api = apiMod.default || apiMod;
         const res = await api.get('/warehouse-portal/load-lanes');
-        const rawLanes = res.data?.data?.lanes || (Array.isArray(res.data?.data) ? res.data.data : []);
-        if (Array.isArray(rawLanes) && rawLanes.length > 0) {
-          const formatted = rawLanes.map((l, idx) => ({
+
+        if (res.data && res.data.success) {
+          const formatted = (res.data.data || []).map((l, idx) => ({
+
             id: l.id || `L-${idx + 1}`,
             name: l.laneName || l.name || `Lane ${idx + 1}`,
             units: l.itemCount || (l.items?.length || 0),
@@ -65,7 +55,7 @@ export default function LoadLane({
           setLanes(formatted);
         }
       } catch (err) {
-        console.warn('Using initial load lanes data:', err.message);
+        console.warn('Failed to load lanes:', err.message);
       }
     };
     fetchLanes();

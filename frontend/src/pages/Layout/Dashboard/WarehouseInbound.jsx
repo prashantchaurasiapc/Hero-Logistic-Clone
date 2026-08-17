@@ -15,23 +15,63 @@ export default function WarehouseInbound() {
   const photoInputRef = useRef(null);
 
   // Inbound Details state
-  const [inboundType, setInboundType] = useState('Purchase / Supplier Delivery');
+  const [inboundType, setInboundType] = useState('');
   const [inboundNo, setInboundNo] = useState('');
   const [supplier, setSupplier] = useState('');
   const [refNote, setRefNote] = useState('');
-  const [transportType, setTransportType] = useState('Truck');
+  const [transportType, setTransportType] = useState('');
   const [driver, setDriver] = useState('');
   const [vehicleTrailer, setVehicleTrailer] = useState('');
   const [dateTime, setDateTime] = useState('');
   const [notes, setNotes] = useState('');
 
   // Location state
-  const [receivingDepot, setReceivingDepot] = useState('Sydney Depot');
-  const [warehouseYard, setWarehouseYard] = useState('Main Yard');
-  const [zone, setZone] = useState('Zone A');
-  const [row, setRow] = useState('Row 1');
-  const [bay, setBay] = useState('Bay 1');
-  const [stagingArea, setStagingArea] = useState('Staging Area 1');
+  const [receivingDepot, setReceivingDepot] = useState('');
+  const [warehouseYard, setWarehouseYard] = useState('');
+  const [zone, setZone] = useState('');
+  const [row, setRow] = useState('');
+  const [bay, setBay] = useState('');
+  const [stagingArea, setStagingArea] = useState('');
+
+  const [dbStagingAreas, setDbStagingAreas] = useState([]);
+  const [dbLoadLanes, setDbLoadLanes] = useState([]);
+  
+  const [dbSuppliers, setDbSuppliers] = useState([]);
+  const [dbDrivers, setDbDrivers] = useState([]);
+  const [dbVehicles, setDbVehicles] = useState([]);
+  const [dbWarehouses, setDbWarehouses] = useState([]);
+
+  React.useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const saRes = await api.get('/warehouse-portal/holding-areas');
+        const saData = saRes.data?.data?.holdingAreas || saRes.data?.data || [];
+        setDbStagingAreas(saData);
+
+        const llRes = await api.get('/warehouse-portal/load-lanes');
+        const llData = llRes.data?.data?.lanes || llRes.data?.data || [];
+        setDbLoadLanes(llData);
+
+        const optionsRes = await api.get('/warehouse-portal/inbound/form-options');
+        if (optionsRes.data?.success) {
+          const { suppliers, drivers, vehicles, warehouses } = optionsRes.data.data;
+          setDbSuppliers(suppliers || []);
+          setDbDrivers(drivers || []);
+          setDbVehicles(vehicles || []);
+          setDbWarehouses(warehouses || []);
+          
+          if (suppliers?.length > 0) setSupplier(suppliers[0].id);
+          if (drivers?.length > 0) setDriver(drivers[0].name);
+          if (vehicles?.length > 0) setVehicleTrailer(vehicles[0].name);
+          if (warehouses?.length > 0) setReceivingDepot(warehouses[0].name);
+        }
+      } catch (err) {
+        console.warn('Could not load WMS locations:', err.message);
+      }
+    };
+    fetchLocations();
+  }, []);
+
 
   // Item Entry state
   const [entryTab, setEntryTab] = useState('manual');
@@ -46,7 +86,7 @@ export default function WarehouseInbound() {
   const [colour, setColour] = useState('');
   const [condition, setCondition] = useState('Good');
   const [fuelType, setFuelType] = useState('Petrol');
-  const [requirePhotos, setRequirePhotos] = useState(true);
+  const [requirePhotos, setRequirePhotos] = useState(false);
   const [damageNoted, setDamageNoted] = useState(false);
 
   // Items List
@@ -81,14 +121,29 @@ export default function WarehouseInbound() {
   };
 
   const handleAddAnotherItem = () => {
+    if (!vin && !regoPlate) {
+      showToast('Please provide at least a VIN or Rego to add item', 'error');
+      return;
+    }
+    
+    const newItem = {
+      id: String(Date.now()),
+      type: 'Vehicle',
+      title: `${make || 'Unknown'} ${model || ''}`.trim(),
+      vin: vin || '-',
+      rego: regoPlate || '-',
+      location: `${zone} / ${row} / ${bay} / ${stagingArea}`,
+      condition: 'Good',
+      damage: 'No Damage',
+      image: null
+    };
+
+    setItemsToReceive(prev => [...prev, newItem]);
+
     setVin('');
     setRegoPlate('');
     setMake('');
     setModel('');
-    setYear('');
-    setColour('');
-    setCondition('Good');
-    setDamageNoted(false);
 
     const itemEntryElem = document.getElementById('section-item-entry');
     if (itemEntryElem) {
@@ -149,43 +204,47 @@ export default function WarehouseInbound() {
     alert('Photo captured & attached successfully!');
   };
 
-  const handleSimulateCSVImport = () => {
-    setImportModalOpen(false);
-    alert('CSV Import is not fully configured for production yet.');
-  };
 
   const handleReceiveComplete = async () => {
     try {
+      const isStagingArea = dbStagingAreas.some(sa => sa.id === stagingArea);
+      const isLoadLane = dbLoadLanes.some(ll => ll.id === stagingArea);
+
       const payload = {
-        receiptNumber: inboundNo,
-        supplierName: supplier,
+        inboundNo,
+        supplier,
         referenceNote: refNote,
-        transportType: transportType,
+        transportType,
         driverName: driver,
-        vehicleDetails: vehicleTrailer,
-        receivingDepot: receivingDepot,
-        zone: zone,
-        status: 'RECEIVED',
+        vehicleRef: vehicleTrailer,
+        receivingDepot,
+        zone,
+        row,
+        bay,
+        stagingAreaId: isStagingArea ? stagingArea : null,
+        loadLaneId: isLoadLane ? stagingArea : null,
+        notes: notes,
         items: itemsToReceive.map(item => ({
           vin: item.vin,
-          make: item.title,
+          make: item.title?.split(' ')?.[0] || 'Unknown',
+          model: item.title?.split(' ')?.slice(1)?.join(' ') || 'Item',
           condition: item.condition,
-          damageStatus: item.damage,
+          type: item.type,
           location: item.location
         }))
       };
 
-      const res = await api.post('/inbound-receipts', payload);
+      const res = await api.post('/warehouse-portal/inbound/receive', payload);
       
       if (res.data && res.data.success) {
-        alert(`Inbound Receipt ${inboundNo} confirmed & received successfully! Total ${itemsToReceive.length} items logged.`);
+        alert(`Inbound Receipt ${inboundNo || 'created'} confirmed & received successfully! Total ${itemsToReceive.length} items logged.`);
         navigate(isYard ? '/yard/current-stock' : '/warehouse/find-stock');
       } else {
         alert('Failed to process inbound receipt. Check console.');
       }
     } catch (err) {
       console.error('Error submitting inbound receipt:', err);
-      alert('Error submitting inbound receipt.');
+      alert('Error submitting inbound receipt: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -939,9 +998,10 @@ export default function WarehouseInbound() {
                 <div className="rcv-form-group">
                   <label title="SUPPLIER / FROM *">SUPPLIER / FROM *</label>
                   <select value={supplier} onChange={e => setSupplier(e.target.value)}>
-                    <option value="ABC Motors">ABC Motors</option>
-                    <option value="XYZ Imports">XYZ Imports</option>
-                    <option value="National Fleet">National Fleet</option>
+                    {dbSuppliers.length === 0 && <option value="">No Suppliers Found</option>}
+                    {dbSuppliers.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.abn || 'N/A'})</option>
+                    ))}
                   </select>
                 </div>
 
@@ -963,8 +1023,10 @@ export default function WarehouseInbound() {
                 <div className="rcv-form-group">
                   <label title="DRIVER">DRIVER</label>
                   <select value={driver} onChange={e => setDriver(e.target.value)}>
-                    <option value="John Smith">John Smith</option>
-                    <option value="Michael Scott">Michael Scott</option>
+                    {dbDrivers.length === 0 && <option value="">No Drivers Available</option>}
+                    {dbDrivers.map(d => (
+                      <option key={d.id} value={d.name}>{d.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -972,7 +1034,13 @@ export default function WarehouseInbound() {
               <div className="rcv-form-grid-2">
                 <div className="rcv-form-group">
                   <label title="VEHICLE / TRAILER">VEHICLE / TRAILER</label>
-                  <input type="text" value={vehicleTrailer} onChange={e => setVehicleTrailer(e.target.value)} />
+                  {/* VEHICLE / TRAILER */}
+                  <select value={vehicleTrailer} onChange={e => setVehicleTrailer(e.target.value)} style={{ padding: '8px', width: '100%', borderRadius: '4px', border: '1px solid #CBD5E1' }}>
+                    {dbVehicles.length === 0 && <option value="">No Vehicles Available</option>}
+                    {dbVehicles.map(v => (
+                      <option key={v.id} value={v.name}>{v.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="rcv-form-group">
                   <label title="DATE / TIME *">DATE / TIME *</label>
@@ -993,9 +1061,10 @@ export default function WarehouseInbound() {
               <div className="rcv-form-group">
                 <label title="RECEIVING DEPOT *">RECEIVING DEPOT *</label>
                 <select value={receivingDepot} onChange={e => setReceivingDepot(e.target.value)}>
-                  <option value="Sydney Depot">Sydney Depot</option>
-                  <option value="Melbourne Yard">Melbourne Yard</option>
-                  <option value="Brisbane Hub">Brisbane Hub</option>
+                  {dbWarehouses.length === 0 && <option value="">No Depots Found</option>}
+                  {dbWarehouses.map(w => (
+                    <option key={w.id} value={w.name}>{w.name}</option>
+                  ))}
                 </select>
               </div>
 
@@ -1037,11 +1106,23 @@ export default function WarehouseInbound() {
               </div>
 
               <div className="rcv-form-group">
-                <label title="STAGING AREA (OPTIONAL)">STAGING AREA (OPTIONAL)</label>
+                <label title="STAGING AREA / LANE (OPTIONAL)">STAGING AREA / LANE (OPTIONAL)</label>
                 <select value={stagingArea} onChange={e => setStagingArea(e.target.value)}>
-                  <option value="Staging Area 1">Staging Area 1</option>
-                  <option value="Load Lane 3">Load Lane 3</option>
-                  <option value="Load Lane 4">Load Lane 4</option>
+                  <option value="">-- Select Staging Area / Lane --</option>
+                  {dbStagingAreas.length > 0 && (
+                    <optgroup label="Staging Areas">
+                      {dbStagingAreas.map(sa => (
+                        <option key={sa.id} value={sa.id}>{sa.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {dbLoadLanes.length > 0 && (
+                    <optgroup label="Load Lanes">
+                      {dbLoadLanes.map(ll => (
+                        <option key={ll.id} value={ll.id}>{ll.laneName}</option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
               </div>
 
@@ -1058,7 +1139,7 @@ export default function WarehouseInbound() {
               <div className="item-entry-tabs">
                 <button className={entryTab === 'manual' ? 'active' : ''} onClick={() => setEntryTab('manual')}>Add Manually</button>
                 <button className={entryTab === 'scan' ? 'active' : ''} onClick={() => setEntryTab('scan')}>Scan Barcode / QR</button>
-                <button className={entryTab === 'upload' ? 'active' : ''} onClick={() => setImportModalOpen(true)}>Upload (CSV)</button>
+
               </div>
 
               <div className="rcv-form-group">
@@ -1170,10 +1251,6 @@ export default function WarehouseInbound() {
                 4. ITEMS TO RECEIVE
               </div>
               <div className="table-actions-top">
-                <span className="action-link" onClick={() => setImportModalOpen(true)}>
-                  <Upload size={14} />
-                  <span>Import Items</span>
-                </span>
                 <span className="action-link" style={{ color: '#EF4444' }} onClick={() => setItemsToReceive([])}>
                   Clear All
                 </span>
@@ -1482,41 +1559,7 @@ export default function WarehouseInbound() {
 
       </div>
 
-      {/* ── IMPORT ITEMS MODAL ── */}
-      {importModalOpen && (
-        <div className="wh-modal-overlay" onClick={() => setImportModalOpen(false)}>
-          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
-            <div className="wh-modal-header">
-              <div className="flex items-center gap-2">
-                <FileSpreadsheet size={18} className="text-blue-600" />
-                <h3>Import Bulk Inbound Items (CSV / Excel)</h3>
-              </div>
-              <button onClick={() => setImportModalOpen(false)}><X size={16} /></button>
-            </div>
 
-            <div className="wh-modal-body">
-              <p className="text-xs text-slate-600">
-                Upload your CSV manifest or Excel spreadsheet containing item details (VIN, Rego, Make, Model, Condition).
-              </p>
-
-              <div className="dropzone-box" style={{ padding: '24px', background: '#F8FAFC' }}>
-                <Upload size={28} className="text-blue-500 mb-1" />
-                <span className="drop-title">Select CSV File to Upload</span>
-                <span className="drop-sub">Supported formats: .csv, .xlsx, .xls</span>
-              </div>
-
-              <div className="flex justify-between items-center text-xs font-bold text-blue-600 cursor-pointer pt-1">
-                <span className="flex items-center gap-1"><Download size={14} /> Download Sample CSV Template</span>
-              </div>
-            </div>
-
-            <div className="wh-modal-footer">
-              <button className="wh-btn-cancel-rcv" onClick={() => setImportModalOpen(false)}>Cancel</button>
-              <button className="wh-btn-submit-rcv" onClick={handleSimulateCSVImport}>Import Sample CSV Items</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── CAMERA / PHOTO CAPTURE MODAL ── */}
       {cameraModalOpen && (

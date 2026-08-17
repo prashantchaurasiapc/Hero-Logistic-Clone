@@ -26,85 +26,28 @@ export default function Reports({
     netProfit: true
   });
 
-  // Dynamic values depending on filters
+  // Dynamic values depending on filters - defaulted to 0 until API connected
   const getMetrics = () => {
-    let multiplier = 1;
-    if (timePeriod === 'Last Quarter') multiplier = 3.2;
-    if (timePeriod === 'Year to Date') multiplier = 11.5;
-
     return {
-      revenue: (12790 * multiplier).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      margin: (-3430 * multiplier).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      trips: Math.round(1 * multiplier),
-      customers: Math.round(7 * (multiplier > 1 ? multiplier * 0.7 : 1))
+      revenue: '0.00',
+      margin: '0.00',
+      trips: 0,
+      customers: 0
     };
   };
 
   const metrics = getMetrics();
 
-  // Chart Data Generators
+  // Chart data — empty until real data fetched from API
   const getChartData = () => {
-    switch (activeTab) {
-      case 'revenue-trends':
-        return [
-          { name: 'Week 1', revenue: 4000, expenses: 3200, profit: 800 },
-          { name: 'Week 2', revenue: 4500, expenses: 3800, profit: 700 },
-          { name: 'Week 3', revenue: 5100, expenses: 4100, profit: 1000 },
-          { name: 'Week 4', revenue: 6200, expenses: 4800, profit: 1400 }
-        ];
-      case 'driver-performance':
-        return [
-          { name: 'Adam K.', trips: 14, efficiency: 94 },
-          { name: 'Sarah R.', trips: 18, efficiency: 98 },
-          { name: 'John D.', trips: 12, efficiency: 91 },
-          { name: 'Dave M.', trips: 16, efficiency: 89 }
-        ];
-      case 'vehicle-utilization':
-        return [
-          { name: 'Car Carriers', rate: 85 },
-          { name: 'Flatbeds', rate: 72 },
-          { name: 'Vans', rate: 90 },
-          { name: 'Tankers', rate: 64 }
-        ];
-      case 'customer-growth':
-        return [
-          { name: 'Jan', active: 4 },
-          { name: 'Feb', active: 5 },
-          { name: 'Mar', active: 6 },
-          { name: 'Apr', active: 7 }
-        ];
-      case 'warehouse-capacity':
-      default:
-        return [
-          { name: 'Bay A (Dry)', occupancy: 78 },
-          { name: 'Bay B (Cold)', occupancy: 92 },
-          { name: 'Bay C (Hazard)', occupancy: 45 },
-          { name: 'Bay D (Overflow)', occupancy: 60 }
-        ];
-    }
+    return [];
   };
 
   const chartData = getChartData();
 
-  // Table Data Generators
+  // Table data — empty until real data fetched from API
   const getTableData = () => {
-    switch (activeTab) {
-      case 'revenue-trends':
-        return [
-          { id: 'R-1', col1: 'Week 1', col2: '$4,000.00', col3: '$3,200.00', col4: '$800.00' },
-          { id: 'R-2', col1: 'Week 2', col2: '$4,500.00', col3: '$3,800.00', col4: '$700.00' },
-          { id: 'R-3', col1: 'Week 3', col2: '$5,100.00', col3: '$4,100.00', col4: '$1,000.00' },
-          { id: 'R-4', col1: 'Week 4', col2: '$6,200.00', col3: '$4,800.00', col4: '$1,400.00' }
-        ];
-      case 'warehouse-capacity':
-      default:
-        return [
-          { id: 'W-1', col1: 'Bay A (Dry)', col2: '78% Occupied', col3: '39 / 50 Pallets', col4: 'AVAILABLE' },
-          { id: 'W-2', col1: 'Bay B (Cold)', col2: '92% Occupied', col3: '46 / 50 Pallets', col4: 'AVAILABLE' },
-          { id: 'W-3', col1: 'Bay C (Hazard)', col2: '45% Occupied', col3: '9 / 20 Pallets', col4: 'AVAILABLE' },
-          { id: 'W-4', col1: 'Bay D (Overflow)', col2: '60% Occupied', col3: '12 / 20 Pallets', col4: 'AVAILABLE' }
-        ];
-    }
+    return [];
   };
 
   const tableData = getTableData();

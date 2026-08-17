@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import {
   FiCheckCircle, FiCamera, FiAlertTriangle, FiFileText,
@@ -57,17 +58,46 @@ export default function StartWork() {
   const completedCount = passCount + failCount + naCount;
   const completionPercentage = Math.round((completedCount / totalCount) * 100);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (failCount > 0) {
       showToast('⚠️ Fail items detected! Please submit defect report before driving.');
-    } else {
-      showToast('✅ Safety Checklist submitted successfully! All clear.');
+      return;
+    }
+    try {
+      const res = await api.post('/warehouse-portal/safety-checklists', {
+        vehicleRef: 'Driver Truck / Vehicle',
+        trailerRef: 'Main Trailer',
+        items: items,
+        isDraft: false,
+        notes: notes
+      });
+      if (res.data?.success) {
+        showToast('✅ Safety Checklist submitted successfully! All clear.');
+        setTimeout(() => navigate('/driver/dashboard'), 2000);
+      }
+    } catch (err) {
+      console.error('Checklist submit error:', err);
+      showToast('Failed to submit checklist: ' + err.message);
     }
   };
 
-  const handleSaveDraft = () => {
-    showToast('💾 Safety Checklist draft saved.');
+  const handleSaveDraft = async () => {
+    try {
+      const res = await api.post('/warehouse-portal/safety-checklists', {
+        vehicleRef: 'Driver Truck / Vehicle',
+        trailerRef: 'Main Trailer',
+        items: items,
+        isDraft: true,
+        notes: notes
+      });
+      if (res.data?.success) {
+        showToast('💾 Safety Checklist draft saved.');
+      }
+    } catch (err) {
+      console.error('Checklist draft error:', err);
+      showToast('Failed to save draft: ' + err.message);
+    }
   };
 
   return (

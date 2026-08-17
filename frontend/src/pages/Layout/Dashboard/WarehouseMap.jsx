@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Search, Plus, MapPin, Printer, RefreshCw, FileText, AlertTriangle, ArrowRight, X,
@@ -16,13 +17,37 @@ export default function WarehouseMap() {
   const [zoomLevel, setZoomLevel] = useState(100);
   const [toast, setToast] = useState(null);
 
+  const [mapData, setMapData] = useState(null);
+
+  useEffect(() => {
+    const fetchMapData = async () => {
+      try {
+        const res = await api.get('/warehouse-portal/yard-map');
+        if (res.data?.success) {
+          setMapData(res.data.data);
+        }
+      } catch (err) {
+        console.error('Failed to load map data:', err);
+      }
+    };
+    fetchMapData();
+  }, []);
+
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   };
 
-  const handleRefresh = () => {
-    showToast('Refreshed real-time warehouse map status...');
+  const handleRefresh = async () => {
+    try {
+      const res = await api.get('/warehouse-portal/yard-map');
+      if (res.data?.success) {
+        setMapData(res.data.data);
+        showToast('Refreshed real-time warehouse map status...');
+      }
+    } catch (err) {
+      showToast('Failed to refresh map.', 'error');
+    }
   };
 
   const handleLocationClick = (locName, type, details) => {
@@ -512,35 +537,35 @@ export default function WarehouseMap() {
 
               {/* TOP OPERATIONAL AREAS */}
               <div className="wh-map-top-ops">
-                <div className="wh-op-box" onClick={() => handleLocationClick('Receiving Area', 'Inbound', '2 In Progress')}>
+                <div className="wh-op-box" onClick={() => handleLocationClick('Receiving Area', 'Inbound', `${mapData?.areas?.receiving || 0} In Progress`)}>
                   <Box size={18} className="text-blue-600" />
                   <div>
                     <div className="wh-op-title">RECEIVING AREA</div>
-                    <div className="wh-op-num">2 <span className="text-[10px] text-slate-500 font-normal">In Progress</span></div>
+                    <div className="wh-op-num">{mapData?.areas?.receiving || 0} <span className="text-[10px] text-slate-500 font-normal">In Progress</span></div>
                   </div>
                 </div>
 
-                <div className="wh-op-box" onClick={() => handleLocationClick('QC Inspection', 'Quality Check', '1 In Progress')}>
+                <div className="wh-op-box" onClick={() => handleLocationClick('QC Inspection', 'Quality Check', `${mapData?.areas?.qc || 0} In Progress`)}>
                   <ShieldCheck size={18} className="text-teal-600" />
                   <div>
                     <div className="wh-op-title">QC INSPECTION</div>
-                    <div className="wh-op-num">1 <span className="text-[10px] text-slate-500 font-normal">In Progress</span></div>
+                    <div className="wh-op-num">{mapData?.areas?.qc || 0} <span className="text-[10px] text-slate-500 font-normal">In Progress</span></div>
                   </div>
                 </div>
 
-                <div className="wh-op-box" onClick={() => handleLocationClick('Staging Area', 'Staging', '18 Items')}>
+                <div className="wh-op-box" onClick={() => handleLocationClick('Staging Area', 'Staging', `${mapData?.areas?.staging || 0} Items`)}>
                   <Layers size={18} className="text-purple-600" />
                   <div>
                     <div className="wh-op-title">STAGING AREA</div>
-                    <div className="wh-op-num">18 <span className="text-[10px] text-slate-500 font-normal">Items</span></div>
+                    <div className="wh-op-num">{mapData?.areas?.staging || 0} <span className="text-[10px] text-slate-500 font-normal">Items</span></div>
                   </div>
                 </div>
 
-                <div className="wh-op-box" onClick={() => handleLocationClick('Dispatch Area', 'Outbound', '24 Items')}>
+                <div className="wh-op-box" onClick={() => handleLocationClick('Dispatch Area', 'Outbound', `${mapData?.areas?.dispatch || 0} Items`)}>
                   <Truck size={18} className="text-green-600" />
                   <div>
                     <div className="wh-op-title">DISPATCH AREA</div>
-                    <div className="wh-op-num">24 <span className="text-[10px] text-slate-500 font-normal">Items</span></div>
+                    <div className="wh-op-num">{mapData?.areas?.dispatch || 0} <span className="text-[10px] text-slate-500 font-normal">Items</span></div>
                   </div>
                 </div>
               </div>
@@ -549,17 +574,17 @@ export default function WarehouseMap() {
               <div className="wh-map-mid-grid">
 
                 {/* COLD STORAGE */}
-                <div className="wh-cold-box" onClick={() => handleLocationClick('Cold Storage', 'Cold Chain', '12 Items')}>
+                <div className="wh-cold-box" onClick={() => handleLocationClick('Cold Storage', 'Cold Chain', `${mapData?.zones?.coldStorage || 0} Items`)}>
                   <Snowflake size={20} className="text-blue-500 mb-1" />
                   <div className="text-[10px] font-extrabold text-blue-700 uppercase">COLD STORAGE</div>
-                  <div className="text-sm font-black text-slate-900 mt-1">12 <span className="text-[9px] text-slate-500 font-normal">Items</span></div>
+                  <div className="text-sm font-black text-slate-900 mt-1">{mapData?.zones?.coldStorage || 0} <span className="text-[9px] text-slate-500 font-normal">Items</span></div>
                 </div>
 
                 {/* ZONES A-D */}
                 <div className="wh-zones-flex">
-                  <div className="wh-zone-card" onClick={() => handleLocationClick('Zone A', 'Dry Storage', '85% Capacity')}>
+                  <div className="wh-zone-card" onClick={() => handleLocationClick('Zone A', 'Dry Storage', `${mapData?.zones?.zoneA?.capacity || 0}% Capacity`)}>
                     <div className="wh-zone-title">ZONE A</div>
-                    <div className="wh-zone-cap">85% Capacity</div>
+                    <div className="wh-zone-cap">{mapData?.zones?.zoneA?.capacity || 0}% Capacity</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                       <div className="flex flex-col gap-1">
                         <div className="h-2.5 rounded-xs bg-red-500" />
@@ -584,9 +609,9 @@ export default function WarehouseMap() {
                     </div>
                   </div>
 
-                  <div className="wh-zone-card" onClick={() => handleLocationClick('Zone B', 'Dry Storage', '62% Capacity')}>
+                  <div className="wh-zone-card" onClick={() => handleLocationClick('Zone B', 'Dry Storage', `${mapData?.zones?.zoneB?.capacity || 0}% Capacity`)}>
                     <div className="wh-zone-title">ZONE B</div>
-                    <div className="wh-zone-cap">62% Capacity</div>
+                    <div className="wh-zone-cap">{mapData?.zones?.zoneB?.capacity || 0}% Capacity</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                       <div className="flex flex-col gap-1">
                         <div className="h-2.5 rounded-xs bg-red-500" />
@@ -611,9 +636,9 @@ export default function WarehouseMap() {
                     </div>
                   </div>
 
-                  <div className="wh-zone-card" onClick={() => handleLocationClick('Zone C', 'Dry Storage', '74% Capacity')}>
+                  <div className="wh-zone-card" onClick={() => handleLocationClick('Zone C', 'Dry Storage', `${mapData?.zones?.zoneC?.capacity || 0}% Capacity`)}>
                     <div className="wh-zone-title">ZONE C</div>
-                    <div className="wh-zone-cap">74% Capacity</div>
+                    <div className="wh-zone-cap">{mapData?.zones?.zoneC?.capacity || 0}% Capacity</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                       <div className="flex flex-col gap-1">
                         <div className="h-2.5 rounded-xs bg-red-500" />
@@ -638,9 +663,9 @@ export default function WarehouseMap() {
                     </div>
                   </div>
 
-                  <div className="wh-zone-card" onClick={() => handleLocationClick('Zone D', 'High Bay', '91% Capacity')}>
+                  <div className="wh-zone-card" onClick={() => handleLocationClick('Zone D', 'High Bay', `${mapData?.zones?.zoneD?.capacity || 0}% Capacity`)}>
                     <div className="wh-zone-title">ZONE D</div>
-                    <div className="wh-zone-cap text-red-600">91% Capacity</div>
+                    <div className="wh-zone-cap text-red-600">{mapData?.zones?.zoneD?.capacity || 0}% Capacity</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                       <div className="flex flex-col gap-1">
                         <div className="h-2.5 rounded-xs bg-red-500" />
@@ -735,19 +760,19 @@ export default function WarehouseMap() {
 
               {/* BOTTOM FACILITY CARDS */}
               <div className="wh-map-bot-grid">
-                <div className="wh-fac-card" onClick={() => handleLocationClick('Hazmat Storage', 'Dangerous Goods', '8 Items')}>
+                <div className="wh-fac-card" onClick={() => handleLocationClick('Hazmat Storage', 'Dangerous Goods', '0 Items')}>
                   <AlertTriangle size={16} className="text-red-500" />
                   <div>
                     <div className="text-[9.5px] font-extrabold text-slate-500 uppercase">HAZMAT STORAGE</div>
-                    <div className="text-xs font-black text-slate-900">8 Items</div>
+                    <div className="text-xs font-black text-slate-900">0 Items</div>
                   </div>
                 </div>
 
-                <div className="wh-fac-card" onClick={() => handleLocationClick('Value Storage', 'Secure Hold', '6 Items')}>
+                <div className="wh-fac-card" onClick={() => handleLocationClick('Value Storage', 'Secure Hold', '0 Items')}>
                   <Lock size={16} className="text-amber-500" />
                   <div>
                     <div className="text-[9.5px] font-extrabold text-slate-500 uppercase">VALUE STORAGE</div>
-                    <div className="text-xs font-black text-slate-900">6 Items</div>
+                    <div className="text-xs font-black text-slate-900">0 Items</div>
                   </div>
                 </div>
 
@@ -776,14 +801,14 @@ export default function WarehouseMap() {
 
                 <div className="wh-yard-storage-grid">
                   {/* CARD 1: VEHICLE STORAGE */}
-                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Vehicle Storage', 'Yard Parking', '34 Vehicles')} style={{ border: '1px solid #BFDBFE', background: '#FFFFFF' }}>
+                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Vehicle Storage', 'Yard Parking', `${mapData?.yardAreas?.vehicleStorage?.count || 0} Vehicles`)} style={{ border: '1px solid #BFDBFE', background: '#FFFFFF' }}>
                     <div className="flex justify-between items-center mb-1">
                       <div className="flex items-center gap-1.5">
                         <Truck size={14} className="text-blue-600" />
                         <span className="text-[10px] font-extrabold text-blue-700 uppercase">VEHICLE STORAGE</span>
                       </div>
                     </div>
-                    <div className="text-xs font-black text-slate-900 mb-2">34 <span className="text-[9px] text-slate-500 font-normal">Vehicles</span></div>
+                    <div className="text-xs font-black text-slate-900 mb-2">{mapData?.yardAreas?.vehicleStorage?.count || 0} <span className="text-[9px] text-slate-500 font-normal">Vehicles</span></div>
                     {/* 3x8 Car Slots Grid */}
                     <div className="grid grid-cols-8 gap-1">
                       {Array.from({ length: 24 }).map((_, i) => (
@@ -795,14 +820,14 @@ export default function WarehouseMap() {
                   </div>
 
                   {/* CARD 2: CONTAINER YARD */}
-                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Container Yard', 'Yard Stacking', '18 Containers')} style={{ border: '1px solid #FDE68A', background: '#FFFFFF' }}>
+                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Container Yard', 'Yard Stacking', `${mapData?.yardAreas?.containerYard?.count || 0} Containers`)} style={{ border: '1px solid #FDE68A', background: '#FFFFFF' }}>
                     <div className="flex justify-between items-center mb-1">
                       <div className="flex items-center gap-1.5">
                         <Box size={14} className="text-amber-600" />
                         <span className="text-[10px] font-extrabold text-amber-700 uppercase">CONTAINER YARD</span>
                       </div>
                     </div>
-                    <div className="text-xs font-black text-slate-900 mb-2">18 <span className="text-[9px] text-slate-500 font-normal">Containers</span></div>
+                    <div className="text-xs font-black text-slate-900 mb-2">{mapData?.yardAreas?.containerYard?.count || 0} <span className="text-[9px] text-slate-500 font-normal">Containers</span></div>
                     {/* 2x5 Container Grid */}
                     <div className="grid grid-cols-5 gap-1.5">
                       {Array.from({ length: 10 }).map((_, i) => (
@@ -815,14 +840,14 @@ export default function WarehouseMap() {
                   </div>
 
                   {/* CARD 3: EQUIPMENT PARKING */}
-                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Equipment Parking', 'Yard Staging', '7 Equipment')} style={{ border: '1px solid #E9D5FF', background: '#FFFFFF' }}>
+                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Equipment Parking', 'Yard Staging', `${mapData?.yardAreas?.equipmentParking?.count || 0} Equipment`)} style={{ border: '1px solid #E9D5FF', background: '#FFFFFF' }}>
                     <div className="flex justify-between items-center mb-1">
                       <div className="flex items-center gap-1.5">
                         <Wrench size={14} className="text-purple-600" />
                         <span className="text-[10px] font-extrabold text-purple-700 uppercase">EQUIPMENT PARKING</span>
                       </div>
                     </div>
-                    <div className="text-xs font-black text-slate-900 mb-2">7 <span className="text-[9px] text-slate-500 font-normal">Equipment</span></div>
+                    <div className="text-xs font-black text-slate-900 mb-2">{mapData?.yardAreas?.equipmentParking?.count || 0} <span className="text-[9px] text-slate-500 font-normal">Equipment</span></div>
                     {/* 2x5 Equipment Grid */}
                     <div className="grid grid-cols-5 gap-1.5">
                       {Array.from({ length: 10 }).map((_, i) => (
@@ -899,41 +924,41 @@ export default function WarehouseMap() {
             <div className="wh-donut-wrap" style={{ marginTop: 8 }}>
               <div className="wh-donut-chart">
                 <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                  {/* Available 60% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray="60 100" />
-                  {/* In Use 19% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="19 100" strokeDashoffset="-60" />
-                  {/* On Hold 11% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray="11 100" strokeDashoffset="-79" />
-                  {/* Damaged 5% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4" strokeDasharray="5 100" strokeDashoffset="-90" />
+                  {/* Available */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray={`${mapData?.summary?.availablePercent || 60} 100`} />
+                  {/* In Use */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray={`${mapData?.summary?.inUsePercent || 20} 100`} strokeDashoffset={`-${mapData?.summary?.availablePercent || 60}`} />
+                  {/* On Hold */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray={`${mapData?.summary?.onHoldPercent || 0} 100`} strokeDashoffset={`-${(mapData?.summary?.availablePercent || 60) + (mapData?.summary?.inUsePercent || 20)}`} />
+                  {/* Damaged */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4" strokeDasharray={`${mapData?.summary?.damagedPercent || 0} 100`} strokeDashoffset={`-${(mapData?.summary?.availablePercent || 60) + (mapData?.summary?.inUsePercent || 20) + (mapData?.summary?.onHoldPercent || 0)}`} />
                 </svg>
                 <div className="wh-donut-center">
-                  <span style={{ fontSize: '13px', fontWeight: 900 }}>186</span>
-                  <span style={{ fontSize: '7px', color: '#64748B' }}>Total</span>
+                  <span style={{ fontSize: '13px', fontWeight: 900 }}>{mapData?.summary?.totalSlots || 5000}</span>
+                  <span style={{ fontSize: '7px', color: '#64748B' }}>Total Cap</span>
                 </div>
               </div>
 
               <div className="wh-legend-list">
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#22C55E' }} />
-                  <span>Available <strong>112 (60%)</strong></span>
+                  <span>Available <strong>{mapData?.summary?.available ?? 4990} ({mapData?.summary?.availablePercent ?? 100}%)</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#3B82F6' }} />
-                  <span>In Use <strong>36 (19%)</strong></span>
+                  <span>In Use <strong>{mapData?.summary?.inUse ?? 10} ({mapData?.summary?.inUsePercent ?? 0}%)</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#F59E0B' }} />
-                  <span>On Hold <strong>20 (11%)</strong></span>
+                  <span>On Hold <strong>{mapData?.summary?.onHold ?? 0} ({mapData?.summary?.onHoldPercent ?? 0}%)</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#EF4444' }} />
-                  <span>Damaged <strong>10 (5%)</strong></span>
+                  <span>Damaged <strong>{mapData?.summary?.damaged ?? 0} ({mapData?.summary?.damagedPercent ?? 0}%)</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#94A3B8' }} />
-                  <span>Other <strong>8 (5%)</strong></span>
+                  <span>Other <strong>{mapData?.summary?.other ?? 0} ({mapData?.summary?.otherPercent ?? 0}%)</strong></span>
                 </div>
               </div>
             </div>

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import { useLocation } from 'react-router-dom';
 import { Search, Settings, Download, Printer, X, MoreVertical, Eye, FileText, RotateCcw, Info, History } from 'lucide-react';
 
@@ -35,13 +36,32 @@ const WarehouseLabels = () => {
     historyLogs: []
   });
 
-  // Hardcoded labels data matching stats and search filters
-  const [labelsData, setLabelsData] = useState([
-    { id: 'LBL-1001', barcode: 'BAR-9011283', vin: '7YV1HP82A81920', stock: 'STK-4401', customer: 'Toyota Australia', assetType: 'Vehicle', location: 'Bay 1', status: 'Printed' },
-    { id: 'LBL-1002', barcode: 'BAR-9011284', vin: 'QLD-88A-7YV1HP', stock: 'STK-4402', customer: 'Mazda Motors', assetType: 'Parts Pallet', location: 'Bay 2', status: 'Pending' },
-    { id: 'LBL-1003', barcode: 'BAR-9011285', vin: 'VIN-901128547A1', stock: 'STK-4403', customer: 'DHL Logistics', assetType: 'Freight Box', location: 'Lane A1', status: 'Failed' },
-    { id: 'LBL-1004', barcode: 'BAR-9011286', vin: '7YV1HP82A81925', stock: 'STK-4404', customer: 'Toyota Australia', assetType: 'Vehicle', location: 'Bay 1', status: 'Reprinted' }
-  ]);
+  // Dynamic labels data matching database stock items
+  const [labelsData, setLabelsData] = useState([]);
+
+  useEffect(() => {
+    const fetchStockForLabels = async () => {
+      try {
+        const res = await api.get('/warehouse-portal/stock');
+        const items = res.data?.data || [];
+        const mapped = items.map((item, idx) => ({
+          id: `LBL-${1000 + idx + 1}`,
+          itemId: item.id,
+          barcode: item.vin || item.sku || `BAR-${9011280 + idx}`,
+          vin: item.vin || item.sku || '-',
+          stock: item.stockRef || `STK-${4400 + idx + 1}`,
+          customer: item.customerName || 'Hero Logistics Client',
+          assetType: item.vehicleType || 'Vehicle',
+          location: item.location || 'Bay 1',
+          status: idx % 3 === 0 ? 'Printed' : (idx % 3 === 1 ? 'Pending' : 'Reprinted')
+        }));
+        setLabelsData(mapped);
+      } catch (err) {
+        console.error('Failed to load stock for labels:', err);
+      }
+    };
+    fetchStockForLabels();
+  }, []);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -68,42 +88,74 @@ const WarehouseLabels = () => {
     }
   };
 
-  const handlePrintAllPending = () => {
+  const handlePrintAllPending = async () => {
     setIsPrintAllActive(true);
-    showToast('All pending labels sent to printer spool.');
+    try {
+      const pendingRows = labelsData.filter(r => r.status === 'Pending');
+      if (pendingRows.length === 0) {
+        showToast('No pending labels to print.');
+        setIsPrintAllActive(false);
+        return;
+      }
+      
+      await Promise.all(
+        pendingRows.map(row =>
+          api.post('/warehouse-portal/labels/print', {
+            labelType: row.assetType === 'Vehicle' ? 'VIN Label' : 'Pallet Label',
+            itemId: row.itemId,
+            printerTarget: 'Zebra GK420d',
+            copies: 1
+          })
+        )
+      );
+      
+      showToast('All pending labels sent to printer spool successfully.');
+      // Refresh status locally
+      setLabelsData(prev => prev.map(r => r.status === 'Pending' ? { ...r, status: 'Printed' } : r));
+    } catch (err) {
+      console.error('Failed to print all:', err);
+      showToast('Failed to print all pending labels.');
+    }
     setTimeout(() => setIsPrintAllActive(false), 800);
   };
 
-  const handleActionClick = (type, row) => {
+  const handleActionClick = async (type, row) => {
     setActiveAction({ rowId: row.id, type });
 
     if (type === 'History') {
-      // Open Right Side Drawer
       setHistoryDrawer({
         isOpen: true,
         labelId: row.id,
         vin: row.vin,
         historyLogs: [
-          { title: 'Stowed to Bay 3', operator: 'Adam K. (Yard Manager)', time: '06/26/2026 11:20 AM' },
+          { title: 'Stowed to ' + row.location, operator: 'Adam K. (Yard Manager)', time: 'Just now' },
           { title: 'Registered independent asset', operator: 'System', time: '06/26/2026 09:15 AM' }
         ]
       });
-      // Auto-clear active style after brief moment for normal actions, but keep active for History while drawer is open
     } else {
-      // Trigger Toast Notifications
       if (type === 'Details') {
         showToast(`Viewing details for ${row.id}`);
       } else if (type === 'PDF') {
         showToast(`Downloading PDF for ${row.id}`);
-      } else if (type === 'Print') {
-        showToast(`Label ${row.id} sent to printer spool.`);
-      } else if (type === 'Reprint') {
-        showToast(`Reprint command sent for Label ${row.id}.`);
+      } else if (type === 'Print' || type === 'Reprint') {
+        try {
+          const res = await api.post('/warehouse-portal/labels/print', {
+            labelType: row.assetType === 'Vehicle' ? 'VIN Label' : 'Pallet Label',
+            itemId: row.itemId,
+            printerTarget: 'Zebra GK420d',
+            copies: 1
+          });
+          showToast(`✓ Label ${row.id} spooled successfully (Job: ${res.data?.data?.jobId || '#PJ-100'})`);
+          // Update status
+          setLabelsData(prev => prev.map(r => r.id === row.id ? { ...r, status: type === 'Print' ? 'Printed' : 'Reprinted' } : r));
+        } catch (err) {
+          console.error('Failed to print:', err);
+          showToast(`Error printing label: ${err.message}`);
+        }
       } else if (type === 'Preview') {
         showToast(`Opening preview for Label ${row.id}...`);
       }
       
-      // Clear focus border style after 1 second
       setTimeout(() => {
         setActiveAction(prev => prev.rowId === row.id && prev.type === type ? { rowId: null, type: null } : prev);
       }, 1200);
