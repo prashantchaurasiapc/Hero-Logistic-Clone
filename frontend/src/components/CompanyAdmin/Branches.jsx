@@ -56,31 +56,35 @@ export default function Branches() {
 
   const fetchBranches = async () => {
     try {
-      const res = await api.get('/branches');
+      // Use company-admin endpoint which scopes branches to the authenticated company only
+      const res = await api.get('/company-admin/branches');
       const data = res.data?.data || res.data || [];
-      if (Array.isArray(data)) {
-        const formatted = data.map(b => {
-          const rawName = b.name || b.branchName || 'Branch';
-          const cleanName = rawName.replace(/[,.\s]+$/, '').trim();
-          return {
-            id: b.id,
-            branchName: cleanName || 'Sydney Main',
-            branchCode: b.code || b.branchCode || (b.id ? String(b.id).substring(0, 7).toUpperCase() : 'BR-001'),
-            company: b.company?.name || 'Hero Logistics Pty Ltd',
-            country: 'Australia',
-            flag: '🇦🇺',
-            state: b.location || 'NSW',
-            manager: b.managerName || 'Unassigned',
-            status: b.status || 'Active',
-            loads: b._count?.warehouses || 0
-          };
-        });
-        setBranchList(formatted);
-      }
+      const list = Array.isArray(data) ? data : (data.items || []);
+      const formatted = list.map(b => {
+        const rawName = b.name || b.branchName || 'Branch';
+        const cleanName = rawName.replace(/[,.\s]+$/, '').trim();
+        return {
+          id: b.id,
+          branchName: cleanName || 'Sydney Main',
+          branchCode: b.code || b.branchCode || (b.id ? String(b.id).substring(0, 7).toUpperCase() : 'BR-001'),
+          company: b.company?.name || 'Hero Logistics Pty Ltd',
+          country: 'Australia',
+          flag: '🇦🇺',
+          state: b.location || 'NSW',
+          manager: b.managerName || 'Unassigned',
+          status: b.status || 'Active',
+          loads: b._count?.loads || b._count?.warehouses || 0,
+          drivers: b._count?.drivers || 0,
+          users: b._count?.users || 0,
+          warehouses: b._count?.warehouses || 0
+        };
+      });
+      setBranchList(formatted);
     } catch (err) {
       console.error('Error fetching branches:', err);
     }
   };
+
 
   const getStatusBadge = (status) => {
     switch(status) {
@@ -138,40 +142,56 @@ export default function Branches() {
     e.preventDefault();
     const fd = new FormData(e.target);
     const bName = fd.get('branchName') || 'New Branch';
-    const bCode = fd.get('branchCode') || 'NEW-001';
-    const bLoc = fd.get('address') || 'NSW';
-    const bMgr = fd.get('manager') || 'Unassigned';
-
-    const newBranchObj = {
-      id: Date.now().toString(),
-      branchName: bName,
-      branchCode: bCode,
-      company: 'Hero Logistics Pty Ltd',
-      country: 'Australia',
-      flag: '🇦🇺',
-      state: bLoc,
-      manager: bMgr,
-      status: 'Active',
-      loads: 0
-    };
+    const bLoc = fd.get('address') || null;
 
     try {
-      const res = await api.post('/branches', {
+      await api.post('/company-admin/branches', {
         name: bName,
         location: bLoc,
-        code: bCode
       });
-      const created = res.data?.data || res.data;
-      if (created && created.id) {
-        newBranchObj.id = created.id;
-      }
+      // Refresh from DB so isolation is preserved
+      await fetchBranches();
+      setIsAddingBranch(false);
     } catch (err) {
-      console.warn('API save branch fallback:', err);
+      console.error('Error creating branch:', err);
+      alert(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to create branch. Please try again.');
     }
-
-    setBranchList(prev => [newBranchObj, ...prev]);
-    setIsAddingBranch(false);
   };
+
+  const handleEditBranch = async (e) => {
+    e.preventDefault();
+    if (!editBranchModal?.id) return;
+    const fd = new FormData(e.target);
+    const bName = fd.get('branchName') || editBranchModal.branchName;
+    const bLoc = fd.get('address') || editBranchModal.state;
+
+    try {
+      await api.put(`/company-admin/branches/${editBranchModal.id}`, {
+        name: bName,
+        location: bLoc,
+      });
+      await fetchBranches();
+      setEditBranchModal(null);
+    } catch (err) {
+      console.error('Error updating branch:', err);
+      alert(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to update branch. Please try again.');
+    }
+  };
+
+  const handleDeleteBranch = async (branchId) => {
+    if (!window.confirm('Are you sure you want to delete this branch? All associated users, drivers, and warehouses will be unlinked.')) return;
+    try {
+      await api.delete(`/company-admin/branches/${branchId}`);
+      // If the deleted branch was selected, deselect it
+      if (selectedBranch?.id === branchId) setSelectedBranch(null);
+      await fetchBranches();
+    } catch (err) {
+      console.error('Error deleting branch:', err);
+      alert(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to delete branch.');
+    }
+  };
+
+
 
   const handleExportCSV = () => {
     if (branchList.length === 0) {
@@ -2592,66 +2612,49 @@ export default function Branches() {
       {/* EDIT BRANCH MODAL */}
       {editBranchModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150">
+          <form onSubmit={handleEditBranch} className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
                 <Edit size={16} className="text-purple-600" /> Edit Branch Details ({editBranchModal.branchCode})
               </h3>
-              <button onClick={() => setEditBranchModal(null)} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
+              <button type="button" onClick={() => setEditBranchModal(null)} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
             </div>
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">Branch Name *</label>
-                <input type="text" value={editBranchModal.branchName || ''} onChange={e => setEditBranchModal({...editBranchModal, branchName: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Branch Code *</label>
-                  <input type="text" value={editBranchModal.branchCode || ''} onChange={e => setEditBranchModal({...editBranchModal, branchCode: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
-                  <select value={editBranchModal.status || 'Active'} onChange={e => setEditBranchModal({...editBranchModal, status: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer">
-                    <option value="Active">Active</option>
-                    <option value="Pending Setup">Pending Setup</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Manager Name</label>
-                  <input type="text" value={editBranchModal.manager || ''} onChange={e => setEditBranchModal({...editBranchModal, manager: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">State / Region</label>
-                  <input type="text" value={editBranchModal.state || ''} onChange={e => setEditBranchModal({...editBranchModal, state: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
+                <input
+                  name="branchName"
+                  type="text"
+                  defaultValue={editBranchModal.branchName || ''}
+                  required
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold"
+                />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">Company Entity</label>
-                <input type="text" value={editBranchModal.company || ''} onChange={e => setEditBranchModal({...editBranchModal, company: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">Location / Address</label>
+                <input
+                  name="address"
+                  type="text"
+                  defaultValue={editBranchModal.state || ''}
+                  placeholder="e.g. 123 Industrial Dr, Sydney NSW 2000"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold"
+                />
               </div>
             </div>
-            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
-              <button onClick={() => setEditBranchModal(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
-              <button onClick={async () => {
-                try {
-                  await api.put(`/branches/${editBranchModal.id}`, {
-                    name: editBranchModal.branchName,
-                    location: editBranchModal.state
-                  });
-                } catch (e) {
-                  console.warn('API update branch fallback:', e);
-                }
-                setBranchList(prev => prev.map(b => b.id === editBranchModal.id ? editBranchModal : b));
-                if (selectedBranch && selectedBranch.id === editBranchModal.id) {
-                  setSelectedBranch(editBranchModal);
-                }
-                setEditBranchModal(null);
-              }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => handleDeleteBranch(editBranchModal.id)}
+                className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg font-bold hover:bg-red-100 text-xs cursor-pointer"
+              >
+                Delete Branch
+              </button>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setEditBranchModal(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
+              </div>
             </div>
-          </div>
+          </form>
         </div>
       )}
 

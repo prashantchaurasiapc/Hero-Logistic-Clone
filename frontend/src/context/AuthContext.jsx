@@ -37,7 +37,8 @@ export const AuthProvider = ({ children }) => {
             name: fetchedUser.name,
             role: fetchedUser.role,
             company: fetchedUser.company?.name || 'Hero Logistics',
-            email: fetchedUser.email
+            email: fetchedUser.email,
+            permissions: fetchedUser.permissions || {}
           }));
         } else {
           // If the backend returns success: false
@@ -70,9 +71,11 @@ export const AuthProvider = ({ children }) => {
           name: loggedInUser.name,
           role: loggedInUser.role,
           company: loggedInUser.company?.name || 'Hero Logistics',
-          email: loggedInUser.email
+          email: loggedInUser.email,
+          permissions: loggedInUser.permissions || {}
         }));
         setIsAuthenticated(true);
+
         return { success: true, user: res.data.data.user };
       }
       return { success: false, message: 'Invalid response from server' };

@@ -1527,8 +1527,10 @@ model AiActivityLog {
 
 model CustomRole {
   id        String   @id @default(uuid())
-  name      String // e.g., "DISPATCHER"
-  companyId String? // Optional: If null, it's a global platform role
+  name      String   // e.g., "Dispatcher"
+  slug      String?  // machine-readable key e.g. "DISPATCHER" — unique for system roles
+  isSystem  Boolean  @default(false) @map("is_system") // System roles cannot be deleted or renamed
+  companyId String?  // Optional: If null, it's a global platform role
   company   Company? @relation(fields: [companyId], references: [id])
 
   permissions CustomPermission[]
@@ -1537,8 +1539,11 @@ model CustomRole {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([slug, companyId]) // unique per company (or globally if companyId is null)
   @@map("custom_role")
 }
+
+
 
 model CustomPermission {
   id     String     @id @default(uuid())

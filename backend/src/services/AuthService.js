@@ -73,8 +73,59 @@ class AuthService {
       }).catch(() => {});
     }
 
+    // Resolve permissions with parent-child hierarchy
+    const roleSlug = user.customRole?.slug || user.role;
+    let masterPerms = {};
+    if (roleSlug) {
+      const masterRole = await prisma.customRole.findFirst({
+        where: { slug: roleSlug, companyId: null, isSystem: true },
+        include: { permissions: true }
+      });
+      if (masterRole?.permissions) {
+        masterRole.permissions.forEach(p => {
+          try { masterPerms[p.module] = JSON.parse(p.actionString); }
+          catch (e) { masterPerms[p.module] = p.actionString; }
+        });
+      }
+    }
+
+    if (!user.companyId || user.role === 'SUPER_ADMIN') {
+      user.permissions = masterPerms;
+    } else {
+      let companyPerms = {};
+      const companyRole = await prisma.customRole.findFirst({
+        where: { slug: roleSlug, companyId: user.companyId },
+        include: { permissions: true }
+      });
+      if (companyRole?.permissions) {
+        companyRole.permissions.forEach(p => {
+          try { companyPerms[p.module] = JSON.parse(p.actionString); }
+          catch (e) { companyPerms[p.module] = p.actionString; }
+        });
+      }
+
+      const effectivePerms = {};
+      Object.entries(masterPerms).forEach(([mod, mActions]) => {
+        effectivePerms[mod] = {};
+        if (typeof mActions === 'object' && mActions !== null) {
+          Object.entries(mActions).forEach(([action, mVal]) => {
+            if (mVal === false) {
+              effectivePerms[mod][action] = false;
+            } else {
+              effectivePerms[mod][action] = companyPerms[mod]?.[action] !== undefined
+                ? Boolean(companyPerms[mod][action])
+                : Boolean(mVal);
+            }
+          });
+        }
+      });
+      user.permissions = effectivePerms;
+    }
+
     return { user, accessToken, refreshToken };
+
   }
+
 
   async logout(refreshToken) {
     if (!refreshToken || !prisma.userSession) return;
