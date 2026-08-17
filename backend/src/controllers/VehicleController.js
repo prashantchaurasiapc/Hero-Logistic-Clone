@@ -70,7 +70,7 @@ const ALLOWED_VEHICLE_FIELDS = new Set([
   'regState', 'regIssueDate', 'regExpiryDate', 'maxDistPerTripKm', 
   'primaryMechanic', 'preferredRoutes', 'preferredRegions', 'dgCertified', 
   'hvCertified', 'notes', 'status', 'companyId', 'currentLocation', 
-  'currentSpeed', 'fuelLevel', 'engineTemp', 'lastPing', 'currentDriverId', 'branchId'
+  'currentSpeed', 'fuelLevel', 'engineTemp', 'lastPing', 'currentDriverId', 'branchId', 'photoUrl'
 ]);
 
 const sanitizePayload = (rawPayload) => {
@@ -120,6 +120,10 @@ const sanitizePayload = (rawPayload) => {
     if (!isNaN(num)) clean.odometerKm = num;
   }
 
+  if (rawPayload.photoUrl !== undefined || rawPayload.avatarUrl !== undefined || rawPayload.img !== undefined || rawPayload.photoPreview !== undefined) {
+    clean.photoUrl = rawPayload.photoUrl || rawPayload.avatarUrl || rawPayload.img || rawPayload.photoPreview || null;
+  }
+
   if (rawPayload.notes !== undefined) {
     clean.notes = rawPayload.notes;
   }
@@ -147,6 +151,23 @@ exports.create = async (req, res, next) => {
       branchIdVal = req.user.branchId;
     }
 
+    let validCategory = 'TRUCK';
+    if (rawPayload.category) {
+      const c = String(rawPayload.category).toUpperCase();
+      if (['TRUCK', 'TRAILER'].includes(c)) validCategory = c;
+    }
+
+    let validStatus = 'IDLE';
+    if (rawPayload.status) {
+      const s = String(rawPayload.status).toUpperCase().replace(/\s+/g, '_');
+      if (['IN_TRANSIT', 'IDLE', 'MAINTENANCE', 'ALERT'].includes(s)) validStatus = s;
+      else if (s === 'ACTIVE' || s === 'AVAILABLE') validStatus = 'IDLE';
+    }
+
+    const regoVal = rawPayload.rego && String(rawPayload.rego).trim() ? String(rawPayload.rego).trim() : `REG-${Math.floor(10000 + Math.random() * 90000)}`;
+    const vinVal = rawPayload.vin && String(rawPayload.vin).trim() ? String(rawPayload.vin).trim() : `VIN-${Math.floor(100000 + Math.random() * 900000)}`;
+    const photoUrlVal = rawPayload.photoUrl || rawPayload.avatarUrl || rawPayload.img || rawPayload.photoPreview || null;
+
     const vehicleData = {
       rego: regoVal,
       vin: vinVal,
@@ -159,6 +180,7 @@ exports.create = async (req, res, next) => {
       fuelType: rawPayload.fuelType || 'Diesel',
       odometerKm: rawPayload.odometerKm && !isNaN(rawPayload.odometerKm) ? parseInt(rawPayload.odometerKm) : 0,
       maintenanceDueKm: rawPayload.maintenanceDueKm && !isNaN(rawPayload.maintenanceDueKm) ? parseInt(rawPayload.maintenanceDueKm) : null,
+      photoUrl: photoUrlVal,
       companyId: effectiveCompanyId,
       branchId: branchIdVal
     };

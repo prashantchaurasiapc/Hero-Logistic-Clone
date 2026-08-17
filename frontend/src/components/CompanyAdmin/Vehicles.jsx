@@ -14,16 +14,28 @@ import {
 } from 'lucide-react';
 
 // Helper upload components moved outside to prevent unmounting on re-renders
-const VehiclePhotoUploadSection = () => {
-  const [photoUrl, setPhotoUrl] = React.useState("https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop");
+const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
+  const defaultPhoto = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop";
+  const [photoUrl, setPhotoUrl] = React.useState(value || defaultPhoto);
   const fileInputRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (value !== undefined && value !== null) {
+      setPhotoUrl(value || defaultPhoto);
+    }
+  }, [value]);
+
+  const updatePhoto = (newUrl) => {
+    setPhotoUrl(newUrl);
+    if (onChange) onChange(newUrl);
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoUrl(reader.result);
+        updatePhoto(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -42,10 +54,10 @@ const VehiclePhotoUploadSection = () => {
           <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
         </div>
         <img 
-          src={photoUrl} 
+          src={photoUrl || defaultPhoto} 
           onError={(e) => {
             e.target.onerror = null;
-            e.target.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop";
+            e.target.src = defaultPhoto;
           }}
           className="w-full h-full object-cover" 
           alt="Vehicle Photo" 
@@ -60,10 +72,10 @@ const VehiclePhotoUploadSection = () => {
       />
       <input 
         type="text" 
-        name="photoUrl"
+        name={name}
         placeholder="https://images.unsplash.com..." 
         value={photoUrl} 
-        onChange={(e) => setPhotoUrl(e.target.value)} 
+        onChange={(e) => updatePhoto(e.target.value)} 
         className="w-full text-center text-[9px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded mt-2 focus:outline-none focus:border-purple-400 text-gray-500 overflow-hidden text-ellipsis" 
       />
     </div>
@@ -258,7 +270,7 @@ const Vehicles = () => {
       if (res.data && res.data.success) {
         const mapped = res.data.data.map(v => ({
           id: v.id,
-          displayId: v.rego || v.id.slice(0, 6).toUpperCase(),
+          displayId: v.rego || v.plate || (v.id && String(v.id).includes('-') ? v.id.split('-')[0].toUpperCase() : String(v.id)),
           reg: v.rego || v.plate || '—',
           branch: v.branch || 'N/A',
           driver: v.driver ? `${v.driver.firstName || ''} ${v.driver.lastName || ''}`.trim() || v.driver.driverCode : '—',
@@ -272,7 +284,8 @@ const Vehicles = () => {
           compliance: v.compliance || 'Compliant',
           nextServiceDate: v.maintenanceDueKm ? `${v.maintenanceDueKm.toLocaleString()} km` : '—',
           nextServiceDays: '',
-          img: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.split('Photo:')[1].split('|')[0].trim() : '') || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60',
+          img: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || (((v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.category && v.category.toLowerCase().includes('car'))) ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60"),
+          photoUrl: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || (((v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.category && v.category.toLowerCase().includes('car'))) ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60"),
           color: v.color || '',
           vin: v.vin || '',
           engineNumber: v.engineNumber || '',
@@ -673,6 +686,7 @@ const Vehicles = () => {
     e.preventDefault();
     const fd = new FormData(e.target);
     try {
+      const photoVal = fd.get('photoUrl') || null;
       const payload = {
         rego: (fd.get('reg') || '').toUpperCase(),
         make: fd.get('make') || '',
@@ -691,7 +705,8 @@ const Vehicles = () => {
         preferredRegions: fd.get('preferredRegions') || '',
         maxDistPerTripKm: fd.get('maxDist') ? parseInt(fd.get('maxDist')) : undefined,
         dgCertified: fd.get('dgCertified') === 'Yes',
-        notes: fd.get('photoUrl') ? `${fd.get('notes') || ''} | Photo:${fd.get('photoUrl')}` : (fd.get('notes') || '')
+        photoUrl: photoVal,
+        notes: fd.get('notes') || ''
       };
       await api.post('/vehicles', payload);
       fetchVehicles();
@@ -3615,11 +3630,8 @@ const Vehicles = () => {
               <button onClick={closeEditModal} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
               <button onClick={async (e) => {
                 try {
-                  const photoStr = editVehicleModal.img || editVehicleModal.photoUrl;
+                  const photoStr = editVehicleModal.img || editVehicleModal.photoUrl || null;
                   const cleanNotes = editVehicleModal.notes ? editVehicleModal.notes.split('Photo:')[0].trim() : '';
-                  const combinedNotes = photoStr 
-                    ? (cleanNotes ? `${cleanNotes} | Photo:${photoStr}` : `Photo:${photoStr}`)
-                    : cleanNotes;
 
                   const payload = {
                     rego: editVehicleModal.reg || editVehicleModal.rego,
@@ -3629,7 +3641,8 @@ const Vehicles = () => {
                     status: editVehicleModal.status,
                     category: editVehicleModal.type,
                     odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
-                    notes: combinedNotes
+                    photoUrl: photoStr,
+                    notes: cleanNotes
                   };
                   await api.put(`/vehicles/${editVehicleModal.id}`, payload);
                   fetchVehicles();
@@ -4107,16 +4120,17 @@ const Vehicles = () => {
                            <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
                                  <img 
-                                     src={v.img} 
-                                     alt="Vehicle" 
-                                     onError={(e) => {
-                                        e.target.onerror = null; 
-                                        e.target.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
-                                     }}
-                                     className="w-10 h-8 rounded object-cover border border-gray-200 shadow-sm" 
+                                      src={v.photoUrl || v.img} 
+                                      alt="Vehicle" 
+                                      onError={(e) => {
+                                         e.target.onerror = null; 
+                                         const isCar = (v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.category && v.category.toLowerCase().includes('car'));
+                                         e.target.src = isCar ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
+                                      }}
+                                      className="w-10 h-8 rounded object-cover border border-gray-200 shadow-sm" 
                                   />
                                  <div>
-                                    <div className="text-[12px] font-bold text-gray-900 whitespace-nowrap">{v.id} - {v.make}</div>
+                                    <div className="text-[12px] font-bold text-gray-900 whitespace-nowrap">{v.displayId || v.reg || v.id} - {v.make}</div>
                                     <div className="text-[10px] text-gray-500 font-medium whitespace-nowrap">{v.reg}</div>
                                  </div>
                               </div>
