@@ -184,16 +184,25 @@ export default function CurrentStock() {
   const location = useLocation();
   const isYard = location.pathname ? location.pathname.startsWith('/yard') : false;
 
-  const [stockItems, setStockItems] = useState(initialStockItems);
+  // Phase A: start with empty — never show mock data as a fallback
+  const [stockItems, setStockItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
 
   useEffect(() => {
     const fetchStock = async () => {
       setLoading(true);
+      setFetchError(null);
       try {
-        const res = await api.get('/load-items');
-        if (res.data && res.data.success && res.data.data.length > 0) {
-          const formatted = res.data.data.map((item, idx) => {
+        // Phase A fix: was /load-items (wrong endpoint), now uses authenticated warehouse portal stock API
+        const res = await api.get('/warehouse-portal/stock');
+        if (res.data && res.data.success) {
+          const items = res.data.data || [];
+          if (items.length === 0) {
+            setStockItems([]);
+            return;
+          }
+          const formatted = items.map((item, idx) => {
             const hasVehicleInfo = item.make || item.model || item.rego || item.vin || item.vehicleType;
             const title = (item.make || item.model)
               ? `${item.make || ''} ${item.model || ''}`.trim()
@@ -206,7 +215,7 @@ export default function CurrentStock() {
               ? `${item.zone || 'Yard A'} / ${item.row || 'R1'} / ${item.bay || 'B01'}${item.position ? ' / ' + item.position : ''}`
               : (item.locationDetail || 'Depot Bay 01');
 
-            const custName = item.customer?.name || item.load?.customer?.name || 'ABC Motors';
+            const custName = item.customer?.name || item.load?.customer?.name || 'Unassigned';
             const loadName = item.load?.loadNumber || (item.loadLane?.name ? item.loadLane.name : (item.loadId ? `LD-${item.loadId.slice(0, 6)}` : 'Unassigned'));
             const loadSub = item.loadLane?.name || (item.stagingArea?.name || 'Unassigned');
 
@@ -222,12 +231,6 @@ export default function CurrentStock() {
               statusLabel = 'Ready';
               statusColor = 'green-outline';
             }
-
-            const imgFallback = item.photos?.[0]?.photoUrl || 
-              (idx % 4 === 0 ? 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=400&q=80' :
-               idx % 4 === 1 ? 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=400&q=80' :
-               idx % 4 === 2 ? 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=400&q=80' :
-               'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80');
 
             return {
               id: item.id || String(idx),
@@ -248,18 +251,29 @@ export default function CurrentStock() {
               loadDetail: loadSub,
               customer: custName,
               updated: item.receivedDate ? new Date(item.receivedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(item.receivedDate).toLocaleDateString() : 'Today',
-              receivedDate: item.receivedDate ? new Date(item.receivedDate).toLocaleString() : '19/07/2026 09:15 AM',
+              receivedDate: item.receivedDate ? new Date(item.receivedDate).toLocaleString() : '-',
               condition: item.damageReportReq ? 'Damage Noted' : 'Good',
               notes: item.notes || '-',
-              image: imgFallback,
+              image: item.photos?.[0]?.photoUrl || null,
               iconType: hasVehicleInfo ? 'car' : 'pallet'
             };
           });
           setStockItems(formatted);
-          setSelectedItem(formatted[0]);
+          setSelectedItem(formatted[0] || null);
+        } else {
+          // API returned but with a non-success flag — surface this as an error
+          setFetchError('Unable to load stock data. Please try again.');
+          setStockItems([]);
         }
       } catch (err) {
         console.error('Error fetching stock items:', err);
+        // Do NOT fall back to mock data — show a real error so issues are visible
+        setFetchError(
+          err?.response?.data?.error?.message ||
+          err?.response?.data?.message ||
+          'Failed to load stock data. Check your connection and try again.'
+        );
+        setStockItems([]);
       } finally {
         setLoading(false);
       }
@@ -283,7 +297,7 @@ export default function CurrentStock() {
   const [viewMode, setViewMode] = useState('list');
 
   // Selection & Details panel state
-  const [selectedItem, setSelectedItem] = useState(initialStockItems[0]);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [isDetailExpanded, setIsDetailExpanded] = useState(false);
   const [viewModalItem, setViewModalItem] = useState(null);
 

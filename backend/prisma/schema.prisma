@@ -457,6 +457,47 @@ enum WarehouseDocType {
 }
 
 // ----------------------------------------------------------------------
+// WAREHOUSE & YARD: YARD ATTENDANT TASK MANAGEMENT (PHASE D)
+// ----------------------------------------------------------------------
+
+model YardTask {
+  id          String    @id @default(uuid())
+  title       String
+  description String?   @db.Text
+  status      String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  priority    String    @default("MEDIUM")  // LOW, MEDIUM, HIGH, URGENT
+  taskType    String    @default("GENERAL") // SPOT, RELOCATE, INSPECT, AUDIT, GENERAL
+  
+  gate        String?   // e.g. "Gate 4"
+  trailerRef  String?   // e.g. "TR-9410"
+  dueDate     DateTime?
+  completedAt DateTime?
+  notes       String?   @db.Text
+
+  driverId    String?
+  driver      Driver?   @relation(fields: [driverId], references: [id])
+
+  userId      String?
+  user        User?     @relation("AssignedYardTasks", fields: [userId], references: [id])
+
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([driverId])
+  @@index([warehouseId])
+  @@index([status])
+  @@map("yard_task")
+}
+
+// ----------------------------------------------------------------------
 // SUPER ADMIN & TENANT CORE MODELS
 // ----------------------------------------------------------------------
 model User {
@@ -498,6 +539,7 @@ model User {
   conversationParts ConversationParticipant[]
   sentMessages      Message[]
   createdReports    Report[]                  @relation("ReportCreator")
+  yardTasks         YardTask[]                @relation("AssignedYardTasks")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -564,6 +606,7 @@ model Company {
   offlineSyncItems   OfflineSyncItem[]
   driverMessages     DriverMessage[]
   incidents          DriverIncident[]
+  yardTasks          YardTask[]
 
   lanePricingRules      LanePricingRule[]
   vehicleTypeRates      VehicleTypeRate[]
@@ -881,6 +924,7 @@ model Driver {
   offlineSyncItems   OfflineSyncItem[]
   driverMessages     DriverMessage[]
   incidents          DriverIncident[]
+  yardTasks          YardTask[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1857,6 +1901,7 @@ model Warehouse {
   labelPrints  WarehouseLabelPrint[]
   printJobs    PrintSpoolerJob[]
   documents    Document[]
+  yardTasks    YardTask[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -316,7 +316,7 @@ exports.getStockById = async (req, res, next) => {
       include: {
         load: { include: { customer: true, driver: true, truck: true, trailer: true } },
         customer: true,
-        warehouse: true,
+        warehouse: { include: { branch: true } },
         loadLane: true,
         stagingArea: true,
         photos: true,
@@ -327,7 +327,16 @@ exports.getStockById = async (req, res, next) => {
       }
     });
 
+    // Not found — return 404 without revealing whether it belongs to another tenant
     if (!item) {
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'Stock item not found'
+      }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    // Tenant ownership check — item must belong to the authenticated tenant
+    if (req.tenantId && item.warehouse?.branch?.companyId !== req.tenantId) {
       return sendError(res, {
         code: ERROR_CODES.NOT_FOUND,
         message: 'Stock item not found'
@@ -347,11 +356,36 @@ exports.getStockById = async (req, res, next) => {
 exports.moveStock = async (req, res, next) => {
   try {
     const { itemId, toZone, toRow, toBay, toPosition, toLaneId, toStagingAreaId, reason } = req.body;
+    // Always resolve identity from JWT — never trust frontend-supplied IDs
     const userId = req.user?.userId || req.user?.id;
 
-    const item = await prisma.loadItem.findUnique({ where: { id: itemId } });
+    if (!itemId) {
+      return sendError(res, { code: ERROR_CODES.VALIDATION_ERROR, message: 'itemId is required' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    // Fetch item WITH warehouse+branch to enable tenant ownership check
+    const item = await prisma.loadItem.findUnique({
+      where: { id: itemId },
+      include: { warehouse: { include: { branch: true } } }
+    });
+
+    // Return 404 for missing OR cross-tenant — do not leak existence to other tenants
     if (!item) {
       return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Item not found' }, HTTP_STATUS.NOT_FOUND);
+    }
+    if (req.tenantId && item.warehouse?.branch?.companyId !== req.tenantId) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Item not found' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    // If moving to a lane, verify the lane belongs to the same tenant
+    if (toLaneId) {
+      const lane = await prisma.loadLane.findUnique({
+        where: { id: toLaneId },
+        include: { warehouse: { include: { branch: true } } }
+      });
+      if (!lane || (req.tenantId && lane.warehouse?.branch?.companyId !== req.tenantId)) {
+        return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Load lane not found' }, HTTP_STATUS.NOT_FOUND);
+      }
     }
 
     const fromLocation = `${item.zone || 'Yard'} / ${item.row || ''} / ${item.bay || ''} / ${item.position || ''}`;
@@ -372,7 +406,7 @@ exports.moveStock = async (req, res, next) => {
         }
       });
 
-      // 2. Create Movement Audit Trail
+      // 2. Create Movement Audit Trail — performedById always from JWT, never from payload
       const movement = await tx.itemMovement.create({
         data: {
           itemId: item.id,
@@ -624,11 +658,32 @@ exports.stageItemsToLane = async (req, res, next) => {
   try {
     const { laneId } = req.params;
     const { itemIds = [] } = req.body;
+    // Always resolve identity from JWT
     const userId = req.user?.userId || req.user?.id;
 
-    const lane = await prisma.loadLane.findUnique({ where: { id: laneId } });
-    if (!lane) {
+    if (!Array.isArray(itemIds) || itemIds.length === 0) {
+      return sendError(res, { code: ERROR_CODES.VALIDATION_ERROR, message: 'itemIds array is required and must not be empty' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    // Verify lane exists AND belongs to the authenticated tenant
+    const lane = await prisma.loadLane.findUnique({
+      where: { id: laneId },
+      include: { warehouse: { include: { branch: true } } }
+    });
+    if (!lane || (req.tenantId && lane.warehouse?.branch?.companyId !== req.tenantId)) {
       return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Load lane not found' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    // Verify every item belongs to the same tenant before staging
+    if (req.tenantId) {
+      const items = await prisma.loadItem.findMany({
+        where: { id: { in: itemIds } },
+        include: { warehouse: { include: { branch: true } } }
+      });
+      const crossTenant = items.some(i => i.warehouse?.branch?.companyId !== req.tenantId);
+      if (crossTenant || items.length !== itemIds.length) {
+        return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'One or more items not found' }, HTTP_STATUS.NOT_FOUND);
+      }
     }
 
     const updated = await prisma.$transaction(async (tx) => {
@@ -822,7 +877,17 @@ exports.getDispatchReady = async (req, res, next) => {
 exports.dispatchLoad = async (req, res, next) => {
   try {
     const { loadId } = req.params;
+    // Always resolve identity from JWT — never trust payload
     const userId = req.user?.userId || req.user?.id;
+
+    // Verify the load belongs to the authenticated tenant before any mutation
+    const existingLoad = await prisma.load.findUnique({ where: { id: loadId } });
+    if (!existingLoad) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Load not found' }, HTTP_STATUS.NOT_FOUND);
+    }
+    if (req.tenantId && existingLoad.companyId !== req.tenantId) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Load not found' }, HTTP_STATUS.NOT_FOUND);
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const load = await tx.load.update({
@@ -834,6 +899,20 @@ exports.dispatchLoad = async (req, res, next) => {
         where: { loadId },
         data: { stockStatus: 'IN_TRANSIT' }
       });
+
+      // Create an audit movement record for dispatch
+      await tx.itemMovement.create({
+        data: {
+          itemId: (await tx.loadItem.findFirst({ where: { loadId } }))?.id || loadId,
+          type: 'DISPATCH',
+          fromLocation: 'Load Lane',
+          toLocation: 'Outbound / In Transit',
+          reason: 'Load Dispatched',
+          result: 'COMPLETED',
+          performedById: userId || null,
+          loadId
+        }
+      }).catch(() => null); // Non-fatal: audit trail failure should not block dispatch
 
       return load;
     });
@@ -1228,52 +1307,73 @@ exports.getSpoolerQueue = async (req, res, next) => {
 
 exports.getSafetyChecklists = async (req, res, next) => {
   try {
-    const checklistItems = [
-      { id: 1, label: 'Brakes (service & park brake)', status: 'PASS' },
-      { id: 2, label: 'Tyres – condition & pressure', status: 'PASS' },
-      { id: 3, label: 'Lights – all working (head, tail, indicators, brake, reverse)', status: 'PASS' },
-      { id: 4, label: 'Indicators / Hazard lights', status: 'PASS' },
-      { id: 5, label: 'Steering & Suspension', status: 'PASS' },
-      { id: 6, label: 'Windscreen / Windows / Mirrors', status: 'PASS' },
-      { id: 7, label: 'Wipers / Washer', status: 'PASS' },
-      { id: 8, label: 'Horn', status: 'PASS' },
-      { id: 9, label: 'Seat belts / Airbag', status: 'PASS' },
-      { id: 10, label: 'Fire extinguisher', status: 'PASS' },
-      { id: 11, label: 'First aid kit', status: 'PASS' },
-      { id: 12, label: 'Load securement equipment', status: 'PASS' },
-      { id: 13, label: 'Fluid levels (engine oil, coolant, brake fluid)', status: 'PASS' },
-      { id: 14, label: 'Fuel level sufficient for trip', status: 'PASS' },
-      { id: 15, label: 'Leaks (oil, fuel, coolant, air)', status: 'PASS' },
-      { id: 16, label: 'Body / Chassis / Coupling', status: 'PASS' },
-      { id: 17, label: 'Load area clear & safe', status: 'PASS' },
-      { id: 18, label: 'Fatigue / Fitness for driving', status: 'PASS' },
-      { id: 19, label: 'Load secured / Straps & chains checked', status: 'NA' },
-      { id: 20, label: 'Other (notes or additional checks)', status: 'NOT_CHECKED' }
-    ];
+    // Resolve authenticated user from JWT — never trust frontend identity
+    const userId = req.user?.userId || req.user?.id;
+    if (!userId) {
+      return sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Unable to identify authenticated user.' }, HTTP_STATUS.UNAUTHORIZED);
+    }
+
+    // Resolve yard attendant/driver record via User → Driver link
+    const driver = await prisma.driver.findUnique({
+      where: { userId },
+      select: { id: true, companyId: true }
+    });
+
+    if (!driver) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'No staff profile found for this account.' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    // Tenant safety — ensure the driver belongs to the authenticated tenant
+    if (req.tenantId && driver.companyId !== req.tenantId) {
+      return sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Access denied.' }, HTTP_STATUS.FORBIDDEN);
+    }
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    // Fetch today's checklist for this driver
+    const currentChecklist = await prisma.preStartChecklist.findFirst({
+      where: {
+        driverId: driver.id,
+        companyId: driver.companyId,
+        date: { gte: todayStart }
+      },
+      include: {
+        items: { orderBy: { itemNumber: 'asc' } }
+      },
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }]
+    });
+
+    // Fetch recent checklist history (last 10 completed)
+    const recentChecklists = await prisma.preStartChecklist.findMany({
+      where: {
+        driverId: driver.id,
+        companyId: driver.companyId,
+        isDraft: false
+      },
+      orderBy: { date: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        date: true,
+        passedCount: true,
+        failedCount: true,
+        totalItems: true,
+        isDraft: true,
+        submittedAt: true
+      }
+    });
+
+    const formattedRecent = recentChecklists.map(c => ({
+      id: c.id,
+      date: c.date ? new Date(c.date).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' }) : null,
+      status: c.failedCount > 0 ? 'Fail' : 'Pass',
+      score: `${c.passedCount} / ${c.totalItems}`
+    }));
 
     return sendSuccess(res, {
-      currentChecklist: {
-        vehicle: 'TRK-101 (MAN TGX 26.580)',
-        loadRef: 'LD-3987',
-        trailer: 'TRL-205 (Car Carrier 4 Level)',
-        dateTime: '29 May 2025, 06:15 AM',
-        completedCount: 19,
-        totalCount: 20,
-        percent: 95,
-        passed: 18,
-        failed: 0,
-        na: 1,
-        notChecked: 1,
-        status: 'Synced',
-        items: checklistItems
-      },
-      recentChecklists: [
-        { date: '29 May 2025, 06:15 AM', status: 'Pass', score: '18 / 20' },
-        { date: '28 May 2025, 06:12 AM', status: 'Pass', score: '20 / 20' },
-        { date: '27 May 2025, 06:10 AM', status: 'Pass', score: '19 / 20' },
-        { date: '26 May 2025, 06:08 AM', status: 'Pass', score: '20 / 20' },
-        { date: '25 May 2025, 06:11 AM', status: 'Pass', score: '18 / 20' }
-      ]
+      currentChecklist: currentChecklist || null,
+      recentChecklists: formattedRecent
     });
   } catch (error) {
     next(error);
@@ -1282,12 +1382,148 @@ exports.getSafetyChecklists = async (req, res, next) => {
 
 exports.submitSafetyChecklist = async (req, res, next) => {
   try {
-    const { vehicleRef, trailerRef, items = [], isDraft = false, notes } = req.body;
-    return sendSuccess(res, {
-      success: true,
-      message: isDraft ? 'Checklist draft saved' : 'Safety checklist submitted successfully',
-      checklistId: `PSC-${Date.now()}`
+    // Resolve authenticated user from JWT — ignore any driverId/companyId from payload
+    const userId = req.user?.userId || req.user?.id;
+    const { vehicleRef, trailerRef, items, notes, isDraft, loadId, gpsLat, gpsLng, allowUpdate, isUpdate } = req.body || {};
+
+    if (!userId) {
+      return sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Unable to identify authenticated user.' }, HTTP_STATUS.UNAUTHORIZED);
+    }
+
+    // Resolve driver/yard attendant from JWT identity — never trust payload
+    const driver = await prisma.driver.findUnique({
+      where: { userId },
+      select: { id: true, companyId: true }
     });
+
+    if (!driver) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'No staff profile found for this account.' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    // Tenant safety check
+    if (req.tenantId && driver.companyId !== req.tenantId) {
+      return sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Access denied.' }, HTTP_STATUS.FORBIDDEN);
+    }
+
+    // Validate items array
+    if (!Array.isArray(items) || items.length === 0) {
+      return sendError(res, { code: ERROR_CODES.VALIDATION_ERROR, message: 'Checklist must contain inspection items.' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    // Map UI status strings to DB ChecklistItemStatus enum (same mapping as Phase 12)
+    const mapStatusToEnum = (st) => {
+      const lower = String(st || '').toLowerCase();
+      if (lower === 'pass') return 'PASS';
+      if (lower === 'fail') return 'FAIL';
+      if (lower === 'na') return 'NA';
+      return 'NOT_CHECKED';
+    };
+
+    let passedCount = 0;
+    let failedCount = 0;
+    let naCount = 0;
+
+    const formattedItems = items.map((item, idx) => {
+      const mappedEnum = mapStatusToEnum(item.status);
+      if (mappedEnum === 'PASS') passedCount++;
+      else if (mappedEnum === 'FAIL') failedCount++;
+      else if (mappedEnum === 'NA') naCount++;
+      return {
+        itemNumber: item.id || (idx + 1),
+        itemLabel: item.label || `Item ${idx + 1}`,
+        status: mappedEnum,
+        notes: item.notes || null
+      };
+    });
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    // Check for existing checklist today — same duplicate prevention as Phase 12
+    const existingChecklist = await prisma.preStartChecklist.findFirst({
+      where: {
+        driverId: driver.id,
+        companyId: driver.companyId,
+        date: { gte: todayStart }
+      }
+    });
+
+    if (existingChecklist && !existingChecklist.isDraft && !isDraft && !allowUpdate && !isUpdate) {
+      return sendError(res, { code: ERROR_CODES.VALIDATION_ERROR, message: "Today's pre-start safety checklist has already been submitted." }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    // Persist using Prisma transaction — same pattern as Phase 12
+    const checklistResult = await prisma.$transaction(async (tx) => {
+      let checklistRecord;
+
+      if (existingChecklist) {
+        // Delete old item responses and update the checklist (draft update flow)
+        await tx.checklistItemResponse.deleteMany({ where: { checklistId: existingChecklist.id } });
+        checklistRecord = await tx.preStartChecklist.update({
+          where: { id: existingChecklist.id },
+          data: {
+            vehicleRef: vehicleRef || existingChecklist.vehicleRef,
+            trailerRef: trailerRef || existingChecklist.trailerRef,
+            loadId: loadId || null,
+            totalItems: items.length,
+            passedCount,
+            failedCount,
+            naCount,
+            isDraft: !!isDraft,
+            notes: notes || null,
+            submittedAt: isDraft ? null : new Date(),
+            gpsLat: typeof gpsLat === 'number' ? gpsLat : null,
+            gpsLng: typeof gpsLng === 'number' ? gpsLng : null
+          }
+        });
+      } else {
+        // Create new checklist — driverId and companyId always from JWT, never payload
+        checklistRecord = await tx.preStartChecklist.create({
+          data: {
+            driverId: driver.id,
+            companyId: driver.companyId,
+            date: new Date(),
+            vehicleRef: vehicleRef || null,
+            trailerRef: trailerRef || null,
+            loadId: loadId || null,
+            totalItems: items.length,
+            passedCount,
+            failedCount,
+            naCount,
+            isDraft: !!isDraft,
+            notes: notes || null,
+            submittedAt: isDraft ? null : new Date(),
+            gpsLat: typeof gpsLat === 'number' ? gpsLat : null,
+            gpsLng: typeof gpsLng === 'number' ? gpsLng : null
+          }
+        });
+      }
+
+      // Create all item responses in one batch
+      await tx.checklistItemResponse.createMany({
+        data: formattedItems.map(item => ({
+          checklistId: checklistRecord.id,
+          itemNumber: item.itemNumber,
+          itemLabel: item.itemLabel,
+          status: item.status,
+          notes: item.notes
+        }))
+      });
+
+      return tx.preStartChecklist.findUnique({
+        where: { id: checklistRecord.id },
+        include: { items: { orderBy: { itemNumber: 'asc' } } }
+      });
+    });
+
+    return sendSuccess(res, {
+      checklist: checklistResult,
+      message: isDraft
+        ? 'Safety Checklist draft saved.'
+        : failedCount > 0
+          ? 'Safety Checklist submitted with defects logged.'
+          : 'Safety Checklist submitted successfully! All clear.'
+    }, HTTP_STATUS.CREATED);
   } catch (error) {
     next(error);
   }
@@ -1299,62 +1535,578 @@ exports.submitSafetyChecklist = async (req, res, next) => {
 
 exports.getStaffProfile = async (req, res, next) => {
   try {
-    return sendSuccess(res, {
-      profile: {
-        name: 'W. Smith',
-        title: 'Warehouse Staff',
-        status: 'On Shift',
-        employeeId: 'WS-1007',
-        email: 'wsmith@herologistics.com',
-        phone: '+61 412 345 678',
-        phoneWork: '+61 2 8765 4321',
-        department: 'Warehouse Operations',
-        depot: 'Sydney Depot',
-        role: 'Warehouse Staff',
-        reportsTo: 'Michael Lee (Warehouse Supervisor)',
-        joinedOn: '15 Mar 2024',
-        address: '12 Logistics Way, Eastern Creek NSW 2766, Australia',
-        emergencyContact: {
-          name: 'Komal Smith',
-          relationship: 'Spouse',
-          phone: '+61 400 987 654'
-        }
-      },
-      preferences: {
-        language: 'English (Australia)',
-        timeZone: '(GMT+10:00) Australia/Sydney',
-        dateFormat: 'DD/MM/YYYY',
-        timeFormat: '12-Hour (AM/PM)'
-      },
-      certifications: [
-        { name: 'General Induction', status: 'Verified', expiry: '15 Mar 2026' },
-        { name: 'Forklift Licence', status: 'Verified', expiry: '22 Oct 2026' },
-        { name: 'First Aid Certificate', status: 'Verified', expiry: '10 Dec 2025' },
-        { name: 'WH&S Training', status: 'Verified', expiry: '15 Mar 2026' }
-      ],
-      skills: [
-        { skill: 'Forklift Operation', level: 'Expert' },
-        { skill: 'Inventory Handling', level: 'Advanced' },
-        { skill: 'Pallet Handling', level: 'Advanced' },
-        { skill: 'WMS System', level: 'Advanced' },
-        { skill: 'Safety Compliance', level: 'Expert' }
-      ],
-      permissions: [
-        'Receive Stock (Inbound)',
-        'Move / Transfer Stock',
-        'Load Lane Management',
-        'Dispatch Ready',
-        'View Movement History',
-        'Messaging',
-        'Report Issues',
-        'View Reports'
-      ],
-      security: {
-        twoFactor: 'Enabled',
-        activeSessions: 2
+    // Resolve authenticated user from JWT — never return another user's profile
+    const userId = req.user?.userId || req.user?.id;
+    if (!userId) {
+      return sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Unable to identify authenticated user.' }, HTTP_STATUS.UNAUTHORIZED);
+    }
+
+    // Fetch the User record
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, role: true, companyId: true, createdAt: true }
+    });
+
+    if (!user) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'User account not found.' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    // Tenant check — user must belong to authenticated tenant
+    if (req.tenantId && user.companyId !== req.tenantId) {
+      return sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Access denied.' }, HTTP_STATUS.FORBIDDEN);
+    }
+
+    // Resolve associated Driver/Yard Attendant record linked via userId
+    const driver = await prisma.driver.findUnique({
+      where: { userId },
+      include: {
+        company: { select: { id: true, name: true } },
+        warehouse: { select: { id: true, name: true, city: true, state: true } },
+        branch: { select: { id: true, name: true, location: true } }
       }
+    });
+
+    // Build profile from real data — if no driver record, return minimal user profile
+    const fullName = driver
+      ? [driver.firstName, driver.lastName].filter(Boolean).join(' ') || user.email
+      : user.email;
+
+    const profile = {
+      userId: user.id,
+      name: fullName,
+      email: driver?.email || user.email,
+      phone: driver?.phone || null,
+      role: driver?.role || user.role || 'Warehouse Staff',
+      driverCode: driver?.driverCode || null,
+      status: driver?.status || 'AVAILABLE',
+      employmentType: driver?.employmentType || null,
+      category: driver?.category || null,
+      joiningDate: driver?.joiningDate || null,
+      address: driver?.address || null,
+      city: driver?.city || null,
+      state: driver?.state || null,
+      company: driver?.company || null,
+      warehouse: driver?.warehouse || null,
+      branch: driver?.branch || null,
+      avatarUrl: driver?.avatarUrl || null,
+      emergencyContact: driver?.emergencyContact || null
+    };
+
+    return sendSuccess(res, { profile });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================================
+// 14. YARD ATTENDANT SHIFT / TIME CLOCK — PHASE C
+//
+// All endpoints resolve identity exclusively from req.user.userId and
+// req.tenantId.  No employee/company IDs are ever accepted from the payload.
+// ============================================================================
+
+/**
+ * Resolve the authenticated user's Driver/staff record — strictly by userId
+ * from the JWT.  Never accept a driverId from the client.
+ */
+async function resolveYardDriver(req, res) {
+  const userId = req.user?.userId || req.user?.id;
+  if (!userId) {
+    sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Unable to identify authenticated user.' }, HTTP_STATUS.UNAUTHORIZED);
+    return null;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, companyId: true, email: true, role: true }
+  });
+  if (!user) {
+    sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'User account not found.' }, HTTP_STATUS.NOT_FOUND);
+    return null;
+  }
+
+  // Enforce tenant isolation on the user record itself
+  if (req.tenantId && user.companyId !== req.tenantId) {
+    sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Access denied.' }, HTTP_STATUS.FORBIDDEN);
+    return null;
+  }
+
+  // Resolve optional Driver profile linked to this user
+  const driver = await prisma.driver.findUnique({
+    where: { userId },
+    include: {
+      warehouse: { select: { id: true, name: true, city: true, state: true } },
+      branch: { select: { id: true, name: true, location: true } }
+    }
+  });
+
+  const companyId = driver?.companyId || user.companyId;
+  const fullName = driver
+    ? [driver.firstName, driver.lastName].filter(Boolean).join(' ') || user.email
+    : user.email;
+
+  return { userId, user, driver, companyId, fullName };
+}
+
+/**
+ * Format a Shift DB record into the canonical API response shape.
+ */
+function formatShift(shift, fullName) {
+  if (!shift) return null;
+  const isActive = shift.status === 'ON_SHIFT';
+  return {
+    id: shift.id,
+    status: isActive ? 'ACTIVE' : shift.status === 'COMPLETED' ? 'COMPLETED' : shift.status,
+    dbStatus: shift.status,
+    clockIn: shift.startTime,
+    clockOut: isActive ? null : shift.endTime,
+    date: shift.date,
+    role: shift.role,
+    notes: shift.notes,
+    companyId: shift.companyId,
+    employeeName: fullName || null,
+    createdAt: shift.createdAt,
+    updatedAt: shift.updatedAt
+  };
+}
+
+/**
+ * GET /api/v1/warehouse-portal/shift/current
+ *
+ * Returns the currently ACTIVE (ON_SHIFT) shift for the authenticated user.
+ * If no active shift exists, returns shift: null.
+ */
+exports.getCurrentShift = async (req, res, next) => {
+  try {
+    const ctx = await resolveYardDriver(req, res);
+    if (!ctx) return; // response already sent by resolveYardDriver
+
+    const { userId, companyId, fullName } = ctx;
+
+    // Find the single open (ON_SHIFT) shift for this user+tenant
+    const activeShift = await prisma.shift.findFirst({
+      where: {
+        userId,
+        companyId,
+        status: 'ON_SHIFT'
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return sendSuccess(res, {
+      shift: formatShift(activeShift, fullName)
     });
   } catch (error) {
     next(error);
   }
 };
+
+/**
+ * POST /api/v1/warehouse-portal/shift/clock-in
+ *
+ * Creates a new ON_SHIFT record for the authenticated user.
+ * Rejects if an active shift already exists.
+ * Never reads driverId / userId / companyId from the request body.
+ */
+exports.clockInShift = async (req, res, next) => {
+  try {
+    const ctx = await resolveYardDriver(req, res);
+    if (!ctx) return;
+
+    const { userId, companyId, fullName, driver } = ctx;
+    const { notes } = req.body || {};
+
+    // Guard: reject duplicate clock-in
+    const existing = await prisma.shift.findFirst({
+      where: { userId, companyId, status: 'ON_SHIFT' }
+    });
+    if (existing) {
+      return sendError(res, {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'You are already clocked in. Please clock out before clocking in again.',
+        details: { alreadyClockedIn: true, shiftId: existing.id }
+      }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    // Authoritative server timestamp — never accept from client
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Use a sentinel far-future endTime (required by schema NOT NULL) until clock-out
+    const sentinelEndTime = new Date('2099-12-31T23:59:59.999Z');
+
+    const shift = await prisma.shift.create({
+      data: {
+        userId,
+        driverId: driver?.id || null,
+        companyId,
+        role: driver?.role || 'Yard Attendant',
+        date: today,
+        startTime: now,          // authoritative clock-in timestamp
+        endTime: sentinelEndTime, // sentinel — replaced on clock-out
+        status: 'ON_SHIFT',
+        notes: notes || null
+      }
+    });
+
+    return sendSuccess(res, {
+      shift: formatShift(shift, fullName),
+      message: 'Clocked in successfully! Shift started.'
+    }, HTTP_STATUS.CREATED);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/v1/warehouse-portal/shift/clock-out
+ *
+ * Closes the active ON_SHIFT record.  Validates that the shift belongs to
+ * the authenticated user + tenant before writing.
+ */
+exports.clockOutShift = async (req, res, next) => {
+  try {
+    const ctx = await resolveYardDriver(req, res);
+    if (!ctx) return;
+
+    const { userId, companyId, fullName } = ctx;
+    const { notes } = req.body || {};
+
+    // Find the active shift — must match authenticated user AND tenant
+    const activeShift = await prisma.shift.findFirst({
+      where: { userId, companyId, status: 'ON_SHIFT' }
+    });
+
+    if (!activeShift) {
+      return sendError(res, {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'You are not currently clocked in. No active shift found.',
+        details: { notClockedIn: true }
+      }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    // Double-check ownership (IDOR guard — belt and suspenders)
+    if (activeShift.userId !== userId || activeShift.companyId !== companyId) {
+      return sendError(res, {
+        code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+        message: 'Access denied.'
+      }, HTTP_STATUS.FORBIDDEN);
+    }
+
+    const now = new Date(); // authoritative clock-out timestamp
+
+    const updated = await prisma.shift.update({
+      where: { id: activeShift.id },
+      data: {
+        endTime: now,          // overwrite sentinel with real clock-out
+        status: 'COMPLETED',
+        notes: notes || activeShift.notes
+      }
+    });
+
+    return sendSuccess(res, {
+      shift: formatShift(updated, fullName),
+      message: 'Clocked out successfully! Shift completed.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/v1/warehouse-portal/shift/history
+ *
+ * Returns paginated shift history for the authenticated user, strictly
+ * scoped to their own records and tenant.
+ */
+exports.getShiftHistory = async (req, res, next) => {
+  try {
+    const ctx = await resolveYardDriver(req, res);
+    if (!ctx) return;
+
+    const { userId, companyId, fullName } = ctx;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
+
+    const [shifts, total] = await Promise.all([
+      prisma.shift.findMany({
+        where: { userId, companyId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.shift.count({ where: { userId, companyId } })
+    ]);
+
+    return sendSuccess(res, {
+      shifts: shifts.map(s => formatShift(s, fullName)),
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================================
+// 15. YARD ATTENDANT TASK MANAGEMENT — PHASE D
+//
+// All endpoints resolve identity strictly from JWT (req.user.userId) and
+// enforce tenant isolation via req.tenantId.
+// ============================================================================
+
+const VALID_TASK_STATUSES = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+const VALID_TASK_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+
+function formatYardTask(task) {
+  if (!task) return null;
+  return {
+    id: task.id,
+    title: task.title,
+    desc: task.description || '',
+    description: task.description || '',
+    status: task.status, // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+    priority: task.priority || 'MEDIUM', // LOW, MEDIUM, HIGH, URGENT
+    taskType: task.taskType || 'GENERAL',
+    gate: task.gate || '—',
+    trailer: task.trailerRef || '—',
+    trailerRef: task.trailerRef || null,
+    dueTime: task.dueDate ? new Date(task.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—',
+    dueDate: task.dueDate || null,
+    completedAt: task.completedAt || null,
+    notes: task.notes || '',
+    assignedDriverId: task.driverId || null,
+    assignedUserId: task.userId || null,
+    warehouseId: task.warehouseId || null,
+    companyId: task.companyId,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt
+  };
+}
+
+/**
+ * GET /api/v1/warehouse-portal/tasks
+ *
+ * Returns tasks for the authenticated Yard Attendant / Warehouse,
+ * strictly filtered by the authenticated tenant (companyId).
+ */
+exports.getTasks = async (req, res, next) => {
+  try {
+    const ctx = await resolveYardDriver(req, res);
+    if (!ctx) return;
+
+    const { userId, companyId, driver } = ctx;
+    const { status, priority, taskType } = req.query;
+
+    const where = {
+      companyId, // Tenant isolation
+      ...(driver?.warehouseId ? {
+        OR: [
+          { warehouseId: driver.warehouseId },
+          { warehouseId: null },
+          { userId },
+          { driverId: driver.id }
+        ]
+      } : {})
+    };
+
+    if (status) {
+      const normalizedStatus = status.toUpperCase().replace(/\s+/g, '_');
+      if (VALID_TASK_STATUSES.includes(normalizedStatus)) {
+        where.status = normalizedStatus;
+      }
+    }
+
+    if (priority) {
+      const normalizedPriority = priority.toUpperCase();
+      if (VALID_TASK_PRIORITIES.includes(normalizedPriority)) {
+        where.priority = normalizedPriority;
+      }
+    }
+
+    if (taskType) {
+      where.taskType = taskType.toUpperCase();
+    }
+
+    const tasks = await prisma.yardTask.findMany({
+      where,
+      orderBy: [
+        { status: 'asc' },
+        { createdAt: 'desc' }
+      ]
+    });
+
+    // Compute live summary counters directly from real DB records
+    const allTenantTasks = await prisma.yardTask.findMany({
+      where: { companyId },
+      select: { status: true, priority: true }
+    });
+
+    const summary = {
+      total: allTenantTasks.length,
+      pending: allTenantTasks.filter(t => t.status === 'PENDING').length,
+      inProgress: allTenantTasks.filter(t => t.status === 'IN_PROGRESS').length,
+      completed: allTenantTasks.filter(t => t.status === 'COMPLETED').length,
+      highPriority: allTenantTasks.filter(t => t.priority === 'HIGH' || t.priority === 'URGENT').length
+    };
+
+    return sendSuccess(res, {
+      tasks: tasks.map(formatYardTask),
+      summary
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/v1/warehouse-portal/tasks/:taskId
+ *
+ * Fetches a single task by ID. Enforces strict tenant isolation.
+ */
+exports.getTaskById = async (req, res, next) => {
+  try {
+    const ctx = await resolveYardDriver(req, res);
+    if (!ctx) return;
+
+    const { companyId } = ctx;
+    const { taskId } = req.params;
+
+    const task = await prisma.yardTask.findFirst({
+      where: { id: taskId, companyId }
+    });
+
+    if (!task) {
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'Task not found or access denied.'
+      }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    return sendSuccess(res, {
+      task: formatYardTask(task)
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PATCH /api/v1/warehouse-portal/tasks/:taskId/status
+ * (also supports PUT)
+ *
+ * Updates a task's status with validation of allowed transitions.
+ */
+exports.updateTaskStatus = async (req, res, next) => {
+  try {
+    const ctx = await resolveYardDriver(req, res);
+    if (!ctx) return;
+
+    const { companyId, userId, driver } = ctx;
+    const { taskId } = req.params;
+    const { status, notes } = req.body || {};
+
+    if (!status) {
+      return sendError(res, {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'Status is required.'
+      }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const normalizedStatus = status.toUpperCase().replace(/\s+/g, '_');
+    if (!VALID_TASK_STATUSES.includes(normalizedStatus)) {
+      return sendError(res, {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: `Invalid status '${status}'. Must be one of: ${VALID_TASK_STATUSES.join(', ')}`
+      }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    // Verify task exists and belongs to the tenant
+    const existing = await prisma.yardTask.findFirst({
+      where: { id: taskId, companyId }
+    });
+
+    if (!existing) {
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'Task not found or access denied.'
+      }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    const updateData = {
+      status: normalizedStatus,
+      updatedAt: new Date()
+    };
+
+    if (notes !== undefined) {
+      updateData.notes = notes;
+    }
+
+    if (normalizedStatus === 'COMPLETED' && !existing.completedAt) {
+      updateData.completedAt = new Date(); // authoritative server timestamp
+    } else if (normalizedStatus === 'IN_PROGRESS' && !existing.userId) {
+      updateData.userId = userId;
+      if (driver?.id) updateData.driverId = driver.id;
+    }
+
+    const updated = await prisma.yardTask.update({
+      where: { id: taskId },
+      data: updateData
+    });
+
+    return sendSuccess(res, {
+      task: formatYardTask(updated),
+      message: `Task status updated to ${normalizedStatus}.`
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/v1/warehouse-portal/tasks/:taskId/complete
+ *
+ * Dedicated task completion endpoint. Sets status to COMPLETED and
+ * records authoritative completion timestamp.
+ */
+exports.completeTask = async (req, res, next) => {
+  try {
+    const ctx = await resolveYardDriver(req, res);
+    if (!ctx) return;
+
+    const { companyId } = ctx;
+    const { taskId } = req.params;
+    const { notes } = req.body || {};
+
+    const existing = await prisma.yardTask.findFirst({
+      where: { id: taskId, companyId }
+    });
+
+    if (!existing) {
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'Task not found or access denied.'
+      }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    const now = new Date(); // Authoritative server timestamp
+
+    const updated = await prisma.yardTask.update({
+      where: { id: taskId },
+      data: {
+        status: 'COMPLETED',
+        completedAt: now,
+        notes: notes !== undefined ? notes : existing.notes,
+        updatedAt: now
+      }
+    });
+
+    return sendSuccess(res, {
+      task: formatYardTask(updated),
+      message: 'Task marked as completed successfully.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

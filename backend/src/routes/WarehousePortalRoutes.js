@@ -59,4 +59,17 @@ router.post('/safety-checklists', ctrl.submitSafetyChecklist);
 // 12. Staff Profile
 router.get('/profile', ctrl.getStaffProfile);
 
+// 13. Shift / Time Clock (Phase C) — Yard Attendant Clock In / Out
+router.get('/shift/current', ctrl.getCurrentShift);
+router.post('/shift/clock-in', ctrl.clockInShift);
+router.post('/shift/clock-out', ctrl.clockOutShift);
+router.get('/shift/history', ctrl.getShiftHistory);
+
+// 14. Task Management (Phase D) — Yard Attendant Task Queue & Status
+router.get('/tasks', ctrl.getTasks);
+router.get('/tasks/:taskId', ctrl.getTaskById);
+router.patch('/tasks/:taskId/status', ctrl.updateTaskStatus);
+router.put('/tasks/:taskId/status', ctrl.updateTaskStatus);
+router.post('/tasks/:taskId/complete', ctrl.completeTask);
+
 module.exports = router;

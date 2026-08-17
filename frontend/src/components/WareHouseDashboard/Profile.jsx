@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 import { 
   User, Phone, Mail, MapPin, Settings, Globe, Clock, Calendar,
   Shield, Check, Monitor, Smartphone, Camera, ChevronRight, 
@@ -15,16 +16,46 @@ export default function Profile() {
   };
 
   // Profile Main States
-  const [name, setName] = useState('W. Smith');
+  const [name, setName] = useState('Staff');
   const [role, setRole] = useState('Warehouse Staff');
-  const [status, setStatus] = useState('On Shift');
-  const [employeeId, setEmployeeId] = useState('WS-1007');
-  const [email, setEmail] = useState('wsmith@herologistics.com');
-  const [phone, setPhone] = useState('+61 412 345 678');
+  const [status, setStatus] = useState('Available');
+  const [employeeId, setEmployeeId] = useState('-');
+  const [email, setEmail] = useState('-');
+  const [phone, setPhone] = useState('-');
   const [department, setDepartment] = useState('Warehouse Operations');
-  const [depot, setDepot] = useState('Sydney Depot');
-  const [reportsTo, setReportsTo] = useState('Michael Lee (Warehouse Supervisor)');
-  const [joinedOn, setJoinedOn] = useState('15 Mar 2024');
+  const [depot, setDepot] = useState('-');
+  const [reportsTo, setReportsTo] = useState('-');
+  const [joinedOn, setJoinedOn] = useState('-');
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/warehouse-portal/profile');
+        if (res.data && res.data.success && res.data.data?.profile) {
+          const p = res.data.data.profile;
+          if (p.name) setName(p.name);
+          if (p.role) setRole(p.role);
+          if (p.status) setStatus(p.status);
+          if (p.driverCode || p.userId) setEmployeeId(p.driverCode || `ID-${p.userId?.slice(0, 6)}`);
+          if (p.email) {
+            setEmail(p.email);
+            setWorkEmail(p.email);
+          }
+          if (p.phone) {
+            setPhone(p.phone);
+            setMobilePhone(p.phone);
+          }
+          if (p.warehouse?.name) setDepot(p.warehouse.name);
+          else if (p.branch?.name) setDepot(p.branch.name);
+          if (p.joiningDate) setJoinedOn(new Date(p.joiningDate).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }));
+          if (p.address) setAddress(`${p.address}${p.city ? ', ' + p.city : ''}${p.state ? ' ' + p.state : ''}`);
+        }
+      } catch (err) {
+        console.error('Error fetching warehouse staff profile:', err);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   // Contact & Address
   const [address, setAddress] = useState('12 Logistics Way, Eastern Creek NSW 2766, Australia');
