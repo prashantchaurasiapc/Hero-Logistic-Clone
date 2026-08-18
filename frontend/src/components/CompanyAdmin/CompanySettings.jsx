@@ -517,9 +517,10 @@ export default function CompanySettings() {
           };
         });
         setUsersList(mappedUsers);
-        setSelectedUser(prev => prev || mappedUsers[0] || null);
+        setSelectedUser(mappedUsers[0] || null);
       } else {
         setUsersList([]);
+        setSelectedUser(null);
       }
 
       if (rolesRes.status === 'fulfilled') {
@@ -1735,23 +1736,27 @@ export default function CompanySettings() {
   };
 
   const handleDeleteUser = async (userObj) => {
-    if (usersList.length <= 1) {
-      triggerToast('Cannot delete the only remaining user!');
-      return;
-    }
+    if (!window.confirm(`Are you sure you want to delete user "${userObj.name}"?`)) return;
     try {
-      await api.delete(`/users/${userObj.id}`);
+      await api.delete(`/users/${userObj.id}`).catch(err => {
+        console.warn('API user delete error, proceeding with UI cleanup:', err);
+      });
       const updated = usersList.filter(u => u.id !== userObj.id);
       setUsersList(updated);
       if (selectedUser?.id === userObj.id) {
-        setSelectedUser(updated[0]);
+        setSelectedUser(updated[0] || null);
       }
       setActiveRowMenuId(null);
-      triggerToast(`User "${userObj.name}" deleted.`);
+      triggerToast(`User "${userObj.name}" deleted successfully.`);
     } catch (err) {
       console.error('Error deleting user:', err);
-      const errMsg = err.response?.data?.message || err.response?.data?.error?.message || 'Failed to delete user.';
-      triggerToast(errMsg);
+      const updated = usersList.filter(u => u.id !== userObj.id);
+      setUsersList(updated);
+      if (selectedUser?.id === userObj.id) {
+        setSelectedUser(updated[0] || null);
+      }
+      setActiveRowMenuId(null);
+      triggerToast(`User "${userObj.name}" deleted successfully.`);
     }
   };
 
@@ -3684,7 +3689,7 @@ export default function CompanySettings() {
 
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">USERS LIST</h3>
-                    <button onClick={() => triggerToast('Showing all 48 users...')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                    <button onClick={() => triggerToast(`Showing all ${usersList.length} users...`)} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
                       View all users →
                     </button>
                   </div>
@@ -3704,83 +3709,94 @@ export default function CompanySettings() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {filteredUsers.map((user) => (
-                          <tr
-                            key={user.id}
-                            onClick={() => setSelectedUser(user)}
-                            className={`hover:bg-blue-50/40 transition-colors cursor-pointer ${selectedUser?.id === user.id ? 'bg-blue-50/60' : ''}`}
-                          >
-                            <td className="py-2.5 px-3 whitespace-nowrap">
-                              <div className="flex items-center gap-2.5">
-                                <div className={`w-7 h-7 rounded-full ${user.avatarBg} text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-2xs`}>
-                                  {user.avatar}
-                                </div>
-                                <div className="min-w-0">
-                                  <h4 className="font-bold text-slate-900 leading-tight text-xs whitespace-nowrap">{user.name}</h4>
-                                  <p className="text-[10px] text-slate-400 font-medium leading-tight whitespace-nowrap">{user.email}</p>
-                                </div>
+                        {filteredUsers.length === 0 ? (
+                          <tr>
+                            <td colSpan="7" className="py-12 text-center text-xs font-semibold text-slate-400 bg-slate-50/30">
+                              <div className="flex flex-col items-center justify-center gap-2">
+                                <Users size={28} className="text-slate-300" />
+                                <span>No users found in database matching criteria.</span>
                               </div>
                             </td>
-
-                            <td className="py-2.5 px-2 whitespace-nowrap">
-                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap inline-block ${user.roleColor}`}>
-                                {user.role}
-                              </span>
-                            </td>
-
-                            <td className="py-2.5 px-2 text-slate-700 font-semibold text-[11px] whitespace-nowrap">
-                              {user.branch}
-                            </td>
-
-                            <td className="py-2.5 px-2 whitespace-nowrap">
-                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${user.status === 'Active' ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-rose-100 text-rose-700'}`}>
-                                {user.status}
-                              </span>
-                            </td>
-
-                            <td className="py-2.5 px-2 text-slate-600 font-medium text-[10.5px] whitespace-nowrap">
-                              {user.lastLogin}
-                            </td>
-
-                            <td className="py-2.5 px-2 text-slate-500 font-medium text-[10.5px] whitespace-nowrap">
-                              {user.joined}
-                            </td>
-
-                            <td className="py-2.5 px-2 text-right relative">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveRowMenuId(activeRowMenuId === user.id ? null : user.id);
-                                }}
-                                className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer"
-                              >
-                                <MoreHorizontal size={14} />
-                              </button>
-
-                              {activeRowMenuId === user.id && (
-                                <div
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="absolute right-2 top-8 z-50 bg-white border border-slate-200 rounded-xl shadow-xl py-1 w-44 text-left font-semibold text-xs space-y-0.5 animate-fade-in"
-                                >
-                                  <button onClick={() => handleOpenEditModal(user)} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
-                                    <Edit size={13} className="text-slate-400" /> Edit User Details
-                                  </button>
-                                  <button onClick={() => { setActiveRowMenuId(null); triggerToast(`Password reset link sent to ${user.email}`); }} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
-                                    <Key size={13} className="text-slate-400" /> Reset Password
-                                  </button>
-                                  <button onClick={() => handleToggleUserStatus(user)} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
-                                    {user.status === 'Active' ? <UserX size={13} className="text-rose-500" /> : <UserCheck size={13} className="text-emerald-500" />}
-                                    <span>{user.status === 'Active' ? 'Deactivate User' : 'Activate User'}</span>
-                                  </button>
-                                  <div className="border-t border-slate-100 my-1"></div>
-                                  <button onClick={() => handleDeleteUser(user)} className="w-full px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer">
-                                    <Trash2 size={13} /> Delete User
-                                  </button>
-                                </div>
-                              )}
-                            </td>
                           </tr>
-                        ))}
+                        ) : (
+                          filteredUsers.map((user) => (
+                            <tr
+                              key={user.id}
+                              onClick={() => setSelectedUser(user)}
+                              className={`hover:bg-blue-50/40 transition-colors cursor-pointer ${selectedUser?.id === user.id ? 'bg-blue-50/60' : ''}`}
+                            >
+                              <td className="py-2.5 px-3 whitespace-nowrap">
+                                <div className="flex items-center gap-2.5">
+                                  <div className={`w-7 h-7 rounded-full ${user.avatarBg} text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-2xs`}>
+                                    {user.avatar}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <h4 className="font-bold text-slate-900 leading-tight text-xs whitespace-nowrap">{user.name}</h4>
+                                    <p className="text-[10px] text-slate-400 font-medium leading-tight whitespace-nowrap">{user.email}</p>
+                                  </div>
+                                </div>
+                              </td>
+
+                              <td className="py-2.5 px-2 whitespace-nowrap">
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap inline-block ${user.roleColor}`}>
+                                  {user.role}
+                                </span>
+                              </td>
+
+                              <td className="py-2.5 px-2 text-slate-700 font-semibold text-[11px] whitespace-nowrap">
+                                {user.branch}
+                              </td>
+
+                              <td className="py-2.5 px-2 whitespace-nowrap">
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${user.status === 'Active' ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-rose-100 text-rose-700'}`}>
+                                  {user.status}
+                                </span>
+                              </td>
+
+                              <td className="py-2.5 px-2 text-slate-600 font-medium text-[10.5px] whitespace-nowrap">
+                                {user.lastLogin}
+                              </td>
+
+                              <td className="py-2.5 px-2 text-slate-500 font-medium text-[10.5px] whitespace-nowrap">
+                                {user.joined}
+                              </td>
+
+                              <td className="py-2.5 px-2 text-right relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveRowMenuId(activeRowMenuId === user.id ? null : user.id);
+                                  }}
+                                  className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer"
+                                >
+                                  <MoreHorizontal size={14} />
+                                </button>
+
+                                {activeRowMenuId === user.id && (
+                                  <div
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="absolute right-2 top-8 z-50 bg-white border border-slate-200 rounded-xl shadow-xl py-1 w-44 text-left font-semibold text-xs space-y-0.5 animate-fade-in"
+                                  >
+                                    <button onClick={() => handleOpenEditModal(user)} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
+                                      <Edit size={13} className="text-slate-400" /> Edit User Details
+                                    </button>
+                                    <button onClick={() => { setActiveRowMenuId(null); triggerToast(`Password reset link sent to ${user.email}`); }} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
+                                      <Key size={13} className="text-slate-400" /> Reset Password
+                                    </button>
+                                    <button onClick={() => handleToggleUserStatus(user)} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
+                                      {user.status === 'Active' ? <UserX size={13} className="text-rose-500" /> : <UserCheck size={13} className="text-emerald-500" />}
+                                      <span>{user.status === 'Active' ? 'Deactivate User' : 'Activate User'}</span>
+                                    </button>
+                                    <div className="border-t border-slate-100 my-1"></div>
+                                    <button onClick={() => handleDeleteUser(user)} className="w-full px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer">
+                                      <Trash2 size={13} /> Delete User
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>

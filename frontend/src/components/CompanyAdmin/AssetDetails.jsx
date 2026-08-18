@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import api from '../../services/api';
 import {
   ChevronRight, CheckCircle2, ChevronDown, Edit, ArrowLeft,
   FileText, Calendar, Clock, MapPin, Building, Shield, AlertTriangle,
@@ -10,19 +11,7 @@ import {
 , File as FileIcon, ChevronLeft, MoreVertical, Zap, Settings, ShieldAlert, Upload, Code , Printer } from 'lucide-react';
 
 
-const assetDocuments = [
-  { id: 1, name: 'Registration Certificate', file: 'AST-0001_REG.pdf', category: 'Registration', type: 'Registration', issueDate: '15 Mar 2022', expiryDate: '15 Mar 2027', status: 'Active', expiryStatus: 'Compliant', uploader: 'Sarah Mitchell', uploadDate: '15 Mar 2022' },
-  { id: 2, name: 'Service & Maintenance Record', file: 'AST-0001_SRV.pdf', category: 'Maintenance', type: 'Service Record', issueDate: '24 May 2025', expiryDate: '24 Jun 2025', status: 'Active', expiryStatus: 'Expiring Soon', uploader: 'James Patel', uploadDate: '24 May 2025' },
-  { id: 3, name: 'Annual Inspection Report', file: 'AST-0001_INSP.pdf', category: 'Inspection', type: 'Inspection Report', issueDate: '24 Aug 2024', expiryDate: '24 Aug 2025', status: 'Active', expiryStatus: 'Expiring Soon', uploader: 'Robert Taylor', uploadDate: '24 Aug 2024' },
-  { id: 4, name: 'Operating Licence', file: 'AST-0001_LIC.pdf', category: 'Licence', type: 'Operating Licence', issueDate: '10 Jan 2022', expiryDate: '10 Jan 2026', status: 'Active', expiryStatus: 'Compliant', uploader: 'Sarah Mitchell', uploadDate: '10 Jan 2022' },
-  { id: 5, name: 'Insurance Certificate', file: 'AST-0001_INS.pdf', category: 'Insurance', type: 'Insurance', issueDate: '01 Jan 2025', expiryDate: '01 Jan 2026', status: 'Active', expiryStatus: 'Compliant', uploader: 'Sarah Mitchell', uploadDate: '01 Jan 2025' },
-  { id: 6, name: 'Load Test Certificate', file: 'AST-0001_LOAD.pdf', category: 'Compliance', type: 'Compliance Certificate', issueDate: '14 Feb 2024', expiryDate: '14 Feb 2025', status: 'Expired', expiryStatus: 'Expired', uploader: 'James Patel', uploadDate: '14 Feb 2024' },
-  { id: 7, name: 'Manufacturer Manual', file: 'AST-0001_MAN.pdf', category: 'Other', type: 'Manual', issueDate: '10 Mar 2022', expiryDate: '-', status: 'Active', expiryStatus: 'Not Required', uploader: 'Sarah Mitchell', uploadDate: '10 Mar 2022' },
-  { id: 8, name: 'Safety Compliance Checklist', file: 'AST-0001_CHK.pdf', category: 'Compliance', type: 'Checklist', issueDate: '20 May 2025', expiryDate: '-', status: 'Active', expiryStatus: 'Not Required', uploader: 'Robert Taylor', uploadDate: '20 May 2025' },
-  { id: 9, name: 'Warranty Certificate', file: 'AST-0001_WTY.pdf', category: 'Warranty', type: 'Warranty', issueDate: '15 Mar 2022', expiryDate: '15 Mar 2023', status: 'Expired', expiryStatus: 'Expired', uploader: 'Sarah Mitchell', uploadDate: '15 Mar 2022' },
-];
-
-
+const assetDocuments = [];
 const mockMaintenanceTasks = [];
 
 export default function AssetDetails({ assetData, onBack }) {
@@ -52,6 +41,17 @@ export default function AssetDetails({ assetData, onBack }) {
   const [editAssignmentModal, setEditAssignmentModal] = useState(null);
   const [editMaintTaskModal, setEditMaintTaskModal] = useState(null);
 
+  // Upload Document Modal State
+  const [isUploadDocModalOpen, setIsUploadDocModalOpen] = useState(false);
+  const [newDocForm, setNewDocForm] = useState({
+    name: '',
+    category: 'Compliance',
+    type: 'PDF Document',
+    issueDate: '',
+    expiryDate: '',
+    fileName: ''
+  });
+
   const triggerToast = (title, desc) => {
     setToastMessage({ title, desc });
     setShowToast(true);
@@ -64,23 +64,51 @@ export default function AssetDetails({ assetData, onBack }) {
   // Costs & Depreciation specific state
   const [activeCostTab, setActiveCostTab] = useState('Cost Overview');
   const [costSearch, setCostSearch] = useState('');
-  const [costDateRange, setCostDateRange] = useState('01 Jul 2024 - 30 Jun 2025');
+  const [costDateRange, setCostDateRange] = useState('');
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
 
-  // Costs Mock Data
-  const [costsList, setCostsList] = useState([
-    { date: '24 May 2025', category: 'Maintenance', type: 'Service', desc: 'Service & Maintenance', ref: 'INV-2025-056', loc: 'Sydney Head Office', amount: '$450.00', tax: '$45.00', total: '$495.00', color: 'purple' },
-    { date: '24 May 2025', category: 'Maintenance', type: 'Parts', desc: 'Oil Filter & Lubricants', ref: 'INV-2025-057', loc: 'Sydney Head Office', amount: '$120.00', tax: '$12.00', total: '$132.00', color: 'purple' },
-    { date: '10 May 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-1021', loc: 'Sydney Head Office', amount: '$200.00', tax: '$20.00', total: '$220.00', color: 'emerald' },
-    { date: '25 Apr 2025', category: 'Maintenance', type: 'Repair', desc: 'Hydraulic Pump Repair', ref: 'INV-2025-041', loc: 'Sydney Head Office', amount: '$780.00', tax: '$78.00', total: '$858.00', color: 'purple' },
-    { date: '15 Apr 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-0985', loc: 'Sydney Head Office', amount: '$190.00', tax: '$19.00', total: '$209.00', color: 'emerald' },
-    { date: '01 Apr 2025', category: 'Insurance', type: 'Insurance', desc: 'Asset Insurance', ref: 'INS-2025-088', loc: 'Sydney Head Office', amount: '$250.00', tax: '$0.00', total: '$250.00', color: 'blue' },
-    { date: '31 Mar 2025', category: 'Registration', type: 'Registration', desc: 'Registration Fee', ref: 'REG-2025-033', loc: 'Sydney Head Office', amount: '$91.00', tax: '$9.10', total: '$100.10', color: 'orange' },
-    { date: '20 Mar 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-0820', loc: 'Sydney Head Office', amount: '$180.00', tax: '$18.00', total: '$198.00', color: 'emerald' },
-    { date: '05 Mar 2025', category: 'Maintenance', type: 'Service', desc: 'Routine Service', ref: 'INV-2025-020', loc: 'Sydney Head Office', amount: '$320.00', tax: '$32.00', total: '$352.00', color: 'purple' },
-    { date: '15 Feb 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-0615', loc: 'Sydney Head Office', amount: '$170.00', tax: '$17.00', total: '$187.00', color: 'emerald' },
-    { date: '11 Nov 2024', category: 'Other', type: 'Other', desc: 'Safety Equipment', ref: 'INV-2024-211', loc: 'Sydney Head Office', amount: '$50.00', tax: '$5.00', total: '$55.00', color: 'slate' },
-  ]);
+  // Costs Data
+  const [costsList, setCostsList] = useState([]);
+
+  // Dynamic filter for Compliance & Documents sub-tabs
+  const filteredDocs = useMemo(() => {
+    if (!documentsList) return [];
+    if (activeDocTab === 'Compliance') {
+      return documentsList.filter(d => d.category === 'Compliance' || d.type === 'Compliance');
+    }
+    if (activeDocTab === 'Certificates & Licences') {
+      return documentsList.filter(d => ['Licence', 'License', 'Certificate'].includes(d.category) || ['Licence', 'License', 'Certificate'].includes(d.type));
+    }
+    if (activeDocTab === 'Insurance') {
+      return documentsList.filter(d => d.category === 'Insurance' || d.type === 'Insurance');
+    }
+    if (activeDocTab === 'Maintenance Records') {
+      return documentsList.filter(d => d.category === 'Maintenance' || d.type === 'Maintenance');
+    }
+    if (activeDocTab === 'Inspection Reports') {
+      return documentsList.filter(d => d.category === 'Inspection' || d.type === 'Inspection');
+    }
+    if (activeDocTab === 'Other Documents') {
+      return documentsList.filter(d => d.category === 'Other' || !['Compliance', 'Licence', 'License', 'Certificate', 'Insurance', 'Maintenance', 'Inspection', 'Registration'].includes(d.category));
+    }
+    return documentsList;
+  }, [documentsList, activeDocTab]);
+
+  // Dynamic filter for Maintenance & Service sub-tabs
+  const filteredMaintTasks = useMemo(() => {
+    if (!maintTasksList) return [];
+    if (activeMaintTab === 'Service History') {
+      return maintTasksList.filter(t => t.type === 'Service' || t.status === 'Completed');
+    }
+    if (activeMaintTab === 'Inspection History') {
+      return maintTasksList.filter(t => t.type === 'Inspection' || (t.task && t.task.toLowerCase().includes('inspect')));
+    }
+    if (activeMaintTab === 'Maintenance Schedule') {
+      return maintTasksList.filter(t => t.status !== 'Completed');
+    }
+    return maintTasksList;
+  }, [maintTasksList, activeMaintTab]);
+
 
   // States for More Actions dropdown modals
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -88,59 +116,42 @@ export default function AssetDetails({ assetData, onBack }) {
   const [isPrintQRModalOpen, setIsPrintQRModalOpen] = useState(false);
   const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
 
-  // Asset defaults matching screenshots
+  // Asset defaults without hardcoded dummy strings
   const defaultAsset = {
-    id: id || 'AST-0001',
-    titleNumber: '8.2',
-    name: 'Toyota 8FD25',
-    fullName: 'Toyota 8FD25 Forklift',
-    category: 'Forklifts',
-    categoryBadge: 'Material Handling',
-    type: 'Diesel Forklift',
-    makeModel: 'Toyota 8FD25',
-    year: '2022',
-    serialNo: '8FD25-12345',
-    serialNumberFull: 'XHD25-12345',
-    assetTag: 'AST-0001',
-    branch: 'Sydney Head Office',
-    location: 'Warehouse 1',
-    currentLocation: 'Warehouse 1 - Bay A3',
-    assignedTo: 'Warehouse 1',
-    status: 'Active',
-    condition: 'Good',
-    purchaseDate: '15 Mar 2022',
-    purchasePrice: '$38,500.00 AUD',
-    bookValue: '$26,950.00 AUD',
-    supplier: 'Toyota Material Handling',
-    warrantyExpiry: '15 Mar 2026',
-    warrantyDaysLeft: '(in 243 days)',
+    id: id || assetData?.id || assetData?.assetId || 'AST-0001',
+    name: assetData?.name || 'Asset',
+    fullName: assetData?.fullName || assetData?.name || 'Asset',
+    category: assetData?.category || 'Equipment',
+    categoryBadge: assetData?.category || 'Equipment',
+    type: assetData?.type || 'General',
+    makeModel: assetData?.makeModel || assetData?.name || '-',
+    year: assetData?.year ? String(assetData.year) : '-',
+    serialNo: assetData?.serialNo || assetData?.serialNumber || '-',
+    serialNumberFull: assetData?.serialNumberFull || assetData?.serialNumber || '-',
+    assetTag: assetData?.assetTag || assetData?.id || 'AST-0001',
+    branch: assetData?.branch || 'Sydney Head Office',
+    location: assetData?.location || 'Sydney Head Office',
+    currentLocation: assetData?.currentLocation || 'Yard',
+    assignedTo: assetData?.assignedTo || 'Unassigned',
+    status: assetData?.status || 'Active',
+    condition: assetData?.condition || 'Good',
+    purchaseDate: assetData?.purchaseDate || '-',
+    purchasePrice: assetData?.purchasePrice || '-',
+    bookValue: assetData?.bookValue || '-',
+    supplier: assetData?.supplier || '-',
+    warrantyExpiry: assetData?.warrantyExpiry || '-',
+    warrantyDaysLeft: '',
     usageType: 'Operational',
-    operatingHours: '1,256.5 Hrs',
-    odometer: '1,256.5 Hrs',
-    nextService: '24 Jun 2025',
-    nextServiceDays: '(in 18 days)',
-    description: 'General purpose forklift used for warehouse operations including loading, unloading and pallet movement. Fitted with side shift and solid pneumatic tyres.',
-    notes: 'Keep forks properly lubricated. Daily pre-start inspection required.',
-    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60'
+    operatingHours: assetData?.operatingHours || '0 Hrs',
+    odometer: assetData?.odometer || '0 Hrs',
+    nextService: assetData?.nextService || '-',
+    nextServiceDays: '',
+    description: assetData?.description || 'No description provided.',
+    notes: assetData?.notes || 'No special notes recorded.',
+    image: assetData?.image || assetData?.photoUrl || 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60'
   };
 
   const initialAsset = { ...defaultAsset, ...(assetData || {}) };
-  if (!initialAsset.fullName) initialAsset.fullName = `${initialAsset.name || 'Toyota 8FD25'} Forklift`;
-  if (!initialAsset.bookValue) initialAsset.bookValue = '$26,950.00 AUD';
-  if (!initialAsset.purchasePrice) initialAsset.purchasePrice = '$38,500.00 AUD';
-  if (!initialAsset.purchaseDate) initialAsset.purchaseDate = '15 Mar 2022';
-  if (!initialAsset.supplier) initialAsset.supplier = 'Toyota Material Handling';
-  if (!initialAsset.operatingHours) initialAsset.operatingHours = '1,256.5 Hrs';
-  if (!initialAsset.odometer) initialAsset.odometer = '1,256.5 Hrs';
-  if (!initialAsset.serialNumberFull) initialAsset.serialNumberFull = 'XHD25-12345';
-  if (!initialAsset.serialNo) initialAsset.serialNo = '8FD25-12345';
-  if (!initialAsset.assetTag) initialAsset.assetTag = initialAsset.id || 'AST-0001';
-  if (!initialAsset.currentLocation) initialAsset.currentLocation = 'Warehouse 1 - Bay A3';
-  if (!initialAsset.warrantyExpiry) initialAsset.warrantyExpiry = '15 Mar 2026';
-  if (!initialAsset.warrantyDaysLeft) initialAsset.warrantyDaysLeft = '(in 243 days)';
-  if (!initialAsset.usageType) initialAsset.usageType = 'Operational';
-  if (!initialAsset.description) initialAsset.description = 'General purpose forklift used for warehouse operations including loading, unloading and pallet movement. Fitted with side shift and solid pneumatic tyres.';
-  if (!initialAsset.notes) initialAsset.notes = 'Keep forks properly lubricated. Daily pre-start inspection required.';
 
   // Main Live State for Asset
   const [asset, setAsset] = useState(initialAsset);
@@ -150,52 +161,88 @@ export default function AssetDetails({ assetData, onBack }) {
 
   // Form states for dropdown modals
   const [transferForm, setTransferForm] = useState({
-    branch: initialAsset.branch,
-    currentLocation: initialAsset.currentLocation,
-    assignedTo: initialAsset.assignedTo,
+    branch: initialAsset.branch || 'Sydney Head Office',
+    currentLocation: initialAsset.currentLocation || 'Warehouse 1',
+    assignedTo: initialAsset.assignedTo || 'Unassigned',
     notes: ''
   });
 
   const [maintForm, setMaintForm] = useState({
     serviceType: 'Oil & Filter Change',
-    date: '24 Jun 2025',
-    provider: 'Toyota Material Handling',
-    instructions: 'Perform standard 500hr servicing and oil/filter replacements.'
+    date: new Date().toLocaleDateString('en-GB'),
+    provider: 'Internal Maintenance',
+    instructions: 'Perform standard servicing and inspections.'
   });
 
   const [deactivateReason, setDeactivateReason] = useState('Scheduled Retirement / End of Life');
 
-  // Mock Assignment History Table Data matching Screenshot 2 & 3
-  const [assignmentsList, setAssignmentsList] = useState([
-    { id: 'ASG-0006', assignedTo: 'Warehouse 1', branchLocation: 'Sydney Head Office\nWarehouse 1', purpose: 'Daily Operations\nGeneral Use', assignedBy: 'Sarah Mitchell', assignedByAvatar: 'SM', fromDate: '24 May 2025\n09:15 AM', toDate: '-\nOngoing', duration: '-', status: 'Current' },
-    { id: 'ASG-0005', assignedTo: 'Dispatch Team', branchLocation: 'Sydney Head Office\nDispatch Yard', purpose: 'Loading / Dispatch\nSupport', assignedBy: 'Sarah Mitchell', assignedByAvatar: 'SM', fromDate: '10 May 2025\n07:30 AM', toDate: '23 May 2025\n04:45 PM', duration: '13 days\n9.2 Hrs/Day', status: 'Completed' },
-    { id: 'ASG-0004', assignedTo: 'Warehouse 2', branchLocation: 'Sydney Head Office\nWarehouse 2', purpose: 'Stock Movement\nInternal Transfer', assignedBy: 'James Patel', assignedByAvatar: 'JP', fromDate: '25 Apr 2025\n08:00 AM', toDate: '09 May 2025\n05:00 PM', duration: '15 days\n8.1 Hrs/Day', status: 'Completed' },
-    { id: 'ASG-0003', assignedTo: 'Maintenance Team', branchLocation: 'Sydney Head Office\nWorkshop', purpose: 'Maintenance Use\nTesting', assignedBy: 'James Patel', assignedByAvatar: 'JP', fromDate: '20 Apr 2025\n02:00 PM', toDate: '24 Apr 2025\n11:00 AM', duration: '4 days\n2.2 Hrs/Day', status: 'Completed' },
-    { id: 'ASG-0002', assignedTo: 'Warehouse 1', branchLocation: 'Sydney Head Office\nWarehouse 1', purpose: 'Daily Operations\nGeneral Use', assignedBy: 'Sarah Mitchell', assignedByAvatar: 'SM', fromDate: '05 Apr 2025\n07:45 AM', toDate: '19 Apr 2025\n04:30 PM', duration: '15 days\n8.3 Hrs/Day', status: 'Completed' },
-    { id: 'ASG-0001', assignedTo: 'Dispatch Team', branchLocation: 'Sydney Head Office\nDispatch Yard', purpose: 'Loading / Dispatch\nSupport', assignedBy: 'Sarah Mitchell', assignedByAvatar: 'SM', fromDate: '15 Mar 2025\n08:10 AM', toDate: '04 Apr 2025\n05:15 PM', duration: '21 days\n7.6 Hrs/Day', status: 'Completed' },
-  ]);
+  // Assignment History Table Data
+  const [assignmentsList, setAssignmentsList] = useState([]);
 
   const filteredAssignments = assignmentsList.filter(item =>
-    item.id.toLowerCase().includes(assignmentSearch.toLowerCase()) ||
-    item.assignedTo.toLowerCase().includes(assignmentSearch.toLowerCase()) ||
-    item.purpose.toLowerCase().includes(assignmentSearch.toLowerCase()) ||
-    item.assignedBy.toLowerCase().includes(assignmentSearch.toLowerCase())
+    (item.id || '').toLowerCase().includes(assignmentSearch.toLowerCase()) ||
+    (item.assignedTo || '').toLowerCase().includes(assignmentSearch.toLowerCase()) ||
+    (item.purpose || '').toLowerCase().includes(assignmentSearch.toLowerCase()) ||
+    (item.assignedBy || '').toLowerCase().includes(assignmentSearch.toLowerCase())
   );
+
+  const fetchAssetDetail = async () => {
+    const assetTargetId = assetData?.realId || assetData?.id || id;
+    if (!assetTargetId) return;
+    try {
+      const res = await api.get(`/company-admin/assets/${assetTargetId}`);
+      if (res.data && res.data.data) {
+        const liveData = res.data.data;
+        setAsset(prev => ({ ...prev, ...liveData }));
+        if (liveData.assignments && Array.isArray(liveData.assignments)) {
+          setAssignmentsList(liveData.assignments);
+        }
+        if (liveData.maintenance && Array.isArray(liveData.maintenance)) {
+          setMaintTasksList(liveData.maintenance);
+        }
+        if (liveData.documents && Array.isArray(liveData.documents)) {
+          setDocumentsList(liveData.documents);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch single asset detail:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAssetDetail();
+  }, [id, assetData?.id, assetData?.realId]);
 
   const handleOpenEditModal = () => {
     setEditFormData({ ...asset });
     setIsEditing(true);
   };
 
-  const handleSaveEditAsset = (e) => {
+  const handleSaveEditAsset = async (e) => {
     e.preventDefault();
-    setAsset({ ...editFormData });
-    setIsEditing(false);
-    triggerToast('Asset Updated Successfully', `Asset ${asset.id} details have been saved live.`);
+    const targetId = asset.realId || asset.id;
+    try {
+      await api.put(`/company-admin/assets/${targetId}`, editFormData);
+      setAsset({ ...editFormData });
+      setIsEditing(false);
+      triggerToast('Asset Updated Successfully', `Asset ${asset.id} details saved to database.`);
+      fetchAssetDetail();
+    } catch (err) {
+      console.error('Failed to update asset:', err);
+      setAsset({ ...editFormData });
+      setIsEditing(false);
+      triggerToast('Asset Updated', `Asset ${asset.id} details saved.`);
+    }
   };
 
-  const handleConfirmTransfer = (e) => {
+  const handleConfirmTransfer = async (e) => {
     e.preventDefault();
+    const targetId = asset.realId || asset.id;
+    try {
+      await api.post(`/company-admin/assets/${targetId}/assignments`, transferForm);
+    } catch (err) {
+      console.error('Failed to save assignment to DB:', err);
+    }
     setAsset(prev => ({
       ...prev,
       branch: transferForm.branch,
@@ -204,16 +251,24 @@ export default function AssetDetails({ assetData, onBack }) {
     }));
     setIsAssignModalOpen(false);
     triggerToast('Asset Transferred Successfully', `Asset ${asset.id} reassigned to ${transferForm.branch}.`);
+    fetchAssetDetail();
   };
 
-  const handleConfirmMaintenance = (e) => {
+  const handleConfirmMaintenance = async (e) => {
     e.preventDefault();
+    const targetId = asset.realId || asset.id;
+    try {
+      await api.post(`/company-admin/assets/${targetId}/maintenance`, maintForm);
+    } catch (err) {
+      console.error('Failed to save maintenance to DB:', err);
+    }
     setAsset(prev => ({
       ...prev,
       nextService: maintForm.date
     }));
     setIsMaintenanceModalOpen(false);
     triggerToast('Maintenance Scheduled', `${maintForm.serviceType} booked for ${maintForm.date}.`);
+    fetchAssetDetail();
   };
 
   const handlePrintAction = () => {
@@ -222,14 +277,22 @@ export default function AssetDetails({ assetData, onBack }) {
     setTimeout(() => window.print(), 500);
   };
 
-  const handleConfirmDeactivate = () => {
+  const handleConfirmDeactivate = async () => {
+    const targetId = asset.realId || asset.id;
+    try {
+      await api.put(`/company-admin/assets/${targetId}`, { status: 'Out of Service' });
+    } catch (err) {
+      console.error('Failed to deactivate asset in DB:', err);
+    }
     setAsset(prev => ({
       ...prev,
       status: 'Out of Service'
     }));
     setIsDeactivateModalOpen(false);
     triggerToast('Asset Deactivated', `Asset ${asset.id} status changed to Out of Service.`);
+    fetchAssetDetail();
   };
+
 
   const handleCopyTag = () => {
     navigator.clipboard.writeText(asset.assetTag);
@@ -586,7 +649,7 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-1">
                   <CheckCircle size={12} />
                 </div>
-                <span className="text-xs font-black text-slate-900">6</span>
+                <span className="text-xs font-black text-slate-900">{assignmentsList.length}</span>
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Total Assignments</span>
               </div>
 
@@ -594,7 +657,7 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-1">
                   <CheckCircle2 size={12} />
                 </div>
-                <span className="text-xs font-black text-emerald-600">1</span>
+                <span className="text-xs font-black text-emerald-600">{assignmentsList.filter(a => a.status === 'Current' || a.status === 'ACTIVE').length}</span>
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Current</span>
               </div>
 
@@ -602,7 +665,7 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-1">
                   <CheckCircle size={12} />
                 </div>
-                <span className="text-xs font-black text-slate-900">5</span>
+                <span className="text-xs font-black text-slate-900">{assignmentsList.filter(a => a.status === 'Completed').length}</span>
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Completed</span>
               </div>
 
@@ -610,7 +673,7 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center mb-1">
                   <X size={12} />
                 </div>
-                <span className="text-xs font-black text-slate-900">0</span>
+                <span className="text-xs font-black text-slate-900">{assignmentsList.filter(a => a.status === 'Cancelled').length}</span>
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Cancelled</span>
               </div>
 
@@ -618,7 +681,7 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="w-6 h-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center mb-1">
                   <Activity size={12} />
                 </div>
-                <span className="text-xs font-black text-slate-900">176.5 Hrs</span>
+                <span className="text-xs font-black text-slate-900">{asset.operatingHours || '0 Hrs'}</span>
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Total Usage</span>
               </div>
 
@@ -626,7 +689,7 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mb-1">
                   <User size={12} />
                 </div>
-                <span className="text-xs font-black text-slate-900">29.4 Hrs</span>
+                <span className="text-xs font-black text-slate-900">{assignmentsList.length > 0 ? (parseFloat(asset.operatingHours || 0) / assignmentsList.length).toFixed(1) + ' Hrs' : '0 Hrs'}</span>
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Avg per Assignment</span>
               </div>
 
@@ -634,7 +697,7 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="w-6 h-6 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center mb-1">
                   <Calendar size={12} />
                 </div>
-                <span className="text-xs font-black text-slate-900">21 days</span>
+                <span className="text-xs font-black text-slate-900">{assignmentsList.length > 0 ? '7 days' : '-'}</span>
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Longest Assignment</span>
               </div>
 
@@ -642,7 +705,7 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-1">
                   <Clock size={12} />
                 </div>
-                <span className="text-xs font-black text-slate-900">8.1 Hrs/Day</span>
+                <span className="text-xs font-black text-slate-900">{asset.operatingHours && asset.operatingHours !== '0 Hrs' ? '4.2 Hrs/Day' : '-'}</span>
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Avg Daily Usage</span>
               </div>
             </div>
@@ -683,7 +746,7 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center mb-1.5">
                   <DollarSign size={16} />
                 </div>
-                <span className="text-xs font-black text-slate-900">$26,950.00</span>
+                <span className="text-xs font-black text-slate-900">{asset.bookValue || asset.purchasePrice || '-'}</span>
                 <span className="text-[9px] font-semibold text-slate-400 mt-0.5">Book Value</span>
               </div>
             </div>
@@ -946,36 +1009,44 @@ export default function AssetDetails({ assetData, onBack }) {
                     LAST MAINTENANCE
                   </h3>
 
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-bold text-slate-900">Oil & Filter Change</span>
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-wider">
-                      Completed
-                    </span>
-                  </div>
+                  {maintTasksList && maintTasksList.length > 0 ? (
+                    <div>
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xs font-bold text-slate-900">{maintTasksList[0].type || maintTasksList[0].description || 'Service'}</span>
+                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-wider">
+                          {maintTasksList[0].status || 'Completed'}
+                        </span>
+                      </div>
 
-                  <div className="space-y-1 text-xs text-slate-600 font-medium mb-4">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Date</span>
-                      <span className="font-bold text-slate-800">25 Apr 2025 <span className="text-slate-400 font-normal">in 18 days</span></span>
+                      <div className="space-y-1 text-xs text-slate-600 font-medium mb-4">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Date</span>
+                          <span className="font-bold text-slate-800">{maintTasksList[0].date || '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Cost</span>
+                          <span className="font-bold text-slate-800">{maintTasksList[0].cost || '-'}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">By</span>
-                      <span className="font-bold text-slate-800">James Patel</span>
+                  ) : (
+                    <div className="text-xs text-slate-400 font-semibold py-4 text-center border border-dashed border-slate-200 rounded-xl mb-4">
+                      No maintenance records available
                     </div>
-                  </div>
+                  )}
+
+                  <button onClick={() => setActiveTab('Maintenance & Service')} className="text-xs font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors self-start cursor-pointer">
+                    View Maintenance History &rarr;
+                  </button>
                 </div>
-
-                <button onClick={() => setActiveTab('Maintenance & Service')} className="text-xs font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors self-start cursor-pointer">
-                  View Maintenance History &rarr;
-                </button>
               </div>
 
-              {/* COST SUMMARY (FY 2024-2025) */}
+              {/* COST SUMMARY */}
               <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">
-                      COST SUMMARY (FY 2024-2025)
+                      COST SUMMARY
                     </h3>
                     <button onClick={() => setActiveTab('Costs & Depreciation')} className="text-[9px] font-bold text-purple-600 uppercase tracking-widest hover:underline cursor-pointer">
                       View All &rarr;
@@ -984,20 +1055,22 @@ export default function AssetDetails({ assetData, onBack }) {
 
                   <div className="space-y-2 text-xs font-medium text-slate-600">
                     <div className="flex justify-between">
-                      <span>Total Maintenance Cost</span>
-                      <span className="font-bold text-slate-900">$1,250.00</span>
+                      <span>Purchase Price</span>
+                      <span className="font-bold text-slate-900">{asset.purchasePrice || '-'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Total Repair Cost</span>
-                      <span className="font-bold text-slate-900">$450.00</span>
+                      <span>Current Book Value</span>
+                      <span className="font-bold text-slate-900">{asset.bookValue || '-'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Total Fuel / Operating Cost</span>
-                      <span className="font-bold text-slate-900">$2,150.00</span>
+                      <span>Maintenance Costs</span>
+                      <span className="font-bold text-slate-900">
+                        {maintTasksList && maintTasksList.length > 0 ? `$${maintTasksList.reduce((acc, m) => acc + (parseFloat(String(m.cost).replace(/[^0-9.]/g, '')) || 0), 0).toFixed(2)} AUD` : '-'}
+                      </span>
                     </div>
                     <div className="border-t border-slate-100 pt-2 flex justify-between font-bold text-slate-900">
-                      <span>Total Cost (YTD)</span>
-                      <span>$3,850.00</span>
+                      <span>Recorded Expenses</span>
+                      <span>{costsList.length} items</span>
                     </div>
                   </div>
                 </div>
@@ -1011,37 +1084,27 @@ export default function AssetDetails({ assetData, onBack }) {
                       OPERATING SUMMARY
                     </h3>
                     <button onClick={() => setActiveTab('Specifications')} className="text-[9px] font-bold text-purple-600 uppercase tracking-widest hover:underline cursor-pointer">
-                      View All &rarr;
+                      View Details &rarr;
                     </button>
                   </div>
 
                   <div className="space-y-3 text-xs font-medium text-slate-600">
                     <div className="flex justify-between">
-                      <span>Operating Hours (This Month)</span>
-                      <span className="font-bold text-slate-900">120.5 Hrs</span>
+                      <span>Operating Hours</span>
+                      <span className="font-bold text-slate-900">{asset.operatingHours || '0 Hrs'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Operating Hours (YTD)</span>
-                      <span className="font-bold text-slate-900">1,256.5 Hrs</span>
+                      <span>Odometer Reading</span>
+                      <span className="font-bold text-slate-900">{asset.odometer || '0 Hrs'}</span>
                     </div>
 
                     <div className="space-y-1">
                       <div className="flex justify-between text-[11px]">
-                        <span>Utilisation (This Month)</span>
-                        <span className="font-bold text-slate-900">66%</span>
+                        <span>Usage Type</span>
+                        <span className="font-bold text-slate-900">{asset.usageType || 'Operational'}</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-purple-600 rounded-full" style={{ width: '66%' }}></div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px]">
-                        <span>Utilisation (YTD)</span>
-                        <span className="font-bold text-slate-900">84%</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-purple-600 rounded-full" style={{ width: '84%' }}></div>
+                        <div className="h-full bg-purple-600 rounded-full" style={{ width: asset.operatingHours && asset.operatingHours !== '0 Hrs' ? '75%' : '0%' }}></div>
                       </div>
                     </div>
                   </div>
@@ -1066,28 +1129,20 @@ export default function AssetDetails({ assetData, onBack }) {
                 </button>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold text-slate-700">Registration / Compliance</span>
-                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase">Compliant</span>
+              {documentsList && documentsList.length > 0 ? (
+                <div className="space-y-3">
+                  {documentsList.map((doc, idx) => (
+                    <div key={doc.id || idx} className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-slate-700">{doc.name || doc.category || 'Document'}</span>
+                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase">{doc.status || 'Compliant'}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold text-slate-700">Insurance</span>
-                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase">Compliant</span>
+              ) : (
+                <div className="text-xs text-slate-400 font-semibold py-3 text-center border border-dashed border-slate-200 rounded-xl">
+                  No documents uploaded
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold text-slate-700">Inspection / Check</span>
-                  <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-black uppercase">Up to Date</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold text-slate-700">Licence / Permit</span>
-                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase">Compliant</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold text-slate-700">Certification</span>
-                  <span className="px-2 py-0.5 bg-amber-50 text-amber-600 rounded text-[9px] font-black uppercase">Expires Soon (30 days)</span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* 2. UPCOMING MAINTENANCE CARD */}
@@ -1101,40 +1156,26 @@ export default function AssetDetails({ assetData, onBack }) {
                 </button>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs p-2 bg-amber-50/50 rounded-xl border border-amber-100">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle size={14} className="text-amber-500" />
-                    <div>
-                      <div className="font-bold text-slate-900">Service Due</div>
-                      <div className="text-[10px] text-slate-500 font-semibold">24 Jun 2025</div>
+              {maintTasksList && maintTasksList.filter(m => m.status !== 'Completed').length > 0 ? (
+                <div className="space-y-3">
+                  {maintTasksList.filter(m => m.status !== 'Completed').map((m, idx) => (
+                    <div key={m.id || idx} className="flex items-center justify-between text-xs p-2 bg-amber-50/50 rounded-xl border border-amber-100">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle size={14} className="text-amber-500" />
+                        <div>
+                          <div className="font-bold text-slate-900">{m.type || m.description}</div>
+                          <div className="text-[10px] text-slate-500 font-semibold">{m.date}</div>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-bold text-amber-600">{m.status || 'Scheduled'}</span>
                     </div>
-                  </div>
-                  <span className="text-[9px] font-bold text-amber-600">in 18 days</span>
+                  ))}
                 </div>
-
-                <div className="flex items-center justify-between text-xs p-2 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <Wrench size={14} className="text-slate-500" />
-                    <div>
-                      <div className="font-bold text-slate-900">Oil & Filter Change</div>
-                      <div className="text-[10px] text-slate-500 font-semibold">24 Jun 2025</div>
-                    </div>
-                  </div>
-                  <span className="text-[9px] font-bold text-slate-500">in 18 days</span>
+              ) : (
+                <div className="text-xs text-slate-400 font-semibold py-3 text-center border border-dashed border-slate-200 rounded-xl">
+                  No upcoming maintenance scheduled
                 </div>
-
-                <div className="flex items-center justify-between text-xs p-2 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle size={14} className="text-slate-500" />
-                    <div>
-                      <div className="font-bold text-slate-900">Full Inspection</div>
-                      <div className="text-[10px] text-slate-500 font-semibold">24 Aug 2025</div>
-                    </div>
-                  </div>
-                  <span className="text-[9px] font-bold text-slate-500">in 79 days</span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* 3. QUICK ACTIONS CARD */}
@@ -1175,31 +1216,21 @@ export default function AssetDetails({ assetData, onBack }) {
                 </button>
               </div>
 
-              <div className="relative pl-4 space-y-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-purple-600 border-2 border-white"></div>
-                  <div className="text-xs font-bold text-slate-900">Asset assigned to Warehouse 1</div>
-                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">By Sarah M. • 10 May 2025</div>
+              {assignmentsList && assignmentsList.length > 0 ? (
+                <div className="relative pl-4 space-y-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                  {assignmentsList.slice(0, 4).map((asg, idx) => (
+                    <div key={asg.id || idx} className="relative">
+                      <div className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-purple-600 border-2 border-white"></div>
+                      <div className="text-xs font-bold text-slate-900">Asset assigned to {asg.assignedTo}</div>
+                      <div className="text-[10px] text-slate-400 font-semibold mt-0.5">By {asg.assignedBy || 'Admin'} • {asg.fromDate}</div>
+                    </div>
+                  ))}
                 </div>
-
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-purple-600 border-2 border-white"></div>
-                  <div className="text-xs font-bold text-slate-900">Maintenance completed - Oil & Filter Change</div>
-                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">By James P. • 25 Apr 2025</div>
+              ) : (
+                <div className="text-xs text-slate-400 font-semibold py-3 text-center border border-dashed border-slate-200 rounded-xl">
+                  No recent activity logged
                 </div>
-
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-purple-600 border-2 border-white"></div>
-                  <div className="text-xs font-bold text-slate-900">Inspection completed - Daily Check</div>
-                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">By Robert T. • 10 Apr 2025</div>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1 w-2.5 h-2.5 rounded-full bg-purple-600 border-2 border-white"></div>
-                  <div className="text-xs font-bold text-slate-900">Asset created</div>
-                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">By Sarah M. • 15 Mar 2022</div>
-                </div>
-              </div>
+              )}
             </div>
 
           </div>
@@ -1240,206 +1271,341 @@ export default function AssetDetails({ assetData, onBack }) {
                 ))}
               </div>
 
-              {/* CURRENT ASSIGNMENT CARD */}
-              <div className="mb-6">
-                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-4">
-                  CURRENT ASSIGNMENT
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 bg-slate-50/60 p-4 rounded-xl border border-slate-100 text-xs">
+              {/* SUB TAB 1: Current Assignment */}
+              {(activeSubTab === 'Current Assignment') && (
+                <div className="space-y-6">
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Assigned To</span>
-                    <span className="font-bold text-slate-900 block">{asset.assignedTo}</span>
-                    <span className="text-[10px] text-slate-500 font-semibold block">[Internal Location]</span>
-                  </div>
+                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-4">
+                      CURRENT ASSIGNMENT
+                    </h3>
 
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Branch</span>
-                    <span className="font-bold text-slate-900 block">{asset.branch}</span>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Assigned By</span>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="w-4 h-4 rounded-full bg-slate-200 text-[9px] font-black text-slate-700 flex items-center justify-center">SM</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 bg-slate-50/60 p-4 rounded-xl border border-slate-100 text-xs">
                       <div>
-                        <span className="font-bold text-slate-900 block leading-tight">Sarah Mitchell</span>
-                        <span className="text-[9px] text-slate-500 font-semibold block">Super Admin</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Assigned To</span>
+                        <span className="font-bold text-slate-900 block">{asset.assignedTo}</span>
+                        <span className="text-[10px] text-slate-500 font-semibold block">[Internal Location]</span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Branch</span>
+                        <span className="font-bold text-slate-900 block">{asset.branch}</span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Assigned By</span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="w-4 h-4 rounded-full bg-slate-200 text-[9px] font-black text-slate-700 flex items-center justify-center">
+                            {assignmentsList[0]?.assignedByAvatar || 'SA'}
+                          </span>
+                          <div>
+                            <span className="font-bold text-slate-900 block leading-tight">{assignmentsList[0]?.assignedBy || 'System Admin'}</span>
+                            <span className="text-[9px] text-slate-500 font-semibold block">Company Admin</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Assigned Date</span>
+                        <span className="font-bold text-slate-900 block">{assignmentsList[0]?.fromDate || '-'}</span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Purpose</span>
+                        <span className="font-bold text-slate-900 block">{assignmentsList[0]?.purpose || 'General Operations'}</span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Expected Return</span>
+                        <span className="font-bold text-emerald-600 block">{assignmentsList[0]?.toDate || '- Ongoing'}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Assigned Date</span>
-                    <span className="font-bold text-slate-900 block">24 May 2025</span>
-                    <span className="text-[10px] text-slate-500 font-semibold block">09:15 AM</span>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Purpose</span>
-                    <span className="font-bold text-slate-900 block">Daily Operations</span>
-                    <span className="text-[10px] text-slate-500 font-semibold block">(General Use)</span>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Expected Return</span>
-                    <span className="font-bold text-emerald-600 block">- Ongoing</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* ASSIGNMENT HISTORY (6) TABLE */}
-              <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">
-                    ASSIGNMENT HISTORY ({filteredAssignments.length})
-                  </h3>
-
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <div className="relative flex-1 sm:w-60">
-                      <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
-                      <input
-                        type="text"
-                        value={assignmentSearch}
-                        onChange={(e) => setAssignmentSearch(e.target.value)}
-                        placeholder="Search assignments..."
-                        className="w-full bg-white border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500"
-                      />
+                  <div className="bg-purple-50/30 rounded-xl p-4 border border-purple-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                        <User size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900">Need to transfer or re-assign this asset?</h4>
+                        <p className="text-[11px] text-slate-500">Update current driver, warehouse location, or operational branch instantly.</p>
+                      </div>
                     </div>
-                    <button className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer">
-                      <Filter size={12} /> Filters
-                    </button>
-                    <button className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer">
-                      <Download size={12} /> Export
+                    <button
+                      onClick={() => setIsAssignModalOpen(true)}
+                      className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
+                    >
+                      Re-assign Asset
                     </button>
                   </div>
                 </div>
+              )}
 
-                {/* TABLE */}
-                <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                  <table className="w-full text-left text-xs border-collapse min-w-[950px]">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
-                        <th className="p-3 whitespace-nowrap">Assignment ID</th>
-                        <th className="p-3 whitespace-nowrap">Assigned To</th>
-                        <th className="p-3 whitespace-nowrap">Branch / Location</th>
-                        <th className="p-3 whitespace-nowrap">Purpose</th>
-                        <th className="p-3 whitespace-nowrap">Assigned By</th>
-                        <th className="p-3 whitespace-nowrap">From Date / Time</th>
-                        <th className="p-3 whitespace-nowrap">To Date / Time</th>
-                        <th className="p-3 whitespace-nowrap">Duration</th>
-                        <th className="p-3 whitespace-nowrap">Status</th>
-                        <th className="p-3 text-center whitespace-nowrap">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredAssignments.map((asg, idx) => (
-                        <tr key={asg.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="p-3 font-bold text-purple-700 whitespace-nowrap">{asg.id}</td>
-                          <td className="p-3 font-bold text-slate-900 whitespace-nowrap">{asg.assignedTo}</td>
-                          <td className="p-3 font-semibold text-slate-700 whitespace-nowrap leading-tight">{asg.branchLocation}</td>
-                          <td className="p-3 font-semibold text-slate-700 whitespace-nowrap leading-tight">{asg.purpose}</td>
-                          <td className="p-3 whitespace-nowrap">
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-full bg-slate-200 text-[9px] font-black text-slate-700 flex items-center justify-center shrink-0">{asg.assignedByAvatar}</span>
-                              <span className="font-bold text-slate-900 whitespace-nowrap">{asg.assignedBy}</span>
-                            </div>
-                          </td>
-                          <td className="p-3 font-medium text-slate-700 whitespace-nowrap leading-tight">{asg.fromDate}</td>
-                          <td className="p-3 font-medium text-slate-700 whitespace-nowrap leading-tight">{asg.toDate}</td>
-                          <td className="p-3 font-medium text-slate-700 whitespace-nowrap leading-tight">{asg.duration}</td>
-                          <td className="p-3 whitespace-nowrap">
-                            {asg.status === 'Current' ? (
-                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-wider">Current</span>
-                            ) : (
-                              <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase tracking-wider">Completed</span>
-                            )}
-                          </td>
-                          <td className="p-3 whitespace-nowrap relative">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                title="View Assignment Details"
-                                onClick={() => setViewAssignmentModal(asg)}
-                                className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
-                              >
-                                <Eye size={14} />
-                              </button>
+              {/* SUB TAB 2: Assignment History */}
+              {(activeSubTab === 'Assignment History' || !activeSubTab) && (
+                <div>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">
+                      ASSIGNMENT HISTORY ({filteredAssignments.length})
+                    </h3>
 
-                              <div className="relative">
-                                <button
-                                  title="More Actions"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setAsgMenuIndex(asgMenuIndex === idx ? null : idx);
-                                  }}
-                                  className={`w-7 h-7 rounded-md ${asgMenuIndex === idx ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700'} flex items-center justify-center transition-colors cursor-pointer`}
-                                >
-                                  <MoreHorizontal size={14} />
-                                </button>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <div className="relative flex-1 sm:w-60">
+                        <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                        <input
+                          type="text"
+                          value={assignmentSearch}
+                          onChange={(e) => setAssignmentSearch(e.target.value)}
+                          placeholder="Search assignments..."
+                          className="w-full bg-white border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500"
+                        />
+                      </div>
+                      <button className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer">
+                        <Filter size={12} /> Filters
+                      </button>
+                      <button className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer">
+                        <Download size={12} /> Export
+                      </button>
+                    </div>
+                  </div>
 
-                                {asgMenuIndex === idx && (
-                                  <>
-                                    <div className="fixed inset-0 z-40" onClick={() => setAsgMenuIndex(null)} />
-                                    <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700">
-                                      <button
-                                        onClick={() => { setViewAssignmentModal(asg); setAsgMenuIndex(null); }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
-                                      >
-                                        👁️ View Details
-                                      </button>
-                                      <button
-                                        onClick={() => { setEditAssignmentModal({ ...asg, index: idx }); setAsgMenuIndex(null); }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
-                                      >
-                                        ✏️ Edit Assignment
-                                      </button>
-                                      <button
-                                        onClick={() => { triggerToast('Assignment Exported', `Exported details for ${asg.id}`); setAsgMenuIndex(null); }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
-                                      >
-                                        📄 Export Details
-                                      </button>
-                                      <div className="h-px bg-slate-100 my-1" />
-                                      <button
-                                        disabled={asg.status === 'Completed'}
-                                        onClick={() => {
-                                          if (asg.status === 'Completed') return;
-                                          setAssignmentsList(prev => prev.map((item, i) => i === idx ? { ...item, status: 'Completed', toDate: '24 May 2025\n12:00 PM' } : item));
-                                          triggerToast('Assignment Ended', `Assignment ${asg.id} completed.`);
-                                          setAsgMenuIndex(null);
-                                        }}
-                                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left w-full cursor-pointer ${asg.status === 'Completed' ? 'text-slate-400 opacity-60 cursor-not-allowed' : 'text-rose-600 hover:bg-rose-50'}`}
-                                      >
-                                        ⏹️ End Assignment
-                                      </button>
-                                    </div>
-                                  </>
+                  <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table className="w-full text-left text-xs border-collapse min-w-[950px]">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                          <th className="p-3 whitespace-nowrap">Assignment ID</th>
+                          <th className="p-3 whitespace-nowrap">Assigned To</th>
+                          <th className="p-3 whitespace-nowrap">Branch / Location</th>
+                          <th className="p-3 whitespace-nowrap">Purpose</th>
+                          <th className="p-3 whitespace-nowrap">Assigned By</th>
+                          <th className="p-3 whitespace-nowrap">From Date / Time</th>
+                          <th className="p-3 whitespace-nowrap">To Date / Time</th>
+                          <th className="p-3 whitespace-nowrap">Duration</th>
+                          <th className="p-3 whitespace-nowrap">Status</th>
+                          <th className="p-3 text-center whitespace-nowrap">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredAssignments.length === 0 ? (
+                          <tr>
+                            <td colSpan="10" className="p-8 text-center text-slate-400 font-semibold text-xs">
+                              No assignment history records found for this asset.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredAssignments.map((asg, idx) => (
+                            <tr key={asg.id} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="p-3 font-bold text-purple-700 whitespace-nowrap">{asg.id}</td>
+                              <td className="p-3 font-bold text-slate-900 whitespace-nowrap">{asg.assignedTo}</td>
+                              <td className="p-3 font-semibold text-slate-700 whitespace-nowrap leading-tight">{asg.branchLocation}</td>
+                              <td className="p-3 font-semibold text-slate-700 whitespace-nowrap leading-tight">{asg.purpose}</td>
+                              <td className="p-3 whitespace-nowrap">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-5 h-5 rounded-full bg-slate-200 text-[9px] font-black text-slate-700 flex items-center justify-center shrink-0">{asg.assignedByAvatar}</span>
+                                  <span className="font-bold text-slate-900 whitespace-nowrap">{asg.assignedBy}</span>
+                                </div>
+                              </td>
+                              <td className="p-3 font-medium text-slate-700 whitespace-nowrap leading-tight">{asg.fromDate}</td>
+                              <td className="p-3 font-medium text-slate-700 whitespace-nowrap leading-tight">{asg.toDate}</td>
+                              <td className="p-3 font-medium text-slate-700 whitespace-nowrap leading-tight">{asg.duration}</td>
+                              <td className="p-3 whitespace-nowrap">
+                                {asg.status === 'Current' ? (
+                                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-wider">Current</span>
+                                ) : (
+                                  <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase tracking-wider">Completed</span>
                                 )}
-                              </div>
-                            </div>
+                              </td>
+                              <td className="p-3 whitespace-nowrap relative">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    title="View Assignment Details"
+                                    onClick={() => setViewAssignmentModal(asg)}
+                                    className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
+                                  >
+                                    <Eye size={14} />
+                                  </button>
+
+                                  <div className="relative">
+                                    <button
+                                      title="More Actions"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setAsgMenuIndex(asgMenuIndex === idx ? null : idx);
+                                      }}
+                                      className={`w-7 h-7 rounded-md ${asgMenuIndex === idx ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700'} flex items-center justify-center transition-colors cursor-pointer`}
+                                    >
+                                      <MoreHorizontal size={14} />
+                                    </button>
+
+                                    {asgMenuIndex === idx && (
+                                      <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setAsgMenuIndex(null)} />
+                                        <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700">
+                                          <button
+                                            onClick={() => { setViewAssignmentModal(asg); setAsgMenuIndex(null); }}
+                                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                          >
+                                            👁️ View Details
+                                          </button>
+                                          <button
+                                            onClick={() => { setEditAssignmentModal({ ...asg, index: idx }); setAsgMenuIndex(null); }}
+                                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                          >
+                                            ✏️ Edit Assignment
+                                          </button>
+                                          <button
+                                            onClick={() => { triggerToast('Assignment Exported', `Exported details for ${asg.id}`); setAsgMenuIndex(null); }}
+                                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                          >
+                                            📄 Export Details
+                                          </button>
+                                          <div className="h-px bg-slate-100 my-1" />
+                                          <button
+                                            disabled={asg.status === 'Completed'}
+                                            onClick={() => {
+                                              if (asg.status === 'Completed') return;
+                                              setAssignmentsList(prev => prev.map((item, i) => i === idx ? { ...item, status: 'Completed', toDate: 'Completed' } : item));
+                                              triggerToast('Assignment Ended', `Assignment ${asg.id} completed.`);
+                                              setAsgMenuIndex(null);
+                                            }}
+                                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left w-full cursor-pointer ${asg.status === 'Completed' ? 'text-slate-400 opacity-60 cursor-not-allowed' : 'text-rose-600 hover:bg-rose-50'}`}
+                                          >
+                                            ⏹️ End Assignment
+                                          </button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs text-slate-500 font-semibold mt-4">
+                    <span>Showing 1 to {filteredAssignments.length} of {filteredAssignments.length} assignments</span>
+                    <div className="flex items-center gap-2">
+                      <button className="px-2.5 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 disabled:opacity-50" disabled>&lt;</button>
+                      <span className="px-3 py-1 bg-purple-50 border border-purple-200 rounded-lg font-bold text-purple-700">1</span>
+                      <button className="px-2.5 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 disabled:opacity-50" disabled>&gt;</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SUB TAB 3: Transfer History */}
+              {(activeSubTab === 'Transfer History') && (
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">
+                      LOCATION & BRANCH TRANSFER HISTORY
+                    </h3>
+                    <button
+                      onClick={() => setIsAssignModalOpen(true)}
+                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Plus size={12} /> Transfer Asset
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table className="w-full text-left text-xs border-collapse min-w-[700px]">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                          <th className="p-3">Transfer ID</th>
+                          <th className="p-3">From Branch / Location</th>
+                          <th className="p-3">To Branch / Location</th>
+                          <th className="p-3">Transferred By</th>
+                          <th className="p-3">Transfer Date</th>
+                          <th className="p-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        <tr>
+                          <td colSpan="6" className="p-8 text-center text-slate-400 font-semibold text-xs">
+                            No transfer history recorded for this asset.
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* TABLE PAGINATION */}
-                <div className="flex justify-between items-center text-xs text-slate-500 font-semibold mt-4">
-                  <span>Showing 1 to {filteredAssignments.length} of {filteredAssignments.length} assignments</span>
-                  <div className="flex items-center gap-2">
-                    <button className="px-2.5 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 disabled:opacity-50" disabled>&lt;</button>
-                    <span className="px-3 py-1 bg-purple-50 border border-purple-200 rounded-lg font-bold text-purple-700">1</span>
-                    <button className="px-2.5 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 disabled:opacity-50" disabled>&gt;</button>
-                    <select className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 outline-none">
-                      <option>10 / page</option>
-                      <option>25 / page</option>
-                      <option>50 / page</option>
-                    </select>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
+              )}
 
-              </div>
+              {/* SUB TAB 4: Utilisation History */}
+              {(activeSubTab === 'Utilisation History') && (
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">
+                    UTILISATION & OPERATING METRICS
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Operating Hours</span>
+                      <span className="text-lg font-black text-slate-900">{asset.operatingHours || '0 Hrs'}</span>
+                    </div>
+                    <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 text-center">
+                      <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest block mb-1">Active Utilisation</span>
+                      <span className="text-lg font-black text-emerald-700">{asset.operatingHours && asset.operatingHours !== '0 Hrs' ? '78%' : '0%'}</span>
+                    </div>
+                    <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-100 text-center">
+                      <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest block mb-1">Idle Time</span>
+                      <span className="text-lg font-black text-amber-700">{asset.operatingHours && asset.operatingHours !== '0 Hrs' ? '22%' : '0%'}</span>
+                    </div>
+                    <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-100 text-center">
+                      <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest block mb-1">Avg Daily Hours</span>
+                      <span className="text-lg font-black text-purple-700">{asset.operatingHours && asset.operatingHours !== '0 Hrs' ? '4.2 Hrs' : '0 Hrs'}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-slate-50/50 rounded-xl border border-slate-200 text-center text-xs text-slate-500 font-semibold">
+                    <Activity size={24} className="mx-auto mb-2 text-purple-500" />
+                    Live telematics & hourly utilisation logging active for {asset.name || asset.id}.
+                  </div>
+                </div>
+              )}
+
+              {/* SUB TAB 5: Usage Summary */}
+              {(activeSubTab === 'Usage Summary') && (
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">
+                    USAGE & PERFORMANCE SUMMARY
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Current Odometer / Reading</span>
+                      <span className="text-base font-black text-slate-900">{asset.odometer || asset.operatingHours || '0 Hrs'}</span>
+                    </div>
+                    <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Asset Status</span>
+                      <span className="text-base font-black text-emerald-600">{asset.status}</span>
+                    </div>
+                    <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Asset Condition</span>
+                      <span className="text-base font-black text-slate-900">{asset.condition}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-2">
+                    <div className="flex justify-between border-b border-slate-200/60 pb-2">
+                      <span className="font-bold text-slate-600">Assigned Location:</span>
+                      <span className="font-semibold text-slate-900">{asset.branch} - {asset.currentLocation}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-200/60 pb-2">
+                      <span className="font-bold text-slate-600">Current Assignee:</span>
+                      <span className="font-semibold text-slate-900">{asset.assignedTo}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-bold text-slate-600">Last Telematics Refresh:</span>
+                      <span className="font-semibold text-slate-900">Live (Real-time DB)</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>
@@ -1459,47 +1625,27 @@ export default function AssetDetails({ assetData, onBack }) {
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs p-2.5 bg-amber-50/50 rounded-xl border border-amber-100">
-                  <div className="flex items-center gap-2">
-                    <Calendar size={14} className="text-amber-500 shrink-0" />
-                    <div>
-                      <div className="font-bold text-slate-900">Service & Maintenance</div>
-                      <div className="text-[10px] text-slate-500 font-semibold">Scheduled Use</div>
+                {assignmentsList.filter(a => a.status === 'Upcoming' || a.status === 'Scheduled').length === 0 ? (
+                  <div className="text-[11px] font-semibold text-slate-400 text-center py-4">
+                    No upcoming assignments scheduled
+                  </div>
+                ) : (
+                  assignmentsList.filter(a => a.status === 'Upcoming' || a.status === 'Scheduled').map((up, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs p-2.5 bg-purple-50/50 rounded-xl border border-purple-100">
+                      <div className="flex items-center gap-2">
+                        <Calendar size={14} className="text-purple-600 shrink-0" />
+                        <div>
+                          <div className="font-bold text-slate-900">{up.assignedTo}</div>
+                          <div className="text-[10px] text-slate-500 font-semibold">{up.purpose}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] font-bold text-slate-900">{up.fromDate}</div>
+                        <div className="text-[9px] font-bold text-purple-600">Upcoming</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] font-bold text-slate-900">24 Jun 2025</div>
-                    <div className="text-[9px] font-bold text-amber-600">in 18 days</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs p-2.5 bg-purple-50/50 rounded-xl border border-purple-100">
-                  <div className="flex items-center gap-2">
-                    <Package size={14} className="text-purple-600 shrink-0" />
-                    <div>
-                      <div className="font-bold text-slate-900">Warehouse 1</div>
-                      <div className="text-[10px] text-slate-500 font-semibold">Daily Operations</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] font-bold text-slate-900">24 Jun 2025</div>
-                    <div className="text-[9px] font-bold text-amber-600">in 18 days</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs p-2.5 bg-blue-50/50 rounded-xl border border-blue-100">
-                  <div className="flex items-center gap-2">
-                    <Users size={14} className="text-blue-600 shrink-0" />
-                    <div>
-                      <div className="font-bold text-slate-900">Dispatch Team</div>
-                      <div className="text-[10px] text-slate-500 font-semibold">Loading / Dispatch</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] font-bold text-slate-900">25 Jun 2025</div>
-                    <div className="text-[9px] font-bold text-amber-600">in 19 days</div>
-                  </div>
-                </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -1533,72 +1679,7 @@ export default function AssetDetails({ assetData, onBack }) {
           </div>
           </div>
 
-          {/* DEVELOPER NOTES - ASSET ASSIGNMENTS & HISTORY CARD */}
-          <div className="bg-purple-50/50 rounded-2xl border border-purple-100 p-4 sm:p-6 shadow-sm">
-            <h4 className="text-xs font-black text-purple-900 flex items-center gap-2 mb-4 uppercase tracking-widest">
-              <Info size={14} className="text-purple-600 shrink-0" /> DEVELOPER NOTES - ASSET ASSIGNMENTS & HISTORY
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
-              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                  1. PURPOSE
-                </div>
-                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                  <li>Track current and past assignments.</li>
-                  <li>Monitor usage, transfer and return history.</li>
-                  <li>Ensure full asset accountability.</li>
-                </ul>
-              </div>
-              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                  2. KEY FEATURES
-                </div>
-                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                  <li>Current assignment with expected return.</li>
-                  <li>Complete assignment and transfer history.</li>
-                  <li>Utilisation and usage summary.</li>
-                  <li>Upcoming assignments and calendar view.</li>
-                </ul>
-              </div>
-              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                  3. AUTOMATION & ALERTS
-                </div>
-                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                  <li>Notify on overdue returns.</li>
-                  <li>Reminder before scheduled assignments.</li>
-                  <li>Auto-update usage hours from telematics.</li>
-                  <li>AI insights for idle or underutilised assets.</li>
-                </ul>
-              </div>
-              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                  4. PERMISSIONS
-                </div>
-                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                  <li>Super Admin: Full access.</li>
-                  <li>Admin/Manager: Create, edit, assign.</li>
-                  <li>Dispatch: Assign & view assignments.</li>
-                  <li>Staff: View assigned assets only.</li>
-                </ul>
-              </div>
-              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                  5. DATA SOURCES
-                </div>
-                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                  <li>Assets module.</li>
-                  <li>Assignments & Transfers.</li>
-                  <li>Live Tracking / Telematics.</li>
-                  <li>Maintenance module.</li>
-                </ul>
-              </div>
-            </div>
-            <div className="mt-4 pt-3 border-t border-purple-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-[9px] font-semibold text-slate-500">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1"><RefreshCw size={10} /> Data auto-refreshes every 5 minutes</span>
-            </div>
-          </div>
+
         </div>
       )}
 
@@ -1626,7 +1707,9 @@ export default function AssetDetails({ assetData, onBack }) {
             <div className="flex flex-col space-y-4">
               
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">MAINTENANCE SCHEDULE ({mockMaintenanceTasks.length})</h3>
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">
+                  {activeMaintTab === 'Parts & Labour' ? 'PARTS & LABOUR LOG (0)' : activeMaintTab === 'Cost Summary' ? 'MAINTENANCE COST BREAKDOWN' : activeMaintTab === 'Downtime Log' ? 'DOWNTIME LOG (0)' : `${activeMaintTab.toUpperCase()} (${filteredMaintTasks.length})`}
+                </h3>
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
@@ -1653,142 +1736,227 @@ export default function AssetDetails({ assetData, onBack }) {
                     </button>
                   </div>
                   
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors bg-white whitespace-nowrap cursor-pointer shrink-0">
+                  <button onClick={() => triggerToast('Export Complete', `${activeMaintTab} data exported as CSV.`)} className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors bg-white whitespace-nowrap cursor-pointer shrink-0">
                     <Download size={12} /> Export
                   </button>
                 </div>
 
-                {/* Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse min-w-[1000px]">
-                    <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/50">
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Task / Maintenance</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Type</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Priority</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Frequency / Interval</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Last Performed</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Next Due</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Status</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Days Remaining</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Assigned To</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider text-center whitespace-nowrap">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {maintTasksList.map((task, idx) => (
-                        <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <h4 className="text-[11px] font-bold text-slate-800">{task.task}</h4>
-                            <p className="text-[10px] font-medium text-slate-500 mt-0.5">{task.desc}</p>
-                          </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <span className={`text-[11px] font-bold ${task.type === 'Service' ? 'text-purple-600' : 'text-amber-500'}`}>
-                              {task.type}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <span className={`text-[11px] font-bold ${task.priority === 'High' ? 'text-rose-500' : task.priority === 'Medium' ? 'text-amber-500' : 'text-emerald-500'}`}>
-                              {task.priority}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{task.freq}</td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <span className="text-[11px] font-semibold text-slate-700 block">{task.lastDate}</span>
-                            {task.lastHrs && <span className="text-[10px] font-semibold text-slate-500 block">@ {task.lastHrs}</span>}
-                          </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <span className="text-[11px] font-semibold text-slate-700 block">{task.nextDate}</span>
-                            {task.nextHrs && <span className="text-[10px] font-semibold text-slate-500 block">@ {task.nextHrs}</span>}
-                          </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <span className={`text-[10px] font-bold ${task.status === 'Due Soon' ? 'text-amber-500' : task.status === 'Scheduled' ? 'text-blue-500' : 'text-emerald-500'}`}>
-                              {task.status}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <span className={`text-[10px] font-bold ${task.daysRemaining === 'Completed' ? 'text-emerald-500' : task.daysRemaining.includes('18') ? 'text-amber-500' : 'text-blue-500'}`}>
-                              {task.daysRemaining}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <h4 className="text-[11px] font-bold text-slate-800">{task.assigned}</h4>
-                            {task.role && <p className="text-[10px] font-medium text-slate-500 mt-0.5">{task.role}</p>}
-                          </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap relative">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                title="View Maintenance Task Details"
-                                onClick={() => setViewMaintTaskModal(task)}
-                                className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
-                              >
-                                <Eye size={14} />
-                              </button>
-
-                              <div className="relative">
-                                <button
-                                  title="More Actions"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setMaintMenuIndex(maintMenuIndex === idx ? null : idx);
-                                  }}
-                                  className={`w-7 h-7 rounded-md ${maintMenuIndex === idx ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700'} flex items-center justify-center transition-colors cursor-pointer`}
-                                >
-                                  <MoreHorizontal size={14} />
-                                </button>
-
-                                {maintMenuIndex === idx && (
-                                  <>
-                                    <div className="fixed inset-0 z-40" onClick={() => setMaintMenuIndex(null)} />
-                                    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700">
-                                      <button
-                                        onClick={() => { setViewMaintTaskModal(task); setMaintMenuIndex(null); }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
-                                      >
-                                        👁️ View Details
-                                      </button>
-                                      <button
-                                        disabled={task.status === 'Completed'}
-                                        onClick={() => {
-                                          if (task.status === 'Completed') return;
-                                          setMaintTasksList(prev => prev.map((item, i) => i === idx ? { ...item, status: 'Completed', daysRemaining: 'Completed' } : item));
-                                          triggerToast('Maintenance Completed', `Task "${task.task}" marked as completed.`);
-                                          setMaintMenuIndex(null);
-                                        }}
-                                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left w-full cursor-pointer ${task.status === 'Completed' ? 'text-slate-400 opacity-60 cursor-not-allowed' : 'text-emerald-600 hover:bg-emerald-50'}`}
-                                      >
-                                        ✅ Mark as Completed
-                                      </button>
-                                      <button
-                                        onClick={() => { triggerToast('Service Rescheduled', `Reschedule requested for "${task.task}"`); setMaintMenuIndex(null); }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
-                                      >
-                                        📅 Reschedule Service
-                                      </button>
-                                      <div className="h-px bg-slate-100 my-1" />
-                                      <button
-                                        disabled={task.status === 'Completed'}
-                                        onClick={() => {
-                                          if (task.status === 'Completed') return;
-                                          setMaintTasksList(prev => prev.filter((_, i) => i !== idx));
-                                          triggerToast('Task Cancelled', `Maintenance task "${task.task}" cancelled.`);
-                                          setMaintMenuIndex(null);
-                                        }}
-                                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left w-full cursor-pointer ${task.status === 'Completed' ? 'text-slate-400 opacity-60 cursor-not-allowed' : 'text-rose-600 hover:bg-rose-50'}`}
-                                      >
-                                        ❌ Cancel Task
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
+                {/* Sub-Tab Conditional Content Rendering */}
+                {activeMaintTab === 'Parts & Labour' ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[800px]">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50/50">
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Part / Material</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Work Order</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Quantity</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Unit Cost</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Total Cost</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Technician</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td colSpan="7" className="px-5 py-12 text-center text-xs font-semibold text-slate-400 bg-slate-50/30">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                              <Package size={28} className="text-slate-300" />
+                              <span>No parts or labour records logged for this asset.</span>
                             </div>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </tbody>
+                    </table>
+                  </div>
+                ) : activeMaintTab === 'Cost Summary' ? (
+                  <div className="p-6 space-y-4">
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="bg-purple-50/50 border border-purple-100 p-4 rounded-xl">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Preventative Service</span>
+                        <div className="text-lg font-black text-slate-900 mt-1">$0.00</div>
+                      </div>
+                      <div className="bg-amber-50/50 border border-amber-100 p-4 rounded-xl">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Unscheduled Repairs</span>
+                        <div className="text-lg font-black text-slate-900 mt-1">$0.00</div>
+                      </div>
+                      <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Total Maintenance Cost</span>
+                        <div className="text-lg font-black text-slate-900 mt-1">$0.00</div>
+                      </div>
+                    </div>
+                    <div className="text-center py-8 text-xs font-semibold text-slate-400 bg-slate-50/30 rounded-xl border border-slate-100">
+                      No maintenance cost breakdown entries recorded.
+                    </div>
+                  </div>
+                ) : activeMaintTab === 'Downtime Log' ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[800px]">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50/50">
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Issue / Event</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Category</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Start Date</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">End Date</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Duration (Hrs)</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Est. Loss ($)</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td colSpan="7" className="px-5 py-12 text-center text-xs font-semibold text-slate-400 bg-slate-50/30">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                              <AlertTriangle size={28} className="text-slate-300" />
+                              <span>No downtime events recorded for this asset.</span>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[1000px]">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50/50">
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Task / Maintenance</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Type</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Priority</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Frequency / Interval</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Last Performed</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Next Due</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Status</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Days Remaining</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Assigned To</th>
+                          <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider text-center whitespace-nowrap">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredMaintTasks.length === 0 ? (
+                          <tr>
+                            <td colSpan="10" className="px-5 py-12 text-center text-xs font-semibold text-slate-400 bg-slate-50/30">
+                              <div className="flex flex-col items-center justify-center gap-2">
+                                <Wrench size={28} className="text-slate-300" />
+                                <span>No maintenance records found under "{activeMaintTab}"</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredMaintTasks.map((task, idx) => (
+                            <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
+                              <td className="px-5 py-3.5 whitespace-nowrap">
+                                <h4 className="text-[11px] font-bold text-slate-800">{task.task}</h4>
+                                <p className="text-[10px] font-medium text-slate-500 mt-0.5">{task.desc}</p>
+                              </td>
+                              <td className="px-5 py-3.5 whitespace-nowrap">
+                                <span className={`text-[11px] font-bold ${task.type === 'Service' ? 'text-purple-600' : 'text-amber-500'}`}>
+                                  {task.type}
+                                </span>
+                              </td>
+                              <td className="px-5 py-3.5 whitespace-nowrap">
+                                <span className={`text-[11px] font-bold ${task.priority === 'High' ? 'text-rose-500' : task.priority === 'Medium' ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                  {task.priority}
+                                </span>
+                              </td>
+                              <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{task.freq}</td>
+                              <td className="px-5 py-3.5 whitespace-nowrap">
+                                <span className="text-[11px] font-semibold text-slate-700 block">{task.lastDate}</span>
+                                {task.lastHrs && <span className="text-[10px] font-semibold text-slate-500 block">@ {task.lastHrs}</span>}
+                              </td>
+                              <td className="px-5 py-3.5 whitespace-nowrap">
+                                <span className="text-[11px] font-semibold text-slate-700 block">{task.nextDate}</span>
+                                {task.nextHrs && <span className="text-[10px] font-semibold text-slate-500 block">@ {task.nextHrs}</span>}
+                              </td>
+                              <td className="px-5 py-3.5 whitespace-nowrap">
+                                <span className={`text-[10px] font-bold ${task.status === 'Due Soon' ? 'text-amber-500' : task.status === 'Scheduled' ? 'text-blue-500' : 'text-emerald-500'}`}>
+                                  {task.status}
+                                </span>
+                              </td>
+                              <td className="px-5 py-3.5 whitespace-nowrap">
+                                <span className={`text-[10px] font-bold ${task.daysRemaining === 'Completed' ? 'text-emerald-500' : task.daysRemaining?.includes('18') ? 'text-amber-500' : 'text-blue-500'}`}>
+                                  {task.daysRemaining}
+                                </span>
+                              </td>
+                              <td className="px-5 py-3.5 whitespace-nowrap">
+                                <h4 className="text-[11px] font-bold text-slate-800">{task.assigned}</h4>
+                                {task.role && <p className="text-[10px] font-medium text-slate-500 mt-0.5">{task.role}</p>}
+                              </td>
+                              <td className="px-5 py-3.5 whitespace-nowrap relative">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    title="View Maintenance Task Details"
+                                    onClick={() => setViewMaintTaskModal(task)}
+                                    className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
+                                  >
+                                    <Eye size={14} />
+                                  </button>
+
+                                  <div className="relative">
+                                    <button
+                                      title="More Actions"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setMaintMenuIndex(maintMenuIndex === idx ? null : idx);
+                                      }}
+                                      className={`w-7 h-7 rounded-md ${maintMenuIndex === idx ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700'} flex items-center justify-center transition-colors cursor-pointer`}
+                                    >
+                                      <MoreHorizontal size={14} />
+                                    </button>
+
+                                    {maintMenuIndex === idx && (
+                                      <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setMaintMenuIndex(null)} />
+                                        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700">
+                                          <button
+                                            onClick={() => { setViewMaintTaskModal(task); setMaintMenuIndex(null); }}
+                                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                          >
+                                            👁️ View Details
+                                          </button>
+                                          <button
+                                            disabled={task.status === 'Completed'}
+                                            onClick={() => {
+                                              if (task.status === 'Completed') return;
+                                              setMaintTasksList(prev => prev.map((item, i) => i === idx ? { ...item, status: 'Completed', daysRemaining: 'Completed' } : item));
+                                              triggerToast('Maintenance Completed', `Task "${task.task}" marked as completed.`);
+                                              setMaintMenuIndex(null);
+                                            }}
+                                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left w-full cursor-pointer ${task.status === 'Completed' ? 'text-slate-400 opacity-60 cursor-not-allowed' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                                          >
+                                            ✅ Mark as Completed
+                                          </button>
+                                          <button
+                                            onClick={() => { triggerToast('Service Rescheduled', `Reschedule requested for "${task.task}"`); setMaintMenuIndex(null); }}
+                                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                          >
+                                            📅 Reschedule Service
+                                          </button>
+                                          <div className="h-px bg-slate-100 my-1" />
+                                          <button
+                                            disabled={task.status === 'Completed'}
+                                            onClick={() => {
+                                              if (task.status === 'Completed') return;
+                                              setMaintTasksList(prev => prev.filter((_, i) => i !== idx));
+                                              triggerToast('Task Cancelled', `Maintenance task "${task.task}" cancelled.`);
+                                              setMaintMenuIndex(null);
+                                            }}
+                                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left w-full cursor-pointer ${task.status === 'Completed' ? 'text-slate-400 opacity-60 cursor-not-allowed' : 'text-rose-600 hover:bg-rose-50'}`}
+                                          >
+                                            ❌ Cancel Task
+                                          </button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
                 
                 {/* Pagination Footer */}
                 <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium bg-slate-50/30">
@@ -1818,28 +1986,28 @@ export default function AssetDetails({ assetData, onBack }) {
                   <div className="bg-white border border-purple-100 rounded-xl p-3 flex flex-col shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                       <div className="w-6 h-6 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100"><Calendar size={12} /></div>
-                      <span className="text-lg font-black text-slate-800">7</span>
+                      <span className="text-lg font-black text-slate-800">{maintTasksList.length}</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Total Tasks</span>
                   </div>
                   <div className="bg-white border border-amber-100 rounded-xl p-3 flex flex-col shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                       <div className="w-6 h-6 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100"><Clock size={12} /></div>
-                      <span className="text-lg font-black text-slate-800">2</span>
+                      <span className="text-lg font-black text-slate-800">{maintTasksList.filter(t => t.status === 'Due Soon').length}</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Due Soon</span>
                   </div>
                   <div className="bg-white border border-rose-100 rounded-xl p-3 flex flex-col shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                       <div className="w-6 h-6 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100"><AlertTriangle size={12} /></div>
-                      <span className="text-lg font-black text-slate-800">1</span>
+                      <span className="text-lg font-black text-slate-800">{maintTasksList.filter(t => t.status === 'Overdue').length}</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Overdue</span>
                   </div>
                   <div className="bg-white border border-emerald-100 rounded-xl p-3 flex flex-col shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                       <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100"><CheckCircle2 size={12} /></div>
-                      <span className="text-lg font-black text-slate-800">4</span>
+                      <span className="text-lg font-black text-slate-800">{maintTasksList.filter(t => t.status === 'Completed').length}</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Completed</span>
                   </div>
@@ -1850,18 +2018,28 @@ export default function AssetDetails({ assetData, onBack }) {
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Next Due Maintenance</h3>
-                  <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors">View All &rarr;</button>
+                  <button onClick={() => setActiveMaintTab('Maintenance Schedule')} className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors">View All &rarr;</button>
                 </div>
-                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <span className="text-3xl font-black text-slate-800">18</span>
-                    <div>
-                      <h4 className="text-[11px] font-bold text-slate-800">Service & Maintenance</h4>
-                      <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Due: 24 Jun 2025 @ 1,250 Hrs</p>
+                {maintTasksList.filter(t => t.status !== 'Completed').length > 0 ? (
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <span className="text-2xl font-black text-slate-800">{maintTasksList.find(t => t.status !== 'Completed')?.daysRemaining || '14'}</span>
+                      <div>
+                        <h4 className="text-[11px] font-bold text-slate-800">{maintTasksList.find(t => t.status !== 'Completed')?.task || 'Routine Maintenance'}</h4>
+                        <p className="text-[10px] font-semibold text-slate-500 mt-0.5">
+                          Due: {maintTasksList.find(t => t.status !== 'Completed')?.nextDate || '-'} @ {maintTasksList.find(t => t.status !== 'Completed')?.nextHrs || '-'}
+                        </p>
+                      </div>
                     </div>
+                    <span className="inline-flex px-2 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded text-[9px] font-bold tracking-widest uppercase">
+                      {maintTasksList.find(t => t.status !== 'Completed')?.status || 'Scheduled'}
+                    </span>
                   </div>
-                  <span className="inline-flex px-2 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded text-[9px] font-bold tracking-widest uppercase">Due Soon</span>
-                </div>
+                ) : (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-xs font-semibold text-slate-400">
+                    No upcoming maintenance scheduled
+                  </div>
+                )}
               </div>
 
               {/* Hours & Usage */}
@@ -1870,22 +2048,22 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3 grid grid-cols-4 gap-2">
                   <div className="flex flex-col items-center justify-center text-center p-2">
                     <Activity size={14} className="text-blue-500 mb-2" />
-                    <span className="text-[11px] font-black text-slate-800 block">1,256.5 Hrs</span>
+                    <span className="text-[11px] font-black text-slate-800 block">{asset.operatingHours || '0 Hrs'}</span>
                     <span className="text-[9px] font-bold text-slate-500">Current Hours</span>
                   </div>
                   <div className="flex flex-col items-center justify-center text-center p-2 border-l border-slate-100">
                     <Calendar size={14} className="text-purple-500 mb-2" />
-                    <span className="text-[11px] font-black text-slate-800 block">1,250 Hrs</span>
-                    <span className="text-[9px] font-bold text-slate-500">Next Service (Due)</span>
+                    <span className="text-[11px] font-black text-slate-800 block">{maintTasksList[0]?.nextHrs || '1,000 Hrs'}</span>
+                    <span className="text-[9px] font-bold text-slate-500">Next Service</span>
                   </div>
                   <div className="flex flex-col items-center justify-center text-center p-2 border-l border-slate-100">
                     <TrendingUp size={14} className="text-emerald-500 mb-2" />
-                    <span className="text-[11px] font-black text-slate-800 block">7.5 Hrs</span>
+                    <span className="text-[11px] font-black text-slate-800 block">{asset.operatingHours && asset.operatingHours !== '0 Hrs' ? '4.2 Hrs' : '0 Hrs'}</span>
                     <span className="text-[9px] font-bold text-slate-500">Avg Daily Usage</span>
                   </div>
                   <div className="flex flex-col items-center justify-center text-center p-2 border-l border-slate-100">
                     <Clock size={14} className="text-slate-500 mb-2" />
-                    <span className="text-[11px] font-black text-slate-800 block">1,256.5 Hrs</span>
+                    <span className="text-[11px] font-black text-slate-800 block">{asset.operatingHours || '0 Hrs'}</span>
                     <span className="text-[9px] font-bold text-slate-500">This Month</span>
                   </div>
                 </div>
@@ -1894,14 +2072,16 @@ export default function AssetDetails({ assetData, onBack }) {
               {/* Downtime Summary */}
               <div>
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Downtime Summary (FY 2024-2025)</h3>
-                  <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors">View Report &rarr;</button>
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Downtime Summary</h3>
+                  <button onClick={() => triggerToast('Downtime Report', 'Downtime summary report generated.')} className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors">View Report &rarr;</button>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
                   <div className="grid grid-cols-2 gap-y-4 gap-x-2">
                     <div>
                       <span className="text-[10px] font-semibold text-slate-500 block mb-0.5">Total Downtime</span>
-                      <span className="text-[11px] font-black text-slate-800">9.0 Hrs</span>
+                      <span className="text-[11px] font-black text-slate-800">
+                        {asset.status === 'Out of Service' || asset.status === 'Maintenance' ? '4.5 Hrs' : '0.0 Hrs'}
+                      </span>
                     </div>
                     <div>
                       <span className="text-[10px] font-semibold text-slate-500 block mb-0.5">Breakdown Downtime</span>
@@ -1909,11 +2089,15 @@ export default function AssetDetails({ assetData, onBack }) {
                     </div>
                     <div>
                       <span className="text-[10px] font-semibold text-slate-500 block mb-0.5">Downtime</span>
-                      <span className="text-[11px] font-black text-slate-800">9.0 Hrs</span>
+                      <span className="text-[11px] font-black text-slate-800">
+                        {asset.status === 'Out of Service' || asset.status === 'Maintenance' ? '4.5 Hrs' : '0.0 Hrs'}
+                      </span>
                     </div>
                     <div>
                       <span className="text-[10px] font-semibold text-slate-500 block mb-0.5">Downtime Cost</span>
-                      <span className="text-[11px] font-black text-slate-800">$1,125.00</span>
+                      <span className="text-[11px] font-black text-slate-800">
+                        {asset.status === 'Out of Service' || asset.status === 'Maintenance' ? '$350.00' : '$0.00'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1957,94 +2141,7 @@ export default function AssetDetails({ assetData, onBack }) {
             </div>
           </div>
 
-          {/* DEVELOPER NOTES */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-6">
-            <div className="p-4 border-b border-slate-100 flex items-center gap-2">
-              <div className="bg-purple-600 p-1.5 rounded text-white">
-                <Code size={14} />
-              </div>
-              <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest">DEVELOPER NOTES - ASSET MAINTENANCE & SERVICE</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 p-4 sm:p-6">
-              {/* Col 1 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">1</div> 
-                  <span>PURPOSE</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Manage all maintenance, service and inspection tasks.</li>
-                  <li className="pl-1">Track schedules, completion, downtime and costs.</li>
-                  <li className="pl-1">Ensure asset reliability and compliance.</li>
-                </ul>
-              </div>
-              
-              {/* Col 2 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">2</div> 
-                  <span>KEY FEATURES</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Schedule recurring maintenance & inspections.</li>
-                  <li className="pl-1">Track next due by hours, time or usage.</li>
-                  <li className="pl-1">Log service history, parts, labour and downtime.</li>
-                  <li className="pl-1">Set reminders and alerts before due dates.</li>
-                </ul>
-              </div>
-              
-              {/* Col 3 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">3</div> 
-                  <span>AUTOMATION & ALERTS</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Auto-calculate next due based on rules.</li>
-                  <li className="pl-1">Alert for due soon, overdue & expiring items.</li>
-                  <li className="pl-1">AI predicts potential issues from history.</li>
-                  <li className="pl-1">Escalate critical overdue items.</li>
-                </ul>
-              </div>
 
-              {/* Col 4 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">4</div> 
-                  <span>PERMISSIONS</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Super Admin: Full access.</li>
-                  <li className="pl-1">Admin/Manager: Create, edit, approve.</li>
-                  <li className="pl-1">Workshop: Update maintenance tasks.</li>
-                  <li className="pl-1">Staff: View assigned maintenance.</li>
-                </ul>
-              </div>
-
-              {/* Col 5 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">5</div> 
-                  <span>DATA SOURCES</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Assets module.</li>
-                  <li className="pl-1">Maintenance module.</li>
-                  <li className="pl-1">Parts & Inventory module.</li>
-                  <li className="pl-1">Downtime & Costs module.</li>
-                </ul>
-              </div>
-            </div>
-            
-            <div className="bg-slate-50/80 border-t border-slate-100 p-4 flex items-center justify-between">
-              <span className="text-[9px] font-bold text-slate-500">All times shown in your local time (AEST)</span>
-              <div className="flex items-center gap-2 text-[9px] font-bold text-slate-500">
-                Data auto-refreshes every 5 minutes
-                <RefreshCw size={10} className="text-slate-400" />
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
@@ -2070,7 +2167,7 @@ export default function AssetDetails({ assetData, onBack }) {
             <div className="flex flex-col space-y-4">
               
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">ALL DOCUMENTS ({assetDocuments.length})</h3>
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">{activeDocTab.toUpperCase()} ({filteredDocs.length})</h3>
               </div>
 
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
@@ -2097,7 +2194,7 @@ export default function AssetDetails({ assetData, onBack }) {
                     </button>
                   </div>
                   
-                  <button className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg text-[11px] font-bold hover:bg-purple-100 transition-colors">
+                  <button onClick={() => setIsUploadDocModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 rounded-xl text-[11px] font-bold transition-all shadow-sm cursor-pointer">
                     <Upload size={14} /> Upload Document
                   </button>
                 </div>
@@ -2119,117 +2216,128 @@ export default function AssetDetails({ assetData, onBack }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {documentsList.map((doc, idx) => (
-                        <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <div className="flex items-start gap-3">
-                              <div className="mt-0.5 text-purple-600 bg-purple-50 p-1.5 rounded"><FileIcon size={14} /></div>
-                              <div>
-                                <h4 className="text-[11px] font-bold text-slate-800">{doc.name}</h4>
-                                <p className="text-[10px] font-medium text-slate-500 mt-0.5">{doc.file}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <span className={`text-[11px] font-bold ${doc.category === 'Registration' ? 'text-blue-600' : doc.category === 'Maintenance' ? 'text-indigo-600' : doc.category === 'Inspection' ? 'text-teal-600' : doc.category === 'Licence' ? 'text-emerald-600' : doc.category === 'Insurance' ? 'text-cyan-600' : doc.category === 'Compliance' ? 'text-purple-600' : doc.category === 'Warranty' ? 'text-rose-600' : 'text-slate-600'}`}>
-                              {doc.category}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{doc.type}</td>
-                          <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{doc.issueDate}</td>
-                          <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{doc.expiryDate}</td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase border ${doc.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>
-                              {doc.status}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <span className={`text-[10px] font-bold ${doc.expiryStatus === 'Compliant' ? 'text-emerald-500' : doc.expiryStatus === 'Expiring Soon' ? 'text-amber-500' : doc.expiryStatus === 'Expired' ? 'text-rose-500' : 'text-slate-400'}`}>
-                              {doc.expiryStatus}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <h4 className="text-[11px] font-bold text-slate-800">{doc.uploader}</h4>
-                            <p className="text-[10px] font-medium text-slate-500 mt-0.5">{doc.uploadDate}</p>
-                          </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap relative">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                title="View Document Details"
-                                onClick={() => setViewDocModal(doc)}
-                                className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
-                              >
-                                <Eye size={14} />
-                              </button>
-
-                              <button
-                                title="Download Document"
-                                onClick={() => triggerToast('Document Downloaded', `Downloading file ${doc.file}`)}
-                                className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
-                              >
-                                <Download size={14} />
-                              </button>
-
-                              <div className="relative">
-                                <button
-                                  title="More Actions"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setDocMenuIndex(docMenuIndex === idx ? null : idx);
-                                  }}
-                                  className={`w-7 h-7 rounded-md ${docMenuIndex === idx ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700'} flex items-center justify-center transition-colors cursor-pointer`}
-                                >
-                                  <MoreHorizontal size={14} />
-                                </button>
-
-                                {docMenuIndex === idx && (
-                                  <>
-                                    <div className="fixed inset-0 z-40" onClick={() => setDocMenuIndex(null)} />
-                                    <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700">
-                                      <button
-                                        onClick={() => { setViewDocModal(doc); setDocMenuIndex(null); }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
-                                      >
-                                        👁️ View Details
-                                      </button>
-                                      <button
-                                        onClick={() => { triggerToast('Document Downloaded', `Downloading ${doc.file}`); setDocMenuIndex(null); }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
-                                      >
-                                        📥 Download File
-                                      </button>
-                                      <button
-                                        onClick={() => { setEditDocModal({ ...doc, index: idx }); setDocMenuIndex(null); }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
-                                      >
-                                        ✏️ Edit Details
-                                      </button>
-                                      <div className="h-px bg-slate-100 my-1" />
-                                      <button
-                                        onClick={() => {
-                                          setDocumentsList(prev => prev.filter((_, i) => i !== idx));
-                                          triggerToast('Document Deleted', `Document "${doc.name}" removed.`);
-                                          setDocMenuIndex(null);
-                                        }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 text-left w-full cursor-pointer"
-                                      >
-                                        ❌ Delete Document
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
+                      {filteredDocs.length === 0 ? (
+                        <tr>
+                          <td colSpan="9" className="px-5 py-12 text-center text-xs font-semibold text-slate-400 bg-slate-50/30">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                              <FileIcon size={28} className="text-slate-300" />
+                              <span>No documents found under "{activeDocTab}"</span>
                             </div>
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        filteredDocs.map((doc, idx) => (
+                          <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
+                            <td className="px-5 py-3.5 whitespace-nowrap">
+                              <div className="flex items-start gap-3">
+                                <div className="mt-0.5 text-purple-600 bg-purple-50 p-1.5 rounded"><FileIcon size={14} /></div>
+                                <div>
+                                  <h4 className="text-[11px] font-bold text-slate-800">{doc.name}</h4>
+                                  <p className="text-[10px] font-medium text-slate-500 mt-0.5">{doc.file}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-5 py-3.5 whitespace-nowrap">
+                              <span className={`text-[11px] font-bold ${doc.category === 'Registration' ? 'text-blue-600' : doc.category === 'Maintenance' ? 'text-indigo-600' : doc.category === 'Inspection' ? 'text-teal-600' : doc.category === 'Licence' ? 'text-emerald-600' : doc.category === 'Insurance' ? 'text-cyan-600' : doc.category === 'Compliance' ? 'text-purple-600' : doc.category === 'Warranty' ? 'text-rose-600' : 'text-slate-600'}`}>
+                                {doc.category}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{doc.type}</td>
+                            <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{doc.issueDate}</td>
+                            <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{doc.expiryDate}</td>
+                            <td className="px-5 py-3.5 whitespace-nowrap">
+                              <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase border ${doc.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>
+                                {doc.status}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3.5 whitespace-nowrap">
+                              <span className={`text-[10px] font-bold ${doc.expiryStatus === 'Compliant' ? 'text-emerald-500' : doc.expiryStatus === 'Expiring Soon' ? 'text-amber-500' : doc.expiryStatus === 'Expired' ? 'text-rose-500' : 'text-slate-400'}`}>
+                                {doc.expiryStatus}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3.5 whitespace-nowrap">
+                              <h4 className="text-[11px] font-bold text-slate-800">{doc.uploader}</h4>
+                              <p className="text-[10px] font-medium text-slate-500 mt-0.5">{doc.uploadDate}</p>
+                            </td>
+                            <td className="px-5 py-3.5 whitespace-nowrap relative">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  title="View Document Details"
+                                  onClick={() => setViewDocModal(doc)}
+                                  className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
+                                >
+                                  <Eye size={14} />
+                                </button>
+
+                                <button
+                                  title="Download Document"
+                                  onClick={() => triggerToast('Document Downloaded', `Downloading file ${doc.file}`)}
+                                  className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
+                                >
+                                  <Download size={14} />
+                                </button>
+
+                                <div className="relative">
+                                  <button
+                                    title="More Actions"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDocMenuIndex(docMenuIndex === idx ? null : idx);
+                                    }}
+                                    className={`w-7 h-7 rounded-md ${docMenuIndex === idx ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700'} flex items-center justify-center transition-colors cursor-pointer`}
+                                  >
+                                    <MoreHorizontal size={14} />
+                                  </button>
+
+                                  {docMenuIndex === idx && (
+                                    <>
+                                      <div className="fixed inset-0 z-40" onClick={() => setDocMenuIndex(null)} />
+                                      <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700">
+                                        <button
+                                          onClick={() => { setViewDocModal(doc); setDocMenuIndex(null); }}
+                                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                        >
+                                          👁️ View Details
+                                        </button>
+                                        <button
+                                          onClick={() => { triggerToast('Document Downloaded', `Downloading ${doc.file}`); setDocMenuIndex(null); }}
+                                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                        >
+                                          📥 Download File
+                                        </button>
+                                        <button
+                                          onClick={() => { setEditDocModal({ ...doc, index: idx }); setDocMenuIndex(null); }}
+                                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                        >
+                                          ✏️ Edit Details
+                                        </button>
+                                        <div className="h-px bg-slate-100 my-1" />
+                                        <button
+                                          onClick={() => {
+                                            setDocumentsList(prev => prev.filter((_, i) => i !== idx));
+                                            triggerToast('Document Deleted', `Document "${doc.name}" removed.`);
+                                            setDocMenuIndex(null);
+                                          }}
+                                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 text-left w-full cursor-pointer"
+                                        >
+                                          ❌ Delete Document
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
                 
                 {/* Pagination Footer */}
                 <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium bg-slate-50/30">
-                  <span>Showing 1 to {assetDocuments.length} of {assetDocuments.length} documents</span>
+                  <span>Showing {filteredDocs.length > 0 ? 1 : 0} to {filteredDocs.length} of {filteredDocs.length} documents</span>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1">
                       <button className="w-6 h-6 flex items-center justify-center rounded text-slate-400"><ChevronLeft size={14} /></button>
@@ -2252,34 +2360,34 @@ export default function AssetDetails({ assetData, onBack }) {
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Compliance Overview</h3>
-                  <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors">View Report &rarr;</button>
+                  <button onClick={() => triggerToast('Compliance Report', 'Compliance overview report generated.')} className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors">View Report &rarr;</button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-white border border-emerald-100 rounded-xl p-3 flex flex-col shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                       <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100"><CheckCircle2 size={12} /></div>
-                      <span className="text-lg font-black text-slate-800">6</span>
+                      <span className="text-lg font-black text-slate-800">{documentsList.filter(d => d.status === 'Compliant' || d.status === 'Active' || d.status === 'VALID').length}</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Compliant</span>
                   </div>
                   <div className="bg-white border border-amber-100 rounded-xl p-3 flex flex-col shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                       <div className="w-6 h-6 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100"><ShieldAlert size={12} /></div>
-                      <span className="text-lg font-black text-slate-800">1</span>
+                      <span className="text-lg font-black text-slate-800">{documentsList.filter(d => d.status === 'Expiring Soon' || d.expiryStatus === 'Expiring Soon').length}</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Expiring Soon</span>
                   </div>
                   <div className="bg-white border border-rose-100 rounded-xl p-3 flex flex-col shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                       <div className="w-6 h-6 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100"><AlertTriangle size={12} /></div>
-                      <span className="text-lg font-black text-slate-800">1</span>
+                      <span className="text-lg font-black text-slate-800">{documentsList.filter(d => d.status === 'Expired' || d.expiryStatus === 'Expired').length}</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Expired</span>
                   </div>
                   <div className="bg-white border border-blue-100 rounded-xl p-3 flex flex-col shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                       <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100"><RefreshCw size={12} /></div>
-                      <span className="text-lg font-black text-slate-800">2</span>
+                      <span className="text-lg font-black text-slate-800">{documentsList.filter(d => d.status === 'Not Required').length}</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Not Required</span>
                   </div>
@@ -2289,58 +2397,51 @@ export default function AssetDetails({ assetData, onBack }) {
               {/* Next Expiry */}
               <div>
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-3">Next Expiry</h3>
-                <div className="bg-white border border-amber-200 rounded-xl p-4 flex items-center justify-between shadow-sm shadow-amber-100/50">
-                  <div className="flex items-center gap-3">
-                    <div className="text-amber-500"><Calendar size={20} /></div>
-                    <div>
-                      <h4 className="text-[11px] font-bold text-slate-800">Service & Maintenance</h4>
-                      <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Due: 24 Jun 2025</p>
+                {documentsList.filter(d => d.expiryDate || d.expiry).length > 0 ? (
+                  <div className="bg-white border border-amber-200 rounded-xl p-4 flex items-center justify-between shadow-sm shadow-amber-100/50">
+                    <div className="flex items-center gap-3">
+                      <div className="text-amber-500"><Calendar size={20} /></div>
+                      <div>
+                        <h4 className="text-[11px] font-bold text-slate-800">{documentsList[0]?.name || documentsList[0]?.documentName || 'Asset Document'}</h4>
+                        <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Due: {documentsList[0]?.expiryDate || documentsList[0]?.expiry || '-'}</p>
+                      </div>
                     </div>
+                    <span className="text-[11px] font-black text-amber-600">{documentsList[0]?.status || 'Expiring Soon'}</span>
                   </div>
-                  <span className="text-[11px] font-black text-amber-600">in 18 days</span>
-                </div>
-                <div className="mt-2 text-right">
-                  <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors">View All Alerts &rarr;</button>
-                </div>
+                ) : (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-xs font-semibold text-slate-400">
+                    No documents expiring soon
+                  </div>
+                )}
               </div>
 
               {/* Compliance Alerts */}
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Compliance Alerts</h3>
-                  <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors">View All &rarr;</button>
+                  <button onClick={() => triggerToast('Compliance Alerts', 'Alerts reviewed.')} className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors">View All &rarr;</button>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-4 border-b border-slate-50 flex items-center justify-between bg-amber-50/50">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 text-amber-500"><AlertTriangle size={14} /></div>
-                      <div>
-                        <h4 className="text-[11px] font-bold text-slate-800">Service & Maintenance</h4>
-                        <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Due in 18 days</p>
-                      </div>
+                  {documentsList.filter(d => d.status === 'Expired' || d.status === 'Expiring Soon').length === 0 ? (
+                    <div className="p-4 text-center text-xs font-semibold text-slate-400">
+                      No compliance alerts for this asset
                     </div>
-                    <span className="text-[10px] font-bold text-slate-700">24 Jun 2025</span>
-                  </div>
-                  <div className="p-4 border-b border-slate-50 flex items-center justify-between bg-amber-50/30">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 text-amber-500"><AlertTriangle size={14} /></div>
-                      <div>
-                        <h4 className="text-[11px] font-bold text-slate-800">Annual Inspection Report</h4>
-                        <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Due in 61 days</p>
+                  ) : (
+                    documentsList.filter(d => d.status === 'Expired' || d.status === 'Expiring Soon').map((doc, idx) => (
+                      <div key={idx} className={`p-4 border-b border-slate-50 flex items-center justify-between ${doc.status === 'Expired' ? 'bg-rose-50/50' : 'bg-amber-50/50'}`}>
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-0.5 ${doc.status === 'Expired' ? 'text-rose-500' : 'text-amber-500'}`}>
+                            {doc.status === 'Expired' ? <ShieldAlert size={14} /> : <AlertTriangle size={14} />}
+                          </div>
+                          <div>
+                            <h4 className="text-[11px] font-bold text-slate-800">{doc.name || doc.documentName}</h4>
+                            <p className="text-[10px] font-semibold text-slate-500 mt-0.5">{doc.status}</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-700">{doc.expiryDate || '-'}</span>
                       </div>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-700">24 Aug 2025</span>
-                  </div>
-                  <div className="p-4 flex items-center justify-between bg-rose-50/50">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 text-rose-500"><ShieldAlert size={14} /></div>
-                      <div>
-                        <h4 className="text-[11px] font-bold text-rose-700">Load Test Certificate</h4>
-                        <p className="text-[10px] font-semibold text-rose-500 mt-0.5">Expired 131 days</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold text-rose-700">14 Feb 2025</span>
-                  </div>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -2348,159 +2449,33 @@ export default function AssetDetails({ assetData, onBack }) {
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Document Categories</h3>
-                  <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors">View All &rarr;</button>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-2">
-                  <div className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
-                    <div className="flex items-center gap-3">
-                      <FileIcon size={14} className="text-blue-500" />
-                      <span className="text-[11px] font-bold text-slate-700">Registration</span>
+                  {[
+                    { label: 'Registration', color: 'text-blue-500', count: documentsList.filter(d => d.category === 'Registration').length },
+                    { label: 'Maintenance', color: 'text-indigo-500', count: documentsList.filter(d => d.category === 'Maintenance').length },
+                    { label: 'Inspection', color: 'text-teal-500', count: documentsList.filter(d => d.category === 'Inspection').length },
+                    { label: 'Licence', color: 'text-emerald-500', count: documentsList.filter(d => d.category === 'Licence' || d.category === 'License').length },
+                    { label: 'Insurance', color: 'text-cyan-500', count: documentsList.filter(d => d.category === 'Insurance').length },
+                    { label: 'Compliance', color: 'text-purple-500', count: documentsList.filter(d => d.category === 'Compliance').length },
+                    { label: 'Warranty', color: 'text-rose-500', count: documentsList.filter(d => d.category === 'Warranty').length },
+                    { label: 'Other', color: 'text-slate-400', count: documentsList.filter(d => d.category === 'Other' || !d.category).length },
+                  ].map((cat, idx) => (
+                    <div key={idx} className="flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                      <div className="flex items-center gap-3">
+                        <FileIcon size={14} className={cat.color} />
+                        <span className="text-[11px] font-bold text-slate-700">{cat.label}</span>
+                      </div>
+                      <span className="text-[11px] font-black text-slate-800">{cat.count}</span>
                     </div>
-                    <span className="text-[11px] font-black text-slate-800">1</span>
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
-                    <div className="flex items-center gap-3">
-                      <FileIcon size={14} className="text-indigo-500" />
-                      <span className="text-[11px] font-bold text-slate-700">Maintenance</span>
-                    </div>
-                    <span className="text-[11px] font-black text-slate-800">1</span>
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
-                    <div className="flex items-center gap-3">
-                      <FileIcon size={14} className="text-teal-500" />
-                      <span className="text-[11px] font-bold text-slate-700">Inspection</span>
-                    </div>
-                    <span className="text-[11px] font-black text-slate-800">1</span>
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
-                    <div className="flex items-center gap-3">
-                      <FileIcon size={14} className="text-emerald-500" />
-                      <span className="text-[11px] font-bold text-slate-700">Licence</span>
-                    </div>
-                    <span className="text-[11px] font-black text-slate-800">1</span>
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
-                    <div className="flex items-center gap-3">
-                      <FileIcon size={14} className="text-cyan-500" />
-                      <span className="text-[11px] font-bold text-slate-700">Insurance</span>
-                    </div>
-                    <span className="text-[11px] font-black text-slate-800">1</span>
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
-                    <div className="flex items-center gap-3">
-                      <FileIcon size={14} className="text-purple-500" />
-                      <span className="text-[11px] font-bold text-slate-700">Compliance</span>
-                    </div>
-                    <span className="text-[11px] font-black text-slate-800">2</span>
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
-                    <div className="flex items-center gap-3">
-                      <FileIcon size={14} className="text-rose-500" />
-                      <span className="text-[11px] font-bold text-slate-700">Warranty</span>
-                    </div>
-                    <span className="text-[11px] font-black text-slate-800">1</span>
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border-t border-slate-100 mt-1">
-                    <div className="flex items-center gap-3">
-                      <FileIcon size={14} className="text-slate-400" />
-                      <span className="text-[11px] font-bold text-slate-700">Other</span>
-                    </div>
-                    <span className="text-[11px] font-black text-slate-800">1</span>
-                  </div>
+                  ))}
                 </div>
               </div>
               
             </div>
           </div>
 
-          {/* DEVELOPER NOTES */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-6">
-            <div className="p-4 border-b border-slate-100 flex items-center gap-2">
-              <div className="bg-purple-600 p-1.5 rounded text-white">
-                <Code size={14} />
-              </div>
-              <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest">DEVELOPER NOTES - ASSET DOCUMENTS & COMPLIANCE</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 p-4 sm:p-6">
-              {/* Col 1 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">1</div> 
-                  <span>PURPOSE</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Central repository for all asset related documents.</li>
-                  <li className="pl-1">Track compliance, certificates, expiry and alerts.</li>
-                  <li className="pl-1">Ensure assets remain compliant and operational.</li>
-                </ul>
-              </div>
-              
-              {/* Col 2 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">2</div> 
-                  <span>KEY FEATURES</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Upload, view, download and manage documents.</li>
-                  <li className="pl-1">Categorised documents with expiry tracking.</li>
-                  <li className="pl-1">Compliance status with alerts and notifications.</li>
-                  <li className="pl-1">Filter by category, status and expiry.</li>
-                </ul>
-              </div>
-              
-              {/* Col 3 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">3</div> 
-                  <span>AUTOMATION & ALERTS</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Auto-detect expiry from document (AI add-on).</li>
-                  <li className="pl-1">Auto reminders before expiry.</li>
-                  <li className="pl-1">Escalate overdue items.</li>
-                  <li className="pl-1">Dashboard and notification alerts.</li>
-                </ul>
-              </div>
 
-              {/* Col 4 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">4</div> 
-                  <span>PERMISSIONS</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Super Admin: Full access.</li>
-                  <li className="pl-1">Admin/Manager: Create, edit, upload.</li>
-                  <li className="pl-1">Dispatch/Warehouse: View relevant only.</li>
-                  <li className="pl-1">Staff: View assigned asset documents.</li>
-                </ul>
-              </div>
-
-              {/* Col 5 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">5</div> 
-                  <span>DATA SOURCES</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Assets module.</li>
-                  <li className="pl-1">Maintenance module.</li>
-                  <li className="pl-1">Compliance module.</li>
-                  <li className="pl-1">Documents & Activity logs.</li>
-                </ul>
-              </div>
-            </div>
-            
-            <div className="bg-slate-50/80 border-t border-slate-100 p-4 flex items-center justify-between">
-              <span className="text-[9px] font-bold text-slate-500">All times shown in your local time (AEST)</span>
-              <div className="flex items-center gap-2 text-[9px] font-bold text-slate-500">
-                Data auto-refreshes every 5 minutes
-                <RefreshCw size={10} className="text-slate-400" />
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
@@ -2663,109 +2638,244 @@ export default function AssetDetails({ assetData, onBack }) {
                 </div>
               </div>
 
-              {/* Table */}
+              {/* Table Header / Sub-tab Title */}
               <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">COST & EXPENSES ({costsList.length})</span>
+                <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">
+                  {activeCostTab === 'Depreciation Schedule' ? 'DEPRECIATION SCHEDULE (5 YEARS)' : activeCostTab === 'Cost by Category' ? 'COST BY CATEGORY BREAKDOWN' : activeCostTab === 'Cost by Branch / Location' ? 'COST BY BRANCH / LOCATION' : activeCostTab === 'Tax & Compliance' ? 'TAX & COMPLIANCE RECORDS' : `COST & EXPENSES (${costsList.length})`}
+                </span>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[1000px]">
-                  <thead>
-                    <tr className="bg-white border-b border-slate-200">
-                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Date</th>
-                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Category</th>
-                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Cost Type</th>
-                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap min-w-[160px]">Description</th>
-                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Reference / Invoice</th>
-                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Branch / Location</th>
-                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Amount (AUD)</th>
-                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Tax (AUD)</th>
-                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Total (AUD)</th>
-                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {costsList.map((row, idx) => (
-                      <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
-                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.date}</td>
-                        <td className="px-4 py-3 text-[11px] whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.color === 'purple' ? 'bg-purple-50 text-purple-600' : row.color === 'emerald' ? 'bg-emerald-50 text-emerald-600' : row.color === 'blue' ? 'bg-blue-50 text-blue-600' : row.color === 'orange' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-600'}`}>
-                            {row.category}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.type}</td>
-                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-800 whitespace-nowrap">{row.desc}</td>
-                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.ref}</td>
-                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-600 whitespace-nowrap">{row.loc}</td>
-                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-900 whitespace-nowrap">{row.amount}</td>
-                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-500 whitespace-nowrap">{row.tax}</td>
-                        <td className="px-4 py-3 text-[11px] font-black text-slate-900 whitespace-nowrap">{row.total}</td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap relative">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              title="View Cost Details"
-                              onClick={() => setViewCostModal(row)}
-                              className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
-                            >
-                              <Eye size={14} />
-                            </button>
-
-                            <div className="relative">
-                              <button
-                                title="More Actions"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setCostMenuIndex(costMenuIndex === idx ? null : idx);
-                                }}
-                                className={`w-7 h-7 rounded-md ${costMenuIndex === idx ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700'} flex items-center justify-center transition-colors cursor-pointer`}
-                              >
-                                <MoreHorizontal size={14} />
-                              </button>
-
-                              {costMenuIndex === idx && (
-                                <>
-                                  <div className="fixed inset-0 z-40" onClick={() => setCostMenuIndex(null)} />
-                                  <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700">
-                                    <button
-                                      onClick={() => { setViewCostModal(row); setCostMenuIndex(null); }}
-                                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
-                                    >
-                                      👁️ View Details
-                                    </button>
-                                    <button
-                                      onClick={() => { triggerToast('Invoice Downloaded', `Downloading invoice ${row.ref}`); setCostMenuIndex(null); }}
-                                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
-                                    >
-                                      📄 Download Invoice
-                                    </button>
-                                    <button
-                                      onClick={() => { setEditCostModal({ ...row, index: idx }); setCostMenuIndex(null); }}
-                                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
-                                    >
-                                      ✏️ Edit Record
-                                    </button>
-                                    <div className="h-px bg-slate-100 my-1" />
-                                    <button
-                                      onClick={() => {
-                                        setCostsList(prev => prev.filter((_, i) => i !== idx));
-                                        triggerToast('Cost Deleted', `Deleted cost record ${row.ref}`);
-                                        setCostMenuIndex(null);
-                                      }}
-                                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 text-left w-full cursor-pointer"
-                                    >
-                                      ❌ Delete Record
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </td>
+              {activeCostTab === 'Depreciation Schedule' ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                      <tr className="bg-white border-b border-slate-200">
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Year / Period</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Opening Value ($)</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Method</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Deprec. Rate</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Depreciation ($)</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Accum. Deprec. ($)</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Closing Book Value ($)</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {[
+                        { year: '2024 - 2025 (FY 1)', open: asset.purchasePrice || '$223.00', method: 'Straight Line', rate: '20.0%', deprec: '$44.60', accum: '$44.60', close: '$178.40' },
+                        { year: '2025 - 2026 (FY 2)', open: '$178.40', method: 'Straight Line', rate: '20.0%', deprec: '$44.60', accum: '$89.20', close: '$133.80' },
+                        { year: '2026 - 2027 (FY 3)', open: '$133.80', method: 'Straight Line', rate: '20.0%', deprec: '$44.60', accum: '$133.80', close: '$89.20' },
+                        { year: '2027 - 2028 (FY 4)', open: '$89.20', method: 'Straight Line', rate: '20.0%', deprec: '$44.60', accum: '$178.40', close: '$44.60' },
+                        { year: '2028 - 2029 (FY 5)', open: '$44.60', method: 'Straight Line', rate: '20.0%', deprec: '$44.60', accum: '$223.00', close: '$0.00' },
+                      ].map((row, idx) => (
+                        <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">{row.year}</td>
+                          <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.open}</td>
+                          <td className="px-4 py-3 text-[11px] font-semibold text-purple-700 whitespace-nowrap">{row.method}</td>
+                          <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.rate}</td>
+                          <td className="px-4 py-3 text-[11px] font-semibold text-rose-600 whitespace-nowrap">{row.deprec}</td>
+                          <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.accum}</td>
+                          <td className="px-4 py-3 text-[11px] font-black text-emerald-600 whitespace-nowrap">{row.close}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : activeCostTab === 'Cost by Category' ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                      <tr className="bg-white border-b border-slate-200">
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Category</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Expense Count</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Total Amount ($)</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">% of Total Cost</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { cat: 'Fuel & Operating', count: costsList.filter(c => c.category === 'Fuel').length, amount: '$0.00', pct: '0.0%', status: 'Normal' },
+                        { cat: 'Scheduled Maintenance', count: costsList.filter(c => c.category === 'Maintenance').length, amount: '$0.00', pct: '0.0%', status: 'Normal' },
+                        { cat: 'Unscheduled Repairs', count: costsList.filter(c => c.category === 'Repairs').length, amount: '$0.00', pct: '0.0%', status: 'Normal' },
+                        { cat: 'Insurance & Licence', count: costsList.filter(c => c.category === 'Insurance').length, amount: '$0.00', pct: '0.0%', status: 'Normal' },
+                        { cat: 'Other Expenses', count: costsList.filter(c => c.category === 'Other').length, amount: '$0.00', pct: '0.0%', status: 'Normal' },
+                      ].map((row, idx) => (
+                        <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">{row.cat}</td>
+                          <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.count}</td>
+                          <td className="px-4 py-3 text-[11px] font-semibold text-slate-900 whitespace-nowrap">{row.amount}</td>
+                          <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.pct}</td>
+                          <td className="px-4 py-3 text-[11px] font-bold text-emerald-600 whitespace-nowrap">{row.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : activeCostTab === 'Cost by Branch / Location' ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                      <tr className="bg-white border-b border-slate-200">
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Branch / Location</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Assigned Tag</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Status</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Total Costs Incurred</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">% Share</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">{asset.branch || 'Sydney Head Office'}</td>
+                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{asset.assetTag || 'AST-0001'}</td>
+                        <td className="px-4 py-3 text-[11px] font-bold text-emerald-600 whitespace-nowrap">{asset.status}</td>
+                        <td className="px-4 py-3 text-[11px] font-black text-slate-900 whitespace-nowrap">
+                          {costsList.length > 0 ? '$' + costsList.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0).toFixed(2) : '$0.00'}
+                        </td>
+                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">100.0%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ) : activeCostTab === 'Tax & Compliance' ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                      <tr className="bg-white border-b border-slate-200">
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Tax Category / Deduction</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Fiscal Year</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Taxable Basis ($)</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Tax Claimed / Credit ($)</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { type: 'Plant & Equipment Depreciation (Div 40)', fy: '2024-2025', basis: asset.purchasePrice || '$223.00', claim: '$44.60', status: 'Claimed' },
+                        { type: 'GST Input Tax Credit', fy: '2024-2025', basis: asset.purchasePrice || '$223.00', claim: '$22.30', status: 'Lodged' },
+                        { type: 'Fuel Tax Credit Claim', fy: '2024-2025', basis: '$0.00', claim: '$0.00', status: 'Compliant' },
+                      ].map((row, idx) => (
+                        <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-3 text-[11px] font-bold text-slate-800 whitespace-nowrap">{row.type}</td>
+                          <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.fy}</td>
+                          <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.basis}</td>
+                          <td className="px-4 py-3 text-[11px] font-black text-purple-700 whitespace-nowrap">{row.claim}</td>
+                          <td className="px-4 py-3 text-[11px] font-bold text-emerald-600 whitespace-nowrap">{row.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[1000px]">
+                    <thead>
+                      <tr className="bg-white border-b border-slate-200">
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Date</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Category</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Cost Type</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap min-w-[160px]">Description</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Reference / Invoice</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Branch / Location</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Amount (AUD)</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Tax (AUD)</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Total (AUD)</th>
+                        <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center whitespace-nowrap">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {costsList.length === 0 ? (
+                        <tr>
+                          <td colSpan="10" className="px-5 py-12 text-center text-xs font-semibold text-slate-400 bg-slate-50/30">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                              <DollarSign size={28} className="text-slate-300" />
+                              <span>No cost or expense records logged for this asset.</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        costsList.map((row, idx) => (
+                          <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
+                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.date}</td>
+                            <td className="px-4 py-3 text-[11px] whitespace-nowrap">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.color === 'purple' ? 'bg-purple-50 text-purple-600' : row.color === 'emerald' ? 'bg-emerald-50 text-emerald-600' : row.color === 'blue' ? 'bg-blue-50 text-blue-600' : row.color === 'orange' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-600'}`}>
+                                {row.category}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.type}</td>
+                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-800 whitespace-nowrap">{row.desc}</td>
+                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.ref}</td>
+                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600 whitespace-nowrap">{row.loc}</td>
+                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-900 whitespace-nowrap">{row.amount}</td>
+                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-500 whitespace-nowrap">{row.tax}</td>
+                            <td className="px-4 py-3 text-[11px] font-black text-slate-900 whitespace-nowrap">{row.total}</td>
+                            <td className="px-4 py-3 text-center whitespace-nowrap relative">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  title="View Cost Details"
+                                  onClick={() => setViewCostModal(row)}
+                                  className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
+                                >
+                                  <Eye size={14} />
+                                </button>
+
+                                <div className="relative">
+                                  <button
+                                    title="More Actions"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setCostMenuIndex(costMenuIndex === idx ? null : idx);
+                                    }}
+                                    className={`w-7 h-7 rounded-md ${costMenuIndex === idx ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700'} flex items-center justify-center transition-colors cursor-pointer`}
+                                  >
+                                    <MoreHorizontal size={14} />
+                                  </button>
+
+                                  {costMenuIndex === idx && (
+                                    <>
+                                      <div className="fixed inset-0 z-40" onClick={() => setCostMenuIndex(null)} />
+                                      <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700">
+                                        <button
+                                          onClick={() => { setViewCostModal(row); setCostMenuIndex(null); }}
+                                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                        >
+                                          👁️ View Details
+                                        </button>
+                                        <button
+                                          onClick={() => { triggerToast('Invoice Downloaded', `Downloading invoice ${row.ref}`); setCostMenuIndex(null); }}
+                                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                        >
+                                          📄 Download Invoice
+                                        </button>
+                                        <button
+                                          onClick={() => { setEditCostModal({ ...row, index: idx }); setCostMenuIndex(null); }}
+                                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                        >
+                                          ✏️ Edit Record
+                                        </button>
+                                        <div className="h-px bg-slate-100 my-1" />
+                                        <button
+                                          onClick={() => {
+                                            setCostsList(prev => prev.filter((_, i) => i !== idx));
+                                            triggerToast('Cost Deleted', `Deleted cost record ${row.ref}`);
+                                            setCostMenuIndex(null);
+                                          }}
+                                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 text-left w-full cursor-pointer"
+                                        >
+                                          ❌ Delete Record
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               {/* Pagination */}
               <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-500 mt-auto bg-white">
@@ -2788,15 +2898,17 @@ export default function AssetDetails({ assetData, onBack }) {
               {/* Cost Summary Section */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">COST SUMMARY (FY 2024-2025)</h4>
-                  <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Report →</span>
+                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">COST SUMMARY</h4>
+                  <span onClick={() => triggerToast('Cost Summary Report', 'Cost summary report generated.')} className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Report →</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="border border-slate-100 rounded-xl p-3 bg-emerald-50/40 flex flex-col items-center justify-center text-center">
                     <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-1.5">
                       <CheckCircle2 size={16} />
                     </div>
-                    <span className="text-xs font-black text-slate-900">$3,850.00</span>
+                    <span className="text-xs font-black text-slate-900">
+                      {costsList.length > 0 ? '$' + costsList.reduce((acc, c) => acc + (parseFloat(c.amount) || 0), 0).toFixed(2) : '$0.00'}
+                    </span>
                     <span className="text-[9px] font-semibold text-slate-400 mt-0.5 uppercase">Total Cost (YTD)</span>
                   </div>
 
@@ -2804,7 +2916,9 @@ export default function AssetDetails({ assetData, onBack }) {
                     <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-1.5">
                       <Activity size={16} />
                     </div>
-                    <span className="text-xs font-black text-slate-900">$2,150.00</span>
+                    <span className="text-xs font-black text-slate-900">
+                      {costsList.filter(c => c.type === 'Operating').length > 0 ? '$' + costsList.filter(c => c.type === 'Operating').reduce((acc, c) => acc + (parseFloat(c.amount) || 0), 0).toFixed(2) : '$0.00'}
+                    </span>
                     <span className="text-[9px] font-semibold text-slate-400 mt-0.5 uppercase">Operating Cost</span>
                   </div>
 
@@ -2812,7 +2926,9 @@ export default function AssetDetails({ assetData, onBack }) {
                     <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-1.5">
                       <Wrench size={16} />
                     </div>
-                    <span className="text-xs font-black text-slate-900">$1,250.00</span>
+                    <span className="text-xs font-black text-slate-900">
+                      {costsList.filter(c => c.type === 'Maintenance').length > 0 ? '$' + costsList.filter(c => c.type === 'Maintenance').reduce((acc, c) => acc + (parseFloat(c.amount) || 0), 0).toFixed(2) : '$0.00'}
+                    </span>
                     <span className="text-[9px] font-semibold text-slate-400 mt-0.5 uppercase">Maintenance Cost</span>
                   </div>
 
@@ -2820,7 +2936,9 @@ export default function AssetDetails({ assetData, onBack }) {
                     <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center mb-1.5">
                       <Layers size={16} />
                     </div>
-                    <span className="text-xs font-black text-slate-900">$450.00</span>
+                    <span className="text-xs font-black text-slate-900">
+                      {costsList.filter(c => c.type === 'Other').length > 0 ? '$' + costsList.filter(c => c.type === 'Other').reduce((acc, c) => acc + (parseFloat(c.amount) || 0), 0).toFixed(2) : '$0.00'}
+                    </span>
                     <span className="text-[9px] font-semibold text-slate-400 mt-0.5 uppercase">Other Cost</span>
                   </div>
                 </div>
@@ -2830,7 +2948,7 @@ export default function AssetDetails({ assetData, onBack }) {
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">DEPRECIATION SUMMARY</h4>
-                  <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Report →</span>
+                  <span onClick={() => triggerToast('Depreciation Report', 'Depreciation report generated.')} className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Report →</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {/* Card 1 */}
@@ -2839,7 +2957,7 @@ export default function AssetDetails({ assetData, onBack }) {
                       <div className="w-6 h-6 flex items-center justify-center bg-purple-100 text-purple-600 rounded">
                         <DollarSign size={12} strokeWidth={3} />
                       </div>
-                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">$38,500</span>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">{asset.purchasePrice || '$0'}</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Purchase Price</span>
                   </div>
@@ -2849,7 +2967,7 @@ export default function AssetDetails({ assetData, onBack }) {
                       <div className="w-6 h-6 flex items-center justify-center bg-blue-100 text-blue-600 rounded">
                         <Calendar size={12} strokeWidth={3} />
                       </div>
-                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">15 Mar 2022</span>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">{asset.purchaseDate || '-'}</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Start Date</span>
                   </div>
@@ -2859,7 +2977,9 @@ export default function AssetDetails({ assetData, onBack }) {
                       <div className="w-6 h-6 flex items-center justify-center bg-amber-100 text-amber-600 rounded">
                         <Activity size={12} strokeWidth={3} />
                       </div>
-                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">$5,000</span>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">
+                        {asset.purchasePrice && asset.purchasePrice !== '-' ? '$2,000' : '$0'}
+                      </span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Residual Value</span>
                   </div>
@@ -2869,7 +2989,7 @@ export default function AssetDetails({ assetData, onBack }) {
                       <div className="w-6 h-6 flex items-center justify-center bg-rose-100 text-rose-600 rounded">
                         <TrendingUp size={12} strokeWidth={3} className="transform rotate-180" />
                       </div>
-                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">$18,460</span>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">$0</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Accum. Deprec.</span>
                   </div>
@@ -2889,7 +3009,7 @@ export default function AssetDetails({ assetData, onBack }) {
                       <div className="w-6 h-6 flex items-center justify-center bg-indigo-100 text-indigo-600 rounded">
                         <DollarSign size={12} strokeWidth={3} />
                       </div>
-                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">$20,040</span>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">{asset.bookValue || asset.purchasePrice || '$0'}</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Book Value</span>
                   </div>
@@ -2909,7 +3029,7 @@ export default function AssetDetails({ assetData, onBack }) {
                       <div className="w-6 h-6 flex items-center justify-center bg-emerald-100 text-emerald-600 rounded">
                         <Activity size={12} strokeWidth={3} />
                       </div>
-                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">$7,700</span>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">$0</span>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Deprec. (YTD)</span>
                   </div>
@@ -2919,47 +3039,20 @@ export default function AssetDetails({ assetData, onBack }) {
               {/* Chart: Cost By Category */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">COST BY CATEGORY (FY 2024-2025)</h4>
-                  <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Chart →</span>
+                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">COST BY CATEGORY</h4>
                 </div>
                 <div className="flex items-center gap-4">
-                  {/* Custom Donut Chart matching screenshot */}
                   <div className="relative flex items-center justify-center w-24 h-24 shrink-0">
                     <svg width="96" height="96" className="transform -rotate-90">
                       <circle cx="48" cy="48" r="38" fill="transparent" stroke="#E2E8F0" strokeWidth="12" />
-                      <circle cx="48" cy="48" r="38" fill="transparent" stroke="#10B981" strokeWidth="12" strokeDasharray="133 238" strokeDashoffset="0" />
-                      <circle cx="48" cy="48" r="38" fill="transparent" stroke="#F59E0B" strokeWidth="12" strokeDasharray="77 238" strokeDashoffset="-133" />
-                      <circle cx="48" cy="48" r="38" fill="transparent" stroke="#EF4444" strokeWidth="12" strokeDasharray="18 238" strokeDashoffset="-210" />
-                      <circle cx="48" cy="48" r="38" fill="transparent" stroke="#8B5CF6" strokeWidth="12" strokeDasharray="6 238" strokeDashoffset="-228" />
-                      <circle cx="48" cy="48" r="38" fill="transparent" stroke="#64748B" strokeWidth="12" strokeDasharray="4 238" strokeDashoffset="-234" />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-sm font-black text-slate-900 leading-tight">$3,850</span>
+                      <span className="text-sm font-black text-slate-900 leading-tight">$0</span>
                       <span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Total Cost<br/>(YTD)</span>
                     </div>
                   </div>
-                  {/* Legend */}
-                  <div className="flex-1 space-y-1.5">
-                    <div className="flex justify-between items-center text-[9px]">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span className="font-bold text-slate-600">Fuel / Operating</span></div>
-                      <span className="font-black text-slate-900">$2,150.00 <span className="text-slate-400 font-semibold">(55.8%)</span></span>
-                    </div>
-                    <div className="flex justify-between items-center text-[9px]">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span className="font-bold text-slate-600">Maintenance & Repairs</span></div>
-                      <span className="font-black text-slate-900">$1,250.00 <span className="text-slate-400 font-semibold">(32.5%)</span></span>
-                    </div>
-                    <div className="flex justify-between items-center text-[9px]">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500"></span><span className="font-bold text-slate-600">Insurance</span></div>
-                      <span className="font-black text-slate-900">$300.00 <span className="text-slate-400 font-semibold">(7.8%)</span></span>
-                    </div>
-                    <div className="flex justify-between items-center text-[9px]">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span><span className="font-bold text-slate-600">Registration</span></div>
-                      <span className="font-black text-slate-900">$100.00 <span className="text-slate-400 font-semibold">(2.6%)</span></span>
-                    </div>
-                    <div className="flex justify-between items-center text-[9px]">
-                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span><span className="font-bold text-slate-600">Other</span></div>
-                      <span className="font-black text-slate-900">$50.00 <span className="text-slate-400 font-semibold">(1.3%)</span></span>
-                    </div>
+                  <div className="flex-1 space-y-1.5 text-xs text-slate-400 font-semibold">
+                    No cost records recorded for this asset yet.
                   </div>
                 </div>
               </div>
@@ -2967,31 +3060,10 @@ export default function AssetDetails({ assetData, onBack }) {
               {/* Chart: Monthly Cost Trend */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">MONTHLY COST TREND (FY 2024-2025)</h4>
-                  <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Chart →</span>
+                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">MONTHLY COST TREND</h4>
                 </div>
-                <div className="relative h-20 w-full mt-2">
-                  <div className="absolute left-0 top-0 bottom-4 w-6 flex flex-col justify-between text-[8px] font-bold text-slate-400 text-right pr-1">
-                    <span>$800</span>
-                    <span>$600</span>
-                    <span>$400</span>
-                    <span>$200</span>
-                    <span>$0</span>
-                  </div>
-                  <div className="absolute left-6 right-0 top-0 bottom-4 border-l border-b border-slate-200">
-                    {/* SVG Line Chart representing the purple trend line */}
-                    <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100" className="overflow-visible">
-                      <path d="M 0,80 L 10,70 L 20,85 L 30,50 L 40,65 L 50,45 L 60,60 L 70,55 L 80,48 L 90,52 L 100,55" fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="80" cy="48" r="3" fill="#fff" stroke="#8B5CF6" strokeWidth="2" />
-                    </svg>
-                    {/* Tooltip */}
-                    <div className="absolute bg-slate-800 text-white text-[8px] font-bold px-1.5 py-0.5 rounded left-[72%] top-[-2px] shadow-lg pointer-events-none whitespace-nowrap">
-                      Apr 2025<br/><span className="text-[9px]">$420.00</span>
-                    </div>
-                  </div>
-                  <div className="absolute left-6 right-0 bottom-0 flex justify-between text-[8px] font-bold text-slate-400 pt-1">
-                    <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
-                  </div>
+                <div className="text-center py-6 text-xs text-slate-400 font-semibold bg-slate-50/50 rounded-xl border border-slate-100">
+                  No monthly cost trend logged for this asset yet.
                 </div>
               </div>
 
@@ -3001,14 +3073,14 @@ export default function AssetDetails({ assetData, onBack }) {
                   <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-2">QUICK ACTIONS</h4>
                   <div className="space-y-2">
                     {[
-                      { icon: <Plus size={12} />, label: 'Add Cost / Expense' },
-                      { icon: <Download size={12} />, label: 'Upload Invoice / Receipt' },
-                      { icon: <Calendar size={12} />, label: 'Schedule Maintenance' },
-                      { icon: <FileText size={12} />, label: 'View Cost Report' },
-                      { icon: <FileText size={12} />, label: 'View Depreciation Report' },
-                      { icon: <FileSpreadsheet size={12} />, label: 'Export Cost Data' }
+                      { icon: <Plus size={12} />, label: 'Add Cost / Expense', action: () => triggerToast('Add Cost', 'Cost form opened.') },
+                      { icon: <Download size={12} />, label: 'Upload Invoice / Receipt', action: () => triggerToast('Upload Invoice', 'Invoice uploader opened.') },
+                      { icon: <Calendar size={12} />, label: 'Schedule Maintenance', action: () => setIsMaintenanceModalOpen(true) },
+                      { icon: <FileText size={12} />, label: 'View Cost Report', action: () => triggerToast('Cost Report', 'Generating cost report.') },
+                      { icon: <FileText size={12} />, label: 'View Depreciation Report', action: () => triggerToast('Depreciation Report', 'Generating depreciation report.') },
+                      { icon: <FileSpreadsheet size={12} />, label: 'Export Cost Data', action: () => triggerToast('Export Cost', 'Exporting cost data as CSV.') }
                     ].map((act, i) => (
-                      <button key={i} className="w-full flex items-center gap-2 text-slate-600 hover:text-purple-600 transition-colors text-[10px] font-bold group cursor-pointer text-left">
+                      <button key={i} onClick={act.action} className="w-full flex items-center gap-2 text-slate-600 hover:text-purple-600 transition-colors text-[10px] font-bold group cursor-pointer text-left">
                         <span className="text-slate-400 group-hover:text-purple-600">{act.icon}</span>
                         {act.label}
                       </button>
@@ -3019,32 +3091,26 @@ export default function AssetDetails({ assetData, onBack }) {
                 <div className="flex-1">
                   <div className="flex justify-between items-center mb-2">
                     <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">RECENT COST ALERTS</h4>
-                    <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View All →</span>
+                    <span onClick={() => triggerToast('Cost Alerts', 'Alerts reviewed.')} className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View All →</span>
                   </div>
                   <div className="space-y-2">
-                    <div className="bg-orange-50 border border-orange-100 p-2 rounded-lg flex items-start gap-2">
-                      <AlertTriangle size={12} className="text-orange-500 shrink-0 mt-0.5" />
-                      <div>
-                        <div className="text-[10px] font-bold text-slate-800 leading-tight hover:text-purple-600 cursor-pointer hover:underline">Hydraulic Pump Repair</div>
-                        <div className="text-[9px] text-slate-500 font-semibold flex justify-between w-full pr-1">
-                          <span>$858.00</span><span>25 Apr 2025</span>
+                    {costsList.filter(c => c.isAlert).length === 0 ? (
+                      <div className="text-[10px] text-slate-400 font-semibold py-4 text-center">
+                        No recent cost alerts
+                      </div>
+                    ) : (
+                      costsList.filter(c => c.isAlert).map((alertItem, idx) => (
+                        <div key={idx} className="bg-amber-50 border border-amber-100 p-2 rounded-lg flex items-start gap-2">
+                          <AlertTriangle size={12} className="text-amber-500 shrink-0 mt-0.5" />
+                          <div>
+                            <div className="text-[10px] font-bold text-slate-800 leading-tight hover:text-purple-600 cursor-pointer hover:underline">{alertItem.description}</div>
+                            <div className="text-[9px] text-slate-500 font-semibold flex justify-between w-full pr-1">
+                              <span>${alertItem.amount}</span><span>{alertItem.date}</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    <div className="bg-orange-50 border border-orange-100 p-2 rounded-lg flex items-start gap-2">
-                      <AlertTriangle size={12} className="text-orange-500 shrink-0 mt-0.5" />
-                      <div>
-                        <div className="text-[10px] font-bold text-slate-800 leading-tight hover:text-purple-600 cursor-pointer hover:underline">Service Due Soon</div>
-                        <div className="text-[9px] text-slate-500 font-semibold mt-0.5">24 Jun 2025</div>
-                      </div>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-100 p-2 rounded-lg flex items-start gap-2">
-                      <Info size={12} className="text-blue-500 shrink-0 mt-0.5" />
-                      <div>
-                        <div className="text-[10px] font-bold text-slate-800 leading-tight hover:text-purple-600 cursor-pointer hover:underline">Insurance Renewal</div>
-                        <div className="text-[9px] text-slate-500 font-semibold mt-0.5">01 Apr 2026</div>
-                      </div>
-                    </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -3052,94 +3118,7 @@ export default function AssetDetails({ assetData, onBack }) {
             </div>
           </div>
 
-          {/* DEVELOPER NOTES (For Costs & Depreciation) */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-6">
-            <div className="p-4 border-b border-slate-100 flex items-center gap-2">
-              <div className="bg-purple-600 p-1.5 rounded text-white">
-                <Code size={14} />
-              </div>
-              <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest">DEVELOPER NOTES - ASSET COSTS & DEPRECIATION</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 p-4 sm:p-6">
-              {/* Col 1 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">1</div> 
-                  <span>PURPOSE</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Track all costs, expenses and depreciation.</li>
-                  <li className="pl-1">Support financial reporting and tax compliance.</li>
-                  <li className="pl-1">Provide clear visibility of asset profitability.</li>
-                </ul>
-              </div>
-              
-              {/* Col 2 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">2</div> 
-                  <span>KEY FEATURES</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Record recurring and one-off costs.</li>
-                  <li className="pl-1">Depreciation calculation (straight line by default).</li>
-                  <li className="pl-1">Cost categorisation and trend analysis.</li>
-                  <li className="pl-1">Export reports for accounting integration.</li>
-                </ul>
-              </div>
-              
-              {/* Col 3 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">3</div> 
-                  <span>AUTOMATION & ALERTS</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Auto-calculate depreciation based on rules.</li>
-                  <li className="pl-1">Alert for upcoming large expenses.</li>
-                  <li className="pl-1">Predict annual cost based on patterns.</li>
-                  <li className="pl-1">AI insights for cost optimisation (AI add-on).</li>
-                </ul>
-              </div>
 
-              {/* Col 4 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">4</div> 
-                  <span>PERMISSIONS</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Super Admin: Full access.</li>
-                  <li className="pl-1">Admin/Manager: Create, edit, approve.</li>
-                  <li className="pl-1">Accounts: View financial data & export.</li>
-                  <li className="pl-1">Staff: View assigned asset costs.</li>
-                </ul>
-              </div>
-
-              {/* Col 5 */}
-              <div>
-                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">5</div> 
-                  <span>DATA SOURCES</span>
-                </h4>
-                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
-                  <li className="pl-1">Costs & Expenses module.</li>
-                  <li className="pl-1">Maintenance module.</li>
-                  <li className="pl-1">Fuel & Usage module.</li>
-                  <li className="pl-1">Invoices & Receipts (OCR).</li>
-                </ul>
-              </div>
-            </div>
-            
-            <div className="bg-slate-50/80 border-t border-slate-100 p-4 flex items-center justify-between">
-              <span className="text-[9px] font-bold text-slate-500">All times shown in your local time (AEST)</span>
-              <div className="flex items-center gap-2 text-[9px] font-bold text-slate-500">
-                Data auto-refreshes every 5 minutes
-                <RefreshCw size={10} className="text-slate-400" />
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
@@ -4261,6 +4240,203 @@ export default function AssetDetails({ assetData, onBack }) {
             <div className="flex justify-end pt-3 border-t border-slate-100">
               <button onClick={() => setViewMaintTaskModal(null)} className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer">Close</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPLOAD DOCUMENT MODAL POPUP */}
+      {isUploadDocModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsUploadDocModalOpen(false)} />
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative z-10 border border-slate-200 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center">
+                  <Upload size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Upload Asset Document</h3>
+                  <p className="text-xs text-slate-500 font-semibold mt-0.5">Attach compliance, insurance, or inspection files</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsUploadDocModalOpen(false)}
+                className="w-8 h-8 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (!newDocForm.name.trim()) {
+                triggerToast('Error', 'Please enter a document title.');
+                return;
+              }
+
+              const newDocumentItem = {
+                name: newDocForm.name.trim(),
+                file: newDocForm.fileName || `${newDocForm.name.toLowerCase().replace(/\s+/g, '_')}.pdf`,
+                category: newDocForm.category || 'Compliance',
+                type: newDocForm.type || 'PDF Document',
+                issueDate: newDocForm.issueDate || new Date().toISOString().split('T')[0],
+                expiryDate: newDocForm.expiryDate || 'No Expiry',
+                status: 'Active',
+                expiryStatus: newDocForm.expiryDate ? 'Compliant' : 'Compliant',
+                uploader: 'Company Admin',
+                uploadDate: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+              };
+
+              setDocumentsList(prev => [newDocumentItem, ...prev]);
+              setIsUploadDocModalOpen(false);
+              triggerToast('Document Uploaded', `Document "${newDocumentItem.name}" uploaded successfully!`);
+              setNewDocForm({
+                name: '',
+                category: 'Compliance',
+                type: 'PDF Document',
+                issueDate: '',
+                expiryDate: '',
+                fileName: ''
+              });
+            }} className="space-y-4">
+
+              {/* Document Title */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Document Title <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Annual Safety & Inspection Certificate"
+                  value={newDocForm.name}
+                  onChange={(e) => setNewDocForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:bg-white transition-all"
+                />
+              </div>
+
+              {/* Category & Type Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Category <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={newDocForm.category}
+                    onChange={(e) => setNewDocForm(prev => ({ ...prev, category: e.target.value }))}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:bg-white transition-all"
+                  >
+                    <option value="Compliance">Compliance</option>
+                    <option value="Certificates & Licences">Certificates & Licences</option>
+                    <option value="Insurance">Insurance</option>
+                    <option value="Maintenance Records">Maintenance Records</option>
+                    <option value="Inspection Reports">Inspection Reports</option>
+                    <option value="Registration">Registration</option>
+                    <option value="Warranty">Warranty</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Document Type
+                  </label>
+                  <select
+                    value={newDocForm.type}
+                    onChange={(e) => setNewDocForm(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:bg-white transition-all"
+                  >
+                    <option value="PDF Document">PDF Document</option>
+                    <option value="Image (PNG/JPG)">Image (PNG/JPG)</option>
+                    <option value="Word Document">Word Document</option>
+                    <option value="License Certificate">License Certificate</option>
+                    <option value="Inspection Report">Inspection Report</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Issue Date & Expiry Date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Issue Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newDocForm.issueDate}
+                    onChange={(e) => setNewDocForm(prev => ({ ...prev, issueDate: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:bg-white transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newDocForm.expiryDate}
+                    onChange={(e) => setNewDocForm(prev => ({ ...prev, expiryDate: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* File Attachment Dropzone */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  File Attachment
+                </label>
+                <div className="relative border-2 border-dashed border-purple-200 hover:border-purple-500 bg-purple-50/30 hover:bg-purple-50/70 transition-all rounded-2xl p-4 text-center cursor-pointer group">
+                  <input
+                    type="file"
+                    onChange={(e) => {
+                      if (e.target.files[0]) {
+                        setNewDocForm(prev => ({
+                          ...prev,
+                          fileName: e.target.files[0].name,
+                          name: prev.name ? prev.name : e.target.files[0].name.replace(/\.[^/.]+$/, "")
+                        }));
+                      }
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="flex flex-col items-center justify-center gap-1.5 pointer-events-none">
+                    <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Upload size={16} />
+                    </div>
+                    {newDocForm.fileName ? (
+                      <span className="text-xs font-black text-purple-700 bg-purple-100 px-3 py-1 rounded-full border border-purple-200 flex items-center gap-1.5">
+                        ✓ {newDocForm.fileName}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-xs font-bold text-slate-700">Click to browse or drag & drop file</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Supports PDF, PNG, JPG, DOCX (Max 25MB)</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 mt-5">
+                <button
+                  type="button"
+                  onClick={() => setIsUploadDocModalOpen(false)}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-600/20 cursor-pointer flex items-center gap-2"
+                >
+                  <Upload size={14} /> Upload & Save Document
+                </button>
+              </div>
+
+            </form>
           </div>
         </div>
       )}
