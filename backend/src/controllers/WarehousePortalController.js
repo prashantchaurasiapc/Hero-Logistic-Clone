@@ -3268,20 +3268,45 @@ exports.getHoldingAreas = async (req, res, next) => {
     const activeAreasCount = areas.filter(a => !a.status || a.status.toUpperCase() === 'ACTIVE').length;
     const inactiveAreasCount = areas.filter(a => a.status && a.status.toUpperCase() === 'INACTIVE').length;
 
-    const formattedAreas = areas.map((a, i) => ({
-      id: a.id,
-      code: a.code || `SA-0${i + 1}`,
-      name: a.name || `Stage Area ${i + 1}`,
-      zone: a.zone || 'Zone A',
-      location: a.subLocation || a.name || '-',
-      nextLane: a.lane || '-',
-      status: a.status || 'ACTIVE',
-      capacity: a.capacity || 20,
-      occupancy: a.capacity > 0 ? Math.round(((a.loadItems?.length || 0) / a.capacity) * 100) : 0,
-      stagedItems: a.loadItems?.length || 0,
-      awaitingMove: 0,
-      oldestItem: '-'
-    }));
+    const formattedAreas = areas.map((a, i) => {
+      let parsedName = a.name || `Stage Area ${i + 1}`;
+      let parsedCode = `SA-0${i + 1}`;
+      let parsedZone = 'Zone A';
+      let parsedCapacity = 20;
+      let parsedLocation = 'Main Storage';
+      let parsedLane = 'Lane 1';
+
+      if (a.name && a.name.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(a.name);
+          parsedName = parsed.name || parsedName;
+          parsedCode = parsed.code || parsedCode;
+          parsedZone = parsed.area || parsedZone;
+          parsedCapacity = parseInt(parsed.cap || parsed.capacity) || parsedCapacity;
+          parsedLocation = parsed.area || parsedLocation;
+          parsedLane = parsed.lane || parsedLane;
+        } catch (err) {
+          // fallback
+        }
+      }
+
+      return {
+        id: a.id,
+        code: parsedCode,
+        name: parsedName,
+        zone: parsedZone,
+        subLocation: parsedLocation,
+        location: parsedLocation,
+        lane: parsedLane,
+        nextLane: parsedLane,
+        status: a.status || 'Active',
+        capacity: parsedCapacity,
+        occupancy: parsedCapacity > 0 ? Math.round(((a.loadItems?.length || 0) / parsedCapacity) * 100) : 0,
+        stagedItems: a.loadItems?.length || 0,
+        awaitingMove: 0,
+        oldestItem: '-'
+      };
+    });
 
 
     return sendSuccess(res, {

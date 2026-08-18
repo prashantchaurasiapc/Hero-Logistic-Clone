@@ -474,8 +474,8 @@ const SentInvoices = () => {
       {/* 4. MAIN CONTENT SPLIT LAYOUT */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* LEFT TABLE: WITH WHITESPACE-NOWRAP FOR MOBILE */}
-        <div className="lg:col-span-8 bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden flex flex-col justify-between">
-          <div className="overflow-x-auto w-full">
+        <div className="lg:col-span-8 bg-white rounded-xl border border-slate-200/80 shadow-2xs flex flex-col justify-between relative">
+          <div className="overflow-x-visible sm:overflow-x-auto w-full min-h-[380px]">
             <table className="w-full text-left border-collapse min-w-[760px] whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/60 border-b border-slate-200 text-[11px] font-bold text-slate-600 tracking-tight">
@@ -521,7 +521,7 @@ const SentInvoices = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredInvoices.map((inv) => {
+                  filteredInvoices.map((inv, rowIndex) => {
                     const isChecked = selectedRowIds.includes(inv.id);
                     const isMenuOpen = activeRowMenuId === inv.id;
 
@@ -583,18 +583,18 @@ const SentInvoices = () => {
                               <button
                                 onClick={() => setActiveRowMenuId(isMenuOpen ? null : inv.id)}
                                 title="More Actions"
-                                className="hover:text-slate-900 transition-colors"
+                                className="hover:text-slate-900 transition-colors p-1 rounded-md hover:bg-slate-100"
                               >
                                 <MoreVertical className="w-4 h-4" />
                               </button>
 
                               {isMenuOpen && (
-                                <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl border border-slate-200 shadow-2xl py-1.5 z-50 text-left font-normal">
+                                <div className="absolute right-full top-0 mr-2 w-48 bg-white rounded-xl border border-slate-200 shadow-2xl py-1.5 z-[9999] text-left font-normal animate-in fade-in zoom-in-95 duration-100">
                                   <button
                                     onClick={() => handleEyeIconClick(inv)}
-                                    className="w-full px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2"
+                                    className="w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2"
                                   >
-                                    <Eye className="w-3.5 h-3.5 text-sky-600" />
+                                    <Eye className="w-4 h-4 text-sky-600" />
                                     <span>View Invoice</span>
                                   </button>
                                   <button
@@ -602,9 +602,9 @@ const SentInvoices = () => {
                                       setActiveRowMenuId(null);
                                       showToast(`Resent invoice ${inv.id} email to customer.`);
                                     }}
-                                    className="w-full px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-50 flex items-center gap-2"
+                                    className="w-full px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 flex items-center gap-2"
                                   >
-                                    <Mail className="w-3.5 h-3.5 text-purple-600" />
+                                    <Mail className="w-4 h-4 text-purple-600" />
                                     <span>Resend Email</span>
                                   </button>
                                 </div>

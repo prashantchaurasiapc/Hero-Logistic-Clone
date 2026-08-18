@@ -7,21 +7,6 @@ export default function WarehouseShift() {
   const [clockedIn, setClockedIn] = useState(false);
   const [clockInTime, setClockInTime] = useState(null);
 
-  useEffect(() => {
-    const checkShiftStatus = async () => {
-      try {
-        const res = await api.get('/warehouse-portal/shift/status');
-        if (res.data?.success) {
-          setClockedIn(res.data.data.clockedIn);
-          setClockInTime(res.data.data.clockInTime);
-        }
-      } catch (err) {
-        console.error('Failed to fetch shift status:', err);
-      }
-    };
-    checkShiftStatus();
-  }, []);
-
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);

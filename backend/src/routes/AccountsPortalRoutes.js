@@ -28,10 +28,13 @@ router.post('/payments/refund', ctrl.refundPayment);
 router.get('/payroll/runs', ctrl.getPayrollRuns);
 router.post('/payroll/calculate', ctrl.calculatePayroll);
 router.put('/payroll/runs/:id/approve', ctrl.approvePayrollRun);
+router.put('/payroll/runs/:id/disburse', ctrl.disburseEmployeePay);
+router.put('/payroll/runs/:id/cancel', ctrl.cancelPayrollRun);
 router.post('/employee-pay/disburse', ctrl.disburseEmployeePay);
 
 // 5. Contractor Pay
 router.get('/contractors/claims', ctrl.getContractorClaims);
+router.post('/contractors/claims', ctrl.createContractorClaim);
 router.put('/contractors/claims/:id/approve', ctrl.approveContractorClaim);
 
 // 6. Expenses

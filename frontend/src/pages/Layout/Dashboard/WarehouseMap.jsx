@@ -10,7 +10,6 @@ import {
 export default function WarehouseMap() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isYard = location.pathname ? location.pathname.startsWith('/yard') : false;
 
   const [activeTab, setActiveTab] = useState('WAREHOUSE'); // 'WAREHOUSE' | 'YARD'
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -705,12 +704,12 @@ export default function WarehouseMap() {
                       return (
                         <div key={lane.id || idx} className="wh-lane-item flex justify-between items-center py-1">
                           <div>
-                            <div className="font-bold text-slate-900 text-[10px] uppercase">{lane.name || lane.lane}</div>
+                            <div className="font-bold text-slate-900 text-[10px] uppercase">{lane.name}</div>
                             <div className={`text-[8.5px] font-extrabold ${statusColor} flex items-center gap-1`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${badgeColor} inline-block`} /> {lane.status}
                             </div>
                           </div>
-                          <span className={`${statusColor} font-extrabold text-xs`}>{lane.currentCount ?? (lane.progress?.split('/')?.[0]?.trim() || 0)} / {lane.maxCapacity ?? (lane.progress?.split('/')?.[1]?.trim() || 8)}</span>
+                          <span className={`${statusColor} font-extrabold text-xs`}>{lane.currentCount} / {lane.maxCapacity}</span>
                         </div>
                       );
                     })
@@ -770,7 +769,7 @@ export default function WarehouseMap() {
                       </div>
                     </div>
                     <div className="text-xs font-black text-slate-900 mb-2">{mapData?.yardAreas?.vehicleStorage?.count || 0} <span className="text-[9px] text-slate-500 font-normal">Vehicles</span></div>
-                    {/* Dynamic Slots Grid */}
+                    {/* 3x8 Car Slots Grid */}
                     <div className="grid grid-cols-8 gap-1">
                       {Array.from({ length: 24 }).map((_, i) => {
                         const isFilled = i < (mapData?.yardAreas?.vehicleStorage?.count || 0);
@@ -784,7 +783,7 @@ export default function WarehouseMap() {
                   </div>
 
                   {/* CARD 2: CONTAINER YARD */}
-                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Container Yard', 'Yard Staging', `${mapData?.yardAreas?.containerYard?.count || 0} Containers`)} style={{ border: '1px solid #FDE68A', background: '#FFFFFF' }}>
+                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Container Yard', 'Yard Stacking', `${mapData?.yardAreas?.containerYard?.count || 0} Containers`)} style={{ border: '1px solid #FDE68A', background: '#FFFFFF' }}>
                     <div className="flex justify-between items-center mb-1">
                       <div className="flex items-center gap-1.5">
                         <Box size={14} className="text-amber-600" />
@@ -792,6 +791,7 @@ export default function WarehouseMap() {
                       </div>
                     </div>
                     <div className="text-xs font-black text-slate-900 mb-2">{mapData?.yardAreas?.containerYard?.count || 0} <span className="text-[9px] text-slate-500 font-normal">Containers</span></div>
+                    {/* 2x5 Container Grid */}
                     <div className="grid grid-cols-5 gap-1.5">
                       {Array.from({ length: 10 }).map((_, i) => {
                         const isFilled = i < (mapData?.yardAreas?.containerYard?.count || 0);
@@ -818,6 +818,7 @@ export default function WarehouseMap() {
                       </div>
                     </div>
                     <div className="text-xs font-black text-slate-900 mb-2">{mapData?.yardAreas?.equipmentParking?.count || 0} <span className="text-[9px] text-slate-500 font-normal">Equipment</span></div>
+                    {/* 2x5 Equipment Grid */}
                     <div className="grid grid-cols-5 gap-1.5">
                       {Array.from({ length: 10 }).map((_, i) => {
                         const isFilled = i < (mapData?.yardAreas?.equipmentParking?.count || 0);
@@ -900,12 +901,16 @@ export default function WarehouseMap() {
               <div className="wh-donut-chart">
                 <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
                   {/* Available */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray={`${mapData?.summary?.availablePercent || 100} 100`} />
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray={`${mapData?.summary?.availablePercent || 60} 100`} />
                   {/* In Use */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray={`${mapData?.summary?.inUsePercent || 0} 100`} strokeDashoffset={`-${mapData?.summary?.availablePercent || 100}`} />
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray={`${mapData?.summary?.inUsePercent || 20} 100`} strokeDashoffset={`-${mapData?.summary?.availablePercent || 60}`} />
+                  {/* On Hold */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray={`${mapData?.summary?.onHoldPercent || 0} 100`} strokeDashoffset={`-${(mapData?.summary?.availablePercent || 60) + (mapData?.summary?.inUsePercent || 20)}`} />
+                  {/* Damaged */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4" strokeDasharray={`${mapData?.summary?.damagedPercent || 0} 100`} strokeDashoffset={`-${(mapData?.summary?.availablePercent || 60) + (mapData?.summary?.inUsePercent || 20) + (mapData?.summary?.onHoldPercent || 0)}`} />
                 </svg>
                 <div className="wh-donut-center">
-                  <span style={{ fontSize: '13px', fontWeight: 900 }}>{mapData?.summary?.totalSlots || 0}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 900 }}>{mapData?.summary?.totalSlots || 5000}</span>
                   <span style={{ fontSize: '7px', color: '#64748B' }}>Total Cap</span>
                 </div>
               </div>
@@ -913,11 +918,11 @@ export default function WarehouseMap() {
               <div className="wh-legend-list">
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#22C55E' }} />
-                  <span>Available <strong>{mapData?.summary?.available ?? 0} ({mapData?.summary?.availablePercent ?? 100}%)</strong></span>
+                  <span>Available <strong>{mapData?.summary?.available ?? 4990} ({mapData?.summary?.availablePercent ?? 100}%)</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#3B82F6' }} />
-                  <span>In Use <strong>{mapData?.summary?.inUse ?? 0} ({mapData?.summary?.inUsePercent ?? 0}%)</strong></span>
+                  <span>In Use <strong>{mapData?.summary?.inUse ?? 10} ({mapData?.summary?.inUsePercent ?? 0}%)</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#F59E0B' }} />
@@ -1032,22 +1037,22 @@ export default function WarehouseMap() {
             <div className="wh-map-side-title">QUICK ACTIONS</div>
 
             <div className="wh-qa-circle-grid">
-              <button className="wh-qa-circle-btn" onClick={() => navigate(isYard ? '/yard/inbound' : '/warehouse/receive-inbound')}>
+              <button className="wh-qa-circle-btn" onClick={() => navigate('/warehouse/receive-inbound')}>
                 <Box size={16} className="text-amber-500" />
                 <span>Receive Stock</span>
               </button>
 
-              <button className="wh-qa-circle-btn" onClick={() => navigate(isYard ? '/yard/movements' : '/warehouse/move-transfer')}>
+              <button className="wh-qa-circle-btn" onClick={() => navigate('/warehouse/move-transfer')}>
                 <ArrowRight size={16} className="text-blue-500" />
                 <span>Move / Transfer</span>
               </button>
 
-              <button className="wh-qa-circle-btn" onClick={() => navigate(isYard ? '/yard/load-lanes' : '/warehouse/load-lanes')}>
+              <button className="wh-qa-circle-btn" onClick={() => navigate('/warehouse/load-lanes')}>
                 <Plus size={16} className="text-green-500" />
                 <span>Create Lane</span>
               </button>
 
-              <button className="wh-qa-circle-btn" onClick={() => navigate(isYard ? '/yard/current-stock' : '/warehouse/find-stock')}>
+              <button className="wh-qa-circle-btn" onClick={() => navigate('/warehouse/find-stock')}>
                 <Search size={16} className="text-purple-500" />
                 <span>Find Stock</span>
               </button>
@@ -1080,7 +1085,7 @@ export default function WarehouseMap() {
               </p>
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button className="px-3 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-600" onClick={() => setSelectedLocation(null)}>Close</button>
-                <button className="px-4 py-1.5 bg-amber-400 rounded text-xs font-extrabold text-slate-900" onClick={() => { setSelectedLocation(null); navigate(isYard ? '/yard/current-stock' : '/warehouse/find-stock'); }}>Inspect Items</button>
+                <button className="px-4 py-1.5 bg-amber-400 rounded text-xs font-extrabold text-slate-900" onClick={() => { setSelectedLocation(null); navigate('/warehouse/find-stock'); }}>Inspect Items</button>
               </div>
             </div>
           </div>
