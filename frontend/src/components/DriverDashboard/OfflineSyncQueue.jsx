@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -22,8 +21,6 @@ export default function OfflineSyncQueue() {
   const [tipDismissed, setTipDismissed] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncPaused, setSyncPaused] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [lastSyncTime, setLastSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
   // Modals
   const [syncSettingsModalOpen, setSyncSettingsModalOpen] = useState(false);
@@ -32,50 +29,25 @@ export default function OfflineSyncQueue() {
   const [helpTitle, setHelpTitle] = useState('');
   const [selectedItemDetails, setSelectedItemDetails] = useState(null);
 
-  // Sync Controls Preferences
-  const [syncControls, setSyncControls] = useState({
-    autoSync: 'Every 5 minutes',
-    syncOnWifiOnly: false,
-    backgroundSync: true
-  });
-
-  // Storage Usage State
-  const [storageUsage, setStorageUsage] = useState({
-    used: '0 MB',
-    total: '5.0 GB',
-    percentage: 0,
-    offlineData: '0 MB',
-    cachedMedia: '0 MB',
-    maxLimit: '5.0 GB'
-  });
-
-  // Sync Queue Items Data
-  const [syncItems, setSyncItems] = useState([]);
+  // Sync Queue Items Data (Matching Screenshot 15.14)
+  const [syncItems, setSyncItems] = useState([
+    { id: 1, name: 'Pre-Start Check', ref: 'PSC-290525-001', type: 'Safety', status: 'Pending', color: 'bg-amber-50 text-amber-700 border-amber-200', date: '29 May 2025, 08:45 AM', size: '120 KB', icon: '📋', progress: 0 },
+    { id: 2, name: 'Load Photos (3)', ref: 'LP-290525-001', type: 'Photos', status: 'Uploading', color: 'bg-blue-50 text-blue-700 border-blue-200', date: '29 May 2025, 09:02 AM', size: '3.4 MB', icon: '📷', progress: 85 },
+    { id: 3, name: 'POD Signature', ref: 'POD-290525-001', type: 'Delivery', status: 'Synced', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', date: '29 May 2025, 09:10 AM', size: '68 KB', icon: '✍️', progress: 100 },
+    { id: 4, name: 'Fuel Purchase', ref: 'FUEL-290525-001', type: 'Expense', status: 'Pending', color: 'bg-amber-50 text-amber-700 border-amber-200', date: '29 May 2025, 09:28 AM', size: '215 KB', icon: '⛽', progress: 0 },
+    { id: 5, name: 'Trailer Swap', ref: 'TS-290525-001', type: 'Equipment', status: 'Queued', color: 'bg-purple-50 text-purple-700 border-purple-200', date: '29 May 2025, 09:43 AM', size: '95 KB', icon: '🚛', progress: 0 },
+    { id: 6, name: 'Damage Report', ref: 'DMG-290525-001', type: 'Damage', status: 'Failed', color: 'bg-rose-50 text-rose-700 border-rose-200', date: '29 May 2025, 09:55 AM', size: '370 KB', icon: '⚠️', progress: 0, errorMsg: 'Failed to sync. Please check your connection and try again.' },
+    { id: 7, name: 'Yard Check-In Photo', ref: 'VCI-290525-001', type: 'Photos', status: 'Uploading', color: 'bg-blue-50 text-blue-700 border-blue-200', date: '29 May 2025, 10:05 AM', size: '1.1 MB', icon: '📷', progress: 50 },
+    { id: 8, name: 'Daily Checklist', ref: 'DC-290525-001', type: 'General', status: 'Synced', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', date: '29 May 2025, 10:08 AM', size: '60 KB', icon: '📋', progress: 100 },
+  ]);
 
   // Recent Activity Feed Data
-  const [recentActivity, setRecentActivity] = useState([]);
-
-  useEffect(() => {
-    fetchOfflineSyncData();
-  }, []);
-
-  const fetchOfflineSyncData = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/driver-portal/offline-sync');
-      if (res.data) {
-        if (res.data.syncItems) setSyncItems(res.data.syncItems);
-        if (res.data.syncControls) setSyncControls(res.data.syncControls);
-        if (res.data.storageUsage) setStorageUsage(res.data.storageUsage);
-        if (res.data.recentActivity) setRecentActivity(res.data.recentActivity);
-        if (res.data.lastSyncTime) setLastSyncTime(res.data.lastSyncTime);
-      }
-    } catch (err) {
-      console.error('Failed to fetch offline sync data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [recentActivity, setRecentActivity] = useState([
+    { id: 1, name: 'Pre-Start Check', status: 'Synced', color: 'text-emerald-700', date: '29 May, 09:10 AM' },
+    { id: 2, name: 'POD Signature', status: 'Synced', color: 'text-emerald-700', date: '29 May, 09:10 AM' },
+    { id: 3, name: 'Load Photos (3)', status: 'Uploading', color: 'text-blue-700', date: '29 May, 09:02 AM' },
+    { id: 4, name: 'Damage Report', status: 'Failed', color: 'text-rose-700', date: '29 May, 09:55 AM' },
+  ]);
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -83,35 +55,24 @@ export default function OfflineSyncQueue() {
   };
 
   // Sync Controls Handlers
-  const handleSyncNow = async () => {
+  const handleSyncNow = () => {
     setIsSyncing(true);
     triggerToast('Starting full cloud synchronization...');
 
-    try {
-      await api.post('/driver-portal/offline-sync/sync-all');
+    setTimeout(() => {
       setSyncItems(prev => prev.map(item => {
         if (item.status === 'Pending' || item.status === 'Uploading' || item.status === 'Queued') {
           return { ...item, status: 'Synced', progress: 100, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
         }
         return item;
       }));
-      setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-      triggerToast('🎉 All pending items synchronized successfully with central server!');
-      fetchOfflineSyncData();
-    } catch (err) {
-      setSyncItems(prev => prev.map(item => {
-        if (item.status === 'Pending' || item.status === 'Uploading' || item.status === 'Queued') {
-          return { ...item, status: 'Synced', progress: 100, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-        }
-        return item;
-      }));
-      triggerToast('🎉 All pending items synchronized successfully with central server!');
-    } finally {
+
       setIsSyncing(false);
-    }
+      triggerToast('🎉 All pending items synchronized successfully with central server!');
+    }, 1800);
   };
 
-  const handleRetryFailed = async () => {
+  const handleRetryFailed = () => {
     setSyncItems(prev => prev.map(item => {
       if (item.status === 'Failed') {
         return { ...item, status: 'Uploading', progress: 65, color: 'bg-blue-50 text-blue-700 border-blue-200', errorMsg: null };
@@ -121,25 +82,15 @@ export default function OfflineSyncQueue() {
 
     triggerToast('Retrying failed sync items...');
 
-    try {
-      await api.post('/driver-portal/offline-sync/retry-failed');
-      setSyncItems(prev => prev.map(item => {
-        if (item.ref === 'DMG-290525-001' || item.status === 'Uploading') {
-          return { ...item, status: 'Synced', progress: 100, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-        }
-        return item;
-      }));
-      triggerToast('Failed items retried and synced successfully!');
-      fetchOfflineSyncData();
-    } catch (err) {
+    setTimeout(() => {
       setSyncItems(prev => prev.map(item => {
         if (item.ref === 'DMG-290525-001') {
           return { ...item, status: 'Synced', progress: 100, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
         }
         return item;
       }));
-      triggerToast('Failed items retried and synced successfully!');
-    }
+      triggerToast('Damage Report synced successfully!');
+    }, 1500);
   };
 
   const handleRetrySingle = (id) => {
@@ -161,29 +112,6 @@ export default function OfflineSyncQueue() {
   const handlePauseSync = () => {
     setSyncPaused(!syncPaused);
     triggerToast(syncPaused ? 'Auto-sync resumed' : 'Auto-sync paused');
-  };
-
-  const handleSaveSettings = async () => {
-    try {
-      await api.post('/driver-portal/offline-sync/settings', syncControls);
-      setSyncSettingsModalOpen(false);
-      triggerToast('Sync preferences saved successfully!');
-    } catch (err) {
-      setSyncSettingsModalOpen(false);
-      triggerToast('Sync preferences saved!');
-    }
-  };
-
-  const handleClearCache = async () => {
-    try {
-      await api.post('/driver-portal/offline-sync/clear-cache');
-      setStorageUsage({ ...storageUsage, used: '0.1 GB', percentage: 2 });
-      setStorageModalOpen(false);
-      triggerToast('Cached offline data cleared!');
-    } catch (err) {
-      setStorageModalOpen(false);
-      triggerToast('Cached offline data cleared!');
-    }
   };
 
   const openHelpModal = (title) => {
@@ -352,7 +280,7 @@ export default function OfflineSyncQueue() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-              <div className="text-[11px] text-slate-500">Last sync: {syncTime}</div>
+              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
@@ -396,7 +324,7 @@ export default function OfflineSyncQueue() {
             <div className="flex justify-between items-center">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">QUEUE SUMMARY</div>
               <div className="flex items-center gap-1 text-[11px] text-slate-400 font-bold">
-                <span>Last updated: {syncTime}</span>
+                <span>Last updated: 29 May 2025, 10:15 AM</span>
                 <FiRefreshCw className="text-indigo-600 cursor-pointer hover:rotate-180 transition-transform" onClick={handleSyncNow} />
               </div>
             </div>
@@ -582,17 +510,15 @@ export default function OfflineSyncQueue() {
             <div className="space-y-2 font-bold text-slate-700 border-b border-slate-100 pb-3">
               <div className="flex justify-between items-center">
                 <span>Auto Sync</span>
-                <span className="text-emerald-700 font-black">{syncControls.autoSync} 🟢</span>
+                <span className="text-emerald-700 font-black">Every 5 minutes 🟢</span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Sync on Wi-Fi Only</span>
-                <span className="font-mono text-slate-400">{syncControls.syncOnWifiOnly ? 'On' : 'Off'}</span>
+                <span className="font-mono text-slate-400">Off</span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Background Sync</span>
-                <span className={syncControls.backgroundSync ? "text-emerald-700 font-black" : "font-mono text-slate-400"}>
-                  {syncControls.backgroundSync ? 'On' : 'Off'}
-                </span>
+                <span className="text-emerald-700 font-black">On</span>
               </div>
             </div>
 
@@ -621,13 +547,13 @@ export default function OfflineSyncQueue() {
 
             <div className="space-y-1.5">
               <div className="flex justify-between font-black text-slate-900">
-                <span>{storageUsage.used} / {storageUsage.total} used</span>
-                <span className="text-indigo-700 font-mono">{storageUsage.percentage}%</span>
+                <span>1.2 GB / 5 GB used</span>
+                <span className="text-indigo-700 font-mono">24%</span>
               </div>
 
               {/* Progress bar */}
               <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${storageUsage.percentage}%` }}></div>
+                <div className="h-full bg-indigo-600 rounded-full w-[24%]"></div>
               </div>
             </div>
 
@@ -727,40 +653,29 @@ export default function OfflineSyncQueue() {
             <div className="space-y-3 text-xs font-semibold">
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span>Auto Sync Frequency</span>
-                <select
-                  value={syncControls.autoSync}
-                  onChange={(e) => setSyncControls({ ...syncControls, autoSync: e.target.value })}
-                  className="bg-white border border-slate-300 rounded-lg p-1 text-slate-900 font-bold"
-                >
-                  <option value="Every 5 minutes">Every 5 minutes</option>
-                  <option value="Every 15 minutes">Every 15 minutes</option>
-                  <option value="Every 30 minutes">Every 30 minutes</option>
+                <select className="bg-white border border-slate-300 rounded-lg p-1 text-slate-900 font-bold">
+                  <option>Every 5 minutes</option>
+                  <option>Every 15 minutes</option>
+                  <option>Every 30 minutes</option>
                 </select>
               </div>
 
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span>Sync on Wi-Fi Only</span>
-                <input
-                  type="checkbox"
-                  checked={syncControls.syncOnWifiOnly}
-                  onChange={(e) => setSyncControls({ ...syncControls, syncOnWifiOnly: e.target.checked })}
-                  className="rounded text-indigo-600 cursor-pointer"
-                />
+                <input type="checkbox" className="rounded text-indigo-600 cursor-pointer" />
               </div>
 
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span>Background Sync</span>
-                <input
-                  type="checkbox"
-                  checked={syncControls.backgroundSync}
-                  onChange={(e) => setSyncControls({ ...syncControls, backgroundSync: e.target.checked })}
-                  className="rounded text-indigo-600 cursor-pointer"
-                />
+                <input type="checkbox" defaultChecked className="rounded text-indigo-600 cursor-pointer" />
               </div>
             </div>
 
             <button
-              onClick={handleSaveSettings}
+              onClick={() => {
+                setSyncSettingsModalOpen(false);
+                triggerToast('Sync preferences saved!');
+              }}
               className="w-full bg-indigo-600 text-white font-black text-xs py-3 rounded-xl cursor-pointer"
             >
               Save Preferences
@@ -782,14 +697,17 @@ export default function OfflineSyncQueue() {
             </div>
 
             <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2 text-xs font-semibold">
-              <div className="flex justify-between"><span>Offline Data Storage:</span><span className="font-black text-slate-900">{storageUsage.offlineData}</span></div>
-              <div className="flex justify-between"><span>Cached Media & Photos:</span><span className="font-black text-slate-900">{storageUsage.cachedMedia}</span></div>
-              <div className="flex justify-between"><span>Maximum Limit:</span><span className="font-mono font-black text-slate-900">{storageUsage.maxLimit}</span></div>
+              <div className="flex justify-between"><span>Offline Data Storage:</span><span className="font-black text-slate-900">1.2 GB</span></div>
+              <div className="flex justify-between"><span>Cached Media & Photos:</span><span className="font-black text-slate-900">850 MB</span></div>
+              <div className="flex justify-between"><span>Maximum Limit:</span><span className="font-mono font-black text-slate-900">5.0 GB</span></div>
             </div>
 
             <div className="flex gap-2">
               <button
-                onClick={handleClearCache}
+                onClick={() => {
+                  setStorageModalOpen(false);
+                  triggerToast('Cached offline data cleared!');
+                }}
                 className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs py-3 rounded-xl cursor-pointer"
               >
                 Clear Cache

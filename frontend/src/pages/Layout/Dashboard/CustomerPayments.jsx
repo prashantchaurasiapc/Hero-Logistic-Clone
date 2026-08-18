@@ -346,7 +346,14 @@ Status: Cleared & Reconciled`;
               </tr>
             </thead>
             <tbody>
-              {payments.map((row) => (
+              {payments.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ padding: '24px 0', textAlign: 'center', color: '#94a3b8', fontSize: 12, fontWeight: 600 }}>
+                    No payment records found.
+                  </td>
+                </tr>
+              ) : (
+                payments.map((row) => (
                 <tr 
                   key={row.id} 
                   style={{
@@ -389,7 +396,8 @@ Status: Cleared & Reconciled`;
                     </td>
                   )}
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>

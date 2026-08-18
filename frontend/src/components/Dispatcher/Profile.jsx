@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   User, Phone, Mail, MapPin, Settings, Globe, Clock, Calendar as CalendarIcon,
   Shield, Check, Monitor, Smartphone, Tablet, Link2, ChevronRight, 
-  Lock, Edit3, Grid, CalendarDays, Truck, Map, MessageSquare, History, Bell
+  Lock, Edit3, Grid, CalendarDays, Truck, Map, MessageSquare, History, Bell, Camera, Upload
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Profile() {
+  const fileInputRef = useRef(null);
   const { user } = useAuth();
   const [toast, setToast] = useState(null);
   const showToast = (msg) => {
@@ -16,6 +17,7 @@ export default function Profile() {
 
   // Editable Profile State Variables
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(() => localStorage.getItem('hero_profile_avatar') || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=256&h=256');
   const [fullName, setFullName] = useState(user?.name || 'Dispatcher User');
   const [mobileNumber, setMobileNumber] = useState(user?.phone || 'N/A');
   const [emailAddress, setEmailAddress] = useState(user?.email || 'dispatcher@herols.com');
@@ -33,6 +35,22 @@ export default function Profile() {
       if (user.emergencyContact) setEmergencyContact(user.emergencyContact);
     }
   }, [user]);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const newUrl = event.target?.result;
+        if (newUrl) {
+          setAvatarUrl(newUrl);
+          localStorage.setItem('hero_profile_avatar', newUrl);
+          showToast('✓ Profile photo updated successfully!');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Temporary Edit Form State Variables
   const [tempFullName, setTempFullName] = useState('');
@@ -122,14 +140,31 @@ export default function Profile() {
           
           {/* Profile Card */}
           <div className="bg-white rounded-[20px] border border-slate-200 p-6 shadow-sm flex flex-col items-center">
-            <div className="relative mb-4">
+            <div className="relative mb-4 group cursor-pointer" onClick={() => fileInputRef.current?.click()} title="Click to Change Profile Photo">
               <img 
-                src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=256&h=256" 
+                src={avatarUrl} 
                 alt={fullName} 
-                className="w-24 h-24 rounded-full object-cover border-2 border-white shadow-md"
+                className="w-24 h-24 rounded-full object-cover border-2 border-white shadow-md transition-transform group-hover:scale-105"
               />
-              <div className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
+              <div className="absolute inset-0 bg-slate-900/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                <Camera size={20} />
+              </div>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                className="absolute bottom-0 right-0 p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full border-2 border-white shadow-sm transition-transform hover:scale-110 cursor-pointer"
+                title="Change Profile Photo"
+              >
+                <Camera size={13} />
+              </button>
             </div>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              accept="image/*" 
+              className="hidden" 
+              onChange={handleImageUpload} 
+            />
             
             <h2 className="text-xl font-bold text-slate-900">{fullName}</h2>
             <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-1.5">Online</span>
@@ -426,6 +461,28 @@ export default function Profile() {
             </div>
             
             <form onSubmit={handleSaveProfile} className="p-5 space-y-4">
+              {/* Profile Photo Uploader */}
+              <div className="flex items-center gap-4 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <img 
+                  src={avatarUrl} 
+                  alt="Avatar Preview" 
+                  className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-xs"
+                />
+                <div className="flex-1">
+                  <span className="text-xs font-bold text-slate-800 block">Profile Photo</span>
+                  <p className="text-[10px] text-slate-500 font-medium mb-1.5">Upload a new profile picture from your computer</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-[11px] transition-colors cursor-pointer flex items-center gap-1"
+                    >
+                      <Upload size={12} /> Upload New Photo
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="wh-light-form-lbl">Full Name</label>
                 <input

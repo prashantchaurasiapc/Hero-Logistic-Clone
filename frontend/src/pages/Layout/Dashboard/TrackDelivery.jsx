@@ -65,8 +65,49 @@ const TrackDelivery = () => {
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportSubject, setSupportSubject] = useState('');
   const [supportDescription, setSupportDescription] = useState('');
-
   const [toast, setToast] = useState(null);
+
+  // Dynamic Tracking State
+  const [searchTrackingId, setSearchTrackingId] = useState('');
+  const [activeLoad, setActiveLoad] = useState(null);
+  const [loadsList, setLoadsList] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchLoads = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/company-admin/loads');
+        if (res.data) {
+          const raw = Array.isArray(res.data) ? res.data : (res.data.loads || []);
+          setLoadsList(raw);
+          if (raw.length > 0) {
+            setActiveLoad(raw[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load tracking data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLoads();
+  }, []);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!searchTrackingId.trim()) return;
+    const found = loadsList.find(l => 
+      (l.loadNumber || '').toLowerCase().includes(searchTrackingId.toLowerCase()) ||
+      (l.id || '').toString().includes(searchTrackingId)
+    );
+    if (found) {
+      setActiveLoad(found);
+      showToast(`Tracking load ${found.loadNumber || found.id}`);
+    } else {
+      showToast('No load found matching tracking ID');
+    }
+  };
 
   const showToast = (msg) => {
     setToast(msg);
@@ -82,18 +123,27 @@ const TrackDelivery = () => {
   };
 
   const handleCallDriver = () => {
-    showToast('Dialing Driver David Miller (+1-555-0199) - Simulated call.');
+    if (activeLoad?.driver?.phone) {
+      showToast(`Dialing Driver ${activeLoad.driver.name || 'Driver'} (${activeLoad.driver.phone})`);
+    } else {
+      showToast('Calling assigned driver...');
+    }
   };
 
   const handleMessageDriver = () => {
     showToast('Direct Message sent to driver mobile app.');
   };
 
-  const timelineSteps = [
-    { label: 'Booked', time: '06/27 10:00 AM', status: 'completed' },
-    { label: 'Dispatched', time: '06/27 11:30 AM', status: 'completed' },
-    { label: 'In Transit', time: '06/27 14:00 PM', status: 'active' },
-    { label: 'Delivered', time: 'Estimated 17:45 PM', status: 'pending' }
+  const timelineSteps = activeLoad ? [
+    { label: 'Booked', time: activeLoad.createdAt ? new Date(activeLoad.createdAt).toLocaleDateString('en-GB') : 'Completed', status: 'completed' },
+    { label: 'Dispatched', time: activeLoad.status === 'Dispatched' || activeLoad.status === 'In Transit' || activeLoad.status === 'Delivered' ? 'Completed' : 'Pending', status: activeLoad.status === 'Scheduled' ? 'pending' : 'completed' },
+    { label: 'In Transit', time: activeLoad.status === 'In Transit' ? 'In Progress' : (activeLoad.status === 'Delivered' ? 'Completed' : 'Pending'), status: activeLoad.status === 'In Transit' ? 'active' : (activeLoad.status === 'Delivered' ? 'completed' : 'pending') },
+    { label: 'Delivered', time: activeLoad.deliveryDate ? new Date(activeLoad.deliveryDate).toLocaleDateString('en-GB') : 'Estimated', status: activeLoad.status === 'Delivered' ? 'completed' : 'pending' }
+  ] : [
+    { label: 'Booked', time: 'Pending', status: 'pending' },
+    { label: 'Dispatched', time: 'Pending', status: 'pending' },
+    { label: 'In Transit', time: 'Pending', status: 'pending' },
+    { label: 'Delivered', time: 'Pending', status: 'pending' }
   ];
 
   return (
@@ -107,15 +157,29 @@ const TrackDelivery = () => {
         <button onClick={() => setShowSupportModal(true)} className="contact-support-btn">Contact Support</button>
       </div>
 
+      {/* Search Tracking Bar */}
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        <input 
+          type="text" 
+          placeholder="Enter Load # or Tracking ID..." 
+          value={searchTrackingId}
+          onChange={e => setSearchTrackingId(e.target.value)}
+          style={{ flex: 1, padding: '10px 16px', borderRadius: 12, border: '1px solid #cbd5e1', fontSize: 13, fontWeight: 600, outline: 'none' }}
+        />
+        <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#2563eb', color: '#fff', fontWeight: 800, borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13 }}>
+          Track Shipment
+        </button>
+      </form>
+
       {/* Grid Layout */}
       <div className="track-delivery-grid">
         {/* Left Side Details Panel */}
         <div style={S.leftCard}>
           <div>
             <span style={S.smallLabel}>ACTIVE TRACKING ID</span>
-            <h2 style={S.trackingId}>LD-4657</h2>
-            <span style={S.cargoText}>rtyu</span>
-            <span style={S.routeText}>dfgh</span>
+            <h2 style={S.trackingId}>{activeLoad ? (activeLoad.loadNumber || activeLoad.id || `LD-${activeLoad.dbId}`) : 'No Load Selected'}</h2>
+            <span style={S.cargoText}>{activeLoad ? (activeLoad.loadType || activeLoad.type || 'General Freight') : ''}</span>
+            <span style={S.routeText}>{activeLoad ? `${activeLoad.pickupLocation || 'Origin'} → ${activeLoad.deliveryLocation || 'Destination'}` : 'Select a load to view tracking'}</span>
           </div>
 
           <div style={S.divider} />
@@ -155,10 +219,12 @@ const TrackDelivery = () => {
           <div>
             <span style={{ ...S.smallLabel, marginBottom: 12, display: 'block' }}>ASSIGNED CARRIER DETAILS</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={S.avatar}>DM</div>
+              <div style={S.avatar}>
+                {activeLoad?.driver?.name ? activeLoad.driver.name.substring(0, 2).toUpperCase() : 'DR'}
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={S.carrierName}>David Miller</span>
-                <span style={S.carrierPlate}>Plate: TR-9410 | Volvo FH16</span>
+                <span style={S.carrierName}>{activeLoad?.driver?.name || activeLoad?.driverName || 'Driver Unassigned'}</span>
+                <span style={S.carrierPlate}>{activeLoad?.truck ? `Truck: ${activeLoad.truck.plateNumber || activeLoad.truck.truckNumber}` : 'Truck details unavailable'}</span>
               </div>
             </div>
           </div>
@@ -167,11 +233,11 @@ const TrackDelivery = () => {
           <div style={S.etaSpeedBox}>
             <div>
               <span style={S.infoLabel}>ETA</span>
-              <div style={S.etaValue}>17:45 PM</div>
+              <div style={S.etaValue}>{activeLoad?.deliveryDate ? new Date(activeLoad.deliveryDate).toLocaleDateString('en-GB') : 'TBD'}</div>
             </div>
             <div>
-              <span style={S.infoLabel}>SPEED</span>
-              <div style={S.speedValue}>55 mph</div>
+              <span style={S.infoLabel}>STATUS</span>
+              <div style={S.speedValue}>{activeLoad?.status || 'Active'}</div>
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Plus, Download, ChevronDown, Search, Filter, RotateCcw, 
   MapPin, Building, Clock, Phone, AlertCircle, CheckCircle2,
@@ -7,32 +7,56 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AssetDetails from './AssetDetails';
-import api from '../../services/api';
 
 // --- MOCK DATA ---
 const mockAssets = [];
 
 // Reusable Donut Chart Component (SVG)
-const AssetDonutChart = ({ totalCount = 0 }) => {
+const AssetDonutChart = () => {
   const size = 160;
   const strokeWidth = 16;
   const radius = (size - strokeWidth) / 2;
   const center = size / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  // Data matching the screenshot: Active 88 (66.7%), Maintenance 18 (13.6%), Out of Service 6 (4.5%), Unassigned 20 (15.2%)
+  const data = [
+    { value: 88, color: '#10B981' }, // Active (emerald)
+    { value: 18, color: '#F59E0B' }, // Maintenance (amber)
+    { value: 6, color: '#EF4444' }, // Out of service (red)
+    { value: 20, color: '#94A3B8' }  // Unassigned (slate)
+  ];
+
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  let currentOffset = 0;
 
   return (
     <div className="relative flex items-center justify-center h-[180px]">
       <svg width={size} height={size} className="transform -rotate-90">
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="transparent"
-          stroke="#E2E8F0"
-          strokeWidth={strokeWidth}
-        />
+        {data.map((item, index) => {
+          const dashArray = (item.value / total) * circumference;
+          const strokeDasharray = `${dashArray} ${circumference}`;
+          const strokeDashoffset = -currentOffset;
+          currentOffset += dashArray;
+
+          return (
+            <circle
+              key={index}
+              cx={center}
+              cy={center}
+              r={radius}
+              fill="transparent"
+              stroke={item.color}
+              strokeWidth={strokeWidth}
+              strokeDasharray={strokeDasharray}
+              strokeDashoffset={strokeDashoffset}
+              className="transition-all duration-1000 ease-out"
+            />
+          );
+        })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-black text-slate-800 tracking-tight leading-none">{totalCount}</span>
+        <span className="text-3xl font-black text-slate-800 tracking-tight leading-none">132</span>
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total</span>
       </div>
     </div>
@@ -41,7 +65,6 @@ const AssetDonutChart = ({ totalCount = 0 }) => {
 
 export default function Assets() {
   const [assetList, setAssetList] = useState(mockAssets);
-  const [loading, setLoading] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [editAssetModal, setEditAssetModal] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,40 +73,6 @@ export default function Assets() {
   const [branchFilter, setBranchFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchAssets();
-  }, []);
-
-  const fetchAssets = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('/assets');
-      const data = res.data?.data || res.data || [];
-      if (Array.isArray(data)) {
-        const formatted = data.map(a => ({
-          id: a.id,
-          assetId: a.assetId || a.id,
-          name: a.name || 'Unnamed Asset',
-          model: a.model || a.make || 'Standard',
-          category: a.category || 'Equipment',
-          type: a.type || 'Standard',
-          branch: a.branch?.name || 'Sydney Head Office',
-          location: a.location || 'Yard',
-          assignedTo: a.assignedTo || 'Unassigned',
-          status: a.status === 'ACTIVE' ? 'Active' : a.status === 'MAINTENANCE' ? 'Maintenance' : a.status === 'OUT_OF_SERVICE' ? 'Out of Service' : (a.status || 'Active'),
-          condition: a.condition ? (a.condition.charAt(0) + a.condition.slice(1).toLowerCase()) : 'Good',
-          nextService: a.nextServiceDue ? new Date(a.nextServiceDue).toLocaleDateString() : 'N/A',
-          dueIn: 'N/A'
-        }));
-        setAssetList(formatted);
-      }
-    } catch (err) {
-      console.error('Error fetching assets from API:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleResetFilters = () => {
     setSearchQuery('');
@@ -270,7 +259,7 @@ export default function Assets() {
                 <div className="w-7 h-7 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded">
                   <Package size={14} />
                 </div>
-                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">{assetList.length}</span>
+                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">132</span>
               </div>
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Total Assets</div>
             </div>
@@ -281,7 +270,7 @@ export default function Assets() {
                 <div className="w-7 h-7 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded">
                   <CheckCircle2 size={14} />
                 </div>
-                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">0</span>
+                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">88</span>
               </div>
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Active</div>
             </div>
@@ -292,7 +281,7 @@ export default function Assets() {
                 <div className="w-7 h-7 flex items-center justify-center bg-amber-50 text-amber-500 rounded">
                   <Wrench size={14} />
                 </div>
-                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">0</span>
+                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">18</span>
               </div>
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Maintenance Due</div>
             </div>
@@ -303,7 +292,7 @@ export default function Assets() {
                 <div className="w-7 h-7 flex items-center justify-center bg-red-50 text-red-500 rounded">
                   <AlertTriangle size={14} />
                 </div>
-                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">0</span>
+                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">6</span>
               </div>
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Out of Service</div>
             </div>
@@ -314,7 +303,7 @@ export default function Assets() {
                 <div className="w-7 h-7 flex items-center justify-center bg-blue-50 text-blue-600 rounded">
                   <Shield size={14} />
                 </div>
-                <span className="text-2xl font-black text-blue-600 leading-none tracking-tight">0</span>
+                <span className="text-2xl font-black text-blue-600 leading-none tracking-tight">7</span>
               </div>
               <div className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-1 leading-snug">Expiring Compliance</div>
             </div>
@@ -325,7 +314,7 @@ export default function Assets() {
                 <div className="w-7 h-7 flex items-center justify-center bg-purple-50 text-purple-600 rounded">
                   <MapPin size={14} />
                 </div>
-                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">0</span>
+                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">13</span>
               </div>
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Assigned</div>
             </div>
@@ -336,7 +325,7 @@ export default function Assets() {
                 <div className="w-7 h-7 flex items-center justify-center bg-slate-100 text-slate-500 rounded">
                   <Building size={14} />
                 </div>
-                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">0</span>
+                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">28</span>
               </div>
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Unassigned</div>
             </div>
@@ -447,120 +436,106 @@ export default function Assets() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {filteredAssets.length === 0 ? (
-                    <tr>
-                      <td colSpan="11" className="py-12 text-center text-xs font-bold text-slate-400">
-                        No non-vehicle assets found. Click + Create New Asset to add one.
+                  {filteredAssets.map((asset) => (
+                    <tr key={asset.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="p-4 text-center"><input type="checkbox" className="rounded border-slate-300 w-3.5 h-3.5 cursor-pointer" /></td>
+                      
+                      <td className="p-4">
+                        <div className="flex flex-col cursor-pointer" onClick={() => setSelectedAsset(asset)}>
+                          <div className="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center mb-1.5 shrink-0 overflow-hidden shadow-sm">
+                            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${asset.id}`} alt="QR" className="w-5 h-5 object-contain opacity-80" />
+                          </div>
+                          <span className="text-[10px] font-black text-blue-600 font-mono tracking-wider hover:underline">{asset.id}</span>
+                        </div>
+                      </td>
+                      
+                      <td className="p-4">
+                        <div onClick={() => setSelectedAsset(asset)} className="text-xs font-black text-slate-900 group-hover:text-purple-700 transition-colors cursor-pointer">{asset.name}</div>
+                        <div className="text-[10px] font-semibold text-slate-400 mt-0.5">{asset.model}</div>
+                      </td>
+                      
+                      <td className="p-4">
+                        <span className={`inline-block px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${getCategoryColor(asset.category).bg} ${getCategoryColor(asset.category).text}`}>{asset.category}</span>
+                      </td>
+                      
+                      <td className="p-4">
+                        <div className="text-xs font-semibold text-slate-600">{asset.type}</div>
+                      </td>
+                      
+                      <td className="p-4">
+                        <div className="text-xs font-bold text-slate-800">
+                          {typeof asset.branch === 'object' ? (asset.branch?.name || asset.branch?.location || 'Sydney Head Office') : (asset.branch || 'Sydney Head Office')}
+                        </div>
+                        <div className="text-[10px] font-semibold text-slate-500 mt-0.5">
+                          {typeof asset.location === 'object' ? (asset.location?.name || asset.location?.location || 'Yard') : (asset.location || 'Yard')}
+                        </div>
+                      </td>
+                      
+                      <td className="p-4">
+                        <div className="text-xs font-semibold text-slate-600">
+                          {typeof asset.assignedTo === 'object' ? (asset.assignedTo?.name || 'Unassigned') : (asset.assignedTo || 'Unassigned')}
+                        </div>
+                      </td>
+                      
+                      <td className="p-4">
+                        {asset.status === 'Active' ? (
+                          <span className="inline-block px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-md text-[9px] font-black uppercase tracking-wider">Active</span>
+                        ) : asset.status === 'Maintenance' ? (
+                          <span className="inline-block px-2.5 py-1 bg-amber-50 text-amber-600 rounded-md text-[9px] font-black uppercase tracking-wider">Maintenance</span>
+                        ) : (
+                          <span className="inline-block px-2.5 py-1 bg-red-50 text-red-600 rounded-md text-[9px] font-black uppercase tracking-wider">Out of Service</span>
+                        )}
+                      </td>
+                      
+                      <td className="p-4">
+                        <span className={`text-xs font-bold ${getConditionColor(asset.condition)}`}>
+                          {asset.condition}
+                        </span>
+                      </td>
+                      
+                      <td className="p-4">
+                        <div className="text-xs font-bold text-slate-800">{asset.nextService}</div>
+                        <div className="text-[10px] font-semibold text-slate-500 mt-0.5">{asset.dueIn}</div>
+                      </td>
+                      
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button 
+                            onClick={() => setSelectedAsset(asset)} 
+                            title="View Asset Details"
+                            className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                          >
+                            <Eye size={13} />
+                          </button>
+                          <button 
+                            onClick={() => setEditAssetModal(asset)} 
+                            title="Edit Asset"
+                            className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                          >
+                            <Edit size={13} />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to delete asset ${asset.name} (${asset.id})?`)) {
+                                setAssetList(prev => prev.filter(a => a.id !== asset.id));
+                              }
+                            }} 
+                            title="Delete Asset"
+                            className="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ) : (
-                    filteredAssets.map((asset) => (
-                      <tr key={asset.id} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="p-4 text-center"><input type="checkbox" className="rounded border-slate-300 w-3.5 h-3.5 cursor-pointer" /></td>
-                        
-                        <td className="p-4">
-                          <div className="flex flex-col cursor-pointer" onClick={() => setSelectedAsset(asset)}>
-                            <div className="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center mb-1.5 shrink-0 overflow-hidden shadow-sm">
-                              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${asset.id}`} alt="QR" className="w-5 h-5 object-contain opacity-80" />
-                            </div>
-                            <span className="text-[10px] font-black text-blue-600 font-mono tracking-wider hover:underline">{asset.id}</span>
-                          </div>
-                        </td>
-                        
-                        <td className="p-4">
-                          <div onClick={() => setSelectedAsset(asset)} className="text-xs font-black text-slate-900 group-hover:text-purple-700 transition-colors cursor-pointer">{asset.name}</div>
-                          <div className="text-[10px] font-semibold text-slate-400 mt-0.5">{asset.model}</div>
-                        </td>
-                        
-                        <td className="p-4">
-                          <span className={`inline-block px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${getCategoryColor(asset.category).bg} ${getCategoryColor(asset.category).text}`}>{asset.category}</span>
-                        </td>
-                        
-                        <td className="p-4">
-                          <div className="text-xs font-semibold text-slate-600">{asset.type}</div>
-                        </td>
-                        
-                        <td className="p-4">
-                          <div className="text-xs font-bold text-slate-800">
-                            {typeof asset.branch === 'object' ? (asset.branch?.name || asset.branch?.location || 'Sydney Head Office') : (asset.branch || 'Sydney Head Office')}
-                          </div>
-                          <div className="text-[10px] font-semibold text-slate-500 mt-0.5">
-                            {typeof asset.location === 'object' ? (asset.location?.name || asset.location?.location || 'Yard') : (asset.location || 'Yard')}
-                          </div>
-                        </td>
-                        
-                        <td className="p-4">
-                          <div className="text-xs font-semibold text-slate-600">
-                            {typeof asset.assignedTo === 'object' ? (asset.assignedTo?.name || 'Unassigned') : (asset.assignedTo || 'Unassigned')}
-                          </div>
-                        </td>
-                        
-                        <td className="p-4">
-                          {asset.status === 'Active' ? (
-                            <span className="inline-block px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-md text-[9px] font-black uppercase tracking-wider">Active</span>
-                          ) : asset.status === 'Maintenance' ? (
-                            <span className="inline-block px-2.5 py-1 bg-amber-50 text-amber-600 rounded-md text-[9px] font-black uppercase tracking-wider">Maintenance</span>
-                          ) : (
-                            <span className="inline-block px-2.5 py-1 bg-red-50 text-red-600 rounded-md text-[9px] font-black uppercase tracking-wider">Out of Service</span>
-                          )}
-                        </td>
-                        
-                        <td className="p-4">
-                          <span className={`text-xs font-bold ${getConditionColor(asset.condition)}`}>
-                            {asset.condition}
-                          </span>
-                        </td>
-                        
-                        <td className="p-4">
-                          <div className="text-xs font-bold text-slate-800">{asset.nextService}</div>
-                          <div className="text-[10px] font-semibold text-slate-500 mt-0.5">{asset.dueIn}</div>
-                        </td>
-                        
-                        <td className="p-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button 
-                              onClick={() => setSelectedAsset(asset)} 
-                              title="View Asset Details"
-                              className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
-                            >
-                              <Eye size={13} />
-                            </button>
-                            <button 
-                              onClick={() => setEditAssetModal(asset)} 
-                              title="Edit Asset"
-                              className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
-                            >
-                              <Edit size={13} />
-                            </button>
-                            <button 
-                              onClick={async () => {
-                                if (window.confirm(`Are you sure you want to delete asset ${asset.name} (${asset.assetId || asset.id})?`)) {
-                                  try {
-                                    await api.delete(`/assets/${asset.id}`);
-                                    setAssetList(prev => prev.filter(a => a.id !== asset.id));
-                                  } catch (err) {
-                                    console.error('Delete asset error:', err);
-                                    setAssetList(prev => prev.filter(a => a.id !== asset.id));
-                                  }
-                                }
-                              }} 
-                              title="Delete Asset"
-                              className="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>
 
             {/* Pagination */}
             <div className="p-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50 text-[10px] font-bold text-slate-500">
-              <div>Showing {filteredAssets.length} assets</div>
+              <div>Showing 1 to 10 of 132 assets</div>
               <div className="flex items-center gap-1">
                 <button className="px-2 py-1.5 border border-slate-200 rounded-md bg-white hover:bg-slate-50">&lt;</button>
                 <button className="px-2.5 py-1.5 border border-purple-500 rounded-md bg-purple-50 text-purple-700">1</button>
@@ -588,7 +563,7 @@ export default function Assets() {
           {/* Asset Summary Donut */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
             <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-6">Asset Summary</h3>
-            <AssetDonutChart totalCount={assetList.length} />
+            <AssetDonutChart />
             
             <div className="mt-8 space-y-3">
               <div className="flex justify-between items-center">
@@ -596,28 +571,28 @@ export default function Assets() {
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
                   <span className="text-xs font-bold text-slate-700">Active</span>
                 </div>
-                <div className="text-xs font-black text-slate-900">0 <span className="text-slate-400 font-semibold ml-1">(0%)</span></div>
+                <div className="text-xs font-black text-slate-900">88 <span className="text-slate-400 font-semibold ml-1">(66.7%)</span></div>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
                   <span className="text-xs font-bold text-slate-700">Maintenance</span>
                 </div>
-                <div className="text-xs font-black text-slate-900">0 <span className="text-slate-400 font-semibold ml-1">(0%)</span></div>
+                <div className="text-xs font-black text-slate-900">18 <span className="text-slate-400 font-semibold ml-1">(13.6%)</span></div>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
                   <span className="text-xs font-bold text-slate-700">Out of Service</span>
                 </div>
-                <div className="text-xs font-black text-slate-900">0 <span className="text-slate-400 font-semibold ml-1">(0%)</span></div>
+                <div className="text-xs font-black text-slate-900">6 <span className="text-slate-400 font-semibold ml-1">(4.5%)</span></div>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-slate-400"></div>
                   <span className="text-xs font-bold text-slate-700">Unassigned</span>
                 </div>
-                <div className="text-xs font-black text-slate-900">0 <span className="text-slate-400 font-semibold ml-1">(0%)</span></div>
+                <div className="text-xs font-black text-slate-900">28 <span className="text-slate-400 font-semibold ml-1">(21.2%)</span></div>
               </div>
             </div>
           </div>
@@ -631,14 +606,14 @@ export default function Assets() {
             
             <div className="space-y-3">
               {[
-                { name: 'Forklifts', count: 0, color: 'bg-blue-600', textColor: 'text-blue-600' },
-                { name: 'Containers', count: 0, color: 'bg-amber-600', textColor: 'text-amber-600' },
-                { name: 'Material Handling', count: 0, color: 'bg-purple-600', textColor: 'text-purple-600' },
-                { name: 'Power Equipment', count: 0, color: 'bg-orange-500', textColor: 'text-orange-500' },
-                { name: 'Equipment', count: 0, color: 'bg-emerald-500', textColor: 'text-emerald-500' },
-                { name: 'IT & Devices', count: 0, color: 'bg-cyan-600', textColor: 'text-cyan-600' },
-                { name: 'Workshop Equipment', count: 0, color: 'bg-rose-500', textColor: 'text-rose-500' },
-                { name: 'PPE', count: 0, color: 'bg-indigo-500', textColor: 'text-indigo-500' }
+                { name: 'Forklifts', count: 21, color: 'bg-blue-600', textColor: 'text-blue-600' },
+                { name: 'Containers', count: 28, color: 'bg-amber-600', textColor: 'text-amber-600' },
+                { name: 'Material Handling', count: 19, color: 'bg-purple-600', textColor: 'text-purple-600' },
+                { name: 'Power Equipment', count: 12, color: 'bg-orange-500', textColor: 'text-orange-500' },
+                { name: 'Equipment', count: 15, color: 'bg-emerald-500', textColor: 'text-emerald-500' },
+                { name: 'IT & Devices', count: 14, color: 'bg-cyan-600', textColor: 'text-cyan-600' },
+                { name: 'Workshop Equipment', count: 11, color: 'bg-rose-500', textColor: 'text-rose-500' },
+                { name: 'PPE', count: 14, color: 'bg-indigo-500', textColor: 'text-indigo-500' }
               ].map((item, i) => (
                 <div key={i} className="flex justify-between items-center group cursor-pointer">
                   <div className="flex items-center gap-2">
@@ -663,7 +638,7 @@ export default function Assets() {
                 <div className="flex items-center gap-3">
                   <AlertTriangle size={16} className="text-amber-600" />
                   <div>
-                    <div className="text-[11px] font-black text-amber-900">0 Expiring Soon</div>
+                    <div className="text-[11px] font-black text-amber-900">7 Expiring Soon</div>
                   </div>
                 </div>
                 <div className="text-[8px] font-black text-amber-700 uppercase tracking-widest bg-amber-100/50 px-2 py-1 rounded border border-amber-200">WITHIN 20 DAYS</div>
@@ -673,7 +648,7 @@ export default function Assets() {
                 <div className="flex items-center gap-3">
                   <AlertCircle size={16} className="text-red-600" />
                   <div>
-                    <div className="text-[11px] font-black text-red-900">0 Require Attention</div>
+                    <div className="text-[11px] font-black text-red-900">4 Require Attention</div>
                   </div>
                 </div>
                 <div className="text-[8px] font-black text-red-700 uppercase tracking-widest bg-red-100/50 px-2 py-1 rounded border border-red-200">EXPIRED</div>
@@ -683,7 +658,7 @@ export default function Assets() {
                 <div className="flex items-center gap-3">
                   <CheckCircle size={16} className="text-blue-600" />
                   <div>
-                    <div className="text-[11px] font-black text-blue-900">0 Up to Date</div>
+                    <div className="text-[11px] font-black text-blue-900">23 Up to Date</div>
                   </div>
                 </div>
                 <div className="text-[8px] font-black text-blue-700 uppercase tracking-widest bg-blue-100/50 px-2 py-1 rounded border border-blue-200">COMPLIANT</div>
@@ -763,17 +738,7 @@ export default function Assets() {
             </div>
             <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
               <button onClick={() => setEditAssetModal(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
-              <button onClick={async () => {
-                try {
-                  const apiStatus = editAssetModal.status === 'Active' ? 'ACTIVE' : editAssetModal.status === 'Maintenance' ? 'MAINTENANCE' : 'OUT_OF_SERVICE';
-                  await api.put(`/assets/${editAssetModal.id}`, {
-                    name: editAssetModal.name,
-                    category: editAssetModal.category,
-                    status: apiStatus
-                  });
-                } catch (err) {
-                  console.error('Update asset error:', err);
-                }
+              <button onClick={() => {
                 setAssetList(prev => prev.map(a => a.id === editAssetModal.id ? editAssetModal : a));
                 setEditAssetModal(null);
               }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>

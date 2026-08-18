@@ -77,15 +77,19 @@ class AuthService {
     const roleSlug = user.customRole?.slug || user.role;
     let masterPerms = {};
     if (roleSlug) {
-      const masterRole = await prisma.customRole.findFirst({
-        where: { OR: [{ slug: roleSlug }, { name: roleSlug }], companyId: null, isSystem: true },
-        include: { permissions: true }
-      });
-      if (masterRole?.permissions) {
-        masterRole.permissions.forEach(p => {
-          try { masterPerms[p.module] = JSON.parse(p.actionString); }
-          catch (e) { masterPerms[p.module] = p.actionString; }
+      try {
+        const masterRole = await prisma.customRole.findFirst({
+          where: { OR: [{ slug: roleSlug }, { name: roleSlug }], companyId: null, isSystem: true },
+          include: { permissions: true }
         });
+        if (masterRole?.permissions) {
+          masterRole.permissions.forEach(p => {
+            try { masterPerms[p.module] = JSON.parse(p.actionString); }
+            catch (e) { masterPerms[p.module] = p.actionString; }
+          });
+        }
+      } catch (err) {
+        console.warn('Could not fetch masterRole permissions:', err.message);
       }
     }
 
@@ -93,15 +97,19 @@ class AuthService {
       user.permissions = masterPerms;
     } else {
       let companyPerms = {};
-      const companyRole = await prisma.customRole.findFirst({
-        where: { OR: [{ slug: roleSlug }, { name: roleSlug }], companyId: user.companyId },
-        include: { permissions: true }
-      });
-      if (companyRole?.permissions) {
-        companyRole.permissions.forEach(p => {
-          try { companyPerms[p.module] = JSON.parse(p.actionString); }
-          catch (e) { companyPerms[p.module] = p.actionString; }
+      try {
+        const companyRole = await prisma.customRole.findFirst({
+          where: { OR: [{ slug: roleSlug }, { name: roleSlug }], companyId: user.companyId },
+          include: { permissions: true }
         });
+        if (companyRole?.permissions) {
+          companyRole.permissions.forEach(p => {
+            try { companyPerms[p.module] = JSON.parse(p.actionString); }
+            catch (e) { companyPerms[p.module] = p.actionString; }
+          });
+        }
+      } catch (err) {
+        console.warn('Could not fetch companyRole permissions:', err.message);
       }
 
       const effectivePerms = {};

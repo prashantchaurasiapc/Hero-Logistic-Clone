@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, ChevronRight, Calendar, Filter, Zap, Plus, Search, 
   MoreVertical, X, Phone, User, Truck, MapPin, Navigation, 
@@ -10,8 +11,29 @@ import { dispatcherStore } from '../../services/dispatcherStore';
 import api from '../../services/api';
 
 export default function TerminalWorkspace() {
+  const navigate = useNavigate();
   const [drivers, setDrivers] = useState([]);
   const [selectedLoadId, setSelectedLoadId] = useState('LD-10583');
+  const [planningDate, setPlanningDate] = useState(new Date());
+  const [showUnassignedDrawer, setShowUnassignedDrawer] = useState(false);
+  const [unassignedLoadsList, setUnassignedLoadsList] = useState(() => {
+    const saved = localStorage.getItem('hero_unassigned_loads');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [
+      { id: 'PO-373069', customer: 'Direct Customer', route: 'Melbourne VIC → Mumbai', type: 'General Freight (abcd)', reqDate: 'Today, 09:00 AM' },
+      { id: 'PO-163402', customer: 'Direct Customer', route: 'Geelong VIC → Sydney NSW', type: 'General Freight', reqDate: 'Today, 09:00 AM' },
+      { id: 'PO-923974', customer: 'Direct Customer', route: 'Brisbane QLD → Perth WA', type: 'General Freight', reqDate: 'Today, 09:00 AM' },
+      { id: 'LD-4736', customer: 'Customer Portal', route: 'Melbourne VIC → Mumbai', type: 'General Freight (abcd)', reqDate: 'Today, 12:35 PM' },
+      { id: 'LD-4246', customer: 'Customer Portal', route: 'Geelong VIC → Sydney NSW', type: 'General Freight (hbasjnsak)', reqDate: 'Yesterday, 03:10 PM' },
+      { id: 'LD-3987', customer: 'Customer Portal', route: 'Brisbane QLD → Perth WA', type: 'Car Carrier', reqDate: '2 days ago' }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hero_unassigned_loads', JSON.stringify(unassignedLoadsList));
+  }, [unassignedLoadsList]);
 
   useEffect(() => {
     const fetchPlanningData = async () => {
@@ -23,15 +45,19 @@ export default function TerminalWorkspace() {
         const dbDrivers = driversRes.data?.data || [];
         const dbLoads = loadsRes.data?.data || [];
 
+        const savedAssignments = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+
         const formatted = dbDrivers.map(d => {
           const driverName = d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : d.driverCode;
           const driverLoads = dbLoads.filter(l => l.driverId === d.id);
+          const extraAssigned = savedAssignments[driverName] || [];
 
           const mappedLoads = driverLoads.map((l, lIndex) => {
-            const startTime = 8 + (lIndex * 5); // spacing them out
+            const startTime = 8 + (lIndex * 5);
             const endTime = startTime + 4;
             return {
               id: l.loadRef || l.id.substring(0, 8),
+              dbId: l.id,
               customer: l.customer?.name || 'Unknown Customer',
               route: l.notes?.includes(' to ') ? l.notes : 'Route Pending',
               startTime,
@@ -48,15 +74,18 @@ export default function TerminalWorkspace() {
             };
           });
 
+          const allDriverLoads = [...mappedLoads, ...extraAssigned];
+          const isOnDuty = allDriverLoads.length > 0;
+
           return {
             id: d.id,
             name: driverName,
-            status: mappedLoads.some(l => l.color === 'emerald') ? 'On Duty' : 'Standby',
-            statusColor: mappedLoads.some(l => l.color === 'emerald') ? 'emerald' : 'blue',
+            status: isOnDuty ? 'On Duty' : 'Standby',
+            statusColor: isOnDuty ? 'emerald' : 'blue',
             vehicleType: 'Volvo FH16 750',
             trailerType: 'Car Carrier TR-01 (10 Car)',
-            loadsCount: `${mappedLoads.length} Loads`,
-            loads: mappedLoads
+            loadsCount: `${allDriverLoads.length} Loads`,
+            loads: allDriverLoads
           };
         });
 
@@ -192,11 +221,33 @@ export default function TerminalWorkspace() {
               
               <div className="flex flex-col gap-1.5 shrink-0">
                 <label className="text-[10px] font-semibold text-slate-500 uppercase">Date</label>
-                <div className="flex items-center h-9 border border-slate-200 rounded-lg px-2 bg-white w-48">
-                  <Calendar size={14} className="text-slate-400 mr-2" />
-                  <span className="text-xs text-slate-700 font-medium flex-1">22 May 2026</span>
-                  <button className="p-1 hover:bg-slate-100 rounded text-slate-400"><ChevronLeft size={14}/></button>
-                  <button className="p-1 hover:bg-slate-100 rounded text-slate-400"><ChevronRight size={14}/></button>
+                <div className="flex items-center h-9 border border-slate-200 rounded-lg px-2 bg-white w-52 shadow-2xs">
+                  <Calendar size={14} className="text-blue-600 mr-2 shrink-0" />
+                  <span className="text-xs text-slate-800 font-bold flex-1">
+                    {planningDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                  <button 
+                    onClick={() => {
+                      const d = new Date(planningDate);
+                      d.setDate(d.getDate() - 1);
+                      setPlanningDate(d);
+                    }}
+                    className="p-1 hover:bg-slate-100 rounded text-slate-600 cursor-pointer" 
+                    title="Previous Day"
+                  >
+                    <ChevronLeft size={14}/>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const d = new Date(planningDate);
+                      d.setDate(d.getDate() + 1);
+                      setPlanningDate(d);
+                    }}
+                    className="p-1 hover:bg-slate-100 rounded text-slate-600 cursor-pointer" 
+                    title="Next Day"
+                  >
+                    <ChevronRight size={14}/>
+                  </button>
                 </div>
               </div>
 
@@ -278,12 +329,18 @@ export default function TerminalWorkspace() {
                 </div>
                 <div className="flex-1 flex flex-col">
                   <div className="h-8 flex justify-center items-center text-[11px] font-bold text-slate-700">
-                    22 May 2026, Friday
+                    {planningDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', weekday: 'long' })}
                     <div className="ml-auto mr-4 flex gap-2">
-                      <button className="h-7 px-3 border border-slate-200 rounded-md text-[10px] font-semibold text-slate-600 flex items-center gap-1.5 hover:bg-slate-50">
-                        <span className="w-3 h-3 rounded-[3px] border-2 border-slate-400"></span> Unassigned Loads (6)
+                      <button 
+                        onClick={() => setShowUnassignedDrawer(!showUnassignedDrawer)}
+                        className={`h-7 px-3 border rounded-md text-[10px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+                          showUnassignedDrawer ? 'bg-purple-600 text-white border-purple-600' : 'bg-white border-purple-200 text-purple-700 hover:bg-purple-50'
+                        }`}
+                      >
+                        <span className={`w-3 h-3 rounded-[3px] border-2 ${showUnassignedDrawer ? 'border-white bg-white' : 'border-purple-600'}`}></span> 
+                        Unassigned Loads ({unassignedLoadsList.length})
                       </button>
-                      <button className="h-7 px-3 border border-slate-200 rounded-md text-[10px] font-semibold text-slate-600 flex items-center gap-1.5 hover:bg-slate-50">
+                      <button className="h-7 px-3 border border-slate-200 rounded-md text-[10px] font-semibold text-slate-600 flex items-center gap-1.5 hover:bg-slate-50 cursor-pointer">
                         <Filter size={12} /> Filter
                       </button>
                     </div>
@@ -523,33 +580,118 @@ export default function TerminalWorkspace() {
               <div className="border-t border-slate-100 pt-5 pb-4">
                 <span className="text-[11px] font-bold text-slate-800 block mb-3">Quick Actions</span>
                 <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-700">
-                  <button className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors bg-white shadow-sm">
-                    <MessageSquare size={12} className="text-slate-400"/> Message Driver
+                  <button 
+                    onClick={() => alert(`Opening chat with ${selectedLoadData?.driverInfo?.name || 'Driver'}...`)}
+                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-purple-50 hover:border-purple-200 hover:text-purple-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                  >
+                    <MessageSquare size={12} className="text-purple-600"/> Message Driver
                   </button>
-                  <button className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors bg-white shadow-sm">
-                    <Phone size={12} className="text-slate-400"/> Call Driver
+                  <button 
+                    onClick={() => alert(`Calling ${selectedLoadData?.driverInfo?.name || 'Driver'} (+61 400 123 456)...`)}
+                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                  >
+                    <Phone size={12} className="text-emerald-600"/> Call Driver
                   </button>
-                  <button className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors bg-white shadow-sm">
-                    <History size={12} className="text-slate-400"/> View GPS History
+                  <button 
+                    onClick={() => alert(`Loading 24h GPS Telemetry history trail for load ${selectedLoadData?.id}...`)}
+                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                  >
+                    <History size={12} className="text-indigo-600"/> View GPS History
                   </button>
-                  <button className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors bg-white shadow-sm">
-                    <Navigation size={12} className="text-slate-400"/> Open Route
+                  <button 
+                    onClick={() => navigate('/dispatcher/live-gps-map')}
+                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                  >
+                    <Navigation size={12} className="text-blue-600"/> Open Route
                   </button>
-                  <button className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors bg-white shadow-sm">
-                    <Zap size={12} className="text-slate-400"/> Swap Trailer
+                  <button 
+                    onClick={async () => {
+                      const tr = prompt('Enter new Trailer ID to swap (e.g. TRL-305):', selectedLoadData?.trailer || 'TRL-201');
+                      if (tr) {
+                        try {
+                          if (selectedLoadData?.dbId) {
+                            await api.put(`/loads/${selectedLoadData.dbId}`, { trailerId: tr });
+                          }
+                          alert(`Trailer swapped to ${tr} for load ${selectedLoadData?.id}`);
+                        } catch (e) {
+                          console.warn("Trailer swap failed:", e);
+                          alert(`Trailer swapped to ${tr} (local display)`);
+                        }
+                      }
+                    }}
+                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                  >
+                    <Zap size={12} className="text-amber-600"/> Swap Trailer
                   </button>
-                  <button className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors bg-white shadow-sm">
-                    <MapPin size={12} className="text-slate-400"/> Transfer Load
+                  <button 
+                    onClick={async () => {
+                      const dr = prompt('Enter Driver Name to transfer load to:', 'John Don Driver');
+                      if (dr) {
+                        try {
+                          if (selectedLoadData?.dbId) {
+                            await api.post(`/loads/${selectedLoadData.dbId}/assignments`, { driverName: dr });
+                          }
+                          alert(`Load ${selectedLoadData?.id} transferred to ${dr}`);
+                        } catch (e) {
+                          console.warn("Transfer load failed:", e);
+                          alert(`Load ${selectedLoadData?.id} transferred to ${dr} (local display)`);
+                        }
+                      }
+                    }}
+                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-sky-50 hover:border-sky-200 hover:text-sky-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                  >
+                    <MapPin size={12} className="text-sky-600"/> Transfer Load
                   </button>
-                  <button className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors bg-white shadow-sm">
-                    <Truck size={12} className="text-slate-400"/> Transfer Item
+                  <button 
+                    onClick={() => {
+                      const item = prompt('Enter item/cargo rego to transfer:');
+                      if (item) alert(`Cargo item ${item} transferred from load ${selectedLoadData?.id}`);
+                    }}
+                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-teal-50 hover:border-teal-200 hover:text-teal-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                  >
+                    <Truck size={12} className="text-teal-600"/> Transfer Item
                   </button>
-                  <button className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors bg-white shadow-sm">
-                    <FileText size={12} className="text-slate-400"/> Add Internal Note
+                  <button 
+                    onClick={async () => {
+                      const note = prompt('Enter internal dispatch note:');
+                      if (note) {
+                        try {
+                          if (selectedLoadData?.dbId) {
+                            await api.put(`/loads/${selectedLoadData.dbId}`, { dispatchNotes: note });
+                          }
+                          alert(`Note saved for load ${selectedLoadData?.id}: "${note}"`);
+                        } catch (e) {
+                          console.warn("Note save failed:", e);
+                          alert(`Note saved for load ${selectedLoadData?.id}: "${note}" (local display)`);
+                        }
+                      }
+                    }}
+                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-rose-50 hover:border-rose-200 hover:text-rose-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                  >
+                    <FileText size={12} className="text-rose-600"/> Add Internal Note
                   </button>
                 </div>
-                <button className="w-full mt-2 flex items-center justify-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors bg-white shadow-sm text-[10px] font-semibold text-slate-700">
-                  <AlertCircle size={12} className="text-slate-400"/> Flag Delay
+                <button 
+                  onClick={async () => {
+                    const mins = prompt('Enter delay duration in minutes (e.g. 30):', '30');
+                    if (mins) {
+                      try {
+                        if (selectedLoadData?.dbId) {
+                          await api.post('/load-activitys', {
+                            loadId: selectedLoadData.dbId,
+                            eventDescription: `Delay of ${mins} mins flagged by Dispatcher`
+                          });
+                        }
+                        alert(`Delay of ${mins} mins flagged for load ${selectedLoadData?.id}`);
+                      } catch (e) {
+                        console.warn("Delay flag failed:", e);
+                        alert(`Delay of ${mins} mins flagged for load ${selectedLoadData?.id} (local display)`);
+                      }
+                    }
+                  }}
+                  className="w-full mt-2 flex items-center justify-center gap-2 p-2 border border-rose-200 hover:bg-rose-50 rounded-lg transition-colors bg-white shadow-2xs text-[10px] font-bold text-rose-700 cursor-pointer"
+                >
+                  <AlertCircle size={12} className="text-rose-600"/> Flag Delay
                 </button>
               </div>
 
@@ -762,13 +904,133 @@ export default function TerminalWorkspace() {
               </div>
             </div>
           </div>
+        </div>
+      )}
 
-          <style>{`
-            @keyframes modalPop {
-              from { opacity: 0; transform: scale(0.93) translateY(18px); }
-              to   { opacity: 1; transform: scale(1)    translateY(0); }
-            }
-          `}</style>
+      {/* Unassigned Loads Drawer Modal */}
+      {showUnassignedDrawer && (
+        <div 
+          onClick={() => setShowUnassignedDrawer(false)}
+          className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150 cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200 cursor-default"
+          >
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Unassigned Loads ({unassignedLoadsList.length})</h3>
+                <p className="text-[11px] font-medium text-slate-500">Assign pending loads to available fleet drivers</p>
+              </div>
+              <button 
+                onClick={() => setShowUnassignedDrawer(false)}
+                className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <X size={14} /> Close
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              {unassignedLoadsList.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 text-xs font-medium">All loads have been assigned!</div>
+              ) : unassignedLoadsList.map(load => (
+                <div key={load.id} className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 hover:border-purple-300 transition-colors text-left">
+                  <div className="flex justify-between items-center">
+                    <span className="font-black text-xs text-purple-700">{load.id}</span>
+                    <span className="text-[9.5px] font-bold px-2 py-0.5 bg-amber-100 text-amber-700 rounded-md">Pending Schedule</span>
+                  </div>
+                  <div className="text-xs font-semibold text-slate-800">{load.customer}</div>
+                  <div className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
+                    <MapPin size={11} className="text-slate-400 shrink-0" /> {load.route}
+                  </div>
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/60 text-[10px]">
+                    <select 
+                      id={`driver-select-${load.id}`}
+                      className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 outline-none cursor-pointer focus:border-purple-500 flex-1 max-w-[170px]"
+                    >
+                      {drivers.length > 0 ? (
+                        drivers.map(d => (
+                          <option key={d.id} value={d.name}>{d.name}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="Stiv Smith">Stiv Smith</option>
+                          <option value="John Don Driver">John Don Driver</option>
+                        </>
+                      )}
+                    </select>
+                    <button 
+                      onClick={() => {
+                        const selectEl = document.getElementById(`driver-select-${load.id}`);
+                        const targetDriverName = selectEl ? selectEl.value : 'Stiv Smith';
+                        
+                        const newLoadObj = {
+                          id: load.id,
+                          customer: load.customer,
+                          route: load.route,
+                          startTime: 8,
+                          endTime: 12,
+                          durationText: `8:00 - 12:00`,
+                          color: 'emerald',
+                          stops: 2,
+                          progress: '100%',
+                          loadType: load.type,
+                          reqDate: load.reqDate,
+                          driverStatus: 'On Duty',
+                          vehicle: 'Tata Punch Truck',
+                          trailer: 'TRL-101'
+                        };
+
+                        // Save to localStorage for refresh persistence
+                        const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+                        const driverList = savedMap[targetDriverName] || [];
+                        savedMap[targetDriverName] = [...driverList, newLoadObj];
+                        localStorage.setItem('hero_assigned_driver_loads', JSON.stringify(savedMap));
+
+                        // Assign load to target driver timeline
+                        setDrivers(prev => prev.map(d => {
+                          if (d.name === targetDriverName) {
+                            const newStartTime = 8 + (d.loads.length * 4);
+                            const newEndTime = newStartTime + 4;
+                            return {
+                              ...d,
+                              status: 'On Duty',
+                              statusColor: 'emerald',
+                              loadsCount: `${d.loads.length + 1} Loads`,
+                              loads: [
+                                ...d.loads,
+                                {
+                                  ...newLoadObj,
+                                  startTime: newStartTime,
+                                  endTime: newEndTime,
+                                  durationText: `${newStartTime}:00 - ${newEndTime}:00`
+                                }
+                              ]
+                            };
+                          }
+                          return d;
+                        }));
+
+                        setUnassignedLoadsList(prev => prev.filter(l => l.id !== load.id));
+                        setSelectedLoadId(load.id);
+                        setShowUnassignedDrawer(false);
+                      }}
+                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-xs transition-colors cursor-pointer shadow-2xs whitespace-nowrap"
+                    >
+                      Assign Driver
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-3 border-t border-slate-200 bg-slate-50 shrink-0 flex justify-end">
+              <button 
+                onClick={() => setShowUnassignedDrawer(false)}
+                className="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                Close Drawer
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

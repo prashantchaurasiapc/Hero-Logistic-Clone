@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
 import {
   Truck, MapPin, Calendar, Clock, Plus, Trash2, Edit2, Check, ArrowRight,
   ShieldCheck, HelpCircle, FileText, ChevronRight, Star, RefreshCw, AlertCircle,
@@ -6,6 +8,7 @@ import {
 } from 'lucide-react';
 
 export default function LoadRequests() {
+  const navigate = useNavigate();
   // Toast Notification State
   const [toastMsg, setToastMsg] = useState('');
   const triggerToast = (msg) => {
@@ -20,25 +23,25 @@ export default function LoadRequests() {
 
   // Pickup Details Form State
   const [pickupForm, setPickupForm] = useState({
-    location: 'Melbourne VIC 3000',
-    date: '2025-05-30',
-    time: '14:30',
-    readyFrom: '14:00',
-    deliveryUntil: '16:00',
-    contactName: 'John Smith',
-    contactPhone: '0412 345 678',
+    location: '',
+    date: '',
+    time: '',
+    readyFrom: '',
+    deliveryUntil: '',
+    contactName: '',
+    contactPhone: '',
     specialInstructions: ''
   });
 
   // Delivery Details Form State
   const [deliveryForm, setDeliveryForm] = useState({
-    location: 'Sydney NSW 2000',
-    date: '2025-05-30',
-    time: '14:30',
-    readyFrom: '14:00',
-    deliveryUntil: '16:00',
-    contactName: 'Sarah Mitchell',
-    contactPhone: '0423 456 789',
+    location: '',
+    date: '',
+    time: '',
+    readyFrom: '',
+    deliveryUntil: '',
+    contactName: '',
+    contactPhone: '',
     specialInstructions: ''
   });
 
@@ -77,48 +80,8 @@ export default function LoadRequests() {
     setFreightTypes(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Items & Freight Table Data State (Exact Match to Screenshot 2)
-  const [items, setItems] = useState([
-    {
-      id: 1,
-      type: 'Vehicle',
-      icon: 'car',
-      description: 'Toyota RAV4 2024',
-      details: 'VIN: JTMRFRREV1RJ23456 | Rego: 1ABC123',
-      quantity: 1,
-      weight: '1,650 kg',
-      weightValue: 1650,
-      dimensions: '4.60m x 1.85m x 1.70m',
-      value: '$36,000.00',
-      numericValue: 36000
-    },
-    {
-      id: 2,
-      type: 'Vehicle',
-      icon: 'car',
-      description: 'Mazda CX-5 2024',
-      details: 'VIN: JM0KFBLAOM456789 | Rego: 2XYZ456',
-      quantity: 1,
-      weight: '1,580 kg',
-      weightValue: 1580,
-      dimensions: '4.55m x 1.84m x 1.67m',
-      value: '$33,000.00',
-      numericValue: 33000
-    },
-    {
-      id: 3,
-      type: 'General Freight',
-      icon: 'package',
-      description: 'Household Items',
-      details: 'Boxes, Furniture',
-      quantity: 5,
-      weight: '320 kg',
-      weightValue: 320,
-      dimensions: 'Various',
-      value: '$2,000.00',
-      numericValue: 2000
-    }
-  ]);
+  // Items & Freight Table Data State
+  const [items, setItems] = useState([]);
 
   // Options & Requirements Checkboxes State
   const [serviceOptions, setServiceOptions] = useState({
@@ -181,9 +144,53 @@ export default function LoadRequests() {
     setEditingItem(null);
   };
 
-  const handleFinalBookingSubmit = () => {
-    triggerToast("Booking request submitted successfully! Reference: BKG-2025-0891");
-    setIsSubmitModalOpen(false);
+  const handleFinalBookingSubmit = async () => {
+    try {
+      const payload = {
+        type: items[0]?.type || 'General Freight',
+        status: 'PLANNED',
+        priority: 'NORMAL',
+        notes: pickupForm.specialInstructions || deliveryForm.specialInstructions || '',
+        loadDate: pickupForm.date ? new Date(`${pickupForm.date}T${pickupForm.time || '00:00'}:00`).toISOString() : new Date().toISOString(),
+        deliveryEta: deliveryForm.date ? new Date(`${deliveryForm.date}T${deliveryForm.time || '00:00'}:00`).toISOString() : new Date().toISOString(),
+        stops: [
+          {
+            type: 'PICKUP',
+            sequenceIndex: 0,
+            address: pickupForm.location || 'Pickup Stop',
+            contactName: pickupForm.contactName || null,
+            contactPhone: pickupForm.contactPhone || null,
+            scheduledDate: pickupForm.date ? new Date(`${pickupForm.date}T${pickupForm.time || '00:00'}:00`).toISOString() : new Date().toISOString()
+          },
+          {
+            type: 'DROPOFF',
+            sequenceIndex: 1,
+            address: deliveryForm.location || 'Delivery Stop',
+            contactName: deliveryForm.contactName || null,
+            contactPhone: deliveryForm.contactPhone || null,
+            scheduledDate: deliveryForm.date ? new Date(`${deliveryForm.date}T${deliveryForm.time || '00:00'}:00`).toISOString() : new Date().toISOString()
+          }
+        ],
+        items: items.map(item => ({
+          stockRef: item.description || 'CARGO-ITEM',
+          notes: `${item.type}${item.details ? ` (${item.details})` : ''}, Weight: ${item.weight}, Dimensions: ${item.dimensions}, Declared Value: ${item.value}`,
+          quantity: item.quantity || 1
+        }))
+      };
+
+      const res = await api.post('/company-admin/loads', payload);
+      if (res.data) {
+        triggerToast("Booking request submitted successfully!");
+        setTimeout(() => {
+          navigate('/customer/my-loads');
+        }, 1500);
+      }
+    } catch (err) {
+      console.error('Failed to submit booking:', err);
+      triggerToast('Booking submission failed. Please try again.');
+    } finally {
+      setIsSubmitModalOpen(false);
+    }
   };
 
   return (
@@ -255,8 +262,29 @@ export default function LoadRequests() {
 
           <button 
             onClick={() => {
+              setPickupForm({
+                location: '',
+                date: '',
+                time: '',
+                readyFrom: '',
+                deliveryUntil: '',
+                contactName: '',
+                contactPhone: '',
+                specialInstructions: ''
+              });
+              setDeliveryForm({
+                location: '',
+                date: '',
+                time: '',
+                readyFrom: '',
+                deliveryUntil: '',
+                contactName: '',
+                contactPhone: '',
+                specialInstructions: ''
+              });
+              setItems([]);
               setNotesToDispatch('');
-              triggerToast("Booking form cleared.");
+              triggerToast("Booking form cleared successfully.");
             }}
             className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors"
           >

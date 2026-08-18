@@ -8,6 +8,7 @@ import { crmRepository } from '../../services/crmRepository';
 import { crmStore } from '../../services/crmStore';
 import { useAuth } from '../../context/AuthContext';
 import api, { getSalesReps } from '../../services/api';
+import { jsPDF } from 'jspdf';
 
 export default function Proposals() {
   const navigate = useNavigate();
@@ -165,22 +166,8 @@ export default function Proposals() {
     setToast({ text: `Proposal for ${p.company} marked as REJECTED.` });
   };
 
-  const handleDownloadProposal = async (p) => {
+  const handleDownloadProposal = (p) => {
     try {
-      let jsPDF;
-      try {
-        const lib = 'jspdf';
-        const jsPDFModule = await import(/* @vite-ignore */ lib);
-        jsPDF = jsPDFModule?.jsPDF || jsPDFModule?.default;
-      } catch (e) {
-        console.warn('jspdf load fallback:', e);
-      }
-
-      if (!jsPDF) {
-        window.print();
-        return;
-      }
-
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',

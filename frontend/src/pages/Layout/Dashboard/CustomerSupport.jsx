@@ -106,12 +106,29 @@ export default function CustomerSupport() {
   // Quick View Load Modal
   const [isViewLoadModalOpen, setIsViewLoadModalOpen] = useState(false);
 
-  // Filtered Conversations
-  const activeConversation = conversations.find(c => c.id === selectedConvId) || conversations[0];
-  const filteredConversations = conversations.filter(conv => {
-    const matchesSearch = conv.title.toLowerCase().includes(convSearchTerm.toLowerCase()) ||
-                          conv.sub.toLowerCase().includes(convSearchTerm.toLowerCase()) ||
-                          conv.lastMessage.toLowerCase().includes(convSearchTerm.toLowerCase());
+  // Default fallback conversation when conversations array is empty or loading
+  const defaultConversation = {
+    id: 1,
+    title: 'Support Team',
+    sub: 'Dispatch Support',
+    listSub: 'General Support',
+    avatar: 'ST',
+    bg: 'bg-blue-600',
+    time: 'Now',
+    dateStarted: new Date().toLocaleDateString('en-GB'),
+    lastMessage: 'Welcome to Support. How can we assist you today?',
+    unread: 0,
+    category: 'Support',
+    isBot: false,
+    messages: []
+  };
+
+  // Safe active conversation with fallback
+  const activeConversation = (conversations || []).find(c => c.id === selectedConvId) || conversations[0] || defaultConversation;
+  const filteredConversations = (conversations || []).filter(conv => {
+    const matchesSearch = (conv.title || '').toLowerCase().includes(convSearchTerm.toLowerCase()) ||
+                          (conv.sub || '').toLowerCase().includes(convSearchTerm.toLowerCase()) ||
+                          (conv.lastMessage || '').toLowerCase().includes(convSearchTerm.toLowerCase());
     const matchesCategory = convCategory === 'All Categories' || convCategory === 'All' || conv.category === convCategory;
     return matchesSearch && matchesCategory;
   });
@@ -366,17 +383,17 @@ export default function CustomerSupport() {
           <div className="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                {activeConversation.isBot ? <Headphones size={16} /> : activeConversation.avatar}
+                {activeConversation?.isBot ? <Headphones size={16} /> : (activeConversation?.avatar || 'ST')}
               </div>
               <div>
-                <h3 className="text-xs font-black text-slate-900 leading-tight">{activeConversation.title}</h3>
-                <p className="text-[10px] text-slate-500 font-medium">{activeConversation.sub}</p>
+                <h3 className="text-xs font-black text-slate-900 leading-tight">{activeConversation?.title || 'Support Team'}</h3>
+                <p className="text-[10px] text-slate-500 font-medium">{activeConversation?.sub || ''}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-[9.5px] text-slate-400 font-medium hidden sm:inline">
-                Conversation started {activeConversation.dateStarted}
+                Conversation started {activeConversation?.dateStarted || ''}
               </span>
               <button 
                 onClick={() => setIsViewLoadModalOpen(true)}
@@ -404,7 +421,7 @@ export default function CustomerSupport() {
             </div>
 
             {/* Render Chat Messages */}
-            {activeConversation.messages.map((msg) => (
+            {(activeConversation?.messages || []).map((msg) => (
               <div key={msg.id} className={`flex gap-2.5 ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
                 {!msg.isMe && (
                   <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-extrabold text-[9px] flex items-center justify-center shrink-0 mt-0.5">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import api from '../../services/api';
+import { getLoadDetails, getMyLoads, getPickupItems, pickupItem } from '../../services/driverApi';
 import {
   FiArrowLeft, FiHelpCircle, FiMoreVertical, FiCheck, FiTrash2, FiEdit2,
   FiPlus, FiCamera, FiAlertTriangle, FiPhone, FiNavigation, FiChevronRight,
@@ -8,14 +9,12 @@ import {
   FiHome, FiClipboard, FiMessageSquare, FiGrid, FiEye, FiFileText, FiTruck
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
-import { getLoadDetails, getMyLoads, getPickupItems, pickupItem } from '../../services/driverApi';
 
 export default function PickupLoading() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { id: paramId } = useParams();
+  const location = useLocation();
 
-  // API State
   const [activeLoad, setActiveLoad] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,7 +23,7 @@ export default function PickupLoading() {
   // Mode & Toast States
   const [driverMode, setDriverMode] = useState('Flexible / Owner-Driver');
   const [toastMsg, setToastMsg] = useState('');
-  const [wrongVehicleAlert, setWrongVehicleAlert] = useState(false);
+  const [wrongVehicleAlert, setWrongVehicleAlert] = useState(true);
   const [addCarModalOpen, setAddCarModalOpen] = useState(false);
   const [scanVinModalOpen, setScanVinModalOpen] = useState(false);
   const [scanVinInput, setScanVinInput] = useState('');
@@ -329,51 +328,35 @@ export default function PickupLoading() {
     }));
   };
 
-  const handleAddCarSubmit = async (e) => {
+  const handleAddCarSubmit = (e) => {
     e.preventDefault();
     if (!newModel || !newVin) return;
-    
-    try {
-      const res = await api.post('/driver-portal/pickup-load/add-item', {
-        loadId: loadInfo.dbId,
-        vin: newVin.toUpperCase(),
-        makeModel: newModel,
-        plate: newPlate.toUpperCase() || 'TEMP-99',
-        drop: newDrop
-      });
-      
-      const newCarItem = {
-        id: res.data?.data?.item?.id || Date.now(),
-        dbId: res.data?.data?.item?.id,
-        drop: newDrop,
-        dropLoc: newDrop === 'DROP 1' ? 'Auto World Sydney' : newDrop === 'DROP 2' ? 'Newcastle Motors' : 'Brisbane Car Centre',
-        vin: newVin.toUpperCase(),
-        makeModel: newModel,
-        color: 'Unknown',
-        plate: newPlate.toUpperCase() || 'TEMP-99',
-        pickedUp: true,
-        time: new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }),
-        photos: { current: 4, total: 4, percent: 100 }
-      };
-      
-      setCars([...cars, newCarItem]);
-      setAddCarModalOpen(false);
-      setNewVin('');
-      setNewModel('');
-      setNewPlate('');
-      triggerToast(`Added ${newModel} to ${newDrop}!`);
-    } catch (err) {
-      console.error(err);
-      triggerToast('❌ Failed to add car.');
-    }
+    const newCarItem = {
+      id: Date.now(),
+      drop: newDrop,
+      dropLoc: newDrop === 'DROP 1' ? 'Auto World Sydney' : newDrop === 'DROP 2' ? 'Newcastle Motors' : 'Brisbane Car Centre',
+      vin: newVin.toUpperCase(),
+      makeModel: newModel,
+      color: 'White',
+      plate: newPlate.toUpperCase() || 'TEMP-99',
+      pickedUp: true,
+      time: '08:25 AM',
+      photos: { current: 4, total: 4, percent: 100 }
+    };
+    setCars([...cars, newCarItem]);
+    setAddCarModalOpen(false);
+    setNewVin('');
+    setNewModel('');
+    setNewPlate('');
+    triggerToast(`Added ${newModel} to ${newDrop}!`);
   };
 
   const pickedUpCount = cars.filter(c => c.pickedUp).length;
   const totalCarsCount = cars.length;
-  const progressPercent = totalCarsCount === 0 ? 0 : Math.round((pickedUpCount / totalCarsCount) * 100);
+  const progressPercent = Math.round((pickedUpCount / totalCarsCount) * 100);
 
-  // Group by Drop dynamically based on items
-  const drops = Array.from(new Set(cars.map(c => c.drop))).sort();
+  // Group by Drop
+  const drops = ['DROP 1', 'DROP 2', 'DROP 3', 'DROP 4'];
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24 text-left">
@@ -390,7 +373,7 @@ export default function PickupLoading() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Pickup & Loading</h1>
-          <p className="text-xs font-semibold text-slate-500 mt-0.5">Scan or select cars assigned to load {loadInfo.id}</p>
+          <p className="text-xs font-semibold text-slate-500 mt-0.5">Scan or select cars assigned to load LD-3987</p>
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -412,27 +395,27 @@ export default function PickupLoading() {
         </div>
       </div>
 
-      {/* TOP HEADER LOAD BANNER CARD */}
+      {/* TOP HEADER LOAD BANNER CARD ("LD-3987") - MATCHES SCREENSHOT 2 */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-2">
-          <div className="text-2xl font-black text-indigo-700 tracking-tight">{loadInfo.id}</div>
+          <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
           <div className="text-sm font-black text-slate-800 flex items-center gap-2">
-            <span>{loadInfo.origin}</span>
+            <span>Melbourne VIC</span>
             <span className="text-slate-400">➔</span>
-            <span>{loadInfo.destination}</span>
+            <span>Sydney NSW</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-6 pt-2 text-xs">
             <div>
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Pickup Time</span>
-              <span className="font-mono text-slate-900 font-extrabold">{loadInfo.pickupTime}</span>
+              <span className="font-mono text-slate-900 font-extrabold">08:00 AM</span>
             </div>
 
             <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
 
             <div>
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-              <span className="font-mono text-slate-900 font-extrabold">{loadInfo.estFinish}</span>
+              <span className="font-mono text-slate-900 font-extrabold">04:30 PM</span>
             </div>
 
             <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
@@ -462,7 +445,7 @@ export default function PickupLoading() {
           </div>
           <div className="text-xs">
             <h4 className="font-bold text-purple-950 leading-snug">Scan or select each car for pickup at this location.</h4>
-            <p className="text-purple-700 font-medium text-[11px] mt-0.5">All {totalCarsCount} cars must be picked up before DISPATCH.</p>
+            <p className="text-purple-700 font-medium text-[11px] mt-0.5">All 8 cars must be picked up before DISPATCH.</p>
           </div>
         </div>
 
@@ -501,7 +484,7 @@ export default function PickupLoading() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-base font-black text-slate-900 tracking-tight uppercase">CARS TO PICK UP ({totalCarsCount})</h3>
-                <p className="text-xs text-slate-500 font-semibold mt-0.5">Location: {loadInfo.origin}</p>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">Location: ABC Car Yard • Melbourne VIC</p>
               </div>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -780,7 +763,7 @@ export default function PickupLoading() {
                 <span className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">✓</span>
                 <div>
                   <div className="font-bold text-slate-900">Picked Up</div>
-                  <div className="text-[11px] text-slate-500">All {totalCarsCount} cars picked up at this location.</div>
+                  <div className="text-[11px] text-slate-500">All 8 cars picked up at this location.</div>
                 </div>
               </div>
 
@@ -816,7 +799,7 @@ export default function PickupLoading() {
             <div className="space-y-2 font-semibold text-slate-700">
               <div className="flex items-center gap-2 text-emerald-600">
                 <span>✓</span>
-                <span>All {totalCarsCount} assigned cars must be picked up.</span>
+                <span>All 8 assigned cars must be picked up.</span>
               </div>
               <div className="flex items-center gap-2 text-emerald-600">
                 <span>✓</span>
@@ -1031,32 +1014,21 @@ export default function PickupLoading() {
               </select>
             </div>
 
+            {/* ACTION BUTTON */}
             <button
               onClick={() => {
-                let targetVin = null;
-                let matchedCar = null;
-
-                if (scanVinInput) {
-                  matchedCar = cars.find(c => c.id === scanVinInput || c.id === parseInt(scanVinInput) || (c.vin && c.vin.toUpperCase() === scanVinInput.trim().toUpperCase()));
-                  targetVin = matchedCar ? matchedCar.vin : scanVinInput.trim();
-                } else {
-                  matchedCar = cars.find(c => !c.pickedUp) || cars[0];
-                  targetVin = matchedCar ? matchedCar.vin : '1HGCM82633A004352';
-                }
-
+                const targetId = scanVinInput ? parseInt(scanVinInput) : 3;
+                const matchedCar = cars.find(c => c.id === targetId) || cars.find(c => !c.pickedUp) || cars[0];
+                
                 setScanVinModalOpen(false);
+                togglePickUp(matchedCar.id);
+                triggerToast(`✅ VIN ${matchedCar.vin} Scanned! ${matchedCar.makeModel} marked as Picked Up.`);
                 setScanVinInput('');
-                if (targetVin) {
-                  handlePickupVinApi(targetVin, matchedCar);
-                }
               }}
-              disabled={isSubmitting}
-              className={`w-full font-black text-xs py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 ${
-                isSubmitting ? 'bg-slate-400 cursor-not-allowed text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
-              }`}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-3.5 rounded-xl transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
             >
               <FiCheckCircle className="text-base" />
-              <span>{isSubmitting ? 'Validating VIN...' : 'Simulate VIN Scan & Mark Picked Up'}</span>
+              <span>Simulate VIN Scan & Mark Picked Up</span>
             </button>
 
             <p className="text-center text-[10px] text-slate-500 font-semibold">
@@ -1175,15 +1147,19 @@ export default function PickupLoading() {
               <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1.5">
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Pickup Location</span>
-                  <span className="text-slate-900 font-black">{loadInfo?.origin || '—'}</span>
+                  <span className="text-slate-900 font-black">ABC Car Yard, Melbourne</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Total Assigned Load</span>
-                  <span className="text-slate-900 font-mono">{cars.length} Vehicles Total</span>
+                  <span className="text-slate-900 font-mono">8 Vehicles Total</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Primary Drop</span>
-                  <span className="text-slate-900">{loadInfo?.destination || '—'}</span>
+                  <span className="text-slate-900">Auto World Sydney</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Dispatch Hotline</span>
+                  <span className="text-indigo-600">+61 400 123 456</span>
                 </div>
               </div>
             </div>

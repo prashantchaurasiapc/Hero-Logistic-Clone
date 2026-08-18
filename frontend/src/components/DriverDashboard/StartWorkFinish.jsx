@@ -1,19 +1,29 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiCheckCircle, FiCamera, FiAlertTriangle, FiFileText,
   FiMessageSquare, FiCheck, FiX, FiMinus, FiHelpCircle, FiChevronRight,
-  FiUpload, FiImage, FiShield, FiClock, FiBookOpen, FiInfo, FiTrash2
+  FiShield, FiBookOpen
 } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 import { getTodayChecklist, submitChecklist } from '../../services/driverApi';
 
 export default function StartWork() {
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
+  const { user } = useAuth();
+  const isWarehouse = window.location.pathname.includes('/warehouse');
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // History logs state
+  const [historyLogs] = useState([
+    { id: 1, date: '28 May 2025', type: 'Pre-Start Inspection', itemsCount: '16/16 Passed', result: 'Pass ✓', pass: true },
+    { id: 2, date: '27 May 2025', type: 'Pre-Start Inspection', itemsCount: '15/16 Passed (1 Minor Defect)', result: 'Minor Defect ⚠️', pass: false },
+  ]);
 
   // Photo uploads state
   const [selectedPhotos, setSelectedPhotos] = useState([]);
@@ -52,36 +62,23 @@ export default function StartWork() {
     { id: 20, label: 'Other (notes or additional checks)', status: 'unchecked' },
   ]);
 
-  // Dynamic state from backend
-  const [contextData, setContextData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    const fetchContext = async () => {
-      try {
-        const res = await api.get('/driver-portal/checklist-context');
-        if (res.data?.success) {
-          const { vehicle, loadRef, trailerRef, lastChecklists, template, lastSaved } = res.data.data;
-          setContextData({ vehicle, loadRef, trailerRef, lastChecklists, lastSaved });
-          setItems(template);
-        }
-      } catch (error) {
-        console.error('Failed to load checklist context', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchContext();
-  }, []);
-
-  // Sample checklist history for modal
-  const historyLogs = [
-    { id: 'CHK-901', date: '29 May 2025, 06:15 AM', status: 'Pass', score: '18 / 20', vehicle: 'TRK-101 (MAN TGX 26.580)', notes: 'All clear. Minor tyre pressure adjustment.' },
-    { id: 'CHK-900', date: '28 May 2025, 06:12 AM', status: 'Pass', score: '20 / 20', vehicle: 'TRK-101 (MAN TGX 26.580)', notes: 'Full pass. Clean vehicle.' },
-    { id: 'CHK-899', date: '27 May 2025, 06:10 AM', status: 'Pass', score: '19 / 20', vehicle: 'TRK-101 (MAN TGX 26.580)', notes: 'Wiper fluid refilled.' },
-    { id: 'CHK-898', date: '26 May 2025, 06:08 AM', status: 'Pass', score: '20 / 20', vehicle: 'TRK-101 (MAN TGX 26.580)', notes: 'Pre-trip check complete.' },
-    { id: 'CHK-897', date: '25 May 2025, 06:11 AM', status: 'Pass', score: '18 / 20', vehicle: 'TRK-101 (MAN TGX 26.580)', notes: 'Right indicator bulb replaced.' },
-  ];
+    const isWarehouse = user?.role === 'WAREHOUSE_MANAGER' || user?.role === 'WAREHOUSE_STAFF' || user?.role === 'YARD_ATTENDANT';
+    if (isWarehouse) {
+      setItems([
+        { id: 1, label: 'Forklift - Brakes & Controls', status: 'pass' },
+        { id: 2, label: 'Forklift - Hydraulics & Lift Mast', status: 'pass' },
+        { id: 3, label: 'Forklift - Tyres & Steering', status: 'pass' },
+        { id: 4, label: 'Pallet Jack - General Condition', status: 'pass' },
+        { id: 5, label: 'RF Scanner - Battery & Connection', status: 'pass' },
+        { id: 6, label: 'Printer / Label Station - Loaded & Online', status: 'pass' },
+        { id: 7, label: 'Dock Doors & Levellers - Operational', status: 'pass' },
+        { id: 8, label: 'PPE - High-Vis Vest & Safety Boots', status: 'pass' },
+        { id: 9, label: 'Emergency Exits - Clear & Accessible', status: 'pass' },
+        { id: 10, label: 'First Aid & Fire Extinguisher - Checked', status: 'pass' }
+      ]);
+    }
+  }, [user]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -131,33 +128,6 @@ export default function StartWork() {
     );
   };
 
-  // Photo Upload Handlers
-  const handleTriggerPhotoUpload = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  const handlePhotoSelect = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    const newPhotoObjs = files.map((file, idx) => ({
-      id: Date.now() + idx,
-      name: file.name,
-      url: URL.createObjectURL(file)
-    }));
-
-    setSelectedPhotos(prev => [...prev, ...newPhotoObjs]);
-    showToast(`📸 ${files.length} photo(s) attached successfully!`);
-    e.target.value = '';
-  };
-
-  const handleRemovePhoto = (id) => {
-    setSelectedPhotos(prev => prev.filter(p => p.id !== id));
-    showToast('Photo removed.');
-  };
-
   // Calculate overview counts
   const passCount = items.filter((i) => i.status === 'pass').length;
   const failCount = items.filter((i) => i.status === 'fail').length;
@@ -165,70 +135,74 @@ export default function StartWork() {
   const uncheckedCount = items.filter((i) => i.status === 'unchecked').length;
   const totalCount = items.length;
   const completedCount = passCount + failCount + naCount;
-  const completionPercentage = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+  const completionPercentage = Math.round((completedCount / totalCount) * 100);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (uncheckedCount > 0) {
+      showToast('⚠️ Please inspect all items before submitting.');
+      return;
+    }
 
     try {
       setIsSubmitting(true);
       const res = await submitChecklist({
-        items,
         notes,
         photos: selectedPhotos.map(p => p.name),
         isDraft: false,
-        allowUpdate: true
+        items: items.map(item => ({
+          itemNumber: item.id,
+          itemLabel: item.label,
+          status: item.status === 'pass' ? 'PASS' : item.status === 'fail' ? 'FAIL' : item.status === 'na' ? 'NA' : 'NOT_CHECKED'
+        }))
       });
-      const msg = res.data?.data?.message || '✅ Safety Checklist submitted successfully! All clear.';
-      setIsAlreadyCompleted(true);
-      showToast(msg);
+
+      if (res.data?.success) {
+        showToast('✅ Safety Checklist submitted successfully!');
+        setTimeout(() => {
+          if (failCount > 0) {
+            navigate(isWarehouse ? '/warehouse/dashboard' : '/driver/incident-reporting');
+          } else {
+            navigate(isWarehouse ? '/warehouse/dashboard' : '/driver/dashboard');
+          }
+        }, 1500);
+      }
     } catch (err) {
-      console.error('Submit checklist error:', err);
-      showToast(err.response?.data?.message || '❌ Failed to submit safety checklist.');
+      console.error(err);
+      showToast('❌ Failed to submit Safety Checklist.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleSaveDraft = async () => {
-    if (isSubmitting) return;
-
     try {
       setIsSubmitting(true);
       const res = await submitChecklist({
-        items,
         notes,
         photos: selectedPhotos.map(p => p.name),
         isDraft: true,
-        allowUpdate: true
+        items: items.map(item => ({
+          itemNumber: item.id,
+          itemLabel: item.label,
+          status: item.status === 'pass' ? 'PASS' : item.status === 'fail' ? 'FAIL' : item.status === 'na' ? 'NA' : 'NOT_CHECKED'
+        }))
       });
-      showToast(res.data?.data?.message || '💾 Safety Checklist draft saved.');
+
+      if (res.data?.success) {
+        showToast('💾 Safety Checklist draft saved.');
+      }
     } catch (err) {
-      console.error('Save draft error:', err);
-      showToast(err.response?.data?.message || '❌ Failed to save draft.');
+      console.error(err);
+      showToast('❌ Failed to save checklist draft.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (loading) {
-     return <div className="p-8 text-center text-slate-500 font-bold">Loading Checklist...</div>;
-  }
-
   return (
     <div className="flex-grow bg-[#f8fafc] p-4 lg:p-6 w-full text-left font-sans overflow-y-auto min-h-screen">
       
-      {/* Hidden File Input for Photo Uploads */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handlePhotoSelect}
-        accept="image/*"
-        multiple
-        className="hidden"
-      />
-
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-5 right-5 z-50 bg-[#ffcc00] text-black font-extrabold text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce">
@@ -237,16 +211,7 @@ export default function StartWork() {
         </div>
       )}
 
-      {/* Completed Status Banner */}
-      {isAlreadyCompleted && (
-        <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs font-bold text-emerald-900 shadow-2xs">
-          <div className="flex items-center gap-2.5">
-            <FiCheckCircle className="text-emerald-600 text-lg shrink-0" />
-            <span>Today's Pre-Start Safety Inspection has been completed & saved to server. You can update any inspection item below.</span>
-          </div>
-          <span className="bg-emerald-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase shrink-0">Completed</span>
-        </div>
-      )}
+      {/* TOP HEADER BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -340,44 +305,32 @@ export default function StartWork() {
                 onClick={() => setHistoryModalOpen(true)}
                 className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <FiFileText className="text-indigo-600" />
-                  <span>View History</span>
-                </div>
-                <FiChevronRight className="text-slate-400" />
+                <FiFileText className="text-slate-600" />
+                <span>View History</span>
               </button>
 
               <button
                 onClick={() => navigate('/driver/incident-reporting')}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <FiAlertTriangle className="text-rose-600" />
-                  <span>Defect Report</span>
-                </div>
-                <FiChevronRight className="text-slate-400" />
+                <FiAlertTriangle className="text-rose-600" />
+                <span>Defect Report</span>
               </button>
 
               <button
                 onClick={() => navigate('/driver/contact-dispatch')}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <FiMessageSquare className="text-blue-600" />
-                  <span>Message Dispatch</span>
-                </div>
-                <FiChevronRight className="text-slate-400" />
+                <FiMessageSquare className="text-blue-600" />
+                <span>Message Dispatch</span>
               </button>
 
               <button
-                onClick={handleTriggerPhotoUpload}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                onClick={() => showToast('Photo uploader camera opened.')}
+                className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <FiCamera className="text-purple-600" />
-                  <span>Upload Photo ({selectedPhotos.length})</span>
-                </div>
-                <FiChevronRight className="text-slate-400" />
+                <FiCamera className="text-purple-600" />
+                <span>Upload Photo</span>
               </button>
             </div>
           </div>
@@ -386,7 +339,7 @@ export default function StartWork() {
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">STATUS</h3>
             <div className="text-xs space-y-1">
-              <div className="text-slate-500 font-medium">Last saved: <strong className="text-slate-800">{contextData?.lastSaved || 'Never'}</strong></div>
+              <div className="text-slate-500 font-medium">Last saved: <strong className="text-slate-800">29 May 2025, 06:10 AM</strong></div>
               <div className="text-emerald-600 font-extrabold flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Synced
               </div>
@@ -416,19 +369,19 @@ export default function StartWork() {
             <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-100 rounded-xl p-3.5 mb-5 text-xs">
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Vehicle</span>
-                <span className="font-black text-slate-900">{contextData?.vehicle?.ref || 'N/A'}</span>
+                <span className="font-black text-slate-900">TRK-101 (MAN TGX 26.580)</span>
               </div>
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Load / Reference</span>
-                <span className="font-black text-purple-700">{contextData?.loadRef || 'N/A'}</span>
+                <span className="font-black text-purple-700">LD-3987</span>
               </div>
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Trailer</span>
-                <span className="font-black text-slate-900">{contextData?.trailerRef || 'N/A'}</span>
+                <span className="font-black text-slate-900">TRL-205 (Car Carrier 4 Level)</span>
               </div>
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Date / Time</span>
-                <span className="font-mono font-bold text-slate-800">{new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                <span className="font-mono font-bold text-slate-800">29 May 2025, 06:15 AM</span>
               </div>
             </div>
 
@@ -453,7 +406,7 @@ export default function StartWork() {
                       </span>
                     </div>
 
-                    {/* Status Action Buttons */}
+                    {/* Status Action Buttons (Matching height of label & badge - 24px / h-6) */}
                     <div className="flex items-center gap-1.5 shrink-0">
                       {/* PASS Button */}
                       <button
@@ -514,53 +467,30 @@ export default function StartWork() {
                 />
                 <button
                   type="button"
-                  onClick={handleTriggerPhotoUpload}
-                  className="bg-purple-50 hover:bg-purple-100 text-purple-700 p-2.5 rounded-xl border border-purple-200 cursor-pointer flex items-center gap-1.5 font-bold text-xs"
+                  onClick={() => showToast('Camera photo capture triggered.')}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2.5 rounded-xl border border-slate-200 cursor-pointer"
                   title="Upload Photo"
                 >
                   <FiCamera className="text-base" />
-                  <span className="hidden sm:inline">Photo</span>
                 </button>
               </div>
-
-              {/* Uploaded Photos Preview List */}
-              {selectedPhotos.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {selectedPhotos.map((photo) => (
-                    <div key={photo.id} className="relative group bg-slate-100 border border-slate-200 rounded-xl p-1.5 flex items-center gap-2 pr-7">
-                      <img src={photo.url} alt="Attached photo" className="w-7 h-7 object-cover rounded-lg" />
-                      <span className="text-[11px] font-bold text-slate-700 truncate max-w-[120px]">{photo.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePhoto(photo.id)}
-                        className="absolute right-1 text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
-                        title="Remove photo"
-                      >
-                        <FiX className="text-xs" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
 
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   type="button"
-                  disabled={isSubmitting}
                   onClick={handleSaveDraft}
-                  className="bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-300 text-slate-800 font-bold text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center"
+                  className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center"
                 >
-                  {isSubmitting ? 'Saving...' : 'Save Draft'}
+                  Save Draft
                 </button>
 
                 <button
                   type="button"
-                  disabled={isSubmitting}
                   onClick={handleSubmit}
-                  className="bg-[#ffcc00] hover:bg-[#e6b800] disabled:opacity-50 disabled:cursor-not-allowed text-black font-black text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center uppercase"
+                  className="bg-[#ffcc00] hover:bg-[#e6b800] text-black font-black text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center uppercase"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit Checklist'}
+                  Submit Checklist
                 </button>
               </div>
             </div>
@@ -633,7 +563,7 @@ export default function StartWork() {
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LAST 5 CHECKLISTS</h3>
-              <button onClick={() => setHistoryModalOpen(true)} className="text-xs font-bold text-purple-600 hover:underline cursor-pointer">
+              <button onClick={() => showToast('Opening full checklist log history...')} className="text-xs font-bold text-purple-600 hover:underline cursor-pointer">
                 View all
               </button>
             </div>
@@ -656,46 +586,34 @@ export default function StartWork() {
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">HELP & RESOURCES</h3>
             <div className="space-y-2">
               <button
-                onClick={() => setSafetyModalOpen(true)}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                onClick={() => showToast('Opening Safety Procedures guide...')}
+                className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2">
-                  <FiShield className="text-emerald-600 text-sm" />
-                  <span>Safety Procedures</span>
-                </div>
+                <span>Safety Procedures</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
 
               <button
-                onClick={() => setInspectionModalOpen(true)}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                onClick={() => showToast('Opening Vehicle Inspection Guide...')}
+                className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2">
-                  <FiBookOpen className="text-indigo-600 text-sm" />
-                  <span>Vehicle Inspection Guide</span>
-                </div>
+                <span>Vehicle Inspection Guide</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
 
               <button
                 onClick={() => navigate('/driver/incident-reporting')}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2">
-                  <FiAlertTriangle className="text-rose-600 text-sm" />
-                  <span>Report an Incident</span>
-                </div>
+                <span>Report an Incident</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
 
               <button
                 onClick={() => navigate('/driver/contact-dispatch')}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2">
-                  <FiMessageSquare className="text-blue-600 text-sm" />
-                  <span>Contact Support</span>
-                </div>
+                <span>Contact Support</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
             </div>
@@ -906,11 +824,11 @@ export default function StartWork() {
                 Close Inspection Guide
               </button>
             </div>
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
           </div>
         </div>
       )}
 
+=======
     </div>
   );
 }

@@ -43,8 +43,90 @@ export default function Customers() {
     }
   };
 
+  const fetchUsersAndBranches = async () => {
+    try {
+      const [usersRes, branchesRes] = await Promise.all([
+        api.get('/users').catch(() => ({ data: { data: [] } })),
+        api.get('/companies/branches').catch(() => api.get('/branches')).catch(() => ({ data: { data: [] } }))
+      ]);
+      const usersData = usersRes.data?.data || usersRes.data || [];
+      const branchesData = branchesRes.data?.data || branchesRes.data || [];
+      if (Array.isArray(usersData) && usersData.length > 0) {
+        setCompanyUsers(usersData);
+      }
+      
+      const defaultBranches = [
+        {
+          id: '1',
+          name: 'Sydney Central Depot',
+          code: 'SYD-CENTRAL',
+          type: 'Primary Depot',
+          status: 'Online',
+          score: 98,
+          address: 'STRATHFIELD, NSW 2135',
+          leadName: 'MICHAEL ADAMS',
+          leadInitials: 'MA',
+          staffCount: 42,
+          vehicles: 18,
+          storageUsage: 92,
+          storageText: 'FULL 92%',
+          storageColor: 'text-red-500 bg-red-500',
+          authority: [
+            { name: 'Michael Adams', role: 'Branch Manager', initials: 'MA' },
+            { name: 'Sarah Mitchell', role: 'Dispatcher', initials: 'SM' }
+          ]
+        },
+        {
+          id: '2',
+          name: 'Melbourne Depot',
+          code: 'MEL-DEPOT',
+          type: 'Primary Depot',
+          status: 'Online',
+          score: 84,
+          address: 'TULLAMARINE, VIC 3043',
+          leadName: 'SARAH MITCHELL',
+          leadInitials: 'SM',
+          staffCount: 14,
+          vehicles: 6,
+          storageUsage: 45,
+          storageText: 'OK 45%',
+          storageColor: 'text-amber-500 bg-amber-500',
+          authority: [
+            { name: 'Sarah Mitchell', role: 'Branch Manager', initials: 'SM' }
+          ]
+        }
+      ];
+
+      if (Array.isArray(branchesData) && branchesData.length > 0) {
+        const mappedBranches = branchesData.map(b => ({
+          id: b.id,
+          name: b.name || 'Branch Depot',
+          code: b.code || 'DEPOT',
+          type: b.type || 'Depot',
+          status: b.status || 'Online',
+          score: b.score || 90,
+          address: b.address || 'N/A',
+          leadName: b.leadName || 'Branch Lead',
+          leadInitials: b.leadInitials || 'BL',
+          staffCount: b._count?.drivers || b.staffCount || 10,
+          vehicles: b._count?.assets || b.vehicles || 5,
+          storageUsage: b.storageUsage || 50,
+          storageText: b.storageText || 'OK 50%',
+          storageColor: b.storageColor || 'text-emerald-500 bg-emerald-500',
+          authority: b.authority || []
+        }));
+        setCustomerBranches(mappedBranches);
+      } else {
+        setCustomerBranches(defaultBranches);
+      }
+    } catch (err) {
+      console.error('Error fetching users/branches:', err);
+    }
+  };
+
   useEffect(() => {
     fetchCustomersFromApi();
+    fetchUsersAndBranches();
   }, []);
 
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -108,70 +190,8 @@ export default function Customers() {
   const [newStaffNameTab, setNewStaffNameTab] = useState('');
   const [newStaffRoleTab, setNewStaffRoleTab] = useState('Dispatcher');
 
-  const [customerBranches, setCustomerBranches] = useState([
-    {
-      id: '1',
-      name: 'Sydney Central Depot',
-      code: 'SYD-CENTRAL',
-      type: 'Primary Depot',
-      status: 'Online',
-      score: 98,
-      address: 'STRATHFIELD, NSW 2135',
-      leadName: 'MICHAEL ADAMS',
-      leadInitials: 'MA',
-      staffCount: 42,
-      vehicles: 18,
-      storageUsage: 92,
-      storageText: 'FULL 92%',
-      storageColor: 'text-red-500 bg-red-500',
-      authority: [
-        { name: 'Michael Adams', role: 'Branch Manager', initials: 'MA' },
-        { name: 'Sarah Mitchell', role: 'Dispatcher', initials: 'SM' },
-        { name: 'Emma Thompson', role: 'Dispatcher', initials: 'ET' },
-        { name: 'Chris Lee', role: 'Accounts', initials: 'CL' }
-      ]
-    },
-    {
-      id: '2',
-      name: 'Melbourne Depot',
-      code: 'MEL-DEPOT',
-      type: 'Primary Depot',
-      status: 'Online',
-      score: 84,
-      address: 'TULLAMARINE, VIC 3043',
-      leadName: 'SARAH MITCHELL',
-      leadInitials: 'SM',
-      staffCount: 14,
-      vehicles: 6,
-      storageUsage: 45,
-      storageText: 'OK 45%',
-      storageColor: 'text-amber-500 bg-amber-500',
-      authority: [
-        { name: 'Sarah Mitchell', role: 'Branch Manager', initials: 'SM' },
-        { name: 'Michael Adams', role: 'Dispatcher', initials: 'MA' }
-      ]
-    },
-    {
-      id: '3',
-      name: 'Brisbane Port Branch',
-      code: 'BNE-PORT',
-      type: 'Local Branch',
-      status: 'Maintenance',
-      score: 72,
-      address: 'LYTTON, QLD 4178',
-      leadName: 'LIAM SMITH',
-      leadInitials: 'LS',
-      staffCount: 28,
-      vehicles: 12,
-      storageUsage: 78,
-      storageText: 'OK 78%',
-      storageColor: 'text-amber-500 bg-amber-500',
-      authority: [
-        { name: 'Liam Smith', role: 'Branch Manager', initials: 'LS' },
-        { name: 'Emma Thompson', role: 'Dispatcher', initials: 'ET' }
-      ]
-    }
-  ]);
+  const [companyUsers, setCompanyUsers] = useState([]);
+  const [customerBranches, setCustomerBranches] = useState([]);
   const [showAddBranchTab, setShowAddBranchTab] = useState(false);
   const [branchSearchQuery, setBranchSearchQuery] = useState('');
   const [newBranchTabForm, setNewBranchTabForm] = useState({
@@ -459,19 +479,43 @@ export default function Customers() {
           console.error('Error fetching loads from API:', err);
         });
 
+      // Gap Fix 3: Load contacts from API (GET /customers/:id/contacts) first,
+      // then fall back to parsing contactName field if API returns nothing
       if (selectedCustomer.contacts) {
         setContacts(selectedCustomer.contacts);
       } else {
-        const parts = (selectedCustomer.contactName || '').trim().split(' ');
-        const first = parts[0] || '';
-        const last = parts.slice(1).join(' ') || '';
-        if (first && first !== 'N/A') {
-          setContacts([
-            { id: 1, firstName: first, lastName: last, role: 'Primary', phone: selectedCustomer.contactPhone || 'N/A', email: selectedCustomer.contactEmail || 'N/A', isPrimary: true }
-          ]);
-        } else {
-          setContacts([]);
-        }
+        api.get(`/customers/${selectedCustomer.id}/contacts`)
+          .then(res => {
+            const contactsData = res.data?.data || res.data || [];
+            if (Array.isArray(contactsData) && contactsData.length > 0) {
+              setContacts(contactsData);
+            } else {
+              // Fallback: build from contactName/email/phone on the customer record
+              const parts = (selectedCustomer.contactName || '').trim().split(' ');
+              const first = parts[0] || '';
+              const last = parts.slice(1).join(' ') || '';
+              if (first && first !== 'N/A') {
+                setContacts([
+                  { id: 1, firstName: first, lastName: last, role: 'Primary', phone: selectedCustomer.contactPhone || 'N/A', email: selectedCustomer.contactEmail || 'N/A', isPrimary: true }
+                ]);
+              } else {
+                setContacts([]);
+              }
+            }
+          })
+          .catch(err => {
+            console.warn('Contacts API fallback:', err);
+            const parts = (selectedCustomer.contactName || '').trim().split(' ');
+            const first = parts[0] || '';
+            const last = parts.slice(1).join(' ') || '';
+            if (first && first !== 'N/A') {
+              setContacts([
+                { id: 1, firstName: first, lastName: last, role: 'Primary', phone: selectedCustomer.contactPhone || 'N/A', email: selectedCustomer.contactEmail || 'N/A', isPrimary: true }
+              ]);
+            } else {
+              setContacts([]);
+            }
+          });
       }
       setInternalNotes(selectedCustomer.notes || '');
       setCustomerTags([]);
@@ -618,6 +662,30 @@ export default function Customers() {
   const [moduleFilter, setModuleFilter] = useState('All Mods');
   const [managerFilter, setManagerFilter] = useState('All Managers');
 
+  // More Filters panel state
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [billingTermsFilter, setBillingTermsFilter] = useState('All');
+  const [billingTypeFilter, setBillingTypeFilter] = useState('All');
+  const [dateFromFilter, setDateFromFilter] = useState('');
+  const [dateToFilter, setDateToFilter] = useState('');
+  const [stateFilter, setStateFilter] = useState('All States');
+
+  const activeMoreFilterCount = [
+    billingTermsFilter !== 'All',
+    billingTypeFilter !== 'All',
+    dateFromFilter !== '',
+    dateToFilter !== '',
+    stateFilter !== 'All States',
+  ].filter(Boolean).length;
+
+  const resetMoreFilters = () => {
+    setBillingTermsFilter('All');
+    setBillingTypeFilter('All');
+    setDateFromFilter('');
+    setDateToFilter('');
+    setStateFilter('All States');
+  };
+
   const filteredCustomers = customersList.filter(c => {
     if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase()) && !c.abn.includes(searchQuery)) return false;
     if (statusFilter !== 'All States' && c.status !== statusFilter) return false;
@@ -628,6 +696,17 @@ export default function Customers() {
       const modKey = modMap[moduleFilter];
       if (modKey && !c.transportModules.includes(modKey)) return false;
     }
+    // Advanced filters (More Filters panel)
+    // Gap Fix 1: billingTermsFilter — exact match on billingTerms string from DB
+    if (billingTermsFilter !== 'All' && c.billingTerms !== billingTermsFilter) return false;
+    // Gap Fix 1b: billingTypeFilter — check if billingTerms contains the type keyword (EOM, Net, COD)
+    if (billingTypeFilter !== 'All') {
+      const terms = (c.billingTerms || '').toLowerCase();
+      if (billingTypeFilter === 'EOM' && !terms.includes('eom')) return false;
+      if (billingTypeFilter === 'Net' && !terms.includes('net')) return false;
+      if (billingTypeFilter === 'COD' && !terms.includes('cod')) return false;
+    }
+    // Gap Fix 2: stateFilter — no state column in DB, skip filter (UI display only)
     return true;
   });
 
@@ -3685,9 +3764,18 @@ export default function Customers() {
 
                   <select className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 cursor-pointer focus:outline-none hover:bg-slate-100 transition-colors shrink-0">
                     <option>All Users</option>
-                    <option>Sarah Mitchell</option>
-                    <option>John Davis</option>
-                    <option>Michael King</option>
+                    {companyUsers.length > 0 ? (
+                      companyUsers.map(user => {
+                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
+                        return <option key={user.id} value={fullName}>{fullName}</option>;
+                      })
+                    ) : (
+                      <>
+                        <option>Sarah Mitchell</option>
+                        <option>John Davis</option>
+                        <option>Michael King</option>
+                      </>
+                    )}
                   </select>
 
                   <select className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 cursor-pointer focus:outline-none hover:bg-slate-100 transition-colors shrink-0">
@@ -4242,8 +4330,17 @@ export default function Customers() {
                 <label className="text-[13px] font-semibold text-slate-800 block mb-2">To</label>
                 <div className="relative">
                   <select className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer">
-                    <option>Sarah Mitchell (Account Manager)</option>
-                    <option>Mike Thompson (Admin)</option>
+                    {companyUsers.length > 0 ? (
+                      companyUsers.map(user => {
+                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
+                        return <option key={user.id} value={fullName}>{fullName} ({user.role || 'Staff'})</option>;
+                      })
+                    ) : (
+                      <>
+                        <option>Sarah Mitchell (Account Manager)</option>
+                        <option>Mike Thompson (Admin)</option>
+                      </>
+                    )}
                   </select>
                   <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -4388,10 +4485,19 @@ export default function Customers() {
                     onChange={e => setEditCustomerForm({ ...editCustomerForm, manager: e.target.value })}
                     className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
                   >
-                    <option value="Sarah Mitchell">Sarah Mitchell</option>
-                    <option value="Mike Thompson">Mike Thompson</option>
-                    <option value="John Davis">John Davis</option>
-                    <option value="Emily Rogers">Emily Rogers</option>
+                    {companyUsers.length > 0 ? (
+                      companyUsers.map(user => {
+                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
+                        return <option key={user.id} value={fullName}>{fullName}</option>;
+                      })
+                    ) : (
+                      <>
+                        <option value="Sarah Mitchell">Sarah Mitchell</option>
+                        <option value="Mike Thompson">Mike Thompson</option>
+                        <option value="John Davis">John Davis</option>
+                        <option value="Emily Rogers">Emily Rogers</option>
+                      </>
+                    )}
                   </select>
                   <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -4431,10 +4537,19 @@ export default function Customers() {
                     onChange={e => setAssignManagerForm({ ...assignManagerForm, manager: e.target.value })}
                     className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
                   >
-                    <option value="Sarah Mitchell">Sarah Mitchell</option>
-                    <option value="Mike Thompson">Mike Thompson</option>
-                    <option value="John Davis">John Davis</option>
-                    <option value="Emily Rogers">Emily Rogers</option>
+                    {companyUsers.length > 0 ? (
+                      companyUsers.map(user => {
+                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
+                        return <option key={user.id} value={fullName}>{fullName}</option>;
+                      })
+                    ) : (
+                      <>
+                        <option value="Sarah Mitchell">Sarah Mitchell</option>
+                        <option value="Mike Thompson">Mike Thompson</option>
+                        <option value="John Davis">John Davis</option>
+                        <option value="Emily Rogers">Emily Rogers</option>
+                      </>
+                    )}
                   </select>
                   <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -5016,8 +5131,17 @@ export default function Customers() {
                 <div className="relative">
                   <select value={managerFilter} onChange={e => setManagerFilter(e.target.value)} className="appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-500 cursor-pointer w-full">
                     <option value="All Managers">All Managers</option>
-                    <option value="Sarah Mitchell">Sarah Mitchell</option>
-                    <option value="Mike Thompson">Mike Thompson</option>
+                    {companyUsers.length > 0 ? (
+                      companyUsers.map(user => {
+                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
+                        return <option key={user.id} value={fullName}>{fullName}</option>;
+                      })
+                    ) : (
+                      <>
+                        <option value="Sarah Mitchell">Sarah Mitchell</option>
+                        <option value="Mike Thompson">Mike Thompson</option>
+                      </>
+                    )}
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -5043,8 +5167,20 @@ export default function Customers() {
                   <Calendar size={14} className="text-slate-400 ml-2" />
                 </div>
               </div>
-              <button className="px-4 py-2 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ml-auto">
+              <button
+                onClick={() => setShowMoreFilters(true)}
+                className={`px-4 py-2 border rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ml-auto ${
+                  activeMoreFilterCount > 0
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                    : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'
+                }`}
+              >
                 <Filter size={14} /> More Filters
+                {activeMoreFilterCount > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-white text-blue-700 text-[9px] font-black flex items-center justify-center">
+                    {activeMoreFilterCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -5430,8 +5566,17 @@ export default function Customers() {
                     onChange={e => setNewCustomerForm({ ...newCustomerForm, manager: e.target.value })}
                     className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
                   >
-                    <option value="Sarah Mitchell">Sarah Mitchell</option>
-                    <option value="Mike Thompson">Mike Thompson</option>
+                    {companyUsers.length > 0 ? (
+                      companyUsers.map(user => {
+                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
+                        return <option key={user.id} value={fullName}>{fullName}</option>;
+                      })
+                    ) : (
+                      <>
+                        <option value="Sarah Mitchell">Sarah Mitchell</option>
+                        <option value="Mike Thompson">Mike Thompson</option>
+                      </>
+                    )}
                   </select>
                   <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -5576,10 +5721,19 @@ export default function Customers() {
                     onChange={e => setEditCustomerForm({ ...editCustomerForm, manager: e.target.value })}
                     className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
                   >
-                    <option value="Sarah Mitchell">Sarah Mitchell</option>
-                    <option value="Mike Thompson">Mike Thompson</option>
-                    <option value="John Davis">John Davis</option>
-                    <option value="Emily Rogers">Emily Rogers</option>
+                    {companyUsers.length > 0 ? (
+                      companyUsers.map(user => {
+                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
+                        return <option key={user.id} value={fullName}>{fullName}</option>;
+                      })
+                    ) : (
+                      <>
+                        <option value="Sarah Mitchell">Sarah Mitchell</option>
+                        <option value="Mike Thompson">Mike Thompson</option>
+                        <option value="John Davis">John Davis</option>
+                        <option value="Emily Rogers">Emily Rogers</option>
+                      </>
+                    )}
                   </select>
                   <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -5619,10 +5773,19 @@ export default function Customers() {
                     onChange={e => setAssignManagerForm({ ...assignManagerForm, manager: e.target.value })}
                     className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
                   >
-                    <option value="Sarah Mitchell">Sarah Mitchell</option>
-                    <option value="Mike Thompson">Mike Thompson</option>
-                    <option value="John Davis">John Davis</option>
-                    <option value="Emily Rogers">Emily Rogers</option>
+                    {companyUsers.length > 0 ? (
+                      companyUsers.map(user => {
+                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
+                        return <option key={user.id} value={fullName}>{fullName}</option>;
+                      })
+                    ) : (
+                      <>
+                        <option value="Sarah Mitchell">Sarah Mitchell</option>
+                        <option value="Mike Thompson">Mike Thompson</option>
+                        <option value="John Davis">John Davis</option>
+                        <option value="Emily Rogers">Emily Rogers</option>
+                      </>
+                    )}
                   </select>
                   <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -6148,6 +6311,204 @@ export default function Customers() {
             </div>
           </form>
         </div>,
+        document.body
+      )}
+
+      {/* ==================== MORE FILTERS SLIDE-IN PANEL ==================== */}
+      {showMoreFilters && createPortal(
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-[9998] bg-black/30 backdrop-blur-[2px]"
+            onClick={() => setShowMoreFilters(false)}
+          />
+
+          {/* Side Drawer */}
+          <div
+            className="fixed top-0 right-0 h-full z-[9999] w-[360px] bg-white shadow-2xl flex flex-col"
+            style={{ animation: 'slideInRight 0.22s cubic-bezier(0.4,0,0.2,1)' }}
+          >
+            {/* Header */}
+            <div className="px-5 py-4 bg-gradient-to-r from-blue-600 to-blue-700 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
+                  <Filter size={16} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white tracking-tight">Advanced Filters</h3>
+                  <p className="text-[10px] text-blue-200 font-medium">Narrow down customer results</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowMoreFilters(false)}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Active filter chips */}
+            {activeMoreFilterCount > 0 && (
+              <div className="px-5 py-3 bg-blue-50 border-b border-blue-100 flex flex-wrap gap-2">
+                {billingTermsFilter !== 'All' && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-[10px] font-bold">
+                    Terms: {billingTermsFilter}
+                    <button onClick={() => setBillingTermsFilter('All')} className="hover:text-blue-600 cursor-pointer"><X size={10} /></button>
+                  </span>
+                )}
+                {billingTypeFilter !== 'All' && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-[10px] font-bold">
+                    Type: {billingTypeFilter}
+                    <button onClick={() => setBillingTypeFilter('All')} className="hover:text-blue-600 cursor-pointer"><X size={10} /></button>
+                  </span>
+                )}
+                {dateFromFilter && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-[10px] font-bold">
+                    From: {dateFromFilter}
+                    <button onClick={() => setDateFromFilter('')} className="hover:text-blue-600 cursor-pointer"><X size={10} /></button>
+                  </span>
+                )}
+                {dateToFilter && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-[10px] font-bold">
+                    To: {dateToFilter}
+                    <button onClick={() => setDateToFilter('')} className="hover:text-blue-600 cursor-pointer"><X size={10} /></button>
+                  </span>
+                )}
+                {stateFilter !== 'All States' && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-[10px] font-bold">
+                    State: {stateFilter}
+                    <button onClick={() => setStateFilter('All States')} className="hover:text-blue-600 cursor-pointer"><X size={10} /></button>
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Filter Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+
+              {/* Billing Terms */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Billing Terms</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['All', '7 Days', '14 Days EOM', '30 Days', 'COD', 'Prepaid'].map(term => (
+                    <button
+                      key={term}
+                      onClick={() => setBillingTermsFilter(term)}
+                      className={`px-3 py-2 rounded-xl border text-[11px] font-semibold cursor-pointer transition-all text-left flex items-center justify-between ${
+                        billingTermsFilter === term
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                          : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50'
+                      }`}
+                    >
+                      <span>{term === 'All' ? 'All Terms' : term}</span>
+                      {billingTermsFilter === term && <Check size={11} />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Billing Type */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Billing Type</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['All', 'EOM', 'Net', 'COD'].map(bt => (
+                    <button
+                      key={bt}
+                      onClick={() => setBillingTypeFilter(bt)}
+                      className={`px-3 py-2 rounded-xl border text-[11px] font-bold cursor-pointer transition-all text-center ${
+                        billingTypeFilter === bt
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                          : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50'
+                      }`}
+                    >
+                      {bt === 'All' ? 'All' : bt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* State / Region */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">State / Region</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['All States', 'NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'ACT', 'NT'].map(s => (
+                    <button
+                      key={s}
+                      onClick={() => setStateFilter(s)}
+                      className={`px-2 py-2 rounded-xl border text-[11px] font-bold cursor-pointer transition-all text-center ${
+                        stateFilter === s
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                          : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50'
+                      }`}
+                    >
+                      {s === 'All States' ? 'All' : s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Created Date Range */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Created Date Range</label>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1.5">From</label>
+                    <div className="relative">
+                      <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="date"
+                        value={dateFromFilter}
+                        onChange={e => setDateFromFilter(e.target.value)}
+                        className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500 bg-white cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-px bg-slate-200" />
+                    <ArrowRight size={12} className="text-slate-300" />
+                    <div className="flex-1 h-px bg-slate-200" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1.5">To</label>
+                    <div className="relative">
+                      <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="date"
+                        value={dateToFilter}
+                        min={dateFromFilter}
+                        onChange={e => setDateToFilter(e.target.value)}
+                        className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500 bg-white cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Live results count */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500">Matching Customers</span>
+                <span className="text-lg font-black text-blue-700">{filteredCustomers.length}</span>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 bg-slate-50 border-t border-slate-100 flex items-center gap-3 shrink-0">
+              <button
+                onClick={resetMoreFilters}
+                className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer flex items-center justify-center gap-2"
+              >
+                <X size={13} /> Reset All
+              </button>
+              <button
+                onClick={() => setShowMoreFilters(false)}
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-2"
+              >
+                <Check size={13} /> Apply Filters
+              </button>
+            </div>
+          </div>
+        </>,
         document.body
       )}
 

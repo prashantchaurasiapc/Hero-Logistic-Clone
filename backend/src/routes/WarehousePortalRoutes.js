@@ -33,6 +33,7 @@ router.post('/load-lanes/:laneId/stage-items', ctrl.stageItemsToLane);
 router.post('/load-lanes/move-items', ctrl.moveLaneItems);
 router.post('/load-lanes/:laneId/clear', ctrl.clearLoadLane);
 router.get('/load-lanes/:laneId/manifest', ctrl.printManifest);
+
 // 5. Dispatch Ready & Outbound
 router.get('/dispatch-ready', ctrl.getDispatchReady);
 router.post('/dispatch-ready/:loadId/dispatch', ctrl.dispatchLoad);

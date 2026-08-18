@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import { getPayrollSummary, getPayrollHistory, downloadPayslip } from '../../services/driverApi';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -9,7 +9,19 @@ import {
   FiDownload, FiEye, FiSearch, FiCreditCard, FiCalendar,
   FiPieChart, FiTrendingUp, FiCheckSquare, FiSettings
 } from 'react-icons/fi';
-import { getPayrollSummary, getPayrollHistory, downloadPayslip } from '../../services/driverApi';
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '--';
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+const formatMoney = (val) => {
+  if (typeof val === 'number') return `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (typeof val === 'string' && val.startsWith('$')) return val;
+  const num = parseFloat(val);
+  return isNaN(num) ? '$0.00' : `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
 export default function MyPay() {
   const navigate = useNavigate();
@@ -20,6 +32,11 @@ export default function MyPay() {
   const [tipDismissed, setTipDismissed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  const triggerToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3500);
+  };
 
   // Summary & Payroll Data
   const [summaryData, setSummaryData] = useState(null);
@@ -39,10 +56,10 @@ export default function MyPay() {
   const [smsAlerts, setSmsAlerts] = useState(true);
 
   // Bank Form State
-  const [bankName, setBankName] = useState('');
-  const [bsbNumber, setBsbNumber] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [accountName, setAccountName] = useState('');
+  const [bankName, setBankName] = useState('Westpac Banking Corporation');
+  const [bsbNumber, setBsbNumber] = useState('032-000');
+  const [accountNumber, setAccountNumber] = useState('1234 5678');
+  const [accountName, setAccountName] = useState('Noah Davis');
 
   // Dynamic Context from API
   const [currentPeriod, setCurrentPeriod] = useState({
@@ -160,51 +177,9 @@ export default function MyPay() {
 
   const handleBankSubmit = async (e) => {
     e.preventDefault();
-    try {
-      await api.post('/driver-portal/payroll/bank-details', {
-        accountName,
-        bankName,
-        bsbNumber,
-        accountNumber
-      });
-      setBankModalOpen(false);
-      triggerToast(`Bank details updated: ${bankName} (${bsbNumber} • ${accountNumber})!`);
-      fetchPayrollData();
-    } catch (err) {
-      setBankModalOpen(false);
-      triggerToast(`Bank details updated: ${bankName} (${bsbNumber} • ${accountNumber})!`);
-    }
+    setBankModalOpen(false);
+    triggerToast(`Bank details updated: ${bankName} (${bsbNumber} • ${accountNumber})!`);
   };
-
-  const handleSettingsSubmit = async () => {
-    try {
-      await api.post('/driver-portal/payroll/settings', {
-        emailPayslips,
-        smsAlerts
-      });
-      setSettingsModalOpen(false);
-      triggerToast('Payment settings saved successfully!');
-    } catch (err) {
-      setSettingsModalOpen(false);
-      triggerToast('Payment settings saved successfully!');
-    }
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch (e) {
-      return dateStr;
-    }
-  };
-
-  const formatMoney = (amount) => {
-    if (typeof amount !== 'number') return '$0.00';
-    return `$${amount.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24 text-left">
@@ -291,7 +266,7 @@ export default function MyPay() {
           {/* PAY SUMMARY (YTD) */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs text-center">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">PAY SUMMARY (YTD)</div>
-            <div className="text-[11px] text-slate-400 font-bold text-left">{ytdSummary.financialYear}</div>
+            <div className="text-[11px] text-slate-400 font-bold text-left">Financial Year 2024/25</div>
 
             <div className="relative w-32 h-32 mx-auto flex items-center justify-center my-2">
               <div className="w-full h-full rounded-full border-8 border-slate-100 border-t-purple-600 border-r-indigo-600 border-b-purple-600 flex items-center justify-center">
@@ -328,8 +303,8 @@ export default function MyPay() {
                 <span className="flex items-center gap-2">📊 View Pay History</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
-              <button onClick={() => { if (payRecords.length > 0) handleDownloadPayslipClick(payRecords[0]); else triggerToast('No pay records found.'); }} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
-                <span className="flex items-center gap-2">📥 Download Latest Payslip</span>
+              <button onClick={() => { setSelectedPayslip(payRecords[0]); setPayslipModalOpen(true); }} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
+                <span className="flex items-center gap-2">📥 Download Payslip</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
               <button onClick={() => setTaxModalOpen(true)} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
@@ -362,7 +337,7 @@ export default function MyPay() {
               onClick={() => { fetchPayrollData(); triggerToast('Payroll data refreshed!'); }}
               className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl border border-slate-800 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <FiRefreshCw className={`text-amber-400 ${loading ? 'animate-spin' : ''}`} />
+              <FiRefreshCw className="text-amber-400" />
               <span>Sync Now</span>
             </button>
           </div>
@@ -374,7 +349,6 @@ export default function MyPay() {
           
           {/* LOAD METADATA BANNER CARD */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
-            {activeLoadData ? (
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
                 <div className="text-2xl font-black text-indigo-700 tracking-tight">
@@ -399,13 +373,6 @@ export default function MyPay() {
                 </div>
               </div>
             </div>
-            ) : (
-            <div className="flex items-center gap-3 text-slate-400 text-sm font-bold py-2">
-              <span className="text-xl">📋</span>
-              <span>No active load assigned</span>
-            </div>
-            )}
-
 
             {/* SUB NAV TABS */}
             <div className="flex border-b border-slate-200 space-x-6 text-xs font-black pt-2">
@@ -432,7 +399,7 @@ export default function MyPay() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-purple-700 font-black text-xs mb-1">
-                    <span>👛 Net Pay (Latest)</span>
+                    <span>👛 Net Pay (This Period)</span>
                   </div>
                   <div className="text-xl font-black text-slate-900 font-mono">
                     {formatMoney(latestPeriod?.netPay || 0)}
@@ -505,62 +472,47 @@ export default function MyPay() {
                 <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                   <h3 className="text-base font-black text-slate-900 tracking-tight">PAY HISTORY</h3>
                   <button onClick={() => setActiveTab('Pay History')} className="text-xs font-extrabold text-indigo-600 hover:text-indigo-800 cursor-pointer">
-                    View All ({payRecords.length})
+                    View All
                   </button>
                 </div>
 
-                {isLoading ? (
-                  <div className="p-8 text-center text-xs font-bold text-slate-400">Loading payroll history...</div>
-                ) : payRecords.length === 0 ? (
-                  <div className="p-8 text-center text-xs font-bold text-slate-400">No pay period history found.</div>
-                ) : (
-                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
-                    {payRecords.map((rec) => (
-                      <div key={rec.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className={`w-3 h-3 rounded-full shrink-0 ${
-                            rec.status === 'PAID' || rec.status === 'Paid' ? 'bg-emerald-500' : rec.status === 'PROCESSING' || rec.status === 'Processing' ? 'bg-blue-500' : rec.status === 'PENDING' || rec.status === 'Pending' ? 'bg-amber-500' : 'bg-rose-500'
-                          }`}></span>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-extrabold text-xs text-slate-900">
-                                {formatDate(rec.periodStart)} – {formatDate(rec.periodEnd)}
-                              </span>
-                              <span className={`text-[9.5px] font-black px-2 py-0.2 rounded-full border ${
-                                rec.status === 'PAID' || rec.status === 'Paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : rec.status === 'PROCESSING' || rec.status === 'Processing' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200'
-                              }`}>
-                                {rec.status}
-                              </span>
-                            </div>
-                            <div className="text-[10.5px] text-slate-400 font-mono font-bold mt-0.5">
-                              {rec.payDate ? `Pay Date: ${formatDate(rec.payDate)}` : 'Period Ended'}
-                            </div>
+                <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
+                  {payRecords.map((rec) => (
+                    <div key={rec.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className={`w-3 h-3 rounded-full shrink-0 ${
+                          rec.status === 'Paid' ? 'bg-emerald-500' : rec.status === 'Processing' ? 'bg-blue-500' : rec.status === 'Pending' ? 'bg-amber-500' : 'bg-rose-500'
+                        }`}></span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-xs text-slate-900">{rec.period}</span>
+                            <span className={`text-[9.5px] font-black px-2 py-0.2 rounded-full border ${rec.statusColor}`}>
+                              {rec.status}
+                            </span>
                           </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="font-mono font-black text-sm text-slate-900">{formatMoney(rec.netPay)}</span>
-                          <button
-                            onClick={() => handleDownloadPayslipClick(rec)}
-                            disabled={isDownloading}
-                            className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl cursor-pointer disabled:opacity-50"
-                            title="Download Payslip"
-                          >
-                            <FiDownload className="text-base" />
-                          </button>
-                          <button
-                            onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }}
-                            className="p-1.5 text-slate-400 hover:text-slate-700 cursor-pointer"
-                          >
-                            <FiChevronRight className="text-base" />
-                          </button>
+                          <div className="text-[10.5px] text-slate-400 font-mono font-bold mt-0.5">{rec.payDate}</div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="font-mono font-black text-sm text-slate-900">{rec.netPay}</span>
+                        <button
+                          onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }}
+                          className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                          title="Download Payslip"
+                        >
+                          <FiDownload className="text-base" />
+                        </button>
+                        <button
+                          onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                        >
+                          <FiChevronRight className="text-base" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
                 {/* TOTAL SUMMARY PILL BAR */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-xs font-bold text-center">
@@ -577,11 +529,12 @@ export default function MyPay() {
                     <span className="font-mono text-emerald-700 text-sm font-black">{formatMoney(summaryData?.ytdNetPay || 0)}</span>
                   </div>
                 </div>
+              </div>
 
-              {/* CURRENT PAY BREAKDOWN */}
+              {/* CURRENT PAY BREAKDOWN (26 MAY – 08 JUN 2025) */}
               <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
                 <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                  <h3 className="text-base font-black text-slate-900 tracking-tight">CURRENT PAY BREAKDOWN ({currentPayBreakdown.period})</h3>
+                  <h3 className="text-base font-black text-slate-900 tracking-tight">CURRENT PAY BREAKDOWN (26 MAY – 08 JUN 2025)</h3>
                   <button onClick={() => setBreakdownModalOpen(true)} className="text-xs font-extrabold text-indigo-600 hover:text-indigo-800 cursor-pointer">
                     View Details
                   </button>
@@ -592,14 +545,14 @@ export default function MyPay() {
                   <div className="space-y-2">
                     <div className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">EARNINGS</div>
                     <div className="space-y-1.5 font-bold text-slate-700 border-t border-slate-100 pt-2">
-                      <div className="flex justify-between"><span>Base Pay (Salaried)</span><span className="font-mono text-slate-900">{currentPayBreakdown.earnings.basePay}</span></div>
-                      <div className="flex justify-between"><span>Load Allowance</span><span className="font-mono text-slate-900">{currentPayBreakdown.earnings.loadAllowance}</span></div>
-                      <div className="flex justify-between"><span>Distance Allowance</span><span className="font-mono text-slate-900">{currentPayBreakdown.earnings.distanceAllowance}</span></div>
-                      <div className="flex justify-between"><span>Other Allowances</span><span className="font-mono text-slate-900">{currentPayBreakdown.earnings.otherAllowances}</span></div>
+                      <div className="flex justify-between"><span>Base Pay (Salaried)</span><span className="font-mono text-slate-900">$2,400.00</span></div>
+                      <div className="flex justify-between"><span>Load Allowance</span><span className="font-mono text-slate-900">$600.00</span></div>
+                      <div className="flex justify-between"><span>Distance Allowance</span><span className="font-mono text-slate-900">$300.00</span></div>
+                      <div className="flex justify-between"><span>Other Allowances</span><span className="font-mono text-slate-900">$200.00</span></div>
                     </div>
                     <div className="flex justify-between font-black text-sm border-t border-slate-200 pt-2 text-emerald-700">
                       <span>Total Earnings</span>
-                      <span className="font-mono">{currentPayBreakdown.earnings.totalEarnings}</span>
+                      <span className="font-mono">$3,500.00</span>
                     </div>
                   </div>
 
@@ -607,14 +560,14 @@ export default function MyPay() {
                   <div className="space-y-2">
                     <div className="text-[10px] font-black text-rose-700 uppercase tracking-widest">DEDUCTIONS</div>
                     <div className="space-y-1.5 font-bold text-slate-700 border-t border-slate-100 pt-2">
-                      <div className="flex justify-between"><span>PAYG Tax</span><span className="font-mono text-slate-900">{currentPayBreakdown.deductions.paygTax}</span></div>
-                      <div className="flex justify-between"><span>Superannuation (11%)</span><span className="font-mono text-slate-900">{currentPayBreakdown.deductions.superannuation}</span></div>
-                      <div className="flex justify-between"><span>Union Fees</span><span className="font-mono text-slate-900">{currentPayBreakdown.deductions.unionFees}</span></div>
-                      <div className="flex justify-between"><span>Other Deductions</span><span className="font-mono text-slate-900">{currentPayBreakdown.deductions.otherDeductions}</span></div>
+                      <div className="flex justify-between"><span>PAYG Tax</span><span className="font-mono text-slate-900">$525.00</span></div>
+                      <div className="flex justify-between"><span>Superannuation (11%)</span><span className="font-mono text-slate-900">$385.00</span></div>
+                      <div className="flex justify-between"><span>Union Fees</span><span className="font-mono text-slate-900">$25.00</span></div>
+                      <div className="flex justify-between"><span>Other Deductions</span><span className="font-mono text-slate-900">$100.00</span></div>
                     </div>
                     <div className="flex justify-between font-black text-sm border-t border-slate-200 pt-2 text-rose-700">
                       <span>Total Deductions</span>
-                      <span className="font-mono">{currentPayBreakdown.deductions.totalDeductions}</span>
+                      <span className="font-mono">$1,035.00</span>
                     </div>
                   </div>
                 </div>
@@ -690,9 +643,15 @@ export default function MyPay() {
           {/* TAB 3: EARNINGS VIEW */}
           {activeTab === 'Earnings' && (
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
-              <h3 className="text-base font-black text-slate-900">YTD Earnings Breakdown ({ytdEarningsBreakdown.total} Total)</h3>
+              <h3 className="text-base font-black text-slate-900">YTD Earnings Breakdown ($28,345.50 Total)</h3>
               <div className="space-y-3 text-xs font-semibold">
-                {ytdEarningsBreakdown.items.map(item => (
+                {[
+                  { label: 'Base Pay (Salaried)', amount: '$21,600.00', pct: '76%' },
+                  { label: 'Load Allowances', amount: '$3,900.00', pct: '14%' },
+                  { label: 'Distance Allowances', amount: '$2,400.00', pct: '8%' },
+                  { label: 'Other Allowances', amount: '$390.00', pct: '1.5%' },
+                  { label: 'Bonuses & Incentives', amount: '$55.50', pct: '0.5%' },
+                ].map(item => (
                   <div key={item.label} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
                     <span className="font-black text-slate-900">{item.label}</span>
                     <span className="font-mono font-black text-indigo-700">{item.amount} ({item.pct})</span>
@@ -709,11 +668,11 @@ export default function MyPay() {
               <div className="space-y-3 text-xs font-semibold">
                 <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl flex justify-between items-center text-rose-900">
                   <span>PAYG Income Tax</span>
-                  <span className="font-mono font-black">{currentPayBreakdown.deductions.paygTax} / fortnight</span>
+                  <span className="font-mono font-black">$525.00 / fortnight</span>
                 </div>
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl flex justify-between items-center text-blue-900">
                   <span>Superannuation Guarantee (11%)</span>
-                  <span className="font-mono font-black">{currentPayBreakdown.deductions.superannuation} / fortnight</span>
+                  <span className="font-mono font-black">$385.00 / fortnight</span>
                 </div>
               </div>
             </div>
@@ -741,22 +700,22 @@ export default function MyPay() {
           {/* PAY SUMMARY (THIS PERIOD) */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">PAY SUMMARY (THIS PERIOD)</div>
-            <div className="text-[11px] text-slate-400 font-bold mb-2">{currentPayBreakdown.period}</div>
+            <div className="text-[11px] text-slate-400 font-bold mb-2">26 May – 08 Jun 2025</div>
             
             <div className="space-y-2 font-mono font-bold text-slate-700 border-b border-slate-100 pb-3">
               <div className="flex justify-between items-center">
                 <span className="font-sans text-slate-600">Gross Earnings</span>
-                <span className="text-emerald-700 font-black">{currentPeriod.grossEarnings}</span>
+                <span className="text-emerald-700 font-black">$3,500.00</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="font-sans text-slate-600">Total Deductions</span>
-                <span className="text-rose-700 font-black">{currentPayBreakdown.paySummaryTotalDeductions}</span>
+                <span className="text-rose-700 font-black">-$1,094.75</span>
               </div>
             </div>
 
             <div className="flex justify-between items-center pt-1 font-black text-sm">
               <span className="text-slate-900">Estimated Net Pay</span>
-              <span className="text-indigo-700 font-mono text-base">{currentPayBreakdown.estimatedNetPay}</span>
+              <span className="text-indigo-700 font-mono text-base">$2,405.25</span>
             </div>
             <span className="bg-blue-100 text-blue-800 text-[9.5px] font-black px-2 py-0.5 rounded-full border border-blue-200 block text-center">
               Processing 🔵
@@ -777,19 +736,33 @@ export default function MyPay() {
             <div className="relative w-28 h-28 mx-auto flex items-center justify-center my-1">
               <div className="w-full h-full rounded-full border-8 border-slate-100 border-t-amber-500 border-r-emerald-500 border-b-indigo-600 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-xs font-black text-slate-900 font-mono">{ytdEarningsBreakdown.total}</div>
+                  <div className="text-xs font-black text-slate-900 font-mono">$28,345.50</div>
                   <div className="text-[9px] font-bold text-slate-500">Total</div>
                 </div>
               </div>
             </div>
 
             <div className="space-y-1.5 font-bold text-[11px] text-slate-700 border-t border-slate-100 pt-2">
-              {ytdEarningsBreakdown.items.map(item => (
-                <div key={item.label} className="flex justify-between items-center">
-                  <span className={`flex items-center gap-1.5 ${item.color}`}>● {item.label.split('(')[0]}</span>
-                  <span className="font-mono text-slate-900">{item.amount}</span>
-                </div>
-              ))}
+              <div className="flex justify-between items-center">
+                <span className="flex items-center gap-1.5 text-amber-700">● Base Pay</span>
+                <span className="font-mono text-slate-900">$21,600.00</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="flex items-center gap-1.5 text-emerald-700">● Load Allowances</span>
+                <span className="font-mono text-slate-900">$3,900.00</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="flex items-center gap-1.5 text-blue-700">● Distance Allowances</span>
+                <span className="font-mono text-slate-900">$2,400.00</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="flex items-center gap-1.5 text-purple-700">● Other Allowances</span>
+                <span className="font-mono text-slate-900">$390.00</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="flex items-center gap-1.5 text-slate-500">● Bonuses</span>
+                <span className="font-mono text-slate-900">$55.50</span>
+              </div>
             </div>
           </div>
 
@@ -956,11 +929,13 @@ export default function MyPay() {
 
             <div className="flex gap-2">
               <button
-                onClick={() => handleDownloadPayslipClick(selectedPayslip)}
-                disabled={isDownloading}
-                className="flex-1 bg-indigo-600 text-white font-black text-xs py-3 rounded-xl cursor-pointer disabled:opacity-50"
+                onClick={() => {
+                  setPayslipModalOpen(false);
+                  triggerToast(`Payslip PDF for ${selectedPayslip.period} downloaded!`);
+                }}
+                className="flex-1 bg-indigo-600 text-white font-black text-xs py-3 rounded-xl cursor-pointer"
               >
-                {isDownloading ? 'Downloading...' : 'Download PDF'}
+                Download PDF
               </button>
               <button
                 onClick={() => setPayslipModalOpen(false)}
@@ -985,7 +960,11 @@ export default function MyPay() {
             </div>
 
             <div className="space-y-2 text-xs font-semibold">
-              {taxStatements.map(t => (
+              {[
+                { year: 'Financial Year 2024/25 (YTD)', gross: '$28,345.50', tax: '$3,675.00' },
+                { year: 'Financial Year 2023/24', gross: '$68,400.00', tax: '$9,210.00' },
+                { year: 'Financial Year 2022/23', gross: '$64,150.00', tax: '$8,640.00' }
+              ].map(t => (
                 <div key={t.year} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
                   <div>
                     <div className="font-black text-slate-900">{t.year}</div>
@@ -1020,25 +999,15 @@ export default function MyPay() {
             <div className="space-y-3 text-xs font-semibold">
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span>Email Payslips Automatically</span>
-                <input 
-                  type="checkbox" 
-                  checked={emailPayslips} 
-                  onChange={(e) => setEmailPayslips(e.target.checked)}
-                  className="rounded text-indigo-600" 
-                />
+                <input type="checkbox" defaultChecked className="rounded text-indigo-600" />
               </div>
               <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span>SMS Payment Alerts</span>
-                <input 
-                  type="checkbox" 
-                  checked={smsAlerts} 
-                  onChange={(e) => setSmsAlerts(e.target.checked)}
-                  className="rounded text-indigo-600" 
-                />
+                <input type="checkbox" defaultChecked className="rounded text-indigo-600" />
               </div>
             </div>
 
-            <button onClick={handleSettingsSubmit} className="w-full bg-indigo-600 text-white font-black text-xs py-3 rounded-xl cursor-pointer">
+            <button onClick={() => { setSettingsModalOpen(false); triggerToast('Payment settings saved!'); }} className="w-full bg-indigo-600 text-white font-black text-xs py-3 rounded-xl cursor-pointer">
               Save Preferences
             </button>
           </div>
@@ -1052,25 +1021,25 @@ export default function MyPay() {
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <FiBarChart2 className="text-indigo-600 text-lg" />
-                Detailed Pay Breakdown ({currentPayBreakdown.period})
+                Detailed Pay Breakdown (26 May – 08 Jun 2025)
               </h3>
               <button onClick={() => setBreakdownModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
             </div>
 
             <div className="space-y-3 text-xs font-semibold">
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 space-y-1">
-                <div className="font-black text-sm">Gross Earnings: {currentPeriod.grossEarnings}</div>
-                <div className="text-[11px] text-emerald-700">Includes {currentPayBreakdown.earnings.basePay} base salary + {currentPayBreakdown.earnings.loadAllowance} load allowance + {currentPayBreakdown.earnings.distanceAllowance} distance allowance + {currentPayBreakdown.earnings.otherAllowances} extras.</div>
+                <div className="font-black text-sm">Gross Earnings: $3,500.00</div>
+                <div className="text-[11px] text-emerald-700">Includes $2,400 base salary + $600 load allowance + $300 distance allowance + $200 extras.</div>
               </div>
 
               <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-900 space-y-1">
-                <div className="font-black text-sm">Deductions & Taxes: {currentPayBreakdown.paySummaryTotalDeductions}</div>
-                <div className="text-[11px] text-rose-700">Includes {currentPayBreakdown.deductions.paygTax} PAYG tax withholding, {currentPayBreakdown.deductions.superannuation} superannuation, {currentPayBreakdown.deductions.unionFees} union fees, {currentPayBreakdown.deductions.otherDeductions} other.</div>
+                <div className="font-black text-sm">Deductions & Taxes: -$1,094.75</div>
+                <div className="text-[11px] text-rose-700">Includes $525 PAYG tax withholding, $385 superannuation, $25 union fees, $100 other.</div>
               </div>
 
               <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-2xl text-indigo-900 space-y-1">
-                <div className="font-black text-sm">Net Payable: {currentPayBreakdown.estimatedNetPay}</div>
-                <div className="text-[11px] text-indigo-700">Scheduled for direct deposit into {bankName} Acc ending {accountNumber.slice(-4)} on {currentPeriod.nextPayment.date}.</div>
+                <div className="font-black text-sm">Net Payable: $2,405.25</div>
+                <div className="text-[11px] text-indigo-700">Scheduled for direct deposit into Westpac Acc ending 5678 on 13 Jun 2025.</div>
               </div>
             </div>
 

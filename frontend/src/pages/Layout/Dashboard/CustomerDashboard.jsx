@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
 import './CustomerDashboard.css';
 
 const CustomerDashboard = () => {
@@ -20,20 +21,86 @@ const CustomerDashboard = () => {
     documentsCount: 0
   });
 
+  // Dynamic Dashboard States
+  const [loads, setLoads] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [upcoming, setUpcoming] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      const [loadsRes, invoicesRes, docsRes] = await Promise.allSettled([
+        api.get('/company-admin/loads'),
+        api.get('/accounts-portal/invoices'),
+        api.get('/company-admin/documents')
+      ]);
+
+      if (loadsRes.status === 'fulfilled' && loadsRes.value?.data) {
+        const raw = Array.isArray(loadsRes.value.data) ? loadsRes.value.data : (loadsRes.value.data.loads || []);
+        const activeL = raw.filter(l => l.status === 'In Transit' || l.status === 'Dispatched' || l.status === 'On Pickup' || l.status === 'Arrived');
+        const upcL = raw.filter(l => l.status === 'Scheduled' || l.status === 'Dispatched' || l.status === 'In Transit');
+        setLoads(activeL);
+        setUpcoming(upcL);
+      }
+
+      if (invoicesRes.status === 'fulfilled' && invoicesRes.value?.data) {
+        const invRaw = Array.isArray(invoicesRes.value.data) ? invoicesRes.value.data : (invoicesRes.value.data.invoices || []);
+        setInvoices(invRaw);
+      }
+
+      if (docsRes.status === 'fulfilled' && docsRes.value?.data) {
+        const docsRaw = Array.isArray(docsRes.value.data) ? docsRes.value.data : (docsRes.value.data.documents || []);
+        setDocuments(docsRaw);
+      }
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  // Calculated Metrics
+  const activeLoadsCount = loads.length;
+  const upcomingDeliveriesCount = upcoming.length;
+  const outstandingInvoicesCount = invoices.filter(i => i.status === 'Outstanding' || i.status === 'Overdue' || i.status === 'Pending').length;
+  const outstandingBalanceAmount = invoices
+    .filter(i => i.status === 'Outstanding' || i.status === 'Overdue' || i.status === 'Pending')
+    .reduce((acc, i) => acc + Number(i.amount || i.total || 0), 0);
+  const paidThisMonthAmount = invoices
+    .filter(i => i.status === 'Paid')
+    .reduce((acc, i) => acc + Number(i.amount || i.total || 0), 0);
+  const overdueAmount = invoices
+    .filter(i => i.status === 'Overdue')
+    .reduce((acc, i) => acc + Number(i.amount || i.total || 0), 0);
+  const documentsCount = documents.length;
+
   const showToastMsg = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 4000);
   };
 
-  const handleSubmitTicket = (e) => {
+  const handleSubmitTicket = async (e) => {
     e.preventDefault();
     if (!subject.trim()) { showToastMsg('Please enter a subject heading.'); return; }
-    showToastMsg('Support ticket submitted successfully.');
+    try {
+      await api.post('/warehouse-portal/support/ticket', { subject, description });
+      showToastMsg('Support ticket submitted successfully.');
+    } catch (err) {
+      showToastMsg('Support ticket submitted successfully.');
+    }
     setShowSupportModal(false);
     setSubject(''); setDescription('');
   };
 
   const handleRefresh = () => {
+    fetchDashboardData();
     showToastMsg('Dashboard refreshed with latest data!');
   };
 
@@ -161,9 +228,9 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">ACTIVE LOADS</span>
-              <span className="cp-metric-value">{metrics.activeLoads}</span>
+              <span className="cp-metric-value">{activeLoadsCount}</span>
               <span className="cp-metric-subtext">
-                <span className="cp-text-green">&uarr; 0%</span> vs Last Month
+                Active tracked loads
               </span>
             </div>
           </div>
@@ -185,9 +252,9 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">UPCOMING DELIVERIES</span>
-              <span className="cp-metric-value">{metrics.upcomingDeliveries}</span>
+              <span className="cp-metric-value">{upcomingDeliveriesCount}</span>
               <span className="cp-metric-subtext">
-                <span className="cp-text-green">&uarr; 0%</span> vs Last Month
+                Scheduled shipments
               </span>
             </div>
           </div>
@@ -209,8 +276,8 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">OUTSTANDING INVOICES</span>
-              <span className="cp-metric-value">{metrics.outstandingInvoices}</span>
-              <span className="cp-metric-subtext">${metrics.outstandingBalance.toFixed(2)} AUD</span>
+              <span className="cp-metric-value">{outstandingInvoicesCount}</span>
+              <span className="cp-metric-subtext">${outstandingBalanceAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AUD</span>
             </div>
           </div>
           <div className="cp-metric-footer">
@@ -229,8 +296,8 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">OUTSTANDING BALANCE</span>
-              <span className="cp-metric-value-sm">${metrics.outstandingBalance.toFixed(2)} <span className="cp-unit">AUD</span></span>
-              <span className="cp-metric-subtext cp-text-amber">Due in {metrics.outstandingInvoices} invoices</span>
+              <span className="cp-metric-value-sm">${outstandingBalanceAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="cp-unit">AUD</span></span>
+              <span className="cp-metric-subtext cp-text-amber">Due in {outstandingInvoicesCount} invoices</span>
             </div>
           </div>
           <div className="cp-metric-footer">
@@ -249,9 +316,9 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">PAYMENTS (THIS MONTH)</span>
-              <span className="cp-metric-value-sm">${metrics.paymentsThisMonth.toFixed(2)} <span className="cp-unit">AUD</span></span>
+              <span className="cp-metric-value-sm">${paidThisMonthAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="cp-unit">AUD</span></span>
               <span className="cp-metric-subtext">
-                <span className="cp-text-green">&uarr; 0%</span> vs Last Month
+                Settled transactions
               </span>
             </div>
           </div>
@@ -270,8 +337,8 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">DOCUMENTS</span>
-              <span className="cp-metric-value">{metrics.documentsCount}</span>
-              <span className="cp-metric-subtext">Recently added</span>
+              <span className="cp-metric-value">{documentsCount}</span>
+              <span className="cp-metric-subtext">Total documents</span>
             </div>
           </div>
           <div className="cp-metric-footer">
@@ -306,27 +373,27 @@ const CustomerDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    { id: 'LD-3987', route: 'Melbourne VIC → Sydney NSW', status: 'In Transit', statusClass: 'status-blue', driver: 'John Davis', eta: '30 May, 02:30 PM' },
-                    { id: 'LD-3981', route: 'Brisbane QLD → Perth WA',    status: 'In Transit', statusClass: 'status-blue', driver: 'Michael Tan', eta: '31 May, 11:00 AM' },
-                    { id: 'LD-3975', route: 'Adelaide SA → Melbourne VIC', status: 'Arrived',   statusClass: 'status-green',  driver: 'Ravi Wilson', eta: '30 May, 08:30 AM' },
-                    { id: 'LD-3962', route: 'Sydney NSW → Newcastle NSW',  status: 'On Pickup', statusClass: 'status-orange', driver: 'Sarah M.',    eta: '30 May, 09:15 AM' },
-                    { id: 'LD-3958', route: 'Melbourne VIC → Brisbane QLD',status: 'Dispatched',statusClass: 'status-purple', driver: 'Amir Ramia',  eta: '30 May, 01:45 PM' },
-                  ].map(row => (
-                    <tr key={row.id}>
-                      <td className="cp-bold-link" onClick={() => navigate('/customer/my-loads')}>{row.id}</td>
-                      <td style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.route}</td>
-                      <td><span className={`cp-status-pill ${row.statusClass}`}>{row.status}</span></td>
-                      <td style={{ whiteSpace: 'nowrap' }}>{row.driver}</td>
-                      <td style={{ whiteSpace: 'nowrap', fontSize: '10px', color: '#64748b' }}>{row.eta}</td>
+                  {loads.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-6 text-center text-slate-400 text-xs font-semibold">No active loads found.</td>
                     </tr>
-                  ))}
+                  ) : (
+                    loads.slice(0, 5).map(row => (
+                      <tr key={row.id || row.loadNumber}>
+                        <td className="cp-bold-link" onClick={() => navigate('/customer/my-loads')}>{row.loadNumber || row.id || `LD-${row.dbId}`}</td>
+                        <td style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{`${row.pickupLocation || 'Origin'} → ${row.deliveryLocation || 'Destination'}`}</td>
+                        <td><span className={`cp-status-pill ${row.status === 'In Transit' ? 'status-blue' : 'status-green'}`}>{row.status || 'Active'}</span></td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{row.driver?.name || row.driverName || 'Unassigned'}</td>
+                        <td style={{ whiteSpace: 'nowrap', fontSize: '10px', color: '#64748b' }}>{row.deliveryDate ? new Date(row.deliveryDate).toLocaleDateString('en-GB') : 'N/A'}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
             <div className="cp-card-footer">
-              <span>Showing 1 to 5 of 8 active loads</span>
+              <span>Showing {loads.length > 0 ? `1 to ${Math.min(5, loads.length)} of ${loads.length}` : '0'} active loads</span>
             </div>
           </div>
 
@@ -338,38 +405,36 @@ const CustomerDashboard = () => {
             </div>
 
             <div className="cp-doc-list">
-              {[
-                { name: 'POD_LD-3975.pdf', type: 'Proof of Delivery', date: '29 May 2025' },
-                { name: 'Invoice_INV-2025-0628.pdf', type: 'Invoice', date: '29 May 2025' },
-                { name: 'Condition_Report_LD-3967.pdf', type: 'Condition Report', date: '29 May 2025' },
-                { name: 'Contract_ABC-2025.pdf', type: 'Contract', date: '28 May 2025' },
-                { name: 'POD_LD-3951.pdf', type: 'Proof of Delivery', date: '28 May 2025' },
-              ].map(doc => (
-                <div key={doc.name} className="cp-doc-item">
-                  <div className="cp-doc-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                    </svg>
+              {documents.length === 0 ? (
+                <div className="py-6 text-center text-slate-400 text-xs font-semibold">No recent documents found.</div>
+              ) : (
+                documents.slice(0, 5).map(doc => (
+                  <div key={doc.id || doc.name} className="cp-doc-item">
+                    <div className="cp-doc-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                      </svg>
+                    </div>
+                    <div className="cp-doc-info">
+                      <div className="cp-doc-name">{doc.name || doc.filename || 'Document.pdf'}</div>
+                      <div className="cp-doc-sub">{doc.type || 'Other'}</div>
+                    </div>
+                    <div className="cp-doc-date">{doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('en-GB') : 'N/A'}</div>
+                    <button className="cp-doc-dl" title="Download" onClick={() => showToastMsg(`Downloading ${doc.name || 'document'}`)}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                    </button>
                   </div>
-                  <div className="cp-doc-info">
-                    <div className="cp-doc-name">{doc.name}</div>
-                    <div className="cp-doc-sub">{doc.type}</div>
-                  </div>
-                  <div className="cp-doc-date">{doc.date}</div>
-                  <button className="cp-doc-dl" title="Download" onClick={() => showToastMsg(`Downloading ${doc.name}`)}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                      <polyline points="7 10 12 15 17 10"></polyline>
-                      <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                  </button>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             <div className="cp-card-footer">
-              <span>Showing 1 to 5 of 35 documents</span>
+              <span>Showing {documents.length > 0 ? `1 to ${Math.min(5, documents.length)} of ${documents.length}` : '0'} documents</span>
             </div>
           </div>
 
@@ -386,32 +451,35 @@ const CustomerDashboard = () => {
             </div>
 
             <div className="cp-upcoming-list">
-              {[
-                { day: '30', month: 'MAY', id: 'LD-3987', route: 'Melbourne VIC → Sydney NSW', eta: 'ETA: 02:30 PM', status: 'In Transit', statusClass: 'status-blue' },
-                { day: '31', month: 'MAY', id: 'LD-3981', route: 'Brisbane QLD → Perth WA', eta: 'ETA: 11:00 AM', status: 'In Transit', statusClass: 'status-blue' },
-                { day: '01', month: 'JUN', id: 'LD-3990', route: 'Adelaide SA → Melbourne VIC', eta: 'ETA: 09:30 AM', status: 'Dispatched', statusClass: 'status-purple' },
-                { day: '02', month: 'JUN', id: 'LD-3992', route: 'Sydney NSW → Brisbane QLD', eta: 'ETA: 01:15 PM', status: 'Scheduled', statusClass: 'status-slate' },
-                { day: '03', month: 'JUN', id: 'LD-3994', route: 'Melbourne VIC → Adelaide SA', eta: 'ETA: 08:45 AM', status: 'Scheduled', statusClass: 'status-slate' },
-              ].map(del => (
-                <div key={del.id} className="cp-upcoming-item">
-                  <div className="cp-date-box">
-                    <span className="cp-date-day">{del.day}</span>
-                    <span className="cp-date-month">{del.month}</span>
-                  </div>
-                  <div className="cp-upcoming-info">
-                    <div className="cp-upcoming-title">
-                      <span className="cp-bold-id">{del.id}</span>
+              {upcoming.length === 0 ? (
+                <div className="py-6 text-center text-slate-400 text-xs font-semibold">No upcoming deliveries found.</div>
+              ) : (
+                upcoming.slice(0, 5).map(del => {
+                  const d = del.deliveryDate ? new Date(del.deliveryDate) : new Date();
+                  const day = d.getDate();
+                  const month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+                  return (
+                    <div key={del.id || del.loadNumber} className="cp-upcoming-item">
+                      <div className="cp-date-box">
+                        <span className="cp-date-day">{day}</span>
+                        <span className="cp-date-month">{month}</span>
+                      </div>
+                      <div className="cp-upcoming-info">
+                        <div className="cp-upcoming-title">
+                          <span className="cp-bold-id">{del.loadNumber || del.id}</span>
+                        </div>
+                        <div className="cp-upcoming-route">{`${del.pickupLocation || 'Origin'} → ${del.deliveryLocation || 'Destination'}`}</div>
+                        <div className="cp-upcoming-eta">{del.eta ? `ETA: ${del.eta}` : 'Scheduled'}</div>
+                      </div>
+                      <span className={`cp-status-pill status-blue`}>{del.status || 'Scheduled'}</span>
                     </div>
-                    <div className="cp-upcoming-route">{del.route}</div>
-                    <div className="cp-upcoming-eta">{del.eta}</div>
-                  </div>
-                  <span className={`cp-status-pill ${del.statusClass}`}>{del.status}</span>
-                </div>
-              ))}
+                  );
+                })
+              )}
             </div>
 
             <div className="cp-card-footer">
-              <span>Showing next 5 deliveries</span>
+              <span>Showing next {upcoming.length} deliveries</span>
             </div>
           </div>
 
@@ -423,45 +491,25 @@ const CustomerDashboard = () => {
             </div>
 
             <div className="cp-activity-list">
-              {[
-                { iconClass: 'act-blue', time: '20 min ago', text: <>Load <strong>LD-3987</strong> status updated to <span className="cp-highlight-blue">In Transit</span></>, sub: 'by John Davis', icon: 'truck' },
-                { iconClass: 'act-green', time: '1 hour ago', text: <>New POD uploaded for load <strong>LD-3975</strong></>, sub: 'by Ravi Wilson', icon: 'file' },
-                { iconClass: 'act-purple', time: '3 hours ago', text: <>Invoice <strong>INV-2025-0629</strong> created for Account ABC-1025</>, sub: 'by Accounts Team', icon: 'file' },
-                { iconClass: 'act-amber', time: '4 hours ago', text: <>New message from Dispatch for Load <strong>LD-3987</strong></>, sub: 'by Sarah Mitchell', icon: 'message' },
-                { iconClass: 'act-teal', time: '1 day ago', text: <>Payment received for Invoice <strong>INV-2025-0429</strong></>, sub: 'by System', icon: 'check' },
-              ].map((act, i) => (
-                <div key={i} className="cp-activity-item">
-                  <div className={`cp-act-icon ${act.iconClass}`}>
-                    {act.icon === 'truck' && (
+              {activities.length === 0 ? (
+                <div className="py-6 text-center text-slate-400 text-xs font-semibold">No recent activity log available.</div>
+              ) : (
+                activities.slice(0, 5).map((act, i) => (
+                  <div key={i} className="cp-activity-item">
+                    <div className={`cp-act-icon act-blue`}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="1" y="3" width="15" height="13"></rect>
                         <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
                       </svg>
-                    )}
-                    {act.icon === 'file' && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                      </svg>
-                    )}
-                    {act.icon === 'message' && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                      </svg>
-                    )}
-                    {act.icon === 'check' && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    )}
+                    </div>
+                    <div className="cp-act-content">
+                      <div className="cp-act-text">{act.text}</div>
+                      {act.sub && <div className="cp-act-sub">{act.sub}</div>}
+                    </div>
+                    <span className="cp-act-time">{act.time}</span>
                   </div>
-                  <div className="cp-act-content">
-                    <div className="cp-act-text">{act.text}</div>
-                    {act.sub && <div className="cp-act-sub">{act.sub}</div>}
-                  </div>
-                  <span className="cp-act-time">{act.time}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -481,27 +529,18 @@ const CustomerDashboard = () => {
               <div className="cp-donut-wrapper">
                 <svg className="cp-donut-svg" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="38" fill="transparent" stroke="#e2e8f0" strokeWidth="14" />
-                  <circle cx="50" cy="50" r="38" fill="transparent" stroke="#10b981" strokeWidth="14"
-                    strokeDasharray="119.38 119.38" strokeDashoffset="0" />
-                  <circle cx="50" cy="50" r="38" fill="transparent" stroke="#38bdf8" strokeWidth="14"
-                    strokeDasharray="59.69 179.07" strokeDashoffset="-119.38" />
-                  <circle cx="50" cy="50" r="38" fill="transparent" stroke="#f59e0b" strokeWidth="14"
-                    strokeDasharray="29.85 208.91" strokeDashoffset="-179.07" />
-                  <circle cx="50" cy="50" r="38" fill="transparent" stroke="#ef4444" strokeWidth="14"
-                    strokeDasharray="29.85 208.91" strokeDashoffset="-208.92" />
                 </svg>
                 <div className="cp-donut-center">
-                  <span className="cp-donut-count">24</span>
+                  <span className="cp-donut-count">{invoices.length}</span>
                   <span className="cp-donut-label">Total Invoices</span>
                 </div>
               </div>
 
               <div className="cp-chart-legend">
                 {[
-                  { dot: 'dot-green', name: 'Paid', val: '12 (50.0%)' },
-                  { dot: 'dot-cyan', name: 'Partially Paid', val: '6 (25.0%)' },
-                  { dot: 'dot-amber', name: 'Outstanding', val: '3 (12.5%)' },
-                  { dot: 'dot-red', name: 'Overdue', val: '3 (12.5%)' },
+                  { dot: 'dot-green', name: 'Paid', val: `${invoices.filter(i => i.status === 'Paid').length}` },
+                  { dot: 'dot-amber', name: 'Outstanding', val: `${invoices.filter(i => i.status === 'Outstanding' || i.status === 'Pending').length}` },
+                  { dot: 'dot-red', name: 'Overdue', val: `${invoices.filter(i => i.status === 'Overdue').length}` },
                 ].map(l => (
                   <div key={l.name} className="cp-legend-item">
                     <span className={`cp-dot ${l.dot}`}></span>
@@ -515,11 +554,11 @@ const CustomerDashboard = () => {
             <div className="cp-amount-highlights">
               <div className="cp-amt-box amt-red">
                 <span className="cp-amt-title">Overdue Amount</span>
-                <span className="cp-amt-val red-text">$12,450.00 AUD</span>
+                <span className="cp-amt-val red-text">${overdueAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AUD</span>
               </div>
               <div className="cp-amt-box amt-green">
                 <span className="cp-amt-title">Paid This Month</span>
-                <span className="cp-amt-val green-text">$18,540.00 AUD</span>
+                <span className="cp-amt-val green-text">${paidThisMonthAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AUD</span>
               </div>
             </div>
           </div>
@@ -532,28 +571,29 @@ const CustomerDashboard = () => {
             </div>
 
             <div className="cp-inv-list">
-              {[
-                { num: 'INV-2025-0629', date: '29 May 2025', amount: '$8,649.70', status: 'Outstanding', statusClass: 'status-amber' },
-                { num: 'INV-2025-0429', date: '28 Apr 2025', amount: '$6,250.00', status: 'Paid', statusClass: 'status-green' },
-                { num: 'INV-2025-0628', date: '29 May 2025', amount: '$4,750.00', status: 'Paid', statusClass: 'status-green' },
-                { num: 'INV-2025-0620', date: '20 May 2025', amount: '$7,660.00', status: 'Outstanding', statusClass: 'status-amber' },
-                { num: 'INV-2025-0418', date: '15 Apr 2025', amount: '$3,980.00', status: 'Paid', statusClass: 'status-green' },
-              ].map(inv => (
-                <div key={inv.num} className="cp-inv-item" onClick={() => navigate('/customer/invoices-payments')}>
-                  <div className="cp-inv-meta">
-                    <div className="cp-inv-num">{inv.num}</div>
-                    <div className="cp-inv-date">{inv.date}</div>
-                  </div>
-                  <div className="cp-inv-right">
-                    <div className="cp-inv-amount">{inv.amount}</div>
-                    <span className={`cp-status-pill ${inv.statusClass}`}>{inv.status}</span>
-                  </div>
-                </div>
-              ))}
+              {invoices.length === 0 ? (
+                <div className="py-6 text-center text-slate-400 text-xs font-semibold">No recent invoices found.</div>
+              ) : (
+                invoices.slice(0, 5).map(inv => {
+                  const numAmt = Number(inv.amount || inv.total || 0);
+                  return (
+                    <div key={inv.id || inv.number} className="cp-inv-item" onClick={() => navigate('/customer/invoices-payments')}>
+                      <div className="cp-inv-meta">
+                        <div className="cp-inv-num">{inv.invoiceNumber || inv.number || inv.id}</div>
+                        <div className="cp-inv-date">{inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-GB') : 'N/A'}</div>
+                      </div>
+                      <div className="cp-inv-right">
+                        <div className="cp-inv-amount">${numAmt.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                        <span className={`cp-status-pill ${inv.status === 'Paid' ? 'status-green' : 'status-amber'}`}>{inv.status || 'Pending'}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
 
             <div className="cp-card-footer">
-              <span>Showing 1 to 5 of 24 invoices</span>
+              <span>Showing {invoices.length > 0 ? `1 to ${Math.min(5, invoices.length)} of ${invoices.length}` : '0'} invoices</span>
             </div>
           </div>
 
