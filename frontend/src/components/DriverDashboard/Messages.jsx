@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import { getMessages, markAllMessagesAsRead, sendMessage } from '../../services/driverApi';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
@@ -262,17 +263,17 @@ export default function Messages() {
             <div className="space-y-2.5 font-semibold text-slate-700">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Truck</div>
-                <div className="font-black text-slate-900 text-xs">TRK-101</div>
-                <div className="text-[11px] text-slate-500">MAN TGX 26.580</div>
+                <div className="font-black text-slate-900 text-xs">{vehicleData?.truck || 'Unassigned'}</div>
+                <div className="text-[11px] text-slate-500">{vehicleData?.make || '--'}</div>
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Trailer</div>
-                <div className="font-black text-slate-900 text-xs">TRL-305</div>
+                <div className="font-black text-slate-900 text-xs">{vehicleData?.trailer || 'Unassigned'}</div>
                 <div className="text-[11px] text-slate-500">Car Carrier (4 Level)</div>
               </div>
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-indigo-500 uppercase font-extrabold">Load</div>
-                <div className="font-black text-indigo-900 text-xs">LD-3987</div>
+                <div className="font-black text-indigo-900 text-xs">{activeLoadData?.loadRef || activeLoadData?.id || 'No Active Load'}</div>
                 <div className="text-[11px] text-indigo-700">Car Carrier (4 Level)</div>
               </div>
             </div>
@@ -309,7 +310,7 @@ export default function Messages() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
+              <div className="text-[11px] text-slate-500">Last sync: {syncTime}</div>
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
