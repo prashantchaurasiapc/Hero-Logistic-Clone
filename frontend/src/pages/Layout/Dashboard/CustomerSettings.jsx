@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import {
   Building, Users, Shield, Lock, Clock, Plus, Search, Edit, MoreHorizontal,
   Check, X, Key, ShieldCheck, Laptop, FileText, ChevronRight, Star, ArrowRight,
@@ -18,15 +19,49 @@ export default function CustomerSettings() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
 
-  // Interactive Users Data State
-  const [usersList, setUsersList] = useState([
-    { id: 1, name: 'John Smith', isYou: true, role: 'Customer Admin', roleBg: 'bg-purple-100 text-purple-700 border-purple-200', email: 'john.smith@abctransport.com.au', phone: '0400 123 456', status: 'Active', lastLogin: '29 May 2025 10:15 AM', bg: 'bg-purple-600', avatar: 'JS' },
-    { id: 2, name: 'Mary Williams', isYou: false, role: 'Booking User', roleBg: 'bg-blue-100 text-blue-700 border-blue-200', email: 'mary.williams@abctransport.com.au', phone: '0411 234 567', status: 'Active', lastLogin: '29 May 2025 09:42 AM', bg: 'bg-teal-600', avatar: 'MW' },
-    { id: 3, name: 'Alex Rogers', isYou: false, role: 'Accounts User', roleBg: 'bg-emerald-100 text-emerald-700 border-emerald-200', email: 'alex.rogers@abctransport.com.au', phone: '0412 345 678', status: 'Active', lastLogin: '28 May 2025 04:12 PM', bg: 'bg-amber-600', avatar: 'AR' },
-    { id: 4, name: 'Mark Miller', isYou: false, role: 'Viewer', roleBg: 'bg-slate-100 text-slate-700 border-slate-200', email: 'mark.miller@abctransport.com.au', phone: '0413 456 789', status: 'Active', lastLogin: '28 May 2025 11:30 AM', bg: 'bg-indigo-600', avatar: 'MM' },
-    { id: 5, name: 'Lisa Patel', isYou: false, role: 'Booking User', roleBg: 'bg-blue-100 text-blue-700 border-blue-200', email: 'lisa.patel@abctransport.com.au', phone: '0414 567 890', status: 'Active', lastLogin: '26 May 2025 02:10 PM', bg: 'bg-rose-600', avatar: 'LP' },
-    { id: 6, name: 'Tom Harris', isYou: false, role: 'Viewer', roleBg: 'bg-slate-100 text-slate-700 border-slate-200', email: 'tom.harris@abctransport.com.au', phone: '0415 678 901', status: 'Inactive', lastLogin: '-', bg: 'bg-slate-500', avatar: 'TH' }
-  ]);
+  // Users Data State
+  const [usersList, setUsersList] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/users');
+      if (res.data) {
+        const raw = Array.isArray(res.data.data) ? res.data.data : (Array.isArray(res.data) ? res.data : (res.data.users || []));
+        const formatted = raw.map((u, i) => {
+          const initials = (u.name || u.firstName || 'User').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+          let roleBg = 'bg-blue-100 text-blue-700 border-blue-200';
+          if (u.role === 'Customer Admin' || u.role === 'ADMIN') roleBg = 'bg-purple-100 text-purple-700 border-purple-200';
+          if (u.role === 'Accounts User') roleBg = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+
+          return {
+            id: u.id || i + 1,
+            dbId: u.id,
+            name: u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'User',
+            isYou: i === 0,
+            role: u.role || 'Booking User',
+            roleBg: roleBg,
+            email: u.email || '',
+            phone: u.phone || 'N/A',
+            status: u.status || 'Active',
+            lastLogin: u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'N/A',
+            bg: 'bg-purple-600',
+            avatar: initials || 'US'
+          };
+        });
+        setUsersList(formatted);
+      }
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   // Dropdown & Modal States
   const [openUserDropdownId, setOpenUserDropdownId] = useState(null);
@@ -50,36 +85,30 @@ export default function CustomerSettings() {
     setIsAddUserModalOpen(true);
   };
 
-  const handleSaveAddUser = (e) => {
+  const handleSaveAddUser = async (e) => {
     e.preventDefault();
     if (!userForm.name || !userForm.email) return;
 
-    let roleBg = 'bg-blue-100 text-blue-700 border-blue-200';
-    if (userForm.role === 'Customer Admin') roleBg = 'bg-purple-100 text-purple-700 border-purple-200';
-    if (userForm.role === 'Accounts User') roleBg = 'bg-emerald-100 text-emerald-700 border-emerald-200';
-    if (userForm.role === 'Viewer') roleBg = 'bg-slate-100 text-slate-700 border-slate-200';
-
-    const initials = userForm.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'US';
-    const bgColors = ['bg-blue-600', 'bg-purple-600', 'bg-teal-600', 'bg-amber-600', 'bg-rose-600'];
-    const randomBg = bgColors[Math.floor(Math.random() * bgColors.length)];
-
-    const newUser = {
-      id: Date.now(),
-      name: userForm.name,
-      isYou: false,
-      role: userForm.role,
-      roleBg: roleBg,
-      email: userForm.email,
-      phone: userForm.phone || '0400 000 000',
-      status: userForm.status,
-      lastLogin: 'Just now',
-      bg: randomBg,
-      avatar: initials
-    };
-
-    setUsersList(prev => [newUser, ...prev]);
-    setIsAddUserModalOpen(false);
-    triggerToast(`User ${userForm.name} added successfully!`);
+    try {
+      const payload = {
+        name: userForm.name,
+        email: userForm.email,
+        phone: userForm.phone || '0400 000 000',
+        role: userForm.role === 'Customer Admin' || userForm.role === 'ADMIN' ? 'COMPANY_ADMIN' : 'USER',
+        password: 'TemporaryPassword123!',
+        status: 'ACTIVE'
+      };
+      const res = await api.post('/users', payload);
+      if (res.data) {
+        fetchUsers();
+        triggerToast(`User ${userForm.name} added successfully!`);
+      }
+    } catch (err) {
+      console.error('Failed to create user:', err);
+      triggerToast('Failed to invite user. Please try again.');
+    } finally {
+      setIsAddUserModalOpen(false);
+    }
   };
 
   const handleOpenEditUserModal = (user) => {
@@ -127,10 +156,23 @@ export default function CustomerSettings() {
     }));
   };
 
-  const handleDeleteUser = (userId, userName) => {
+  const handleDeleteUser = async (userId, userName) => {
     if (window.confirm(`Are you sure you want to remove user "${userName}"?`)) {
-      setUsersList(prev => prev.filter(u => u.id !== userId));
-      triggerToast(`User ${userName} removed.`);
+      try {
+        const targetUser = usersList.find(u => u.id === userId);
+        const targetDbId = targetUser?.dbId;
+        if (targetDbId) {
+          await api.delete(`/users/${targetDbId}`);
+          fetchUsers();
+          triggerToast(`User ${userName} removed.`);
+        } else {
+          setUsersList(prev => prev.filter(u => u.id !== userId));
+          triggerToast(`User ${userName} removed.`);
+        }
+      } catch (err) {
+        console.error('Failed to delete user:', err);
+        triggerToast('Failed to delete user. Please try again.');
+      }
     }
   };
 

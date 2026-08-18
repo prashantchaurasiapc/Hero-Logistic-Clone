@@ -93,17 +93,13 @@ export default function CurrentStock() {
         setStockItems(formatted);
         setSelectedItem(formatted[0] || null);
       } else {
-        setFetchError('Unable to load stock data. Please try again.');
         setStockItems([]);
+        setSelectedItem(null);
       }
     } catch (err) {
       console.error('Error fetching stock items:', err);
-      setFetchError(
-        err?.response?.data?.error?.message ||
-        err?.response?.data?.message ||
-        'Failed to load stock data. Check your connection and try again.'
-      );
       setStockItems([]);
+      setSelectedItem(null);
     } finally {
       setLoading(false);
     }

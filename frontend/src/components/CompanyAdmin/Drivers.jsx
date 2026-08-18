@@ -223,6 +223,7 @@ export default function Drivers() {
   const [showAddActivityModal, setShowAddActivityModal] = useState(false);
   const [showMessageDriverModal, setShowMessageDriverModal] = useState(false);
   const [showDeactivateConfirmModal, setShowDeactivateConfirmModal] = useState(false);
+  const [showDriverMoreFilters, setShowDriverMoreFilters] = useState(false);
 
   const handlePrintDriverProfile = () => {
     if (!selectedDriver) return;
@@ -5708,13 +5709,62 @@ export default function Drivers() {
                     <option value="Perth">Perth</option>
                   </select>
                 </div>
-                <div className="flex items-end gap-2 col-span-2 sm:col-span-1">
-                  <button className="flex items-center gap-1.5 bg-white border border-purple-200 text-purple-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-purple-50 transition-colors cursor-pointer">
+                <div className="flex items-end gap-2 col-span-2 sm:col-span-1 relative">
+                  <button 
+                    onClick={() => setShowDriverMoreFilters(!showDriverMoreFilters)}
+                    className="flex items-center gap-1.5 bg-white border border-purple-200 text-purple-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-purple-50 transition-colors cursor-pointer shadow-2xs whitespace-nowrap"
+                  >
                     <Filter size={14} /> More Filters
                   </button>
-                  <button onClick={handleResetFilters} className="bg-slate-50 text-slate-500 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors cursor-pointer">
+                  <button 
+                    onClick={() => {
+                      setSearchQuery('');
+                      setStatusFilter('All');
+                      setLicenceFilter('All');
+                      setComplianceFilter('All');
+                      setBranchFilter('All');
+                    }} 
+                    className="bg-slate-50 text-slate-500 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
                     Reset
                   </button>
+                  {showDriverMoreFilters && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowDriverMoreFilters(false)} />
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-4 space-y-3 animate-in fade-in zoom-in-95 text-left">
+                        <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                          <span className="text-xs font-bold text-slate-900">Advanced Driver Filters</span>
+                          <button 
+                            onClick={() => {
+                              setSearchQuery('');
+                              setStatusFilter('All');
+                              setLicenceFilter('All');
+                              setComplianceFilter('All');
+                              setBranchFilter('All');
+                              setShowDriverMoreFilters(false);
+                            }} 
+                            className="text-[10px] font-bold text-purple-600 hover:underline cursor-pointer"
+                          >
+                            Reset All
+                          </button>
+                        </div>
+                        <div className="space-y-2 text-xs font-semibold text-slate-700">
+                          <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" defaultChecked className="rounded accent-purple-600 cursor-pointer" /> Compliant Licenses Only
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" defaultChecked className="rounded accent-purple-600 cursor-pointer" /> Valid Medical Certificates
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" defaultChecked className="rounded accent-purple-600 cursor-pointer" /> Show Active Assignments
+                          </label>
+                        </div>
+                        <div className="pt-2 border-t border-slate-100 flex justify-end">
+                          <button onClick={() => setShowDriverMoreFilters(false)} className="px-3 py-1 bg-purple-600 text-white rounded-lg text-xs font-bold cursor-pointer">Done</button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

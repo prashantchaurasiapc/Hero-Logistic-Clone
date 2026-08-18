@@ -52,6 +52,115 @@ exports.logout = async (req, res, next) => {
   }
 };
 
+async function resolveUserPermissions(user) {
+  if (!user) return {};
+  try {
+    const prisma = require('../utils/prismaClient');
+    const roleSlug = user.customRole?.slug || user.role || user.customRole?.name;
+    if (!roleSlug) return {};
+
+    // 1. Always load master system role (Super Admin Parent)
+    let masterRole = null;
+    try {
+      masterRole = await prisma.customRole.findFirst({
+        where: {
+          OR: [
+            { slug: roleSlug },
+            { name: roleSlug }
+          ],
+          companyId: null,
+          isSystem: true
+        },
+        include: { permissions: true }
+      });
+    } catch (err) {
+      try {
+        masterRole = await prisma.customRole.findFirst({
+          where: {
+            OR: [
+              { name: roleSlug },
+              { id: user.customRoleId || '' }
+            ],
+            companyId: null
+          },
+          include: { permissions: true }
+        });
+      } catch (e) {
+        masterRole = null;
+      }
+    }
+
+    const masterPerms = {};
+    if (masterRole?.permissions) {
+      masterRole.permissions.forEach(p => {
+        try {
+          masterPerms[p.module] = JSON.parse(p.actionString);
+        } catch (e) {
+          masterPerms[p.module] = p.actionString;
+        }
+      });
+    }
+
+    // If super admin or no company, return master permissions directly
+    if (!user.companyId || user.role === 'SUPER_ADMIN') {
+      return masterPerms;
+    }
+
+    // 2. Load company-level override (Child)
+    let companyRole = null;
+    try {
+      companyRole = await prisma.customRole.findFirst({
+        where: {
+          OR: [
+            { slug: roleSlug },
+            { name: roleSlug }
+          ],
+          companyId: user.companyId
+        },
+        include: { permissions: true }
+      });
+    } catch (e) {
+      companyRole = null;
+    }
+
+    const companyPerms = {};
+    if (companyRole?.permissions) {
+      companyRole.permissions.forEach(p => {
+        try {
+          companyPerms[p.module] = JSON.parse(p.actionString);
+        } catch (e) {
+          companyPerms[p.module] = p.actionString;
+        }
+      });
+    }
+
+    // 3. Merge: Child can never exceed parent permissions
+    const effectivePerms = {};
+    Object.entries(masterPerms).forEach(([mod, mActions]) => {
+      effectivePerms[mod] = {};
+      if (typeof mActions === 'object' && mActions !== null) {
+        Object.entries(mActions).forEach(([action, mVal]) => {
+          if (mVal === false) {
+            // Parent disabled -> strictly false
+            effectivePerms[mod][action] = false;
+          } else {
+            // Parent enabled -> use company setting if exists, otherwise default to master
+            effectivePerms[mod][action] = companyPerms[mod]?.[action] !== undefined
+              ? Boolean(companyPerms[mod][action])
+              : Boolean(mVal);
+          }
+        });
+      }
+    });
+
+    return effectivePerms;
+  } catch (globalErr) {
+    console.warn('resolveUserPermissions notice:', globalErr.message);
+    return {};
+  }
+}
+
+
 exports.me = async (req, res, next) => {
   try {
     const prisma = require('../utils/prismaClient');
@@ -73,12 +182,14 @@ exports.me = async (req, res, next) => {
     });
     if (freshUser) {
       delete freshUser.password;
+      freshUser.permissions = await resolveUserPermissions(freshUser);
     }
     return sendSuccess(res, { user: freshUser || req.user }, HTTP_STATUS.OK);
   } catch (error) {
     next(error);
   }
 };
+
 
 exports.impersonate = async (req, res, next) => {
   try {

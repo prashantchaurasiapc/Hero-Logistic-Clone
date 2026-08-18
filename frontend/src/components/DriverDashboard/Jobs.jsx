@@ -8,105 +8,83 @@ import {
   FiPlus, FiX, FiBookOpen, FiPhone,
   FiSend, FiChevronLeft, FiFilter,
   FiMoreVertical, FiEye, FiEdit2, FiTrash2,
-  FiTrendingUp, FiAlertTriangle,
+  FiTrendingUp,
 } from 'react-icons/fi';
-import { getMyLoads } from '../../services/driverApi';
 
-function extractCityState(addr) {
-  if (!addr) return '';
-  const parts = addr.split(',');
-  if (parts.length >= 2) {
-    return parts.slice(-2).join(',').trim();
-  }
-  return addr;
-}
-
-function formatLoadDate(dateVal) {
-  if (!dateVal) return 'Today';
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return 'Today';
-  const today = new Date();
-  const diffDays = Math.round((new Date(d).setHours(0,0,0,0) - new Date(today).setHours(0,0,0,0)) / 86400000);
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Tomorrow';
-  if (diffDays === -1) return 'Yesterday';
-  return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-function formatLoadTime(dateVal) {
-  if (!dateVal) return '08:00 AM';
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return '08:00 AM';
-  return d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatLoadForJobs(rawLoad) {
-  const displayId = rawLoad.loadRef || rawLoad.draftId || (rawLoad.id ? `LD-${rawLoad.id.substring(0, 4).toUpperCase()}` : 'LD-0000');
-  const loadType = rawLoad.type || 'General Freight';
-  
-  let status = 'UPCOMING';
-  let statusText = 'Upcoming';
-  let timeColor = '#0f172a';
-
-  if (['IN_TRANSIT', 'ACTIVE'].includes(rawLoad.status)) {
-    status = 'IN_PROGRESS';
-    statusText = 'In Progress';
-    timeColor = '#d97706';
-  } else if (['DELIVERED', 'COMPLETED'].includes(rawLoad.status)) {
-    status = 'COMPLETED';
-    statusText = 'Completed';
-    timeColor = '#059669';
-  } else if (rawLoad.status === 'CANCELLED') {
-    status = 'CANCELLED';
-    statusText = 'Cancelled';
-    timeColor = '#e11d48';
-  }
-
-  const pickupStop = rawLoad.stops?.find(s => s.type === 'PICKUP') || rawLoad.stops?.[0];
-  const dropoffStop = rawLoad.stops?.filter(s => s.type === 'DROPOFF').slice(-1)[0] || rawLoad.stops?.[rawLoad.stops?.length - 1];
-
-  const pickupAddress = pickupStop?.address || 'N/A';
-  const pickupName = pickupStop?.contactName || extractCityState(pickupAddress) || 'Pickup Yard';
-  const deliveryAddress = dropoffStop?.address || 'N/A';
-  const deliveryName = dropoffStop?.contactName || extractCityState(deliveryAddress) || 'Delivery Terminal';
-
-  const origin = extractCityState(pickupAddress) || pickupName;
-  const destination = extractCityState(deliveryAddress) || deliveryName;
-
-  const numStops = rawLoad.stops?.length || 2;
-  const stopsLabel = `${Math.max(1, numStops - 1)} Stop${Math.max(1, numStops - 1) === 1 ? '' : 's'}`;
-
-  const dateLabel = formatLoadDate(rawLoad.loadDate || pickupStop?.scheduledDate);
-  let timeLabel = formatLoadTime(pickupStop?.scheduledDate || rawLoad.loadDate);
-  if (status === 'IN_PROGRESS') timeLabel = 'In Transit';
-  if (status === 'COMPLETED') timeLabel = 'Completed';
-  if (status === 'CANCELLED') timeLabel = 'Cancelled';
-
-  return {
-    rawId: rawLoad.id,
-    id: displayId,
-    subTitle: loadType,
-    status,
-    statusText,
-    date: dateLabel,
-    time: timeLabel,
-    timeColor,
-    origin,
-    destination,
-    pickupName,
-    pickupAddress,
-    deliveryName,
-    deliveryAddress,
-    loadType,
-    reference: rawLoad.loadRef || rawLoad.draftId || displayId,
-    stops: stopsLabel,
-    distance: '—',
-  };
-}
-
-
-
-
+const ALL_JOBS = [
+  {
+    id: 'LD-3987', subTitle: 'Car Carrier (4 Level)',
+    status: 'UPCOMING', statusText: 'Upcoming',
+    date: 'Today', time: '06:00 AM', timeColor: '#0f172a',
+    origin: 'Melbourne VIC', destination: 'Sydney NSW',
+    pickupName: 'ABC Car Yard', pickupAddress: '123 Sunshine Rd, Melbourne VIC 3000',
+    deliveryName: 'Auto World Sydney', deliveryAddress: '45 Parramatta Rd, Sydney NSW 2150',
+    loadType: 'Car Carrier', reference: 'PO-65432', stops: '1 Stop', distance: '845 km',
+  },
+  {
+    id: 'LD-3988', subTitle: 'Car Carrier (4 Level)',
+    status: 'UPCOMING', statusText: 'Upcoming',
+    date: 'Tomorrow', time: '07:30 AM', timeColor: '#0f172a',
+    origin: 'Brisbane QLD', destination: 'Perth WA',
+    pickupName: 'Brisbane Port Terminal', pickupAddress: 'Port Dr, Brisbane QLD 4178',
+    deliveryName: 'Perth Freight Hub', deliveryAddress: '12 Freight Ave, Perth WA 6100',
+    loadType: 'Car Carrier', reference: 'PO-65456', stops: '2 Stops', distance: '4,374 km',
+  },
+  {
+    id: 'LD-3986', subTitle: 'Car Carrier (4 Level)',
+    status: 'IN_PROGRESS', statusText: 'In Progress',
+    date: 'Today', time: 'In Transit', timeColor: '#d97706',
+    origin: 'Melbourne VIC', destination: 'Adelaide SA',
+    pickupName: 'Melbourne Vehicle Hub', pickupAddress: '88 Western Hwy, Deer Park VIC 3023',
+    deliveryName: 'Adelaide Vehicle Hub', deliveryAddress: '55 Chief St, Wingfield SA 5013',
+    loadType: 'Car Carrier', reference: 'PO-65421', stops: '1 Stop', distance: '731 km',
+  },
+  {
+    id: 'LD-3985', subTitle: 'Car Carrier (4 Level)',
+    status: 'IN_PROGRESS', statusText: 'In Progress',
+    date: 'Yesterday', time: 'Delivered', timeColor: '#059669',
+    origin: 'Sydney NSW', destination: 'Newcastle NSW',
+    pickupName: 'Sydney Yard', pickupAddress: '10-12 Forsyth St, South Granville NSW 2142',
+    deliveryName: 'Newcastle Yard', deliveryAddress: '61 Munibung Rd, Cardiff NSW 2285',
+    loadType: 'Car Carrier', reference: 'PO-65410', stops: '1 Stop', distance: '170 km',
+  },
+  {
+    id: 'LD-3984', subTitle: 'Car Carrier (4 Level)',
+    status: 'COMPLETED', statusText: 'Completed',
+    date: '27 May 2025', time: 'Completed', timeColor: '#059669',
+    origin: 'Brisbane QLD', destination: 'Gold Coast QLD',
+    pickupName: 'Brisbane Yard', pickupAddress: '12 Trade St, Lytton QLD 4178',
+    deliveryName: 'Gold Coast Yard', deliveryAddress: '24 Bailey Cres, Southport QLD 4215',
+    loadType: 'Car Carrier', reference: 'PO-65398', stops: '1 Stop', distance: '95 km',
+  },
+  {
+    id: 'LD-3983', subTitle: 'Car Carrier (4 Level)',
+    status: 'COMPLETED', statusText: 'Completed',
+    date: '25 May 2025', time: 'Completed', timeColor: '#059669',
+    origin: 'Melbourne VIC', destination: 'Geelong VIC',
+    pickupName: 'Laverton Depot', pickupAddress: '5 Industrial Blvd, Laverton VIC 3028',
+    deliveryName: 'Geelong Auto Hub', deliveryAddress: '18 Port Rd, Geelong VIC 3220',
+    loadType: 'Car Carrier', reference: 'PO-65380', stops: '1 Stop', distance: '75 km',
+  },
+  {
+    id: 'LD-3982', subTitle: 'Car Carrier (4 Level)',
+    status: 'COMPLETED', statusText: 'Completed',
+    date: '23 May 2025', time: 'Completed', timeColor: '#059669',
+    origin: 'Sydney NSW', destination: 'Wollongong NSW',
+    pickupName: 'Sydney South Depot', pickupAddress: '41 Botany Rd, Waterloo NSW 2017',
+    deliveryName: 'Wollongong Freight Park', deliveryAddress: '9 Port Kembla Rd, Wollongong NSW 2500',
+    loadType: 'Car Carrier', reference: 'PO-65361', stops: '1 Stop', distance: '83 km',
+  },
+  {
+    id: 'LD-3981', subTitle: 'Car Carrier (4 Level)',
+    status: 'CANCELLED', statusText: 'Cancelled',
+    date: '22 May 2025', time: 'Cancelled', timeColor: '#e11d48',
+    origin: 'Adelaide SA', destination: 'Darwin NT',
+    pickupName: 'Adelaide South Yard', pickupAddress: '3 Regency Rd, Kilburn SA 5084',
+    deliveryName: 'Darwin Freight Terminal', deliveryAddress: '10 Frances Bay Dr, Darwin NT 0800',
+    loadType: 'Car Carrier', reference: 'PO-65340', stops: '1 Stop', distance: '3,021 km',
+  },
+];
 
 const STATUS_META = {
   UPCOMING:    { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },
@@ -119,9 +97,7 @@ const PAGE_SIZE = 5;
 
 export default function Jobs() {
   const navigate = useNavigate();
-  const [jobs, setJobs]                 = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState(null);
+  const [jobs, setJobs]                 = useState(ALL_JOBS);
   const [activeTab, setActiveTab]       = useState('ALL');
   const [searchQuery, setSearchQuery]   = useState('');
   const [page, setPage]                 = useState(1);
@@ -137,31 +113,6 @@ export default function Jobs() {
     pickupTime: '', deliveryTime: '', customer: '', reference: '',
     loadType: 'Car Carrier (4 Level)', stops: '1 Stop', notes: '',
   });
-
-  useEffect(() => {
-    let isSubscribed = true;
-    setLoading(true);
-    getMyLoads()
-      .then(res => {
-        if (isSubscribed) {
-          const raw = res.data?.data?.loads || [];
-          const formatted = raw.map(formatLoadForJobs);
-          setJobs(formatted);
-          setError(null);
-        }
-      })
-      .catch(err => {
-        if (isSubscribed) {
-          const msg = err.response?.data?.error?.message || 'Could not load assigned jobs. Please try again.';
-          setError(msg);
-        }
-      })
-      .finally(() => {
-        if (isSubscribed) setLoading(false);
-      });
-
-    return () => { isSubscribed = false; };
-  }, []);
 
   useEffect(() => {
     const handler = e => {
@@ -193,7 +144,6 @@ export default function Jobs() {
       || j.deliveryName.toLowerCase().includes(q) || j.pickupName.toLowerCase().includes(q);
     return tabOk && searchOk;
   });
-
 
   const totalPages = Math.ceil(filtered.length / perPage);
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
@@ -368,13 +318,6 @@ export default function Jobs() {
           </div>
         </div>
 
-        {/* Error Banner */}
-        {error && (
-          <div style={{ marginBottom: 16, padding: '12px 16px', background: '#fef2f2', border: '1px solid #fecdd3', borderRadius: 12, color: '#9f1239', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FiAlertTriangle size={16} /> {error}
-          </div>
-        )}
-
         {/* ── TABLE ── */}
         <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: 24 }}>
           <div style={{ overflowX: 'auto' }}>
@@ -389,22 +332,13 @@ export default function Jobs() {
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td colSpan={10} style={{ padding: '16px', textAlign: 'center' }}>
-                        <div style={{ height: 16, background: '#f1f5f9', borderRadius: 8, width: '100%' }}>Loading...</div>
-                      </td>
-                    </tr>
-                  ))
-                ) : paged.length === 0 ? (
+                {paged.length === 0 ? (
                   <tr>
                     <td colSpan={10} style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8', fontWeight: 700, fontSize: 14 }}>
-                      {jobs.length === 0 ? 'No assigned jobs found in your schedule.' : 'No jobs match your current filter.'}
+                      No jobs match your current filter.
                     </td>
                   </tr>
                 ) : paged.map((job, idx) => {
-
                   const meta = STATUS_META[job.status];
                   return (
                     <tr
@@ -414,11 +348,10 @@ export default function Jobs() {
                       {/* Load ID */}
                       <td style={{ padding: '12px 16px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                         <span
-                          onClick={() => navigate(`/driver/job/${job.rawId}`)}
+                          onClick={() => navigate('/driver/pickup-loading')}
                           style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: 13, color: '#1d4ed8', textDecoration: 'underline', cursor: 'pointer' }}
                         >{job.id}</span>
                       </td>
-
                       {/* Status */}
                       <td style={{ padding: '12px 16px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                         <span style={{ fontSize: 11, fontWeight: 900, padding: '4px 12px', borderRadius: 20, background: meta.bg, color: meta.text, border: `1px solid ${meta.border}`, whiteSpace: 'nowrap', display: 'inline-block' }}>
@@ -470,13 +403,12 @@ export default function Jobs() {
                         </button>
                         {openDropdown === job.id && (
                           <div style={{ position: 'absolute', right: 8, top: '110%', zIndex: 999, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 160, overflow: 'hidden' }}>
-                            <button onClick={e => { e.stopPropagation(); setOpenDropdown(null); navigate(`/driver/job/${job.rawId}`); }}
+                            <button onClick={e => { e.stopPropagation(); setOpenDropdown(null); navigate('/driver/pickup-loading'); }}
                               style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', background: 'none', border: 'none', fontSize: 13, fontWeight: 700, color: '#0f172a', cursor: 'pointer', textAlign: 'left' }}
                               onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                               onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-                              <FiEye size={14} color="#3b82f6" /> View Load Details
+                              <FiEye size={14} color="#3b82f6" /> View / Pickup Load
                             </button>
-
                             <button onClick={e => { e.stopPropagation(); setOpenDropdown(null); setEditJob({ ...job }); }}
                               style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', background: 'none', border: 'none', borderTop: '1px solid #f1f5f9', fontSize: 13, fontWeight: 700, color: '#0f172a', cursor: 'pointer', textAlign: 'left' }}
                               onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}

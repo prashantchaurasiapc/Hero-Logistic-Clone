@@ -50,9 +50,9 @@ exports.getById = async (req, res, next) => {
   }
 };
 
-// Create new Shift
 exports.create = async (req, res, next) => {
   try {
+    const payload = { ...req.body };
     if (req.tenantId) payload.companyId = req.tenantId;
     if (req.user && req.user.role === 'DRIVER') {
       payload.userId = req.user.id;

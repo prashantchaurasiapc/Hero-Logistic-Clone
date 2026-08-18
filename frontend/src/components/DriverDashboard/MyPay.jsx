@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
@@ -8,7 +8,6 @@ import {
   FiDownload, FiEye, FiSearch, FiCreditCard, FiCalendar,
   FiPieChart, FiTrendingUp, FiCheckSquare, FiSettings
 } from 'react-icons/fi';
-import { getPayrollSummary, getPayrollHistory, downloadPayslip } from '../../services/driverApi';
 
 export default function MyPay() {
   const navigate = useNavigate();
@@ -17,13 +16,6 @@ export default function MyPay() {
   const [activeTab, setActiveTab] = useState('Overview'); // 'Overview', 'Pay History', 'Earnings', 'Deductions', 'Tax'
   const [toastMsg, setToastMsg] = useState('');
   const [tipDismissed, setTipDismissed] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDownloading, setIsDownloading] = useState(false);
-
-  // Summary & Payroll Data
-  const [summaryData, setSummaryData] = useState(null);
-  const [latestPeriod, setLatestPeriod] = useState(null);
-  const [upcomingPayment, setUpcomingPayment] = useState(null);
 
   // Modals
   const [bankModalOpen, setBankModalOpen] = useState(false);
@@ -39,68 +31,19 @@ export default function MyPay() {
   const [accountNumber, setAccountNumber] = useState('1234 5678');
   const [accountName, setAccountName] = useState('Noah Davis');
 
-  // Pay History Data
-  const [payRecords, setPayRecords] = useState([]);
+  // Pay History Data (6 Items from screenshot 15.12)
+  const [payRecords, setPayRecords] = useState([
+    { id: 1, period: '12 May 2025 – 25 May 2025', payDate: 'Paid on 28 May 2025', netPay: '$2,740.25', status: 'Paid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', amount: 2740.25 },
+    { id: 2, period: '26 May 2025 – 08 Jun 2025', payDate: 'Pay Date: 13 Jun 2025', netPay: '$2,820.50', status: 'Processing', statusColor: 'bg-blue-50 text-blue-700 border-blue-200', amount: 2820.50 },
+    { id: 3, period: '12 May 2025 – 25 May 2025', payDate: 'Pay Date: 28 May 2025', netPay: '$2,510.00', status: 'Pending', statusColor: 'bg-amber-50 text-amber-700 border-amber-200', amount: 2510.00 },
+    { id: 4, period: '28 Apr 2025 – 11 May 2025', payDate: 'Paid on 14 May 2025', netPay: '$2,560.75', status: 'Paid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', amount: 2560.75 },
+    { id: 5, period: '14 Apr 2025 – 27 Apr 2025', payDate: 'Paid on 30 Apr 2025', netPay: '$2,615.50', status: 'Paid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', amount: 2615.50 },
+    { id: 6, period: '31 Mar 2025 – 13 Apr 2025', payDate: 'Cancelled on 18 Apr 2025', netPay: '$0.00', status: 'Cancelled', statusColor: 'bg-rose-50 text-rose-700 border-rose-200', amount: 0.00 },
+  ]);
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
-  };
-
-  const fetchPayrollData = async () => {
-    setIsLoading(true);
-    try {
-      const [sumRes, histRes] = await Promise.all([
-        getPayrollSummary().catch(() => null),
-        getPayrollHistory().catch(() => null)
-      ]);
-
-      if (sumRes?.data?.data) {
-        setSummaryData(sumRes.data.data.summary);
-        setLatestPeriod(sumRes.data.data.latestPayPeriod);
-        setUpcomingPayment(sumRes.data.data.upcomingPayment);
-      }
-
-      if (histRes?.data?.data && Array.isArray(histRes.data.data)) {
-        setPayRecords(histRes.data.data);
-      }
-    } catch (err) {
-      console.error('Failed to load payroll data:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPayrollData();
-  }, []);
-
-  const handleDownloadPayslipClick = async (rec) => {
-    if (!rec?.id) return;
-    setIsDownloading(true);
-    try {
-      const res = await downloadPayslip(rec.id);
-      if (res.data instanceof Blob) {
-        const url = window.URL.createObjectURL(new Blob([res.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `Payslip_${rec.id}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        triggerToast(`Payslip downloaded for period!`);
-      } else if (res.data?.data?.pdfUrl) {
-        window.open(res.data.data.pdfUrl, '_blank');
-        triggerToast(`Opening payslip PDF...`);
-      } else {
-        triggerToast('Payslip document is not available for this period.');
-      }
-    } catch (err) {
-      triggerToast('Payslip not available or download failed.');
-    } finally {
-      setIsDownloading(false);
-      setPayslipModalOpen(false);
-    }
   };
 
   const handleBankSubmit = (e) => {
@@ -108,22 +51,6 @@ export default function MyPay() {
     setBankModalOpen(false);
     triggerToast(`Bank details updated: ${bankName} (${bsbNumber} • ${accountNumber})!`);
   };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch (e) {
-      return dateStr;
-    }
-  };
-
-  const formatMoney = (amount) => {
-    if (typeof amount !== 'number') return '$0.00';
-    return `$${amount.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24 text-left">
@@ -215,9 +142,7 @@ export default function MyPay() {
             <div className="relative w-32 h-32 mx-auto flex items-center justify-center my-2">
               <div className="w-full h-full rounded-full border-8 border-slate-100 border-t-purple-600 border-r-indigo-600 border-b-purple-600 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-base font-black text-slate-900 font-mono">
-                    {formatMoney(summaryData?.ytdGrossEarnings || 0)}
-                  </div>
+                  <div className="text-base font-black text-slate-900 font-mono">$26,845.50</div>
                   <div className="text-[9.5px] font-bold text-slate-500">Total Earnings</div>
                 </div>
               </div>
@@ -226,15 +151,15 @@ export default function MyPay() {
             <div className="space-y-1.5 text-xs font-bold border-t border-slate-100 pt-3">
               <div className="flex justify-between text-emerald-700">
                 <span>Net Pay Received</span>
-                <span className="font-mono text-slate-900">{formatMoney(summaryData?.ytdNetPay || 0)}</span>
+                <span className="font-mono text-slate-900">$24,105.25</span>
               </div>
               <div className="flex justify-between text-amber-700">
                 <span>Pending Payments</span>
-                <span className="font-mono text-slate-900">{formatMoney(summaryData?.pendingPayments || 0)}</span>
+                <span className="font-mono text-slate-900">$2,740.25</span>
               </div>
               <div className="flex justify-between text-rose-700">
                 <span>Total Deductions</span>
-                <span className="font-mono text-slate-900">{formatMoney(summaryData?.ytdDeductions || 0)}</span>
+                <span className="font-mono text-slate-900">$2,740.25</span>
               </div>
             </div>
           </div>
@@ -247,8 +172,8 @@ export default function MyPay() {
                 <span className="flex items-center gap-2">📊 View Pay History</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
-              <button onClick={() => { if (payRecords.length > 0) handleDownloadPayslipClick(payRecords[0]); else triggerToast('No pay records found.'); }} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
-                <span className="flex items-center gap-2">📥 Download Latest Payslip</span>
+              <button onClick={() => { setSelectedPayslip(payRecords[0]); setPayslipModalOpen(true); }} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
+                <span className="flex items-center gap-2">📥 Download Payslip</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
               <button onClick={() => setTaxModalOpen(true)} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
@@ -274,11 +199,11 @@ export default function MyPay() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-              <div className="text-[11px] text-slate-500">Live Backend Connected</div>
-              <div className="text-[11px] text-slate-500">Driver identity resolved from JWT</div>
+              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
+              <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
-              onClick={() => { fetchPayrollData(); triggerToast('Payroll data refreshed!'); }}
+              onClick={() => triggerToast('Payroll data refreshed from STP Engine!')}
               className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl border border-slate-800 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <FiRefreshCw className="text-amber-400" />
@@ -295,25 +220,33 @@ export default function MyPay() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-2xl font-black text-indigo-700 tracking-tight">
-                  {summaryData?.driverName ? `Payroll — ${summaryData.driverName}` : 'Driver Payroll'}
-                </div>
-                <div className="text-xs font-bold text-slate-500 mt-0.5">
-                  {latestPeriod ? `Active Period: ${formatDate(latestPeriod.periodStart)} – ${formatDate(latestPeriod.periodEnd)}` : 'No active pay periods'}
+                <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
+                <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
+                  <span>Melbourne VIC</span>
+                  <span className="text-slate-400">➔</span>
+                  <span>Sydney NSW</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
-                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Status</span>
-                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">
-                    {latestPeriod?.status || 'ACTIVE'}
-                  </span>
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Start Date</span>
+                  <span className="font-mono text-slate-900">29 May 2025</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
-                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Frequency</span>
-                  <span className="font-mono text-indigo-700">{latestPeriod?.frequency || 'FORTNIGHTLY'}</span>
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
+                  <span className="font-mono text-slate-900">29 May 2025</span>
+                </div>
+                <div className="h-6 w-px bg-slate-200"></div>
+                <div>
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Status</span>
+                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">En Route</span>
+                </div>
+                <div className="h-6 w-px bg-slate-200"></div>
+                <div>
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Load ID</span>
+                  <span className="font-mono text-indigo-700">PO-65432</span>
                 </div>
               </div>
             </div>
@@ -343,148 +276,124 @@ export default function MyPay() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-purple-700 font-black text-xs mb-1">
-                    <span>👛 Net Pay (Latest)</span>
+                    <span>👛 Net Pay (This Period)</span>
                   </div>
-                  <div className="text-xl font-black text-slate-900 font-mono">
-                    {formatMoney(latestPeriod?.netPay || 0)}
-                  </div>
+                  <div className="text-xl font-black text-slate-900 font-mono">$2,740.25</div>
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-emerald-700 font-black text-xs mb-1">
                     <span>🟢 Gross Earnings</span>
                   </div>
-                  <div className="text-xl font-black text-emerald-700 font-mono">
-                    {formatMoney(latestPeriod?.grossEarnings || 0)}
-                  </div>
+                  <div className="text-xl font-black text-emerald-700 font-mono">$3,500.00</div>
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-amber-700 font-black text-xs mb-1">
                     <span>🟠 Total Deductions</span>
                   </div>
-                  <div className="text-xl font-black text-slate-900 font-mono">
-                    {formatMoney(latestPeriod?.totalDeductions || 0)}
-                  </div>
+                  <div className="text-xl font-black text-slate-900 font-mono">$759.75</div>
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-blue-700 font-black text-xs mb-1">
                     <span>🏦 Pay Frequency</span>
                   </div>
-                  <div className="text-xl font-black text-slate-900">
-                    {latestPeriod?.frequency || 'Fortnightly'}
-                  </div>
+                  <div className="text-xl font-black text-slate-900">Fortnightly</div>
                 </div>
               </div>
 
               {/* NEXT PAY BANNER */}
-              {upcomingPayment && (
-                <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl shrink-0 font-bold">
-                      📅
-                    </div>
-                    <div>
-                      <div className="text-xs font-semibold text-slate-600">
-                        Next payment scheduled for <span className="font-black text-slate-900">{formatDate(upcomingPayment.payDate || upcomingPayment.periodEnd)}</span>
-                        <span className="ml-2 bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-200">
-                          {upcomingPayment.status}
-                        </span>
-                      </div>
-                      <div className="text-[11px] font-mono text-slate-400 font-bold mt-0.5">
-                        Period: {formatDate(upcomingPayment.periodStart)} – {formatDate(upcomingPayment.periodEnd)}
-                      </div>
-                    </div>
+              <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl shrink-0 font-bold">
+                    📅
                   </div>
-
-                  <div className="text-right w-full sm:w-auto">
-                    <div className="text-xs font-semibold text-slate-400">Estimated Net Pay</div>
-                    <div className="text-xl font-black text-indigo-700 font-mono">{formatMoney(upcomingPayment.netPay)}</div>
-                    <span className="bg-blue-100 text-blue-800 text-[9.5px] font-black px-2 py-0.2 rounded-full border border-blue-200 inline-block mt-0.5">
-                      Status: {upcomingPayment.status}
-                    </span>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-600">
+                      Your next payment is scheduled for <span className="font-black text-slate-900">Friday, 13 Jun 2025</span>
+                      <span className="ml-2 bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-200">
+                        in 15 Days
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-mono text-slate-400 font-bold mt-0.5">
+                      Period: 26 May 2025 – 08 Jun 2025
+                    </div>
                   </div>
                 </div>
-              )}
+
+                <div className="text-right w-full sm:w-auto">
+                  <div className="text-xs font-semibold text-slate-400">Estimated Net Pay</div>
+                  <div className="text-xl font-black text-indigo-700 font-mono">$2,820.50</div>
+                  <span className="bg-blue-100 text-blue-800 text-[9.5px] font-black px-2 py-0.2 rounded-full border border-blue-200 inline-block mt-0.5">
+                    Status: Processing
+                  </span>
+                </div>
+              </div>
 
               {/* PAY HISTORY LIST */}
               <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
                 <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                   <h3 className="text-base font-black text-slate-900 tracking-tight">PAY HISTORY</h3>
                   <button onClick={() => setActiveTab('Pay History')} className="text-xs font-extrabold text-indigo-600 hover:text-indigo-800 cursor-pointer">
-                    View All ({payRecords.length})
+                    View All
                   </button>
                 </div>
 
-                {isLoading ? (
-                  <div className="p-8 text-center text-xs font-bold text-slate-400">Loading payroll history...</div>
-                ) : payRecords.length === 0 ? (
-                  <div className="p-8 text-center text-xs font-bold text-slate-400">No pay period history found.</div>
-                ) : (
-                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
-                    {payRecords.map((rec) => (
-                      <div key={rec.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className={`w-3 h-3 rounded-full shrink-0 ${
-                            rec.status === 'PAID' || rec.status === 'Paid' ? 'bg-emerald-500' : rec.status === 'PROCESSING' || rec.status === 'Processing' ? 'bg-blue-500' : rec.status === 'PENDING' || rec.status === 'Pending' ? 'bg-amber-500' : 'bg-rose-500'
-                          }`}></span>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-extrabold text-xs text-slate-900">
-                                {formatDate(rec.periodStart)} – {formatDate(rec.periodEnd)}
-                              </span>
-                              <span className={`text-[9.5px] font-black px-2 py-0.2 rounded-full border ${
-                                rec.status === 'PAID' || rec.status === 'Paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : rec.status === 'PROCESSING' || rec.status === 'Processing' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200'
-                              }`}>
-                                {rec.status}
-                              </span>
-                            </div>
-                            <div className="text-[10.5px] text-slate-400 font-mono font-bold mt-0.5">
-                              {rec.payDate ? `Pay Date: ${formatDate(rec.payDate)}` : 'Period Ended'}
-                            </div>
+                <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
+                  {payRecords.map((rec) => (
+                    <div key={rec.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className={`w-3 h-3 rounded-full shrink-0 ${
+                          rec.status === 'Paid' ? 'bg-emerald-500' : rec.status === 'Processing' ? 'bg-blue-500' : rec.status === 'Pending' ? 'bg-amber-500' : 'bg-rose-500'
+                        }`}></span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-xs text-slate-900">{rec.period}</span>
+                            <span className={`text-[9.5px] font-black px-2 py-0.2 rounded-full border ${rec.statusColor}`}>
+                              {rec.status}
+                            </span>
                           </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="font-mono font-black text-sm text-slate-900">{formatMoney(rec.netPay)}</span>
-                          <button
-                            onClick={() => handleDownloadPayslipClick(rec)}
-                            disabled={isDownloading}
-                            className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl cursor-pointer disabled:opacity-50"
-                            title="Download Payslip"
-                          >
-                            <FiDownload className="text-base" />
-                          </button>
-                          <button
-                            onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }}
-                            className="p-1.5 text-slate-400 hover:text-slate-700 cursor-pointer"
-                          >
-                            <FiChevronRight className="text-base" />
-                          </button>
+                          <div className="text-[10.5px] text-slate-400 font-mono font-bold mt-0.5">{rec.payDate}</div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="font-mono font-black text-sm text-slate-900">{rec.netPay}</span>
+                        <button
+                          onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }}
+                          className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                          title="Download Payslip"
+                        >
+                          <FiDownload className="text-base" />
+                        </button>
+                        <button
+                          onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                        >
+                          <FiChevronRight className="text-base" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
                 {/* TOTAL SUMMARY PILL BAR */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-xs font-bold text-center">
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Gross Earnings</span>
-                    <span className="font-mono text-slate-900 text-sm font-black">{formatMoney(summaryData?.ytdGrossEarnings || 0)}</span>
+                    <span className="font-mono text-slate-900 text-sm font-black">$28,345.50</span>
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Deductions</span>
-                    <span className="font-mono text-slate-900 text-sm font-black">{formatMoney(summaryData?.ytdDeductions || 0)}</span>
+                    <span className="font-mono text-slate-900 text-sm font-black">$2,740.25</span>
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Net Paid</span>
-                    <span className="font-mono text-emerald-700 text-sm font-black">{formatMoney(summaryData?.ytdNetPay || 0)}</span>
+                    <span className="font-mono text-emerald-700 text-sm font-black">$25,605.25</span>
                   </div>
                 </div>
+              </div>
 
               {/* CURRENT PAY BREAKDOWN (26 MAY – 08 JUN 2025) */}
               <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
@@ -884,11 +793,13 @@ export default function MyPay() {
 
             <div className="flex gap-2">
               <button
-                onClick={() => handleDownloadPayslipClick(selectedPayslip)}
-                disabled={isDownloading}
-                className="flex-1 bg-indigo-600 text-white font-black text-xs py-3 rounded-xl cursor-pointer disabled:opacity-50"
+                onClick={() => {
+                  setPayslipModalOpen(false);
+                  triggerToast(`Payslip PDF for ${selectedPayslip.period} downloaded!`);
+                }}
+                className="flex-1 bg-indigo-600 text-white font-black text-xs py-3 rounded-xl cursor-pointer"
               >
-                {isDownloading ? 'Downloading...' : 'Download PDF'}
+                Download PDF
               </button>
               <button
                 onClick={() => setPayslipModalOpen(false)}

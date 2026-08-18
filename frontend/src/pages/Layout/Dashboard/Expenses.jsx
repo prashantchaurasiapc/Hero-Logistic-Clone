@@ -14,50 +14,7 @@ import {
 
 export default function Expenses() {
   // --- INITIAL MOCK DATA ---
-  const initialExpenses = [
-    { id: 1, date: '24 May 2026', description: 'Fuel - Truck 12', category: 'Fuel', employee: 'John Smith', reference: 'RPT-8475', attachments: 3, exGst: 180.91, gst: 18.09, total: 199.00, status: 'Pending Approval', paymentStatus: 'Unpaid' },
-    { id: 2, date: '24 May 2026', description: 'Toll - M7', category: 'Tolls', employee: 'Michael Brown', reference: 'TOL-5623', attachments: 0, exGst: 12.73, gst: 1.27, total: 14.00, status: 'Pending Approval', paymentStatus: 'Unpaid' },
-    { id: 3, date: '23 May 2026', description: 'Tyre Repair', category: 'Repairs', employee: 'John Smith', reference: 'INV-7732', attachments: 0, exGst: 250.00, gst: 25.00, total: 275.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 4, date: '23 May 2026', description: 'Office Supplies', category: 'Office', employee: 'Sarah Jones', reference: 'RPT-8471', attachments: 2, exGst: 45.45, gst: 4.55, total: 50.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 5, date: '22 May 2026', description: 'Parking - Client Meeting', category: 'Parking', employee: 'Michael Brown', reference: 'RPT-8469', attachments: 1, exGst: 9.09, gst: 0.91, total: 13.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 6, date: '22 May 2026', description: 'Accommodation - Brisbane', category: 'Accommodation', employee: 'David Lee', reference: 'INV-5541', attachments: 1, exGst: 181.82, gst: 18.18, total: 200.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 7, date: '21 May 2026', description: 'Fuel - Truck 07', category: 'Fuel', employee: 'James Wilson', reference: 'RPT-8462', attachments: 2, exGst: 200.00, gst: 20.00, total: 220.00, status: 'Reimbursed', paymentStatus: 'Paid' },
-    { id: 8, date: '21 May 2026', description: 'Meal - Client Lunch', category: 'Meals', employee: 'Sarah Jones', reference: 'RPT-8461', attachments: 0, exGst: 68.18, gst: 6.82, total: 75.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 9, date: '20 May 2026', description: 'Service - Truck 12', category: 'Maintenance', employee: 'James Wilson', reference: 'INV-5520', attachments: 4, exGst: 800.00, gst: 80.00, total: 880.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 10, date: '20 May 2026', description: 'Phone Allowance', category: 'Other', employee: 'John Smith', reference: 'MAY-2026', attachments: 0, exGst: 45.45, gst: 0.00, total: 45.45, status: 'Reimbursed', paymentStatus: 'Paid' },
-    { id: 11, date: '19 May 2026', description: 'Fuel - Van 04', category: 'Fuel', employee: 'David Lee', reference: 'RPT-8450', attachments: 1, exGst: 136.36, gst: 13.64, total: 150.00, status: 'Pending Approval', paymentStatus: 'Unpaid' },
-    { id: 12, date: '19 May 2026', description: 'Engine Oil Filter', category: 'Repairs', employee: 'Michael Brown', reference: 'INV-7710', attachments: 2, exGst: 318.18, gst: 31.82, total: 350.00, status: 'Overdue', paymentStatus: 'Unpaid' },
-    { id: 13, date: '18 May 2026', description: 'Toll - Gateway Bridge', category: 'Tolls', employee: 'John Smith', reference: 'TOL-5619', attachments: 0, exGst: 18.18, gst: 1.82, total: 20.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 14, date: '18 May 2026', description: 'Depot Cleaning Supplies', category: 'Office', employee: 'Sarah Jones', reference: 'RPT-8442', attachments: 1, exGst: 77.27, gst: 7.73, total: 85.00, status: 'Pending Approval', paymentStatus: 'Unpaid' },
-    { id: 15, date: '17 May 2026', description: 'Fuel - Truck 15', category: 'Fuel', employee: 'James Wilson', reference: 'RPT-8438', attachments: 1, exGst: 227.27, gst: 22.73, total: 250.00, status: 'Reimbursed', paymentStatus: 'Paid' },
-    { id: 16, date: '17 May 2026', description: 'Hotel Stay - Sydney', category: 'Accommodation', employee: 'David Lee', reference: 'INV-5511', attachments: 2, exGst: 409.09, gst: 40.91, total: 450.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 17, date: '16 May 2026', description: 'AdBlue Fluid 20L', category: 'Maintenance', employee: 'Michael Brown', reference: 'RPT-8430', attachments: 1, exGst: 54.55, gst: 5.45, total: 60.00, status: 'Pending Approval', paymentStatus: 'Unpaid' },
-    { id: 18, date: '16 May 2026', description: 'Windscreen Replacement', category: 'Repairs', employee: 'John Smith', reference: 'INV-7698', attachments: 3, exGst: 318.18, gst: 31.82, total: 350.00, status: 'Overdue', paymentStatus: 'Unpaid' },
-    { id: 19, date: '15 May 2026', description: 'Fuel - Truck 03', category: 'Fuel', employee: 'Sarah Jones', reference: 'RPT-8422', attachments: 1, exGst: 190.91, gst: 19.09, total: 210.00, status: 'Reimbursed', paymentStatus: 'Paid' },
-    { id: 20, date: '15 May 2026', description: 'Logistics Seminar Fee', category: 'Other', employee: 'David Lee', reference: 'INV-5490', attachments: 1, exGst: 272.73, gst: 27.27, total: 300.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 21, date: '14 May 2026', description: 'Airport Parking', category: 'Parking', employee: 'Sarah Jones', reference: 'RPT-8419', attachments: 1, exGst: 31.82, gst: 3.18, total: 35.00, status: 'Pending Approval', paymentStatus: 'Unpaid' },
-    { id: 22, date: '14 May 2026', description: 'Fuel - Truck 12', category: 'Fuel', employee: 'John Smith', reference: 'RPT-8415', attachments: 2, exGst: 209.09, gst: 20.91, total: 230.00, status: 'Reimbursed', paymentStatus: 'Paid' },
-    { id: 23, date: '13 May 2026', description: 'Team Coffee & Snacks', category: 'Meals', employee: 'Michael Brown', reference: 'RPT-8408', attachments: 0, exGst: 25.45, gst: 2.55, total: 28.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 24, date: '13 May 2026', description: 'Safety Boots', category: 'Other', employee: 'James Wilson', reference: 'INV-7650', attachments: 1, exGst: 136.36, gst: 13.64, total: 150.00, status: 'Pending Approval', paymentStatus: 'Unpaid' },
-    { id: 25, date: '12 May 2026', description: 'Toll - M4 Express', category: 'Tolls', employee: 'David Lee', reference: 'TOL-5601', attachments: 0, exGst: 14.55, gst: 1.45, total: 16.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 26, date: '12 May 2026', description: 'Brake Pads Replacement', category: 'Repairs', employee: 'John Smith', reference: 'INV-7644', attachments: 2, exGst: 454.55, gst: 45.45, total: 500.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 27, date: '11 May 2026', description: 'Fuel - Truck 09', category: 'Fuel', employee: 'Michael Brown', reference: 'RPT-8395', attachments: 1, exGst: 218.18, gst: 21.82, total: 240.00, status: 'Reimbursed', paymentStatus: 'Paid' },
-    { id: 28, date: '11 May 2026', description: 'Printer Toner Cartridge', category: 'Office', employee: 'Sarah Jones', reference: 'INV-5460', attachments: 1, exGst: 109.09, gst: 10.91, total: 120.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 29, date: '10 May 2026', description: 'Fuel - Truck 02', category: 'Fuel', employee: 'James Wilson', reference: 'RPT-8388', attachments: 2, exGst: 172.73, gst: 17.27, total: 190.00, status: 'Pending Approval', paymentStatus: 'Unpaid' },
-    { id: 30, date: '10 May 2026', description: 'Forklift Hydraulic Oil', category: 'Maintenance', employee: 'David Lee', reference: 'INV-7622', attachments: 1, exGst: 118.18, gst: 11.82, total: 130.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 31, date: '09 May 2026', description: 'Motel - Newcastle Depot', category: 'Accommodation', employee: 'John Smith', reference: 'INV-5433', attachments: 1, exGst: 145.45, gst: 14.55, total: 160.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 32, date: '09 May 2026', description: 'Courier Satchel Fee', category: 'Other', employee: 'Sarah Jones', reference: 'RPT-8370', attachments: 0, exGst: 13.64, gst: 1.36, total: 15.00, status: 'Reimbursed', paymentStatus: 'Paid' },
-    { id: 33, date: '08 May 2026', description: 'Fuel - Truck 14', category: 'Fuel', employee: 'Michael Brown', reference: 'RPT-8362', attachments: 1, exGst: 245.45, gst: 24.55, total: 270.00, status: 'Reimbursed', paymentStatus: 'Paid' },
-    { id: 34, date: '08 May 2026', description: 'Tailgate Repair', category: 'Repairs', employee: 'James Wilson', reference: 'INV-7601', attachments: 3, exGst: 545.45, gst: 54.55, total: 600.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 35, date: '07 May 2026', description: 'Toll - EastLink', category: 'Tolls', employee: 'John Smith', reference: 'TOL-5590', attachments: 0, exGst: 11.82, gst: 1.18, total: 13.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 36, date: '07 May 2026', description: 'Client Dinner', category: 'Meals', employee: 'David Lee', reference: 'RPT-8350', attachments: 2, exGst: 113.64, gst: 11.36, total: 125.00, status: 'Pending Approval', paymentStatus: 'Unpaid' },
-    { id: 37, date: '06 May 2026', description: 'Fuel - Truck 06', category: 'Fuel', employee: 'Sarah Jones', reference: 'RPT-8342', attachments: 1, exGst: 195.45, gst: 19.55, total: 215.00, status: 'Reimbursed', paymentStatus: 'Paid' },
-    { id: 38, date: '06 May 2026', description: 'Wiper Blades & Fluid', category: 'Maintenance', employee: 'Michael Brown', reference: 'RPT-8338', attachments: 1, exGst: 40.91, gst: 4.09, total: 45.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 39, date: '05 May 2026', description: 'Fuel - Van 02', category: 'Fuel', employee: 'James Wilson', reference: 'RPT-8325', attachments: 1, exGst: 127.27, gst: 12.73, total: 140.00, status: 'Reimbursed', paymentStatus: 'Paid' },
-    { id: 40, date: '05 May 2026', description: 'Overnight Parking - Port', category: 'Parking', employee: 'John Smith', reference: 'RPT-8320', attachments: 1, exGst: 22.73, gst: 2.27, total: 25.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-    { id: 41, date: '04 May 2026', description: 'Fuel - Truck 11', category: 'Fuel', employee: 'David Lee', reference: 'RPT-8311', attachments: 2, exGst: 213.64, gst: 21.36, total: 235.00, status: 'Reimbursed', paymentStatus: 'Paid' },
-    { id: 42, date: '04 May 2026', description: 'First Aid Kit Refill', category: 'Office', employee: 'Sarah Jones', reference: 'INV-5401', attachments: 1, exGst: 59.09, gst: 5.91, total: 65.00, status: 'Approved', paymentStatus: 'Reimbursed' },
-  ];
+  const initialExpenses = [];
 
   // --- STATE MANAGEMENT ---
   const [expensesData, setExpensesData] = useState(initialExpenses);
@@ -99,7 +56,7 @@ export default function Expenses() {
   const [selectedEmployee, setSelectedEmployee] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('All');
-  const [dateRange, setDateRange] = useState('18 May 2026 - 24 May 2026');
+  const [dateRange, setDateRange] = useState('All Dates');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedRows, setSelectedRows] = useState([]);
@@ -119,10 +76,15 @@ export default function Expenses() {
   }, []);
 
   // Delete Expense Handler
-  const handleDeleteExpense = (id, description) => {
+  const handleDeleteExpense = async (id, description) => {
     if (window.confirm(`Are you sure you want to delete expense "${description}"?`)) {
-      setExpensesData(prev => prev.filter(e => e.id !== id));
-      setToastMessage(`Expense "${description}" deleted successfully!`);
+      try {
+        await api.delete(`/load-expenses/${id}`);
+        setToastMessage(`Expense "${description}" deleted successfully!`);
+        fetchExpenses();
+      } catch (err) {
+        setToastMessage('✗ Failed to delete expense.');
+      }
       setTimeout(() => setToastMessage(null), 3500);
     }
   };
@@ -130,14 +92,14 @@ export default function Expenses() {
   const [newExpenseForm, setNewExpenseForm] = useState({
     description: '',
     category: 'Fuel',
-    employee: 'John Smith',
+    employee: '',
     reference: '',
     exGst: '',
     gst: '',
     total: '',
     status: 'Pending Approval',
     paymentStatus: 'Unpaid',
-    date: '25 May 2026',
+    date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
     attachments: 1
   });
 
@@ -170,35 +132,20 @@ export default function Expenses() {
 
     try {
       const payload = {
-        loadId: null, // Depending on if we tie it to a load
-        expenseType: newExpenseForm.category,
-        amount: exGstNum,
+        loadId: null,
+        type: newExpenseForm.category,
+        amount: totalNum,
         description: newExpenseForm.description,
-        expenseDate: new Date().toISOString(),
-        status: 'PENDING'
+        date: new Date().toISOString(),
+        status: newExpenseForm.status === 'Approved' ? 'APPROVED' : 'PENDING'
       };
 
-      const res = await api.post('/load-expenses', payload);
+      await api.post('/load-expenses', payload);
       
-      const newExpenseObj = {
-        id: res.data?.data?.id || Date.now(),
-        date: newExpenseForm.date || '25 May 2026',
-        description: newExpenseForm.description,
-        category: newExpenseForm.category,
-        employee: newExpenseForm.employee,
-        reference: newExpenseForm.reference || `RPT-${Math.floor(1000 + Math.random() * 9000)}`,
-        attachments: Number(newExpenseForm.attachments) || 1,
-        exGst: exGstNum,
-        gst: gstNum,
-        total: totalNum,
-        status: newExpenseForm.status,
-        paymentStatus: newExpenseForm.paymentStatus
-      };
-
-      setExpensesData(prev => [newExpenseObj, ...prev]);
       setIsNewExpenseModalOpen(false);
-      setToastMessage(`Expense "${newExpenseObj.description}" created successfully!`);
+      setToastMessage(`Expense "${newExpenseForm.description}" created successfully!`);
       setTimeout(() => setToastMessage(null), 3500);
+      fetchExpenses();
 
       // Reset Form
       setNewExpenseForm({
@@ -211,7 +158,7 @@ export default function Expenses() {
         total: '',
         status: 'Pending Approval',
         paymentStatus: 'Unpaid',
-        date: '25 May 2026',
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         attachments: 1
       });
     } catch (err) {
@@ -331,29 +278,37 @@ export default function Expenses() {
   }, [expensesData]);
 
   const kpis = [
-    { title: 'Total Expenses (This Period)', value: formatCurrency(totalExpensesSum), sub: `${expensesData.length} expenses`, trend: '15.2%', isUp: true, trendLabel: 'vs last period', link: 'View summary →', bg: 'bg-blue-50 text-blue-600', icon: <CreditCard size={20} /> },
+    { title: 'Total Expenses (This Period)', value: formatCurrency(totalExpensesSum), sub: `${expensesData.length} expenses`, trend: '0%', isUp: false, trendLabel: 'vs last period', link: 'View summary →', bg: 'bg-blue-50 text-blue-600', icon: <CreditCard size={20} /> },
     { title: 'Pending Approval', value: formatCurrency(expensesData.filter(e=>e.status==='Pending Approval').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Pending Approval']} expenses`, link: 'View items →', bg: 'bg-emerald-50 text-emerald-600', icon: <Calendar size={20} /> },
     { title: 'Approved (This Period)', value: formatCurrency(expensesData.filter(e=>e.status==='Approved').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Approved']} expenses`, link: 'View items →', bg: 'bg-amber-50 text-amber-600', icon: <Users size={20} /> },
     { title: 'Reimbursed (This Period)', value: formatCurrency(expensesData.filter(e=>e.status==='Reimbursed').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Reimbursed']} expenses`, link: 'View payments →', bg: 'bg-purple-50 text-purple-600', icon: <Wallet size={20} /> },
-    { title: 'Overdue Expenses', value: formatCurrency(expensesData.filter(e=>e.status==='Overdue').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Overdue']} expenses`, overdueCount: 2, link: 'View overdue →', bg: 'bg-rose-50 text-rose-600', icon: <AlertCircle size={20} /> },
-    { title: 'This Period vs Last', value: '15.2%', isUp: true, subLabel: 'vs $16,280.03', link: 'View report →', bg: 'bg-teal-50 text-teal-600', icon: <Activity size={20} /> },
+    { title: 'Overdue Expenses', value: formatCurrency(expensesData.filter(e=>e.status==='Overdue').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Overdue']} expenses`, overdueCount: 0, link: 'View overdue →', bg: 'bg-rose-50 text-rose-600', icon: <AlertCircle size={20} /> },
+    { title: 'This Period vs Last', value: '0%', isUp: false, subLabel: 'vs $0.00', link: 'View report →', bg: 'bg-teal-50 text-teal-600', icon: <Activity size={20} /> },
   ];
 
   // --- CHART DATA ---
+  const fuelSum = expensesData.filter(e => e.category === 'Fuel').reduce((sum, e) => sum + (e.total || 0), 0);
+  const repairsSum = expensesData.filter(e => e.category === 'Repairs' || e.category === 'Maintenance').reduce((sum, e) => sum + (e.total || 0), 0);
+  const tollsSum = expensesData.filter(e => e.category === 'Tolls' || e.category === 'Parking').reduce((sum, e) => sum + (e.total || 0), 0);
+  const accommodationSum = expensesData.filter(e => e.category === 'Accommodation' || e.category === 'Meals').reduce((sum, e) => sum + (e.total || 0), 0);
+  const otherSum = expensesData.filter(e => !['Fuel', 'Repairs', 'Maintenance', 'Tolls', 'Parking', 'Accommodation', 'Meals'].includes(e.category)).reduce((sum, e) => sum + (e.total || 0), 0);
+
+  const totalSumVal = fuelSum + repairsSum + tollsSum + accommodationSum + otherSum;
+
   const barChartData = [
-    { name: 'Fuel', amount: 5280, fill: '#3b82f6' },
-    { name: 'Repairs', amount: 4125, fill: '#a855f7' },
-    { name: 'Tolls', amount: 2310, fill: '#06b6d4' },
-    { name: 'Accommodation', amount: 2200, fill: '#f97316' },
-    { name: 'Other', amount: 4835, fill: '#60a5fa' },
+    { name: 'Fuel', amount: fuelSum, fill: '#3b82f6' },
+    { name: 'Repairs', amount: repairsSum, fill: '#a855f7' },
+    { name: 'Tolls', amount: tollsSum, fill: '#06b6d4' },
+    { name: 'Accommodation', amount: accommodationSum, fill: '#f97316' },
+    { name: 'Other', amount: otherSum, fill: '#60a5fa' },
   ];
 
   const pieChartData = [
-    { name: 'Fuel', value: 5280, percent: '28.2%', color: '#3b82f6' },
-    { name: 'Repairs', value: 4125, percent: '22.0%', color: '#a855f7' },
-    { name: 'Tolls', value: 2310, percent: '12.3%', color: '#06b6d4' },
-    { name: 'Accommodation', value: 2200, percent: '11.7%', color: '#f97316' },
-    { name: 'Other', value: 4835, percent: '25.8%', color: '#60a5fa' },
+    { name: 'Fuel', value: fuelSum, percent: totalSumVal > 0 ? `${((fuelSum / totalSumVal) * 100).toFixed(1)}%` : '0%', color: '#3b82f6' },
+    { name: 'Repairs', value: repairsSum, percent: totalSumVal > 0 ? `${((repairsSum / totalSumVal) * 100).toFixed(1)}%` : '0%', color: '#a855f7' },
+    { name: 'Tolls', value: tollsSum, percent: totalSumVal > 0 ? `${((tollsSum / totalSumVal) * 100).toFixed(1)}%` : '0%', color: '#06b6d4' },
+    { name: 'Accommodation', value: accommodationSum, percent: totalSumVal > 0 ? `${((accommodationSum / totalSumVal) * 100).toFixed(1)}%` : '0%', color: '#f97316' },
+    { name: 'Other', value: otherSum, percent: totalSumVal > 0 ? `${((otherSum / totalSumVal) * 100).toFixed(1)}%` : '0%', color: '#60a5fa' },
   ];
 
   // Category badge helper
@@ -899,18 +854,12 @@ export default function Expenses() {
               <button className="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer">View all</button>
             </div>
             <div className="space-y-3">
-              {[
-                { name: 'Fuel', amount: '$5,280.00', icon: <Fuel size={14} className="text-blue-500"/> },
-                { name: 'Repairs', amount: '$4,125.00', icon: <Wrench size={14} className="text-purple-500"/> },
-                { name: 'Tolls', amount: '$2,310.00', icon: <Compass size={14} className="text-teal-500"/> },
-                { name: 'Accommodation', amount: '$2,200.00', icon: <Building2 size={14} className="text-orange-500"/> },
-                { name: 'Other', amount: '$4,835.00', icon: <CreditCard size={14} className="text-slate-400"/> },
-              ].map((cat, i) => (
+              {pieChartData.map((cat, i) => (
                 <div key={i} className="flex items-center justify-between text-[11px] py-1 border-b border-slate-50 last:border-none">
                   <span className="flex items-center gap-2 font-semibold text-slate-700">
-                    {cat.icon} {cat.name}
+                    <CreditCard size={14} className="text-blue-500"/> {cat.name}
                   </span>
-                  <span className="font-black text-slate-900">{cat.amount}</span>
+                  <span className="font-black text-slate-900">{formatCurrency(cat.value)}</span>
                 </div>
               ))}
             </div>

@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config(); // Trigger nodemon restart for cleaned fallback entries
 const { PrismaClient } = require('@prisma/client');
 const { PrismaMariaDb } = require('@prisma/adapter-mariadb');
 
@@ -17,7 +17,7 @@ try {
     host = (urlObj.hostname === 'localhost' || !urlObj.hostname) ? '127.0.0.1' : urlObj.hostname;
     port = Number(urlObj.port) || 3306;
     user = urlObj.username || 'root';
-    if (urlObj.password) password = urlObj.password;
+    if (urlObj.password) password = decodeURIComponent(urlObj.password);
     if (urlObj.pathname) database = urlObj.pathname.replace(/^\//, '');
   } catch (e) {
     // fallback to defaults
@@ -33,7 +33,7 @@ try {
 
   prisma = new PrismaClient({ adapter });
 } catch (err) {
-  console.error('Failed to initialize PrismaMariaDb adapter:', err);
+  console.error('Failed to initialize PrismaMariaDb adapter, falling back to standard PrismaClient:', err);
   prisma = new PrismaClient();
 }
 

@@ -11,19 +11,18 @@ import {
 } from 'recharts';
 
 export default function Pnl() {
-  const [financialYear, setFinancialYear] = useState('FY 2025/26');
-  const [period, setPeriod] = useState('May 2026');
-  const [comparison, setComparison] = useState('Apr 2026');
+  const [financialYear, setFinancialYear] = useState('Current FY');
+  const [period, setPeriod] = useState('Current Period');
+  const [comparison, setComparison] = useState('Previous Period');
   const [showPercentage, setShowPercentage] = useState(true);
   const [activeTab, setActiveTab] = useState('P&L Statement');
   const [toastMessage, setToastMessage] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // --- MOCK DATA FALLBACK ---
   const [dataMay2026, setDataMay2026] = useState({
-    revenue: { freight: 468200, surcharges: 28650, other: 15580 },
-    cogs: { driver: 228650, fuel: 96820, contractor: 48750, vehicle: 32450, tolls: 8430, other: 5540 },
-    opex: { admin: 11850, marketing: 4280, depreciation: 3960, other: 2750 }
+    revenue: { freight: 0, surcharges: 0, other: 0 },
+    cogs: { driver: 0, fuel: 0, contractor: 0, vehicle: 0, tolls: 0, other: 0 },
+    opex: { admin: 0, marketing: 0, depreciation: 0, other: 0 }
   });
 
   const fetchPnlData = async () => {
@@ -45,14 +44,14 @@ export default function Pnl() {
   }, []);
 
   const dataApr2026 = {
-    revenue: { freight: 410850, surcharges: 25480, other: 13730 },
-    cogs: { driver: 206410, fuel: 87560, contractor: 43120, vehicle: 29840, tolls: 7520, other: 4810 },
-    opex: { admin: 10820, marketing: 3680, depreciation: 3960, other: 2540 }
+    revenue: { freight: 0, surcharges: 0, other: 0 },
+    cogs: { driver: 0, fuel: 0, contractor: 0, vehicle: 0, tolls: 0, other: 0 },
+    opex: { admin: 0, marketing: 0, depreciation: 0, other: 0 }
   };
   const dataMar2026 = {
-    revenue: { freight: 390000, surcharges: 24000, other: 12000 },
-    cogs: { driver: 195000, fuel: 85000, contractor: 40000, vehicle: 28000, tolls: 7000, other: 4500 },
-    opex: { admin: 10500, marketing: 3500, depreciation: 3960, other: 2400 }
+    revenue: { freight: 0, surcharges: 0, other: 0 },
+    cogs: { driver: 0, fuel: 0, contractor: 0, vehicle: 0, tolls: 0, other: 0 },
+    opex: { admin: 0, marketing: 0, depreciation: 0, other: 0 }
   };
 
   const db = {
@@ -154,55 +153,39 @@ export default function Pnl() {
 
   // Trend Chart Data
   const trendChartData = [
-    { name: 'Jul', profit: 32000, revenue: 380000, cogs: 310000 },
-    { name: 'Aug', profit: 34000, revenue: 395000, cogs: 322000 },
-    { name: 'Sep', profit: 38000, revenue: 410000, cogs: 334000 },
-    { name: 'Oct', profit: 42000, revenue: 425000, cogs: 345000 },
-    { name: 'Nov', profit: 46000, revenue: 440000, cogs: 356000 },
-    { name: 'Dec', profit: 44000, revenue: 435000, cogs: 353000 },
-    { name: 'Jan', profit: 48000, revenue: 450000, cogs: 364000 },
-    { name: 'Feb', profit: 51000, revenue: 460000, cogs: 371000 },
-    { name: 'Mar', profit: 54000, revenue: 426000, cogs: 350000 },
-    { name: 'Apr', profit: 60000, revenue: 450060, cogs: 370330 },
-    { name: 'May', profit: 68950, revenue: 512430, cogs: 420640 },
+    { name: 'Mar', profit: sumObj(dataMar2026.revenue) - sumObj(dataMar2026.cogs) - sumObj(dataMar2026.opex), revenue: sumObj(dataMar2026.revenue), cogs: sumObj(dataMar2026.cogs) },
+    { name: 'Apr', profit: sumObj(dataApr2026.revenue) - sumObj(dataApr2026.cogs) - sumObj(dataApr2026.opex), revenue: sumObj(dataApr2026.revenue), cogs: sumObj(dataApr2026.cogs) },
+    { name: 'May', profit: currNetProfit, revenue: currRev, cogs: currCogs }
   ];
 
   // Data for Tab 2: Monthly Trend Table
   const monthlyTrendTableData = [
-    { month: 'Jul 2025', revenue: 380000, cogs: 310000, grossProfit: 70000, opex: 38000, netProfit: 32000, margin: 8.4 },
-    { month: 'Aug 2025', revenue: 395000, cogs: 322000, grossProfit: 73000, opex: 39000, netProfit: 34000, margin: 8.6 },
-    { month: 'Sep 2025', revenue: 410000, cogs: 334000, grossProfit: 76000, opex: 38000, netProfit: 38000, margin: 9.3 },
-    { month: 'Oct 2025', revenue: 425000, cogs: 345000, grossProfit: 80000, opex: 38000, netProfit: 42000, margin: 9.9 },
-    { month: 'Nov 2025', revenue: 440000, cogs: 356000, grossProfit: 84000, opex: 38000, netProfit: 46000, margin: 10.5 },
-    { month: 'Dec 2025', revenue: 435000, cogs: 353000, grossProfit: 82000, opex: 38000, netProfit: 44000, margin: 10.1 },
-    { month: 'Jan 2026', revenue: 450000, cogs: 364000, grossProfit: 86000, opex: 38000, netProfit: 48000, margin: 10.7 },
-    { month: 'Feb 2026', revenue: 460000, cogs: 371000, grossProfit: 89000, opex: 38000, netProfit: 51000, margin: 11.1 },
-    { month: 'Mar 2026', revenue: 426000, cogs: 350000, grossProfit: 76000, opex: 22000, netProfit: 54000, margin: 12.7 },
-    { month: 'Apr 2026', revenue: 450060, cogs: 370330, grossProfit: 79730, opex: 19730, netProfit: 60000, margin: 13.3 },
-    { month: 'May 2026', revenue: 512430, cogs: 420640, grossProfit: 91790, opex: 22840, netProfit: 68950, margin: 13.5 }
+    { month: 'Mar 2026', revenue: sumObj(dataMar2026.revenue), cogs: sumObj(dataMar2026.cogs), grossProfit: sumObj(dataMar2026.revenue) - sumObj(dataMar2026.cogs), opex: sumObj(dataMar2026.opex), netProfit: sumObj(dataMar2026.revenue) - sumObj(dataMar2026.cogs) - sumObj(dataMar2026.opex), margin: sumObj(dataMar2026.revenue) > 0 ? ((sumObj(dataMar2026.revenue) - sumObj(dataMar2026.cogs) - sumObj(dataMar2026.opex)) / sumObj(dataMar2026.revenue)) * 100 : 0 },
+    { month: 'Apr 2026', revenue: sumObj(dataApr2026.revenue), cogs: sumObj(dataApr2026.cogs), grossProfit: sumObj(dataApr2026.revenue) - sumObj(dataApr2026.cogs), opex: sumObj(dataApr2026.opex), netProfit: sumObj(dataApr2026.revenue) - sumObj(dataApr2026.cogs) - sumObj(dataApr2026.opex), margin: sumObj(dataApr2026.revenue) > 0 ? ((sumObj(dataApr2026.revenue) - sumObj(dataApr2026.cogs) - sumObj(dataApr2026.opex)) / sumObj(dataApr2026.revenue)) * 100 : 0 },
+    { month: 'May 2026', revenue: currRev, cogs: currCogs, grossProfit: currGrossProfit, opex: currOpex, netProfit: currNetProfit, margin: currNpMargin }
   ];
 
   // Data for Tab 3: Period Comparison
   const comparisonData = [
-    { metric: 'Total Revenue', may: 512430, apr: 450060, mar: 426000, varDollar: 62370, varPct: 13.9, isGood: true },
-    { metric: 'Freight Income', may: 468200, apr: 410850, mar: 390000, varDollar: 57350, varPct: 13.9, isGood: true },
-    { metric: 'Surcharges & Recovery', may: 28650, apr: 25480, mar: 24000, varDollar: 3170, varPct: 12.4, isGood: true },
-    { metric: 'Cost of Sales (COGS)', may: 420640, apr: 370330, mar: 350000, varDollar: 50310, varPct: 13.6, isGood: false },
-    { metric: 'Driver Wages & Subcontractors', may: 228650, apr: 206410, mar: 195000, varDollar: 22240, varPct: 10.8, isGood: false },
-    { metric: 'Fuel Costs', may: 96820, apr: 87560, mar: 85000, varDollar: 9260, varPct: 10.6, isGood: false },
-    { metric: 'Gross Profit', may: 91790, apr: 79730, mar: 76000, varDollar: 12060, varPct: 15.1, isGood: true },
-    { metric: 'Operating Expenses', may: 22840, apr: 19730, mar: 19730, varDollar: 3110, varPct: 15.8, isGood: false },
-    { metric: 'Net Profit', may: 68950, apr: 60000, mar: 54000, varDollar: 8950, varPct: 14.9, isGood: true },
+    { metric: 'Total Revenue', may: currRev, apr: compRev, mar: sumObj(dataMar2026.revenue), varDollar: currRev - compRev, varPct: calcChange(currRev, compRev), isGood: currRev >= compRev },
+    { metric: 'Freight Income', may: currentData.revenue.freight, apr: compData.revenue.freight, mar: dataMar2026.revenue.freight, varDollar: currentData.revenue.freight - compData.revenue.freight, varPct: calcChange(currentData.revenue.freight, compData.revenue.freight), isGood: currentData.revenue.freight >= compData.revenue.freight },
+    { metric: 'Surcharges & Recovery', may: currentData.revenue.surcharges, apr: compData.revenue.surcharges, mar: dataMar2026.revenue.surcharges, varDollar: currentData.revenue.surcharges - compData.revenue.surcharges, varPct: calcChange(currentData.revenue.surcharges, compData.revenue.surcharges), isGood: currentData.revenue.surcharges >= compData.revenue.surcharges },
+    { metric: 'Cost of Sales (COGS)', may: currCogs, apr: compCogs, mar: sumObj(dataMar2026.cogs), varDollar: currCogs - compCogs, varPct: calcChange(currCogs, compCogs), isGood: currCogs <= compCogs },
+    { metric: 'Driver Wages & Subcontractors', may: currentData.cogs.driver, apr: compData.cogs.driver, mar: dataMar2026.cogs.driver, varDollar: currentData.cogs.driver - compData.cogs.driver, varPct: calcChange(currentData.cogs.driver, compData.cogs.driver), isGood: currentData.cogs.driver <= compData.cogs.driver },
+    { metric: 'Fuel Costs', may: currentData.cogs.fuel, apr: compData.cogs.fuel, mar: dataMar2026.cogs.fuel, varDollar: currentData.cogs.fuel - compData.cogs.fuel, varPct: calcChange(currentData.cogs.fuel, compData.cogs.fuel), isGood: currentData.cogs.fuel <= compData.cogs.fuel },
+    { metric: 'Gross Profit', may: currGrossProfit, apr: compGrossProfit, mar: sumObj(dataMar2026.revenue) - sumObj(dataMar2026.cogs), varDollar: currGrossProfit - compGrossProfit, varPct: calcChange(currGrossProfit, compGrossProfit), isGood: currGrossProfit >= compGrossProfit },
+    { metric: 'Operating Expenses', may: currOpex, apr: compOpex, mar: sumObj(dataMar2026.opex), varDollar: currOpex - compOpex, varPct: calcChange(currOpex, compOpex), isGood: currOpex <= compOpex },
+    { metric: 'Net Profit', may: currNetProfit, apr: compNetProfit, mar: sumObj(dataMar2026.revenue) - sumObj(dataMar2026.cogs) - sumObj(dataMar2026.opex), varDollar: currNetProfit - compNetProfit, varPct: calcChange(currNetProfit, compNetProfit), isGood: currNetProfit >= compNetProfit }
   ];
 
   // Data for Tab 4: YTD Overview
   const ytdOverviewData = [
-    { category: 'Gross Freight Revenue', actual: 4850000, target: 4650000, variance: 200000, pct: 4.3, status: 'Exceeded Target', color: 'emerald' },
-    { category: 'Fuel Surcharges & Fees', actual: 298000, target: 280000, variance: 18000, pct: 6.4, status: 'Exceeded Target', color: 'emerald' },
-    { category: 'Driver Payroll & Contractors', actual: 2420000, target: 2350000, variance: -70000, pct: -2.9, status: 'Slightly Over Budget', color: 'amber' },
-    { category: 'Fuel & Fleet Running Costs', actual: 1020000, target: 980000, variance: -40000, pct: -4.0, status: 'Controlled Variance', color: 'slate' },
-    { category: 'Maintenance & Repairs', actual: 340000, target: 360000, variance: 20000, pct: 5.5, status: 'Under Budget', color: 'emerald' },
-    { category: 'Admin & General Opex', actual: 538000, target: 550000, variance: 12000, pct: 2.2, status: 'On Target', color: 'blue' },
+    { category: 'Gross Freight Revenue', actual: currRev, target: currRev, variance: 0, pct: 0, status: 'On Target', color: 'blue' },
+    { category: 'Fuel Surcharges & Fees', actual: currentData.revenue.surcharges, target: currentData.revenue.surcharges, variance: 0, pct: 0, status: 'On Target', color: 'blue' },
+    { category: 'Driver Payroll & Contractors', actual: currentData.cogs.driver + currentData.cogs.contractor, target: currentData.cogs.driver + currentData.cogs.contractor, variance: 0, pct: 0, status: 'On Target', color: 'blue' },
+    { category: 'Fuel & Fleet Running Costs', actual: currentData.cogs.fuel, target: currentData.cogs.fuel, variance: 0, pct: 0, status: 'On Target', color: 'blue' },
+    { category: 'Maintenance & Repairs', actual: currentData.cogs.vehicle, target: currentData.cogs.vehicle, variance: 0, pct: 0, status: 'On Target', color: 'blue' },
+    { category: 'Admin & General Opex', actual: currOpex, target: currOpex, variance: 0, pct: 0, status: 'On Target', color: 'blue' },
   ];
 
   // Pie Chart Data

@@ -55,7 +55,7 @@ export default function YardLoadLane() {
   // Button Hover States
   const [hoverBtn, setHoverBtn] = useState(null);
 
-  // Table data
+  // Tasks data (loaded from API)
   const [tasks, setTasks] = useState([]);
 
   const filteredTasks = tasks.filter(t => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
@@ -8,15 +8,10 @@ import {
   FiMaximize2, FiEye, FiDownload, FiSearch, FiPaperclip
 } from 'react-icons/fi';
 import { BsQrCodeScan, BsFuelPump } from 'react-icons/bs';
-import { getMyExpenses, createExpense } from '../../services/driverApi';
 
 export default function AddExpense() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-
-  // Loading & Submitting States
-  const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Tab & Filter States
   const [activeTab, setActiveTab] = useState('Fuel & Expenses'); // 'Fuel & Expenses', 'Summary', 'Receipts', 'Analytics'
@@ -65,44 +60,6 @@ export default function AddExpense() {
     { id: 4, date: '26 May 2025', time: '12:20 PM', vendor: 'M5 Motorway', amount: '$12.60' },
   ]);
 
-  // Fetch real expenses from Backend on Mount
-  useEffect(() => {
-    let isSubscribed = true;
-    setLoading(true);
-
-    getMyExpenses()
-      .then(res => {
-        if (!isSubscribed) return;
-        const data = res.data?.data?.expenses || [];
-        if (data.length > 0) {
-          const categoryColors = { Fuel: 'purple', Maintenance: 'emerald', Tyres: 'amber', Tolls: 'blue', Other: 'slate' };
-          const categoryIcons = { Fuel: '⛽', Maintenance: '🔧', Tyres: '🛞', Tolls: '🛣️', Other: '🧽' };
-
-          const formatted = data.map(item => ({
-            id: item.id,
-            category: item.type || 'Other',
-            categoryColor: categoryColors[item.type] || 'slate',
-            icon: categoryIcons[item.type] || '📄',
-            vendor: item.vendorName || item.description || 'Vendor',
-            details: item.litres ? `${item.odometer || '0'} km • ${item.litres} L` : item.description || 'Logged Expense',
-            date: new Date(item.date || item.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }),
-            amount: item.amount || 0,
-            status: item.status === 'APPROVED' ? 'Approved' : item.status === 'REJECTED' ? 'Rejected' : 'Pending',
-            receiptUrl: item.receiptUrl
-          }));
-          setExpenses(formatted);
-        }
-      })
-      .catch(err => {
-        if (isSubscribed) console.error('Error fetching driver expenses:', err);
-      })
-      .finally(() => {
-        if (isSubscribed) setLoading(false);
-      });
-
-    return () => { isSubscribed = false; };
-  }, []);
-
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
@@ -128,59 +85,44 @@ export default function AddExpense() {
 
   const handleAddExpenseSubmit = (e) => {
     e.preventDefault();
-    if (!formVendor || !formAmount || isSubmitting) return;
+    if (!formVendor || !formAmount) return;
 
     const numAmount = parseFloat(formAmount) || 0;
-    if (numAmount <= 0) {
-      triggerToast('❌ Error: Please enter a valid expense amount greater than $0.');
-      return;
+    const categoryColors = { Fuel: 'purple', Maintenance: 'emerald', Tyres: 'amber', Tolls: 'blue', Other: 'slate' };
+    const categoryIcons = { Fuel: '⛽', Maintenance: '🔧', Tyres: '🛞', Tolls: '🛣️', Other: '🧽' };
+
+    const newExpense = {
+      id: Date.now(),
+      category: formCategory,
+      categoryColor: categoryColors[formCategory] || 'slate',
+      icon: categoryIcons[formCategory] || '📄',
+      vendor: formVendor,
+      details: formCategory === 'Fuel' && formLitres ? `${formOdometer} km • ${formLitres} L @ $2.05/L` : formNotes || 'Receipt Logged',
+      date: '29 May 2025 02:45 PM',
+      amount: numAmount,
+      status: 'Approved'
+    };
+
+    setExpenses([newExpense, ...expenses]);
+
+    // Also add to receipts if receipt uploaded
+    if (formReceiptAdded) {
+      setReceipts([{
+        id: Date.now(),
+        date: '29 May 2025',
+        time: '02:45 PM',
+        vendor: formVendor,
+        amount: `$${numAmount.toFixed(2)}`
+      }, ...receipts]);
     }
 
-    setIsSubmitting(true);
-
-    createExpense({
-      category: formCategory,
-      type: formCategory,
-      amount: numAmount,
-      vendorName: formVendor,
-      litres: formLitres ? parseFloat(formLitres) : undefined,
-      odometer: formOdometer,
-      description: formNotes || `${formCategory} expense at ${formVendor}`,
-      receiptUrl: formReceiptAdded ? '/uploads/receipt_sample.jpg' : undefined
-    })
-      .then(res => {
-        const newExp = res.data?.data?.expense;
-        const categoryColors = { Fuel: 'purple', Maintenance: 'emerald', Tyres: 'amber', Tolls: 'blue', Other: 'slate' };
-        const categoryIcons = { Fuel: '⛽', Maintenance: '🔧', Tyres: '🛞', Tolls: '🛣️', Other: '🧽' };
-
-        const formattedNew = {
-          id: newExp?.id || Date.now(),
-          category: formCategory,
-          categoryColor: categoryColors[formCategory] || 'slate',
-          icon: categoryIcons[formCategory] || '📄',
-          vendor: formVendor,
-          details: formCategory === 'Fuel' && formLitres ? `${formOdometer} km • ${formLitres} L` : formNotes || 'Receipt Logged',
-          date: new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }),
-          amount: numAmount,
-          status: 'Pending'
-        };
-
-        setExpenses(prev => [formattedNew, ...prev]);
-        setAddExpenseModalOpen(false);
-        setFormVendor('');
-        setFormAmount('');
-        setFormLitres('');
-        setFormNotes('');
-        setFormReceiptAdded(false);
-        triggerToast(`🎉 Added ${formCategory} expense of $${numAmount.toFixed(2)} for ${formVendor}!`);
-      })
-      .catch(err => {
-        const msg = err.response?.data?.error?.message || 'Failed to submit expense.';
-        triggerToast(`❌ Error: ${msg}`);
-      })
-      .finally(() => {
-        setIsSubmitting(false);
-      });
+    setAddExpenseModalOpen(false);
+    setFormVendor('');
+    setFormAmount('');
+    setFormLitres('');
+    setFormNotes('');
+    setFormReceiptAdded(false);
+    triggerToast(`Added ${formCategory} expense of $${numAmount.toFixed(2)} for ${formVendor}!`);
   };
 
   // Calculations

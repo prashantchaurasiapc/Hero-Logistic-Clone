@@ -2541,9 +2541,115 @@ export default function Loads() {
   const [driverFilter, setDriverFilter] = useState('All Drivers');
   const [vehicleFilter, setVehicleFilter] = useState('All Vehicles');
   const [locationFilter, setLocationFilter] = useState('All Locations');
+  const [sortBy, setSortBy] = useState('NEWEST');
+  const [groupBy, setGroupBy] = useState('NONE');
+  const [showColumnsModal, setShowColumnsModal] = useState(false);
+  const [showGroupByModal, setShowGroupByModal] = useState(false);
+  const [hiddenColumns, setHiddenColumns] = useState([]);
+  const [showMoreFiltersDrawer, setShowMoreFiltersDrawer] = useState(false);
+
+  const handleResetAllFilters = () => {
+    setSearch('');
+    setDateFrom('');
+    setDateTo('');
+    setStatusFilter('All Status');
+    setTypeFilter('All Types');
+    setCustomerFilter('All Customer');
+    setDriverFilter('All Drivers');
+    setVehicleFilter('All Vehicles');
+    setLocationFilter('All Locations');
+    setSortBy('NEWEST');
+    setGroupBy('NONE');
+    setCurrentPage(1);
+    setShowMoreFiltersDrawer(false);
+  };
 
   const [loadsList, setLoadsList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleExport = () => {
+    const listToExport = filtered && filtered.length > 0 ? filtered : loadsList;
+    if (!listToExport || listToExport.length === 0) {
+      alert('No loads available to export.');
+      return;
+    }
+    const headers = ['Load Ref', 'Date', 'Status', 'Load Type', 'Customer', 'Pickup Location', 'Dropoff Location', 'Driver', 'Truck'];
+    const csvRows = listToExport.map(l => [
+      `"${l.id || ''}"`,
+      `"${l.date || ''}"`,
+      `"${l.status || ''}"`,
+      `"${l.type || ''}"`,
+      `"${(l.customer || '').replace(/"/g, '""')}"`,
+      `"${(l.from || '').replace(/"/g, '""')}"`,
+      `"${(l.to || '').replace(/"/g, '""')}"`,
+      `"${(l.driver || 'Unassigned').replace(/"/g, '""')}"`,
+      `"${(l.truck || 'N/A').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...csvRows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `loads_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target.result;
+        let importedLoads = [];
+
+        if (file.name.endsWith('.json')) {
+          importedLoads = JSON.parse(text);
+        } else {
+          const lines = text.split(/\r\n|\n/).filter(line => line.trim());
+          if (lines.length > 1) {
+            for (let i = 1; i < lines.length; i++) {
+              const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+              if (cols.length >= 2) {
+                importedLoads.push({
+                  type: cols[2] || 'General Freight',
+                  notes: `Imported load from ${file.name}`
+                });
+              }
+            }
+          }
+        }
+
+        if (importedLoads.length > 0) {
+          for (const item of importedLoads) {
+            await api.post('/company-admin/loads', {
+              type: item.type || 'General Freight',
+              notes: item.notes || `Imported load from ${file.name}`
+            }).catch(() => {});
+          }
+          alert(`Successfully imported ${importedLoads.length} load(s)!`);
+          fetchLoads();
+        } else {
+          alert('No valid loads found in the selected file.');
+        }
+      } catch (err) {
+        console.error('Import error:', err);
+        alert('Failed to parse the imported file. Please upload a valid CSV or JSON file.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   const fetchLoads = async () => {
     try {
@@ -2637,8 +2743,16 @@ export default function Loads() {
     { name: 'Cancelled', value: filtered.filter(d => d.status === 'CANCELLED').length, color: '#ef4444' },
   ];
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
-  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const sortedFiltered = [...filtered].sort((a, b) => {
+    if (sortBy === 'OLDEST') return new Date(a.date || 0) - new Date(b.date || 0);
+    if (sortBy === 'CUSTOMER') return (a.customer || '').localeCompare(b.customer || '');
+    if (sortBy === 'STATUS') return (a.status || '').localeCompare(b.status || '');
+    if (sortBy === 'TYPE') return (a.type || '').localeCompare(b.type || '');
+    return new Date(b.date || 0) - new Date(a.date || 0);
+  });
+
+  const totalPages = Math.ceil(sortedFiltered.length / PAGE_SIZE) || 1;
+  const paged = sortedFiltered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const [toastMsg, setToastMsg] = useState(null);
   const [bulkAction, setBulkAction] = useState('Bulk Actions');
@@ -2807,21 +2921,25 @@ export default function Loads() {
 
           {/* Filter Container */}
           <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm mb-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:flex xl:flex-wrap items-center gap-2">
-              <div className="col-span-2 sm:col-span-1 xl:flex-1 xl:min-w-[140px] relative">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex-1 min-w-[180px] relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search loads..."
                   value={search}
                   onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
-                  className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-              <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500" title="From Date"/>
-              <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500" title="To Date"/>
-              
-              <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer truncate">
+
+              <div className="flex items-center gap-1.5">
+                <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setCurrentPage(1); }} className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer" title="From Date"/>
+                <span className="text-slate-400 text-xs font-bold">to</span>
+                <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setCurrentPage(1); }} className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer" title="To Date"/>
+              </div>
+
+              <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }} className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer min-w-[120px]">
                 <option>All Status</option>
                 <option value="ACTIVE">Active</option>
                 <option value="PLANNED">Planned</option>
@@ -2830,36 +2948,103 @@ export default function Loads() {
                 <option value="CANCELLED">Cancelled</option>
               </select>
 
-              <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer truncate">
-                <option>All Types</option>
-                <option value="General Freight">General Freight</option>
-                <option value="Car Carrying">Car Carrying</option>
-                <option value="Dangerous Goods">Dangerous Goods</option>
-              </select>
+              {/* More Filters Drawer */}
+              {(() => {
+                const activeCount = [
+                  typeFilter !== 'All Types', 
+                  customerFilter !== 'All Customer', 
+                  driverFilter !== 'All Drivers', 
+                  vehicleFilter !== 'All Vehicles', 
+                  locationFilter !== 'All Locations'
+                ].filter(Boolean).length;
 
-              <select value={customerFilter} onChange={e => { setCustomerFilter(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer truncate">
-                <option>All Customer</option>
-                {[...new Set(LOADS.map(l => l.customer).filter(Boolean))].map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+                return (
+                  <div className="relative">
+                    <button 
+                      onClick={() => setShowMoreFiltersDrawer(!showMoreFiltersDrawer)}
+                      className={`px-3.5 py-2 border rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer transition-colors shadow-2xs ${
+                        activeCount > 0 
+                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Filter className="w-3.5 h-3.5 text-indigo-600" /> More Filters
+                      {activeCount > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-black">{activeCount}</span>
+                      )}
+                    </button>
 
-              <select value={driverFilter} onChange={e => { setDriverFilter(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer truncate">
-                <option>All Drivers</option>
-                {[...new Set(LOADS.map(l => l.driver).filter(Boolean))].map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
-              
-              <select value={vehicleFilter} onChange={e => { setVehicleFilter(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer truncate">
-                <option>All Vehicles</option>
-                {[...new Set(LOADS.map(l => l.truck).filter(Boolean).map(t => t.split(' | ')[0]))].map(v => <option key={v} value={v}>{v}</option>)}
-              </select>
+                    {showMoreFiltersDrawer && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowMoreFiltersDrawer(false)} />
+                        <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-4 space-y-3.5 animate-in fade-in zoom-in-95 text-left">
+                          <div className="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                            <div className="flex items-center gap-2">
+                              <Filter className="w-4 h-4 text-indigo-600" />
+                              <span className="text-xs font-bold text-slate-900">Advanced Filters</span>
+                            </div>
+                            <button onClick={handleResetAllFilters} className="text-[11px] font-bold text-indigo-600 hover:underline cursor-pointer">Reset All</button>
+                          </div>
 
-              <select value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer truncate">
-                <option>All Locations</option>
-                {[...new Set([...LOADS.map(l => l.from), ...LOADS.map(l => l.to)].filter(Boolean))].map(loc => <option key={loc} value={loc}>{loc}</option>)}
-              </select>
+                          <div className="space-y-3 text-xs">
+                            {/* Load Type */}
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">Load Type</label>
+                              <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                                <option>All Types</option>
+                                <option value="General Freight">General Freight</option>
+                                <option value="Car Carrying">Car Carrying</option>
+                                <option value="Dangerous Goods">Dangerous Goods</option>
+                              </select>
+                            </div>
 
-              <button className="col-span-2 sm:col-span-1 xl:w-auto px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1.5 whitespace-nowrap">
-                <Filter className="w-3.5 h-3.5" /> More Filters
-              </button>
+                            {/* Customer */}
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">Customer</label>
+                              <select value={customerFilter} onChange={e => { setCustomerFilter(e.target.value); setCurrentPage(1); }} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                                <option>All Customer</option>
+                                {[...new Set(LOADS.map(l => l.customer).filter(Boolean))].map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            </div>
+
+                            {/* Assigned Driver */}
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">Assigned Driver</label>
+                              <select value={driverFilter} onChange={e => { setDriverFilter(e.target.value); setCurrentPage(1); }} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                                <option>All Drivers</option>
+                                {[...new Set(LOADS.map(l => l.driver).filter(Boolean))].map(d => <option key={d} value={d}>{d}</option>)}
+                              </select>
+                            </div>
+
+                            {/* Vehicle */}
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">Vehicle / Fleet</label>
+                              <select value={vehicleFilter} onChange={e => { setVehicleFilter(e.target.value); setCurrentPage(1); }} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                                <option>All Vehicles</option>
+                                {[...new Set(LOADS.map(l => l.truck).filter(Boolean).map(t => t.split(' | ')[0]))].map(v => <option key={v} value={v}>{v}</option>)}
+                              </select>
+                            </div>
+
+                            {/* Location */}
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">Location / Route</label>
+                              <select value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setCurrentPage(1); }} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                                <option>All Locations</option>
+                                {[...new Set([...LOADS.map(l => l.from), ...LOADS.map(l => l.to)].filter(Boolean))].map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-100">
+                            <button onClick={() => setShowMoreFiltersDrawer(false)} className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-sm">Done</button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+
             </div>
           </div>
 
@@ -2867,17 +3052,76 @@ export default function Loads() {
 
           {/* Toolbar */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 mt-4 gap-2">
-            <p className="text-[11px] font-semibold text-slate-500">{filtered.length} loads found</p>
+            <p className="text-[11px] font-semibold text-slate-500">{sortedFiltered.length} loads found</p>
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-50">
-                <MoreVertical className="w-3 h-3" /> Columns
-              </button>
-              <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-50">
-                Group By
-              </button>
-              <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-50">
-                Sort By: Created Date (Newest) <ChevronDown className="w-3 h-3" />
-              </button>
+              
+              {/* Columns Selector */}
+              <div className="relative flex-1 sm:flex-none">
+                <button 
+                  onClick={() => setShowColumnsModal(!showColumnsModal)}
+                  className="w-full sm:w-auto justify-center flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  <MoreVertical className="w-3 h-3" /> Columns
+                </button>
+                {showColumnsModal && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowColumnsModal(false)} />
+                    <div className="absolute right-0 sm:left-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3 space-y-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Visible Columns</p>
+                      {['STATUS', 'LOAD TYPE', 'CUSTOMER', 'ROUTE', 'DRIVER / TRUCK', 'PICKUP DATE', 'ETA / DELIVERY', 'PROGRESS'].map(col => (
+                        <label key={col} className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
+                          <input 
+                            type="checkbox" 
+                            checked={!hiddenColumns.includes(col)}
+                            onChange={() => {
+                              setHiddenColumns(prev => prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col]);
+                            }}
+                            className="w-3.5 h-3.5 rounded border-slate-300 accent-indigo-600 cursor-pointer"
+                          />
+                          {col}
+                        </label>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Group By Selector */}
+              <div className="relative flex-1 sm:flex-none">
+                <button 
+                  onClick={() => setShowGroupByModal(!showGroupByModal)}
+                  className={`w-full sm:w-auto justify-center flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[10px] font-semibold transition-colors cursor-pointer ${
+                    groupBy !== 'NONE' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Group By: {groupBy === 'NONE' ? 'None' : groupBy}
+                </button>
+                {showGroupByModal && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowGroupByModal(false)} />
+                    <div className="absolute right-0 sm:left-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1 divide-y divide-slate-100">
+                      <button onClick={() => { setGroupBy('NONE'); setShowGroupByModal(false); }} className="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 cursor-pointer">None (Flat Table)</button>
+                      <button onClick={() => { setGroupBy('STATUS'); setShowGroupByModal(false); }} className="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 cursor-pointer">Group by Status</button>
+                      <button onClick={() => { setGroupBy('CUSTOMER'); setShowGroupByModal(false); }} className="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 cursor-pointer">Group by Customer</button>
+                      <button onClick={() => { setGroupBy('TYPE'); setShowGroupByModal(false); }} className="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-indigo-50 cursor-pointer">Group by Load Type</button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Sort By Select */}
+              <select 
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="flex-1 sm:flex-none px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer"
+              >
+                <option value="NEWEST">Sort By: Created Date (Newest)</option>
+                <option value="OLDEST">Sort By: Created Date (Oldest)</option>
+                <option value="CUSTOMER">Sort By: Customer Name (A-Z)</option>
+                <option value="STATUS">Sort By: Status</option>
+                <option value="TYPE">Sort By: Load Type</option>
+              </select>
+
             </div>
           </div>
 
@@ -2895,7 +3139,7 @@ export default function Loads() {
                         className="w-3.5 h-3.5 rounded border-slate-300 accent-indigo-600"
                       />
                     </th>
-                    {['LOAD REF', 'STATUS', 'LOAD TYPE', 'CUSTOMER', 'ROUTE', 'DRIVER / TRUCK', 'PICKUP DATE', 'ETA / DELIVERY', 'PROGRESS', 'ACTIONS'].map(h => (
+                    {['LOAD REF', 'STATUS', 'LOAD TYPE', 'CUSTOMER', 'ROUTE', 'DRIVER / TRUCK', 'PICKUP DATE', 'ETA / DELIVERY', 'PROGRESS', 'ACTIONS'].filter(h => !hiddenColumns.includes(h)).map(h => (
                       <th key={h} className="px-3 py-4 text-[10px] font-semibold text-slate-500 uppercase tracking-widest whitespace-nowrap">{h}</th>
                     ))}
                   </tr>

@@ -10,38 +10,36 @@ import {
 } from 'lucide-react';
 
 const AccountsDashboard = () => {
-  const [dateRange, setDateRange] = useState('18 May 2026 – 24 May 2026');
+  const [dateRange, setDateRange] = useState('This Month');
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Live KPI Data State
   const [dashboardData, setDashboardData] = useState({
     kpis: {
-      draftInvoicesCount: 12,
-      inReviewCount: 7,
-      sentInvoicesCount: 42,
-      paidInvoicesCount: 38,
-      overdueInvoicesCount: 9,
-      payrollDueAmount: 24650.00,
-      expensesAmount: 8430.50,
-      grossMarginPct: 28.4
+      draftInvoicesCount: 0,
+      draftInvoicesAmount: 0.00,
+      inReviewCount: 0,
+      sentInvoicesCount: 0,
+      paidInvoicesCount: 0,
+      overdueInvoicesCount: 0,
+      payrollDueAmount: 0.00,
+      expensesAmount: 0.00,
+      grossMarginPct: 0.0
     },
     invoiceStatusOverview: [
-      { name: 'Paid', value: 38, color: '#10B981' },
-      { name: 'Sent', value: 42, color: '#3B82F6' },
-      { name: 'In Review', value: 7, color: '#F59E0B' },
-      { name: 'Overdue', value: 9, color: '#EF4444' }
+      { name: 'Paid', value: 0, color: '#10B981' },
+      { name: 'Sent', value: 0, color: '#3B82F6' },
+      { name: 'In Review', value: 0, color: '#F59E0B' },
+      { name: 'Overdue', value: 0, color: '#EF4444' }
     ],
-    monthlyTrend: [
-      { month: 'Dec 25', invoices: 320000, payments: 310000 },
-      { month: 'Jan 26', invoices: 380000, payments: 365000 },
-      { month: 'Feb 26', invoices: 410000, payments: 395000 },
-      { month: 'Mar 26', invoices: 440000, payments: 420000 },
-      { month: 'Apr 26', invoices: 465000, payments: 450000 },
-      { month: 'May 26', invoices: 485000, payments: 430000 }
-    ],
+    monthlyTrend: [],
     userName: 'Accounts Manager'
   });
+
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [userName, setUserName] = useState('Accounts Manager');
+  const [overdueInvoices, setOverdueInvoices] = useState([]);
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -54,6 +52,22 @@ const AccountsDashboard = () => {
           invoiceStatusOverview: res.data.data.invoiceStatusOverview || prev.invoiceStatusOverview,
           monthlyTrend: res.data.data.monthlyTrend || prev.monthlyTrend
         }));
+        if (Array.isArray(res.data.data.recentActivity)) {
+          setRecentActivities(res.data.data.recentActivity);
+        }
+      }
+      const invRes = await api.get('/accounts/invoices');
+      if (invRes.data?.success && Array.isArray(invRes.data.data)) {
+        const overdue = invRes.data.data.filter(inv => inv.status === 'Overdue');
+        setOverdueInvoices(overdue.slice(0, 3));
+      }
+      try {
+        const profileRes = await api.get('/accounts/profile');
+        if (profileRes.data?.success && profileRes.data.data?.profile) {
+          setUserName(profileRes.data.data.profile.fullName || 'Accounts Manager');
+        }
+      } catch (profileErr) {
+        console.warn('Failed to load user profile name:', profileErr);
       }
     } catch (err) {
       console.warn('Using live fallback dashboard data:', err);
@@ -80,6 +94,35 @@ const AccountsDashboard = () => {
     showToast(message);
   };
 
+  const totalInvoices = (dashboardData.kpis.draftInvoicesCount || 0) +
+                        (dashboardData.kpis.inReviewCount || 0) +
+                        (dashboardData.kpis.sentInvoicesCount || 0) +
+                        (dashboardData.kpis.paidInvoicesCount || 0) +
+                        (dashboardData.kpis.overdueInvoicesCount || 0);
+
+  const draftPct = totalInvoices > 0 ? Math.round((dashboardData.kpis.draftInvoicesCount / totalInvoices) * 100) : 0;
+  const inReviewPct = totalInvoices > 0 ? Math.round((dashboardData.kpis.inReviewCount / totalInvoices) * 100) : 0;
+  const sentPct = totalInvoices > 0 ? Math.round((dashboardData.kpis.sentInvoicesCount / totalInvoices) * 100) : 0;
+  const paidPct = totalInvoices > 0 ? Math.round((dashboardData.kpis.paidInvoicesCount / totalInvoices) * 100) : 0;
+  const overduePct = totalInvoices > 0 ? Math.round((dashboardData.kpis.overdueInvoicesCount / totalInvoices) * 100) : 0;
+
+  const invoiceStatusOverviewData = [
+    { name: 'Draft', value: dashboardData.kpis.draftInvoicesCount || 0, color: '#3b82f6' },
+    { name: 'In Review', value: dashboardData.kpis.inReviewCount || 0, color: '#f59e0b' },
+    { name: 'Sent', value: dashboardData.kpis.sentInvoicesCount || 0, color: '#a855f7' },
+    { name: 'Paid', value: dashboardData.kpis.paidInvoicesCount || 0, color: '#10b981' },
+    { name: 'Overdue', value: dashboardData.kpis.overdueInvoicesCount || 0, color: '#ef4444' },
+  ];
+
+  const chartData = (dashboardData.monthlyTrend && dashboardData.monthlyTrend.length > 0)
+    ? dashboardData.monthlyTrend.map(item => ({
+        date: item.month || item.date || '',
+        sent: Math.round((item.invoices || item.sent || 0) / 1000),
+        paid: Math.round((item.payments || item.paid || 0) / 1000),
+        rec: Math.round(((item.payments || item.paid || 0) * 0.9) / 1000)
+      }))
+    : [];
+
   return (
     <div className="p-3 sm:p-6 bg-[#f8fafc] min-h-screen font-sans text-left relative overflow-x-hidden">
       {/* Toast Notification Banner (Mobile Responsive Position) */}
@@ -100,7 +143,7 @@ const AccountsDashboard = () => {
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Accounts Dashboard</h1>
           <p className="text-[11px] sm:text-xs text-slate-500 font-semibold mt-0.5 sm:mt-1">
-            Welcome back, John Smith! Here's your accounts overview.
+            Welcome back, {userName}! Here's your accounts overview.
           </p>
         </div>
 
@@ -118,7 +161,7 @@ const AccountsDashboard = () => {
               <div className="text-left min-w-0">
                 <span className="font-extrabold text-slate-900 text-xs block truncate">{dateRange}</span>
                 <span className="text-[9px] sm:text-[9.5px] text-slate-400 block font-semibold truncate">
-                  Compared to 11 May 2026 – 17 May 2026
+                  Filtered by Selected Period
                 </span>
               </div>
             </div>
@@ -129,10 +172,10 @@ const AccountsDashboard = () => {
             <div className="absolute right-0 left-0 sm:left-auto mt-2 sm:w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-2 text-xs font-semibold animate-in fade-in zoom-in-95 duration-100">
               <div className="text-[10px] uppercase font-extrabold text-slate-400 px-3 py-1.5">Select Date Range</div>
               {[
-                '18 May 2026 – 24 May 2026',
-                '01 May 2026 – 31 May 2026 (This Month)',
-                '01 Apr 2026 – 30 Apr 2026 (Last Month)',
-                'FY 2025 – 2026 (Year to Date)'
+                'This Week',
+                'This Month',
+                'Last Month',
+                'Year to Date'
               ].map((range) => (
                 <button
                   key={range}
@@ -264,7 +307,7 @@ const AccountsDashboard = () => {
             <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight truncate">Payroll Due</span>
           </div>
           <div>
-            <div className="text-base sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1 truncate">${(dashboardData.kpis.payrollDueAmount || 24650).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div className="text-base sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1 truncate">${(dashboardData.kpis.payrollDueAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-slate-400 truncate block">Next run pending</span>
           </div>
         </div>
@@ -281,7 +324,7 @@ const AccountsDashboard = () => {
             <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight truncate">Expenses Approved</span>
           </div>
           <div>
-            <div className="text-base sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1 truncate">${(dashboardData.kpis.expensesAmount || 8430.50).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div className="text-base sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1 truncate">${(dashboardData.kpis.expensesAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-slate-400 truncate block">Fleet & Driver</span>
           </div>
         </div>
@@ -318,13 +361,7 @@ const AccountsDashboard = () => {
             <div className="relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center shrink-0">
               <PieChart width={144} height={144}>
                 <Pie
-                  data={[
-                    { name: 'Draft', value: 12, color: '#3b82f6' },
-                    { name: 'In Review', value: 7, color: '#f59e0b' },
-                    { name: 'Sent', value: 42, color: '#a855f7' },
-                    { name: 'Paid', value: 38, color: '#10b981' },
-                    { name: 'Overdue', value: 9, color: '#ef4444' },
-                  ]}
+                  data={invoiceStatusOverviewData}
                   cx="50%"
                   cy="50%"
                   innerRadius={40}
@@ -334,19 +371,13 @@ const AccountsDashboard = () => {
                   dataKey="value"
                   stroke="none"
                 >
-                  {[
-                    { color: '#3b82f6' },
-                    { color: '#f59e0b' },
-                    { color: '#a855f7' },
-                    { color: '#10b981' },
-                    { color: '#ef4444' },
-                  ].map((entry, index) => (
+                  {invoiceStatusOverviewData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
               </PieChart>
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                <span className="text-xl sm:text-2xl font-black text-slate-900 leading-none">100</span>
+                <span className="text-xl sm:text-2xl font-black text-slate-900 leading-none">{totalInvoices}</span>
                 <span className="text-[9.5px] sm:text-[10px] font-semibold text-slate-400 mt-0.5">Total Invoices</span>
               </div>
             </div>
@@ -358,35 +389,35 @@ const AccountsDashboard = () => {
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
                   <span className="font-semibold text-slate-600">Draft</span>
                 </div>
-                <span className="font-bold text-slate-900">12 (12%)</span>
+                <span className="font-bold text-slate-900">{dashboardData.kpis.draftInvoicesCount} ({draftPct}%)</span>
               </div>
               <div className="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-50 p-1 rounded" onClick={() => handleAction('In Review Invoices clicked! Notification triggered.')}>
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
                   <span className="font-semibold text-slate-600">In Review</span>
                 </div>
-                <span className="font-bold text-slate-900">7 (7%)</span>
+                <span className="font-bold text-slate-900">{dashboardData.kpis.inReviewCount} ({inReviewPct}%)</span>
               </div>
               <div className="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-50 p-1 rounded" onClick={() => handleAction('Sent Invoices clicked! Notification triggered.')}>
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0" />
                   <span className="font-semibold text-slate-600">Sent</span>
                 </div>
-                <span className="font-bold text-slate-900">42 (42%)</span>
+                <span className="font-bold text-slate-900">{dashboardData.kpis.sentInvoicesCount} ({sentPct}%)</span>
               </div>
               <div className="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-50 p-1 rounded" onClick={() => handleAction('Paid Invoices clicked! Notification triggered.')}>
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
                   <span className="font-semibold text-slate-600">Paid</span>
                 </div>
-                <span className="font-bold text-slate-900">38 (38%)</span>
+                <span className="font-bold text-slate-900">{dashboardData.kpis.paidInvoicesCount} ({paidPct}%)</span>
               </div>
               <div className="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-50 p-1 rounded" onClick={() => handleAction('Overdue Invoices clicked! Notification triggered.')}>
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" />
                   <span className="font-semibold text-slate-600">Overdue</span>
                 </div>
-                <span className="font-bold text-slate-900">9 (9%)</span>
+                <span className="font-bold text-slate-900">{dashboardData.kpis.overdueInvoicesCount} ({overduePct}%)</span>
               </div>
             </div>
           </div>
@@ -413,14 +444,7 @@ const AccountsDashboard = () => {
           </div>
           <div className="h-40 sm:h-44 w-full my-auto">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[
-                { date: '18 Apr', sent: 60, paid: 40, rec: 50 },
-                { date: '25 Apr', sent: 70, paid: 45, rec: 55 },
-                { date: '02 May', sent: 90, paid: 50, rec: 75 },
-                { date: '09 May', sent: 110, paid: 75, rec: 95 },
-                { date: '16 May', sent: 140, paid: 90, rec: 110 },
-                { date: '23 May', sent: 115, paid: 85, rec: 90 },
-              ]} barGap={2}>
+              <BarChart data={chartData} barGap={2}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="date" tick={{fontSize: 9, fill: '#94a3b8'}} axisLine={false} tickLine={false} />
                 <YAxis tick={{fontSize: 9, fill: '#94a3b8'}} axisLine={false} tickLine={false} tickFormatter={v => `$${v}K`} />
@@ -454,50 +478,26 @@ const AccountsDashboard = () => {
             </button>
           </div>
           <div className="space-y-2.5 sm:space-y-3 my-auto">
-            {/* Item 1 */}
-            <div
-              onClick={() => handleAction('INV-1045 clicked! Notification triggered.')}
-              className="flex items-center justify-between p-2 sm:p-2.5 rounded-lg border-l-4 border-l-red-500 bg-slate-50/50 hover:bg-slate-100/70 transition-colors cursor-pointer"
-            >
-              <div className="min-w-0 pr-2">
-                <div className="text-xs font-bold text-slate-900 truncate">INV-1045</div>
-                <div className="text-[10px] sm:text-[11px] text-slate-500 font-semibold mt-0.5 truncate">ABC Auto Transport</div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="text-xs font-bold text-slate-900">$5,420.00</div>
-                <div className="text-[9.5px] sm:text-[10px] text-slate-400 mt-0.5">Due 12 May <span className="text-red-500 font-bold block sm:inline sm:ml-1">15d overdue</span></div>
-              </div>
-            </div>
-
-            {/* Item 2 */}
-            <div
-              onClick={() => handleAction('INV-1038 clicked! Notification triggered.')}
-              className="flex items-center justify-between p-2 sm:p-2.5 rounded-lg border-l-4 border-l-red-500 bg-slate-50/50 hover:bg-slate-100/70 transition-colors cursor-pointer"
-            >
-              <div className="min-w-0 pr-2">
-                <div className="text-xs font-bold text-slate-900 truncate">INV-1038</div>
-                <div className="text-[10px] sm:text-[11px] text-slate-500 font-semibold mt-0.5 truncate">FastTrack Logistics</div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="text-xs font-bold text-slate-900">$3,850.00</div>
-                <div className="text-[9.5px] sm:text-[10px] text-slate-400 mt-0.5">Due 14 May <span className="text-red-500 font-bold block sm:inline sm:ml-1">13d overdue</span></div>
-              </div>
-            </div>
-
-            {/* Item 3 */}
-            <div
-              onClick={() => handleAction('INV-1029 clicked! Notification triggered.')}
-              className="flex items-center justify-between p-2 sm:p-2.5 rounded-lg border-l-4 border-l-red-500 bg-slate-50/50 hover:bg-slate-100/70 transition-colors cursor-pointer"
-            >
-              <div className="min-w-0 pr-2">
-                <div className="text-xs font-bold text-slate-900 truncate">INV-1029</div>
-                <div className="text-[10px] sm:text-[11px] text-slate-500 font-semibold mt-0.5 truncate">Prime Carriers</div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="text-xs font-bold text-slate-900">$6,050.00</div>
-                <div className="text-[9.5px] sm:text-[10px] text-slate-400 mt-0.5">Due 10 May <span className="text-red-500 font-bold block sm:inline sm:ml-1">17d overdue</span></div>
-              </div>
-            </div>
+            {overdueInvoices.length === 0 ? (
+              <div className="text-center text-slate-400 py-6 font-bold text-xs uppercase">No overdue invoices found</div>
+            ) : (
+              overdueInvoices.map((inv) => (
+                <div
+                  key={inv.id}
+                  onClick={() => handleAction(`Invoice ${inv.id} clicked.`)}
+                  className="flex items-center justify-between p-2 sm:p-2.5 rounded-lg border-l-4 border-l-red-500 bg-slate-50/50 hover:bg-slate-100/70 transition-colors cursor-pointer"
+                >
+                  <div className="min-w-0 pr-2">
+                    <div className="text-xs font-bold text-slate-900 truncate">{inv.id}</div>
+                    <div className="text-[10px] sm:text-[11px] text-slate-500 font-semibold mt-0.5 truncate">{inv.customer}</div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-xs font-bold text-slate-900">${(inv.amount || inv.total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                    <div className="text-[9.5px] sm:text-[10px] text-slate-400 mt-0.5">Due {inv.dueDate}</div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
           <div className="pt-3.5 border-t border-slate-100 mt-3 sm:mt-4">
             <button
@@ -533,12 +533,12 @@ const AccountsDashboard = () => {
               </div>
               <div>
                 <div className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Next Payroll Date</div>
-                <div className="text-xs sm:text-sm font-black text-slate-900">29 May 2026 <span className="text-[11px] text-slate-500 font-semibold">(Fri)</span></div>
+                <div className="text-xs sm:text-sm font-black text-slate-900">— <span className="text-[11px] text-slate-500 font-semibold"></span></div>
               </div>
             </div>
             <div className="sm:text-right w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-blue-100/80">
               <div className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Amount</div>
-              <div className="text-sm sm:text-base font-black text-slate-900">$24,650.00</div>
+              <div className="text-sm sm:text-base font-black text-slate-900">${(dashboardData.kpis.payrollDueAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3 mb-2">
@@ -547,14 +547,14 @@ const AccountsDashboard = () => {
               className="bg-slate-50/80 p-2.5 sm:p-3 rounded-lg border border-slate-100 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <div className="text-[10px] sm:text-[10.5px] font-semibold text-slate-400">Employees</div>
-              <div className="text-base sm:text-lg font-bold text-slate-900">18</div>
+              <div className="text-base sm:text-lg font-bold text-slate-900">{dashboardData.kpis.payrollDueCount || 0}</div>
             </div>
             <div
               onClick={() => handleAction('Contractors count clicked! Notification triggered.')}
               className="bg-slate-50/80 p-2.5 sm:p-3 rounded-lg border border-slate-100 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <div className="text-[10px] sm:text-[10.5px] font-semibold text-slate-400">Contractors</div>
-              <div className="text-base sm:text-lg font-bold text-slate-900">5</div>
+              <div className="text-base sm:text-lg font-bold text-slate-900">0</div>
             </div>
           </div>
           <div className="pt-3.5 border-t border-slate-100 mt-2">
@@ -585,8 +585,8 @@ const AccountsDashboard = () => {
               <PieChart width={128} height={128}>
                 <Pie
                   data={[
-                    { name: 'Pending', value: 35 },
-                    { name: 'Remaining', value: 65 },
+                    { name: 'Pending', value: dashboardData.kpis.expensesPendingCount || 0 },
+                    { name: 'Approved', value: dashboardData.kpis.expensesAmount ? 100 : 0 },
                   ]}
                   cx="50%"
                   cy="50%"
@@ -602,8 +602,8 @@ const AccountsDashboard = () => {
                 </Pie>
               </PieChart>
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                <span className="text-sm sm:text-base font-black text-slate-900 leading-tight">$8,430.50</span>
-                <span className="text-[9px] sm:text-[10px] font-semibold text-slate-400">Pending</span>
+                <span className="text-sm sm:text-base font-black text-slate-900 leading-tight">${(dashboardData.kpis.expensesAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                <span className="text-[9px] sm:text-[10px] font-semibold text-slate-400">Approved</span>
               </div>
             </div>
             {/* List */}
@@ -614,8 +614,8 @@ const AccountsDashboard = () => {
                   <span className="font-semibold text-slate-700 text-[11px] sm:text-xs">Fuel</span>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-slate-900 text-[11px] sm:text-xs">$3,250.00</div>
-                  <div className="text-[9px] sm:text-[9.5px] text-slate-400 font-medium">5 claims</div>
+                  <div className="font-bold text-slate-900 text-[11px] sm:text-xs">$0.00</div>
+                  <div className="text-[9px] sm:text-[9.5px] text-slate-400 font-medium">0 claims</div>
                 </div>
               </div>
               <div className="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-50 p-1 rounded" onClick={() => handleAction('Maintenance Claims clicked! Notification triggered.')}>
@@ -624,8 +624,8 @@ const AccountsDashboard = () => {
                   <span className="font-semibold text-slate-700 text-[11px] sm:text-xs">Maintenance</span>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-slate-900 text-[11px] sm:text-xs">$2,180.50</div>
-                  <div className="text-[9px] sm:text-[9.5px] text-slate-400 font-medium">3 claims</div>
+                  <div className="font-bold text-slate-900 text-[11px] sm:text-xs">$0.00</div>
+                  <div className="text-[9px] sm:text-[9.5px] text-slate-400 font-medium">0 claims</div>
                 </div>
               </div>
               <div className="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-50 p-1 rounded" onClick={() => handleAction('Tolls & Parking clicked! Notification triggered.')}>
@@ -634,8 +634,8 @@ const AccountsDashboard = () => {
                   <span className="font-semibold text-slate-700 text-[11px] sm:text-xs">Tolls &amp; Parking</span>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-slate-900 text-[11px] sm:text-xs">$1,250.00</div>
-                  <div className="text-[9px] sm:text-[9.5px] text-slate-400 font-medium">2 claims</div>
+                  <div className="font-bold text-slate-900 text-[11px] sm:text-xs">$0.00</div>
+                  <div className="text-[9px] sm:text-[9.5px] text-slate-400 font-medium">0 claims</div>
                 </div>
               </div>
               <div className="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-50 p-1 rounded" onClick={() => handleAction('Other Expenses clicked! Notification triggered.')}>
@@ -644,8 +644,8 @@ const AccountsDashboard = () => {
                   <span className="font-semibold text-slate-700 text-[11px] sm:text-xs">Other</span>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-slate-900 text-[11px] sm:text-xs">$1,750.00</div>
-                  <div className="text-[9px] sm:text-[9.5px] text-slate-400 font-medium">2 claims</div>
+                  <div className="font-bold text-slate-900 text-[11px] sm:text-xs">$0.00</div>
+                  <div className="text-[9px] sm:text-[9.5px] text-slate-400 font-medium">0 claims</div>
                 </div>
               </div>
             </div>
@@ -675,25 +675,25 @@ const AccountsDashboard = () => {
           <div className="bg-slate-50/80 p-2.5 sm:p-3 rounded-xl border border-slate-100 grid grid-cols-2 gap-2 sm:gap-3 mb-3">
             <div onClick={() => handleAction('Cash In (YTD) clicked! Notification triggered.')} className="cursor-pointer">
               <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 block uppercase">Cash In (YTD)</span>
-              <div className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5">$1,245,680.00</div>
-              <span className="text-[9px] sm:text-[10px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-0.5">
-                <TrendingUp className="w-2.5 h-2.5 shrink-0"/> 18.6% vs yr
+              <div className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5">$0.00</div>
+              <span className="text-[9px] sm:text-[10px] font-semibold text-slate-400 flex items-center gap-0.5 mt-0.5">
+                0% vs yr
               </span>
             </div>
             <div onClick={() => handleAction('Cash Out (YTD) clicked! Notification triggered.')} className="cursor-pointer">
               <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 block uppercase">Cash Out (YTD)</span>
-              <div className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5">$1,012,340.00</div>
-              <span className="text-[9px] sm:text-[10px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-0.5">
-                <TrendingUp className="w-2.5 h-2.5 shrink-0"/> 12.3% vs yr
+              <div className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5">$0.00</div>
+              <span className="text-[9px] sm:text-[10px] font-semibold text-slate-400 flex items-center gap-0.5 mt-0.5">
+                0% vs yr
               </span>
             </div>
           </div>
           <div onClick={() => handleAction('Net Cash Flow clicked! Notification triggered.')} className="bg-emerald-50/20 p-2.5 sm:p-3 rounded-xl border border-emerald-200/60 flex items-center justify-between cursor-pointer hover:bg-emerald-50/40 transition-colors">
             <div>
               <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 block uppercase">Net Cash Flow</span>
-              <div className="text-sm sm:text-base font-bold text-emerald-600 mt-0.5">$233,340.00</div>
-              <span className="text-[9px] sm:text-[10px] font-semibold text-emerald-600 flex items-center gap-0.5 mt-0.5">
-                <TrendingUp className="w-2.5 h-2.5 shrink-0"/> 22.5% vs yr
+              <div className="text-sm sm:text-base font-bold text-emerald-600 mt-0.5">$0.00</div>
+              <span className="text-[9px] sm:text-[10px] font-semibold text-slate-400 flex items-center gap-0.5 mt-0.5">
+                0% vs yr
               </span>
             </div>
             {/* Exact Green Sparkline Curve */}
@@ -706,11 +706,11 @@ const AccountsDashboard = () => {
                   </linearGradient>
                 </defs>
                 <path
-                  d="M0,32 Q5,28 10,24 T20,26 T30,22 T40,24 Q48,18 55,14 Q62,20 68,28 Q73,22 78,18 Q82,20 85,22 Q92,12 100,4 L100,40 L0,40 Z"
+                  d="M0,40 L100,40 L0,40 Z"
                   fill="url(#greenGrad)"
                 />
                 <path
-                  d="M0,32 Q5,28 10,24 T20,26 T30,22 T40,24 Q48,18 55,14 Q62,20 68,28 Q73,22 78,18 Q82,20 85,22 Q92,12 100,4"
+                  d="M0,32 Q100,32 100,32"
                   fill="none"
                   stroke="#10b981"
                   strokeWidth="2.2"
@@ -740,35 +740,35 @@ const AccountsDashboard = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 my-auto">
             <div onClick={() => handleAction('Total Revenue clicked! Notification triggered.')} className="p-3 sm:p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between hover:bg-slate-100 transition-colors cursor-pointer">
               <span className="text-[9.5px] sm:text-[10.5px] font-bold text-slate-400 uppercase block mb-1 truncate">Total Revenue</span>
-              <div className="text-sm sm:text-base font-bold text-slate-900 mb-1 truncate">$1,248,600.00</div>
-              <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-emerald-600 flex items-center gap-0.5 truncate">
-                <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> 15.2% vs yr
+              <div className="text-sm sm:text-base font-bold text-slate-900 mb-1 truncate">$0.00</div>
+              <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-slate-400 flex items-center gap-0.5 truncate">
+                0% vs yr
               </span>
             </div>
             <div onClick={() => handleAction('Total Cost clicked! Notification triggered.')} className="p-3 sm:p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between hover:bg-slate-100 transition-colors cursor-pointer">
               <span className="text-[9.5px] sm:text-[10.5px] font-bold text-slate-400 uppercase block mb-1 truncate">Total Cost</span>
-              <div className="text-sm sm:text-base font-bold text-slate-900 mb-1 truncate">$894,320.00</div>
-              <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-emerald-600 flex items-center gap-0.5 truncate">
-                <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> 10.1% vs yr
+              <div className="text-sm sm:text-base font-bold text-slate-900 mb-1 truncate">$0.00</div>
+              <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-slate-400 flex items-center gap-0.5 truncate">
+                0% vs yr
               </span>
             </div>
             <div onClick={() => handleAction('Gross Profit clicked! Notification triggered.')} className="p-3 sm:p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between hover:bg-slate-100 transition-colors cursor-pointer">
               <span className="text-[9.5px] sm:text-[10.5px] font-bold text-slate-400 uppercase block mb-1 truncate">Gross Profit</span>
-              <div className="text-sm sm:text-base font-bold text-slate-900 mb-1 truncate">$354,280.00</div>
-              <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-emerald-600 flex items-center gap-0.5 truncate">
-                <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> 24.6% vs yr
+              <div className="text-sm sm:text-base font-bold text-slate-900 mb-1 truncate">$0.00</div>
+              <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-slate-400 flex items-center gap-0.5 truncate">
+                0% vs yr
               </span>
             </div>
             <div onClick={() => handleAction('Gross Margin clicked! Notification triggered.')} className="p-3 sm:p-3.5 rounded-xl bg-emerald-50/90 border border-emerald-200/80 flex flex-col justify-between hover:bg-emerald-100/90 transition-colors cursor-pointer">
               <div>
                 <span className="text-[9.5px] sm:text-[10.5px] font-bold text-emerald-800 uppercase block mb-1 truncate">Gross Margin</span>
-                <div className="text-lg sm:text-xl font-black text-emerald-600 mb-1 truncate">28.4%</div>
+                <div className="text-lg sm:text-xl font-black text-emerald-600 mb-1 truncate">{dashboardData.kpis.grossMarginPct || 0}%</div>
                 <div className="w-full bg-emerald-200/80 rounded-full h-1.5 mb-2">
-                  <div className="bg-emerald-500 h-1.5 rounded-full w-[65%]" />
+                  <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${dashboardData.kpis.grossMarginPct || 0}%` }} />
                 </div>
               </div>
               <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-emerald-600 flex items-center gap-0.5 truncate">
-                <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> 2.6% vs yr
+                <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> Target 25%+
               </span>
             </div>
           </div>
@@ -786,54 +786,7 @@ const AccountsDashboard = () => {
             </button>
           </div>
           <div className="space-y-3 my-auto">
-            <div
-              onClick={() => handleAction('Activity: Invoice INV-1042 sent to ABC Auto Transport')}
-              className="flex items-start gap-2.5 sm:gap-3 p-1.5 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-            >
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 mt-0.5">
-                <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-slate-800 leading-snug truncate sm:whitespace-normal">Invoice INV-1042 has been sent to ABC Auto Transport</div>
-                <div className="text-[9.5px] sm:text-[10px] text-slate-400 font-medium mt-0.5">18 May 2026, 10:45 AM</div>
-              </div>
-            </div>
-            <div
-              onClick={() => handleAction('Activity: Payment of $4,150.00 received from Global Motors')}
-              className="flex items-start gap-2.5 sm:gap-3 p-1.5 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-            >
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-slate-800 leading-snug truncate sm:whitespace-normal">Payment of $4,150.00 received from Global Motors</div>
-                <div className="text-[9.5px] sm:text-[10px] text-slate-400 font-medium mt-0.5">18 May 2026, 09:15 AM</div>
-              </div>
-            </div>
-            <div
-              onClick={() => handleAction('Activity: Expense claim for Fuel - $320.00 submitted')}
-              className="flex items-start gap-2.5 sm:gap-3 p-1.5 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-            >
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
-                <Receipt className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-slate-800 leading-snug truncate sm:whitespace-normal">Expense claim for Fuel - $320.00 submitted by Driver #D-1024</div>
-                <div className="text-[9.5px] sm:text-[10px] text-slate-400 font-medium mt-0.5">17 May 2026, 04:30 PM</div>
-              </div>
-            </div>
-            <div
-              onClick={() => handleAction('Activity: Payroll for week ending 17 May 2026 ready')}
-              className="flex items-start gap-2.5 sm:gap-3 p-1.5 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-            >
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
-                <File className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-slate-800 leading-snug truncate sm:whitespace-normal">Payroll for week ending 17 May 2026 is ready for approval</div>
-                <div className="text-[9.5px] sm:text-[10px] text-slate-400 font-medium mt-0.5">17 May 2026, 11:20 AM</div>
-              </div>
-            </div>
+            <div className="text-center text-slate-400 py-6 font-bold text-xs uppercase">No recent activity found</div>
           </div>
         </div>
       </div>

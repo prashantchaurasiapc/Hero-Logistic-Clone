@@ -15,7 +15,7 @@ exports.getAll = async (req, res, next) => {
         where, skip, take, orderBy,
         include: {
           branch: true,
-          assignments: { take: 5, orderBy: { createdAt: 'desc' } },
+          assignments: { take: 5, orderBy: { startDate: 'desc' } },
           maintenance: { take: 5, orderBy: { createdAt: 'desc' } }
         }
       }),

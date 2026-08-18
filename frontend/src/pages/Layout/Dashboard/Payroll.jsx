@@ -11,48 +11,9 @@ import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 
 const Payroll = () => {
   const fmt = (val) => Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  // Master Payrolls Data matching screenshot
-  const initialPayrolls = [
-    {
-      id: 'PAYROLL-2026-W21',
-      weekEnding: '24 May 2026',
-      weekEndingRaw: '2026-05-24',
-      payGroup: 'Drivers - Linehaul',
-      type: 'Weekly',
-      employees: 18,
-      grossPay: 24650.00,
-      deductions: 6215.00,
-      netPay: 18435.00,
-      status: 'Draft',
-      createdBy: 'John Smith',
-      createdOn: '22 May 2026 10:15 AM',
-      basePay: 20500.00,
-      allowances: 2150.00,
-      overtime: 1600.00,
-      reimbursements: 400.00
-    },
-    {
-      id: 'PAYROLL-2026-W20',
-      weekEnding: '17 May 2026',
-      weekEndingRaw: '2026-05-17',
-      payGroup: 'Drivers - Linehaul',
-      type: 'Weekly',
-      employees: 18,
-      grossPay: 21950.00,
-      deductions: 5480.00,
-      netPay: 16470.00,
-      status: 'Paid',
-      createdBy: 'John Smith',
-      createdOn: '15 May 2026 09:22 AM',
-      basePay: 18500.00,
-      allowances: 1850.00,
-      overtime: 1250.00,
-      reimbursements: 350.00
-    }
-  ];
-
-  const [payrolls, setPayrolls] = useState(initialPayrolls);
-  const [selectedPayroll, setSelectedPayroll] = useState(initialPayrolls[0]);
+  const initialPayrolls = [];
+  const [payrolls, setPayrolls] = useState([]);
+  const [selectedPayroll, setSelectedPayroll] = useState(null);
   const [activeTab, setActiveTab] = useState('All Payrolls');
   const [loading, setLoading] = useState(false);
 
@@ -60,9 +21,11 @@ const Payroll = () => {
     setLoading(true);
     try {
       const res = await api.get('/accounts/payroll/runs');
-      if (res.data?.success && Array.isArray(res.data.data?.payRuns) && res.data.data.payRuns.length > 0) {
+      if (res.data?.success && Array.isArray(res.data.data?.payRuns)) {
         setPayrolls(res.data.data.payRuns);
-        setSelectedPayroll(res.data.data.payRuns[0]);
+        if (res.data.data.payRuns.length > 0) {
+          setSelectedPayroll(res.data.data.payRuns[0]);
+        }
       }
     } catch (err) {
       console.warn('Using live fallback payrolls:', err);
@@ -94,7 +57,7 @@ const Payroll = () => {
   // Date Filter State
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [weekEndingFilter, setWeekEndingFilter] = useState('All');
-  const [weekEndingLabel, setWeekEndingLabel] = useState('24 May 2026');
+  const [weekEndingLabel, setWeekEndingLabel] = useState('Current Period');
 
   // Bottom Details Sub-tab state
   const [bottomSubTab, setBottomSubTab] = useState('Summary');
@@ -112,12 +75,20 @@ const Payroll = () => {
   };
 
   // Donut Chart Data for Payroll Summary
+  const netPayTotal = payrolls.reduce((sum, p) => sum + (p.netPay || p.numericAmount || 0), 0);
+  const superTotal = payrolls.reduce((sum, p) => sum + (p.superannuation || 0), 0);
+  const paygTotal = payrolls.reduce((sum, p) => sum + (p.paygWithholding || 0), 0);
+  const deductionsTotal = payrolls.reduce((sum, p) => sum + (p.deductions || 0), 0);
+
   const payrollDonutData = [
-    { name: 'Net Pay', value: 18435, color: '#22c55e' },         // Green
-    { name: 'Superannuation', value: 3450, color: '#3b82f6' },   // Blue
-    { name: 'PAYG Withholding', value: 2765, color: '#eab308' }, // Yellow
-    { name: 'Other Deductions', value: 0, color: '#a855f7' }     // Purple
+    { name: 'Net Pay', value: netPayTotal || 0, color: '#22c55e' },         // Green
+    { name: 'Superannuation', value: superTotal || 0, color: '#3b82f6' },   // Blue
+    { name: 'PAYG Withholding', value: paygTotal || 0, color: '#eab308' }, // Yellow
+    { name: 'Other Deductions', value: deductionsTotal || 0, color: '#a855f7' }     // Purple
   ];
+
+  const totalPayrollAmount = netPayTotal + superTotal + paygTotal + deductionsTotal;
+  const employeesPaidCount = payrolls.reduce((sum, p) => sum + (p.employeesCount || p.employees || 0), 0);
 
   // Filtering Logic
   const filteredPayrolls = payrolls.filter(p => {
@@ -215,9 +186,9 @@ const Payroll = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Upcoming Payroll</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">$24,650.00</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">${totalPayrollAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <div className="text-[9px] sm:text-[10px] font-semibold text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 leading-tight">
-              <span className="whitespace-nowrap">Due 29 May</span> • <span className="text-purple-600 font-bold whitespace-nowrap">2 days left</span>
+              <span className="whitespace-nowrap">Due —</span> • <span className="text-slate-400 font-bold whitespace-nowrap">0 days left</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
@@ -229,9 +200,9 @@ const Payroll = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Employees Paid</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">18</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">{employeesPaidCount}</div>
             <div className="text-[9px] sm:text-[10px] font-semibold text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 leading-tight">
-              <span className="whitespace-nowrap">Total 18</span> • <span className="text-sky-600 font-bold cursor-pointer hover:underline whitespace-nowrap">Details &rarr;</span>
+              <span className="whitespace-nowrap">Total {employeesPaidCount}</span> • <span className="text-sky-600 font-bold cursor-pointer hover:underline whitespace-nowrap">Details &rarr;</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
@@ -243,9 +214,9 @@ const Payroll = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Total Payroll</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">$24,650.00</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">${totalPayrollAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <div className="text-[9px] sm:text-[10px] font-semibold text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 leading-tight">
-              <span className="whitespace-nowrap">24 May</span> • <span className="text-emerald-600 font-bold flex items-center whitespace-nowrap"><ArrowUp className="w-2.5 h-2.5"/> 12.4%</span>
+              <span className="whitespace-nowrap">—</span> • <span className="text-slate-400 font-bold flex items-center whitespace-nowrap">0%</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
@@ -257,7 +228,7 @@ const Payroll = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Taxes & Deductions</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">$6,215.00</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">${(superTotal + paygTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <div className="text-[9px] sm:text-[10px] font-semibold text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 leading-tight">
               <span className="whitespace-nowrap">PAYG, Super</span> • <span className="text-sky-600 font-bold cursor-pointer hover:underline whitespace-nowrap">Summary &rarr;</span>
             </div>
@@ -271,9 +242,9 @@ const Payroll = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Net Pay</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">$18,435.00</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">${netPayTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <div className="text-[9px] sm:text-[10px] font-semibold text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 leading-tight">
-              <span className="whitespace-nowrap">After deductions</span> • <span className="text-emerald-600 font-bold flex items-center whitespace-nowrap"><ArrowUp className="w-2.5 h-2.5"/> 12.4%</span>
+              <span className="whitespace-nowrap">After deductions</span> • <span className="text-slate-400 font-bold flex items-center whitespace-nowrap">0%</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
@@ -285,7 +256,7 @@ const Payroll = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Payroll YTD</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">$512,430.00</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">$0.00</div>
             <div className="text-[9px] sm:text-[10px] font-semibold text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 leading-tight">
               <span className="whitespace-nowrap">FY 2025/26</span> • <span className="text-sky-600 font-bold cursor-pointer hover:underline whitespace-nowrap">Report &rarr;</span>
             </div>
@@ -426,12 +397,12 @@ const Payroll = () => {
       {/* 3. TABS ROW (ALL PAYROLLS, DRAFT, PENDING, APPROVED, PAID, CANCELLED) */}
       <div className="flex items-center gap-3 sm:gap-6 text-xs font-bold mb-4 border-b border-slate-200/80 pb-1 overflow-x-auto no-scrollbar w-full whitespace-nowrap">
         {[
-          { id: 'All Payrolls', label: 'All Payrolls (12)' },
-          { id: 'Draft', label: 'Draft (2)' },
-          { id: 'Pending Approval', label: 'Pending Approval (1)' },
-          { id: 'Approved', label: 'Approved (5)' },
-          { id: 'Paid', label: 'Paid (4)' },
-          { id: 'Cancelled', label: 'Cancelled (0)' }
+          { id: 'All Payrolls', label: `All Payrolls (${payrolls.length})` },
+          { id: 'Draft', label: `Draft (${payrolls.filter(p => p.status === 'Draft').length})` },
+          { id: 'Pending Approval', label: `Pending Approval (${payrolls.filter(p => p.status === 'Pending Approval').length})` },
+          { id: 'Approved', label: `Approved (${payrolls.filter(p => p.status === 'Approved').length})` },
+          { id: 'Paid', label: `Paid (${payrolls.filter(p => p.status === 'Paid').length})` },
+          { id: 'Cancelled', label: `Cancelled (${payrolls.filter(p => p.status === 'Cancelled').length})` }
         ].map(tab => (
           <button
             key={tab.id}
@@ -628,7 +599,9 @@ const Payroll = () => {
                 </ResponsiveContainer>
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-1">
-                  <span className="text-[9px] font-black text-slate-900 leading-none tracking-tighter">$24.6k</span>
+                  <span className="text-[9px] font-black text-slate-900 leading-none tracking-tighter">
+                    ${(totalPayrollAmount / 1000).toFixed(1)}k
+                  </span>
                   <span className="text-[6.5px] font-extrabold text-slate-400 uppercase tracking-tighter mt-0.5">Gross Pay</span>
                 </div>
               </div>
@@ -640,28 +613,28 @@ const Payroll = () => {
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0" />
                     <span className="truncate">Net Pay</span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">$18,435</span>
+                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">${netPayTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1 min-w-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block shrink-0" />
                     <span className="truncate">Super</span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">$3,450</span>
+                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">${superTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1 min-w-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block shrink-0" />
                     <span className="truncate">PAYG</span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">$2,765</span>
+                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">${paygTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1 min-w-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-purple-500 inline-block shrink-0" />
                     <span className="truncate">Other</span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">$0</span>
+                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">${deductionsTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
             </div>
@@ -679,35 +652,35 @@ const Payroll = () => {
                   <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
                   <span>Period Start</span>
                 </div>
-                <span className="font-bold text-slate-900">18 May 2026</span>
+                <span className="font-bold text-slate-900">{selectedPayroll?.periodStart || selectedPayroll?.weekEnding || '—'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
                   <span>Period End</span>
                 </div>
-                <span className="font-bold text-slate-900">24 May 2026</span>
+                <span className="font-bold text-slate-900">{selectedPayroll?.periodEnd || selectedPayroll?.weekEnding || '—'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                   <span>Cut-off</span>
                 </div>
-                <span className="font-bold text-slate-900">24 May 12:00 PM</span>
+                <span className="font-bold text-slate-900">{selectedPayroll?.cutoffDate || '—'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
                   <span>Due Date</span>
                 </div>
-                <span className="font-bold text-slate-900">29 May 2026</span>
+                <span className="font-bold text-slate-900">{selectedPayroll?.dueDate || '—'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <CreditCard className="w-3 h-3 text-slate-400 shrink-0" />
                   <span>Payment Date</span>
                 </div>
-                <span className="font-bold text-slate-900">29 May 2026</span>
+                <span className="font-bold text-slate-900">{selectedPayroll?.createdOn || selectedPayroll?.paymentDate || '—'}</span>
               </div>
             </div>
           </div>

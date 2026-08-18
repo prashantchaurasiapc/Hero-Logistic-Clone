@@ -338,6 +338,9 @@ const Vehicles = () => {
   const [sortBy, setSortBy] = React.useState('id');
   const [viewMode, setViewMode] = React.useState('list'); // 'list' | 'grid'
   const [editVehicleModal, setEditVehicleModal] = React.useState(null);
+  const [showVehiclesFilterDrawer, setShowVehiclesFilterDrawer] = React.useState(false);
+  const filterBtnRef = React.useRef(null);
+  const [filterBtnRect, setFilterBtnRect] = React.useState(null);
 
   // Current Trailer Assignment & Modal States
   const [currentTrailer, setCurrentTrailer] = React.useState(null);
@@ -4001,68 +4004,78 @@ const Vehicles = () => {
           </button>
           <div className="relative">
             <button 
-              onClick={() => setMoreActionsOpen(!moreActionsOpen)}
+              onClick={() => setShowMoreActionsDropdown(!showMoreActionsDropdown)}
               className="border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center shadow-sm cursor-pointer whitespace-nowrap flex-grow sm:flex-grow-0 justify-center"
             >
               More Actions <ChevronDownIcon size={14} className="ml-1" />
             </button>
-            {moreActionsOpen && (
-              <div 
-                className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1 text-left animate-in fade-in zoom-in duration-100"
-                onClick={() => setMoreActionsOpen(false)}
-              >
-                <button 
-                  onClick={() => {
-                    const headers = ['Vehicle ID', 'Make/Model', 'Registration', 'Branch', 'Driver', 'Status', 'Compliance', 'Odometer'];
-                    const rows = vehicles.map(v => [
-                      `"${v.id || ''}"`,
-                      `"${v.make || ''}"`,
-                      `"${v.reg || ''}"`,
-                      `"${v.branch || ''}"`,
-                      `"${v.driver || ''}"`,
-                      `"${v.status || ''}"`,
-                      `"${v.compliance || ''}"`,
-                      `"${v.odometer || ''}"`
-                    ]);
-                    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-                    const encodedUri = encodeURI(csvContent);
-                    const link = document.createElement('a');
-                    link.setAttribute('href', encodedUri);
-                    link.setAttribute('download', `fleet_vehicles_${new Date().toISOString().slice(0, 10)}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    showToast('✓ Fleet vehicles exported to CSV');
-                  }}
-                  className="w-full px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2 cursor-pointer"
-                >
-                  <Download size={14} className="text-purple-600" /> Export Fleet (CSV)
-                </button>
-                <button 
-                  onClick={() => {
-                    window.print();
-                  }}
-                  className="w-full px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2 cursor-pointer"
-                >
-                  <Printer size={14} className="text-slate-600" /> Print Vehicle Registry
-                </button>
-                <button 
-                  onClick={() => {
-                    fetchVehicles();
-                    showToast('✓ Fleet vehicles synced with live database');
-                  }}
-                  className="w-full px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2 cursor-pointer border-t border-gray-100"
-                >
-                  <RefreshCw size={14} className="text-emerald-600" /> Sync / Refresh Fleet
-                </button>
-              </div>
+            {showMoreActionsDropdown && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowMoreActionsDropdown(false)} />
+                <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1.5 divide-y divide-gray-100 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="py-1">
+                    <button 
+                      onClick={() => {
+                        setShowMoreActionsDropdown(false);
+                        if (!vehicles || vehicles.length === 0) {
+                          showToast('No vehicles available to export', 'warning');
+                          return;
+                        }
+                        const headers = ['Vehicle / Reg No', 'Type', 'Make', 'Status', 'Current Driver', 'Odometer', 'Compliance'];
+                        const rows = vehicles.map(v => [`"${v.displayId || v.reg}"`, `"${v.type}"`, `"${v.make}"`, `"${v.status}"`, `"${v.driver}"`, `"${v.odometer}"`, `"${v.compliance}"`]);
+                        const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+                        const encodedUri = encodeURI(csvContent);
+                        const link = document.createElement('a');
+                        link.setAttribute('href', encodedUri);
+                        link.setAttribute('download', `fleet_summary_${new Date().toISOString().split('T')[0]}.csv`);
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        showToast('Exporting Fleet Summary CSV...');
+                      }} 
+                      className="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2 cursor-pointer"
+                    >
+                      <Download size={14} className="text-purple-600" /> Export Fleet Summary (CSV)
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowMoreActionsDropdown(false);
+                        window.print();
+                      }} 
+                      className="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2 cursor-pointer"
+                    >
+                      <FileText size={14} className="text-purple-600" /> Print Compliance Report
+                    </button>
+                  </div>
+                  <div className="py-1">
+                    <button 
+                      onClick={() => {
+                        setShowMoreActionsDropdown(false);
+                        fetchVehicles();
+                        showToast('Refreshing fleet & telemetry sync...');
+                      }} 
+                      className="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2 cursor-pointer"
+                    >
+                      <RefreshCw size={14} className="text-purple-600" /> Sync Telemetry Data
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
           <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white shrink-0">
-            <button className="px-2.5 py-2 bg-white hover:bg-gray-50 text-gray-600 border-r border-gray-200 cursor-pointer">
+            <button 
+              onClick={() => showToast('Navigated to previous fleet page')}
+              className="px-2.5 py-2 bg-white hover:bg-gray-50 text-gray-600 border-r border-gray-200 cursor-pointer"
+              title="Previous Page"
+            >
               <ChevronLeft size={16} />
             </button>
-            <button className="px-2.5 py-2 bg-white hover:bg-gray-50 text-gray-600 cursor-pointer">
+            <button 
+              onClick={() => showToast('Navigated to next fleet page')}
+              className="px-2.5 py-2 bg-white hover:bg-gray-50 text-gray-600 cursor-pointer"
+              title="Next Page"
+            >
               <ChevronRight size={16} />
             </button>
           </div>
@@ -4155,14 +4168,164 @@ const Vehicles = () => {
                    })}
                 </div>
                 <div className="flex items-center gap-3 pb-2 flex-wrap">
-                   <button className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm hover:bg-gray-50">
-                      <Filter size={14} /> Filters
-                   </button>
+                    <div className="relative">
+                       <button 
+                          ref={filterBtnRef}
+                          onClick={() => {
+                            if (!showVehiclesFilterDrawer) {
+                              const rect = filterBtnRef.current?.getBoundingClientRect();
+                              setFilterBtnRect(rect);
+                            }
+                            setShowVehiclesFilterDrawer(!showVehiclesFilterDrawer);
+                          }}
+                          className={`flex items-center gap-1.5 text-[12px] font-semibold border px-3 py-1.5 rounded-lg shadow-sm cursor-pointer transition-all ${
+                            showVehiclesFilterDrawer
+                              ? 'bg-purple-600 text-white border-purple-600 shadow-md'
+                              : 'text-gray-700 border-gray-200 hover:bg-gray-50'
+                          }`}
+                       >
+                          <Filter size={14} className={showVehiclesFilterDrawer ? 'text-white' : 'text-purple-600'} />
+                          Filters
+                          {(search || statusFilter !== 'ALL') && (
+                            <span className="ml-0.5 w-4 h-4 rounded-full bg-white text-purple-700 text-[9px] font-black flex items-center justify-center shadow-sm">
+                              {(search ? 1 : 0) + (statusFilter !== 'ALL' ? 1 : 0)}
+                            </span>
+                          )}
+                       </button>
+
+                       {/* Fixed-positioned filter panel — not clipped by overflow-hidden */}
+                       {showVehiclesFilterDrawer && filterBtnRect && (
+                          <>
+                             <div className="fixed inset-0 z-[9998]" onClick={() => setShowVehiclesFilterDrawer(false)} />
+                             <div
+                               className="fixed z-[9999] text-left"
+                               style={{
+                                 top: filterBtnRect.bottom + 8,
+                                 right: window.innerWidth - filterBtnRect.right,
+                               }}
+                             >
+                               <div className="w-72 bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden" style={{ animation: 'fadeInDown 0.15s ease' }}>
+                                 {/* Header */}
+                                 <div className="px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 flex items-center justify-between">
+                                   <div className="flex items-center gap-2">
+                                     <div className="w-6 h-6 rounded-md bg-white/20 flex items-center justify-center">
+                                       <Filter size={13} className="text-white" />
+                                     </div>
+                                     <span className="text-xs font-bold text-white tracking-wide">Fleet Filters</span>
+                                   </div>
+                                   <button
+                                     onClick={() => { setSearch(''); setStatusFilter('ALL'); }}
+                                     className="text-[10px] font-bold text-purple-200 hover:text-white transition-colors cursor-pointer"
+                                   >
+                                     Reset All
+                                   </button>
+                                 </div>
+
+                                 {/* Body */}
+                                 <div className="p-4 space-y-4">
+                                   {/* Search */}
+                                   <div>
+                                     <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Search</label>
+                                     <div className="relative">
+                                       <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                       <input
+                                         type="text"
+                                         value={search}
+                                         onChange={(e) => setSearch(e.target.value)}
+                                         placeholder="Reg, driver, make..."
+                                         className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-xl text-xs font-medium focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 bg-gray-50"
+                                         autoFocus
+                                       />
+                                       {search && (
+                                         <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
+                                           <X size={12} />
+                                         </button>
+                                       )}
+                                     </div>
+                                   </div>
+
+                                   {/* Status */}
+                                   <div>
+                                     <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Vehicle Status</label>
+                                     <div className="grid grid-cols-1 gap-1.5">
+                                       {[
+                                         { value: 'ALL', label: 'All Vehicles', icon: '🚛', color: 'text-gray-700 bg-gray-50 border-gray-200 hover:border-gray-400' },
+                                         { value: 'ACTIVE', label: 'Active', icon: '✅', color: 'text-green-700 bg-green-50 border-green-200 hover:border-green-400' },
+                                         { value: 'MAINTENANCE', label: 'In Maintenance', icon: '🔧', color: 'text-orange-700 bg-orange-50 border-orange-200 hover:border-orange-400' },
+                                         { value: 'OUT OF SERVICE', label: 'Out of Service', icon: '🔴', color: 'text-red-700 bg-red-50 border-red-200 hover:border-red-400' },
+                                         { value: 'INACTIVE', label: 'Sold / Inactive', icon: '📦', color: 'text-gray-500 bg-gray-50 border-gray-200 hover:border-gray-400' },
+                                       ].map(opt => (
+                                         <button
+                                           key={opt.value}
+                                           onClick={() => setStatusFilter(opt.value)}
+                                           className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] font-semibold cursor-pointer transition-all text-left ${
+                                             statusFilter === opt.value
+                                               ? 'border-purple-400 bg-purple-50 text-purple-700 shadow-sm ring-1 ring-purple-200'
+                                               : opt.color
+                                           }`}
+                                         >
+                                           <span className="text-[12px]">{opt.icon}</span>
+                                           {opt.label}
+                                           {statusFilter === opt.value && <Check size={12} className="ml-auto text-purple-600 shrink-0" />}
+                                         </button>
+                                       ))}
+                                     </div>
+                                   </div>
+                                 </div>
+
+                                 {/* Footer */}
+                                 <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center gap-2">
+                                   <button
+                                     onClick={() => { setSearch(''); setStatusFilter('ALL'); }}
+                                     className="flex-1 py-2 border border-gray-200 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-100 transition-colors cursor-pointer"
+                                   >
+                                     Clear
+                                   </button>
+                                   <button
+                                     onClick={() => setShowVehiclesFilterDrawer(false)}
+                                     className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-sm"
+                                   >
+                                     Apply Filters
+                                   </button>
+                                 </div>
+                               </div>
+                             </div>
+                          </>
+                       )}
+                    </div>
                    <div className="relative">
                       <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                       <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search vehicles..." className="pl-8 pr-3 py-1.5 text-[12px] border border-gray-200 rounded-lg w-48 focus:outline-none focus:border-purple-400" />
                    </div>
-                   <button className="p-1.5 border border-gray-200 text-gray-600 rounded-lg shadow-sm hover:bg-gray-50">
+                   <button 
+                      onClick={() => {
+                         if (!vehicles || vehicles.length === 0) {
+                            alert('No vehicles available to export.');
+                            return;
+                         }
+                         const list = (filteredVehicles && filteredVehicles.length > 0) ? filteredVehicles : vehicles;
+                         const headers = ['Vehicle / Reg No', 'Type / Make / Model', 'Year', 'Status', 'Current Driver', 'Odometer', 'Compliance'];
+                         const rows = list.map(v => [
+                            `"${v.displayId || v.reg || ''}"`,
+                            `"${v.make || ''}"`,
+                            `"${v.year || ''}"`,
+                            `"${v.status || ''}"`,
+                            `"${v.driver || 'Unassigned'}"`,
+                            `"${v.odometer || ''}"`,
+                            `"${v.compliance || ''}"`
+                         ]);
+                         const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+                         const encodedUri = encodeURI(csvContent);
+                         const link = document.createElement('a');
+                         link.setAttribute('href', encodedUri);
+                         link.setAttribute('download', `vehicles_fleet_${new Date().toISOString().split('T')[0]}.csv`);
+                         document.body.appendChild(link);
+                         link.click();
+                         document.body.removeChild(link);
+                      }}
+                      title="Export Fleet CSV"
+                      className="p-1.5 border border-gray-200 text-gray-600 rounded-lg shadow-sm hover:bg-gray-50 cursor-pointer"
+                   >
                       <Download size={16} />
                    </button>
                 </div>

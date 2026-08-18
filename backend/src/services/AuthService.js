@@ -73,8 +73,67 @@ class AuthService {
       }).catch(() => {});
     }
 
+    // Resolve permissions with parent-child hierarchy
+    const roleSlug = user.customRole?.slug || user.role;
+    let masterPerms = {};
+    if (roleSlug) {
+      try {
+        const masterRole = await prisma.customRole.findFirst({
+          where: { OR: [{ slug: roleSlug }, { name: roleSlug }], companyId: null, isSystem: true },
+          include: { permissions: true }
+        });
+        if (masterRole?.permissions) {
+          masterRole.permissions.forEach(p => {
+            try { masterPerms[p.module] = JSON.parse(p.actionString); }
+            catch (e) { masterPerms[p.module] = p.actionString; }
+          });
+        }
+      } catch (err) {
+        console.warn('Could not fetch masterRole permissions:', err.message);
+      }
+    }
+
+    if (!user.companyId || user.role === 'SUPER_ADMIN') {
+      user.permissions = masterPerms;
+    } else {
+      let companyPerms = {};
+      try {
+        const companyRole = await prisma.customRole.findFirst({
+          where: { OR: [{ slug: roleSlug }, { name: roleSlug }], companyId: user.companyId },
+          include: { permissions: true }
+        });
+        if (companyRole?.permissions) {
+          companyRole.permissions.forEach(p => {
+            try { companyPerms[p.module] = JSON.parse(p.actionString); }
+            catch (e) { companyPerms[p.module] = p.actionString; }
+          });
+        }
+      } catch (err) {
+        console.warn('Could not fetch companyRole permissions:', err.message);
+      }
+
+      const effectivePerms = {};
+      Object.entries(masterPerms).forEach(([mod, mActions]) => {
+        effectivePerms[mod] = {};
+        if (typeof mActions === 'object' && mActions !== null) {
+          Object.entries(mActions).forEach(([action, mVal]) => {
+            if (mVal === false) {
+              effectivePerms[mod][action] = false;
+            } else {
+              effectivePerms[mod][action] = companyPerms[mod]?.[action] !== undefined
+                ? Boolean(companyPerms[mod][action])
+                : Boolean(mVal);
+            }
+          });
+        }
+      });
+      user.permissions = effectivePerms;
+    }
+
     return { user, accessToken, refreshToken };
+
   }
+
 
   async logout(refreshToken) {
     if (!refreshToken || !prisma.userSession) return;
