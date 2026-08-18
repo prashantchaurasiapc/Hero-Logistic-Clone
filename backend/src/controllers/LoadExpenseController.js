@@ -8,7 +8,12 @@ exports.getAll = async (req, res, next) => {
   try {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
-    if (req.tenantId) where.load = { companyId: req.tenantId };
+    if (req.tenantId) {
+      where.OR = [
+        { companyId: req.tenantId },
+        { load: { companyId: req.tenantId } }
+      ];
+    }
     if (req.user && req.user.role === 'DRIVER') {
       where.load = { driver: { userId: req.user.id } };
     }
@@ -31,7 +36,12 @@ exports.getAll = async (req, res, next) => {
 exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.tenantId) where.load = { companyId: req.tenantId };
+    if (req.tenantId) {
+      where.OR = [
+        { companyId: req.tenantId },
+        { load: { companyId: req.tenantId } }
+      ];
+    }
     if (req.user && req.user.role === 'DRIVER') {
       where.load = { driver: { userId: req.user.id } };
     }
@@ -54,13 +64,27 @@ exports.getById = async (req, res, next) => {
 // Create new LoadExpense
 exports.create = async (req, res, next) => {
   try {
-    const payload = { ...req.body };
-    if (req.tenantId) {
-      payload.load = { connect: { id: payload.loadId } };
+    const { loadId, date, type, description, amount, status, vendorName, litres, pricePerLitre, odometer, receiptUrl, vehicleId, driverId } = req.body;
+
+    let companyId = req.tenantId || req.user?.companyId;
+    if (!companyId && req.user?.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { companyId: true }
+      });
+      companyId = user?.companyId;
     }
-    if (req.user && req.user.role === 'DRIVER') {
+
+    if (!companyId) {
+      return sendError(res, {
+        code: ERROR_CODES.BAD_REQUEST,
+        message: 'Company context is required to create an expense.'
+      }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    if (loadId && req.user && req.user.role === 'DRIVER') {
       const assignedLoad = await prisma.load.findFirst({
-        where: { id: payload.loadId, driver: { userId: req.user.id } }
+        where: { id: loadId, driver: { userId: req.user.id } }
       });
       if (!assignedLoad) {
         return sendError(res, {
@@ -68,12 +92,27 @@ exports.create = async (req, res, next) => {
           message: 'You are not assigned to this load.'
         }, HTTP_STATUS.FORBIDDEN);
       }
-      payload.status = 'PENDING';
     }
 
     const data = await prisma.loadExpense.create({
-      data: payload
+      data: {
+        companyId,
+        loadId: loadId || null,
+        date: date ? new Date(date) : new Date(),
+        type: type || 'Fuel',
+        description: description || '',
+        amount: parseFloat(amount || 0),
+        status: (req.user && req.user.role === 'DRIVER') ? 'PENDING' : (status || 'PENDING'),
+        vendorName: vendorName || null,
+        litres: litres ? parseFloat(litres) : null,
+        pricePerLitre: pricePerLitre ? parseFloat(pricePerLitre) : null,
+        odometer: odometer ? parseInt(odometer, 10) : null,
+        receiptUrl: receiptUrl || null,
+        vehicleId: vehicleId || null,
+        driverId: driverId || null
+      }
     });
+
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {
     next(error);
@@ -87,7 +126,12 @@ exports.update = async (req, res, next) => {
     const updateData = { ...req.body };
     
     const where = { id };
-    if (req.tenantId) where.load = { companyId: req.tenantId };
+    if (req.tenantId) {
+      where.OR = [
+        { companyId: req.tenantId },
+        { load: { companyId: req.tenantId } }
+      ];
+    }
     if (req.user && req.user.role === 'DRIVER') {
       const existing = await prisma.loadExpense.findFirst({
         where: { id, load: { driver: { userId: req.user.id } } }
@@ -144,7 +188,12 @@ exports.update = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.tenantId) where.load = { companyId: req.tenantId };
+    if (req.tenantId) {
+      where.OR = [
+        { companyId: req.tenantId },
+        { load: { companyId: req.tenantId } }
+      ];
+    }
     if (req.user && req.user.role === 'DRIVER') {
       const existing = await prisma.loadExpense.findFirst({
         where: { id: req.params.id, load: { driver: { userId: req.user.id } } }

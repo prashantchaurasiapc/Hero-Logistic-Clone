@@ -93,8 +93,10 @@ const SuperAdminDashboardRoutes = require('./SuperAdminDashboardRoutes');
 const PaymentGatewayConfigRoutes = require('./PaymentGatewayConfigRoutes');
 const WorkflowRuleRoutes = require('./WorkflowRuleRoutes');
 const UploadRoutes = require('./UploadRoutes');
+const DriverPortalRoutes = require('./DriverPortalRoutes');
 
 router.use('/upload', UploadRoutes);
+router.use('/driver-portal', DriverPortalRoutes);
 router.use('/auth', authRoutes);
 router.use('/workflow-rules', WorkflowRuleRoutes);
 router.use('/companys', CompanyRoutes);
@@ -213,9 +215,12 @@ router.use('/dashboard-metrics', SuperAdminDashboardRoutes);
 // Warehouse Portal routes & aliases
 router.use('/warehouse-portal', WarehousePortalRoutes);
 
+<<<<<<< HEAD
 // Driver Portal dedicated routes
 const DriverPortalRoutes = require('./DriverPortalRoutes');
 router.use('/driver-portal', DriverPortalRoutes);
+=======
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
 // Accounts Portal dedicated routes
 const AccountsPortalRoutes = require('./AccountsPortalRoutes');

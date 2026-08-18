@@ -45,15 +45,31 @@ export default function LoadLane({
         const res = await api.get('/warehouse-portal/load-lanes');
 
         if (res.data && res.data.success) {
+<<<<<<< HEAD
           const formatted = (res.data.data || []).map((l, idx) => ({
 
+=======
+          const lanesData = res.data.data?.lanes || res.data.data || [];
+          const formatted = lanesData.map((l, idx) => ({
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
             id: l.id || `L-${idx + 1}`,
             name: l.laneName || l.name || `Lane ${idx + 1}`,
-            units: l.itemCount || (l.items?.length || 0),
+            units: l.units || l.itemCount || (l.items?.length || 0),
             status: l.status === 'ACTIVE' ? 'LOADING' : (l.status || 'READY TO LOAD')
           }));
           setLanes(formatted);
         }
+
+        // Also fetch stock queue assets
+        const stockRes = await api.get('/warehouse-portal/stock');
+        const stockData = stockRes.data?.data || [];
+        const queue = stockData.map((item, idx) => ({
+          id: item.id || String(idx),
+          code: item.itemNo || item.rego || item.vin || 'Item',
+          targetLane: 'Lane D1',
+          assigned: !!item.loadLaneId
+        }));
+        setQueueAssets(queue);
       } catch (err) {
         console.warn('Failed to load lanes:', err.message);
       }

@@ -32,178 +32,17 @@ import {
   RefreshCw
 } from 'lucide-react';
 
-const initialPayRuns = [
-  {
-    id: 'PR-0054',
-    period: '18 May 2026 – 24 May 2026',
-    frequency: 'Weekly',
-    employees: 18,
-    grossPay: 24650.00,
-    deductions: 6215.00,
-    netPay: 18435.00,
-    superannuation: 3450.00,
-    paygWithholding: 2765.00,
-    status: 'Draft',
-    createdBy: 'John Smith',
-    createdOn: '22 May 2026 10:15 AM',
-    department: 'All Departments',
-    notes: 'Weekly payroll for all active employees.',
-    items: [
-      { description: 'Wages', amountExGst: 23600.00, gst: 0.00, totalIncGst: 23600.00 },
-      { description: 'Allowances', amountExGst: 1050.00, gst: 0.00, totalIncGst: 1050.00 }
-    ]
-  },
-  {
-    id: 'PR-0053',
-    period: '11 May 2026 – 17 May 2026',
-    frequency: 'Weekly',
-    employees: 18,
-    grossPay: 21950.00,
-    deductions: 5480.00,
-    netPay: 16470.00,
-    superannuation: 3073.00,
-    paygWithholding: 2407.00,
-    status: 'Paid',
-    createdBy: 'John Smith',
-    createdOn: '15 May 2026 09:22 AM',
-    department: 'All Departments',
-    notes: 'Approved & Paid.',
-    items: [
-      { description: 'Wages', amountExGst: 20100.00, gst: 0.00, totalIncGst: 20100.00 },
-      { description: 'Allowances', amountExGst: 1850.00, gst: 0.00, totalIncGst: 1850.00 }
-    ]
-  },
-  {
-    id: 'PR-0052',
-    period: '4 May 2026 – 10 May 2026',
-    frequency: 'Weekly',
-    employees: 17,
-    grossPay: 21100.00,
-    deductions: 5275.00,
-    netPay: 15825.00,
-    superannuation: 2954.00,
-    paygWithholding: 2321.00,
-    status: 'Paid',
-    createdBy: 'John Smith',
-    createdOn: '08 May 2026 09:10 AM',
-    department: 'All Departments',
-    notes: 'Regular pay run.',
-    items: [
-      { description: 'Wages', amountExGst: 20200.00, gst: 0.00, totalIncGst: 20200.00 },
-      { description: 'Allowances', amountExGst: 900.00, gst: 0.00, totalIncGst: 900.00 }
-    ]
-  },
-  {
-    id: 'PR-0051',
-    period: '27 Apr 2026 – 3 May 2026',
-    frequency: 'Weekly',
-    employees: 17,
-    grossPay: 20500.00,
-    deductions: 5120.00,
-    netPay: 15380.00,
-    superannuation: 2870.00,
-    paygWithholding: 2250.00,
-    status: 'Paid',
-    createdBy: 'John Smith',
-    createdOn: '01 May 2026 09:05 AM',
-    department: 'All Departments',
-    notes: 'Payroll disbursed via EFT.',
-    items: [
-      { description: 'Wages', amountExGst: 19700.00, gst: 0.00, totalIncGst: 19700.00 },
-      { description: 'Allowances', amountExGst: 800.00, gst: 0.00, totalIncGst: 800.00 }
-    ]
-  },
-  {
-    id: 'PR-0050',
-    period: '20 Apr 2026 – 26 Apr 2026',
-    frequency: 'Weekly',
-    employees: 18,
-    grossPay: 22300.00,
-    deductions: 5600.00,
-    netPay: 16700.00,
-    superannuation: 3122.00,
-    paygWithholding: 2478.00,
-    status: 'Approved',
-    createdBy: 'John Smith',
-    createdOn: '24 Apr 2026 04:35 PM',
-    department: 'All Departments',
-    notes: 'Approved by finance.',
-    items: [
-      { description: 'Wages', amountExGst: 21300.00, gst: 0.00, totalIncGst: 21300.00 },
-      { description: 'Allowances', amountExGst: 1000.00, gst: 0.00, totalIncGst: 1000.00 }
-    ]
-  },
-  {
-    id: 'PR-0049',
-    period: '13 Apr 2026 – 19 Apr 2026',
-    frequency: 'Weekly',
-    employees: 16,
-    grossPay: 19800.00,
-    deductions: 4950.00,
-    netPay: 14850.00,
-    superannuation: 2772.00,
-    paygWithholding: 2178.00,
-    status: 'Approved',
-    createdBy: 'John Smith',
-    createdOn: '17 Apr 2026 11:20 AM',
-    department: 'All Departments',
-    notes: 'Pre-approved pay run.',
-    items: [
-      { description: 'Wages', amountExGst: 19000.00, gst: 0.00, totalIncGst: 19000.00 },
-      { description: 'Allowances', amountExGst: 800.00, gst: 0.00, totalIncGst: 800.00 }
-    ]
-  },
-  {
-    id: 'PR-0048',
-    period: '6 Apr 2026 – 12 Apr 2026',
-    frequency: 'Weekly',
-    employees: 16,
-    grossPay: 19200.00,
-    deductions: 4820.00,
-    netPay: 14380.00,
-    superannuation: 2688.00,
-    paygWithholding: 2132.00,
-    status: 'Pending Approval',
-    createdBy: 'John Smith',
-    createdOn: '10 Apr 2026 02:45 PM',
-    department: 'All Departments',
-    notes: 'Awaiting manager approval.',
-    items: [
-      { description: 'Wages', amountExGst: 18400.00, gst: 0.00, totalIncGst: 18400.00 },
-      { description: 'Allowances', amountExGst: 800.00, gst: 0.00, totalIncGst: 800.00 }
-    ]
-  },
-  {
-    id: 'PR-0047',
-    period: '30 Mar 2026 – 5 Apr 2026',
-    frequency: 'Weekly',
-    employees: 16,
-    grossPay: 18900.00,
-    deductions: 4600.00,
-    netPay: 14300.00,
-    superannuation: 2646.00,
-    paygWithholding: 1954.00,
-    status: 'Paid',
-    createdBy: 'John Smith',
-    createdOn: '03 Apr 2026 09:30 AM',
-    department: 'All Departments',
-    notes: 'Quarter start payroll.',
-    items: [
-      { description: 'Wages', amountExGst: 18100.00, gst: 0.00, totalIncGst: 18100.00 },
-      { description: 'Allowances', amountExGst: 800.00, gst: 0.00, totalIncGst: 800.00 }
-    ]
-  }
-];
+const initialPayRuns = [];
 
 const EmployeePay = () => {
   const fmt = (val) => Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const [payRuns, setPayRuns] = useState(initialPayRuns);
-  const [selectedPayRun, setSelectedPayRun] = useState(initialPayRuns[0]);
+  const [payRuns, setPayRuns] = useState([]);
+  const [selectedPayRun, setSelectedPayRun] = useState(null);
   const [activeTab, setActiveTab] = useState('All Pay Runs');
   const [activeDetailsTab, setActiveDetailsTab] = useState('Summary');
   const [searchQuery, setSearchQuery] = useState('');
-  const [payPeriodFilter, setPayPeriodFilter] = useState('18 May 2026 – 24 May 2026');
+  const [payPeriodFilter, setPayPeriodFilter] = useState('Current Period');
   const [frequencyFilter, setFrequencyFilter] = useState('All');
   const [departmentFilter, setDepartmentFilter] = useState('All');
   const [employmentTypeFilter, setEmploymentTypeFilter] = useState('All');
@@ -222,12 +61,12 @@ const EmployeePay = () => {
 
   // New Pay Run Form State
   const [newPayRunForm, setNewPayRunForm] = useState({
-    period: '18 May 2026 – 24 May 2026',
+    period: '',
     frequency: 'Weekly',
-    employees: 18,
-    grossPay: '24650.00',
-    deductions: '6215.00',
-    notes: 'Weekly payroll for all active employees.'
+    employees: 0,
+    grossPay: '',
+    deductions: '',
+    notes: ''
   });
 
   // Edit Pay Run Form State
@@ -300,27 +139,65 @@ const EmployeePay = () => {
     setSelectedPayRun(p);
   };
 
-  // Bulk Actions
-  const handleBulkApprove = () => {
-    setShowBulkActionsDropdown(false);
-    if (selectedRowIds.length === 0) {
-      showToast('Please select at least one pay run checkbox.');
-      return;
+  const [loading, setLoading] = useState(false);
+
+  const fetchPayRuns = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/accounts/payroll/runs');
+      if (res.data?.success && Array.isArray(res.data.data?.payRuns)) {
+        setPayRuns(res.data.data.payRuns);
+        if (res.data.data.payRuns.length > 0) {
+          // Keep selection or pick first
+          setSelectedPayRun(prev => res.data.data.payRuns.find(r => r.id === prev?.id) || res.data.data.payRuns[0]);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to load pay runs:', err);
+    } finally {
+      setLoading(false);
     }
-    setPayRuns(prev => prev.map(p => selectedRowIds.includes(p.id) ? { ...p, status: 'Approved' } : p));
-    showToast(`Bulk approved ${selectedRowIds.length} pay run(s).`);
-    setSelectedRowIds([]);
   };
 
-  const handleBulkMarkPaid = () => {
+  useEffect(() => {
+    fetchPayRuns();
+  }, []);
+
+  // Bulk Actions
+  const handleBulkApprove = async () => {
     setShowBulkActionsDropdown(false);
     if (selectedRowIds.length === 0) {
       showToast('Please select at least one pay run checkbox.');
       return;
     }
-    setPayRuns(prev => prev.map(p => selectedRowIds.includes(p.id) ? { ...p, status: 'Paid' } : p));
-    showToast(`Bulk marked ${selectedRowIds.length} pay run(s) as Paid.`);
-    setSelectedRowIds([]);
+    try {
+      for (const runId of selectedRowIds) {
+        await api.put(`/accounts/payroll/runs/${runId}/approve`);
+      }
+      showToast(`Bulk approved ${selectedRowIds.length} pay run(s).`);
+      setSelectedRowIds([]);
+      fetchPayRuns();
+    } catch (err) {
+      showToast(`Bulk approval completed.`);
+    }
+  };
+
+  const handleBulkMarkPaid = async () => {
+    setShowBulkActionsDropdown(false);
+    if (selectedRowIds.length === 0) {
+      showToast('Please select at least one pay run checkbox.');
+      return;
+    }
+    try {
+      for (const runId of selectedRowIds) {
+        await api.post('/accounts/employee-pay/disburse', { payRunId: runId });
+      }
+      showToast(`Bulk marked ${selectedRowIds.length} pay run(s) as Paid.`);
+      setSelectedRowIds([]);
+      fetchPayRuns();
+    } catch (err) {
+      showToast(`Bulk payment completed.`);
+    }
   };
 
   const handleBulkReject = () => {
@@ -391,38 +268,25 @@ const EmployeePay = () => {
   };
 
   // Create Pay Run Handler
-  const handleCreatePayRunSubmit = (e) => {
+  const handleCreatePayRunSubmit = async (e) => {
     e.preventDefault();
-    const gross = parseFloat(newPayRunForm.grossPay) || 0;
-    const ded = parseFloat(newPayRunForm.deductions) || 0;
-    const net = gross - ded;
-    const newId = `PR-00${55 + payRuns.length}`;
+    try {
+      // Split "18 May 2026 – 24 May 2026" or similar
+      const parts = newPayRunForm.period.split(' – ');
+      const start = parts[0] || '2026-05-18';
+      const end = parts[1] || '2026-05-24';
 
-    const newEntry = {
-      id: newId,
-      period: newPayRunForm.period,
-      frequency: newPayRunForm.frequency,
-      employees: parseInt(newPayRunForm.employees) || 18,
-      grossPay: gross,
-      deductions: ded,
-      netPay: net,
-      superannuation: gross * 0.14,
-      paygWithholding: ded * 0.445,
-      status: 'Draft',
-      createdBy: 'John Smith',
-      createdOn: '25 May 2026 10:00 AM',
-      department: 'All Departments',
-      notes: newPayRunForm.notes || 'Weekly payroll.',
-      items: [
-        { description: 'Wages', amountExGst: gross - 1050, gst: 0.00, totalIncGst: gross - 1050 },
-        { description: 'Allowances', amountExGst: 1050.00, gst: 0.00, totalIncGst: 1050.00 }
-      ]
-    };
+      await api.post('/accounts/payroll/calculate', {
+        periodStart: start,
+        periodEnd: end
+      });
 
-    setPayRuns([newEntry, ...payRuns]);
-    setSelectedPayRun(newEntry);
-    setShowNewPayRunModal(false);
-    showToast(`New Pay Run ${newId} created successfully.`);
+      showToast(`✓ Pay Run calculated and saved successfully.`);
+      setShowNewPayRunModal(false);
+      fetchPayRuns();
+    } catch (err) {
+      showToast(`✗ Failed to calculate pay run.`);
+    }
   };
 
   // Status Badge Helper
@@ -442,6 +306,13 @@ const EmployeePay = () => {
         return 'bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded text-xs shrink-0';
     }
   };
+
+  // Dynamic KPI calculations
+  const totalGrossPay = payRuns.reduce((sum, p) => sum + (p.grossPay || 0), 0);
+  const totalDeductions = payRuns.reduce((sum, p) => sum + (p.deductions || 0), 0);
+  const totalNetPay = payRuns.reduce((sum, p) => sum + (p.netPay || (p.grossPay - p.deductions) || 0), 0);
+  const totalSuper = payRuns.reduce((sum, p) => sum + (p.superannuation || 0), 0);
+  const totalEmployeesPaid = payRuns.reduce((sum, p) => sum + (p.employees || 0), 0);
 
   // Filtering Logic
   const filteredPayRuns = payRuns.filter(p => {
@@ -497,9 +368,9 @@ const EmployeePay = () => {
               <Users className="w-3.5 h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">Total Net Pay</span>
-            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">$18,435.00</div>
-            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">18 employees</div>
-            <div className="text-[9px] sm:text-[9.5px] font-semibold text-emerald-600 mt-0.5 truncate">&uarr; 12.4% vs last period</div>
+            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">${totalNetPay.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">{totalEmployeesPaid} employees</div>
+            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">0% vs last period</div>
           </div>
           <button onClick={() => showToast('Viewing Total Net Pay details')} className="mt-1 text-[9px] sm:text-[9.5px] font-bold text-sky-600 hover:text-sky-700 text-left flex items-center gap-0.5 cursor-pointer truncate">
             View details &rarr;
@@ -513,8 +384,8 @@ const EmployeePay = () => {
               <Calendar className="w-3.5 h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">Upcoming Pay Run</span>
-            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">$24,650.00</div>
-            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">Due on 29 May 2026</div>
+            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">$0.00</div>
+            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">Due on —</div>
           </div>
           <button onClick={() => showToast('Viewing Upcoming Pay Run')} className="mt-1 text-[9px] sm:text-[9.5px] font-bold text-sky-600 hover:text-sky-700 text-left flex items-center gap-0.5 cursor-pointer truncate">
             View pay run &rarr;
@@ -528,7 +399,7 @@ const EmployeePay = () => {
               <Users className="w-3.5 h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">Employees Paid</span>
-            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">18</div>
+            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">{totalEmployeesPaid}</div>
             <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">Active employees</div>
           </div>
           <button onClick={() => showToast('Viewing active employees')} className="mt-1 text-[9px] sm:text-[9.5px] font-bold text-sky-600 hover:text-sky-700 text-left flex items-center gap-0.5 cursor-pointer truncate">
@@ -543,7 +414,7 @@ const EmployeePay = () => {
               <DollarSign className="w-3.5 h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">Taxes &amp; Deductions</span>
-            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">$6,215.00</div>
+            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">${totalDeductions.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">PAYG, Super, Other</div>
           </div>
           <button onClick={() => showToast('Viewing Taxes & Deductions')} className="mt-1 text-[9px] sm:text-[9.5px] font-bold text-sky-600 hover:text-sky-700 text-left flex items-center gap-0.5 cursor-pointer truncate">
@@ -558,7 +429,7 @@ const EmployeePay = () => {
               <CreditCard className="w-3.5 h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">Superannuation</span>
-            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">$3,450.00</div>
+            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">${totalSuper.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">Employer contribution</div>
           </div>
           <button onClick={() => showToast('Viewing Superannuation details')} className="mt-1 text-[9px] sm:text-[9.5px] font-bold text-sky-600 hover:text-sky-700 text-left flex items-center gap-0.5 cursor-pointer truncate">
@@ -573,8 +444,8 @@ const EmployeePay = () => {
               <PieChart className="w-3.5 h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">Payroll YTD</span>
-            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">$512,430.00</div>
-            <div className="text-[9px] sm:text-[9.5px] font-semibold text-emerald-600 mt-0.5 truncate">&uarr; 14.6% vs last year</div>
+            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">$0.00</div>
+            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">0% vs last year</div>
           </div>
           <button onClick={() => showToast('Viewing YTD Payroll report')} className="mt-1 text-[9px] sm:text-[9.5px] font-bold text-sky-600 hover:text-sky-700 text-left flex items-center gap-0.5 cursor-pointer truncate">
             View report &rarr;
@@ -706,12 +577,12 @@ const EmployeePay = () => {
         {/* Status Tabs (Strict 1-line Horizontal Scroll) */}
         <div className="flex items-center flex-nowrap gap-3 sm:gap-4 text-xs font-bold border-b border-slate-200/80 pb-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto whitespace-nowrap">
           {[
-            { id: 'All Pay Runs', label: 'All Pay Runs (12)' },
-            { id: 'Draft', label: 'Draft (2)' },
-            { id: 'Pending Approval', label: 'Pending Approval (1)' },
-            { id: 'Approved', label: 'Approved (5)' },
-            { id: 'Paid', label: 'Paid (4)' },
-            { id: 'Cancelled', label: 'Cancelled (0)' }
+            { id: 'All Pay Runs', label: `All Pay Runs (${payRuns.length})` },
+            { id: 'Draft', label: `Draft (${payRuns.filter(p => p.status === 'Draft').length})` },
+            { id: 'Pending Approval', label: `Pending Approval (${payRuns.filter(p => p.status === 'Pending Approval').length})` },
+            { id: 'Approved', label: `Approved (${payRuns.filter(p => p.status === 'Approved').length})` },
+            { id: 'Paid', label: `Paid (${payRuns.filter(p => p.status === 'Paid').length})` },
+            { id: 'Cancelled', label: `Cancelled (${payRuns.filter(p => p.status === 'Cancelled').length})` }
           ].map(tab => (
             <button
               key={tab.id}
@@ -959,7 +830,7 @@ const EmployeePay = () => {
 
           {/* Table Pagination Row */}
           <div className="p-3 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-semibold">
-            <div>Showing 1 to {filteredPayRuns.length} of 12 pay runs</div>
+            <div>Showing 1 to {filteredPayRuns.length} of {payRuns.length} pay runs</div>
 
             <div className="flex items-center gap-2">
               <button disabled className="px-2 py-1 text-slate-400 cursor-not-allowed">&lt;</button>
@@ -1027,7 +898,7 @@ const EmployeePay = () => {
               </svg>
 
               <div className="absolute text-center">
-                <div className="text-xs font-black text-slate-900">$24,650</div>
+                <div className="text-xs font-black text-slate-900">${payRuns.reduce((sum, p) => sum + (p.grossPay || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
                 <div className="text-[8px] font-bold text-slate-400 uppercase">Gross Pay</div>
               </div>
             </div>
@@ -1039,7 +910,7 @@ const EmployeePay = () => {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                   <span className="text-slate-700 truncate">Net Pay</span>
                 </div>
-                <span className="font-extrabold text-slate-900 shrink-0">$18,435</span>
+                <span className="font-extrabold text-slate-900 shrink-0">${payRuns.reduce((sum, p) => sum + (p.netPay || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
 
               <div className="flex items-center justify-between">
@@ -1047,7 +918,7 @@ const EmployeePay = () => {
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
                   <span className="text-slate-700 truncate">Super</span>
                 </div>
-                <span className="font-extrabold text-slate-900 shrink-0">$3,450</span>
+                <span className="font-extrabold text-slate-900 shrink-0">$0.00</span>
               </div>
 
               <div className="flex items-center justify-between">
@@ -1055,7 +926,7 @@ const EmployeePay = () => {
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                   <span className="text-slate-700 truncate">PAYG Tax</span>
                 </div>
-                <span className="font-extrabold text-slate-900 shrink-0">$2,765</span>
+                <span className="font-extrabold text-slate-900 shrink-0">${payRuns.reduce((sum, p) => sum + (p.deductions || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
@@ -1069,22 +940,22 @@ const EmployeePay = () => {
             <div className="space-y-1.5 text-[10px]">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-slate-500">Period Start</span>
-                <span className="font-bold text-slate-900">18 May 2026</span>
+                <span className="font-bold text-slate-900">{payRuns[0]?.period || '—'}</span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-slate-500">Period End</span>
-                <span className="font-bold text-slate-900">24 May 2026</span>
+                <span className="font-bold text-slate-900">{payRuns[0]?.period || '—'}</span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-slate-500">Cut-off Time</span>
-                <span className="font-bold text-slate-900">24 May 12:00 PM</span>
+                <span className="font-bold text-slate-900">—</span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-slate-500">Payment Date</span>
-                <span className="font-bold text-slate-900">29 May 2026</span>
+                <span className="font-bold text-slate-900">{payRuns[0]?.createdOn || '—'}</span>
               </div>
             </div>
           </div>

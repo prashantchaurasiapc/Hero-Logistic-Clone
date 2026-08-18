@@ -45,6 +45,7 @@ export default function CustomerInvoices() {
     amount: '0.00'
   });
 
+<<<<<<< HEAD
   // Invoices List Data State
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -89,6 +90,10 @@ export default function CustomerInvoices() {
   useEffect(() => {
     fetchInvoices();
   }, []);
+=======
+  // Invoices List Data State (Exact Match to Screenshot 2)
+  const [invoices, setInvoices] = useState([]);
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
   // Bulk Selection Handlers
   const handleSelectAll = () => {
@@ -320,6 +325,7 @@ export default function CustomerInvoices() {
       {/* =========================================================================
          TOP 5 METRIC SUMMARY CARDS (Exact Match 2nd Screenshot Vertical Stack)
          ========================================================================= */}
+<<<<<<< HEAD
       {(() => {
         const totalOutstanding = invoices.filter(i => i.status === 'Overdue' || i.status === 'Outstanding' || i.status === 'Pending').reduce((acc, i) => acc + (i.numericAmount || 0), 0);
         const overdueAmt = invoices.filter(i => i.status === 'Overdue').reduce((acc, i) => acc + (i.numericAmount || 0), 0);
@@ -352,8 +358,72 @@ export default function CustomerInvoices() {
                   <ArrowRight size={11} />
                 </button>
               </div>
+=======
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        
+        {/* Card 1: OUTSTANDING BALANCE */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+              <Receipt size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">OUTSTANDING BALANCE</span>
+              <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${invoices.filter(i => i.status === 'Overdue').reduce((s, i) => s + (i.numericAmount || 0), 0).toFixed(2)}</span>
+                <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+              </div>
+              <span className="text-[10px] font-extrabold text-amber-600 block mt-1 whitespace-nowrap truncate">Due in {invoices.filter(i => i.status !== 'Paid').length} invoices</span>
+            </div>
+          </div>
+          <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
+            <button onClick={() => setSelectedStatus('Overdue')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+              <span>View outstanding</span>
+              <ArrowRight size={11} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 2: OVERDUE AMOUNT */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 border border-red-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+              <Clock size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">OVERDUE AMOUNT</span>
+              <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${invoices.filter(i => i.status === 'Overdue').reduce((s, i) => s + (i.numericAmount || 0), 0).toFixed(2)}</span>
+                <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+              </div>
+              <span className="text-[10px] font-extrabold text-red-600 block mt-1 whitespace-nowrap truncate">{invoices.filter(i => i.status === 'Overdue').length} invoices overdue</span>
+            </div>
+          </div>
+          <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
+            <button onClick={() => setSelectedStatus('Overdue')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+              <span>View overdue</span>
+              <ArrowRight size={11} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 3: PAID THIS MONTH */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+              <CheckCircle2 size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">PAID THIS MONTH</span>
+              <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${invoices.filter(i => i.status === 'Paid').reduce((s, i) => s + (i.numericAmount || 0), 0).toFixed(2)}</span>
+                <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+              </div>
+              <span className="text-[10px] font-extrabold text-emerald-600 block mt-1 whitespace-nowrap truncate">↑ 0% vs last month</span>
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
             </div>
 
+<<<<<<< HEAD
             {/* Card 2: OVERDUE AMOUNT */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
               <div className="flex items-start gap-2.5">
@@ -368,6 +438,19 @@ export default function CustomerInvoices() {
                   </div>
                   <span className="text-[10px] font-extrabold text-red-600 block mt-1 whitespace-nowrap truncate">{overdueCnt} invoices overdue</span>
                 </div>
+=======
+        {/* Card 4: TOTAL INVOICED (YTD) */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+              <DollarSign size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">TOTAL INVOICED (YTD)</span>
+              <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${invoices.reduce((s, i) => s + (i.numericAmount || 0), 0).toFixed(2)}</span>
+                <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
               </div>
               <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
                 <button onClick={() => setSelectedStatus('Overdue')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">

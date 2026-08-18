@@ -17,6 +17,7 @@ export default function Profile() {
   };
 
   // Profile Main States
+<<<<<<< HEAD
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [status, setStatus] = useState('');
@@ -27,6 +28,50 @@ export default function Profile() {
   const [depot, setDepot] = useState('');
   const [reportsTo, setReportsTo] = useState('');
   const [joinedOn, setJoinedOn] = useState('');
+=======
+
+  const [name, setName] = useState('Staff');
+  const [role, setRole] = useState('Warehouse Staff');
+  const [status, setStatus] = useState('Available');
+  const [employeeId, setEmployeeId] = useState('-');
+  const [email, setEmail] = useState('-');
+  const [phone, setPhone] = useState('-');
+  const [department, setDepartment] = useState('Warehouse Operations');
+  const [depot, setDepot] = useState('-');
+  const [reportsTo, setReportsTo] = useState('-');
+  const [joinedOn, setJoinedOn] = useState('-');
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/warehouse-portal/profile');
+        if (res.data && res.data.success && res.data.data?.profile) {
+          const p = res.data.data.profile;
+          if (p.name) setName(p.name);
+          if (p.role) setRole(p.role);
+          if (p.status) setStatus(p.status);
+          if (p.driverCode || p.userId) setEmployeeId(p.driverCode || `ID-${p.userId?.slice(0, 6)}`);
+          if (p.email) {
+            setEmail(p.email);
+            setWorkEmail(p.email);
+          }
+          if (p.phone) {
+            setPhone(p.phone);
+            setMobilePhone(p.phone);
+          }
+          if (p.warehouse?.name) setDepot(p.warehouse.name);
+          else if (p.branch?.name) setDepot(p.branch.name);
+          if (p.joiningDate) setJoinedOn(new Date(p.joiningDate).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }));
+          if (p.address) setAddress(`${p.address}${p.city ? ', ' + p.city : ''}${p.state ? ' ' + p.state : ''}`);
+        }
+      } catch (err) {
+        console.error('Error fetching warehouse staff profile:', err);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
   // Contact & Address
   const [address, setAddress] = useState('');
@@ -114,6 +159,21 @@ export default function Profile() {
   const [tempAddress, setTempAddress] = useState('');
   const [tempEmergencyName, setTempEmergencyName] = useState('');
   const [tempEmergencyPhone, setTempEmergencyPhone] = useState('');
+  const [avatar, setAvatar] = useState(localStorage.getItem('warehouse_avatar') || null);
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64data = reader.result;
+        setAvatar(base64data);
+        localStorage.setItem('warehouse_avatar', base64data);
+        showToast('✓ Avatar updated successfully!');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const openEditModal = () => {
     setTempName(name);
@@ -125,18 +185,36 @@ export default function Profile() {
     setEditModalOpen(true);
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    setName(tempName);
-    setPhone(tempPhone);
-    setEmail(tempEmail);
-    setWorkEmail(tempEmail);
-    setMobilePhone(tempPhone);
-    setAddress(tempAddress);
-    setEmergencyName(tempEmergencyName);
-    setEmergencyPhone(tempEmergencyPhone);
-    setEditModalOpen(false);
-    showToast('✓ Profile updated successfully!');
+    try {
+      const res = await api.put('/warehouse-portal/profile', {
+        name: tempName,
+        phone: tempPhone,
+        email: tempEmail,
+        address: tempAddress,
+        emergencyName: tempEmergencyName,
+        emergencyPhone: tempEmergencyPhone
+      });
+      if (res.data?.success) {
+        const data = res.data.data;
+        setName(data.name || '');
+        setPhone(data.phone || '');
+        setEmail(data.email || '');
+        setWorkEmail(data.email || '');
+        setMobilePhone(data.phone || '');
+        setAddress(data.address || '');
+        setEmergencyName(data.emergencyContact?.name || '');
+        setEmergencyPhone(data.emergencyContact?.phone || '');
+        setEditModalOpen(false);
+        showToast('✓ Profile updated successfully!');
+      } else {
+        showToast('✕ Update failed');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('✕ Error updating profile');
+    }
   };
 
   return (
@@ -523,9 +601,26 @@ export default function Profile() {
 
           {/* USER MAIN CARD */}
           <div className="wh-p-card" style={{ textAlign: 'center' }}>
-            <div className="wh-p-avatar-wrap">
-              <div className="wh-p-avatar-circle">WS</div>
-              <div className="wh-p-avatar-cam" title="Change Avatar"><Camera size={12} /></div>
+            <div className="wh-p-avatar-wrap" style={{ position: 'relative', width: 96, height: 96, margin: '0 auto 16px' }}>
+              <label htmlFor="avatar-upload-input" className="cursor-pointer block w-full h-full">
+                {avatar ? (
+                  <img src={avatar} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-2 border-slate-200 shadow-sm" />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-2xl font-black shadow-inner">
+                    {name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'WS'}
+                  </div>
+                )}
+                <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-amber-500 border-2 border-white flex items-center justify-center text-slate-900 shadow hover:bg-amber-400 transition-all" title="Change Avatar">
+                  <Camera size={12} />
+                </div>
+              </label>
+              <input
+                id="avatar-upload-input"
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
             </div>
 
             <h2 className="wh-p-user-name">{name}</h2>

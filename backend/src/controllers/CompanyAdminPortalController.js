@@ -597,9 +597,12 @@ exports.createVehicle = async (req, res, next) => {
       fuelType: rawPayload.fuelType || 'Diesel',
       odometerKm: rawPayload.odometerKm && !isNaN(rawPayload.odometerKm) ? parseInt(rawPayload.odometerKm) : 0,
       maintenanceDueKm: rawPayload.maintenanceDueKm && !isNaN(rawPayload.maintenanceDueKm) ? parseInt(rawPayload.maintenanceDueKm) : null,
-      photoUrl: photoUrlVal,
-      companyId: effectiveCompanyId
+      photoUrl: photoUrlVal
     };
+
+    if (effectiveCompanyId) {
+      vehicleData.company = { connect: { id: effectiveCompanyId } };
+    }
 
     const data = await prisma.vehicle.create({ data: vehicleData, include: { currentDriver: true } });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
@@ -613,10 +616,14 @@ exports.getBranches = async (req, res, next) => {
   try {
     const companyId = await resolveCompanyId(req);
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
+    // Strictly scope to this company's branches
     if (companyId) where.companyId = companyId;
 
     const [data, total] = await Promise.all([
-      prisma.branch.findMany({ where, skip, take, orderBy, include: { _count: { select: { drivers: true, warehouses: true, assets: true } } } }),
+      prisma.branch.findMany({
+        where, skip, take, orderBy,
+        include: { _count: { select: { drivers: true, warehouses: true, assets: true, users: true, loads: true } } }
+      }),
       prisma.branch.count({ where })
     ]);
     return sendList(res, data, buildPaginationMeta(total, currentPage, pageSize, req.query.sort));
@@ -625,12 +632,74 @@ exports.getBranches = async (req, res, next) => {
 
 exports.createBranch = async (req, res, next) => {
   try {
-    const companyId = await resolveCompanyId(req);
+    // Use resolveRequiredCompanyId — guarantees a valid companyId for write operations
+    const companyId = await resolveRequiredCompanyId(req);
     const payload = { ...req.body };
-    if (companyId && !payload.companyId) payload.companyId = companyId;
-    const data = await prisma.branch.create({ data: payload });
+    const data = await prisma.branch.create({
+      data: {
+        name: payload.name || payload.branchName || 'New Branch',
+        location: payload.location || payload.address || payload.state || null,
+        companyId // always use authenticated tenant's ID
+      }
+    });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) { next(error); }
+};
+
+exports.updateBranch = async (req, res, next) => {
+  try {
+    const companyId = await resolveCompanyId(req);
+    const { id } = req.params;
+    const { name, location, branchName, address, state } = req.body;
+
+    // Verify this branch belongs to the authenticated company
+    const whereCheck = { id };
+    if (companyId) whereCheck.companyId = companyId;
+    const existing = await prisma.branch.findFirst({ where: whereCheck });
+    if (!existing) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Branch not found or access denied' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    const data = await prisma.branch.update({
+      where: { id },
+      data: {
+        name: name || branchName || undefined,
+        location: location || address || state || undefined
+      }
+    });
+    return sendSuccess(res, data);
+  } catch (error) { next(error); }
+};
+
+exports.deleteBranch = async (req, res, next) => {
+  try {
+    const companyId = await resolveCompanyId(req);
+    const { id } = req.params;
+
+    // Verify this branch belongs to the authenticated company
+    const whereCheck = { id };
+    if (companyId) whereCheck.companyId = companyId;
+    const existing = await prisma.branch.findFirst({ where: whereCheck });
+    if (!existing) {
+      return res.status(HTTP_STATUS.NO_CONTENT).send();
+    }
+
+    // Safe cleanup: null-out all linked records
+    await Promise.allSettled([
+      prisma.driver.updateMany({ where: { branchId: id }, data: { branchId: null } }),
+      prisma.warehouse.updateMany({ where: { branchId: id }, data: { branchId: null } }),
+      prisma.asset.updateMany({ where: { branchId: id }, data: { branchId: null } }),
+      prisma.user.updateMany({ where: { branchId: id }, data: { branchId: null } }),
+      prisma.vehicle.updateMany({ where: { branchId: id }, data: { branchId: null } }),
+      prisma.customer.updateMany({ where: { branchId: id }, data: { branchId: null } }),
+    ]);
+
+    await prisma.branch.delete({ where: { id } });
+    return res.status(HTTP_STATUS.NO_CONTENT).send();
+  } catch (error) {
+    if (error.code === 'P2025') return res.status(HTTP_STATUS.NO_CONTENT).send();
+    next(error);
+  }
 };
 
 // ----------------------------------------------------------------------
@@ -1667,7 +1736,18 @@ exports.sendMessage = async (req, res, next) => {
     }
 
     let targetConvId = conversationId;
-    if (!targetConvId) {
+    let existingConv = null;
+
+    if (targetConvId) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetConvId);
+      if (isUuid) {
+        existingConv = await prisma.conversation.findUnique({
+          where: { id: targetConvId }
+        });
+      }
+    }
+
+    if (!existingConv) {
       const newConv = await prisma.conversation.create({
         data: {
           companyId: compId,

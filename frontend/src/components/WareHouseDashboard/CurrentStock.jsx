@@ -16,46 +16,94 @@ export default function CurrentStock() {
   const navigate = useNavigate();
   const location = useLocation();
   const isYard = location.pathname ? location.pathname.startsWith('/yard') : false;
+<<<<<<< HEAD
 
+=======
+  // Phase A: start with empty - never show mock data as a fallback
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
   const [stockItems, setStockItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
   const [loadLanes, setLoadLanes] = useState([]);
   const [holdingAreas, setHoldingAreas] = useState([]);
 
   const fetchStock = async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const res = await api.get('/warehouse-portal/stock');
-      if (res.data && res.data.success && res.data.data.length > 0) {
-        const formatted = res.data.data.map((item, idx) => ({
-          id: item.id || String(idx),
-          itemNo: item.itemNo || item.rego || item.vin || '',
-          title: item.title || 'Stock Item',
-          rego: item.rego || '',
-          vin: item.vin || '',
-          barcode: item.barcode || '',
-          type: item.type || 'Vehicle',
-          typeBadge: item.typeBadge || 'Car Carrying',
-          typeColor: item.typeColor || 'blue',
-          location: item.location || 'Yard A',
-          locationDetail: item.locationDetail || '',
-          rowBayPos: item.rowBayPos || '',
-          status: item.status || 'In Storage',
-          statusColor: item.statusColor === 'blue' ? 'purple' : (item.statusColor === 'green' ? 'green' : 'orange'),
-          loadJob: item.loadJob || 'Unassigned',
-          loadDetail: item.loadDetail || '',
-          customer: item.customer || 'Unassigned',
-          updated: item.updated || 'Today',
-          receivedDate: item.receivedDate || '',
-          condition: item.condition || 'Good',
-          notes: item.notes || '-',
-          image: item.image || 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=400&q=80',
-          iconType: item.iconType || 'car'
-        }));
+      if (res.data && res.data.success) {
+        const items = res.data.data || [];
+        if (items.length === 0) {
+          setStockItems([]);
+          return;
+        }
+        const formatted = items.map((item, idx) => {
+          const hasVehicleInfo = item.make || item.model || item.rego || item.vin || item.vehicleType;
+          const title = (item.make || item.model)
+            ? `${item.make || ''} ${item.model || ''}`.trim()
+            : (item.stockRef || item.identifier || (item.vehicleType ? item.vehicleType : `Stock Item ${idx + 1}`));
+          
+          const itemCode = item.rego || item.stockRef || (item.vin ? `VIN: ${item.vin.slice(0, 10)}...` : `ITM-${item.id?.slice(0, 6)}`);
+          
+          let locMain = item.zone ? `${item.zone}` : (item.warehouse?.name || 'Main Yard');
+          let locSub = (item.row || item.bay || item.position) 
+            ? `${item.zone || 'Yard A'} / ${item.row || 'R1'} / ${item.bay || 'B01'}${item.position ? ' / ' + item.position : ''}`
+            : (item.locationDetail || 'Depot Bay 01');
+
+          const custName = item.customer?.name || item.load?.customer?.name || 'Unassigned';
+          const loadName = item.load?.loadNumber || (item.loadLane?.name ? item.loadLane.name : (item.loadId ? `LD-${item.loadId.slice(0, 6)}` : 'Unassigned'));
+          const loadSub = item.loadLane?.name || (item.stagingArea?.name || 'Unassigned');
+
+          let statusLabel = 'In Storage';
+          let statusColor = 'green';
+          if (item.stockStatus === 'STAGED') {
+            statusLabel = 'Staged';
+            statusColor = 'purple';
+          } else if (item.stockStatus === 'TO_MOVE') {
+            statusLabel = 'To Move';
+            statusColor = 'orange';
+          } else if (item.stockStatus === 'DISPATCHED') {
+            statusLabel = 'Ready';
+            statusColor = 'green-outline';
+          }
+
+          return {
+            id: item.id || String(idx),
+            itemNo: itemCode,
+            title: title,
+            rego: item.rego || '',
+            vin: item.vin || '',
+            barcode: item.stockRef || '',
+            type: hasVehicleInfo ? 'Vehicle' : (item.vehicleType || 'General Freight'),
+            typeBadge: hasVehicleInfo ? 'Car Carrying' : 'General',
+            typeColor: hasVehicleInfo ? 'blue' : 'green',
+            location: locMain,
+            locationDetail: locSub,
+            rowBayPos: locSub,
+            status: statusLabel,
+            statusColor: statusColor,
+            loadJob: loadName,
+            loadDetail: loadSub,
+            customer: custName,
+            updated: item.receivedDate ? new Date(item.receivedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(item.receivedDate).toLocaleDateString() : 'Today',
+            receivedDate: item.receivedDate ? new Date(item.receivedDate).toLocaleString() : '-',
+            condition: item.damageReportReq ? 'Damage Noted' : 'Good',
+            notes: item.notes || '-',
+            image: item.photos?.[0]?.photoUrl || null,
+            iconType: hasVehicleInfo ? 'car' : 'pallet'
+          };
+        });
         setStockItems(formatted);
+        setSelectedItem(formatted[0] || null);
+      } else {
+        setStockItems([]);
+        setSelectedItem(null);
       }
     } catch (err) {
       console.error('Error fetching stock items:', err);
+      setStockItems([]);
+      setSelectedItem(null);
     } finally {
       setLoading(false);
     }
@@ -63,6 +111,7 @@ export default function CurrentStock() {
 
   useEffect(() => {
     fetchStock();
+<<<<<<< HEAD
     const fetchLanesAndHolding = async () => {
       try {
 
@@ -86,6 +135,8 @@ export default function CurrentStock() {
       }
     };
     fetchLanesAndHolding();
+=======
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
   }, []);
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');

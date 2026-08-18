@@ -81,6 +81,9 @@ export default function WarehouseMovements() {
         }
       };
       fetchHistory();
+    } else {
+      setRefNo(`TRF-${Math.floor(100000 + Math.random() * 900000)}`);
+      setDateTime(new Date().toLocaleString('en-GB'));
     }
   }, [isHistoryView]);
 

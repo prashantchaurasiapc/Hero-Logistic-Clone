@@ -12,6 +12,14 @@ const CustomerDashboard = () => {
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [toast, setToast] = useState(null);
+  const [metrics, setMetrics] = useState({
+    activeLoads: 0,
+    upcomingDeliveries: 0,
+    outstandingInvoices: 0,
+    outstandingBalance: 0.00,
+    paymentsThisMonth: 0.00,
+    documentsCount: 0
+  });
 
   // Dynamic Dashboard States
   const [loads, setLoads] = useState([]);
@@ -220,9 +228,15 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">ACTIVE LOADS</span>
+<<<<<<< HEAD
               <span className="cp-metric-value">{activeLoadsCount}</span>
               <span className="cp-metric-subtext">
                 Active tracked loads
+=======
+              <span className="cp-metric-value">{metrics.activeLoads}</span>
+              <span className="cp-metric-subtext">
+                <span className="cp-text-green">&uarr; 0%</span> vs Last Month
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
               </span>
             </div>
           </div>
@@ -244,9 +258,15 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">UPCOMING DELIVERIES</span>
+<<<<<<< HEAD
               <span className="cp-metric-value">{upcomingDeliveriesCount}</span>
               <span className="cp-metric-subtext">
                 Scheduled shipments
+=======
+              <span className="cp-metric-value">{metrics.upcomingDeliveries}</span>
+              <span className="cp-metric-subtext">
+                <span className="cp-text-green">&uarr; 0%</span> vs Last Month
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
               </span>
             </div>
           </div>
@@ -268,8 +288,13 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">OUTSTANDING INVOICES</span>
+<<<<<<< HEAD
               <span className="cp-metric-value">{outstandingInvoicesCount}</span>
               <span className="cp-metric-subtext">${outstandingBalanceAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AUD</span>
+=======
+              <span className="cp-metric-value">{metrics.outstandingInvoices}</span>
+              <span className="cp-metric-subtext">${metrics.outstandingBalance.toFixed(2)} AUD</span>
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
             </div>
           </div>
           <div className="cp-metric-footer">
@@ -288,8 +313,13 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">OUTSTANDING BALANCE</span>
+<<<<<<< HEAD
               <span className="cp-metric-value-sm">${outstandingBalanceAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="cp-unit">AUD</span></span>
               <span className="cp-metric-subtext cp-text-amber">Due in {outstandingInvoicesCount} invoices</span>
+=======
+              <span className="cp-metric-value-sm">${metrics.outstandingBalance.toFixed(2)} <span className="cp-unit">AUD</span></span>
+              <span className="cp-metric-subtext cp-text-amber">Due in {metrics.outstandingInvoices} invoices</span>
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
             </div>
           </div>
           <div className="cp-metric-footer">
@@ -308,9 +338,15 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">PAYMENTS (THIS MONTH)</span>
+<<<<<<< HEAD
               <span className="cp-metric-value-sm">${paidThisMonthAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="cp-unit">AUD</span></span>
               <span className="cp-metric-subtext">
                 Settled transactions
+=======
+              <span className="cp-metric-value-sm">${metrics.paymentsThisMonth.toFixed(2)} <span className="cp-unit">AUD</span></span>
+              <span className="cp-metric-subtext">
+                <span className="cp-text-green">&uarr; 0%</span> vs Last Month
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
               </span>
             </div>
           </div>
@@ -329,8 +365,13 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">DOCUMENTS</span>
+<<<<<<< HEAD
               <span className="cp-metric-value">{documentsCount}</span>
               <span className="cp-metric-subtext">Total documents</span>
+=======
+              <span className="cp-metric-value">{metrics.documentsCount}</span>
+              <span className="cp-metric-subtext">Recently added</span>
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
             </div>
           </div>
           <div className="cp-metric-footer">

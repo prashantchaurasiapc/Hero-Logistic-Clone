@@ -342,6 +342,8 @@ enum ReportScheduleFreq {
 enum ChecklistItemStatus {
   YES
   NO
+  PASS
+  FAIL
   NA
   NOT_CHECKED
 }
@@ -455,6 +457,47 @@ enum WarehouseDocType {
 }
 
 // ----------------------------------------------------------------------
+// WAREHOUSE & YARD: YARD ATTENDANT TASK MANAGEMENT (PHASE D)
+// ----------------------------------------------------------------------
+
+model YardTask {
+  id          String    @id @default(uuid())
+  title       String
+  description String?   @db.Text
+  status      String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  priority    String    @default("MEDIUM")  // LOW, MEDIUM, HIGH, URGENT
+  taskType    String    @default("GENERAL") // SPOT, RELOCATE, INSPECT, AUDIT, GENERAL
+  
+  gate        String?   // e.g. "Gate 4"
+  trailerRef  String?   // e.g. "TR-9410"
+  dueDate     DateTime?
+  completedAt DateTime?
+  notes       String?   @db.Text
+
+  driverId    String?
+  driver      Driver?   @relation(fields: [driverId], references: [id])
+
+  userId      String?
+  user        User?     @relation("AssignedYardTasks", fields: [userId], references: [id])
+
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([driverId])
+  @@index([warehouseId])
+  @@index([status])
+  @@map("yard_task")
+}
+
+// ----------------------------------------------------------------------
 // SUPER ADMIN & TENANT CORE MODELS
 // ----------------------------------------------------------------------
 model User {
@@ -499,6 +542,7 @@ model User {
   conversationParts ConversationParticipant[]
   sentMessages      Message[]
   createdReports    Report[]                  @relation("ReportCreator")
+  yardTasks         YardTask[]                @relation("AssignedYardTasks")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -565,6 +609,10 @@ model Company {
   payPeriods         PayPeriod[]
   equipmentSwaps     EquipmentSwap[]
   offlineSyncItems   OfflineSyncItem[]
+  expenses           LoadExpense[]
+  driverMessages     DriverMessage[]
+  incidents          DriverIncident[]
+  yardTasks          YardTask[]
 
   lanePricingRules      LanePricingRule[]
   vehicleTypeRates      VehicleTypeRate[]
@@ -891,8 +939,11 @@ model Driver {
   leaveRequests      DriverLeaveRequest[]
   payRates           DriverPayRate[]
   activities         DriverActivity[]
-  messages           DriverMessage[]
+  driverMessages     DriverMessage[]
+  incidents          DriverIncident[]
+  yardTasks          YardTask[]
   superInfo          DriverSuperInfo?
+  expenses           LoadExpense[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1009,17 +1060,31 @@ model DriverActivity {
 }
 
 model DriverMessage {
-  id        String   @id @default(uuid())
-  subject   String
-  message   String   @db.Text
-  sender    String   @default("Fleet Admin")
-  status    String   @default("Sent")
+  id          String   @id @default(uuid())
+  subject     String?
+  message     String?  @db.Text
+  body        String?  @db.Text
+  sender      String?  @default("Fleet Admin")
+  senderName  String?
+  senderRole  String?
+  recipient   String?
+  category    String?  @default("General")
+  status      String   @default("Sent")
+  isFromDriver Boolean @default(false)
+  isRead      Boolean  @default(false)
+  important   Boolean  @default(false)
+  isGroup     Boolean  @default(false)
+  meta        String?
+  threadId    String?
 
-  driverId  String
-  driver    Driver   @relation(fields: [driverId], references: [id])
+  driverId    String
+  driver      Driver   @relation(fields: [driverId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  companyId   String?
+  company     Company? @relation(fields: [companyId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("driver_message")
 }
@@ -1088,6 +1153,7 @@ model Vehicle {
   truckLoads   Load[]     @relation("TruckToLoad")
   trailerLoads Load[]     @relation("TrailerToLoad")
   documents    Document[]
+  expenses     LoadExpense[]
 
   telemetryHistory   TelemetryLog[]
   prevEquipmentSwaps EquipmentSwap[] @relation("PrevTrailerSwap")
@@ -1151,6 +1217,8 @@ model Load {
 
   stagingAreaId String?
   stagingArea   StagingArea? @relation(fields: [stagingAreaId], references: [id])
+
+  incidents DriverIncident[]
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
@@ -1462,8 +1530,10 @@ model AiActivityLog {
 
 model CustomRole {
   id        String   @id @default(uuid())
-  name      String // e.g., "DISPATCHER"
-  companyId String? // Optional: If null, it's a global platform role
+  name      String   // e.g., "Dispatcher"
+  slug      String?  // machine-readable key e.g. "DISPATCHER" — unique for system roles
+  isSystem  Boolean  @default(false) @map("is_system") // System roles cannot be deleted or renamed
+  companyId String?  // Optional: If null, it's a global platform role
   company   Company? @relation(fields: [companyId], references: [id])
 
   permissions CustomPermission[]
@@ -1472,8 +1542,11 @@ model CustomRole {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([slug, companyId]) // unique per company (or globally if companyId is null)
   @@map("custom_role")
 }
+
+
 
 model CustomPermission {
   id     String     @id @default(uuid())
@@ -1950,14 +2023,23 @@ enum CustomerInvoiceStatus {
 
 model LoadExpense {
   id     String @id @default(uuid())
-  loadId String
-  load   Load   @relation(fields: [loadId], references: [id])
+  loadId String?
+  load   Load?   @relation(fields: [loadId], references: [id])
 
-  date        DateTime
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  date        DateTime @default(now())
   type        String // e.g., "Fuel", "Toll", "Maintenance"
   description String
   amount      Float
   status      ExpenseStatus @default(PENDING)
+
+  // Direct relationship to vehicle and driver for general/vehicle expenses
+  vehicleId String?
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+  driverId  String?
+  driver    Driver?  @relation(fields: [driverId], references: [id])
 
   // Enhanced for Driver Portal Fuel & Expenses screen
   vendorName    String? // e.g., "BP Service Centre - Yass NSW"
@@ -1998,6 +2080,9 @@ model CustomerInvoice {
   status  CustomerInvoiceStatus @default(DRAFT)
   dueDate DateTime?
   pdfUrl  String?
+  notes   String?               @db.Text
+  items   Json?
+  type    String?               @default("Freight")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2043,6 +2128,7 @@ model Warehouse {
   labelPrints  WarehouseLabelPrint[]
   printJobs    PrintSpoolerJob[]
   documents    Document[]
+  yardTasks    YardTask[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2763,6 +2849,41 @@ model ImpersonationSession {
   @@map("impersonation_session")
 }
 
+// ----------------------------------------------------------------------
+// DRIVER PORTAL: INCIDENT & EMERGENCY SOS REPORTING
+// ----------------------------------------------------------------------
+
+model DriverIncident {
+  id String @id @default(uuid())
+
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  loadId String?
+  load   Load?   @relation(fields: [loadId], references: [id])
+
+  incidentType String  @default("INCIDENT") // "INCIDENT" | "SOS"
+  category     String  // e.g. "Highway Road Accident", "Cargo Damage", "Vehicle Breakdown"
+  description  String  @db.Text
+  photoUrl     String?
+  status       String  @default("UNDER_REVIEW") // UNDER_REVIEW, INVESTIGATING, RESOLVED, CLOSED
+
+  gpsLat Float?
+  gpsLng Float?
+
+  isSos      Boolean @default(false)
+  shareGps   Boolean @default(true)
+  autoNotify Boolean @default(true)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("driver_incident")
+}
+
 model RegionalTerminal {
   id        String   @id @default(uuid())
   name      String   @unique
@@ -2775,4 +2896,3 @@ model RegionalTerminal {
 
   @@map("regional_terminal")
 }
-
