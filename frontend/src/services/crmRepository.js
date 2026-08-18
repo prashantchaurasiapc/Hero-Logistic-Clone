@@ -79,10 +79,18 @@ class CRMRepository {
   }
 
   async syncWithBackend() {
+    // Skip Sales CRM sync when inside Driver portal
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/driver')) {
+      return;
+    }
+
     try {
       // 1. Fetch leads
-      const leadsRes = await api.get('/leads');
-      if (leadsRes.data && Array.isArray(leadsRes.data.data)) {
+      const leadsRes = await api.get('/leads').catch(err => {
+        if (err?.response?.status === 403) return null;
+        throw err;
+      });
+      if (leadsRes?.data && Array.isArray(leadsRes.data.data)) {
         const mapped = leadsRes.data.data.map(mapLeadToFrontend);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
       }

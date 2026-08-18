@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   FiCheckCircle, FiClock, FiMapPin, FiPhone, FiChevronRight,
   FiCamera, FiFileText, FiAlertTriangle, FiRefreshCw,
@@ -9,9 +9,23 @@ import {
   FiNavigation, FiShare2, FiTrash2
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
+<<<<<<< HEAD
+import api from '../../services/api';
+=======
+import { getLoadDetails, getMyLoads, getDeliveryItems, submitDeliveryPOD } from '../../services/driverApi';
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 
 export default function DeliveryPOD() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { id: paramId } = useParams();
+
+  // API State
+  const [activeLoad, setActiveLoad] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeStop, setActiveStop] = useState(null);
 
   // Mode & Toggle States
   const [afterHoursEnabled, setAfterHoursEnabled] = useState(false);
@@ -36,99 +50,131 @@ export default function DeliveryPOD() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureName, setSignatureName] = useState('');
 
-  // Cars assigned to DROP 1 (Auto World Sydney) matching Screenshot 2
-  const [cars, setCars] = useState([
-    {
-      id: 1,
-      makeModel: 'Toyota Camry',
-      color: 'White',
-      reg: 'ABC123',
-      vin: '1HGCM82633A004352',
-      beforePhotos: { current: 4, total: 4, percent: 100, missingText: '' },
-      deliveryPhotos: { current: 4, total: 4, percent: 100, missingText: '' },
-      signature: 'John Smith',
-      damage: 'No Damage',
-      damageType: 'none',
-      status: 'Delivered',
-      deliveryTime: '11:02 AM',
-      delivered: true,
-    },
-    {
-      id: 2,
-      makeModel: 'Mazda 3',
-      color: 'Blue',
-      reg: 'CDE789',
-      vin: 'JM1BM1W7X01331234',
-      beforePhotos: { current: 3, total: 4, percent: 75, missingText: 'Missing 1 Photo' },
-      deliveryPhotos: { current: 3, total: 4, percent: 75, missingText: 'Missing 1 Photo' },
-      signature: 'Jane Doe',
-      damage: 'No Damage',
-      damageType: 'none',
-      status: 'Delivered',
-      deliveryTime: '11:08 AM',
-      delivered: true,
-    },
-    {
-      id: 3,
-      makeModel: 'Kia Sportage',
-      color: 'Silver',
-      reg: 'GHI321',
-      vin: 'KNAJE5518PS123456',
-      beforePhotos: { current: 2, total: 4, percent: 50, missingText: 'Missing 2 Photos' },
-      deliveryPhotos: { current: 2, total: 4, percent: 50, missingText: 'Missing 2 Photos' },
-      signature: 'Mark Williams',
-      damage: 'Minor Scratch on Rear Bumper',
-      damageType: 'warning',
-      status: 'Delivered',
-      deliveryTime: '11:12 AM',
-      delivered: true,
-    },
-    {
-      id: 4,
-      makeModel: 'Honda Accord',
-      color: 'Silver',
-      reg: 'BCD456',
-      vin: 'JH4KAB260MC000145',
-      beforePhotos: { current: 3, total: 4, percent: 75, missingText: 'Missing 1 Photo' },
-      deliveryPhotos: { current: 0, total: 4, percent: 0, missingText: 'Missing 4 Photos' },
-      signature: null,
-      damage: null,
-      damageType: 'none',
-      status: 'Not Delivered',
-      deliveryTime: null,
-      delivered: false,
-    },
-    {
-      id: 5,
-      makeModel: 'Audi A6',
-      color: 'Black',
-      reg: 'FEG345',
-      vin: 'WAUZZZ4G5HN123456',
-      beforePhotos: { current: 0, total: 4, percent: 0, missingText: 'Missing 4 Photos' },
-      deliveryPhotos: { current: 0, total: 4, percent: 0, missingText: 'Missing 4 Photos' },
-      signature: null,
-      damage: null,
-      damageType: 'none',
-      status: 'Not Delivered',
-      deliveryTime: null,
-      delivered: false,
-    },
-    {
-      id: 6,
-      makeModel: 'Mercedes C200',
-      color: 'White',
-      reg: 'FGH678',
-      vin: 'WDB8A7C57JA123456',
-      beforePhotos: { current: 0, total: 4, percent: 0, missingText: 'Missing 4 Photos' },
-      deliveryPhotos: { current: 0, total: 4, percent: 0, missingText: 'Missing 4 Photos' },
-      signature: null,
-      damage: null,
-      damageType: 'none',
-      status: 'Not Delivered',
-      deliveryTime: null,
-      delivered: false,
-    },
-  ]);
+<<<<<<< HEAD
+  // Data State
+  const [loading, setLoading] = useState(true);
+  const [runData, setRunData] = useState(null);
+  const [cars, setCars] = useState([]);
+
+  useEffect(() => {
+    const fetchActiveRun = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get('/driver-portal/active-run');
+        if (res.data?.success && res.data.data.run) {
+          const run = res.data.data.run;
+          setRunData(run);
+          
+          // Map run items to the format expected by DeliveryPOD
+          if (run.items) {
+            const mappedCars = run.items.map(item => ({
+              id: item.id,
+              makeModel: item.makeModel || 'Unknown Vehicle',
+              color: 'Unknown',
+              reg: item.reg || 'UNKNOWN',
+              vin: item.vin || 'UNKNOWN',
+              beforePhotos: { current: 4, total: 4, percent: 100, missingText: '' },
+              deliveryPhotos: { current: 0, total: 4, percent: 0, missingText: 'Missing 4 Photos' },
+              signature: null,
+              damage: null,
+              damageType: 'none',
+              status: item.status === 'DELIVERED' ? 'Delivered' : 'Not Delivered',
+              deliveryTime: null,
+              delivered: item.status === 'DELIVERED',
+            }));
+            setCars(mappedCars);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch active run:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActiveRun();
+  }, []);
+
+=======
+  // Cars assigned to DROP 1 (Fetched from real backend API)
+  const [cars, setCars] = useState([]);
+
+  // Fetch Load & Delivery Details from Backend
+  useEffect(() => {
+    let isSubscribed = true;
+    setLoading(true);
+    setError(null);
+
+    const targetId = paramId || location.state?.loadId;
+
+    const loadTask = targetId 
+      ? getLoadDetails(targetId) 
+      : getMyLoads().then(res => {
+          const loads = res.data?.data?.loads || [];
+          const active = loads.find(l => ['IN_TRANSIT', 'ACTIVE', 'ASSIGNED'].includes(l.status)) || loads[0];
+          if (!active) throw new Error('No active load found.');
+          return getLoadDetails(active.id);
+        });
+
+    loadTask
+      .then(res => {
+        if (!isSubscribed) return;
+        const rawLoad = res.data?.data?.load;
+        if (!rawLoad) throw new Error('Load not found.');
+
+        const displayId = rawLoad.loadRef || (rawLoad.id ? `LD-${rawLoad.id.substring(0, 4).toUpperCase()}` : 'LD-0000');
+        setActiveLoad({
+          rawId: rawLoad.id,
+          displayId,
+          loadRef: rawLoad.loadRef,
+          status: rawLoad.status,
+        });
+
+        // Fetch Real Delivery Items from backend
+        return getDeliveryItems(rawLoad.id);
+      })
+      .then(res => {
+        if (!isSubscribed || !res) return;
+        const backendItems = res.data?.data?.items || [];
+        const stops = res.data?.data?.stops || [];
+
+        if (stops.length > 0) setActiveStop(stops[0]);
+
+        const formattedCars = backendItems.map((item, idx) => ({
+          id: item.id,
+          makeModel: `${item.make || ''} ${item.model || 'Vehicle'}`.trim(),
+          color: item.color || 'White',
+          reg: item.rego || `REG-${idx + 101}`,
+          vin: item.vin || `VIN-${String(item.id).substring(0, 8).toUpperCase()}`,
+          beforePhotos: { current: 4, total: 4, percent: 100, missingText: '' },
+          deliveryPhotos: {
+            current: item.status === 'DELIVERED' ? 4 : 0,
+            total: 4,
+            percent: item.status === 'DELIVERED' ? 100 : 0,
+            missingText: item.status === 'DELIVERED' ? '' : 'Missing 4 Photos'
+          },
+          signature: item.status === 'DELIVERED' ? 'Customer Signed' : null,
+          damage: item.damage || 'No Damage',
+          damageType: item.damage ? 'warning' : 'none',
+          status: item.status === 'DELIVERED' ? 'Delivered' : 'Not Delivered',
+          deliveryTime: item.status === 'DELIVERED' ? '11:02 AM' : null,
+          delivered: item.status === 'DELIVERED',
+        }));
+        setCars(formattedCars);
+      })
+      .catch(err => {
+        if (isSubscribed) {
+          const msg = err.response?.data?.error?.message || err.message || 'Could not load delivery details.';
+          setError(msg);
+        }
+      })
+      .finally(() => {
+        if (isSubscribed) setLoading(false);
+      });
+
+    return () => { isSubscribed = false; };
+  }, [paramId, location.state]);
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -168,16 +214,85 @@ export default function DeliveryPOD() {
     setSignatureModalOpen(true);
   };
 
+  const handleConfirmDropDelivery = (signatureData = null, signeeOverride = null) => {
+    const currentLoadId = activeLoad?.rawId || paramId;
+    if (!currentLoadId || isSubmitting) return;
+
+    const signName = signeeOverride || signatureName || selectedCarForModal?.signature || 'John Smith';
+    if (!afterHoursEnabled && (!signName || !signName.trim())) {
+      triggerToast('⚠️ Receiver signature name is required.');
+      return;
+    }
+
+    let canvasDataUrl = signatureData;
+    if (!canvasDataUrl && canvasRef.current) {
+      try {
+        canvasDataUrl = canvasRef.current.toDataURL('image/png');
+      } catch (e) {}
+    }
+
+    if (!afterHoursEnabled && !canvasDataUrl) {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = 300;
+      tempCanvas.height = 100;
+      const ctx = tempCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 300, 100);
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillStyle = '#1e1b4b';
+      ctx.fillText(signName || 'Customer Signed', 20, 50);
+      canvasDataUrl = tempCanvas.toDataURL('image/png');
+    }
+
+    setIsSubmitting(true);
+
+    const payload = {
+      stopId: activeStop?.id,
+      signeeName: signName,
+      signatureData: canvasDataUrl,
+      isAfterHours: afterHoursEnabled,
+      deliveryNotes: deliveryNotes || afterHoursNotes || 'Delivered cleanly',
+      itemIds: cars.map(c => c.id).filter(id => typeof id === 'string')
+    };
+
+    submitDeliveryPOD(currentLoadId, payload)
+      .then(res => {
+        const newLoadStatus = res.data?.data?.loadStatus;
+
+        setCars(prevCars => prevCars.map(c => ({
+          ...c,
+          delivered: true,
+          status: 'Delivered',
+          deliveryTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          signature: signName
+        })));
+
+        if (activeLoad) {
+          setActiveLoad(prev => ({ ...prev, status: newLoadStatus || 'DELIVERED' }));
+        }
+
+        triggerToast('🎉 PROOF OF DELIVERY SUBMITTED! Dispatch & Customer notified.');
+      })
+      .catch(err => {
+        const msg = err.response?.data?.error?.message || 'POD submission failed.';
+        triggerToast(`❌ Error: ${msg}`);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+  };
+
   const handleSaveSignature = () => {
-    if (!signatureName.trim()) {
+    if (!signatureName.trim() && !afterHoursEnabled) {
       triggerToast('Please enter receiver name before saving signature.');
       return;
     }
-    if (selectedCarForModal) {
-      setCars(cars.map(c => c.id === selectedCarForModal.id ? { ...c, signature: signatureName } : c));
+    let dataUrl = null;
+    if (canvasRef.current) {
+      try { dataUrl = canvasRef.current.toDataURL('image/png'); } catch (e) {}
     }
     setSignatureModalOpen(false);
-    triggerToast(`Signature captured for ${signatureName}!`);
+    handleConfirmDropDelivery(dataUrl, signatureName);
   };
 
   const handleAddCarSubmit = (e) => {
@@ -291,14 +406,18 @@ export default function DeliveryPOD() {
     }));
   };
 
+<<<<<<< HEAD
   const handleConfirmDropDelivery = () => {
     const undeliveredCount = cars.filter(c => !c.delivered).length;
     if (undeliveredCount > 0 && !afterHoursEnabled) {
       triggerToast(`⚠️ Note: ${undeliveredCount} cars remaining. You can enable After-Hours mode or mark remaining cars as delivered.`);
+    } else {
+      triggerToast(`🎉 DROP 1 OF ${runData?.stopsCount || 1} DELIVERY CONFIRMED! Dispatch and Customer notified.`);
     }
-    triggerToast('🎉 DROP 1 DELIVERY CONFIRMED! Dispatch and Customer notified.');
   };
 
+=======
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   // Canvas Handlers for Signature Capture
   const handleClearCanvas = () => {
     const canvas = canvasRef.current;
@@ -456,41 +575,64 @@ export default function DeliveryPOD() {
         </div>
       </div>
 
-      {/* TOP HEADER LOAD BANNER CARD ("LD-3987") */}
+      {/* TOP HEADER LOAD BANNER CARD */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-2">
-          <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
+<<<<<<< HEAD
+          <div className="text-2xl font-black text-indigo-700 tracking-tight">{runData?.id || 'LD-XXXX'}</div>
           <div className="text-sm font-black text-slate-800 flex items-center gap-2">
-            <span>Melbourne VIC</span>
+            <span>{runData?.origin || 'Origin'}</span>
             <span className="text-slate-400">➔</span>
-            <span>Sydney NSW</span>
+            <span>{runData?.destination || 'Destination'}</span>
+=======
+          <div className="text-2xl font-black text-indigo-700 tracking-tight">
+            {activeLoad?.loadRef || activeLoad?.displayId || 'Active Load'}
+          </div>
+          <div className="text-sm font-black text-slate-800 flex items-center gap-2">
+            <span>{activeStop?.name || activeStop?.contactName || 'Delivery Drop'}</span>
+            <span className="text-slate-400">➔</span>
+            <span>{activeStop?.address || 'Destination'}</span>
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
           </div>
 
           <div className="flex flex-wrap items-center gap-6 pt-2 text-xs">
             <div>
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Current Stop</span>
-              <span className="font-extrabold text-slate-900">DROP 1 OF 4</span>
+<<<<<<< HEAD
+              <span className="font-extrabold text-slate-900">DROP 1 OF {runData?.stopsCount || 1}</span>
+=======
+              <span className="font-extrabold text-slate-900">{activeStop?.name || 'DROP 1 OF 1'}</span>
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             </div>
 
             <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
 
             <div>
+<<<<<<< HEAD
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Delivery Time</span>
-              <span className="font-extrabold text-slate-900">11:00 AM</span>
+              <span className="font-extrabold text-slate-900">{runData?.nextStop?.eta || 'TBA'}</span>
             </div>
 
             <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
 
             <div>
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-              <span className="font-extrabold text-slate-900">11:45 AM</span>
+              <span className="font-extrabold text-slate-900">{runData?.estFinish || 'TBA'}</span>
+=======
+              <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Status</span>
+              <span className="font-extrabold text-slate-900">{activeLoad?.status || 'IN_TRANSIT'}</span>
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             </div>
 
             <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
 
             <div>
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Cars for this stop</span>
-              <span className="font-extrabold text-slate-900">3 Cars</span>
+<<<<<<< HEAD
+              <span className="font-extrabold text-slate-900">{totalCarsCount} Cars</span>
+=======
+              <span className="font-extrabold text-slate-900">{cars.length} Cars</span>
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             </div>
           </div>
         </div>
@@ -552,8 +694,13 @@ export default function DeliveryPOD() {
             {/* Table Header Section */}
             <div className="p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100">
               <div>
-                <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO DELIVER – DROP 1 ({totalCarsCount})</h3>
-                <p className="text-xs font-semibold text-slate-500 mt-0.5">Destination: <strong className="text-slate-800">Auto World Sydney</strong></p>
+<<<<<<< HEAD
+                <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO DELIVER – DROP 1 OF {runData?.stopsCount || 1} ({totalCarsCount})</h3>
+                <p className="text-xs font-semibold text-slate-500 mt-0.5">Destination: <strong className="text-slate-800">{runData?.nextStop?.name || 'Destination'}</strong></p>
+=======
+                <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO DELIVER ({cars.length})</h3>
+                <p className="text-xs font-semibold text-slate-500 mt-0.5">Destination: <strong className="text-slate-800">{activeStop?.address || 'Delivery Drop'}</strong></p>
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
               </div>
 
               <div className="flex items-center gap-2">
@@ -565,13 +712,30 @@ export default function DeliveryPOD() {
                   <span>Scan VIN</span>
                 </button>
                 <span className="bg-indigo-50 text-indigo-700 text-xs font-black px-3 py-1.5 rounded-lg border border-indigo-100">
-                  3 Cars
+<<<<<<< HEAD
+                  {totalCarsCount} Cars
+=======
+                  {cars.length} Cars
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
                 </span>
               </div>
             </div>
 
             {/* Table Responsive Wrapper */}
             <div className="overflow-x-auto custom-scrollbar">
+              {cars.length === 0 ? (
+                <div className="bg-slate-50 border-y border-dashed border-slate-200 p-8 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-xl font-black">
+                    🚗
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-sm">No vehicles to deliver yet</h4>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 font-medium">
+                      Click <strong>Scan VIN to Add</strong> below to add vehicles for this delivery drop.
+                    </p>
+                  </div>
+                </div>
+              ) : (
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">
@@ -587,7 +751,8 @@ export default function DeliveryPOD() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                  {cars.map((car, index) => (
+                  {cars.length > 0 ? (
+                    cars.map((car, index) => (
                     <tr 
                       key={car.id} 
                       className={`hover:bg-slate-50/80 transition-colors ${
@@ -788,9 +953,17 @@ export default function DeliveryPOD() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="py-12 text-center text-slate-500 font-medium">
+                      No vehicles assigned to this delivery drop. Click "Scan VIN" or "Add Car to Delivery" to add vehicles.
+                    </td>
+                  </tr>
+                )}
                 </tbody>
               </table>
+              )}
             </div>
 
             {/* ADD CAR BANNER AT BOTTOM OF TABLE CARD */}
@@ -884,7 +1057,7 @@ export default function DeliveryPOD() {
               <div className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-xs font-black">
                 ✓
               </div>
-              <span>CONFIRM DROP 1 DELIVERY</span>
+              <span>CONFIRM DROP 1 OF {runData?.stopsCount || 1} DELIVERY</span>
             </div>
             <span className="text-[11px] font-normal opacity-90">This will complete delivery for this stop and notify Dispatch & Customer.</span>
           </button>
@@ -906,7 +1079,7 @@ export default function DeliveryPOD() {
                 </div>
                 <div>
                   <div className="font-extrabold text-slate-900">Picked Up</div>
-                  <p className="text-[11px] text-slate-500 font-medium leading-tight">All 8 cars picked up at the origin.</p>
+                  <p className="text-[11px] text-slate-500 font-medium leading-tight">All {totalCarsCount} cars picked up at the origin.</p>
                 </div>
               </div>
 
@@ -1290,8 +1463,8 @@ export default function DeliveryPOD() {
           <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 text-left animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <div>
-                <h3 className="font-black text-slate-900 text-base">Load Details - LD-3987</h3>
-                <p className="text-xs text-slate-500 font-medium">Customer: Auto World Logistics</p>
+                <h3 className="font-black text-slate-900 text-base">Load Details - {runData?.id || 'LD-XXXX'}</h3>
+                <p className="text-xs text-slate-500 font-medium">Customer: {runData?.nextStop?.name || 'Customer'}</p>
               </div>
               <button onClick={() => setJobDetailsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
             </div>
@@ -1300,25 +1473,25 @@ export default function DeliveryPOD() {
               <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Route</span>
-                  <span className="text-slate-900">Melbourne VIC ➔ Sydney NSW</span>
+                  <span className="text-slate-900">{runData?.origin || 'Origin'} ➔ {runData?.destination || 'Destination'}</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Total Vehicle Load</span>
-                  <span className="text-slate-900 font-mono">8 Vehicles Total</span>
+                  <span className="text-slate-900 font-mono">{runData?.totalCarsCount || 0} Vehicles Total</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Stop 1 (Drop)</span>
-                  <span className="text-slate-900">Auto World Sydney (3 Vehicles)</span>
+                  <span className="text-slate-900">{runData?.nextStop?.name || 'Destination'} ({totalCarsCount} Vehicles)</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Dispatch Contact</span>
-                  <span className="text-indigo-600">+61 400 123 456</span>
+                  <span className="text-indigo-600">{runData?.nextStop?.contactPhone || 'TBA'}</span>
                 </div>
               </div>
 
               <div className="p-3 bg-purple-50 rounded-2xl border border-purple-100 text-purple-950 font-medium text-[11px]">
                 <strong className="font-bold block mb-0.5">Delivery Instructions:</strong>
-                Park car carrier at gate 4. Hand keys over to site manager or drop in lockbox #2 if after hours.
+                {runData?.nextStop?.instructions || 'No instructions provided.'}
               </div>
             </div>
 

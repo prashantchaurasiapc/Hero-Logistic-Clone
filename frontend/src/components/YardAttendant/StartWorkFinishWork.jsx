@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addGateLog } from '../../store/slices/warehouseSlice';
 import Button from '../common/Button';
@@ -13,15 +13,10 @@ import DataTable from '../common/DataTable';
 import StatusBadge from '../common/StatusBadge';
 import Modal from '../common/Modal';
 import { Layers, MapPin, Database, Award, Check, Truck, QrCode, AlertTriangle, Clock, ArrowRight, Shield, Calendar, RefreshCw, Navigation, Bell, X, CheckCircle, ChevronRight, User, Clipboard, Eye, FileText, Camera, Zap, Activity } from 'lucide-react';
-import { useLogistics } from '../../context/LogisticsContext';
+import { getCurrentWarehouseShift, clockInWarehouseShift, clockOutWarehouseShift, getWarehouseTasks, updateWarehouseTaskStatus, completeWarehouseTask } from '../../services/api';
+import SafetyChecklist from './SafetyChecklist';
 
 // ─── Initial Data Templates ──────────────────────────────────────────────────
-const INITIAL_TASKS = [
-  { id: 1, title: 'Spot Trailer TR-9410 to Gate 4', desc: 'Dock unloading request from warehouse team', status: 'Pending', priority: 'High', dueTime: '14:00', gate: 'Gate 4', trailer: 'TR-9410', notes: '' },
-  { id: 2, title: 'Audit Seal locks for TR-1102', desc: 'Verify container security codes before departure', status: 'In Progress', priority: 'High', dueTime: '15:30', gate: 'Gate 2', trailer: 'TR-1102', notes: '' },
-  { id: 3, title: 'Check damage report for TR-4809', desc: 'Verify reported rear bumper dent specs', status: 'Completed', priority: 'Medium', dueTime: '12:00', gate: 'Gate 1', trailer: 'TR-4809', notes: 'Minor surface scratch noted.' },
-  { id: 4, title: 'Move TR-7712 to Lane 3', desc: 'Consolidation move for outbound load', status: 'Pending', priority: 'Medium', dueTime: '16:00', gate: 'Gate 3', trailer: 'TR-7712', notes: '' },
-];
 
 const NOTIFICATIONS_DATA = [
   { id: 1, type: 'task', title: 'New Task Assigned', msg: 'Spot Trailer TR-5540 to Gate 1 by 15:00', time: '2 min ago', read: false },
@@ -52,12 +47,17 @@ const YARD_SPOTS = [
 export default function YardAttendantDashboard({ activeTab = 'overview' }) {
   const dispatch = useDispatch();
   const gateLogs = useSelector((state) => state.warehouse.gateLogs);
-  const { shiftState, startWork, finishWork } = useLogistics();
+
+  // ─── Real Backend Shift State (Phase C) ────────────────────────────────────
+  const [shift, setShift] = useState(undefined);        // undefined = loading
+  const [shiftLoading, setShiftLoading] = useState(true);
+  const [shiftActionLoading, setShiftActionLoading] = useState(false);
+  const [shiftError, setShiftError] = useState(null);
+  const [completedShift, setCompletedShift] = useState(null);
 
   // ─── Local Status & Shift Summary State ─────────────────────────────────────
   const [currentStatus, setCurrentStatus] = useState('Available');
   const [statusNote, setStatusNote] = useState('');
-  const [shiftSummary, setShiftSummary] = useState(null);
   const [shiftSummaryOpen, setShiftSummaryOpen] = useState(false);
 
   // ─── Modal States ──────────────────────────────────────────────────────────
@@ -67,14 +67,21 @@ export default function YardAttendantDashboard({ activeTab = 'overview' }) {
   const [taskDetailModal, setTaskDetailModal] = useState(null);
   const [taskNotesModal, setTaskNotesModal] = useState(null);
   const [inspectionModal, setInspectionModal] = useState(null);
+  const [safetyChecklistModalOpen, setSafetyChecklistModalOpen] = useState(false);
   const [qrScanModal, setQrScanModal] = useState(false);
   const [incidentModal, setIncidentModal] = useState(false);
   const [notifModal, setNotifModal] = useState(false);
   const [yardMapModal, setYardMapModal] = useState(false);
   const [supervisorModalOpen, setSupervisorModalOpen] = useState(false);
 
+  // ─── Real Backend Tasks State (Phase D) ───────────────────────────────────
+  const [tasks, setTasks] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
+  const [tasksError, setTasksError] = useState(null);
+  const [taskActionLoading, setTaskActionLoading] = useState(false);
+  const [taskSummary, setTaskSummary] = useState({ total: 0, pending: 0, inProgress: 0, completed: 0, highPriority: 0 });
+
   // ─── Data Lists State ───────────────────────────────────────────────────────
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
   const [reports, setReports] = useState([
     { id: 1, type: 'Damage', trailer: 'TR-7712', details: 'Rear container door seal torn. Water leak risk.', severity: 'High', date: '06/19/2026' },
     { id: 2, type: 'Missing Item', trailer: 'TR-1102', details: 'Load securing chains missing from rear locker box.', severity: 'Low', date: '06/18/2026' }
@@ -127,61 +134,167 @@ export default function YardAttendantDashboard({ activeTab = 'overview' }) {
   const [toastType, setToastType] = useState('info');
   const triggerToast = (msg, type = 'success') => { setToastMessage(msg); setToastType(type); };
 
-  // ─── Shift Logging Handlers ────────────────────────────────────────────────
-  const handleStartWork = () => {
-    startWork('Yard Attendant');
-    setCurrentStatus('Working');
-    triggerToast('Shift started. Status updated to Working.');
+  // ─── Fetch Current Shift from Backend ──────────────────────────────────────
+  const fetchCurrentShift = useCallback(async () => {
+    try {
+      setShiftLoading(true);
+      setShiftError(null);
+      const res = await getCurrentWarehouseShift();
+      setShift(res.data?.data?.shift || null);
+    } catch (err) {
+      console.error('Failed to fetch shift:', err);
+      setShiftError('Unable to load shift status.');
+      setShift(null);
+    } finally {
+      setShiftLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchCurrentShift(); }, [fetchCurrentShift]);
+
+  // ─── Real Clock-In Handler ──────────────────────────────────────────────────
+  const handleStartWork = async () => {
+    try {
+      setShiftActionLoading(true);
+      setShiftError(null);
+      const res = await clockInWarehouseShift();
+      setShift(res.data?.data?.shift || null);
+      setCurrentStatus('Working');
+      triggerToast('Shift started. Clock-in recorded.');
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Clock-in failed. Please try again.';
+      setShiftError(msg);
+      triggerToast(msg, 'error');
+    } finally {
+      setShiftActionLoading(false);
+    }
   };
 
-  const handleFinishWork = () => {
-    if (!shiftState.isWorking) {
+  // ─── Real Clock-Out Handler ─────────────────────────────────────────────────
+  const handleFinishWork = async () => {
+    if (shift?.status !== 'ACTIVE') {
       triggerToast('You are not currently clocked in.', 'error');
       return;
     }
-    const endTime = new Date().toLocaleTimeString();
-    const durationMin = Math.round(shiftState.totalSeconds / 60) || 1;
-    const summary = {
-      role: 'Yard Attendant',
-      startTime: shiftState.startTime || new Date().toLocaleTimeString(),
-      endTime: endTime,
-      duration: durationMin,
-      wages: (durationMin * 0.75).toFixed(2)
-    };
-    setShiftSummary(summary);
-    setShiftSummaryOpen(true);
-    finishWork('Yard Attendant');
-    setCurrentStatus('Off Duty');
-    triggerToast('Shift ended. Timesheet summary generated.');
+    try {
+      setShiftActionLoading(true);
+      setShiftError(null);
+      const res = await clockOutWarehouseShift();
+      const s = res.data?.data?.shift || null;
+      setCompletedShift(s);
+      setShift(s);
+      setShiftSummaryOpen(true);
+      setCurrentStatus('Off Duty');
+      triggerToast('Shift ended. Timesheet summary generated.');
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Clock-out failed. Please try again.';
+      setShiftError(msg);
+      triggerToast(msg, 'error');
+    } finally {
+      setShiftActionLoading(false);
+    }
   };
 
-  // ─── Task Queue Handlers ───────────────────────────────────────────────────
-  const handleStartTask = (id) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, status: 'In Progress' } : t));
-    triggerToast('Task status updated to In Progress.');
+  // ─── Fetch Tasks from Backend (Phase D) ────────────────────────────────────
+  const fetchTasks = useCallback(async () => {
+    try {
+      setTasksLoading(true);
+      setTasksError(null);
+      const res = await getWarehouseTasks();
+      const taskList = res.data?.data?.tasks || [];
+      const summary = res.data?.data?.summary || {
+        total: taskList.length,
+        pending: taskList.filter(t => t.status === 'PENDING').length,
+        inProgress: taskList.filter(t => t.status === 'IN_PROGRESS').length,
+        completed: taskList.filter(t => t.status === 'COMPLETED').length,
+        highPriority: taskList.filter(t => t.priority === 'HIGH' || t.priority === 'URGENT').length
+      };
+      setTasks(taskList);
+      setTaskSummary(summary);
+    } catch (err) {
+      console.error('Failed to fetch warehouse tasks:', err);
+      setTasksError('Unable to load tasks from server.');
+    } finally {
+      setTasksLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  // ─── Task Queue Handlers (Phase D) ──────────────────────────────────────────
+  const handleStartTask = async (id) => {
+    try {
+      setTaskActionLoading(true);
+      await updateWarehouseTaskStatus(id, { status: 'IN_PROGRESS' });
+      await fetchTasks();
+      triggerToast('Task status updated to In Progress.');
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to update task status.';
+      triggerToast(msg, 'error');
+    } finally {
+      setTaskActionLoading(false);
+    }
   };
 
-  const handleCompleteTask = (id) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, status: 'Completed' } : t));
-    triggerToast('Task completed successfully.');
+  const handleCompleteTask = async (id) => {
+    try {
+      setTaskActionLoading(true);
+      await completeWarehouseTask(id, { notes: 'Completed by Yard Attendant' });
+      await fetchTasks();
+      triggerToast('Task marked as completed successfully.');
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to complete task.';
+      triggerToast(msg, 'error');
+    } finally {
+      setTaskActionLoading(false);
+    }
   };
 
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (!taskNotesModal) return;
-    setTasks(tasks.map(t => t.id === taskNotesModal.id ? { ...t, notes: laneNotes } : t));
-    setTaskNotesModal(null);
-    setLaneNotes('');
-    triggerToast('Task notes saved.');
+    try {
+      setTaskActionLoading(true);
+      await updateWarehouseTaskStatus(taskNotesModal.id, { notes: laneNotes });
+      await fetchTasks();
+      setTaskNotesModal(null);
+      setLaneNotes('');
+      triggerToast('Task notes saved.');
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to save notes.';
+      triggerToast(msg, 'error');
+    } finally {
+      setTaskActionLoading(false);
+    }
   };
 
-  const handleConfirmLoaded = (id) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, status: 'Completed', notes: 'Confirmed Loaded' } : t));
-    triggerToast('Trailer cargo confirmed as LOADED.');
+  const handleConfirmLoaded = async (id) => {
+    try {
+      setTaskActionLoading(true);
+      await completeWarehouseTask(id, { notes: 'Confirmed Loaded' });
+      await fetchTasks();
+      triggerToast('Trailer cargo confirmed as LOADED.');
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to confirm load.';
+      triggerToast(msg, 'error');
+    } finally {
+      setTaskActionLoading(false);
+    }
   };
 
-  const handleConfirmUnloaded = (id) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, status: 'Completed', notes: 'Confirmed Unloaded' } : t));
-    triggerToast('Trailer cargo confirmed as UNLOADED.');
+  const handleConfirmUnloaded = async (id) => {
+    try {
+      setTaskActionLoading(true);
+      await completeWarehouseTask(id, { notes: 'Confirmed Unloaded' });
+      await fetchTasks();
+      triggerToast('Trailer cargo confirmed as UNLOADED.');
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to confirm unload.';
+      triggerToast(msg, 'error');
+    } finally {
+      setTaskActionLoading(false);
+    }
   };
 
   // ─── Status Update Handler ─────────────────────────────────────────────────
@@ -518,28 +631,29 @@ export default function YardAttendantDashboard({ activeTab = 'overview' }) {
             <StatCard title="Trailers Spotted" value={yardSpots.filter(s => s.type === 'trailer' && s.occupied).length} description="Active parking spots" progress={56} />
             <StatCard title="Gate Events" value={gateLogs.length} description="Inward/Outward today" trend="+2 checks" trendDirection="up" />
             <StatCard title="Yard Capacity" value={`${Math.round((yardSpots.filter(s => s.occupied).length / yardSpots.length) * 100)}%`} description="Slots occupied" progress={56} />
-            <StatCard title="Pending Tasks" value={tasks.filter(t => t.status === 'Pending').length} description="Awaiting action" trend="Action needed" trendDirection="neutral" />
-            <StatCard title="Current Shift" value={shiftState.isWorking ? 'Active' : 'Off Duty'} description={shiftState.isWorking ? `Started: ${shiftState.startTime}` : 'Not clocked in'} trend={shiftState.isWorking ? 'Working' : 'Clock in'} trendDirection={shiftState.isWorking ? 'up' : 'neutral'} />
+            <StatCard title="Pending Tasks" value={taskSummary.pending} description="Awaiting action" trend="Action needed" trendDirection="neutral" />
+            <StatCard title="Current Shift" value={shift?.status === 'ACTIVE' ? 'Active' : 'Off Duty'} description={shift?.status === 'ACTIVE' ? `Started: ${shift?.clockIn ? new Date(shift.clockIn).toLocaleTimeString() : '—'}` : 'Not clocked in'} trend={shift?.status === 'ACTIVE' ? 'Working' : 'Clock in'} trendDirection={shift?.status === 'ACTIVE' ? 'up' : 'neutral'} />
           </div>
 
           {/* Action Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
             {[
+              { label: 'Safety Checklist', sub: '20-point daily safety checks', icon: Shield, color: 'brand', onClick: () => setSafetyChecklistModalOpen(true) },
               { label: 'Move Asset', sub: 'Relocate trailers & containers', icon: Navigation, color: 'blue', onClick: () => triggerToast('Select Move Asset from sidebar or top tabs to relocate.') },
               { label: 'Scan In', sub: 'Check inbound assets into yard', icon: QrCode, color: 'emerald', onClick: () => { setScanType('Container'); setQrScanModal(true); } },
               { label: 'Scan Out', sub: 'Release assets to gate', icon: Truck, color: 'purple', onClick: () => { setScanType('Container'); setQrScanModal(true); } },
               { label: 'Lane Assignment', sub: 'Spot trailers to load lanes', icon: MapPin, color: 'yellow', onClick: () => setYardMapModal(true) },
               { label: 'Report Issue', sub: 'Log damage or missing items', icon: AlertTriangle, color: 'red', onClick: () => setIncidentModal(true) },
             ].map(({ label, sub, icon: Icon, color, onClick }) => (
-              <div key={label} className="glass rounded-2xl p-5 border border-slate-200 text-center flex flex-col items-center gap-3 hover:border-brand-500/40 transition-colors cursor-pointer group" onClick={onClick}>
-                <div className={`w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center group-hover:bg-slate-700/50 transition-colors`}>
-                  <Icon className="h-6 w-6 text-brand-400" />
+              <div key={label} className="glass rounded-2xl p-4 border border-slate-200 text-center flex flex-col items-center gap-2.5 hover:border-brand-500/40 transition-colors cursor-pointer group" onClick={onClick}>
+                <div className={`w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center group-hover:bg-slate-700/50 transition-colors`}>
+                  <Icon className="h-5 w-5 text-brand-400" />
                 </div>
                 <div>
                   <strong className="text-slate-900 text-xs block font-extrabold">{label}</strong>
-                  <p className="text-[10px] text-slate-500 mt-0.5">{sub}</p>
+                  <p className="text-[9px] text-slate-500 mt-0.5">{sub}</p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-brand-400 transition-colors" />
+                <ArrowRight className="h-3.5 w-3.5 text-slate-500 group-hover:text-brand-400 transition-colors" />
               </div>
             ))}
           </div>
@@ -576,38 +690,62 @@ export default function YardAttendantDashboard({ activeTab = 'overview' }) {
           <div className="glass rounded-2xl p-5 border border-slate-200 text-left space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-sm font-extrabold text-slate-900">Spotted Relocator Task Queue</h3>
-              <Button size="sm" variant="outline" onClick={() => setTasksModalOpen(true)}>View All Tasks</Button>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="secondary" icon={RefreshCw} onClick={fetchTasks}>Refresh</Button>
+                <Button size="sm" variant="outline" onClick={() => setTasksModalOpen(true)}>View All Tasks ({taskSummary.total})</Button>
+              </div>
             </div>
-            <div className="divide-y divide-[#2E2E2E]/40">
-              {tasks.slice(0,3).map(task => (
-                <div key={task.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <strong className="text-slate-900 text-xs">{task.title}</strong>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold border ${task.priority === 'High' ? 'text-red-400 border-red-500/30 bg-red-500/5' : 'text-yellow-400 border-yellow-500/30 bg-yellow-500/5'}`}>{task.priority}</span>
+
+            {tasksLoading ? (
+              <div className="py-8 text-center text-slate-500 text-xs flex flex-col items-center gap-2">
+                <RefreshCw className="h-5 w-5 animate-spin text-brand-500" />
+                <span>Loading assigned tasks...</span>
+              </div>
+            ) : tasksError ? (
+              <div className="py-6 text-center text-red-500 text-xs">
+                <p>{tasksError}</p>
+                <Button size="sm" variant="outline" className="mt-2" onClick={fetchTasks}>Retry</Button>
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 text-xs">
+                <Clipboard className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                <p className="font-semibold text-slate-500">No tasks assigned.</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Check back later or contact supervisor.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {tasks.slice(0, 4).map(task => (
+                  <div key={task.id} className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <strong className="text-slate-900 text-xs">{task.title}</strong>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold border ${task.priority === 'HIGH' || task.priority === 'URGENT' || task.priority === 'High' ? 'text-red-600 border-red-200 bg-red-50' : 'text-yellow-600 border-yellow-200 bg-yellow-50'}`}>
+                          {task.priority}
+                        </span>
+                      </div>
+                      <p className="text-slate-500 text-xs">{task.desc || task.description}</p>
+                      <p className="text-[10px] text-slate-500 font-mono">Due: {task.dueTime} | Gate: {task.gate} | Trailer: {task.trailer}</p>
                     </div>
-                    <p className="text-slate-500 text-xs">{task.desc}</p>
-                    <p className="text-[10px] text-slate-500 font-mono">Due: {task.dueTime} | Gate: {task.gate} | {task.trailer}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge status={task.status} />
+                      {(task.status === 'PENDING' || task.status === 'Pending') && (
+                        <Button size="sm" variant="secondary" disabled={taskActionLoading} onClick={() => handleStartTask(task.id)}>Start Task</Button>
+                      )}
+                      {(task.status === 'IN_PROGRESS' || task.status === 'In Progress') && (
+                        <>
+                          <Button size="sm" variant="primary" icon={Check} disabled={taskActionLoading} onClick={() => handleCompleteTask(task.id)}>Complete</Button>
+                          <Button size="sm" variant="secondary" disabled={taskActionLoading} onClick={() => handleConfirmLoaded(task.id)}>Confirm Loaded</Button>
+                          <Button size="sm" variant="outline" disabled={taskActionLoading} onClick={() => handleConfirmUnloaded(task.id)}>Confirm Unloaded</Button>
+                        </>
+                      )}
+                      <Button size="sm" variant="outline" onClick={() => setTaskDetailModal(task)}>View Details</Button>
+                      <Button size="sm" variant="outline" onClick={() => { setTaskNotesModal(task); setLaneNotes(task.notes || ''); }}>Add Notes</Button>
+                      <Button size="sm" variant="outline" onClick={() => setSupervisorModalOpen(true)}>Contact Supervisor</Button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StatusBadge status={task.status} />
-                    {task.status === 'Pending' && (
-                      <Button size="sm" variant="secondary" onClick={() => handleStartTask(task.id)}>Start Task</Button>
-                    )}
-                    {task.status === 'In Progress' && (
-                      <>
-                        <Button size="sm" variant="primary" icon={Check} onClick={() => handleCompleteTask(task.id)}>Complete</Button>
-                        <Button size="sm" variant="secondary" onClick={() => handleConfirmLoaded(task.id)}>Confirm Loaded</Button>
-                        <Button size="sm" variant="outline" onClick={() => handleConfirmUnloaded(task.id)}>Confirm Unloaded</Button>
-                      </>
-                    )}
-                    <Button size="sm" variant="outline" onClick={() => setTaskDetailModal(task)}>View Details</Button>
-                    <Button size="sm" variant="outline" onClick={() => { setTaskNotesModal(task); setLaneNotes(task.notes || ''); }}>Add Notes</Button>
-                    <Button size="sm" variant="outline" onClick={() => setSupervisorModalOpen(true)}>Contact Supervisor</Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -672,62 +810,8 @@ export default function YardAttendantDashboard({ activeTab = 'overview' }) {
 
       {/* ─── Inspections Tab ──────────────────────────────────────────────── */}
       {activeTab === 'inspections' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          <div className="lg:col-span-5 glass rounded-2xl p-5 border border-slate-200 text-left space-y-4">
-            <h3 className="text-sm font-extrabold text-slate-900">Log Safety Inspection Report</h3>
-            <form onSubmit={handleAddInspectionReport} className="space-y-4">
-              <SelectInput label="Report Issue Category" value={issueType} onChange={(e) => setIssueType(e.target.value)} options={[
-                { value: 'Damage', label: 'Container Damage Report' },
-                { value: 'Missing Item', label: 'Missing Security tools / chains' }
-              ]} />
-              <TextInput label="Trailer Container ID" required placeholder="e.g. TR-9410" value={inspectedTrailer} onChange={(e) => setInspectedTrailer(e.target.value)} />
-              <TextInput label="Report details description" required placeholder="e.g. Door latch seal ripped" value={issueDesc} onChange={(e) => setIssueDesc(e.target.value)} />
-              <SelectInput label="Issue Severity" value={issueSeverity} onChange={(e) => setIssueSeverity(e.target.value)} options={[
-                { value: 'High', label: 'High (Immediate Ground)' },
-                { value: 'Medium', label: 'Medium (Requires repair)' },
-                { value: 'Low', label: 'Low (Warning log)' }
-              ]} />
-              {/* Checklist */}
-              <div>
-                <label className="block text-slate-500 font-bold uppercase text-[9px] mb-2">Inspection Checklist</label>
-                <div className="space-y-2">
-                  {Object.entries(inspectionChecklist).map(([key, checked]) => (
-                    <label key={key} className="flex items-center gap-2 cursor-pointer group">
-                      <input type="checkbox" checked={checked} onChange={() => setInspectionChecklist(prev => ({...prev, [key]: !prev[key]}))} className="w-4 h-4 accent-yellow-400" />
-                      <span className="text-xs text-slate-600 capitalize group-hover:text-slate-900 transition-colors">{key.charAt(0).toUpperCase() + key.slice(1)} checked</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <FileUploader label="Upload Inspections photo evidence" onUploadSuccess={() => triggerToast('Photo evidence uploaded.')} />
-              <div className="flex gap-2 pt-2 border-t border-slate-200">
-                <Button type="button" variant="warning" className="flex-1" onClick={handleReportMissingItem}>Report Missing Item</Button>
-                <Button type="submit" variant="primary" className="flex-1">Submit Inspection</Button>
-              </div>
-            </form>
-          </div>
-
-          <div className="lg:col-span-7 glass rounded-2xl p-5 border border-slate-200 text-left space-y-4">
-            <h3 className="text-sm font-extrabold text-slate-900">Active Safety Issues Index</h3>
-            <div className="divide-y divide-[#2E2E2E]/40">
-              {reports.map(rep => (
-                <div key={rep.id} className="py-3 flex flex-col sm:flex-row justify-between sm:items-center text-xs gap-4">
-                  <div className="space-y-1">
-                    <div className="flex gap-2 items-center">
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${rep.type === 'Damage' ? 'bg-red-500/10 text-red-400' : 'bg-yellow-500/10 text-yellow-400'}`}>{rep.type}</span>
-                      <strong className="text-slate-900">Trailer: {rep.trailer}</strong>
-                    </div>
-                    <p className="text-slate-500">{rep.details}</p>
-                    <span className="text-[9px] text-slate-500 font-semibold font-mono block">Logged date: {rep.date}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2.5 py-1 text-[9px] font-bold rounded-lg border ${rep.severity === 'High' ? 'border-red-500/30 text-red-400 bg-red-500/5' : 'border-yellow-500/30 text-yellow-400 bg-yellow-500/5'}`}>{rep.severity} Severity</span>
-                    <Button size="sm" variant="outline" onClick={() => setInspectionModal(rep)}>Details</Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="space-y-6">
+          <SafetyChecklist onToast={triggerToast} />
         </div>
       )}
 
@@ -1021,10 +1105,10 @@ export default function YardAttendantDashboard({ activeTab = 'overview' }) {
           {/* Summary row */}
           <div className="grid grid-cols-4 gap-2 text-center">
             {[
-              { label: 'Pending', count: tasks.filter(t => t.status === 'Pending').length, color: 'text-yellow-400' },
-              { label: 'In Progress', count: tasks.filter(t => t.status === 'In Progress').length, color: 'text-blue-400' },
-              { label: 'Completed', count: tasks.filter(t => t.status === 'Completed').length, color: 'text-emerald-400' },
-              { label: 'High Priority', count: tasks.filter(t => t.priority === 'High').length, color: 'text-red-400' },
+              { label: 'Pending', count: taskSummary.pending, color: 'text-yellow-500' },
+              { label: 'In Progress', count: taskSummary.inProgress, color: 'text-blue-500' },
+              { label: 'Completed', count: taskSummary.completed, color: 'text-emerald-500' },
+              { label: 'High Priority', count: taskSummary.highPriority, color: 'text-red-500' },
             ].map(({ label, count, color }) => (
               <div key={label} className="p-2 bg-white/60 rounded-xl border border-slate-200">
                 <p className={`text-lg font-black ${color}`}>{count}</p>
@@ -1032,40 +1116,55 @@ export default function YardAttendantDashboard({ activeTab = 'overview' }) {
               </div>
             ))}
           </div>
-          <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-hide">
-            {tasks.map(task => (
-              <div key={task.id} className="p-3 bg-white/40 border border-slate-200 rounded-xl space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-bold text-slate-900 text-xs">{task.title}</p>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold border ${task.priority === 'High' ? 'text-red-400 border-red-500/30 bg-red-500/5' : 'text-yellow-400 border-yellow-500/30 bg-yellow-500/5'}`}>{task.priority}</span>
+
+          {tasksLoading ? (
+            <div className="py-8 text-center text-slate-500 text-xs flex flex-col items-center gap-2">
+              <RefreshCw className="h-5 w-5 animate-spin text-brand-500" />
+              <span>Loading tasks...</span>
+            </div>
+          ) : tasks.length === 0 ? (
+            <div className="py-8 text-center text-slate-400 text-xs">
+              <Clipboard className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+              <p className="font-semibold text-slate-500">No tasks assigned.</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-hide">
+              {tasks.map(task => (
+                <div key={task.id} className="p-3 bg-white/40 border border-slate-200 rounded-xl space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-slate-900 text-xs">{task.title}</p>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold border ${task.priority === 'HIGH' || task.priority === 'URGENT' || task.priority === 'High' ? 'text-red-600 border-red-200 bg-red-50' : 'text-yellow-600 border-yellow-200 bg-yellow-50'}`}>{task.priority}</span>
+                      </div>
+                      <p className="text-slate-500 text-[10px] mt-0.5">{task.desc || task.description}</p>
+                      <div className="flex gap-3 mt-1 text-[9px] text-slate-500 font-mono">
+                        <span>⏰ {task.dueTime}</span>
+                        <span>🚪 {task.gate}</span>
+                        <span>🚛 {task.trailer}</span>
+                      </div>
+                      {task.notes && <p className="text-[10px] text-slate-500 mt-1 italic">📝 {task.notes}</p>}
                     </div>
-                    <p className="text-slate-500 text-[10px] mt-0.5">{task.desc}</p>
-                    <div className="flex gap-3 mt-1 text-[9px] text-slate-500 font-mono">
-                      <span>⏰ {task.dueTime}</span>
-                      <span>🚪 {task.gate}</span>
-                      <span>🚛 {task.trailer}</span>
-                    </div>
-                    {task.notes && <p className="text-[10px] text-slate-500 mt-1 italic">📝 {task.notes}</p>}
+                    <StatusBadge status={task.status} />
                   </div>
-                  <StatusBadge status={task.status} />
+                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-200">
+                    {(task.status === 'PENDING' || task.status === 'Pending') && (
+                      <Button size="sm" variant="secondary" disabled={taskActionLoading} onClick={() => handleStartTask(task.id)}>Start Task</Button>
+                    )}
+                    {(task.status === 'IN_PROGRESS' || task.status === 'In Progress') && (
+                      <>
+                        <Button size="sm" variant="primary" icon={Check} disabled={taskActionLoading} onClick={() => handleCompleteTask(task.id)}>Complete Task</Button>
+                        <Button size="sm" variant="secondary" disabled={taskActionLoading} onClick={() => handleConfirmLoaded(task.id)}>Confirm Loaded</Button>
+                        <Button size="sm" variant="outline" disabled={taskActionLoading} onClick={() => handleConfirmUnloaded(task.id)}>Confirm Unloaded</Button>
+                      </>
+                    )}
+                    <Button size="sm" variant="outline" onClick={() => { setTaskDetailModal(task); setTasksModalOpen(false); }}>View Details</Button>
+                    <Button size="sm" variant="outline" onClick={() => { setTaskNotesModal(task); setLaneNotes(task.notes || ''); setTasksModalOpen(false); }}>Add Notes</Button>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-200">
-                  {task.status === 'Pending' && <Button size="sm" variant="secondary" onClick={() => handleStartTask(task.id)}>Start Task</Button>}
-                  {task.status === 'In Progress' && (
-                    <>
-                      <Button size="sm" variant="primary" icon={Check} onClick={() => handleCompleteTask(task.id)}>Complete Task</Button>
-                      <Button size="sm" variant="secondary" onClick={() => handleConfirmLoaded(task.id)}>Confirm Loaded</Button>
-                      <Button size="sm" variant="outline" onClick={() => handleConfirmUnloaded(task.id)}>Confirm Unloaded</Button>
-                    </>
-                  )}
-                  <Button size="sm" variant="outline" onClick={() => { setTaskDetailModal(task); setTasksModalOpen(false); }}>View Details</Button>
-                  <Button size="sm" variant="outline" onClick={() => { setTaskNotesModal(task); setLaneNotes(task.notes || ''); setTasksModalOpen(false); }}>Add Notes</Button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           <div className="flex justify-end pt-2 border-t border-slate-200">
             <Button variant="secondary" onClick={() => setTasksModalOpen(false)}>Close</Button>
           </div>
@@ -1302,6 +1401,13 @@ export default function YardAttendantDashboard({ activeTab = 'overview' }) {
           <div className="flex justify-end">
             <Button variant="secondary" onClick={() => setYardMapModal(false)}>Close</Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Safety Checklist Modal */}
+      <Modal isOpen={safetyChecklistModalOpen} onClose={() => setSafetyChecklistModalOpen(false)} title="Pre-Start Safety Inspection" size="xl">
+        <div className="p-2 max-h-[75vh] overflow-y-auto">
+          <SafetyChecklist onToast={triggerToast} />
         </div>
       </Modal>
 

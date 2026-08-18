@@ -1,8 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import api from '../../../services/api';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import api, { getCurrentWarehouseShift, clockInWarehouseShift, clockOutWarehouseShift } from '../../../services/api';
+import SafetyChecklist from '../../../components/YardAttendant/SafetyChecklist';
 import './WarehouseDashboard.css';
 
 // SVG Icons
+const ShieldIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+  </svg>
+);
 const BellIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -49,12 +55,21 @@ const CloseIcon = () => (
 );
 
 export default function YardWorkStatus() {
-  const [shiftActive, setShiftActive] = useState(false);
-  const [secondsElapsed, setSecondsElapsed] = useState(0);
-  const [startTime, setStartTime] = useState(null);
-  const [endTime, setEndTime] = useState(null);
+  // ─── Real Backend Shift State ────────────────────────────────────────────────
+  // shift === null  → NOT_STARTED
+  // shift.status === 'ACTIVE'    → ON_SHIFT (clocked in)
+  // shift.status === 'COMPLETED' → clocked out
+  const [shift, setShift] = useState(undefined); // undefined = loading, null = not started
+  const [shiftLoading, setShiftLoading] = useState(true);
+  const [shiftError, setShiftError] = useState(null);
+  const [shiftActionLoading, setShiftActionLoading] = useState(false);
+
+  // Presentation-only elapsed timer — derived from server clockIn, NOT persisted
   const [timerString, setTimerString] = useState('00:00:00');
-  const [activeTimesheetId, setActiveTimesheetId] = useState(null);
+  const timerRef = useRef(null);
+
+  // Completed shift info for summary modal
+  const [completedShift, setCompletedShift] = useState(null);
 
   // Modals state
   const [showSummaryModal, setShowSummaryModal] = useState(false);
@@ -63,6 +78,7 @@ export default function YardWorkStatus() {
   const [showQrModal, setShowQrModal] = useState(false);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showSafetyChecklistModal, setShowSafetyChecklistModal] = useState(false);
 
   // QR Modal form state
   const [scanType, setScanType] = useState('Trailer');
@@ -146,77 +162,89 @@ export default function YardWorkStatus() {
   // Toast notifications state
   const [toast, setToast] = useState(null);
 
-  const timerRef = useRef(null);
-
   const triggerToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Timer counter effect
-  useEffect(() => {
-    if (shiftActive) {
-      timerRef.current = setInterval(() => {
-        setSecondsElapsed(prev => prev + 1);
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [shiftActive]);
-
-  // Convert elapsed seconds to HH:MM:SS
-  useEffect(() => {
-    const hrs = Math.floor(secondsElapsed / 3600).toString().padStart(2, '0');
-    const mins = Math.floor((secondsElapsed % 3600) / 60).toString().padStart(2, '0');
-    const secs = (secondsElapsed % 60).toString().padStart(2, '0');
-    setTimerString(`${hrs}:${mins}:${secs}`);
-  }, [secondsElapsed]);
-
-  const handleStartWork = async () => {
-    const now = new Date();
-    setStartTime(now);
-    setSecondsElapsed(0);
-    setShiftActive(true);
-    triggerToast('Work shift started successfully. Logging GPS telemetry.');
-
+  // ─── Fetch Current Shift from Backend ────────────────────────────────────────
+  const fetchCurrentShift = useCallback(async () => {
     try {
-      const res = await api.post('/timesheets', {
-        driverId: 'temp-driver-id', // Placeholder, should be replaced with actual user's driver ID
-        companyId: 'temp-company-id',
-        date: now.toISOString(),
-        clockInAt: now.toISOString(),
-        status: 'DRAFT'
-      });
-      if (res.data && res.data.success) {
-        setActiveTimesheetId(res.data.data.id);
-      }
+      setShiftLoading(true);
+      setShiftError(null);
+      const res = await getCurrentWarehouseShift();
+      const s = res.data?.data?.shift || null;
+      setShift(s);
     } catch (err) {
-      console.error('Error creating timesheet', err);
+      console.error('Failed to fetch current shift:', err);
+      setShiftError('Unable to load shift status. Please refresh.');
+      setShift(null);
+    } finally {
+      setShiftLoading(false);
+    }
+  }, []);
+
+  // Fetch on mount — persists state across page refresh
+  useEffect(() => {
+    fetchCurrentShift();
+  }, [fetchCurrentShift]);
+
+  // ─── Presentation-only Elapsed Timer ─────────────────────────────────────────
+  // Derived entirely from the server clockIn timestamp — no fake incrementing state
+  useEffect(() => {
+    const isActive = shift?.status === 'ACTIVE';
+    if (isActive && shift?.clockIn) {
+      const updateTimer = () => {
+        const elapsed = Math.max(0, Math.floor((Date.now() - new Date(shift.clockIn).getTime()) / 1000));
+        const hrs = Math.floor(elapsed / 3600).toString().padStart(2, '0');
+        const mins = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
+        const secs = (elapsed % 60).toString().padStart(2, '0');
+        setTimerString(`${hrs}:${mins}:${secs}`);
+      };
+      updateTimer();
+      timerRef.current = setInterval(updateTimer, 1000);
+    } else {
+      clearInterval(timerRef.current);
+      setTimerString('00:00:00');
+    }
+    return () => clearInterval(timerRef.current);
+  }, [shift?.status, shift?.clockIn]);
+
+  // ─── Real Clock-In Handler ────────────────────────────────────────────────────
+  const handleStartWork = async () => {
+    try {
+      setShiftActionLoading(true);
+      setShiftError(null);
+      const res = await clockInWarehouseShift();
+      const s = res.data?.data?.shift || null;
+      setShift(s);
+      triggerToast('Work shift started successfully!');
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Clock-in failed. Please try again.';
+      setShiftError(msg);
+      triggerToast(msg);
+    } finally {
+      setShiftActionLoading(false);
     }
   };
 
+  // ─── Real Clock-Out Handler ───────────────────────────────────────────────────
   const handleFinishWork = async () => {
-    const now = new Date();
-    setEndTime(now);
-    setShiftActive(false);
-    setShowSummaryModal(true);
-
-    if (activeTimesheetId) {
-      try {
-        await api.put(`/timesheets/${activeTimesheetId}`, {
-          clockOutAt: now.toISOString(),
-          status: 'SUBMITTED',
-          totalMinutes: Math.max(1, Math.ceil(secondsElapsed / 60))
-        });
-        setActiveTimesheetId(null);
-      } catch (err) {
-        console.error('Error updating timesheet', err);
-      }
+    try {
+      setShiftActionLoading(true);
+      setShiftError(null);
+      const res = await clockOutWarehouseShift();
+      const s = res.data?.data?.shift || null;
+      setCompletedShift(s);
+      setShift(s);
+      setShowSummaryModal(true);
+      triggerToast('Shift ended. Summary recorded.');
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Clock-out failed. Please try again.';
+      setShiftError(msg);
+      triggerToast(msg);
+    } finally {
+      setShiftActionLoading(false);
     }
   };
 
@@ -279,6 +307,34 @@ export default function YardWorkStatus() {
 
         {/* Top Right Header Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          
+          {/* Safety Checklist button */}
+          <button
+            type="button"
+            onClick={() => setShowSafetyChecklistModal(true)}
+            title="Daily Pre-Start Safety Inspection"
+            style={{
+              height: 38,
+              padding: '0 14px',
+              borderRadius: 12,
+              border: '1px solid #fde047',
+              backgroundColor: '#fefce8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              cursor: 'pointer',
+              color: '#854d0e',
+              fontSize: 12,
+              fontWeight: '800',
+              outline: 'none',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+            }}
+          >
+            <ShieldIcon />
+            <span>Safety Checklist</span>
+          </button>
+
           {/* Bell Icon with unread badge */}
           <div style={{ position: 'relative' }}>
             <button
@@ -436,32 +492,91 @@ export default function YardWorkStatus() {
             alignItems: 'center',
             gap: 16
           }}>
-            {!shiftActive ? (
+
+            {/* Loading state */}
+            {shiftLoading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '12px 0' }}>
+                <div style={{
+                  width: 28, height: 28,
+                  border: '3px solid #e2e8f0',
+                  borderTopColor: '#b45309',
+                  borderRadius: '50%',
+                  animation: 'spin 0.8s linear infinite'
+                }} />
+                <span style={{ fontSize: 12, color: '#64748b', fontWeight: '600' }}>Loading shift status...</span>
+              </div>
+            ) : shiftError ? (
+              <div style={{ width: '100%', textAlign: 'center' }}>
+                <p style={{ fontSize: 12, color: '#ef4444', fontWeight: '600', margin: '0 0 12px 0' }}>{shiftError}</p>
+                <button
+                  onClick={fetchCurrentShift}
+                  style={{
+                    backgroundColor: '#f8fafc', border: '1px solid #cbd5e1',
+                    borderRadius: 8, padding: '8px 16px',
+                    fontSize: 12, fontWeight: '700', color: '#334155',
+                    cursor: 'pointer', outline: 'none'
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
+            ) : shift?.status !== 'ACTIVE' ? (
               <>
                 <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px' }}>
-                  NOT CLOCKED IN
+                  {shift?.status === 'COMPLETED' ? 'SHIFT COMPLETED' : 'NOT CLOCKED IN'}
                 </span>
                 <h3 style={{ fontSize: 22, fontWeight: '800', color: '#475569', margin: 0 }}>
-                  Shift Off-Duty
+                  {shift?.status === 'COMPLETED' ? 'Shift Ended' : 'Shift Off-Duty'}
                 </h3>
+                {shift?.status === 'COMPLETED' && shift?.clockIn && (
+                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: '500', textAlign: 'center' }}>
+                    <div>Clocked in: {new Date(shift.clockIn).toLocaleTimeString()}</div>
+                    <div>Clocked out: {shift.clockOut ? new Date(shift.clockOut).toLocaleTimeString() : '—'}</div>
+                  </div>
+                )}
                 <button
                   onClick={handleStartWork}
+                  disabled={shiftActionLoading}
                   style={{
                     width: '100%',
-                    backgroundColor: '#ffcc00',
+                    backgroundColor: shiftActionLoading ? '#e2e8f0' : '#ffcc00',
                     border: 'none',
                     borderRadius: 12,
                     padding: '14px',
                     fontSize: 13.5,
                     fontWeight: '800',
-                    color: '#000000',
-                    cursor: 'pointer',
+                    color: shiftActionLoading ? '#64748b' : '#000000',
+                    cursor: shiftActionLoading ? 'not-allowed' : 'pointer',
                     outline: 'none',
                     boxShadow: '0 4px 12px rgba(255, 204, 0, 0.25)',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  Start Work
+                  {shiftActionLoading ? 'Clocking In...' : 'Start Work'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSafetyChecklistModal(true)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: 12,
+                    padding: '10px',
+                    fontSize: 12,
+                    fontWeight: '800',
+                    color: '#334155',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <ShieldIcon />
+                  <span>Pre-Start Safety Checklist (20 Items)</span>
                 </button>
               </>
             ) : (
@@ -473,26 +588,27 @@ export default function YardWorkStatus() {
                   {timerString}
                 </div>
                 <span style={{ fontSize: 11, color: '#64748b', fontWeight: '500' }}>
-                  Started at: {getFormattedTime(startTime)}
+                  Started at: {shift?.clockIn ? new Date(shift.clockIn).toLocaleTimeString() : '—'}
                 </span>
                 <button
                   onClick={handleFinishWork}
+                  disabled={shiftActionLoading}
                   style={{
                     width: '100%',
-                    backgroundColor: '#ef4444',
+                    backgroundColor: shiftActionLoading ? '#e2e8f0' : '#ef4444',
                     border: 'none',
                     borderRadius: 12,
                     padding: '14px',
                     fontSize: 13.5,
                     fontWeight: '800',
-                    color: '#ffffff',
-                    cursor: 'pointer',
+                    color: shiftActionLoading ? '#64748b' : '#ffffff',
+                    cursor: shiftActionLoading ? 'not-allowed' : 'pointer',
                     outline: 'none',
                     boxShadow: '0 4px 12px rgba(239, 68, 68, 0.25)',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  Finish Work
+                  {shiftActionLoading ? 'Clocking Out...' : 'Finish Work'}
                 </button>
               </>
             )}
@@ -553,27 +669,37 @@ export default function YardWorkStatus() {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 12, fontWeight: '800', color: '#b45309', letterSpacing: '0.5px' }}>YARD ATTENDANT</span>
-                  <span style={{ fontSize: 11, fontWeight: '800', color: '#64748b' }}>{getFormattedDate(endTime)}</span>
+                  <span style={{ fontSize: 11, fontWeight: '800', color: '#64748b' }}>
+                    {completedShift?.date ? new Date(completedShift.date).toLocaleDateString() : new Date().toLocaleDateString()}
+                  </span>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 20px', textAlign: 'left' }}>
                   <div>
                     <span style={{ fontSize: 9.5, fontWeight: '800', color: '#92400e', display: 'block', letterSpacing: '0.2px' }}>START TIME</span>
-                    <span style={{ fontSize: 13, fontWeight: '800', color: '#0f172a', marginTop: 4, display: 'block' }}>{getFormattedTime(startTime)}</span>
+                    <span style={{ fontSize: 13, fontWeight: '800', color: '#0f172a', marginTop: 4, display: 'block' }}>
+                      {completedShift?.clockIn ? new Date(completedShift.clockIn).toLocaleTimeString() : '—'}
+                    </span>
                   </div>
                   <div>
                     <span style={{ fontSize: 9.5, fontWeight: '800', color: '#92400e', display: 'block', letterSpacing: '0.2px' }}>END TIME</span>
-                    <span style={{ fontSize: 13, fontWeight: '800', color: '#0f172a', marginTop: 4, display: 'block' }}>{getFormattedTime(endTime)}</span>
+                    <span style={{ fontSize: 13, fontWeight: '800', color: '#0f172a', marginTop: 4, display: 'block' }}>
+                      {completedShift?.clockOut ? new Date(completedShift.clockOut).toLocaleTimeString() : '—'}
+                    </span>
                   </div>
                   <div>
                     <span style={{ fontSize: 9.5, fontWeight: '800', color: '#92400e', display: 'block', letterSpacing: '0.2px' }}>TOTAL DURATION</span>
                     <span style={{ fontSize: 13, fontWeight: '800', color: '#10b981', marginTop: 4, display: 'block' }}>
-                      {Math.max(1, Math.ceil(secondsElapsed / 60))} minutes
+                      {completedShift?.clockIn && completedShift?.clockOut
+                        ? `${Math.max(1, Math.round((new Date(completedShift.clockOut) - new Date(completedShift.clockIn)) / 60000))} minutes`
+                        : '—'}
                     </span>
                   </div>
                   <div>
-                    <span style={{ fontSize: 9.5, fontWeight: '800', color: '#92400e', display: 'block', letterSpacing: '0.2px' }}>ESTIMATED PAY</span>
-                    <span style={{ fontSize: 13, fontWeight: '800', color: '#b45309', marginTop: 4, display: 'block' }}>${getEstimatedPay()}</span>
+                    <span style={{ fontSize: 9.5, fontWeight: '800', color: '#92400e', display: 'block', letterSpacing: '0.2px' }}>ROLE</span>
+                    <span style={{ fontSize: 13, fontWeight: '800', color: '#b45309', marginTop: 4, display: 'block' }}>
+                      {completedShift?.role || 'Yard Attendant'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -2091,6 +2217,56 @@ export default function YardWorkStatus() {
           >
             ✕
           </button>
+        </div>
+      )}
+
+      {/* MODAL: Pre-Start Safety Checklist */}
+      {showSafetyChecklistModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1050,
+          padding: '16px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: 20,
+            width: '100%',
+            maxWidth: 1050,
+            maxHeight: '90vh',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {/* Modal Header */}
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ShieldIcon />
+                <h2 style={{ fontSize: 16, fontWeight: '800', color: '#0f172a', margin: 0 }}>Daily Pre-Start Safety Inspection</h2>
+              </div>
+              <button
+                onClick={() => setShowSafetyChecklistModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', color: '#64748b' }}
+              >
+                <CloseIcon />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '24px', overflowY: 'auto' }}>
+              <SafetyChecklist onToast={triggerToast} />
+            </div>
+          </div>
         </div>
       )}
 

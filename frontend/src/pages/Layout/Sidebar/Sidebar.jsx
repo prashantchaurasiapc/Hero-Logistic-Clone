@@ -390,16 +390,18 @@ const Sidebar = ({ role, isOpen, onClose }) => {
     }));
   };
 
-  // Get dynamic session values if they exist
+  // Get dynamic session values & permissions if they exist
   let userName = config.userName;
   let portalName = config.portalName;
   let userRole = config.userRole;
   let avatarLetter = config.avatarLetter || config.userName?.charAt(0) || 'A';
+  let userPermissions = {};
 
   const sessionStr = localStorage.getItem('hero_session');
   if (sessionStr) {
     try {
       const session = JSON.parse(sessionStr);
+      userPermissions = session.permissions || {};
       if (session.name) {
         userName = session.name;
         avatarLetter = session.name.charAt(0).toUpperCase();
@@ -420,6 +422,36 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       console.error(e);
     }
   }
+
+  // Permission filter helper: checks if a menu item should be shown
+  const isPermitted = (itemLabel) => {
+    if (role === 'super-admin') return true;
+    if (!userPermissions || Object.keys(userPermissions).length === 0) return true;
+
+    const normalizedTarget = (itemLabel || '').toLowerCase().trim();
+    if (!normalizedTarget) return true;
+
+    // Find matching key in userPermissions
+    const matchedKey = Object.keys(userPermissions).find(k => {
+      const normK = k.toLowerCase().trim();
+      return normK === normalizedTarget ||
+             normK.includes(normalizedTarget) ||
+             normalizedTarget.includes(normK) ||
+             (normalizedTarget.startsWith('user') && normK.startsWith('user')) ||
+             (normalizedTarget.startsWith('role') && normK.startsWith('role'));
+    });
+
+    if (!matchedKey) return true; // default allowed if not explicitly in config
+
+    const permVal = userPermissions[matchedKey];
+    if (typeof permVal === 'boolean') return permVal;
+    if (typeof permVal === 'object' && permVal !== null) {
+      if (permVal.Show === false || permVal.View === false) {
+        return false;
+      }
+    }
+    return true;
+  };
 
   return (
     <aside className="sidebar">
@@ -457,7 +489,10 @@ const Sidebar = ({ role, isOpen, onClose }) => {
             const hasItems = Boolean(item.items && item.items.length > 0);
 
             if (hasItems) {
-              const hasActiveChild = item.items.some(sub => isPathActive(sub.path));
+              const visibleSubItems = item.items.filter(sub => isPermitted(sub.label));
+              if (visibleSubItems.length === 0) return null;
+
+              const hasActiveChild = visibleSubItems.some(sub => isPathActive(sub.path));
               const isOpen = openSubMenus[itemKey] ?? hasActiveChild;
 
               return (
@@ -472,7 +507,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
                   </div>
                   {isOpen && (
                     <ul className="submenu">
-                      {item.items.map((subItem, i) => {
+                      {visibleSubItems.map((subItem, i) => {
                         const subActive = isPathActive(subItem.path);
                         return (
                           <li key={i}>
@@ -492,6 +527,8 @@ const Sidebar = ({ role, isOpen, onClose }) => {
               );
             }
 
+            if (!isPermitted(item.label)) return null;
+
             const active = isPathActive(item.path);
             return (
               <li key={index}>
@@ -510,7 +547,10 @@ const Sidebar = ({ role, isOpen, onClose }) => {
 
           {/* Submenus (Company Admin / Warehouse Tools) */}
           {config.subMenus?.map((sub) => {
-            const hasActiveChild = sub.items.some(item => isPathActive(item.path));
+            const visibleSubItems = sub.items.filter(subItem => isPermitted(subItem.label));
+            if (visibleSubItems.length === 0) return null;
+
+            const hasActiveChild = visibleSubItems.some(item => isPathActive(item.path));
             return (
               <React.Fragment key={sub.key}>
                 {sub.header && (
@@ -527,7 +567,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
                   </div>
                   {openSubMenus[sub.key] && (
                     <ul className="submenu">
-                      {sub.items.map((subItem, i) => {
+                      {visibleSubItems.map((subItem, i) => {
                         const subActive = isPathActive(subItem.path);
                         return (
                           <li key={i}>
@@ -550,6 +590,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
 
           {/* Extra items after submenus (Company Admin) */}
           {config.extraItems?.map((item, index) => {
+            if (!isPermitted(item.label)) return null;
             const extraActive = isPathActive(item.path);
             return (
               <li key={`extra-${index}`}>
@@ -566,6 +607,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
           })}
         </ul>
       </nav>
+
 
       <div className="sidebar-footer">
         <div className="user-profile">
