@@ -52,14 +52,14 @@ const SuperAdminDashboard = () => {
       </div>
 
       <div className="stats-grid stats-4">
-        <StatCard title="ACTIVE COMPANIES" value={companies.filter(c => c.status === 'ACTIVE').length || 4} desc="SaaS instances online" status="Stable" />
-        <StatCard title="TRIAL COMPANIES" value={companies.filter(c => c.status === 'TRIAL').length || 2} desc="SaaS trial instances" status="+1 new" statusColor="text-green" />
-        <StatCard title="PAID COMPANIES" value={companies.filter(c => c.status === 'ACTIVE').length || 3} desc="Subscribed paying contracts" status="Stable" />
-        <StatCard title="MONTHLY REVENUE" value="$42,910" desc="Platform cash stream baseline" status="+8%" statusColor="text-green" />
-        <StatCard title="FAILED PAYMENTS" value="1" desc="Payment gateway errors" status="0 alerts" />
-        <StatCard title="SUPPORT TICKETS" value="2" desc="Requires administrative response" status="Alert" statusColor="text-red" />
-        <StatCard title="ACTIVE USERS" value="118" desc="Active platform users pool" status="+3 active" statusColor="text-green" />
-        <StatCard title="PLATFORM USAGE" value="14.2%" desc="AWS autoscaling node limits" status="Stable" />
+        <StatCard title="ACTIVE COMPANIES" value={companies.filter(c => c.status === 'ACTIVE').length} desc="SaaS instances online" status="Stable" />
+        <StatCard title="TRIAL COMPANIES" value={companies.filter(c => c.status === 'TRIAL').length} desc="SaaS trial instances" status="—" statusColor="text-green" />
+        <StatCard title="PAID COMPANIES" value={companies.filter(c => c.status === 'ACTIVE').length} desc="Subscribed paying contracts" status="Stable" />
+        <StatCard title="MONTHLY REVENUE" value="—" desc="Platform cash stream baseline" status="—" statusColor="text-green" />
+        <StatCard title="FAILED PAYMENTS" value="—" desc="Payment gateway errors" status="0 alerts" />
+        <StatCard title="SUPPORT TICKETS" value="—" desc="Requires administrative response" status="Alert" statusColor="text-red" />
+        <StatCard title="ACTIVE USERS" value="—" desc="Active platform users pool" status="—" statusColor="text-green" />
+        <StatCard title="PLATFORM USAGE" value="—" desc="AWS autoscaling node limits" status="Stable" />
       </div>
 
       <div className="dashboard-row">

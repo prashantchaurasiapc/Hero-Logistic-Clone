@@ -1,93 +1,90 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import { Search, DollarSign, Edit3, Check, Save, Download, Settings, RefreshCw, X, Shield, Building2, UserCheck, Plus, Sliders } from 'lucide-react';
 import './WarehouseDashboard.css';
 
-const MOCK_COMPANIES = [];
-
-const MOCK_CUSTOMERS = [];
-
-const INITIAL_CUSTOMER_PRICING = [
-  {
-    id: 'PRC-101',
-    companyName: 'Hero Logistics HQ',
-    customerName: 'Toyota Australia',
-    accountCode: 'ACC-TYT-01',
-    pricingMode: 'By Kilometer', // 'By Load' | 'By Kilometer'
-    baseRate: 3.85, // $ per KM or $ per Load
-    minCharge: 450.00,
-    fuelSurchargePct: 12.5,
-    tollsIncluded: true,
-    effectiveDate: '2026-01-01',
-    status: 'ACTIVE'
-  },
-  {
-    id: 'PRC-102',
-    companyName: 'Hero Logistics Victoria',
-    customerName: 'Global Retail Corp',
-    accountCode: 'ACC-GRC-02',
-    pricingMode: 'By Load',
-    baseRate: 1250.00,
-    minCharge: 800.00,
-    fuelSurchargePct: 10.0,
-    tollsIncluded: false,
-    effectiveDate: '2026-02-15',
-    status: 'ACTIVE'
-  },
-  {
-    id: 'PRC-103',
-    companyName: 'Hero Logistics HQ',
-    customerName: 'Linfox Logistics',
-    accountCode: 'ACC-LFX-03',
-    pricingMode: 'By Kilometer',
-    baseRate: 4.20,
-    minCharge: 500.00,
-    fuelSurchargePct: 14.0,
-    tollsIncluded: true,
-    effectiveDate: '2026-03-01',
-    status: 'ACTIVE'
-  },
-  {
-    id: 'PRC-104',
-    companyName: 'Hero Logistics NSW',
-    customerName: 'FastGoods LLC',
-    accountCode: 'ACC-FGL-04',
-    pricingMode: 'By Load',
-    baseRate: 950.00,
-    minCharge: 600.00,
-    fuelSurchargePct: 8.5,
-    tollsIncluded: false,
-    effectiveDate: '2026-01-10',
-    status: 'ACTIVE'
-  },
-  {
-    id: 'PRC-105',
-    companyName: 'Hero Logistics HQ',
-    customerName: 'DHL Supply Chain',
-    accountCode: 'ACC-DHL-05',
-    pricingMode: 'By Kilometer',
-    baseRate: 3.95,
-    minCharge: 480.00,
-    fuelSurchargePct: 11.0,
-    tollsIncluded: true,
-    effectiveDate: '2026-04-01',
-    status: 'ACTIVE'
-  }
-];
-
 export default function CustomerPricing() {
-  const [pricingList, setPricingList] = useState(INITIAL_CUSTOMER_PRICING);
+  const [companies, setCompanies] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [pricingList, setPricingList] = useState([]);
+
+  useEffect(() => {
+    const loadDropdownData = async () => {
+      try {
+        const res = await api.get('/accounts/invoices');
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          const customersMap = {};
+          const companiesMap = {};
+          res.data.data.forEach(inv => {
+            if (inv.customerId && inv.customer) {
+              customersMap[inv.customer] = {
+                id: inv.customerId,
+                name: inv.customer,
+                code: `CUST-${inv.customerId.slice(0, 4).toUpperCase()}`
+              };
+            }
+            if (inv.company || inv.companyName) {
+              const comp = inv.company || inv.companyName || 'HERO Logistics Pty Ltd';
+              companiesMap[comp] = {
+                id: inv.companyId || 'comp-1',
+                name: comp
+              };
+            }
+          });
+          
+          const custList = Object.values(customersMap);
+          const compList = Object.values(companiesMap);
+          
+          if (custList.length === 0) {
+            custList.push(
+              { id: 'c1', name: 'Darren Logistics', code: 'CUST-DARR' },
+              { id: 'c2', name: 'Coastline Car Carriers', code: 'CUST-COAS' },
+              { id: 'c3', name: 'Commercial Logistics Client', code: 'CUST-COMM' }
+            );
+          }
+          if (compList.length === 0) {
+            compList.push({ id: 'comp-1', name: 'HERO Logistics Pty Ltd' });
+          }
+          
+          setCompanies(compList);
+          setCustomers(custList);
+          setSelectedCompany(compList[0]?.name || '');
+          setSelectedCustomer(custList[0]?.name || '');
+          
+          const initialPricing = custList.map((cust, idx) => ({
+            id: `PRC-${1000 + idx}`,
+            companyName: compList[0]?.name || 'HERO Logistics Pty Ltd',
+            customerName: cust.name,
+            accountCode: cust.code,
+            pricingMode: idx % 2 === 0 ? 'By Kilometer' : 'By Load',
+            baseRate: idx % 2 === 0 ? 3.85 : 450.00,
+            minCharge: idx % 2 === 0 ? 150.00 : 450.00,
+            fuelSurchargePct: 14.5,
+            tollsIncluded: true,
+            effectiveDate: '2026-01-01',
+            status: 'ACTIVE'
+          }));
+          setPricingList(initialPricing);
+        }
+      } catch (err) {
+        console.warn('Failed to load dropdown values:', err);
+      }
+    };
+    loadDropdownData();
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState(null); // For Edit Modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
   // Top Form Quick Selection State
-  const [selectedCompany, setSelectedCompany] = useState('Hero Logistics HQ');
-  const [selectedCustomer, setSelectedCustomer] = useState('Toyota Australia');
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState('');
   const [topPricingMode, setTopPricingMode] = useState('By Kilometer');
-  const [topBaseRate, setTopBaseRate] = useState('3.85');
-  const [topMinCharge, setTopMinCharge] = useState('450.00');
-  const [topFuelPct, setTopFuelPct] = useState('12.5');
+  const [topBaseRate, setTopBaseRate] = useState('');
+  const [topMinCharge, setTopMinCharge] = useState('');
+  const [topFuelPct, setTopFuelPct] = useState('');
 
   // Form State inside Edit Modal
   const [editForm, setEditForm] = useState({
@@ -127,7 +124,7 @@ export default function CustomerPricing() {
     }
 
     const existingIndex = pricingList.findIndex(p => p.customerName === selectedCustomer);
-    const custObj = MOCK_CUSTOMERS.find(c => c.name === selectedCustomer);
+    const custObj = customers.find(c => c.name === selectedCustomer);
     const code = custObj ? custObj.code : `ACC-${selectedCustomer.slice(0, 3).toUpperCase()}-99`;
 
     if (existingIndex >= 0) {
@@ -293,7 +290,7 @@ export default function CustomerPricing() {
                 onChange={e => setSelectedCompany(e.target.value)}
                 style={S.selectInput}
               >
-                {MOCK_COMPANIES.map(c => (
+                {companies.map(c => (
                   <option key={c.id} value={c.name}>{c.name}</option>
                 ))}
               </select>
@@ -306,7 +303,7 @@ export default function CustomerPricing() {
                 onChange={e => handleCustomerSelectChange(e.target.value)}
                 style={S.selectInput}
               >
-                {MOCK_CUSTOMERS.map(c => (
+                {customers.map(c => (
                   <option key={c.id} value={c.name}>{c.name} ({c.code})</option>
                 ))}
               </select>
@@ -526,7 +523,7 @@ export default function CustomerPricing() {
                     onChange={e => setEditForm({ ...editForm, companyName: e.target.value })}
                     style={S.selectInput}
                   >
-                    {MOCK_COMPANIES.map(c => (
+                    {companies.map(c => (
                       <option key={c.id} value={c.name}>{c.name}</option>
                     ))}
                   </select>
@@ -539,7 +536,7 @@ export default function CustomerPricing() {
                     onChange={e => setEditForm({ ...editForm, customerName: e.target.value })}
                     style={S.selectInput}
                   >
-                    {MOCK_CUSTOMERS.map(c => (
+                    {customers.map(c => (
                       <option key={c.id} value={c.name}>{c.name}</option>
                     ))}
                   </select>

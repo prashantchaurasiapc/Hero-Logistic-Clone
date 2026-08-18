@@ -15,6 +15,8 @@ router.get('/invoices', ctrl.getInvoices);
 router.post('/invoices/manual', ctrl.createManualInvoice);
 router.put('/invoices/:id/approve', ctrl.approveInvoice);
 router.put('/invoices/:id/send', ctrl.approveInvoice);
+router.put('/invoices/:id', ctrl.editInvoice);
+router.delete('/invoices/:id', ctrl.deleteInvoice);
 
 // 3. Payments & Allocations
 router.get('/payments', ctrl.getPayments);

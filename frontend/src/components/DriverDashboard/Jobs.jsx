@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import {
   FiPackage, FiTruck, FiClock, FiCheckCircle,
   FiUpload, FiMessageSquare,
@@ -107,7 +108,10 @@ function formatLoadForJobs(rawLoad) {
 
 
 
+<<<<<<< HEAD
+=======
 
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 const STATUS_META = {
   UPCOMING:    { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },
   IN_PROGRESS: { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
@@ -121,7 +125,10 @@ export default function Jobs() {
   const navigate = useNavigate();
   const [jobs, setJobs]                 = useState([]);
   const [loading, setLoading]           = useState(true);
+<<<<<<< HEAD
+=======
   const [error, setError]               = useState(null);
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   const [activeTab, setActiveTab]       = useState('ALL');
   const [searchQuery, setSearchQuery]   = useState('');
   const [page, setPage]                 = useState(1);
@@ -137,6 +144,25 @@ export default function Jobs() {
     pickupTime: '', deliveryTime: '', customer: '', reference: '',
     loadType: 'Car Carrier (4 Level)', stops: '1 Stop', notes: '',
   });
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/jobs');
+      if (res.data?.success) {
+        setJobs(res.data.data.jobs || []);
+      }
+    } catch (error) {
+      console.error('Failed to load jobs', error);
+      showToast('❌ Failed to load jobs.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
 
   useEffect(() => {
     let isSubscribed = true;
@@ -194,14 +220,19 @@ export default function Jobs() {
     return tabOk && searchOk;
   });
 
+<<<<<<< HEAD
+  const totalPages = Math.ceil(filtered.length / perPage) || 1;
+=======
 
   const totalPages = Math.ceil(filtered.length / perPage);
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   const handleTabChange = t => { setActiveTab(t); setPage(1); };
   const handleSearch    = e => { setSearchQuery(e.target.value); setPage(1); };
 
   const handleDeleteConfirm = () => {
+    // Optimistic delete
     setJobs(prev => prev.filter(j => j.id !== deleteJob.id));
     showToast(`🗑️ Job ${deleteJob.id} deleted successfully!`);
     setDeleteJob(null);
@@ -214,11 +245,20 @@ export default function Jobs() {
     setEditJob(null);
   };
 
-  const handleNewLoadSubmit = e => {
+  const handleNewLoadSubmit = async e => {
     e.preventDefault();
-    showToast('✅ New load submitted to Dispatch for scheduling!');
-    setNewLoadOpen(false);
-    setNewLoad({ origin: '', destination: '', pickupAddress: '', deliveryAddress: '', pickupTime: '', deliveryTime: '', customer: '', reference: '', loadType: 'Car Carrier (4 Level)', stops: '1 Stop', notes: '' });
+    try {
+      const res = await api.post('/driver-portal/jobs', newLoad);
+      if (res.data?.success) {
+         showToast('✅ New load submitted to Dispatch for scheduling!');
+         setNewLoadOpen(false);
+         setNewLoad({ origin: '', destination: '', pickupAddress: '', deliveryAddress: '', pickupTime: '', deliveryTime: '', customer: '', reference: '', loadType: 'Car Carrier (4 Level)', stops: '1 Stop', notes: '' });
+         fetchJobs();
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Failed to submit load request.');
+    }
   };
 
   const inputStyle = {
@@ -530,7 +570,7 @@ export default function Jobs() {
             <h3 style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 900, color: '#0f172a' }}>Key Actions</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'Refresh List',     icon: FiRefreshCw,     action: () => showToast('Refreshing job list...') },
+                { label: 'Refresh List',     icon: FiRefreshCw,     action: () => { showToast('Refreshing job list...'); fetchJobs(); } },
                 { label: 'Message Dispatch', icon: FiMessageSquare, action: () => navigate('/driver/contact-dispatch') },
                 { label: 'View Calendar',    icon: FiCalendar,      action: () => showToast('Opening calendar...') },
               ].map(({ label, icon: Icon, action }) => (
@@ -547,7 +587,7 @@ export default function Jobs() {
             <div style={{ display: 'flex', gap: 32 }}>
               <div>
                 <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Last sync</div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginTop: 2 }}>29 May 2025, 10:15 AM</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginTop: 2 }}>{new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
               </div>
               <div>
                 <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Auto refresh</div>
@@ -558,7 +598,7 @@ export default function Jobs() {
               <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 800, color: '#10b981' }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }}></span> Online
               </span>
-              <button onClick={() => showToast('Syncing with server...')}
+              <button onClick={() => { showToast('Syncing with server...'); fetchJobs(); }}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', background: '#0f172a', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 800, color: '#fff', cursor: 'pointer' }}>
                 <FiRefreshCw size={12} /> Sync Now
               </button>
@@ -574,7 +614,7 @@ export default function Jobs() {
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }}></span>
             Data auto-refreshes every 5 minutes
           </span>
-          <span>Last updated: 29 May 2025, 10:15 AM &nbsp; ↻</span>
+          <span>Last updated: {new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} &nbsp; ↻</span>
         </div>
       </div>
 

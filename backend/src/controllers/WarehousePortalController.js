@@ -2596,6 +2596,269 @@ exports.getInboundFormOptions = async (req, res, next) => {
   }
 };
 
+<<<<<<< HEAD
+exports.getInboundReceipts = async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId;
+    const receipts = await prisma.inboundReceipt.findMany({
+      where: {
+        ...(tenantId && { warehouse: { branch: { companyId: tenantId } } })
+      },
+      orderBy: { receivingDate: 'desc' },
+      include: {
+        items: true,
+        stagingArea: true,
+        warehouse: true
+      }
+    });
+
+    return sendSuccess(res, receipts);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.createInboundReceipt = async (req, res, next) => {
+  try {
+    const {
+      inboundType = 'Purchase / Supplier Delivery',
+      inboundNo,
+      supplier,
+      referenceNote,
+      transportType = 'Truck',
+      driverName,
+      vehicleRef,
+      date,
+      receivingDepot,
+      warehouseId,
+      zone = 'Zone A',
+      row = 'Row 1',
+      bay = 'Bay 1',
+      stagingAreaId,
+      loadLaneId,
+      items = [],
+      notes
+    } = req.body;
+
+    const userId = req.user?.userId || req.user?.id;
+    const tenantId = req.tenantId;
+
+    // Get default warehouse scoped to tenant
+    let targetWarehouseId = warehouseId;
+    if (!targetWarehouseId) {
+      const defaultWh = await prisma.warehouse.findFirst({
+        where: { ...(tenantId && { branch: { companyId: tenantId } }) }
+      });
+      targetWarehouseId = defaultWh?.id;
+    }
+
+    if (!targetWarehouseId) {
+      return sendError(res, { code: 'NO_WAREHOUSE', message: 'No warehouse found in depot' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const receiptNo = inboundNo || `GR-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const transactionResult = await prisma.$transaction(async (tx) => {
+      // 1. Create Inbound Receipt
+      const receipt = await tx.inboundReceipt.create({
+        data: {
+          receiptNo,
+          supplier: supplier || '-',
+          referenceNote: referenceNote || '-',
+          transportType,
+          driverName: driverName || '-',
+          vehicleRef: vehicleRef || '-',
+          inboundType,
+          status: 'Completed',
+          notes,
+          warehouseId: targetWarehouseId,
+          stagingAreaId: stagingAreaId || null,
+          receivingDate: date ? new Date(date) : new Date()
+        }
+      });
+
+      // 2. Create LoadItems for each item in the delivery
+      const createdItems = [];
+      for (const item of items) {
+        const dummyStop = await tx.routeStop.findFirst();
+        let pickupStopId = dummyStop?.id;
+        let dropoffStopId = dummyStop?.id;
+
+        if (!pickupStopId) {
+          let targetCompanyId = tenantId;
+          if (!targetCompanyId) {
+            const firstCompany = await tx.company.findFirst();
+            targetCompanyId = firstCompany?.id;
+          }
+
+          const dummyLoad = await tx.load.create({
+            data: {
+              loadRef: `INB-${receiptNo}-${Math.floor(100 + Math.random() * 900)}`,
+              type: 'Inbound Delivery',
+              status: 'COMPLETED',
+              companyId: targetCompanyId
+            }
+          });
+          const stop1 = await tx.routeStop.create({
+            data: { loadId: dummyLoad.id, type: 'PICKUP', sequenceIndex: 0, address: supplier || 'Depot' }
+          });
+          const stop2 = await tx.routeStop.create({
+            data: { loadId: dummyLoad.id, type: 'DROPOFF', sequenceIndex: 1, address: 'Depot' }
+          });
+          pickupStopId = stop1.id;
+          dropoffStopId = stop2.id;
+        }
+
+        const createdItem = await tx.loadItem.create({
+          data: {
+            loadId: dummyStop?.loadId || (await tx.load.findFirst())?.id || receipt.id,
+            pickupStopId,
+            dropoffStopId,
+            vin: item.vin || null,
+            rego: item.rego || item.plate || null,
+            make: item.make || null,
+            model: item.model || null,
+            year: item.year ? parseInt(item.year) : null,
+            color: item.color || item.colour || null,
+            vehicleType: item.type || 'Vehicle',
+            stockStatus: loadLaneId || stagingAreaId ? 'STAGED' : 'IN_STORAGE',
+            damageReportReq: item.condition === 'Damage Noted' || item.damageNoted || false,
+            notes: item.notes || null,
+            warehouseId: targetWarehouseId,
+            zone,
+            row,
+            bay,
+            position: item.position || 'P01',
+            stagingAreaId: stagingAreaId || null,
+            loadLaneId: loadLaneId || null,
+            inboundReceiptId: receipt.id,
+            receivedDate: new Date()
+          }
+        });
+
+        // 3. Log initial Received Movement
+        await tx.itemMovement.create({
+          data: {
+            itemId: createdItem.id,
+            type: 'RECEIVE',
+            fromLocation: supplier || 'Inbound Dock',
+            toLocation: `${zone} / ${row} / ${bay}`,
+            reason: `Inbound Receipt ${receiptNo}`,
+            result: 'COMPLETED',
+            performedById: userId === 'dev-user-id' ? null : (userId || null),
+            status: 'Completed'
+          }
+        });
+
+        createdItems.push(createdItem);
+      }
+
+      return { receipt, items: createdItems };
+    });
+
+    return sendSuccess(res, transactionResult, HTTP_STATUS.CREATED);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================================
+// 5. LOAD LANES
+// ============================================================================
+
+exports.getLoadLanes = async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId;
+    const lanes = await prisma.loadLane.findMany({
+      where: {
+        ...(tenantId && { warehouse: { branch: { companyId: tenantId } } })
+      },
+      orderBy: { name: 'asc' },
+      include: {
+        loads: {
+          include: { customer: true, driver: { include: { user: true } }, truck: true, trailer: true }
+        },
+        loadItems: true,
+        warehouse: true
+      }
+    });
+
+    const formattedLanes = lanes.map((lane, idx) => {
+      const activeLoad = lane.loads?.[0];
+      const count = lane.loadItems?.length || 0;
+      let status = 'Empty';
+      if (lane.status) {
+        status = lane.status;
+      } else if (activeLoad) {
+        status = activeLoad.status === 'READY_FOR_PICKUP' ? 'Ready to Dispatch' : 'In Progress';
+      }
+
+      return {
+        id: lane.id,
+        name: lane.name || `Lane ${idx + 1}`,
+        laneNumber: `Lane ${idx + 1}`,
+        laneName: lane.name || `Lane ${idx + 1}`,
+        area: lane.warehouse?.name || 'Main Yard',
+
+        status: lane.status === 'ACTIVE' ? 'In Progress' : (lane.status || 'Empty'),
+        loadCount: lane.loads?.length || (count > 0 ? 1 : 0),
+        currentLoadRef: activeLoad?.loadRef || activeLoad?.draftId || '-',
+        trailerVehicle: activeLoad ? `${activeLoad.truck?.rego || ''} / ${activeLoad.trailer?.rego || ''}`.trim() : '-',
+        vehicleId: activeLoad?.truckId || activeLoad?.trailerId || '',
+        carrierType: activeLoad?.type || 'Car Carrier',
+        driver: activeLoad?.driver?.name || '-',
+        driverId: activeLoad?.driverId || '',
+        estDispatch: activeLoad?.pickupDate ? new Date(activeLoad.pickupDate).toLocaleDateString('en-GB') : '-',
+
+        progress: `${count} / 10`,
+        items: lane.loadItems || []
+      };
+    });
+
+    const readyCount = formattedLanes.filter(l => l.status.toLowerCase().includes('ready')).length;
+    const inProgressCount = formattedLanes.filter(l => l.status.toLowerCase().includes('progress')).length;
+    const holdCount = formattedLanes.filter(l => l.status.toLowerCase().includes('hold')).length;
+    const emptyCount = formattedLanes.filter(l => l.status.toLowerCase().includes('empty') || l.loadsCount === 0).length;
+    const totalLanesCount = formattedLanes.length;
+
+    const upcomingLoads = await prisma.load.findMany({
+      where: {
+        loadLaneId: { not: null },
+        status: { in: ['ASSIGNED', 'IN_TRANSIT', 'ACTIVE', 'PLANNED'] }
+      },
+      include: {
+        loadLane: true
+      },
+      orderBy: { loadDate: 'asc' },
+      take: 5
+    });
+
+    return sendSuccess(res, {
+      summary: {
+
+        totalLanes: formattedLanes.length,
+        activeLanes: formattedLanes.filter(l => l.loadCount > 0).length,
+
+        loadsInProgress: inProgressCount,
+        readyToDispatch: readyCount,
+        overdueHold: holdCount,
+        readyCount,
+        inProgressCount,
+        holdCount,
+        emptyCount
+      },
+      lanes: formattedLanes,
+
+      upcomingDispatches: []
+
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+=======
+>>>>>>> 9e06227a94ff04434ad6c988e7baf9d6d514c510
 exports.createLoadLane = async (req, res, next) => {
   try {
     const { name, area } = req.body;
@@ -2690,6 +2953,1327 @@ exports.assignDriverToLane = async (req, res, next) => {
   }
 };
 
+<<<<<<< HEAD
+exports.stageItemsToLane = async (req, res, next) => {
+  try {
+    const { laneId } = req.params;
+    const { itemIds = [] } = req.body;
+    const userId = req.user?.userId || req.user?.id;
+
+    const lane = await prisma.loadLane.findUnique({ where: { id: laneId } });
+    if (!lane) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Load lane not found' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.loadItem.updateMany({
+        where: { id: { in: itemIds } },
+        data: {
+          loadLaneId: laneId,
+          stockStatus: 'STAGED'
+        }
+      });
+
+      for (const id of itemIds) {
+        await tx.itemMovement.create({
+          data: {
+            itemId: id,
+            type: 'TRANSFER',
+            toLocation: lane.name || `Load Lane ${laneId}`,
+            reason: 'Staging to Load Lane',
+            result: 'COMPLETED',
+            performedById: userId === 'dev-user-id' ? null : (userId || null),
+            loadLaneId: laneId
+          }
+        });
+      }
+
+      return { success: true, count: itemIds.length };
+    });
+
+    return sendSuccess(res, updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================================
+// 6. DISPATCH READY & OUTBOUND
+// ============================================================================
+
+exports.getDispatchReady = async (req, res, next) => {
+  try {
+    const readyLoads = await prisma.load.findMany({
+      where: {
+        status: { in: ['PLANNED', 'ASSIGNED'] }
+      },
+      include: {
+        customer: true,
+        driver: true,
+        truck: true,
+        trailer: true,
+        items: true,
+        loadLane: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const formattedLoads = readyLoads.map(load => ({
+      id: load.id,
+      loadRef: load.loadRef || load.draftId || '-',
+      poRef: load.poNumber || '-',
+      customer: load.customer?.companyName || '-',
+      trailerVehicle: `${load.truck?.rego || ''} / ${load.trailer?.rego || ''}`.trim() || '-',
+      carrierType: load.type || 'Car Carrier',
+      driver: load.driver?.name || '-',
+      phone: load.driver?.phone || '-',
+      loadLane: load.loadLane?.name || '-',
+      area: 'Main Yard',
+      readySince: load.createdAt ? new Date(load.createdAt).toLocaleDateString('en-GB') : '-',
+      status: load.status || 'Ready'
+    }));
+
+    return sendSuccess(res, {
+      summary: {
+        readyToDispatch: formattedLoads.length,
+        todaysDispatch: 0,
+        awaitingPickup: 0,
+        exceptions: 0,
+        readyPercent: formattedLoads.length > 0 ? 100 : 0,
+        awaitingPercent: 0,
+        holdPercent: 0
+      },
+      loads: formattedLoads,
+      nextPickups: []
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.dispatchLoad = async (req, res, next) => {
+  try {
+    const { loadId } = req.params;
+
+    const result = await prisma.$transaction(async (tx) => {
+      const load = await tx.load.update({
+        where: { id: loadId },
+        data: { status: 'IN_TRANSIT' }
+      });
+
+      await tx.loadItem.updateMany({
+        where: { loadId },
+        data: { stockStatus: 'DISPATCHED' }
+      });
+
+      return load;
+    });
+
+    return sendSuccess(res, { message: 'Load marked as dispatched successfully', load: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================================
+// 7. HOLDING AREAS
+// ============================================================================
+
+exports.getHoldingAreas = async (req, res, next) => {
+  try {
+    const areas = await prisma.stagingArea.findMany({
+      include: {
+        loadItems: true,
+        warehouse: true
+      },
+      orderBy: { name: 'asc' }
+    });
+
+
+    const activeAreasCount = areas.filter(a => !a.status || a.status.toUpperCase() === 'ACTIVE').length;
+    const inactiveAreasCount = areas.filter(a => a.status && a.status.toUpperCase() === 'INACTIVE').length;
+
+    const formattedAreas = areas.map((a, i) => ({
+      id: a.id,
+      code: a.code || `SA-0${i + 1}`,
+      name: a.name || `Stage Area ${i + 1}`,
+      zone: a.zone || 'Zone A',
+      location: a.subLocation || a.name || '-',
+      nextLane: a.lane || '-',
+      status: a.status || 'ACTIVE',
+      capacity: a.capacity || 20,
+      occupancy: a.capacity > 0 ? Math.round(((a.loadItems?.length || 0) / a.capacity) * 100) : 0,
+      stagedItems: a.loadItems?.length || 0,
+      awaitingMove: 0,
+      oldestItem: '-'
+    }));
+
+
+    return sendSuccess(res, {
+      summary: {
+        totalHoldingAreas: areas.length,
+        activeAreas: activeAreasCount,
+        inactiveAreas: inactiveAreasCount,
+
+        stagedItemsTotal: areas.reduce((acc, curr) => acc + (curr.loadItems?.length || 0), 0),
+        awaitingMoveTotal: 0,
+        overdueItemsTotal: 0,
+        readyForMovePercent: 0,
+
+        waitingOver2hPercent: 0,
+        waitingUnder2hPercent: 0,
+        overduePercent: 0
+      },
+
+      holdingAreas: formattedAreas,
+      topOccupancy: [],
+      recentlyStaged: []
+
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.moveHoldingAreaStock = async (req, res, next) => {
+  try {
+    const stagingAreaId = req.params.id;
+    const { loadLaneId } = req.body;
+    let userId = req.user?.userId || req.user?.id;
+    if (userId === 'dev-user-id') {
+       const firstUser = await prisma.user.findFirst();
+       if (firstUser) userId = firstUser.id;
+    }
+
+    const stagingArea = await prisma.stagingArea.findUnique({
+      where: { id: stagingAreaId },
+      include: { loadItems: true }
+    });
+
+    if (!stagingArea) return sendError(res, { message: 'Staging Area not found' }, HTTP_STATUS.NOT_FOUND);
+    if (!loadLaneId) return sendError(res, { message: 'Load Lane ID is required' }, HTTP_STATUS.BAD_REQUEST);
+
+    const targetLane = await prisma.loadLane.findUnique({ where: { id: loadLaneId } });
+    if (!targetLane) return sendError(res, { message: 'Target Load Lane not found' }, HTTP_STATUS.NOT_FOUND);
+
+    const updated = await prisma.$transaction(async (tx) => {
+      // Update all items in this staging area
+      await tx.loadItem.updateMany({
+        where: { stagingAreaId: stagingAreaId },
+        data: {
+          loadLaneId: loadLaneId,
+          stockStatus: 'STAGED',
+          stagingAreaId: null
+        }
+      });
+
+      for (const item of stagingArea.loadItems) {
+        await tx.itemMovement.create({
+          data: {
+            itemId: item.id,
+            type: 'TRANSFER',
+            fromLocation: `Staging Area: ${stagingArea.name}`,
+            toLocation: `Lane: ${targetLane.name}`,
+            reason: 'Staging to Load Lane Move Task',
+            result: 'COMPLETED',
+            performedById: userId === 'dev-user-id' ? null : (userId || null),
+            loadLaneId: loadLaneId
+          }
+        });
+      }
+
+      return { success: true, count: stagingArea.loadItems.length };
+    });
+
+    return sendSuccess(res, updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.assignHoldingAreaToLane = async (req, res, next) => {
+  try {
+    const stagingAreaId = req.params.id;
+    const { loadLaneId } = req.body;
+    let userId = req.user?.userId || req.user?.id;
+
+    if (!loadLaneId) return sendError(res, { message: 'Load Lane ID is required' }, HTTP_STATUS.BAD_REQUEST);
+
+    const updatedArea = await prisma.stagingArea.update({
+      where: { id: stagingAreaId },
+      data: { lane: `Load Lane ${loadLaneId}` } // simple string representation for frontend mapping
+    });
+
+    return sendSuccess(res, { message: 'Assigned successfully', data: updatedArea });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================================
+// 8. MOVEMENT HISTORY & AUDIT LOGS
+// ============================================================================
+
+exports.getMovements = async (req, res, next) => {
+  try {
+    const { type, result, search, page = 1, limit = 25 } = req.query;
+    const where = {};
+
+    if (type && type !== 'All Types' && type !== 'All') {
+      where.type = type.toUpperCase().replace(/\s+/g, '_');
+    }
+    if (result && result !== 'All Results' && result !== 'All') {
+      where.result = result.toUpperCase();
+    }
+    if (search) {
+      where.OR = [
+        { fromLocation: { contains: search } },
+        { toLocation: { contains: search } },
+        { reason: { contains: search } },
+        { item: { vin: { contains: search } } },
+        { item: { rego: { contains: search } } },
+        { item: { stockRef: { contains: search } } }
+      ];
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const take = parseInt(limit);
+
+    const [movements, total] = await Promise.all([
+      prisma.itemMovement.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { timestamp: 'desc' },
+        include: {
+          item: true,
+          performedBy: true,
+          loadLane: true,
+          stagingArea: true
+        }
+      }),
+      prisma.itemMovement.count({ where })
+    ]);
+
+    const formatted = movements.map(m => ({
+      id: m.id,
+      dateTime: m.timestamp ? new Date(m.timestamp).toLocaleDateString('en-GB') + ' ' + new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-',
+      type: m.type || 'Move',
+      item: m.item?.make ? `${m.item.make} ${m.item.model || ''}` : (m.item?.stockRef || 'Item'),
+      vinRego: `${m.item?.vin || ''} | ${m.item?.rego || ''}`.trim(),
+      fromLocation: m.fromLocation || '-',
+      toLocation: m.toLocation || '-',
+      loadRef: m.movementRef || '-',
+      by: m.performedBy?.name || 'Staff',
+      role: 'Staff',
+      result: m.result || 'Completed'
+    }));
+
+    return sendList(res, formatted, {
+      total: total || 0,
+      currentPage: parseInt(page),
+      pageSize: parseInt(limit),
+      summary: {
+        totalMovements: total || 0,
+        completed: movements.filter(m => m.result === 'COMPLETED').length,
+        completedPercent: total > 0 ? Math.round((movements.filter(m => m.result === 'COMPLETED').length / total) * 100) : 0,
+        failed: movements.filter(m => m.result === 'FAILED').length,
+        failedPercent: 0,
+        inProgress: 0,
+        inProgressPercent: 0,
+        cancelled: 0,
+        cancelledPercent: 0,
+        typeBreakdown: {
+          receiveInbound: 0,
+          moveWithinDepot: 0,
+          transferToAnother: 0,
+          stageToLoadLane: 0,
+          dispatchPickup: 0,
+          returnOutbound: 0
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================================
+// 9. WAREHOUSE & YARD MAP
+// ============================================================================
+
+exports.getYardMap = async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId;
+
+    const defaultWh = await prisma.warehouse.findFirst({
+      where: { ...(tenantId && { branch: { companyId: tenantId } }) }
+    });
+    const totalCapacity = defaultWh?.palletCapacity || 5000;
+
+    const [
+      inUse,
+      damaged,
+      receivingCount,
+      qcCount,
+      stagingCount,
+      dispatchCount,
+      vehiclesCount,
+      containersCount,
+      trailersCount,
+      equipmentCount,
+      lanesList,
+      zA,
+      zB,
+      zC,
+      zD,
+      zE,
+      coldItems,
+      activeStaffCount
+    ] = await Promise.all([
+      prisma.loadItem.count({ where: { stockStatus: { in: ['IN_STORAGE', 'STAGED'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { damageReportReq: true, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.inboundReceipt.count({ where: { status: { in: ['Pending', 'Receiving', 'PENDING'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.preStartChecklist.count({ where: { isDraft: true, ...(tenantId && { companyId: tenantId }) } }),
+      prisma.loadItem.count({ where: { stockStatus: 'STAGED', ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { stockStatus: 'TO_MOVE', ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { vehicleType: 'Vehicle', stockStatus: { in: ['IN_STORAGE', 'STAGED'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { vehicleType: 'Container', stockStatus: { in: ['IN_STORAGE', 'STAGED'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { vehicleType: 'Trailer', stockStatus: { in: ['IN_STORAGE', 'STAGED'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { vehicleType: 'Equipment', stockStatus: { in: ['IN_STORAGE', 'STAGED'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadLane.findMany({
+        where: { ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) },
+        include: {
+          _count: {
+            select: { loadItems: true }
+          }
+        }
+      }),
+      prisma.loadItem.count({ where: { zone: 'Zone A', stockStatus: { in: ['IN_STORAGE', 'STAGED'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { zone: 'Zone B', stockStatus: { in: ['IN_STORAGE', 'STAGED'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { zone: 'Zone C', stockStatus: { in: ['IN_STORAGE', 'STAGED'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { zone: 'Zone D', stockStatus: { in: ['IN_STORAGE', 'STAGED'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { zone: 'Zone E', stockStatus: { in: ['IN_STORAGE', 'STAGED'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { zone: 'Cold Storage', stockStatus: { in: ['IN_STORAGE', 'STAGED'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.timesheet.count({ where: { clockOutAt: null, ...(tenantId && { tenantId }) } })
+    ]);
+
+    const available = Math.max(0, totalCapacity - inUse);
+    const availablePercent = totalCapacity > 0 ? Math.round((available / totalCapacity) * 100) : 100;
+    const inUsePercent = totalCapacity > 0 ? Math.round((inUse / totalCapacity) * 100) : 0;
+    const damagedPercent = totalCapacity > 0 ? Math.round((damaged / totalCapacity) * 100) : 0;
+
+    const zoneCapacity = Math.floor(totalCapacity / 5);
+
+    return sendSuccess(res, {
+      areas: {
+        receiving: receivingCount,
+        qc: qcCount,
+        staging: stagingCount,
+        dispatch: dispatchCount
+      },
+      zones: {
+        coldStorage: coldItems,
+        zoneA: { capacity: Math.round((zA / zoneCapacity) * 100) || 0, items: zA },
+        zoneB: { capacity: Math.round((zB / zoneCapacity) * 100) || 0, items: zB },
+        zoneC: { capacity: Math.round((zC / zoneCapacity) * 100) || 0, items: zC },
+        zoneD: { capacity: Math.round((zD / zoneCapacity) * 100) || 0, items: zD },
+        zoneE: { capacity: Math.round((zE / zoneCapacity) * 100) || 0, items: zE }
+      },
+      activeStaff: activeStaffCount,
+      warehouseZones: [],
+      loadLanes: lanesList.map(lane => ({
+        id: lane.id,
+        name: lane.name,
+        status: lane._count.loadItems >= 8 ? 'Full' : lane._count.loadItems > 0 ? 'Staging' : 'Empty',
+        currentCount: lane._count.loadItems,
+        maxCapacity: 8
+      })),
+      yardAreas: {
+        vehicleStorage: { name: 'VEHICLE STORAGE', count: vehiclesCount, inTransit: 0, unit: 'Vehicles' },
+        containerYard: { name: 'CONTAINER YARD', count: containersCount, inTransit: 0, unit: 'Containers' },
+        equipmentParking: { name: 'EQUIPMENT PARKING', count: equipmentCount, inUse: equipmentCount, unit: 'Equipment' },
+        emptyPark: { name: 'EMPTY PARK', count: trailersCount, inUse: trailersCount, unit: 'Trailers' }
+      },
+      summary: {
+        totalSlots: totalCapacity,
+        available: available,
+        availablePercent: availablePercent,
+        inUse: inUse,
+        inUsePercent: inUsePercent,
+        onHold: 0,
+        onHoldPercent: 0,
+        damaged: damaged,
+        damagedPercent: damagedPercent,
+        other: 0,
+        otherPercent: 0
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================================
+// 10. REPORTS & ANALYTICS
+// ============================================================================
+
+exports.getReportsOverview = async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId;
+
+    const [total, inbound, outbound, staged, uniqueSkus, damaged, onHold, activeStaffCount, equipmentCount] = await Promise.all([
+      prisma.loadItem.count({ where: { ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { inboundReceiptId: { not: null }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { stockStatus: 'DISPATCHED', ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { stockStatus: 'STAGED', ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.findMany({
+        where: { sku: { not: null, not: '' }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) },
+        select: { sku: true },
+        distinct: ['sku']
+      }),
+      prisma.loadItem.count({ where: { damageReportReq: true, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.loadItem.count({ where: { stockStatus: 'TO_MOVE', ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } }),
+      prisma.timesheet.count({ where: { clockOutAt: null, ...(tenantId && { tenantId }) } }),
+      prisma.loadItem.count({ where: { vehicleType: 'Equipment', stockStatus: { in: ['IN_STORAGE', 'STAGED'] }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) } })
+    ]);
+
+    // Calculate accuracy rate (100% - damaged ratio)
+    const accuracyVal = total > 0 ? (100 - (damaged / total) * 100).toFixed(1) : '100.0';
+
+    // Calculate dynamic average dwell time from receivedDate to now
+    const itemsWithReceivedDate = await prisma.loadItem.findMany({
+      where: { receivedDate: { not: null }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) },
+      select: { receivedDate: true }
+    });
+    let avgDwellStr = '1d 4h';
+    if (itemsWithReceivedDate.length > 0) {
+      const totalDwellMs = itemsWithReceivedDate.reduce((sum, item) => sum + (Date.now() - new Date(item.receivedDate).getTime()), 0);
+      const avgDwellHours = Math.round(totalDwellMs / (1000 * 60 * 60 * itemsWithReceivedDate.length));
+      avgDwellStr = avgDwellHours > 24 ? `${Math.floor(avgDwellHours / 24)}d ${avgDwellHours % 24}h` : `${avgDwellHours}h`;
+    }
+
+    const inStockCount = Math.max(0, total - staged - outbound - damaged - onHold);
+
+    // Fetch dynamic top load lanes grouped by count
+    const laneGroups = await prisma.loadItem.groupBy({
+      where: { loadLaneId: { not: null }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) },
+      by: ['loadLaneId'],
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 5
+    });
+
+    const topLoadLanes = await Promise.all(
+      laneGroups.map(async (group, idx) => {
+        const lane = await prisma.loadLane.findUnique({
+          where: { id: group.loadLaneId }
+        });
+        return {
+          rank: idx + 1,
+          lane: lane?.name || `Lane ${idx + 1}`,
+          items: `${group._count.id} Items`,
+          pct: `${Math.min(100, Math.round((group._count.id / 8) * 100))}%`
+        };
+      })
+    );
+
+    // Fetch dynamic top carriers grouped by inbound receipts
+    const carrierGroups = await prisma.inboundReceipt.groupBy({
+      where: { carrierName: { not: null, not: '-' }, ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) },
+      by: ['carrierName'],
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 5
+    });
+
+    const topCarriers = carrierGroups.map((group, idx) => ({
+      rank: idx + 1,
+      lane: group.carrierName,
+      items: `${group._count.id} Loads`,
+      pct: `${Math.min(100, Math.round((group._count.id / Math.max(1, carrierGroups.length)) * 100))}%`
+    }));
+
+    return sendSuccess(res, {
+      headlineKpis: {
+        totalItemsHandled: total,
+        totalItemsTrend: '+0.0%',
+        receivedInbound: inbound,
+        receivedTrend: '+0.0%',
+        dispatchedOutbound: outbound,
+        dispatchedTrend: '+0.0%',
+        stagedItems: staged,
+        stagedTrend: '+0.0%',
+        avgDwellTime: avgDwellStr,
+        dwellTrend: '+0.0%',
+        accuracyRate: `${accuracyVal}%`,
+        accuracyTrend: '+0.0%',
+        totalSkus: uniqueSkus.length,
+        activeStaff: activeStaffCount,
+        forkliftUtilization: `${equipmentCount} / 8 (${Math.round((equipmentCount / 8) * 100)}%)`,
+        dockDoorOccupancy: `${staged} / 4 (${Math.round((staged / 4) * 100)}%)`,
+        incidentFreeDays: 365,
+        auditReadinessScore: '100 / 100',
+        hazmatCompliance: '100%',
+        tempControlVariance: '±0.0 °C',
+        transitDamageRate: total > 0 ? `${((damaged / total) * 100).toFixed(1)}%` : '0.0%'
+      },
+      movementTrend: [],
+      itemsByStatus: {
+        total: total,
+        inStock: { count: inStockCount, percent: total > 0 ? Math.round((inStockCount / total) * 100) : 0 },
+        staged: { count: staged, percent: total > 0 ? Math.round((staged / total) * 100) : 0 },
+        inTransit: { count: outbound, percent: total > 0 ? Math.round((outbound / total) * 100) : 0 },
+        onHold: { count: onHold, percent: total > 0 ? Math.round((onHold / total) * 100) : 0 },
+        damaged: { count: damaged, percent: total > 0 ? Math.round((damaged / total) * 100) : 0 },
+        other: { count: 0, percent: 0 }
+      },
+      topLoadLanes,
+      topCarriers,
+      hourlyMetrics: [],
+      inventoryByZone: await (async () => {
+        const zoneGroups = await prisma.loadItem.groupBy({
+          by: ['zone'],
+          _count: { id: true },
+          orderBy: { _count: { id: 'desc' } },
+          take: 7
+        });
+        const colors = ['#16A34A','#2563EB','#EA580C','#9333EA','#06B6D4','#DC2626','#64748B'];
+        return zoneGroups.map((z, i) => ({
+          zone: z.zone || 'Unknown',
+          count: z._count.id,
+          percent: total > 0 ? Math.round((z._count.id / total) * 100) : 0,
+          color: colors[i % colors.length]
+        }));
+      })(),
+      dwellTimeAnalysis: await (async () => {
+        const allItems = await prisma.loadItem.findMany({
+          where: { receivedDate: { not: null } },
+          select: { receivedDate: true }
+        });
+        const now = Date.now();
+        const ranges = [
+          { label: '0 - 2 Hours',    min: 0,  max: 2,   count: 0, color: '#16A34A' },
+          { label: '2 - 4 Hours',    min: 2,  max: 4,   count: 0, color: '#2563EB' },
+          { label: '4 - 8 Hours',    min: 4,  max: 8,   count: 0, color: '#EA580C' },
+          { label: '8 - 24 Hours',   min: 8,  max: 24,  count: 0, color: '#DC2626' },
+          { label: 'Over 24 Hours',  min: 24, max: 9999, count: 0, color: '#9333EA' }
+        ];
+        for (const item of allItems) {
+          const h = (now - new Date(item.receivedDate).getTime()) / (1000 * 60 * 60);
+          for (const r of ranges) {
+            if (h >= r.min && h < r.max) { r.count++; break; }
+          }
+        }
+        const tot = allItems.length || 1;
+        return {
+          average: avgDwellStr,
+          ranges: ranges.map(r => ({ ...r, percent: Math.round((r.count / tot) * 100) }))
+        };
+      })()
+
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================================
+// 11. LABELS, TOOLS & THERMAL PRINTING
+// ============================================================================
+
+exports.getLabels = async (req, res, next) => {
+  try {
+    return sendSuccess(res, {
+      templates: ['VIN Label', 'Pallet Label', 'QR Code Label', 'Container Label', 'Load Label', 'Location Label', 'Holding Area Label', 'Load Lane Label', 'Custom Label'],
+      printers: [],
+      recentPrints: []
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.printLabel = async (req, res, next) => {
+  try {
+    const { labelType, itemId, printerTarget = 'Default Printer', copies = 1 } = req.body;
+    return sendSuccess(res, {
+      success: true,
+      message: `Spooled ${copies} ${labelType} to printer`,
+      jobId: `#PJ-${Math.floor(100 + Math.random() * 900)}`
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.scanBarcode = async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    
+    // Attempt to find LoadItem by VIN, ID, Rego, or stockRef
+    const item = await prisma.loadItem.findFirst({
+      where: {
+        OR: [
+          { vin: code },
+          { id: code },
+          { rego: code },
+          { stockRef: code }
+        ]
+      },
+      include: {
+        load: true,
+        loadLane: true
+      }
+    });
+
+    if (!item) {
+      return sendError(res, { message: 'Item not found for this barcode' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    return sendSuccess(res, {
+      code: code,
+      status: item.stockStatus,
+      identifier: item.vin || item.id,
+      nameCategory: `${item.make || ''} ${item.model || ''}`,
+      zoneBinSlot: item.loadLane ? `Lane: ${item.loadLane.name}` : (item.loadId ? `Load: ${item.loadId}` : 'Storage'),
+      stockQty: '1',
+      weight: item.weight ? `${item.weight} kg` : 'N/A',
+      dimensions: item.dimensions || 'N/A',
+      lastAudit: item.updatedAt ? new Date(item.updatedAt).toLocaleString() : 'N/A',
+      actions: ['Move', 'Inspect', 'Print Label']
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getSpoolerQueue = async (req, res, next) => {
+  try {
+    return sendSuccess(res, {
+      queueStatus: 'Empty',
+      spoolerJobs: [],
+      networkPrinters: []
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================================
+// 12. SAFETY CHECKLIST & PRE-START
+// ============================================================================
+
+exports.getSafetyChecklists = async (req, res, next) => {
+  try {
+    return sendSuccess(res, {
+      currentChecklist: null,
+      recentChecklists: []
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.submitSafetyChecklist = async (req, res, next) => {
+  try {
+    const { vehicleRef, trailerRef, items = [], isDraft = false, notes } = req.body;
+
+    let companyId = req.companyId || req.tenantId;
+    if (!companyId) {
+      const comp = await prisma.company.findFirst();
+      companyId = comp?.id;
+    }
+
+    let driver = null;
+    let userId = req.user?.id || req.user?.userId;
+    if (userId) {
+      driver = await prisma.driver.findFirst({ where: { userId } });
+    }
+    if (!driver && companyId) {
+      driver = await prisma.driver.findFirst({ where: { companyId } });
+    }
+    if (!driver) {
+      driver = await prisma.driver.findFirst();
+    }
+    if (!driver && companyId) {
+      driver = await prisma.driver.create({
+        data: {
+          name: 'Warehouse Safety Operator',
+          email: `wh-safety-${Date.now()}@herologistics.com`,
+          phone: '+61400000000',
+          companyId
+        }
+      });
+    }
+
+    const checklist = await prisma.preStartChecklist.create({
+      data: {
+        companyId,
+        driverId: driver.id,
+        vehicleRef: vehicleRef || 'Warehouse Vehicle Check',
+        trailerRef: trailerRef || 'N/A',
+        notes: notes || (items.length > 0 ? JSON.stringify(items) : 'All Checked'),
+        date: new Date(),
+        isDraft: Boolean(isDraft),
+        totalItems: items.length || 5,
+        passedCount: items.filter(i => i.status === 'pass').length || 5,
+        failedCount: items.filter(i => i.status === 'fail').length || 0
+      }
+    });
+
+    return sendSuccess(res, {
+      success: true,
+      message: isDraft ? 'Checklist draft saved' : 'Safety checklist submitted successfully',
+      checklistId: checklist.id
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================================
+// 13. WAREHOUSE STAFF PROFILE
+// ============================================================================
+exports.getStaffProfile = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.userId || user.id }
+    });
+
+    let branch = null;
+    if (dbUser?.branchId) {
+      try {
+        branch = await prisma.branch.findUnique({ where: { id: dbUser.branchId } });
+      } catch (err) {
+        console.warn('Failed to fetch branch:', err.message);
+      }
+    }
+
+    let company = null;
+    if (dbUser?.companyId) {
+      try {
+        company = await prisma.company.findUnique({ where: { id: dbUser.companyId } });
+      } catch (err) {
+        console.warn('Failed to fetch company:', err.message);
+      }
+    }
+
+    const isManager = ['WAREHOUSE', 'COMPANY_ADMIN', 'SUPER_ADMIN'].includes(dbUser?.role || user?.role);
+
+    let permissions = [];
+    if (isManager) {
+      permissions = [
+        'Monitor entire depot',
+        'Manage areas',
+        'Configure load lanes',
+        'Assign tasks',
+        'Approve exceptions',
+        'Team reports',
+        'Overrides',
+        'Manage capacity',
+        'Manage warehouse configuration',
+        'Supervise handover'
+      ];
+    } else {
+      permissions = [
+        'Execute physical task',
+        'Use assigned areas',
+        'Move items to lanes',
+        'Perform tasks',
+        'Report exceptions',
+        'Own/basic reports',
+        'Normal actions',
+        'Follow capacity',
+        'Scan/receive/move/stage',
+        'Perform handover'
+      ];
+    }
+
+    let emergencyContactName = '-';
+    let emergencyContactPhone = '-';
+    let emergencyContactRelation = '-';
+    if (dbUser?.emergencyContact) {
+      try {
+        const contact = JSON.parse(dbUser.emergencyContact);
+        emergencyContactName = contact.name || '-';
+        emergencyContactPhone = contact.phone || '-';
+        emergencyContactRelation = contact.relation || '-';
+      } catch (e) {
+        emergencyContactName = dbUser.emergencyContact;
+      }
+    }
+
+    return sendSuccess(res, {
+      profile: {
+        name: dbUser?.name || 'Warehouse Staff',
+        title: dbUser?.role === 'WAREHOUSE' ? 'Warehouse Operations' : 'Staff Member',
+        status: dbUser?.status || 'Active',
+        employeeId: dbUser?.userCode || `WS-${dbUser?.id?.slice(0, 4) || '1001'}`,
+        email: dbUser?.email || '-',
+        phone: dbUser?.phone || '-',
+        department: 'Warehouse Operations',
+        depot: branch?.name || company?.name || 'Main Depot',
+        role: dbUser?.role || 'WAREHOUSE',
+        reportsTo: 'Michael Lee',
+        joinedOn: dbUser?.createdAt ? new Date(dbUser.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '15 Mar 2024',
+        address: dbUser?.address || '-',
+        emergencyContact: {
+          name: emergencyContactName,
+          relationship: emergencyContactRelation,
+          phone: emergencyContactPhone
+        }
+      },
+      preferences: {
+        language: 'English',
+        timeZone: 'Australia/Sydney',
+        dateFormat: 'DD/MM/YYYY',
+        timeFormat: '12-Hour (AM/PM)'
+      },
+      certifications: [],
+      skills: [],
+      permissions: permissions,
+      security: {
+        twoFactor: 'Disabled',
+        activeSessions: 1
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateStaffProfile = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const { name, phone, email, address, emergencyName, emergencyPhone } = req.body;
+
+    const emergencyContactStr = JSON.stringify({
+      name: emergencyName || '-',
+      phone: emergencyPhone || '-',
+      relation: 'Emergency Contact'
+    });
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.userId || user.id },
+      data: {
+        name,
+        phone,
+        email,
+        address,
+        emergencyContact: emergencyContactStr
+      }
+    });
+
+    return sendSuccess(res, {
+      name: updatedUser.name,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      address: updatedUser.address,
+      emergencyContact: {
+        name: emergencyName || '-',
+        phone: emergencyPhone || '-'
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================================
+
+exports.reportIssue = async (req, res, next) => {
+  try {
+    const { category, trailerId, description, severity = 'Medium', checklist } = req.body;
+    const userId = req.user?.userId || req.user?.id;
+    const tenantId = req.tenantId;
+
+    if (!trailerId || !description) {
+      return sendError(res, { code: ERROR_CODES.BAD_REQUEST, message: 'Identifier and description are required' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    // Match item in loadItem if possible
+    const matchedItem = await prisma.loadItem.findFirst({
+      where: {
+        OR: [
+          { rego: { equals: trailerId, mode: 'insensitive' } },
+          { vin: { equals: trailerId, mode: 'insensitive' } },
+          { stockRef: { equals: trailerId, mode: 'insensitive' } },
+          { id: trailerId }
+        ]
+      }
+    });
+
+    // If High severity and matched item, put on damage hold
+    if (matchedItem && (severity.toLowerCase().includes('high') || category.toLowerCase().includes('damage'))) {
+      await prisma.loadItem.update({
+        where: { id: matchedItem.id },
+        data: {
+          damageReportReq: true,
+          notes: matchedItem.notes ? `${matchedItem.notes} | ISSUE: ${description}` : `ISSUE: ${description}`
+        }
+      });
+
+      // Also record movement exception
+      await prisma.itemMovement.create({
+        data: {
+          itemId: matchedItem.id,
+          type: 'RELOCATION',
+          fromLocation: `${matchedItem.zone || 'Yard'} / ${matchedItem.row || ''}`,
+          toLocation: 'HOLD / DEFECT AREA',
+          reason: `DEFECT: ${description}`,
+          result: 'HOLD',
+          performedById: userId || null,
+          status: 'Hold'
+        }
+      });
+    }
+
+    // Create Audit Log entry for canonical persistence
+    const auditRecord = await prisma.auditLog.create({
+      data: {
+        companyId: tenantId || null,
+        userId: userId || null,
+        userEmail: req.user?.email || 'yard@hero.com',
+        action: 'YARD_ISSUE_LOGGED',
+        resource: 'YARD_EQUIPMENT',
+        resourceId: matchedItem ? matchedItem.id : trailerId,
+        details: JSON.stringify({
+          category,
+          identifier: trailerId,
+          description,
+          severity,
+          checklist: checklist || {},
+          status: 'ACTIVE',
+          reportedAt: new Date().toISOString()
+        })
+      }
+    });
+
+    return sendSuccess(res, {
+      id: auditRecord.id,
+      category: category.includes('Damage') ? 'Damage' : 'Missing Item',
+      trailerId,
+      description,
+      severity: severity.split(' ')[0],
+      loggedDate: new Date().toISOString(),
+      status: 'ACTIVE'
+    }, HTTP_STATUS.CREATED);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getReportedIssues = async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId;
+
+    const auditLogs = await prisma.auditLog.findMany({
+      where: {
+        action: 'YARD_ISSUE_LOGGED',
+        ...(tenantId && { companyId: tenantId })
+      },
+      orderBy: { timestamp: 'desc' },
+      take: 50
+    });
+
+    const formatted = auditLogs.map(log => {
+      let parsed = {};
+      try { parsed = JSON.parse(log.details); } catch (e) {}
+      return {
+        id: log.id,
+        category: parsed.category ? (parsed.category.includes('Damage') ? 'Damage' : 'Missing Item') : 'Damage',
+        trailerId: parsed.identifier || log.resourceId || 'Unknown',
+        description: parsed.description || 'Inspection issue reported',
+        severity: parsed.severity ? parsed.severity.split(' ')[0] : 'Medium',
+        loggedDate: log.timestamp ? new Date(log.timestamp).toLocaleDateString('en-US') : 'Recent',
+        status: parsed.status || 'ACTIVE'
+      };
+    });
+
+    return sendSuccess(res, formatted);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.resolveReportedIssue = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId || req.user?.id;
+
+    // Log resolution to audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: userId || null,
+        userEmail: req.user?.email || 'yard@hero.com',
+        action: 'YARD_ISSUE_RESOLVED',
+        resource: 'YARD_EQUIPMENT',
+        resourceId: id,
+        details: JSON.stringify({ issueId: id, resolvedAt: new Date().toISOString() })
+      }
+    });
+
+    return sendSuccess(res, { success: true, message: 'Issue resolved successfully.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 12. MESSAGES & SUPPORT
+// ============================================================================
+
+exports.getSupportDashboard = async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId;
+
+    // 1. Fetch Conversations
+    const conversations = await prisma.conversation.findMany({
+      where: { ...(tenantId && { companyId: tenantId }) },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' }
+        },
+        participants: {
+          include: { user: true }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    // 2. Fetch Support Tickets
+    const supportTickets = await prisma.supportTicket.findMany({
+      where: { ...(tenantId && { companyId: tenantId }) },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Formatting for frontend
+    let unreadMessagesCount = 0;
+    const formattedConversations = conversations.map((conv, idx) => {
+      const messages = conv.messages || [];
+      const lastMessage = messages[messages.length - 1];
+      const isRead = true; // Simplified for now
+      if (!isRead) unreadMessagesCount++;
+
+      return {
+        id: conv.id,
+        title: conv.title || 'Conversation',
+        sub: conv.referenceType || 'Support',
+        listSub: conv.referenceId || 'General',
+        avatar: conv.title ? conv.title.substring(0, 2).toUpperCase() : 'C',
+        bg: 'bg-blue-600',
+        time: lastMessage ? new Date(lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-',
+        dateStarted: new Date(conv.createdAt).toLocaleString('en-GB'),
+        lastMessage: lastMessage?.content || 'No messages yet',
+        unread: isRead ? 0 : 1,
+        category: 'Support',
+        isBot: false,
+        messages: messages.map(m => ({
+          id: m.id,
+          sender: m.senderId === req.user?.id ? 'You' : 'Support Team',
+          isMe: m.senderId === req.user?.id,
+          text: m.content,
+          time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          read: true
+        }))
+      };
+    });
+
+    const formattedTickets = supportTickets.map(t => ({
+      id: `#SUP-${t.ticketNumber}`,
+      title: t.subject,
+      created: new Date(t.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      status: t.status === 'OPEN' ? 'Open' : (t.status === 'IN_PROGRESS' ? 'In Progress' : 'Resolved'),
+      statusBg: t.status === 'OPEN' ? 'bg-[#FFFBEB] text-[#B45309] border-[#FDE047]' : 'bg-blue-50 text-blue-700 border-blue-200'
+    }));
+
+    const openTicketsCount = supportTickets.filter(t => t.status === 'OPEN').length;
+    const awaitingResponseCount = supportTickets.filter(t => t.status === 'IN_PROGRESS').length;
+    const resolvedTicketsCount = supportTickets.filter(t => t.status === 'CLOSED').length;
+
+    return sendSuccess(res, {
+      kpi: {
+        unreadMessages: unreadMessagesCount,
+        openTickets: openTicketsCount,
+        awaitingResponse: awaitingResponseCount,
+        resolvedTickets: resolvedTicketsCount
+      },
+      conversations: formattedConversations,
+      supportTickets: formattedTickets
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+exports.sendMessage = async (req, res, next) => {
+  try {
+    const { conversationId, text } = req.body;
+    const senderId = req.user?.id;
+
+    if (!senderId) return sendError(res, { code: 'UNAUTHORIZED', message: 'Not logged in' }, HTTP_STATUS.UNAUTHORIZED);
+    if (!text) return sendError(res, { code: 'BAD_REQUEST', message: 'Text is required' }, HTTP_STATUS.BAD_REQUEST);
+
+    let targetConvId = conversationId;
+    if (!targetConvId) {
+      const companyId = req.tenantId || (await prisma.company.findFirst()).id;
+      const conv = await prisma.conversation.create({
+        data: {
+          title: 'General Support',
+          companyId,
+          type: 'DIRECT',
+          participants: {
+            create: { userId: senderId }
+          }
+        }
+      });
+      targetConvId = conv.id;
+    }
+
+    const newMsg = await prisma.message.create({
+      data: {
+        conversationId: targetConvId,
+        senderId,
+        content: text
+      }
+    });
+
+    await prisma.conversation.update({
+      where: { id: targetConvId },
+      data: { updatedAt: new Date() }
+    });
+
+    return sendSuccess(res, { message: newMsg }, HTTP_STATUS.CREATED);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.createSupportTicket = async (req, res, next) => {
+  try {
+    const { subject, category, priority, description } = req.body;
+    const companyId = req.tenantId || (await prisma.company.findFirst()).id;
+
+    const ticket = await prisma.supportTicket.create({
+      data: {
+        subject,
+        category: category || 'General',
+        priority: priority === 'High' ? 'HIGH' : (priority === 'Urgent' ? 'URGENT' : 'MEDIUM'),
+        message: description || subject,
+        companyId,
+        status: 'OPEN'
+      }
+    });
+
+    return sendSuccess(res, { ticket }, HTTP_STATUS.CREATED);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==========================================
+// 14. SHIFTS & TIMESHEETS
+// ==========================================
+
+exports.clockIn = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    const companyId = req.tenantId || (await prisma.company.findFirst()).id;
+    
+    let realUserId = userId;
+    const driverCheck = await prisma.driver.findFirst({ where: { OR: [{ id: userId }, { userId: userId }] } });
+    if (driverCheck) {
+      realUserId = driverCheck.id;
+    } else {
+      const firstDriver = await prisma.driver.findFirst();
+      if (firstDriver) realUserId = firstDriver.id;
+    }
+
+    // Always create a new timesheet for today (no restrictions on multiple clock ins)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const timesheet = await prisma.timesheet.create({
+      data: {
+        driverId: realUserId,
+        companyId: companyId,
+        date: today,
+        status: 'DRAFT',
+        clockInAt: new Date()
+      }
+    });
+
+    await prisma.timesheetEvent.create({
+      data: {
+        timesheetId: timesheet.id,
+        type: 'CLOCK_IN',
+        timestamp: new Date(),
+        locationName: 'Warehouse Default'
+      }
+    });
+
+    return sendSuccess(res, { message: 'Clocked in successfully', timesheet }, HTTP_STATUS.OK);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.clockOut = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    
+    let realUserId = userId;
+    const driverCheck = await prisma.driver.findFirst({ where: { OR: [{ id: userId }, { userId: userId }] } });
+    if (driverCheck) {
+      realUserId = driverCheck.id;
+    } else {
+      const firstDriver = await prisma.driver.findFirst();
+      if (firstDriver) realUserId = firstDriver.id;
+    }
+
+    // Find the active timesheet (most recent one first)
+    let timesheet = await prisma.timesheet.findFirst({
+      where: {
+        driverId: realUserId,
+        clockOutAt: null
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    if (!timesheet || !timesheet.clockInAt) {
+      return sendError(res, { message: 'Not clocked in yet' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    timesheet = await prisma.timesheet.update({
+      where: { id: timesheet.id },
+      data: { 
+        clockOutAt: new Date(),
+        status: 'SUBMITTED'
+      }
+    });
+
+    await prisma.timesheetEvent.create({
+      data: {
+        timesheetId: timesheet.id,
+        type: 'CLOCK_OUT',
+        timestamp: new Date(),
+        locationName: 'Warehouse Default'
+      }
+    });
+
+    return sendSuccess(res, { message: 'Clocked out successfully', timesheet }, HTTP_STATUS.OK);
+  } catch (error) {
+    next(error);
+  }
+};
+
+=======
+>>>>>>> 9e06227a94ff04434ad6c988e7baf9d6d514c510
 exports.moveLaneItems = async (req, res, next) => {
   try {
     const { sourceLaneId, targetLaneId } = req.body;
@@ -2906,9 +4490,6 @@ exports.getShiftStatus = async (req, res, next) => {
   try {
     const userId = req.user?.userId || req.user?.id;
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     let realUserId = userId;
     const driverCheck = await prisma.driver.findFirst({ where: { OR: [{ id: userId }, { userId: userId }] } });
     if (driverCheck) {
@@ -2918,14 +4499,18 @@ exports.getShiftStatus = async (req, res, next) => {
       if (firstDriver) realUserId = firstDriver.id;
     }
 
+    // Find the active timesheet (clocked in but not clocked out, most recent first)
     const timesheet = await prisma.timesheet.findFirst({
       where: {
         driverId: realUserId,
-        date: today
+        clockOutAt: null
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     });
 
-    const isClockedIn = !!(timesheet && timesheet.clockInAt && !timesheet.clockOutAt);
+    const isClockedIn = !!(timesheet && timesheet.clockInAt);
 
     return sendSuccess(res, {
       clockedIn: isClockedIn,
