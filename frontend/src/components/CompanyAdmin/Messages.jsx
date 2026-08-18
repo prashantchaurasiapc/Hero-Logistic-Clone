@@ -142,6 +142,7 @@ export default function Messages() {
 
   // Contacts List for 12.2 Conversations Page
   const [contactsList, setContactsList] = useState([]);
+  const [conversationsList, setConversationsList] = useState([]);
 
   // Active Selected Contact in 12.2 Conversations
   const [activeContactId, setActiveContactId] = useState(null);
@@ -289,9 +290,11 @@ export default function Messages() {
       setCustomerList(customers);
 
       // Load live conversations and messages
-      if (Array.isArray(data.conversations) && data.conversations.length > 0) {
+      const convs = data.conversations || [];
+      setConversationsList(convs);
+      if (convs.length > 0) {
         const loadedChats = {};
-        data.conversations.forEach(conv => {
+        convs.forEach(conv => {
           if (Array.isArray(conv.messages) && conv.messages.length > 0) {
             loadedChats[conv.id] = conv.messages.map(m => ({
               id: m.id,
@@ -2998,7 +3001,7 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL CONVERSATIONS</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">{contactsList.length}</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">{conversationsList.length}</div>
                 <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">Live count from conversations</div>
                 <button
                   onClick={() => { setSelectedCategory('Conversations'); showToast('Opened Conversations'); }}

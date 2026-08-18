@@ -56,8 +56,3 @@ router.post('/offline-sync/settings', DriverPortalController.updateSyncSettings)
 router.post('/offline-sync/clear-cache', DriverPortalController.clearStorageCache);
 
 module.exports = router;
-
-
-
-
-

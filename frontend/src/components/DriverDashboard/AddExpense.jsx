@@ -1,6 +1,10 @@
+<<<<<<< HEAD
 import React, { useState, useRef, useEffect } from 'react';
+=======
+import React, { useState, useEffect, useRef } from 'react';
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import { getMyExpenses, createExpense } from '../../services/driverApi';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -19,6 +23,7 @@ export default function AddExpense() {
   const [toastMsg, setToastMsg] = useState('');
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [tipDismissed, setTipDismissed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState(null);
@@ -37,22 +42,31 @@ export default function AddExpense() {
   const [formVendor, setFormVendor] = useState('');
   const [formAmount, setFormAmount] = useState('');
   const [formLitres, setFormLitres] = useState('');
-  const [formOdometer, setFormOdometer] = useState('');
+  const [formOdometer, setFormOdometer] = useState('450,789');
   const [formNotes, setFormNotes] = useState('');
   const [formReceiptAdded, setFormReceiptAdded] = useState(false);
 
   // Odometer State
   const [odometerVal, setOdometerVal] = useState('0');
 
-  const [runData, setRunData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
   // Expense Items Data
-  const [expenses, setExpenses] = useState([]);
-  
-  // Receipts Thumbnails Data
-  const [receipts, setReceipts] = useState([]);
+  const [expenses, setExpenses] = useState([
+    { id: 1, category: 'Fuel', categoryColor: 'purple', icon: '⛽', vendor: 'BP Service Centre - Yass NSW', details: '450,789 km • 68 L @ $2.05/L', date: '29 May 2025 07:15 AM', amount: 139.40, status: 'Approved' },
+    { id: 2, category: 'Maintenance', categoryColor: 'emerald', icon: '🔧', vendor: 'Quick Lube - Goulburn NSW', details: 'Oil Change & Filter', date: '28 May 2025 09:30 AM', amount: 85.00, status: 'Approved' },
+    { id: 3, category: 'Tyres', categoryColor: 'amber', icon: '🛞', vendor: 'Tyre Power - Campbelltown NSW', details: 'Tyre Repair & Balance', date: '27 May 2025 11:45 AM', amount: 45.00, status: 'Pending' },
+    { id: 4, category: 'Tolls', categoryColor: 'blue', icon: '🛣️', vendor: 'M5 Motorway Toll - Sydney NSW', details: 'Heavy Vehicle Toll', date: '26 May 2025 12:20 PM', amount: 12.60, status: 'Approved' },
+    { id: 5, category: 'Other', categoryColor: 'slate', icon: '🧽', vendor: 'Truck Wash - Campbelltown NSW', details: 'Cabin & Trailer Wash', date: '25 May 2025 01:10 PM', amount: 30.50, status: 'Approved' },
+  ]);
 
+  // Receipts Thumbnails Data
+  const [receipts, setReceipts] = useState([
+    { id: 1, date: '29 May 2025', time: '07:15 AM', vendor: 'BP Service Centre', amount: '$139.40' },
+    { id: 2, date: '28 May 2025', time: '09:30 AM', vendor: 'Quick Lube', amount: '$85.00' },
+    { id: 3, date: '27 May 2025', time: '11:45 AM', vendor: 'Tyre Power', amount: '$45.00' },
+    { id: 4, date: '26 May 2025', time: '12:20 PM', vendor: 'M5 Motorway', amount: '$12.60' },
+  ]);
+
+<<<<<<< HEAD
   useEffect(() => {
     fetchData();
   }, []);
@@ -116,6 +130,36 @@ export default function AddExpense() {
     }
   };
 
+=======
+  // Fetch Live Expenses from API
+  useEffect(() => {
+    let isSubscribed = true;
+    getMyExpenses()
+      .then(res => {
+        if (!isSubscribed) return;
+        const list = res.data?.data?.expenses || res.data?.data || [];
+        if (Array.isArray(list) && list.length > 0) {
+          const categoryColors = { Fuel: 'purple', Maintenance: 'emerald', Tyres: 'amber', Tolls: 'blue', Other: 'slate' };
+          const categoryIcons = { Fuel: '⛽', Maintenance: '🔧', Tyres: '🛞', Tolls: '🛣️', Other: '🧽' };
+          const formattedList = list.map(item => ({
+            id: item.id,
+            category: item.category || item.type || 'Other',
+            categoryColor: categoryColors[item.category] || 'slate',
+            icon: categoryIcons[item.category] || '📄',
+            vendor: item.vendorName || item.vendor || 'Vendor Service',
+            details: item.description || (item.litres ? `${item.litres} L` : 'Expense Logged'),
+            date: item.createdAt ? new Date(item.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '29 May 2025',
+            amount: parseFloat(item.amount) || 0,
+            status: item.status || 'Approved'
+          }));
+          setExpenses(formattedList);
+        }
+      })
+      .catch(() => {});
+    return () => { isSubscribed = false; };
+  }, []);
+
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
@@ -131,7 +175,7 @@ export default function AddExpense() {
   const handleUploadSubmit = () => {
     const fileName = selectedFile ? selectedFile.name : 'Receipt_Scan.jpg';
     setReceipts([
-      { id: Date.now(), date: new Date().toLocaleDateString('en-AU'), time: new Date().toLocaleTimeString('en-AU', {hour: '2-digit', minute:'2-digit'}), vendor: selectedFile ? fileName : 'Uploaded Receipt', amount: '$0.00' },
+      { id: Date.now(), date: '29 May 2025', time: '02:50 PM', vendor: selectedFile ? fileName : 'Uploaded Receipt', amount: '$45.00' },
       ...receipts
     ]);
     setSelectedFile(null);
@@ -139,10 +183,11 @@ export default function AddExpense() {
     triggerToast('Receipt file uploaded & attached successfully!');
   };
 
-  const handleAddExpenseSubmit = async (e) => {
+  const handleAddExpenseSubmit = (e) => {
     e.preventDefault();
     if (!formVendor || !formAmount) return;
 
+<<<<<<< HEAD
     try {
       const numAmount = parseFloat(formAmount) || 0;
       await api.post('/driver-portal/expenses', {
@@ -168,6 +213,82 @@ export default function AddExpense() {
     } catch (err) {
       triggerToast('Failed to add expense.');
     }
+=======
+    const numAmount = parseFloat(formAmount) || 0;
+    const categoryColors = { Fuel: 'purple', Maintenance: 'emerald', Tyres: 'amber', Tolls: 'blue', Other: 'slate' };
+    const categoryIcons = { Fuel: '⛽', Maintenance: '🔧', Tyres: '🛞', Tolls: '🛣️', Other: '🧽' };
+
+    const newExpense = {
+      id: Date.now(),
+      category: formCategory,
+      categoryColor: categoryColors[formCategory] || 'slate',
+      icon: categoryIcons[formCategory] || '📄',
+      vendor: formVendor,
+      details: formCategory === 'Fuel' && formLitres ? `${formOdometer} km • ${formLitres} L @ $2.05/L` : formNotes || 'Receipt Logged',
+      date: '29 May 2025 02:45 PM',
+      amount: numAmount,
+      status: 'Approved'
+    };
+
+    setExpenses([newExpense, ...expenses]);
+
+    // Also add to receipts if receipt uploaded
+    if (formReceiptAdded) {
+      setReceipts([{
+        id: Date.now(),
+        date: '29 May 2025',
+        time: '02:45 PM',
+        vendor: formVendor,
+        amount: `$${numAmount.toFixed(2)}`
+      }, ...receipts]);
+    }
+
+    setIsSubmitting(true);
+
+    createExpense({
+      category: formCategory,
+      type: formCategory,
+      amount: numAmount,
+      vendorName: formVendor,
+      litres: formLitres ? parseFloat(formLitres) : undefined,
+      odometer: formOdometer,
+      description: formNotes || `${formCategory} expense at ${formVendor}`,
+      receiptUrl: formReceiptAdded ? '/uploads/receipt_sample.jpg' : undefined
+    })
+      .then(res => {
+        const newExp = res.data?.data?.expense;
+        const categoryColors = { Fuel: 'purple', Maintenance: 'emerald', Tyres: 'amber', Tolls: 'blue', Other: 'slate' };
+        const categoryIcons = { Fuel: '⛽', Maintenance: '🔧', Tyres: '🛞', Tolls: '🛣️', Other: '🧽' };
+
+        const formattedNew = {
+          id: newExp?.id || Date.now(),
+          category: formCategory,
+          categoryColor: categoryColors[formCategory] || 'slate',
+          icon: categoryIcons[formCategory] || '📄',
+          vendor: formVendor,
+          details: formCategory === 'Fuel' && formLitres ? `${formOdometer} km • ${formLitres} L` : formNotes || 'Receipt Logged',
+          date: new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }),
+          amount: numAmount,
+          status: 'Pending'
+        };
+
+        setExpenses(prev => [formattedNew, ...prev]);
+        setAddExpenseModalOpen(false);
+        setFormVendor('');
+        setFormAmount('');
+        setFormLitres('');
+        setFormNotes('');
+        setFormReceiptAdded(false);
+        triggerToast(`🎉 Added ${formCategory} expense of $${numAmount.toFixed(2)} for ${formVendor}!`);
+      })
+      .catch(err => {
+        const msg = err.response?.data?.error?.message || 'Failed to submit expense.';
+        triggerToast(`❌ Error: ${msg}`);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
   };
 
   // Calculations
@@ -263,18 +384,18 @@ export default function AddExpense() {
             <div className="space-y-2.5 font-semibold text-slate-700">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Truck</div>
-                <div className="font-black text-slate-900 text-xs">{runData?.vehicle?.truck || 'Unassigned'}</div>
-                <div className="text-[11px] text-slate-500">Heavy Vehicle</div>
+                <div className="font-black text-slate-900 text-xs">TRK-101</div>
+                <div className="text-[11px] text-slate-500">MAN TGX 26.580</div>
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Trailer</div>
-                <div className="font-black text-slate-900 text-xs">{runData?.vehicle?.trailer || 'Unassigned'}</div>
-                <div className="text-[11px] text-slate-500">{runData?.vehicle?.trailerType || 'Trailer'}</div>
+                <div className="font-black text-slate-900 text-xs">TRL-305</div>
+                <div className="text-[11px] text-slate-500">Car Carrier (4 Level)</div>
               </div>
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-indigo-500 uppercase font-extrabold">Active Load</div>
-                <div className="font-black text-indigo-900 text-xs">{runData?.id || 'LD-XXXX'}</div>
-                <div className="text-[11px] text-indigo-700">{runData?.vehicle?.loadType || 'General Freight'}</div>
+                <div className="font-black text-indigo-900 text-xs">LD-3987</div>
+                <div className="text-[11px] text-indigo-700">Car Carrier (4 Level)</div>
               </div>
             </div>
           </div>
@@ -335,33 +456,33 @@ export default function AddExpense() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-2xl font-black text-indigo-700 tracking-tight">{runData?.id || 'LD-XXXX'}</div>
+                <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
                 <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                  <span>{runData?.origin || 'Origin'}</span>
+                  <span>Melbourne VIC</span>
                   <span className="text-slate-400">➔</span>
-                  <span>{runData?.destination || 'Destination'}</span>
+                  <span>Sydney NSW</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Start Date</span>
-                  <span className="font-mono text-slate-900">Today</span>
+                  <span className="font-mono text-slate-900">24 May 2025</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-                  <span className="font-mono text-slate-900">{runData?.estFinish || 'TBA'}</span>
+                  <span className="font-mono text-slate-900">28 May 2025</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Status</span>
-                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">{runData?.status || 'Active'}</span>
+                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">En Route</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Progress</span>
-                  <span className="font-mono text-slate-900">1 of {runData?.stopsCount || 1} Stops</span>
+                  <span className="font-mono text-slate-900">1 of 3 Stops</span>
                 </div>
               </div>
             </div>
@@ -370,7 +491,7 @@ export default function AddExpense() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1 border-t border-slate-100">
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Vehicle</span>
-                <span className="font-bold text-slate-900">{runData?.vehicle?.truck || 'Unassigned'}</span>
+                <span className="font-bold text-slate-900">TRK-101</span>
               </div>
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Odometer</span>
@@ -378,11 +499,11 @@ export default function AddExpense() {
               </div>
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Distance (Est.)</span>
-                <span className="font-bold text-slate-900 font-mono">0 km</span>
+                <span className="font-bold text-slate-900 font-mono">214 km</span>
               </div>
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Load ID</span>
-                <span className="font-bold text-indigo-700 font-mono">{runData?.id || 'PO-XXXX'}</span>
+                <span className="font-bold text-indigo-700 font-mono">PO-65432</span>
               </div>
             </div>
 
@@ -410,7 +531,7 @@ export default function AddExpense() {
               <div className="flex items-center gap-2 text-purple-700 font-black text-xs mb-1">
                 <span>⛽ Fuel Used Today</span>
               </div>
-              <div className="text-2xl font-black text-slate-900">{expenses.filter(e => e.category === 'Fuel').reduce((sum, e) => sum + (e.litres || 0), 0)} L</div>
+              <div className="text-2xl font-black text-slate-900">68 L</div>
               <div className="text-[10px] text-slate-400 font-bold mt-1">Today</div>
             </div>
 
@@ -419,14 +540,14 @@ export default function AddExpense() {
                 <span>💰 Total Spent</span>
               </div>
               <div className="text-2xl font-black text-emerald-700">${totalSpent.toFixed(2)}</div>
-              <div className="text-[10px] text-slate-400 font-bold mt-1">Total Expenses</div>
+              <div className="text-[10px] text-slate-400 font-bold mt-1">Today</div>
             </div>
 
             <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
               <div className="flex items-center gap-2 text-amber-700 font-black text-xs mb-1">
                 <span>🚚 Avg. Economy</span>
               </div>
-              <div className="text-2xl font-black text-slate-900">0.00 <span className="text-xs font-normal text-slate-500">km/L</span></div>
+              <div className="text-2xl font-black text-slate-900">2.08 <span className="text-xs font-normal text-slate-500">km/L</span></div>
               <div className="text-[10px] text-slate-400 font-bold mt-1">Since Start</div>
             </div>
 
@@ -434,7 +555,7 @@ export default function AddExpense() {
               <div className="flex items-center gap-2 text-blue-700 font-black text-xs mb-1">
                 <span>📈 Cost / km</span>
               </div>
-              <div className="text-2xl font-black text-slate-900">$0.00</div>
+              <div className="text-2xl font-black text-slate-900">$1.46</div>
               <div className="text-[10px] text-slate-400 font-bold mt-1">Since Start</div>
             </div>
           </div>
@@ -658,7 +779,7 @@ export default function AddExpense() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-2xl text-center">
                   <div className="text-xs text-indigo-600 font-bold uppercase">Estimated Trip Range</div>
-                  <div className="text-2xl font-black text-indigo-900 mt-1">{runData?.vehicle?.estRangeKm || 0} km</div>
+                  <div className="text-2xl font-black text-indigo-900 mt-1">1,020 km</div>
                 </div>
                 <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-center">
                   <div className="text-xs text-emerald-600 font-bold uppercase">Cost Efficiency Score</div>

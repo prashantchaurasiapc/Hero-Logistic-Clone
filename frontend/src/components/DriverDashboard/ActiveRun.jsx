@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { useNavigate, useLocation } from 'react-router-dom';
+=======
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { getLoadDetails, getMyLoads } from '../../services/driverApi';
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 import {
   FiCheckCircle, FiClock, FiNavigation, FiPhone, FiChevronRight,
   FiCamera, FiFileText, FiMessageSquare, FiAlertTriangle, FiRefreshCw,
@@ -7,21 +12,49 @@ import {
   FiBookOpen, FiLifeBuoy, FiCheck, FiX, FiMapPin, FiMaximize2
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
+<<<<<<< HEAD
+=======
+
+const formatBackendActiveLoad = (raw) => {
+  if (!raw) return null;
+  return {
+    id: raw.id || raw.loadId || 'LD-3987',
+    loadNumber: raw.loadNumber || raw.id || 'LD-3987',
+    origin: raw.origin || raw.pickupLocation || 'Melbourne VIC',
+    destination: raw.destination || raw.deliveryLocation || 'Sydney NSW',
+    totalCars: raw.vehicles?.length || raw.totalCars || 8,
+    carsPickedUp: raw.vehicles?.filter(v => v.status === 'PICKED_UP')?.length || 8,
+    isDispatched: raw.status === 'DISPATCHED' || raw.status === 'IN_TRANSIT',
+    isDelivered: raw.status === 'DELIVERED',
+  };
+};
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
 export default function ActiveRun() {
   const navigate = useNavigate();
   const location = useLocation();
+<<<<<<< HEAD
+=======
+  const { id: paramId } = useParams();
+
+  const [activeLoad, setActiveLoad] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
   // Interactive States
-  const [loadStatus, setLoadStatus] = useState('Picked Up'); // 'Picked Up', 'Dispatched', 'Delivered'
+  const [loadStatus, setLoadStatus] = useState('Picked Up');
   const [isDispatched, setIsDispatched] = useState(false);
+<<<<<<< HEAD
+=======
+  const [pickedUpCountState, setCarsPickedUp] = useState(8);
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
   const [toastMsg, setToastMsg] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
   
   // Data State
-  const [loading, setLoading] = useState(true);
   const [runData, setRunData] = useState(null);
 
   // Modals
@@ -36,6 +69,7 @@ export default function ActiveRun() {
   const [noteText, setNoteText] = useState('');
   const [photoCaption, setPhotoCaption] = useState('');
 
+<<<<<<< HEAD
   const fetchActiveRun = async () => {
     try {
       setLoading(true);
@@ -55,6 +89,72 @@ export default function ActiveRun() {
   useEffect(() => {
     fetchActiveRun();
   }, []);
+=======
+  // Fetch Load from Backend API
+  useEffect(() => {
+    let isSubscribed = true;
+    setLoading(true);
+    setError(null);
+
+    const targetId = paramId || location.state?.loadId;
+
+    if (targetId) {
+      getLoadDetails(targetId)
+        .then(res => {
+          if (isSubscribed) {
+            const raw = res.data?.data?.load;
+            if (raw) {
+              const formatted = formatBackendActiveLoad(raw);
+              setActiveLoad(formatted);
+              setIsDispatched(formatted.isDispatched);
+              setCarsPickedUp(formatted.totalCars);
+              setLoadStatus(formatted.isDelivered ? 'Delivered' : formatted.isDispatched ? 'Dispatched' : 'Picked Up');
+            } else {
+              setError('Active load details not found.');
+            }
+          }
+        })
+        .catch(err => {
+          if (isSubscribed) {
+            const msg = err.response?.data?.error?.message || 'Could not load active run details.';
+            setError(msg);
+          }
+        })
+        .finally(() => {
+          if (isSubscribed) setLoading(false);
+        });
+    } else {
+      // Fetch driver's assigned loads to pick current active load
+      getMyLoads()
+        .then(res => {
+          if (isSubscribed) {
+            const loads = res.data?.data?.loads || [];
+            if (loads.length > 0) {
+              const current = loads.find(l => ['IN_TRANSIT', 'ACTIVE', 'ASSIGNED'].includes(l.status)) || loads[0];
+              const formatted = formatBackendActiveLoad(current);
+              setActiveLoad(formatted);
+              setIsDispatched(formatted.isDispatched);
+              setCarsPickedUp(formatted.totalCars);
+              setLoadStatus(formatted.isDelivered ? 'Delivered' : formatted.isDispatched ? 'Dispatched' : 'Picked Up');
+            } else {
+              setError('No active loads assigned to your account.');
+            }
+          }
+        })
+        .catch(err => {
+          if (isSubscribed) {
+            const msg = err.response?.data?.error?.message || 'Could not load active run details.';
+            setError(msg);
+          }
+        })
+        .finally(() => {
+          if (isSubscribed) setLoading(false);
+        });
+    }
+
+    return () => { isSubscribed = false; };
+  }, [paramId, location.state]);
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
   useEffect(() => {
     if (location.state?.autoOpenDispatchModal && !isDispatched) {
@@ -62,8 +162,8 @@ export default function ActiveRun() {
     }
   }, [location.state, isDispatched]);
 
-  const carsPickedUp = runData ? runData.pickedUpCount : 0;
-  const totalCars = runData ? runData.totalCarsCount : 0;
+  const carsPickedUp = runData ? runData.pickedUpCount : (activeLoad?.carsPickedUp || pickedUpCountState);
+  const totalCars = runData ? runData.totalCarsCount : (activeLoad?.totalCars || 8);
   const deliveredCars = runData ? runData.deliveredCount : 0;
 
   const triggerToast = (msg) => {
@@ -185,11 +285,11 @@ export default function ActiveRun() {
             {/* Header info */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-2xl font-black text-indigo-700 tracking-tight">{runData?.id || 'LD-XXXX'}</div>
+                <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
                 <div className="text-lg font-black text-slate-900 mt-0.5 flex items-center gap-2">
-                  <span>{runData?.origin || 'Origin'}</span>
+                  <span>Melbourne VIC</span>
                   <span className="text-slate-400">➔</span>
-                  <span>{runData?.destination || 'Destination'}</span>
+                  <span>Sydney NSW</span>
                 </div>
               </div>
 
@@ -197,17 +297,17 @@ export default function ActiveRun() {
               <div className="flex items-center gap-4 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-100 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Start</span>
-                  <span className="font-mono text-slate-900">{runData?.pickupTime || 'TBA'}</span>
+                  <span className="font-mono text-slate-900">08:00 AM</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-                  <span className="font-mono text-slate-900">{runData?.estFinish || 'TBA'}</span>
+                  <span className="font-mono text-slate-900">04:30 PM</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Stops</span>
-                  <span className="font-mono text-slate-900">{runData?.stopsCount || 0}</span>
+                  <span className="font-mono text-slate-900">2</span>
                 </div>
               </div>
             </div>
@@ -261,7 +361,7 @@ export default function ActiveRun() {
                   </div>
                   <span className="text-xs font-black text-slate-400 mt-1">Delivered</span>
                   <span className="text-[10.5px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200 shadow-2xs">
-                    {deliveredCars} / {totalCars} Cars
+                    0 / {totalCars} Cars
                   </span>
                 </div>
               </div>
@@ -283,20 +383,20 @@ export default function ActiveRun() {
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">NEXT STOP</span>
                 </div>
                 <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
-                  {runData?.nextStop?.distance ? `IN ${runData.nextStop.distance}` : 'TBA'}
+                  IN 112 KM
                 </span>
               </div>
 
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
-                  <h3 className="text-base font-black text-slate-900">{runData?.nextStop?.name || 'Next Stop'}</h3>
-                  <p className="text-xs font-medium text-slate-600">{runData?.nextStop?.address || 'Address TBA'}</p>
+                  <h3 className="text-base font-black text-slate-900">Auto World Sydney</h3>
+                  <p className="text-xs font-medium text-slate-600">45 Parramatta Rd, Sydney NSW 2150</p>
                 </div>
 
                 <div className="text-right text-xs">
                   <div className="text-[10px] font-extrabold text-slate-400 uppercase">ETA</div>
-                  <div className="font-mono font-black text-slate-900 text-sm">{runData?.nextStop?.eta || 'TBA'}</div>
-                  <div className="text-[11px] font-bold text-slate-500">In 1h 45m ({runData?.nextStop?.distance})</div>
+                  <div className="font-mono font-black text-slate-900 text-sm">02:30 PM</div>
+                  <div className="text-[11px] font-bold text-slate-500">In 1h 45m (112 km)</div>
                 </div>
               </div>
 
@@ -311,7 +411,7 @@ export default function ActiveRun() {
                 </button>
 
                 <button
-                  onClick={() => triggerToast(`Dialing contact: ${runData?.nextStop?.contactName} (${runData?.nextStop?.contactPhone})...`)}
+                  onClick={() => triggerToast('Dialing contact: Mark Wilson (0411 987 654)...')}
                   className="bg-white hover:bg-slate-100 border border-indigo-200 text-indigo-700 font-extrabold text-xs py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <FiPhone className="text-indigo-600" />
@@ -323,14 +423,14 @@ export default function ActiveRun() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-200/60 text-xs">
                 <div>
                   <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Contact</span>
-                  <div className="font-bold text-slate-900">{runData?.nextStop?.contactName || 'Mark Wilson'}</div>
-                  <div className="text-slate-500 font-mono">{runData?.nextStop?.contactPhone || '0411 987 654'}</div>
+                  <div className="font-bold text-slate-900">Mark Wilson</div>
+                  <div className="text-slate-500 font-mono">0411 987 654</div>
                 </div>
 
                 <div>
                   <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Instructions</span>
                   <div className="font-semibold text-slate-700 flex items-center justify-between cursor-pointer hover:text-indigo-600">
-                    <span>{runData?.nextStop?.instructions || 'Please confirm delivery bay on arrival.'}</span>
+                    <span>Please confirm delivery bay on arrival.</span>
                     <FiChevronRight className="text-slate-400" />
                   </div>
                 </div>
@@ -349,7 +449,7 @@ export default function ActiveRun() {
                 <p className={`text-xs font-semibold mt-0.5 ${isDispatched ? 'text-emerald-800' : 'text-indigo-800'}`}>
                   {isDispatched 
                     ? `Departure logged at ${dispatchTime}. GPS location saved & customer notified.` 
-                    : `You have picked up all ${totalCars} cars. When you leave the yard, tap DISPATCH.`}
+                    : 'You have picked up all 8 cars. When you leave the yard, tap DISPATCH.'}
                 </p>
               </div>
 
@@ -436,8 +536,8 @@ export default function ActiveRun() {
                 <span className="w-3 h-3 rounded-full bg-emerald-500 mt-1 shrink-0"></span>
                 <div>
                   <span className="font-extrabold text-slate-400 uppercase text-[10px] block">Pickup Location</span>
-                  <div className="font-black text-slate-900">{runData?.origin || 'Origin'}</div>
-                  <div className="text-slate-500 font-medium">{runData?.originAddress || 'Unknown Address'}</div>
+                  <div className="font-black text-slate-900">ABC Car Yard</div>
+                  <div className="text-slate-500 font-medium">12a Sunshine Rd, Melbourne VIC 3000</div>
                 </div>
               </div>
 
@@ -445,7 +545,7 @@ export default function ActiveRun() {
               <div className="flex items-start gap-3 pl-6">
                 <div>
                   <span className="font-black text-emerald-600 block">Picked Up</span>
-                  <span className="font-mono font-bold text-slate-800">{carsPickedUp} / {totalCars} Cars</span>
+                  <span className="font-mono font-bold text-slate-800">8 / 8 Cars</span>
                 </div>
               </div>
 
@@ -463,15 +563,15 @@ export default function ActiveRun() {
                 <span className="w-3 h-3 rounded-full bg-slate-400 mt-1 shrink-0"></span>
                 <div>
                   <span className="font-extrabold text-slate-400 uppercase text-[10px] block">Delivery Location</span>
-                  <div className="font-black text-slate-900">{runData?.destination || 'Destination'}</div>
-                  <div className="text-slate-500 font-medium">{runData?.destinationAddress || 'Unknown Address'}</div>
+                  <div className="font-black text-slate-900">Auto World Sydney</div>
+                  <div className="text-slate-500 font-medium">45 Parramatta Rd, Sydney NSW 2150</div>
                 </div>
               </div>
 
               {/* Total Cars */}
               <div className="pt-2 border-t border-slate-100 flex justify-between items-center font-bold">
                 <span className="text-slate-500">Total Cars</span>
-                <span className="font-mono text-slate-900">{totalCars} Cars</span>
+                <span className="font-mono text-slate-900">8 Cars</span>
               </div>
 
             </div>
@@ -491,14 +591,14 @@ export default function ActiveRun() {
 
             <div className="space-y-1">
               {[
-                { label: 'Safety Procedures', icon: <FiShield className="text-slate-500" /> },
-                { label: 'Driver Guide', icon: <FiBookOpen className="text-slate-500" /> },
-                { label: 'Contact Support', icon: <FiHelpCircle className="text-slate-500" /> },
-                { label: 'Emergency Numbers', icon: <FiLifeBuoy className="text-rose-500" /> },
+                { label: 'Safety Procedures', icon: <FiShield className="text-slate-500" />, action: () => triggerToast('Opening Safety Procedures Guide...') },
+                { label: 'Driver Guide', icon: <FiBookOpen className="text-slate-500" />, action: () => triggerToast('Opening Heavy Vehicle Driver Guide...') },
+                { label: 'Contact Support', icon: <FiHelpCircle className="text-indigo-600" />, action: () => setSupportModalOpen(true) },
+                { label: 'Emergency Numbers', icon: <FiLifeBuoy className="text-rose-500" />, action: () => setSupportModalOpen(true) },
               ].map((item) => (
                 <button
                   key={item.label}
-                  onClick={() => triggerToast(`Opening ${item.label}...`)}
+                  onClick={item.action}
                   className="w-full p-2.5 rounded-xl hover:bg-slate-50 text-xs font-bold text-slate-800 flex items-center justify-between cursor-pointer transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
@@ -540,7 +640,7 @@ export default function ActiveRun() {
                 <FiTruck className="text-slate-600 text-lg mt-0.5 shrink-0" />
                 <div>
                   <span className="font-extrabold text-slate-400 uppercase text-[10px] block">Truck</span>
-                  <div className="font-black text-slate-900">{runData?.vehicle?.truck || 'MAN TGX 26.580'}</div>
+                  <div className="font-black text-slate-900">MAN TGX 26.580</div>
                 </div>
               </div>
 
@@ -548,8 +648,8 @@ export default function ActiveRun() {
                 <FiLayers className="text-slate-600 text-lg mt-0.5 shrink-0" />
                 <div>
                   <span className="font-extrabold text-slate-400 uppercase text-[10px] block">Trailer</span>
-                  <div className="font-black text-slate-900">{runData?.vehicle?.trailer || 'TRL-205'}</div>
-                  <div className="text-slate-500 font-semibold">{runData?.vehicle?.trailerType || null}</div>
+                  <div className="font-black text-slate-900">TRL-205</div>
+                  <div className="text-slate-500 font-semibold">Car Carrier (2 Level)</div>
                 </div>
               </div>
 
@@ -557,8 +657,8 @@ export default function ActiveRun() {
                 <BsQrCodeScan className="text-slate-600 text-lg mt-0.5 shrink-0" />
                 <div>
                   <span className="font-extrabold text-slate-400 uppercase text-[10px] block">Load</span>
-                  <div className="font-black text-slate-900">{runData?.id || 'LD-XXXX'}</div>
-                  <div className="text-slate-500 font-semibold">{runData?.vehicle?.loadType || `Car Carrier (${totalCars} Cars)`}</div>
+                  <div className="font-black text-slate-900">LD-3987</div>
+                  <div className="text-slate-500 font-semibold">Car Carrier (8 Cars)</div>
                 </div>
               </div>
             </div>
@@ -571,7 +671,7 @@ export default function ActiveRun() {
             <div className="space-y-2">
               <div>
                 <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Last Sync</span>
-                <span className="font-mono font-bold text-slate-800">{new Date().toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                <span className="font-mono font-bold text-slate-800">29 May 2025, 09:15 AM</span>
               </div>
 
               <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
@@ -610,17 +710,26 @@ export default function ActiveRun() {
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <BsQrCodeScan className="text-emerald-600 text-lg" />
-                Scan / Select Vehicles ({totalCars} Cars)
+                Scan / Select Vehicles (8 Cars)
               </h3>
               <button onClick={() => setScanModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
             </div>
 
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
-              {(runData?.items || []).map((car, idx) => (
-                <div key={car.id || idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+              {[
+                { vin: 'VIN-948192', model: 'Toyota Camry 2024 (White)', pos: 'Deck 1 - Front' },
+                { vin: 'VIN-948193', model: 'Mazda CX-5 2024 (Blue)', pos: 'Deck 1 - Rear' },
+                { vin: 'VIN-948194', model: 'Ford Ranger Wildtrak (Black)', pos: 'Deck 2 - Front' },
+                { vin: 'VIN-948195', model: 'Hyundai Tucson 2024 (Silver)', pos: 'Deck 2 - Rear' },
+                { vin: 'VIN-948196', model: 'Kia Carnival 2024 (Grey)', pos: 'Deck 3 - Front' },
+                { vin: 'VIN-948197', model: 'Nissan X-Trail 2024 (Red)', pos: 'Deck 3 - Rear' },
+                { vin: 'VIN-948198', model: 'Subaru Outback 2024 (Green)', pos: 'Deck 4 - Front' },
+                { vin: 'VIN-948199', model: 'Tesla Model Y 2024 (White)', pos: 'Deck 4 - Rear' },
+              ].map((car, idx) => (
+                <div key={car.vin} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
                   <div>
-                    <div className="font-bold text-slate-900">{car.description || car.makeModel || 'Unknown Vehicle'}</div>
-                    <div className="font-mono text-[11px] text-slate-500">{car.vin}</div>
+                    <div className="font-bold text-slate-900">{car.model}</div>
+                    <div className="font-mono text-[11px] text-slate-500">{car.vin} • {car.pos}</div>
                   </div>
                   <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
                     Scanned ✓
@@ -630,7 +739,7 @@ export default function ActiveRun() {
             </div>
 
             <button
-              onClick={() => { setScanModalOpen(false); triggerToast(`All ${totalCars} vehicle VINs verified & logged!`); }}
+              onClick={() => { setScanModalOpen(false); triggerToast('All 8 vehicle VINs verified & logged!'); }}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-3 rounded-xl transition-all cursor-pointer shadow-xs"
             >
               Confirm All Scanned Vehicles
@@ -668,7 +777,7 @@ export default function ActiveRun() {
             <button
               onClick={() => {
                 setPhotoModalOpen(false);
-                triggerToast(`Photo attached to load ${runData?.id || 'LD-XXXX'} successfully!`);
+                triggerToast('Photo attached to load LD-3987 successfully!');
                 setPhotoCaption('');
               }}
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-3 rounded-xl transition-all cursor-pointer"
@@ -726,9 +835,9 @@ export default function ActiveRun() {
             </div>
 
             <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl space-y-2 text-xs">
-              <div className="font-black text-indigo-950">Destination: {runData?.nextStop?.name || 'Auto World Sydney'}</div>
-              <div className="text-slate-600 font-medium">{runData?.nextStop?.address || '45 Parramatta Rd, Sydney NSW 2150'}</div>
-              <div className="font-mono text-indigo-700 font-bold">Distance: {runData?.nextStop?.distance || '112 km'} • ETA: {runData?.nextStop?.eta || '02:30 PM'}</div>
+              <div className="font-black text-indigo-950">Destination: Auto World Sydney</div>
+              <div className="text-slate-600 font-medium">45 Parramatta Rd, Sydney NSW 2150</div>
+              <div className="font-mono text-indigo-700 font-bold">Distance: 112 km • ETA: 02:30 PM</div>
             </div>
 
             <div className="space-y-2">
@@ -786,21 +895,21 @@ export default function ActiveRun() {
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 text-xs">
               <div className="flex items-center justify-between font-black">
                 <span className="text-slate-700">Load Identifier:</span>
-                <span className="text-indigo-700 font-mono text-sm">{runData?.id || 'LD-XXXX'}</span>
+                <span className="text-indigo-700 font-mono text-sm">LD-3987</span>
               </div>
               
               <div className="flex items-start gap-2.5">
                 <FiMapPin className="text-indigo-600 text-sm mt-0.5 shrink-0" />
                 <div>
-                  <span className="font-bold text-slate-900">{runData?.origin || '—'}</span>
-                  <div className="text-slate-500 text-[11px]">{runData?.originAddress || '12a Sunshine Rd, Melbourne VIC 3000'}</div>
+                  <span className="font-bold text-slate-900">ABC Car Yard</span>
+                  <div className="text-slate-500 text-[11px]">12a Sunshine Rd, Melbourne VIC 3000</div>
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 text-[11px] font-bold">
                 <span className="text-slate-600">Pickup Status:</span>
                 <span className="text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  ✓ {carsPickedUp} / {totalCars} Cars Picked Up
+                  ✓ 8 / 8 Cars Picked Up
                 </span>
               </div>
             </div>
@@ -811,7 +920,7 @@ export default function ActiveRun() {
               
               <label className="flex items-center gap-3 p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-emerald-950 cursor-pointer">
                 <input type="checkbox" defaultChecked className="w-4 h-4 accent-emerald-600 rounded" />
-                <span>All {totalCars} vehicles securely strapped & height clearance verified</span>
+                <span>All 8 vehicles securely strapped & height clearance verified</span>
               </label>
 
               <label className="flex items-center gap-3 p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-emerald-950 cursor-pointer">
@@ -867,7 +976,7 @@ export default function ActiveRun() {
                 </span>
                 <h3 className="font-black text-slate-900 text-xl tracking-tight mt-2 flex items-center gap-2">
                   <FiCheckCircle className="text-emerald-600 text-2xl" />
-                  Load {runData?.id || 'LD-XXXX'} En Route
+                  Load LD-3987 En Route
                 </h3>
                 <p className="text-xs text-slate-500 font-semibold mt-0.5">
                   Departure successfully recorded. Customer & Dispatch notified.
@@ -890,7 +999,7 @@ export default function ActiveRun() {
 
               <div className="flex justify-between items-center pb-2 border-b border-slate-200/70">
                 <span className="text-slate-500 font-bold">Origin Yard:</span>
-                <span className="font-bold text-slate-900">{runData?.origin || 'ABC Car Yard'}</span>
+                <span className="font-bold text-slate-900">ABC Car Yard, Melbourne</span>
               </div>
 
               <div className="flex justify-between items-center pb-2 border-b border-slate-200/70">
@@ -901,14 +1010,14 @@ export default function ActiveRun() {
               <div className="flex justify-between items-center pb-2 border-b border-slate-200/70">
                 <span className="text-slate-500 font-bold">Assigned Load:</span>
                 <span className="font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
-                  {carsPickedUp} / {totalCars} Cars Secured ✓
+                  8 / 8 Cars Secured ✓
                 </span>
               </div>
 
               <div className="flex justify-between items-center text-[11px] font-bold">
                 <span className="text-slate-500">Customer Notification:</span>
                 <span className="text-emerald-600 flex items-center gap-1">
-                  ✓ Sent to {runData?.destination || 'Destination'} (SMS/Email)
+                  ✓ Sent to Auto World Sydney (SMS/Email)
                 </span>
               </div>
             </div>
@@ -947,6 +1056,60 @@ export default function ActiveRun() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* SUPPORT & EMERGENCY HOTLINES MODAL */}
+      {supportModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[160] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                <FiHelpCircle className="text-indigo-600 text-lg" />
+                Driver Support & Hotline Directory
+              </h3>
+              <button onClick={() => setSupportModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between">
+                <div>
+                  <div className="font-black text-rose-950">24/7 Breakdown & Emergency</div>
+                  <div className="text-[10.5px] text-rose-700 font-medium">Roadside & Safety Command</div>
+                </div>
+                <a href="tel:1800555999" className="bg-rose-600 text-white font-mono font-black text-xs px-3 py-1.5 rounded-xl cursor-pointer">
+                  1800 555 999
+                </a>
+              </div>
+
+              <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between">
+                <div>
+                  <div className="font-black text-indigo-950">Fleet Dispatch Center</div>
+                  <div className="text-[10.5px] text-indigo-700 font-medium">Load & Schedule Desk</div>
+                </div>
+                <a href="tel:0411111222" className="bg-indigo-600 text-white font-mono font-black text-xs px-3 py-1.5 rounded-xl cursor-pointer">
+                  0411 111 222
+                </a>
+              </div>
+
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between">
+                <div>
+                  <div className="font-black text-amber-950">Vehicle Maintenance Support</div>
+                  <div className="text-[10.5px] text-amber-700 font-medium">Mechanical Workshop</div>
+                </div>
+                <a href="tel:0400555666" className="bg-amber-600 text-white font-mono font-black text-xs px-3 py-1.5 rounded-xl cursor-pointer">
+                  0400 555 666
+                </a>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSupportModalOpen(false)}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3 rounded-xl cursor-pointer"
+            >
+              Close Support Directory
+            </button>
           </div>
         </div>
       )}

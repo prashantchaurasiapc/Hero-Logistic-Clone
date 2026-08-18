@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import api from '../../../services/api';
 import { 
   FileText, Calendar, Clock, Download, RefreshCw, Search, Filter, RotateCcw, 
   Star, ChevronRight, ChevronLeft, TrendingUp, DollarSign, Scale, Users, 
@@ -15,7 +16,7 @@ export default function AccountsReports() {
   const [selectedPeriod, setSelectedPeriod] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
-  const [starredReports, setStarredReports] = useState([1, 6]); // Default starred reports IDs
+  const [starredReports, setStarredReports] = useState([]);
   const [toastMessage, setToastMessage] = useState(null);
 
   // Modal States
@@ -23,28 +24,30 @@ export default function AccountsReports() {
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [customTitle, setCustomTitle] = useState('');
   const [customCategory, setCustomCategory] = useState('Financial');
-  const [runPeriod, setRunPeriod] = useState('May 2026');
+  const [runPeriod, setRunPeriod] = useState('');
   const [runFormat, setRunFormat] = useState('PDF');
   const [actionMenuId, setActionMenuId] = useState(null);
   const [viewReportModal, setViewReportModal] = useState(null);
 
-  // Dynamic Recent Reports state so newly run reports appear live in table!
-  const [recentReportsList, setRecentReportsList] = useState([
-    { id: 1, name: 'P&L Statement - May 2026', category: 'Financial', period: 'May 2026', user: 'John Smith', date: '31 May 2026, 8:45 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-    { id: 2, name: 'GST Summary - Q4 FY 2025/26', category: 'Compliance', period: 'Apr - Jun 2026', user: 'John Smith', date: '30 May 2026, 4:20 PM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { id: 3, name: 'Accounts Receivable Aging', category: 'Financial', period: 'As at 31 May 2026', user: 'Sarah Johnson', date: '30 May 2026, 10:10 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-    { id: 4, name: 'Payroll Summary - May 2026', category: 'Payroll', period: 'May 2026', user: 'John Smith', date: '29 May 2026, 3:30 PM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { id: 5, name: 'Vehicle Cost Report - May 2026', category: 'Vehicle & Assets', period: 'May 2026', user: 'Michael Brown', date: '29 May 2026, 9:15 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-  ]);
+  // Recent Reports list (loaded from API)
+  const [recentReportsList, setRecentReportsList] = useState([]);
 
-  // Scheduled Reports Toggles State
-  const [scheduledReports, setScheduledReports] = useState([
-    { id: 1, name: 'P&L Statement', freq: 'Monthly • 1st day of each month', active: true },
-    { id: 2, name: 'GST Summary', freq: 'Quarterly • After quarter end', active: true },
-    { id: 3, name: 'Payroll Summary', freq: 'Monthly • Last day of each month', active: true },
-    { id: 4, name: 'A/R Aging Report', freq: 'Weekly • Every Monday', active: true },
-    { id: 5, name: 'Vehicle Cost Report', freq: 'Monthly • 5th day of each month', active: false },
-  ]);
+  // Scheduled Reports Toggles (loaded from API)
+  const [scheduledReports, setScheduledReports] = useState([]);
+
+  useEffect(() => {
+    const fetchRecentReports = async () => {
+      try {
+        const res = await api.get('/reports');
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          setRecentReportsList(res.data.data);
+        }
+      } catch (err) {
+        // Leave empty if no reports in DB
+      }
+    };
+    fetchRecentReports();
+  }, []);
 
   const toggleScheduled = (id) => {
     setScheduledReports(scheduledReports.map(item => 
@@ -81,15 +84,11 @@ export default function AccountsReports() {
   // Filter report cards
   const filteredReportCards = useMemo(() => {
     return reportCards.filter(report => {
-      // Active Tab Filter
       if (activeTab !== 'All Reports' && activeTab !== 'Custom') {
         if (report.category !== activeTab) return false;
       }
-      // Dropdown Category Filter
       if (selectedCategory !== 'All' && report.category !== selectedCategory) return false;
-      // Dropdown Format Filter
       if (selectedFormat !== 'All' && !report.tags.includes(selectedFormat)) return false;
-      // Search Query Filter
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase();
         const matchName = report.name.toLowerCase().includes(q);
@@ -100,46 +99,22 @@ export default function AccountsReports() {
     });
   }, [reportCards, activeTab, selectedCategory, selectedFormat, searchQuery]);
 
-  // --- RECENT REPORTS TABLE DATA ---
-  const recentReports = useMemo(() => [
-    { id: 1, name: 'P&L Statement - May 2026', category: 'Financial', period: 'May 2026', user: 'John Smith', date: '31 May 2026, 8:45 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-    { id: 2, name: 'GST Summary - Q4 FY 2025/26', category: 'Compliance', period: 'Apr - Jun 2026', user: 'John Smith', date: '30 May 2026, 4:20 PM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { id: 3, name: 'Accounts Receivable Aging', category: 'Financial', period: 'As at 31 May 2026', user: 'Sarah Johnson', date: '30 May 2026, 10:10 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-    { id: 4, name: 'Payroll Summary - May 2026', category: 'Payroll', period: 'May 2026', user: 'John Smith', date: '29 May 2026, 3:30 PM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { id: 5, name: 'Vehicle Cost Report - May 2026', category: 'Vehicle & Assets', period: 'May 2026', user: 'Michael Brown', date: '29 May 2026, 9:15 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-
-    // Additional mock rows for pagination (items 6-20)
-    { id: 6, name: 'Balance Sheet - Q3 2026', category: 'Financial', period: 'Jan - Mar 2026', user: 'David Lee', date: '28 May 2026, 2:15 PM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-    { id: 7, name: 'PAYG Withholding - May 2026', category: 'Compliance', period: 'May 2026', user: 'Sarah Johnson', date: '27 May 2026, 11:30 AM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { id: 8, name: 'Expense Summary - Q1 2026', category: 'Operations', period: 'Jan - Mar 2026', user: 'Michael Brown', date: '26 May 2026, 4:00 PM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-    { id: 9, name: 'Contractor Pay - May 2026', category: 'Operations', period: 'May 2026', user: 'John Smith', date: '25 May 2026, 10:45 AM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { id: 10, name: 'Employee Payroll Detail', category: 'Payroll', period: 'May 2026', user: 'Sarah Johnson', date: '24 May 2026, 3:20 PM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-    { id: 11, name: 'Cash Flow Statement - May 2026', category: 'Financial', period: 'May 2026', user: 'David Lee', date: '23 May 2026, 1:10 PM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { id: 12, name: 'A/P Aging Report', category: 'Financial', period: 'As at 22 May 2026', user: 'John Smith', date: '22 May 2026, 9:00 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-    { id: 13, name: 'GST Obligations Audit', category: 'Compliance', period: 'Q3 2026', user: 'Sarah Johnson', date: '21 May 2026, 5:15 PM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { id: 14, name: 'Vehicle Maintenance Log', category: 'Vehicle & Assets', period: 'Apr 2026', user: 'Michael Brown', date: '20 May 2026, 11:00 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-    { id: 15, name: 'Fuel Consumption Audit', category: 'Vehicle & Assets', period: 'May 2026', user: 'David Lee', date: '19 May 2026, 2:40 PM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { id: 16, name: 'P&L Statement - Apr 2026', category: 'Financial', period: 'Apr 2026', user: 'John Smith', date: '18 May 2026, 9:30 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-    { id: 17, name: 'Superannuation Guarantee', category: 'Payroll', period: 'Q3 2026', user: 'Sarah Johnson', date: '17 May 2026, 4:10 PM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { id: 18, name: 'Fleet Depreciation Schedule', category: 'Vehicle & Assets', period: 'FY 2025/26', user: 'Michael Brown', date: '16 May 2026, 10:20 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-    { id: 19, name: 'Vendor Expenses Summary', category: 'Operations', period: 'Apr 2026', user: 'David Lee', date: '15 May 2026, 3:00 PM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { id: 20, name: 'Annual BAS Statement', category: 'Compliance', period: 'FY 2024/25', user: 'John Smith', date: '14 May 2026, 1:15 PM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
-  ], []);
+  const recentReports = recentReportsList;
 
   // Pagination for Recent Reports Table
-  const totalPages = Math.ceil(recentReports.length / itemsPerPage) || 1;
+  const totalPages = Math.ceil(recentReportsList.length / itemsPerPage) || 1;
   const paginatedRecentReports = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
-    return recentReports.slice(start, start + itemsPerPage);
-  }, [recentReports, currentPage, itemsPerPage]);
+    return recentReportsList.slice(start, start + itemsPerPage);
+  }, [recentReportsList, currentPage, itemsPerPage]);
 
   // --- KPI CARDS DATA ---
   const kpis = [
-    { title: 'Reports Generated (This Period)', value: '28', trend: '31.7%', trendLabel: 'vs Apr 2026', link: 'View details →', bg: 'bg-blue-50 text-blue-600', icon: <FileText size={20} /> },
-    { title: 'Scheduled Reports', value: '7', sub: 'Next: 31 May 2026', link: 'View schedule →', bg: 'bg-emerald-50 text-emerald-600', icon: <Calendar size={20} /> },
-    { title: 'Last Report Run', value: 'Today, 8:45 AM', sub: 'P&L Statement - May 2026', link: 'View report →', bg: 'bg-purple-50 text-purple-600', icon: <Clock size={20} /> },
-    { title: 'Exports (This Period)', value: '15', trend: '38.4%', trendLabel: 'vs Apr 2026', link: 'View exports →', bg: 'bg-amber-50 text-amber-600', icon: <Download size={20} /> },
-    { title: 'Data Updated', value: 'Today, 9:20 AM', sub: 'All systems up to date', link: 'Refresh data →', bg: 'bg-rose-50 text-rose-600', icon: <RefreshCw size={20} /> },
+    { title: 'Reports Generated (This Period)', value: recentReportsList.length.toString(), link: 'View details →', bg: 'bg-blue-50 text-blue-600', icon: <FileText size={20} /> },
+    { title: 'Scheduled Reports', value: scheduledReports.filter(s => s.active).length.toString(), sub: `${scheduledReports.filter(s => s.active).length} active schedules`, link: 'View schedule →', bg: 'bg-emerald-50 text-emerald-600', icon: <Calendar size={20} /> },
+    { title: 'Last Report Run', value: recentReportsList[0]?.name || '—', sub: recentReportsList[0]?.date || 'No reports run yet', link: 'View report →', bg: 'bg-purple-50 text-purple-600', icon: <Clock size={20} /> },
+    { title: 'Exports (This Period)', value: '0', link: 'View exports →', bg: 'bg-amber-50 text-amber-600', icon: <Download size={20} /> },
+    { title: 'Data Updated', value: 'Live', sub: 'All systems up to date', link: 'Refresh data →', bg: 'bg-rose-50 text-rose-600', icon: <RefreshCw size={20} /> },
   ];
 
   const handleResetFilters = () => {
@@ -378,110 +353,118 @@ export default function AccountsReports() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {paginatedRecentReports.map(item => (
-                    <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-4 py-3 text-xs font-bold text-slate-900">
-                        <div className="flex items-center gap-2">
-                          <FileText size={14} className="text-slate-400 shrink-0" />
-                          <span className="truncate max-w-[220px]">{item.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-[11px] font-medium text-slate-600">{item.category}</td>
-                      <td className="px-4 py-3 text-[11px] font-medium text-slate-600">{item.period}</td>
-                      <td className="px-4 py-3 text-[11px] font-medium text-slate-700">{item.user}</td>
-                      <td className="px-4 py-3 text-[11px] font-medium text-slate-500">{item.date}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${item.formatColor}`}>
-                          {item.format}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center" style={{ position: 'relative' }}>
-                        <div className="flex items-center justify-center gap-1">
-                          {/* Download */}
-                          <button
-                            title="Download Report"
-                            onClick={(e) => { e.stopPropagation(); setToastMessage(`⬇️ Downloading "${item.name}" (${item.format})...`); setTimeout(() => setToastMessage(null), 2500); }}
-                            className="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
-                          >
-                            <Download size={13} />
-                          </button>
-
-                          {/* Share */}
-                          <button
-                            title="Share Report"
-                            onClick={(e) => { e.stopPropagation(); setToastMessage(`📤 Share link copied for "${item.name}"`); setTimeout(() => setToastMessage(null), 2500); }}
-                            className="p-1.5 rounded-md text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
-                          >
-                            <Share2 size={13} />
-                          </button>
-
-                          {/* 3-dot menu */}
-                          <button
-                            title="More Options"
-                            onClick={(e) => { e.stopPropagation(); setActionMenuId(actionMenuId === item.id ? null : item.id); }}
-                            className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
-                          >
-                            <MoreVertical size={13} />
-                          </button>
-
-                          {/* Dropdown Menu */}
-                          {actionMenuId === item.id && (
-                            <div
-                              style={{
-                                position: 'absolute', right: 8, top: 'calc(100% - 4px)',
-                                background: '#FFFFFF', border: '1px solid #E2E8F0',
-                                borderRadius: '10px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
-                                padding: '6px', zIndex: 9999, minWidth: '175px', textAlign: 'left'
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
-                                onClick={() => { setViewReportModal(item); setActionMenuId(null); }}
-                              >
-                                <Eye size={13} className="text-blue-500" /> View Report Details
-                              </button>
-
-                              <button
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
-                                onClick={() => { setToastMessage(`⬇️ Downloading "${item.name}"...`); setTimeout(() => setToastMessage(null), 2500); setActionMenuId(null); }}
-                              >
-                                <Download size={13} className="text-slate-500" /> Download ({item.format})
-                              </button>
-
-                              <button
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
-                                onClick={() => { setToastMessage(`🖨️ Sending "${item.name}" to printer...`); setTimeout(() => setToastMessage(null), 2500); setActionMenuId(null); }}
-                              >
-                                <Printer size={13} className="text-slate-500" /> Print Report
-                              </button>
-
-                              <button
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
-                                onClick={() => { setToastMessage(`📤 Share link copied for "${item.name}"`); setTimeout(() => setToastMessage(null), 2500); setActionMenuId(null); }}
-                              >
-                                <Share2 size={13} className="text-emerald-500" /> Copy Share Link
-                              </button>
-
-                              <div style={{ height: '1px', background: '#F1F5F9', margin: '4px 0' }} />
-
-                              <button
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-red-600 rounded-md hover:bg-red-50 transition-colors"
-                                onClick={() => {
-                                  setRecentReportsList(recentReportsList.filter(r => r.id !== item.id));
-                                  setToastMessage(`🗑️ "${item.name}" removed from history`);
-                                  setTimeout(() => setToastMessage(null), 2500);
-                                  setActionMenuId(null);
-                                }}
-                              >
-                                <Trash2 size={13} className="text-red-500" /> Remove from History
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                  {paginatedRecentReports.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        No reports run yet
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    paginatedRecentReports.map(item => (
+                      <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="px-4 py-3 text-xs font-bold text-slate-900">
+                          <div className="flex items-center gap-2">
+                            <FileText size={14} className="text-slate-400 shrink-0" />
+                            <span className="truncate max-w-[220px]">{item.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-[11px] font-medium text-slate-600">{item.category}</td>
+                        <td className="px-4 py-3 text-[11px] font-medium text-slate-600">{item.period}</td>
+                        <td className="px-4 py-3 text-[11px] font-medium text-slate-700">{item.user}</td>
+                        <td className="px-4 py-3 text-[11px] font-medium text-slate-500">{item.date}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${item.formatColor}`}>
+                            {item.format}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center" style={{ position: 'relative' }}>
+                          <div className="flex items-center justify-center gap-1">
+                            {/* Download */}
+                            <button
+                              title="Download Report"
+                              onClick={(e) => { e.stopPropagation(); setToastMessage(`⬇️ Downloading "${item.name}" (${item.format})...`); setTimeout(() => setToastMessage(null), 2500); }}
+                              className="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                            >
+                              <Download size={13} />
+                            </button>
+
+                            {/* Share */}
+                            <button
+                              title="Share Report"
+                              onClick={(e) => { e.stopPropagation(); setToastMessage(`📤 Share link copied for "${item.name}"`); setTimeout(() => setToastMessage(null), 2500); }}
+                              className="p-1.5 rounded-md text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
+                            >
+                              <Share2 size={13} />
+                            </button>
+
+                            {/* 3-dot menu */}
+                            <button
+                              title="More Options"
+                              onClick={(e) => { e.stopPropagation(); setActionMenuId(actionMenuId === item.id ? null : item.id); }}
+                              className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
+                            >
+                              <MoreVertical size={13} />
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {actionMenuId === item.id && (
+                              <div
+                                style={{
+                                  position: 'absolute', right: 8, top: 'calc(100% - 4px)',
+                                  background: '#FFFFFF', border: '1px solid #E2E8F0',
+                                  borderRadius: '10px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                                  padding: '6px', zIndex: 9999, minWidth: '175px', textAlign: 'left'
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
+                                  onClick={() => { setViewReportModal(item); setActionMenuId(null); }}
+                                >
+                                  <Eye size={13} className="text-blue-500" /> View Report Details
+                                </button>
+
+                                <button
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
+                                  onClick={() => { setToastMessage(`⬇️ Downloading "${item.name}"...`); setTimeout(() => setToastMessage(null), 2500); setActionMenuId(null); }}
+                                >
+                                  <Download size={13} className="text-slate-500" /> Download ({item.format})
+                                </button>
+
+                                <button
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
+                                  onClick={() => { setToastMessage(`🖨️ Sending "${item.name}" to printer...`); setTimeout(() => setToastMessage(null), 2500); setActionMenuId(null); }}
+                                >
+                                  <Printer size={13} className="text-slate-500" /> Print Report
+                                </button>
+
+                                <button
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
+                                  onClick={() => { setToastMessage(`📤 Share link copied for "${item.name}"`); setTimeout(() => setToastMessage(null), 2500); setActionMenuId(null); }}
+                                >
+                                  <Share2 size={13} className="text-emerald-500" /> Copy Share Link
+                                </button>
+
+                                <div style={{ height: '1px', background: '#F1F5F9', margin: '4px 0' }} />
+
+                                <button
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-red-600 rounded-md hover:bg-red-50 transition-colors"
+                                  onClick={() => {
+                                    setRecentReportsList(recentReportsList.filter(r => r.id !== item.id));
+                                    setToastMessage(`🗑️ "${item.name}" removed from history`);
+                                    setTimeout(() => setToastMessage(null), 2500);
+                                    setActionMenuId(null);
+                                  }}
+                                >
+                                  <Trash2 size={13} className="text-red-500" /> Remove from History
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -489,7 +472,7 @@ export default function AccountsReports() {
             {/* Pagination Footer */}
             <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-200 gap-4">
               <p className="text-xs text-slate-500 font-medium">
-                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, recentReports.length)} of {recentReports.length} reports
+                Showing {recentReportsList.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, recentReportsList.length)} of {recentReportsList.length} reports
               </p>
 
               <div className="flex items-center gap-6">

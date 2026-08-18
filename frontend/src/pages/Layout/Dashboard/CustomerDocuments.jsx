@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import api from '../../../services/api';
 import {
   FileText, FileCheck, Receipt, FileSearch, Folder, Search, Filter, RefreshCw,
   Upload, Download, Plus, Star, MoreHorizontal, ExternalLink, Eye, ChevronRight,
@@ -32,7 +33,7 @@ export default function CustomerDocuments() {
   // Email Document Modal State
   const [emailModalDoc, setEmailModalDoc] = useState(null);
   const [emailForm, setEmailForm] = useState({
-    recipientEmail: 'accounts@abctransport.com.au',
+    recipientEmail: '',
     subject: '',
     message: ''
   });
@@ -41,113 +42,43 @@ export default function CustomerDocuments() {
   const modalFileInputRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
 
-  // Documents List Data State (Matching 2nd Screenshot Exactly)
-  const [documents, setDocuments] = useState([
-    {
-      id: 'DOC-101',
-      name: 'INV-2025-0529.pdf',
-      type: 'Invoice',
-      typeBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      iconColor: 'text-red-500',
-      relatedTo: 'ABC Transport Solutions',
-      loadRef: 'LD-3987',
-      route: 'Melbourne VIC → Sydney NSW',
-      date: '29 May 2025',
-      uploadedBy: 'System',
-      size: '156 KB'
-    },
-    {
-      id: 'DOC-102',
-      name: 'POD-LD-3987.pdf',
-      type: 'POD',
-      typeBadge: 'bg-purple-50 text-purple-700 border-purple-200',
-      iconColor: 'text-emerald-500',
-      relatedTo: 'ABC Transport Solutions',
-      loadRef: 'LD-3987',
-      route: 'Melbourne VIC → Sydney NSW',
-      date: '30 May 2025',
-      uploadedBy: 'Driver App',
-      size: '243 KB'
-    },
-    {
-      id: 'DOC-103',
-      name: 'LD-3987-preload.jpg',
-      type: 'Photo',
-      typeBadge: 'bg-blue-50 text-blue-700 border-blue-200',
-      iconColor: 'text-amber-500',
-      relatedTo: 'ABC Transport Solutions',
-      loadRef: 'LD-3987',
-      route: 'Melbourne VIC → Sydney NSW',
-      date: '30 May 2025',
-      uploadedBy: 'Driver App',
-      size: '1.2 MB'
-    },
-    {
-      id: 'DOC-104',
-      name: 'LD-3987-delivery.jpg',
-      type: 'Photo',
-      typeBadge: 'bg-blue-50 text-blue-700 border-blue-200',
-      iconColor: 'text-amber-500',
-      relatedTo: 'ABC Transport Solutions',
-      loadRef: 'LD-3987',
-      route: 'Melbourne VIC → Sydney NSW',
-      date: '30 May 2025',
-      uploadedBy: 'Driver App',
-      size: '1.8 MB'
-    },
-    {
-      id: 'DOC-105',
-      name: 'Condition Report.pdf',
-      type: 'Condition Report',
-      typeBadge: 'bg-amber-50 text-amber-700 border-amber-200',
-      iconColor: 'text-red-500',
-      relatedTo: 'ABC Transport Solutions',
-      loadRef: 'LD-3981',
-      route: 'Brisbane QLD → Perth WA',
-      date: '28 May 2025',
-      uploadedBy: 'Driver App',
-      size: '312 KB'
-    },
-    {
-      id: 'DOC-106',
-      name: 'Pre-Load Condition.pdf',
-      type: 'Condition Report',
-      typeBadge: 'bg-amber-50 text-amber-700 border-amber-200',
-      iconColor: 'text-red-500',
-      relatedTo: 'ABC Transport Solutions',
-      loadRef: 'LD-3981',
-      route: 'Brisbane QLD → Perth WA',
-      date: '27 May 2025',
-      uploadedBy: 'Driver App',
-      size: '296 KB'
-    },
-    {
-      id: 'DOC-107',
-      name: 'Delivery Instructions.pdf',
-      type: 'Other',
-      typeBadge: 'bg-slate-100 text-slate-700 border-slate-200',
-      iconColor: 'text-red-500',
-      relatedTo: 'ABC Transport Solutions',
-      loadRef: 'LD-3975',
-      route: 'Adelaide SA → Melbourne VIC',
-      date: '26 May 2025',
-      uploadedBy: 'Dispatch',
-      size: '184 KB'
-    },
-    {
-      id: 'DOC-108',
-      name: 'Rates Confirmation.xlsx',
-      type: 'Other',
-      typeBadge: 'bg-slate-100 text-slate-700 border-slate-200',
-      iconColor: 'text-emerald-600',
-      relatedTo: 'ABC Transport Solutions',
-      loadRef: 'General',
-      route: '',
-      date: '15 May 2025',
-      uploadedBy: 'Accounts',
-      size: '45 KB'
+  // Documents List Data State
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchDocuments = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/company-admin/documents');
+      if (res.data) {
+        const raw = res.data.data?.documents || (Array.isArray(res.data) ? res.data : (res.data.documents || []));
+        const formatted = raw.map(doc => ({
+          id: doc.id || `DOC-${doc.dbId}`,
+          dbId: doc.id,
+          name: doc.name || doc.filename || 'Document.pdf',
+          type: doc.type || 'Other',
+          typeBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+          iconColor: 'text-blue-500',
+          relatedTo: doc.relatedTo || 'Company',
+          loadRef: doc.loadRef || doc.loadNumber || 'N/A',
+          route: doc.route || 'N/A',
+          date: doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('en-GB') : 'N/A',
+          uploadedBy: doc.uploadedBy || 'System',
+          size: doc.size || 'N/A',
+          url: doc.url || ''
+        }));
+        setDocuments(formatted);
+      }
+    } catch (err) {
+      console.error('Failed to fetch documents:', err);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
 
   // Bulk Selection Handlers
   const handleSelectAll = () => {
@@ -208,31 +139,29 @@ export default function CustomerDocuments() {
     }
   };
 
-  const handleSaveUpload = (e) => {
+  const handleSaveUpload = async (e) => {
     e.preventDefault();
     const finalDocName = uploadForm.docName || attachedFile?.name || 'Uploaded_Document.pdf';
-
-    const newDoc = {
-      id: `DOC-${Date.now()}`,
-      name: finalDocName.endsWith('.pdf') || finalDocName.endsWith('.jpg') || finalDocName.endsWith('.png') || finalDocName.endsWith('.xlsx')
-        ? finalDocName 
-        : `${finalDocName}.pdf`,
-      type: uploadForm.docType.includes('POD') ? 'POD' : uploadForm.docType.includes('Invoice') ? 'Invoice' : 'Other',
-      typeBadge: uploadForm.docType.includes('POD') ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200',
-      iconColor: uploadForm.docType.includes('POD') ? 'text-emerald-500' : 'text-blue-500',
-      relatedTo: 'ABC Transport Solutions',
-      loadRef: uploadForm.loadRef,
-      route: 'Sydney NSW → Melbourne VIC',
-      date: 'Just now',
-      uploadedBy: 'Portal User',
-      size: attachedFile?.size || '240 KB'
-    };
-
-    setDocuments(prev => [newDoc, ...prev]);
-    setIsUploadModalOpen(false);
-    setUploadForm({ docName: '', docType: 'POD (Proof of Delivery)', loadRef: 'LD-3987' });
-    setAttachedFile(null);
-    triggerToast('Document uploaded successfully!');
+    try {
+      const payload = {
+        title: finalDocName.endsWith('.pdf') || finalDocName.endsWith('.jpg') || finalDocName.endsWith('.png') || finalDocName.endsWith('.xlsx')
+          ? finalDocName 
+          : `${finalDocName}.pdf`,
+        category: uploadForm.docType.includes('POD') ? 'POD' : uploadForm.docType.includes('Invoice') ? 'Invoice' : 'Other'
+      };
+      const res = await api.post('/company-admin/documents', payload);
+      if (res.data) {
+        fetchDocuments();
+        triggerToast('Document uploaded successfully!');
+      }
+    } catch (err) {
+      console.error('Failed to upload document:', err);
+      triggerToast('Document upload failed. Please try again.');
+    } finally {
+      setIsUploadModalOpen(false);
+      setUploadForm({ docName: '', docType: 'POD (Proof of Delivery)', loadRef: 'LD-3987' });
+      setAttachedFile(null);
+    }
   };
 
   // Request Document Modal Form
@@ -255,10 +184,24 @@ export default function CustomerDocuments() {
     setEmailModalDoc(null);
   };
 
-  const handleDeleteDoc = (id, name) => {
-    setDocuments(prev => prev.filter(d => d.id !== id));
-    setActiveMenuDocId(null);
-    triggerToast(`Document ${name} deleted successfully.`);
+  const handleDeleteDoc = async (id, name) => {
+    try {
+      const targetDoc = documents.find(d => d.id === id);
+      const targetDbId = targetDoc?.dbId;
+      if (targetDbId) {
+        await api.delete(`/company-admin/documents/${targetDbId}`);
+        fetchDocuments();
+        triggerToast(`Document ${name} deleted successfully.`);
+      } else {
+        setDocuments(prev => prev.filter(d => d.id !== id));
+        triggerToast(`Document ${name} deleted successfully.`);
+      }
+    } catch (err) {
+      console.error('Failed to delete document:', err);
+      triggerToast('Failed to delete document. Please try again.');
+    } finally {
+      setActiveMenuDocId(null);
+    }
   };
 
   // Filtered Documents Logic

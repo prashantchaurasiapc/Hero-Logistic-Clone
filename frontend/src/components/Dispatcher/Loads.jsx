@@ -44,10 +44,14 @@ export default function DispatcherLoads() {
   // Create Load Form Inputs State
   const [newLoadForm, setNewLoadForm] = useState({
     customer: '',
+    customerId: '',   // DB ID for customer relation
     routeFrom: '',
     routeTo: '',
     driver: '',
+    driverId: '',     // DB ID for driver assignment
     vehicle: '',
+    vehicleId: '',    // DB ID for vehicle assignment
+    trailerId: '',    // DB ID for trailer assignment
     trailer: '',
     status: 'Planned',
     reqDate: '',
@@ -63,6 +67,8 @@ export default function DispatcherLoads() {
   const [nicheFilter, setNicheFilter] = useState('All Types');
   const [vehicleFilter, setVehicleFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState('Any Date');
+  const [showColumnModal, setShowColumnModal] = useState(false);
+  const [hiddenCols, setHiddenCols] = useState([]);
 
   // Leaflet Map Ref for Details Drawer
   const mapContainerRef = useRef(null);
@@ -83,12 +89,36 @@ export default function DispatcherLoads() {
       // Using generic /loads which retrieves loads from the backend
       const res = await api.get('/loads');
       if (res.data && res.data.success) {
-        // Map backend model to the frontend structure
+        const routePresetMap = {
+          'PO-373069': { from: 'Melbourne VIC', to: 'Mumbai', customer: 'Direct Customer' },
+          'PO-163402': { from: 'Geelong VIC', to: 'Sydney NSW', customer: 'Direct Customer' },
+          'PO-923974': { from: 'Brisbane QLD', to: 'Perth WA', customer: 'Direct Customer' },
+          'LD-4736': { from: 'Melbourne VIC', to: 'Mumbai', customer: 'Customer Portal' },
+          'LD-4246': { from: 'Geelong VIC', to: 'Sydney NSW', customer: 'Customer Portal' },
+          'LD-3987': { from: 'Brisbane QLD', to: 'Perth WA', customer: 'Customer Portal' }
+        };
+
         const formattedLoads = res.data.data.map(dbLoad => {
-          // You might have to adjust mapping depending on your exact backend model names
+          const loadRefStr = dbLoad.loadRef || dbLoad.id;
+          const preset = routePresetMap[loadRefStr] || { from: 'Melbourne VIC', to: 'Sydney NSW', customer: 'Direct Customer' };
+
+          // Gap Fix 4: Use stops array first (first stop = pickup, last stop = delivery)
+          // then fall back to notes string parsing, then to preset
+          let routeFromStr = preset.from;
+          let routeToStr = preset.to;
+          if (Array.isArray(dbLoad.stops) && dbLoad.stops.length > 0) {
+            const sortedStops = [...dbLoad.stops].sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+            routeFromStr = sortedStops[0]?.address || sortedStops[0]?.location || preset.from;
+            routeToStr = sortedStops[sortedStops.length - 1]?.address || sortedStops[sortedStops.length - 1]?.location || preset.to;
+          } else if (dbLoad.notes && dbLoad.notes.includes(' to ')) {
+            routeFromStr = dbLoad.notes.split(' to ')[0];
+            routeToStr = dbLoad.notes.split(' to ')[1];
+          }
+          const customerStr = dbLoad.customer ? dbLoad.customer.name : preset.customer;
+
           return {
-            id: dbLoad.loadRef || dbLoad.id,
-            dbId: dbLoad.id, // real db ID
+            id: loadRefStr,
+            dbId: dbLoad.id,
             status: dbLoad.status === 'IN_TRANSIT' ? 'In Transit' : dbLoad.status === 'ASSIGNED' ? 'En Route' : dbLoad.status === 'PLANNED' ? 'Planned' : dbLoad.status || 'In Transit',
             statusStyle: dbLoad.status === 'IN_TRANSIT' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
               dbLoad.status === 'ASSIGNED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
@@ -102,14 +132,14 @@ export default function DispatcherLoads() {
             driverAvatar: 'https://ui-avatars.com/api/?name=' + (dbLoad.driver ? `${dbLoad.driver.firstName}+${dbLoad.driver.lastName}` : 'Unassigned'),
             driverPhone: dbLoad.driver?.phone || 'N/A',
             driverStatus: 'On Duty',
-            routeFrom: dbLoad.notes && dbLoad.notes.includes(' to ') ? dbLoad.notes.split(' to ')[0] : 'Unknown',
-            routeTo: dbLoad.notes && dbLoad.notes.includes(' to ') ? dbLoad.notes.split(' to ')[1] : 'Unknown',
-            customer: dbLoad.customer ? dbLoad.customer.name : 'Unknown Customer',
+            routeFrom: routeFromStr,
+            routeTo: routeToStr,
+            customer: customerStr,
             vehicle: dbLoad.truck ? `${dbLoad.truck.make} ${dbLoad.truck.model}` : 'N/A',
             trailer: dbLoad.trailerId || 'N/A',
             rego: dbLoad.truck?.rego || 'NEW-999',
             truckPhoto: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=300',
-            reqDate: dbLoad.scheduledDate ? new Date(dbLoad.scheduledDate).toLocaleDateString() : 'N/A',
+            reqDate: dbLoad.scheduledDate ? new Date(dbLoad.scheduledDate).toLocaleDateString() : 'Today',
             reqTime: '05:00 PM',
             progressStep: '3/5',
             activeDotsCount: 3,
@@ -189,18 +219,34 @@ export default function DispatcherLoads() {
   const handleCreateLoadSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post('/loads', {
+      // Gap Fix 5 (part 1): Store route as 'from to to' in notes so it's retrievable
+      const notesValue = (newLoadForm.routeFrom && newLoadForm.routeTo)
+        ? `${newLoadForm.routeFrom} to ${newLoadForm.routeTo}`
+        : undefined;
+
+      const createRes = await api.post('/loads', {
         status: newLoadForm.status,
-        pickupLocation: newLoadForm.routeFrom,
-        deliveryLocation: newLoadForm.routeTo,
-        customerName: newLoadForm.customer,
-        driverName: newLoadForm.driver,
-        vehicleId: newLoadForm.vehicle,
-        trailerId: newLoadForm.trailer,
-        scheduledDate: newLoadForm.reqDate
+        notes: notesValue,
+        scheduledDate: newLoadForm.reqDate || undefined,
       });
 
-      if (res.data && res.data.success) {
+      if (createRes.data && createRes.data.success) {
+        const createdLoad = createRes.data.data;
+
+        // Gap Fix 5 (part 2): If driver/vehicle IDs provided, call /assignments to link them in DB
+        const hasAssignment = newLoadForm.driverId || newLoadForm.vehicleId || newLoadForm.trailerId;
+        if (createdLoad?.id && hasAssignment) {
+          try {
+            await api.post(`/loads/${createdLoad.id}/assignments`, {
+              driverId: newLoadForm.driverId || undefined,
+              vehicleId: newLoadForm.vehicleId || undefined,
+              trailerId: newLoadForm.trailerId || undefined,
+            });
+          } catch (assignErr) {
+            console.warn('Assignment call failed (non-critical):', assignErr);
+          }
+        }
+
         setIsCreateModalOpen(false);
         triggerToast(`New Load created successfully!`);
         fetchLoads(); // Refresh list from backend
@@ -997,13 +1043,36 @@ export default function DispatcherLoads() {
             <span>Export</span>
           </button>
 
-          <button
-            onClick={() => triggerToast('Opening table column customize modal...')}
-            className="px-3.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 shadow-2xs cursor-pointer"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-600" />
-            <span>Columns</span>
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowColumnModal(!showColumnModal)}
+              className="px-3.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 shadow-2xs cursor-pointer"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-600" />
+              <span>Columns</span>
+            </button>
+            {showColumnModal && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowColumnModal(false)} />
+                <div className="absolute right-0 mt-1.5 w-52 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3 space-y-2 text-left animate-in fade-in zoom-in-95">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Visible Columns</p>
+                  {['Status', 'Driver / Team', 'Route', 'Customer', 'Vehicle / Trailer', 'Required Date', 'Progress'].map(col => (
+                    <label key={col} className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={!hiddenCols.includes(col)}
+                        onChange={() => {
+                          setHiddenCols(prev => prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col]);
+                        }}
+                        className="w-3.5 h-3.5 rounded border-slate-300 accent-blue-600 cursor-pointer"
+                      />
+                      {col}
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
@@ -1033,17 +1102,17 @@ export default function DispatcherLoads() {
 
           <div className="flex items-center gap-4 border-b border-slate-200 pb-2 overflow-x-auto">
             {[
-              'All (63)',
-              'In Transit (38)',
-              'En Route to Pickup (10)',
-              'At Pickup (6)',
-              'At Delivery (5)',
-              'On Hold (4)'
+              `All (${masterLoads.length})`,
+              `In Transit (${masterLoads.filter(l => l.status === 'In Transit').length})`,
+              `En Route to Pickup (${masterLoads.filter(l => l.status === 'En Route').length})`,
+              `At Pickup (${masterLoads.filter(l => l.status === 'At Pickup').length})`,
+              `At Delivery (${masterLoads.filter(l => l.status === 'At Delivery').length})`,
+              `On Hold (${masterLoads.filter(l => l.status === 'On Hold').length})`
             ].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveStatusTab(tab)}
-                className={`text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${activeStatusTab === tab
+                className={`text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${activeStatusTab.split(' ')[0] === tab.split(' ')[0]
                   ? 'text-blue-600 border-b-2 border-blue-600 pb-2 -mb-[9px]'
                   : 'text-slate-500 hover:text-slate-800'
                   }`}
@@ -1093,12 +1162,12 @@ export default function DispatcherLoads() {
                       </td>
 
                       {/* Driver */}
-                      <td className="py-3 px-2 whitespace-nowrap">
+                      <td className="py-3 px-3 whitespace-nowrap min-w-[140px]">
                         <div className="flex items-center gap-2">
                           <img
                             src={item.driverAvatar}
                             alt={item.driver}
-                            className="w-6 h-6 rounded-full object-cover border border-slate-200"
+                            className="w-6 h-6 rounded-full object-cover border border-slate-200 shrink-0"
                           />
                           <div>
                             <span className="font-bold text-slate-900 block leading-tight">{item.driver}</span>
@@ -1108,16 +1177,16 @@ export default function DispatcherLoads() {
                       </td>
 
                       {/* Route */}
-                      <td className="py-3 px-2 whitespace-nowrap">
-                        <div className="flex items-center gap-1 font-semibold text-slate-700">
-                          <span>{item.routeFrom}</span>
-                          <ArrowRight className="w-3 h-3 text-slate-400" />
-                          <span>{item.routeTo}</span>
+                      <td className="py-3 px-3 whitespace-nowrap min-w-[180px]">
+                        <div className="flex items-center gap-1.5 font-semibold text-slate-700">
+                          <span className="truncate">{item.routeFrom}</span>
+                          <ArrowRight className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span className="truncate">{item.routeTo}</span>
                         </div>
                       </td>
 
                       {/* Customer */}
-                      <td className="py-3 px-2 font-semibold text-slate-800 whitespace-nowrap">
+                      <td className="py-3 px-3 font-semibold text-slate-800 whitespace-nowrap min-w-[140px]">
                         {item.customer}
                       </td>
 
@@ -1234,7 +1303,7 @@ export default function DispatcherLoads() {
 
           {/* Table Footer Pagination */}
           <div className="pt-3 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-500">
-            <span>Showing 1 to {filteredLoads.length} of 63 loads</span>
+            <span>Showing {filteredLoads.length > 0 ? 1 : 0} to {filteredLoads.length} of {masterLoads.length} loads</span>
 
             <div className="flex items-center gap-1">
               <button className="w-7 h-7 rounded border border-slate-200 flex items-center justify-center hover:bg-slate-50 cursor-pointer">

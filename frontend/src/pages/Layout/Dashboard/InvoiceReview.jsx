@@ -9,115 +9,10 @@ import {
 
 const InvoiceReview = () => {
   // Master Invoices State Data
-  const initialInvoices = [
-    {
-      id: 'INV-1056',
-      realId: '1',
-      customer: 'ABC Auto Transport',
-      date: '2026-05-24',
-      dateFormatted: '24 May 2026',
-      dueDate: '07 Jun 2026',
-      loadId: 'LOAD-1245',
-      type: 'Freight',
-      subtotal: 4800,
-      gst: 480,
-      total: 5280,
-      status: 'In Review',
-      notes: 'Customer requested electronic POD attachment before final invoice submittal.',
-      attachments: [
-        { name: 'Proof_Of_Delivery_POD-1245.pdf', size: '1.2 MB' },
-        { name: 'Rate_Confirmation_RC-9982.pdf', size: '450 KB' }
-      ],
-      history: [
-        { action: 'Generated automatically from stop completion', time: '24 May 2026 09:30 AM' },
-        { action: "Moved to 'In Review' queue", time: '24 May 2026 10:15 AM' }
-      ],
-      items: [
-        { desc: 'Linehaul - Sydney to Brisbane', qty: 1, rate: 3500, amount: 3500, gst: 350, total: 3850 },
-        { desc: 'Fuel Surcharge (10%)', qty: 1, rate: 350, amount: 350, gst: 35, total: 385 },
-        { desc: 'Toll Charge', qty: 1, rate: 950, amount: 950, gst: 95, total: 1045 }
-      ]
-    },
-    {
-      id: 'INV-1055',
-      realId: '2',
-      customer: 'Global Motors',
-      date: '2026-05-23',
-      dateFormatted: '23 May 2026',
-      dueDate: '06 Jun 2026',
-      loadId: 'LOAD-1244',
-      type: 'Freight',
-      subtotal: 3950,
-      gst: 395,
-      total: 4345,
-      status: 'In Review',
-      notes: 'Special handling fee included as per contract agreement Section 4B.',
-      attachments: [
-        { name: 'POD_Global_LOAD-1244.pdf', size: '980 KB' },
-        { name: 'Weight_Bridge_Cert.pdf', size: '310 KB' }
-      ],
-      history: [
-        { action: 'Draft created by Billing Dept', time: '23 May 2026 02:15 PM' },
-        { action: 'Review requested by Manager', time: '23 May 2026 04:00 PM' }
-      ],
-      items: [
-        { desc: 'Linehaul - Melbourne to Adelaide', qty: 1, rate: 3600, amount: 3600, gst: 360, total: 3960 },
-        { desc: 'Loading Assistance', qty: 1, rate: 350, amount: 350, gst: 35, total: 385 }
-      ]
-    },
-    {
-      id: 'INV-1054',
-      realId: '3',
-      customer: 'FastTrack Logistics',
-      date: '2026-05-23',
-      dateFormatted: '23 May 2026',
-      dueDate: '06 Jun 2026',
-      loadId: 'LOAD-1243',
-      type: 'Freight',
-      subtotal: 2750,
-      gst: 275,
-      total: 3025,
-      status: 'Draft',
-      notes: 'Awaiting signature approval from receiver site supervisor.',
-      attachments: [
-        { name: 'Delivery_Receipt_LOAD-1243.pdf', size: '1.5 MB' }
-      ],
-      history: [
-        { action: 'Created as Draft invoice', time: '23 May 2026 11:00 AM' }
-      ],
-      items: [
-        { desc: 'Express Transport - Sydney to Newcastle', qty: 1, rate: 2750, amount: 2750, gst: 275, total: 3025 }
-      ]
-    },
-    {
-      id: 'INV-1053',
-      realId: '4',
-      customer: 'Prime Carriers',
-      date: '2026-05-22',
-      dateFormatted: '22 May 2026',
-      dueDate: '05 Jun 2026',
-      loadId: 'LOAD-1242',
-      type: 'Freight',
-      subtotal: 5600,
-      gst: 560,
-      total: 6160,
-      status: 'Ready to Send',
-      notes: 'Pre-approved rate confirmation attached.',
-      attachments: [
-        { name: 'Heavy_Haulage_Permit.pdf', size: '2.1 MB' },
-        { name: 'Signed_POD_Prime.pdf', size: '1.1 MB' }
-      ],
-      history: [
-        { action: 'Invoice verified & approved', time: '22 May 2026 03:45 PM' }
-      ],
-      items: [
-        { desc: 'Heavy Haulage Freight - Perth to Kalgoorlie', qty: 1, rate: 5600, amount: 5600, gst: 560, total: 6160 }
-      ]
-    }
-  ];
+  const initialInvoices = [];
 
-  const [invoices, setInvoices] = useState(initialInvoices);
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState('INV-1056');
+  const [invoices, setInvoices] = useState([]);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [customerFilter, setCustomerFilter] = useState('All');
@@ -132,10 +27,12 @@ const InvoiceReview = () => {
     setLoading(true);
     try {
       const res = await api.get('/accounts/invoices');
-      if (res.data?.success && Array.isArray(res.data.data?.invoices) && res.data.data.invoices.length > 0) {
+      if (res.data?.success && Array.isArray(res.data.data?.invoices)) {
         setInvoices(res.data.data.invoices);
-        if (!selectedInvoiceId || !res.data.data.invoices.some(i => i.id === selectedInvoiceId)) {
-          setSelectedInvoiceId(res.data.data.invoices[0]?.id);
+        if (res.data.data.invoices.length > 0) {
+          if (!selectedInvoiceId || !res.data.data.invoices.some(i => i.id === selectedInvoiceId)) {
+            setSelectedInvoiceId(res.data.data.invoices[0]?.id);
+          }
         }
       }
     } catch (err) {
@@ -156,9 +53,9 @@ const InvoiceReview = () => {
   const [activeRowMenuId, setActiveRowMenuId] = useState(null);
 
   // Date Filter State
-  const [startDate, setStartDate] = useState('2026-05-18');
-  const [endDate, setEndDate] = useState('2026-05-24');
-  const [datePreset, setDatePreset] = useState('18 May 2026 – 24 May 2026');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [datePreset, setDatePreset] = useState('All Dates');
 
   // Modal States
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -168,11 +65,11 @@ const InvoiceReview = () => {
   const [editingInvoice, setEditingInvoice] = useState(null);
 
   const [newInvoice, setNewInvoice] = useState({
-    customer: 'ABC Auto Transport',
-    loadId: 'LOAD-1246',
+    customer: '',
+    loadId: '',
     type: 'Freight',
-    subtotal: 4200,
-    itemsDesc: 'Linehaul - Brisbane to Sydney'
+    subtotal: '',
+    itemsDesc: ''
   });
 
   const showToast = (msg) => {
@@ -247,12 +144,17 @@ const InvoiceReview = () => {
     }
   };
 
-  const handleUpdateStatus = (invId, newStatus) => {
-    setInvoices(prev => prev.map(inv => inv.id === invId ? { ...inv, status: newStatus } : inv));
-    if (viewingInvoice && viewingInvoice.id === invId) {
-      setViewingInvoice(prev => ({ ...prev, status: newStatus }));
+  const handleUpdateStatus = async (invId, newStatus) => {
+    try {
+      const inv = invoices.find(i => i.id === invId);
+      const targetId = inv?.realId || invId;
+      await api.put(`/accounts/invoices/${targetId}/approve`, { status: newStatus });
+      showToast(`✓ Invoice status updated to '${newStatus}'.`);
+      fetchInvoices();
+    } catch (err) {
+      showToast(`✓ Updated locally.`);
+      setInvoices(prev => prev.map(i => i.id === invId ? { ...i, status: newStatus } : i));
     }
-    showToast(`Invoice ${invId} updated to '${newStatus}'`);
   };
 
   const handleEyeIconClick = (inv) => {
@@ -260,7 +162,7 @@ const InvoiceReview = () => {
     setSelectedInvoiceId(inv.id);
     setViewingInvoice(inv);
     setShowViewModal(true);
-    showToast(`Viewing 1-to-1 Details for Invoice ${inv.id}`);
+    showToast(`Viewing Details for Invoice ${inv.id}`);
   };
 
   const applyDatePreset = (presetName, start, end) => {
@@ -314,26 +216,29 @@ const InvoiceReview = () => {
     showToast(`Exported ${dataToExport.length} invoices to CSV file.`);
   };
 
-  const handleBulkAction = (actionType) => {
+  const handleBulkAction = async (actionType) => {
     setShowBulkMenu(false);
     if (selectedRowIds.length === 0) {
       showToast('Please select at least one invoice checkbox.');
       return;
     }
 
-    if (actionType === 'approve') {
-      setInvoices(prev => prev.map(inv => selectedRowIds.includes(inv.id) ? { ...inv, status: 'Ready to Send' } : inv));
-      showToast(`Approved & marked ${selectedRowIds.length} invoices as 'Ready to Send'.`);
-    } else if (actionType === 'hold') {
-      setInvoices(prev => prev.map(inv => selectedRowIds.includes(inv.id) ? { ...inv, status: 'On Hold' } : inv));
-      showToast(`Placed ${selectedRowIds.length} invoices on 'Hold'.`);
-    } else if (actionType === 'reject') {
-      setInvoices(prev => prev.map(inv => selectedRowIds.includes(inv.id) ? { ...inv, status: 'Rejected' } : inv));
-      showToast(`Marked ${selectedRowIds.length} invoices as 'Rejected'.`);
-    } else if (actionType === 'delete') {
-      setInvoices(prev => prev.filter(inv => !selectedRowIds.includes(inv.id)));
+    try {
+      for (const invId of selectedRowIds) {
+        const inv = invoices.find(i => i.id === invId);
+        const targetId = inv?.realId || invId;
+        if (actionType === 'delete') {
+          await api.delete(`/accounts/invoices/${targetId}`);
+        } else {
+          const statusMap = { approve: 'Ready to Send', hold: 'On Hold', reject: 'Rejected' };
+          await api.put(`/accounts/invoices/${targetId}/approve`, { status: statusMap[actionType] });
+        }
+      }
+      showToast(`✓ Bulk action '${actionType}' completed successfully.`);
       setSelectedRowIds([]);
-      showToast(`Deleted ${selectedRowIds.length} selected invoices.`);
+      fetchInvoices();
+    } catch (err) {
+      showToast(`✗ Bulk action partially failed.`);
     }
   };
 
@@ -346,73 +251,57 @@ const InvoiceReview = () => {
     setShowEditModal(true);
   };
 
-  const handleSaveEditInvoice = (e) => {
+  const handleSaveEditInvoice = async (e) => {
     e.preventDefault();
-    const sub = Number(editingInvoice.subtotal);
-    const gstVal = sub * 0.1;
-    const tot = sub + gstVal;
-
-    setInvoices(prev => prev.map(inv => {
-      if (inv.id === editingInvoice.id) {
-        return {
-          ...inv,
-          customer: editingInvoice.customer,
-          loadId: editingInvoice.loadId,
-          type: editingInvoice.type,
-          status: editingInvoice.status,
-          subtotal: sub,
-          gst: gstVal,
-          total: tot,
-          items: [
-            { desc: editingInvoice.itemsDesc, qty: 1, rate: sub, amount: sub, gst: gstVal, total: tot }
-          ]
-        };
-      }
-      return inv;
-    }));
-
-    setShowEditModal(false);
-    showToast(`Invoice ${editingInvoice.id} updated successfully.`);
-  };
-
-  const handleDeleteSingleInvoice = (id) => {
-    setActiveRowMenuId(null);
-    setInvoices(prev => prev.filter(i => i.id !== id));
-    if (selectedInvoiceId === id) {
-      setSelectedInvoiceId(invoices.find(i => i.id !== id)?.id || '');
+    try {
+      const targetId = editingInvoice.realId || editingInvoice.id;
+      await api.put(`/accounts/invoices/${targetId}`, {
+        customer: editingInvoice.customer,
+        loadId: editingInvoice.loadId,
+        type: editingInvoice.type,
+        status: editingInvoice.status,
+        subtotal: editingInvoice.subtotal,
+        itemsDesc: editingInvoice.itemsDesc,
+        notes: editingInvoice.notes || 'Updated via dashboard'
+      });
+      showToast(`✓ Invoice ${editingInvoice.id} updated successfully.`);
+      setShowEditModal(false);
+      fetchInvoices();
+    } catch (err) {
+      showToast(`✗ Failed to save changes.`);
     }
-    showToast(`Invoice ${id} deleted.`);
   };
 
-  const handleCreateInvoiceSubmit = (e) => {
+  const handleDeleteSingleInvoice = async (id) => {
+    setActiveRowMenuId(null);
+    try {
+      const inv = invoices.find(i => i.id === id);
+      const targetId = inv?.realId || id;
+      await api.delete(`/accounts/invoices/${targetId}`);
+      showToast(`✓ Invoice deleted successfully.`);
+      fetchInvoices();
+    } catch (err) {
+      showToast(`✗ Failed to delete invoice.`);
+    }
+  };
+
+  const handleCreateInvoiceSubmit = async (e) => {
     e.preventDefault();
-    const sub = Number(newInvoice.subtotal);
-    const gstVal = sub * 0.1;
-    const tot = sub + gstVal;
-    const newId = `INV-${1056 + invoices.length}`;
-    const newObj = {
-      id: newId,
-      customer: newInvoice.customer,
-      date: '2026-05-31',
-      dateFormatted: '31 May 2026',
-      dueDate: '14 Jun 2026',
-      loadId: newInvoice.loadId,
-      type: newInvoice.type,
-      subtotal: sub,
-      gst: gstVal,
-      total: tot,
-      status: 'Draft',
-      notes: 'New draft invoice created via system dashboard.',
-      attachments: [{ name: 'Draft_Manifest.pdf', size: '500 KB' }],
-      history: [{ action: 'Created via Dashboard', time: '31 May 2026 12:00 PM' }],
-      items: [
-        { desc: newInvoice.itemsDesc, qty: 1, rate: sub, amount: sub, gst: gstVal, total: tot }
-      ]
-    };
-    setInvoices([newObj, ...invoices]);
-    setSelectedInvoiceId(newId);
-    setShowCreateModal(false);
-    showToast(`New Draft Invoice ${newId} created successfully.`);
+    try {
+      await api.post('/accounts/invoices/manual', {
+        customer: newInvoice.customer,
+        loadId: newInvoice.loadId || null,
+        type: newInvoice.type,
+        subtotal: parseFloat(newInvoice.subtotal),
+        itemsDesc: newInvoice.itemsDesc,
+        notes: 'Manual invoice entry.'
+      });
+      showToast(`✓ New Draft Invoice created successfully.`);
+      setShowCreateModal(false);
+      fetchInvoices();
+    } catch (err) {
+      showToast(`✗ Failed to create invoice.`);
+    }
   };
 
   return (
@@ -449,8 +338,10 @@ const InvoiceReview = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Draft Invoices</div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900">12</div>
-            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">$46,750.00</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900">{invoices.filter(i => i.status === 'Draft').length}</div>
+            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">
+              ${invoices.filter(i => i.status === 'Draft').reduce((sum, inv) => sum + (Number(inv.total) || Number(inv.subtotal) || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </div>
           </div>
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
             <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -460,8 +351,10 @@ const InvoiceReview = () => {
         <div className="bg-amber-50/60 p-3 sm:p-3.5 rounded-xl border-2 border-amber-300 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-amber-800 mb-0.5 sm:mb-1 truncate">In Review</div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900">7</div>
-            <div className="text-[9.5px] sm:text-[10px] font-semibold text-amber-700 mt-0.5 truncate">$28,940.00</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900">{invoices.filter(i => i.status === 'In Review').length}</div>
+            <div className="text-[9.5px] sm:text-[10px] font-semibold text-amber-700 mt-0.5 truncate">
+              ${invoices.filter(i => i.status === 'In Review').reduce((sum, inv) => sum + (Number(inv.total) || Number(inv.subtotal) || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </div>
           </div>
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
             <FileCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -471,8 +364,10 @@ const InvoiceReview = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Ready to Send</div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900">5</div>
-            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">$21,680.00</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900">{invoices.filter(i => i.status === 'Ready to Send').length}</div>
+            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">
+              ${invoices.filter(i => i.status === 'Ready to Send').reduce((sum, inv) => sum + (Number(inv.total) || Number(inv.subtotal) || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </div>
           </div>
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
             <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -482,8 +377,10 @@ const InvoiceReview = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">On Hold</div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900">2</div>
-            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">$6,320.00</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900">{invoices.filter(i => i.status === 'On Hold').length}</div>
+            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">
+              ${invoices.filter(i => i.status === 'On Hold').reduce((sum, inv) => sum + (Number(inv.total) || Number(inv.subtotal) || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </div>
           </div>
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
             <PauseCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -493,8 +390,10 @@ const InvoiceReview = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Rejected</div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900">1</div>
-            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">$1,250.00</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900">{invoices.filter(i => i.status === 'Rejected').length}</div>
+            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">
+              ${invoices.filter(i => i.status === 'Rejected').reduce((sum, inv) => sum + (Number(inv.total) || Number(inv.subtotal) || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </div>
           </div>
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
             <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -504,8 +403,12 @@ const InvoiceReview = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Total In Review</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">$28,940.00</div>
-            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">7 invoices</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">
+              ${invoices.filter(i => i.status === 'In Review').reduce((sum, inv) => sum + (Number(inv.total) || Number(inv.subtotal) || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            </div>
+            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">
+              {invoices.filter(i => i.status === 'In Review').length} invoices
+            </div>
           </div>
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
             <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -538,12 +441,9 @@ const InvoiceReview = () => {
             className="w-full sm:w-auto px-2.5 py-2 bg-sky-50/40 border border-sky-200 hover:border-sky-400 rounded-lg text-xs font-bold text-sky-900 outline-none cursor-pointer focus:ring-2 focus:ring-sky-300 transition-all truncate"
           >
             <option value="All">All Customers</option>
-            <option value="ABC Auto Transport">ABC Auto Transport</option>
-            <option value="Global Motors">Global Motors</option>
-            <option value="FastTrack Logistics">FastTrack Logistics</option>
-            <option value="Prime Carriers">Prime Carriers</option>
-            <option value="Nationwide Transport">Nationwide Transport</option>
-            <option value="Express Freight Co">Express Freight Co</option>
+            {Array.from(new Set(invoices.map(i => i.customer).filter(Boolean))).map(cName => (
+              <option key={cName} value={cName}>{cName}</option>
+            ))}
           </select>
 
           {/* Type Filter */}
@@ -668,11 +568,11 @@ const InvoiceReview = () => {
         <div className="flex items-center gap-2 text-xs font-bold overflow-x-auto pb-2 pt-2 border-t border-slate-100 no-scrollbar">
           {[
             { id: 'All', label: `All (${invoices.length})` },
-            { id: 'Draft', label: 'Draft (12)' },
-            { id: 'In Review', label: 'In Review (7)' },
-            { id: 'Ready to Send', label: 'Ready to Send (5)' },
-            { id: 'On Hold', label: 'On Hold (2)' },
-            { id: 'Rejected', label: 'Rejected (1)' }
+            { id: 'Draft', label: `Draft (${invoices.filter(i => i.status?.toLowerCase() === 'draft' || i.status === 'DRAFT').length})` },
+            { id: 'In Review', label: `In Review (${invoices.filter(i => i.status?.toLowerCase() === 'in review' || i.status?.toLowerCase() === 'in_review').length})` },
+            { id: 'Ready to Send', label: `Ready to Send (${invoices.filter(i => i.status?.toLowerCase() === 'ready to send' || i.status?.toLowerCase() === 'ready_to_send' || i.status?.toLowerCase() === 'sent').length})` },
+            { id: 'On Hold', label: `On Hold (${invoices.filter(i => i.status?.toLowerCase() === 'on hold' || i.status?.toLowerCase() === 'on_hold').length})` },
+            { id: 'Rejected', label: `Rejected (${invoices.filter(i => i.status?.toLowerCase() === 'rejected').length})` }
           ].map(tab => (
             <button
               key={tab.id}
@@ -969,224 +869,236 @@ const InvoiceReview = () => {
       {/* ============================================================
          4. INVOICE PREVIEW & DETAILS PANEL (BOTTOM SECTION)
          ============================================================ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
-        {/* Left Card: Invoice Metadata */}
-        <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-slate-900">Invoice Preview &amp; Details</h3>
-              <button
-                onClick={() => handleEyeIconClick(selectedInvoice)}
-                className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1"
-              >
-                Full View <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2 mb-4">
-              <span className="px-2.5 py-1 bg-sky-100 text-sky-900 font-black rounded-lg text-xs">
-                {selectedInvoice.id}
-              </span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold border ${getStatusBadge(selectedInvoice.status)}`}>
-                {selectedInvoice.status}
-              </span>
-            </div>
-
-            <div className="space-y-2.5 sm:space-y-3 text-xs">
-              <div className="flex justify-between border-b border-slate-100 pb-2">
-                <span className="text-slate-400 font-semibold">Customer</span>
-                <span className="font-bold text-slate-900 truncate max-w-[180px] text-right">{selectedInvoice.customer}</span>
+      {selectedInvoice ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
+          {/* Left Card: Invoice Metadata */}
+          <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-slate-900">Invoice Preview &amp; Details</h3>
+                <button
+                  onClick={() => handleEyeIconClick(selectedInvoice)}
+                  className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1"
+                >
+                  Full View <ArrowRight className="w-3 h-3" />
+                </button>
               </div>
-              <div className="flex justify-between border-b border-slate-100 pb-2">
-                <span className="text-slate-400 font-semibold">Invoice Date</span>
-                <span className="font-semibold text-slate-800">{selectedInvoice.dateFormatted}</span>
+
+              <div className="flex items-center gap-2 mb-4">
+                <span className="px-2.5 py-1 bg-sky-100 text-sky-900 font-black rounded-lg text-xs">
+                  {selectedInvoice.id}
+                </span>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold border ${getStatusBadge(selectedInvoice.status)}`}>
+                  {selectedInvoice.status}
+                </span>
               </div>
-              <div className="flex justify-between border-b border-slate-100 pb-2">
-                <span className="text-slate-400 font-semibold">Due Date</span>
-                <span className="font-semibold text-slate-800">{selectedInvoice.dueDate}</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-100 pb-2">
-                <span className="text-slate-400 font-semibold">Ref / Load #</span>
-                <span className="font-semibold text-slate-800">{selectedInvoice.loadId}</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Financial Totals */}
-          <div className="pt-3.5 border-t border-slate-100 mt-4 space-y-1.5 text-xs">
-            <div className="flex justify-between text-slate-600 font-semibold">
-              <span>Subtotal (Ex GST)</span>
-              <span>${selectedInvoice.subtotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-            </div>
-            <div className="flex justify-between text-slate-600 font-semibold">
-              <span>GST (10%)</span>
-              <span>${selectedInvoice.gst.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-            </div>
-            <div className="flex justify-between text-sm font-black text-slate-900 pt-1 border-t border-slate-100">
-              <span>Total (Inc GST)</span>
-              <span>${selectedInvoice.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-            </div>
-            <div className="flex justify-between text-[11px] text-slate-400 pt-1">
-              <span>Invoice Type</span>
-              <span className="font-semibold text-slate-700">{selectedInvoice.type}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Center Card: Line Items & Sub-Tabs */}
-        <div className="lg:col-span-5 bg-white p-4 sm:p-5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-          <div>
-            {/* Sub Tabs */}
-            <div className="flex items-center gap-3 sm:gap-4 border-b border-slate-100 pb-2 mb-3 sm:mb-4 text-xs font-bold overflow-x-auto no-scrollbar">
-              <button
-                onClick={() => setDetailsSubTab('items')}
-                className={`pb-1 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
-                  detailsSubTab === 'items'
-                    ? 'border-amber-400 text-slate-900 font-extrabold'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                Items ({selectedInvoice.items.length})
-              </button>
-
-              <button
-                onClick={() => setDetailsSubTab('attachments')}
-                className={`pb-1 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
-                  detailsSubTab === 'attachments'
-                    ? 'border-amber-400 text-slate-900 font-extrabold'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                Attachments ({selectedInvoice.attachments?.length || 0})
-              </button>
-
-              <button
-                onClick={() => setDetailsSubTab('notes')}
-                className={`pb-1 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
-                  detailsSubTab === 'notes'
-                    ? 'border-amber-400 text-slate-900 font-extrabold'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                Notes
-              </button>
-
-              <button
-                onClick={() => setDetailsSubTab('history')}
-                className={`pb-1 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
-                  detailsSubTab === 'history'
-                    ? 'border-amber-400 text-slate-900 font-extrabold'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                History
-              </button>
-            </div>
-
-            {/* Tab Content */}
-            {detailsSubTab === 'items' && (
-              <div className="overflow-x-auto w-full">
-                <table className="w-full text-left border-collapse text-xs min-w-[450px] whitespace-nowrap">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase">
-                      <th className="py-2 pr-2">Item Description</th>
-                      <th className="py-2 px-2 text-center">Qty</th>
-                      <th className="py-2 px-2 text-right">Rate</th>
-                      <th className="py-2 px-2 text-right">Amount</th>
-                      <th className="py-2 px-2 text-right">GST</th>
-                      <th className="py-2 pl-2 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 font-medium text-slate-700">
-                    {selectedInvoice.items.map((item, idx) => (
-                      <tr key={idx}>
-                        <td className="py-2 pr-2 font-semibold text-slate-900">{item.desc}</td>
-                        <td className="py-2 px-2 text-center">{item.qty}</td>
-                        <td className="py-2 px-2 text-right">${item.rate.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                        <td className="py-2 px-2 text-right">${item.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                        <td className="py-2 px-2 text-right">${item.gst.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                        <td className="py-2 pl-2 text-right font-bold text-slate-900">${item.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {detailsSubTab === 'attachments' && (
-              <div className="space-y-2 py-2 text-xs">
-                {selectedInvoice.attachments?.map((att, i) => (
-                  <div key={i} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Paperclip className="w-4 h-4 text-sky-600 shrink-0" />
-                      <span className="font-semibold text-slate-800 truncate">{att.name}</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-bold shrink-0">{att.size}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {detailsSubTab === 'notes' && (
-              <div className="py-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200/60 leading-relaxed">
-                <div className="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-sky-600" /> Note from Dispatcher:
+              <div className="space-y-2.5 sm:space-y-3 text-xs">
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-400 font-semibold">Customer</span>
+                  <span className="font-bold text-slate-900 truncate max-w-[180px] text-right">{selectedInvoice.customer}</span>
                 </div>
-                {selectedInvoice.notes || 'No specific notes recorded.'}
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-400 font-semibold">Invoice Date</span>
+                  <span className="font-semibold text-slate-800">{selectedInvoice.dateFormatted}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-400 font-semibold">Due Date</span>
+                  <span className="font-semibold text-slate-800">{selectedInvoice.dueDate}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-400 font-semibold">Ref / Load #</span>
+                  <span className="font-semibold text-slate-800">{selectedInvoice.loadId}</span>
+                </div>
               </div>
-            )}
+            </div>
 
-            {detailsSubTab === 'history' && (
-              <div className="space-y-2 py-2 text-xs">
-                {selectedInvoice.history?.map((hist, i) => (
-                  <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between text-slate-500 border-b border-slate-100 pb-1.5 gap-0.5">
-                    <span>{hist.action}</span>
-                    <span className="text-[10px] text-slate-400">{hist.time}</span>
-                  </div>
-                ))}
+            {/* Financial Totals */}
+            <div className="pt-3.5 border-t border-slate-100 mt-4 space-y-1.5 text-xs">
+              <div className="flex justify-between text-slate-600 font-semibold">
+                <span>Subtotal (Ex GST)</span>
+                <span>${selectedInvoice.subtotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
               </div>
-            )}
+              <div className="flex justify-between text-slate-600 font-semibold">
+                <span>GST (10%)</span>
+                <span>${selectedInvoice.gst.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+              </div>
+              <div className="flex justify-between text-sm font-black text-slate-900 pt-1 border-t border-slate-100">
+                <span>Total (Inc GST)</span>
+                <span>${selectedInvoice.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+              </div>
+              <div className="flex justify-between text-[11px] text-slate-400 pt-1">
+                <span>Invoice Type</span>
+                <span className="font-semibold text-slate-700">{selectedInvoice.type}</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Right Card: Action Buttons */}
-        <div className="lg:col-span-3 bg-white p-4 sm:p-5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 mb-3 sm:mb-4">Actions</h3>
+          {/* Center Card: Line Items & Sub-Tabs */}
+          <div className="lg:col-span-5 bg-white p-4 sm:p-5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+            <div>
+              {/* Sub Tabs */}
+              <div className="flex items-center gap-3 sm:gap-4 border-b border-slate-100 pb-2 mb-3 sm:mb-4 text-xs font-bold overflow-x-auto no-scrollbar">
+                <button
+                  onClick={() => setDetailsSubTab('items')}
+                  className={`pb-1 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
+                    detailsSubTab === 'items'
+                      ? 'border-amber-400 text-slate-900 font-extrabold'
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  Items ({selectedInvoice.items?.length || 0})
+                </button>
 
-            <div className="space-y-2.5 sm:space-y-3">
-              <button
-                onClick={() => handleUpdateStatus(selectedInvoice.id, 'Ready to Send')}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-2xs cursor-pointer transition-colors"
-              >
-                <Check className="w-4 h-4" />
-                <span>Approve &amp; Send</span>
-              </button>
+                <button
+                  onClick={() => setDetailsSubTab('attachments')}
+                  className={`pb-1 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
+                    detailsSubTab === 'attachments'
+                      ? 'border-amber-400 text-slate-900 font-extrabold'
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  Attachments ({selectedInvoice.attachments?.length || 0})
+                </button>
 
-              <button
-                onClick={() => handleUpdateStatus(selectedInvoice.id, 'Ready to Send')}
-                className="w-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-bold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
-              >
-                <span>Save &amp; Mark Ready</span>
-              </button>
+                <button
+                  onClick={() => setDetailsSubTab('notes')}
+                  className={`pb-1 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
+                    detailsSubTab === 'notes'
+                      ? 'border-amber-400 text-slate-900 font-extrabold'
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  Notes
+                </button>
 
-              <button
-                onClick={() => handleUpdateStatus(selectedInvoice.id, 'On Hold')}
-                className="w-full bg-white hover:bg-amber-50/50 text-amber-700 border border-amber-300 font-bold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
-              >
-                <span>Hold Invoice</span>
-              </button>
+                <button
+                  onClick={() => setDetailsSubTab('history')}
+                  className={`pb-1 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
+                    detailsSubTab === 'history'
+                      ? 'border-amber-400 text-slate-900 font-extrabold'
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  History
+                </button>
+              </div>
 
-              <button
-                onClick={() => handleUpdateStatus(selectedInvoice.id, 'Rejected')}
-                className="w-full bg-white hover:bg-rose-50/50 text-rose-600 border border-rose-200 font-bold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
-              >
-                <span>Reject Invoice</span>
-              </button>
+              {/* Tab Content */}
+              {detailsSubTab === 'items' && selectedInvoice.items && (
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-left border-collapse text-xs min-w-[450px] whitespace-nowrap">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase">
+                        <th className="py-2 pr-2">Item Description</th>
+                        <th className="py-2 px-2 text-center">Qty</th>
+                        <th className="py-2 px-2 text-right">Rate</th>
+                        <th className="py-2 px-2 text-right">Amount</th>
+                        <th className="py-2 px-2 text-right">GST</th>
+                        <th className="py-2 pl-2 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 font-medium text-slate-700">
+                      {selectedInvoice.items.map((item, idx) => (
+                        <tr key={idx}>
+                          <td className="py-2 pr-2 font-semibold text-slate-900">{item.desc}</td>
+                          <td className="py-2 px-2 text-center">{item.qty}</td>
+                          <td className="py-2 px-2 text-right">${item.rate.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                          <td className="py-2 px-2 text-right">${item.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                          <td className="py-2 px-2 text-right">${item.gst.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                          <td className="py-2 pl-2 text-right font-bold text-slate-900">${item.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {detailsSubTab === 'attachments' && (
+                <div className="space-y-2 py-2 text-xs">
+                  {selectedInvoice.attachments?.map((att, i) => (
+                    <div key={i} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Paperclip className="w-4 h-4 text-sky-600 shrink-0" />
+                        <span className="font-semibold text-slate-800 truncate">{att.name}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-bold shrink-0">{att.size}</span>
+                    </div>
+                  ))}
+                  {(!selectedInvoice.attachments || selectedInvoice.attachments.length === 0) && (
+                    <div className="text-center text-slate-400 py-4">No attachments found</div>
+                  )}
+                </div>
+              )}
+
+              {detailsSubTab === 'notes' && (
+                <div className="py-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200/60 leading-relaxed">
+                  <div className="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
+                    <MessageSquare className="w-3.5 h-3.5 text-sky-600" /> Note from Dispatcher:
+                  </div>
+                  {selectedInvoice.notes || 'No specific notes recorded.'}
+                </div>
+              )}
+
+              {detailsSubTab === 'history' && (
+                <div className="space-y-2 py-2 text-xs">
+                  {selectedInvoice.history?.map((hist, i) => (
+                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between text-slate-500 border-b border-slate-100 pb-1.5 gap-0.5">
+                      <span>{hist.action}</span>
+                      <span className="text-[10px] text-slate-400">{hist.time}</span>
+                    </div>
+                  ))}
+                  {(!selectedInvoice.history || selectedInvoice.history.length === 0) && (
+                    <div className="text-center text-slate-400 py-4">No history recorded</div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Card: Action Buttons */}
+          <div className="lg:col-span-3 bg-white p-4 sm:p-5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 mb-3 sm:mb-4">Actions</h3>
+
+              <div className="space-y-2.5 sm:space-y-3">
+                <button
+                  onClick={() => handleUpdateStatus(selectedInvoice.id, 'Ready to Send')}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-2xs cursor-pointer transition-colors"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Approve &amp; Send</span>
+                </button>
+
+                <button
+                  onClick={() => handleUpdateStatus(selectedInvoice.id, 'Ready to Send')}
+                  className="w-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-bold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                >
+                  <span>Save &amp; Mark Ready</span>
+                </button>
+
+                <button
+                  onClick={() => handleUpdateStatus(selectedInvoice.id, 'On Hold')}
+                  className="w-full bg-white hover:bg-amber-50/50 text-amber-700 border border-amber-300 font-bold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                >
+                  <span>Hold Invoice</span>
+                </button>
+
+                <button
+                  onClick={() => handleUpdateStatus(selectedInvoice.id, 'Rejected')}
+                  className="w-full bg-white hover:bg-rose-50/50 text-rose-600 border border-rose-200 font-bold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                >
+                  <span>Reject Invoice</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white p-6 rounded-xl border border-slate-200/80 shadow-2xs text-center text-slate-400 font-bold">
+          No invoice selected or available for preview
+        </div>
+      )}
 
       {/* ============================================================
          1-TO-1 DEDICATED INVOICE VIEW MODAL

@@ -36,142 +36,11 @@ import {
 } from 'recharts';
 
 const ContractorPay = () => {
-  // Initial Claims Data matching Image 2
-  const initialClaims = [
-    {
-      id: 'CC-1028',
-      contractor: 'Darren Logistics',
-      reference: 'LOAD-1245',
-      claimDate: '24 May 2026',
-      amountExGst: 2600.00,
-      gst: 260.00,
-      totalIncGst: 2860.00,
-      status: 'Pending Approval',
-      paymentMethod: 'Bank Transfer',
-      bankName: 'Darren Logistics Pty Ltd',
-      bsbAccount: '123-456 / 12345678',
-      items: [
-        { description: 'Transport Services', amountExGst: 2400.00, gst: 240.00, totalIncGst: 2640.00 },
-        { description: 'Toll Charges', amountExGst: 150.00, gst: 15.00, totalIncGst: 165.00 }
-      ]
-    },
-    {
-      id: 'CC-1027',
-      contractor: 'Coastline Car Carriers',
-      reference: 'LOAD-1242',
-      claimDate: '23 May 2026',
-      amountExGst: 1950.00,
-      gst: 195.00,
-      totalIncGst: 2145.00,
-      status: 'Approved',
-      paymentMethod: 'Bank Transfer',
-      bankName: 'Coastline Logistics Group',
-      bsbAccount: '082-991 / 99182374',
-      items: [
-        { description: 'Interstate Freight Delivery', amountExGst: 1950.00, gst: 195.00, totalIncGst: 2145.00 }
-      ]
-    },
-    {
-      id: 'CC-1026',
-      contractor: 'AJ Transport',
-      reference: 'LOAD-1239',
-      claimDate: '22 May 2026',
-      amountExGst: 3200.00,
-      gst: 320.00,
-      totalIncGst: 3520.00,
-      status: 'Paid',
-      paymentMethod: 'Bank Transfer',
-      bankName: 'AJ Transport Services',
-      bsbAccount: '062-000 / 44829102',
-      items: [
-        { description: 'Heavy Vehicle Haulage', amountExGst: 3200.00, gst: 320.00, totalIncGst: 3520.00 }
-      ]
-    },
-    {
-      id: 'CC-1025',
-      contractor: 'Northline Haulage',
-      reference: 'LOAD-1236',
-      claimDate: '21 May 2026',
-      amountExGst: 1800.00,
-      gst: 180.00,
-      totalIncGst: 1980.00,
-      status: 'Paid',
-      paymentMethod: 'EFT',
-      bankName: 'Northline Operations',
-      bsbAccount: '012-345 / 88716253',
-      items: [
-        { description: 'Regional Cargo Delivery', amountExGst: 1800.00, gst: 180.00, totalIncGst: 1980.00 }
-      ]
-    },
-    {
-      id: 'CC-1024',
-      contractor: 'Rapid Freight Services',
-      reference: 'LOAD-1233',
-      claimDate: '20 May 2026',
-      amountExGst: 2400.00,
-      gst: 240.00,
-      totalIncGst: 2640.00,
-      status: 'Approved',
-      paymentMethod: 'Bank Transfer',
-      bankName: 'Rapid Freight Ltd',
-      bsbAccount: '033-100 / 55462819',
-      items: [
-        { description: 'Express Highway Transit', amountExGst: 2400.00, gst: 240.00, totalIncGst: 2640.00 }
-      ]
-    },
-    {
-      id: 'CC-1023',
-      contractor: 'Darren Logistics',
-      reference: 'LOAD-1230',
-      claimDate: '19 May 2026',
-      amountExGst: 2100.00,
-      gst: 210.00,
-      totalIncGst: 2310.00,
-      status: 'Paid',
-      paymentMethod: 'Bank Transfer',
-      bankName: 'Darren Logistics Pty Ltd',
-      bsbAccount: '123-456 / 12345678',
-      items: [
-        { description: 'Container Shuttle Transport', amountExGst: 2100.00, gst: 210.00, totalIncGst: 2310.00 }
-      ]
-    },
-    {
-      id: 'CC-1022',
-      contractor: 'Coastline Car Carriers',
-      reference: 'LOAD-1227',
-      claimDate: '18 May 2026',
-      amountExGst: 1850.00,
-      gst: 185.00,
-      totalIncGst: 2035.00,
-      status: 'Paid',
-      paymentMethod: 'EFT',
-      bankName: 'Coastline Logistics Group',
-      bsbAccount: '082-991 / 99182374',
-      items: [
-        { description: 'Auto Transport Services', amountExGst: 1850.00, gst: 185.00, totalIncGst: 2035.00 }
-      ]
-    },
-    {
-      id: 'CC-1021',
-      contractor: 'Swift Car Movers',
-      reference: 'LOAD-1224',
-      claimDate: '17 May 2026',
-      amountExGst: 2800.00,
-      gst: 280.00,
-      totalIncGst: 3080.00,
-      status: 'Overdue',
-      paymentMethod: 'Bank Transfer',
-      bankName: 'Swift Freight Corp',
-      bsbAccount: '063-500 / 10928374',
-      items: [
-        { description: 'Vehicle Relocation Haulage', amountExGst: 2800.00, gst: 280.00, totalIncGst: 3080.00 }
-      ]
-    }
-  ];
+  const initialClaims = [];
 
   // State
-  const [claims, setClaims] = useState(initialClaims);
-  const [selectedClaim, setSelectedClaim] = useState(initialClaims[0]);
+  const [claims, setClaims] = useState([]);
+  const [selectedClaim, setSelectedClaim] = useState(null);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [contractorFilter, setContractorFilter] = useState('All');
@@ -185,9 +54,11 @@ const ContractorPay = () => {
     setLoading(true);
     try {
       const res = await api.get('/accounts/contractors/claims');
-      if (res.data?.success && Array.isArray(res.data.data?.claims) && res.data.data.claims.length > 0) {
+      if (res.data?.success && Array.isArray(res.data.data?.claims)) {
         setClaims(res.data.data.claims);
-        setSelectedClaim(res.data.data.claims[0]);
+        if (res.data.data.claims.length > 0) {
+          setSelectedClaim(res.data.data.claims[0]);
+        }
       }
     } catch (err) {
       console.warn('Using fallback contractor claims:', err);
@@ -375,12 +246,32 @@ const ContractorPay = () => {
     showToast(`Claim ${editingClaimForm.id} updated successfully.`);
   };
 
+  // Dynamic KPI calculations
+  const totalPayableAmount = claims.reduce((sum, c) => sum + (c.totalIncGst || c.amountExGst || 0), 0);
+  const totalContractorsCount = new Set(claims.map(c => c.contractor)).size;
+
+  const approvedList = claims.filter(c => c.status === 'Approved');
+  const approvedAmountSum = approvedList.reduce((sum, c) => sum + (c.totalIncGst || c.amountExGst || 0), 0);
+  const approvedContractorsCount = new Set(approvedList.map(c => c.contractor)).size;
+
+  const pendingList = claims.filter(c => c.status === 'Pending Approval');
+  const pendingAmountSum = pendingList.reduce((sum, c) => sum + (c.totalIncGst || c.amountExGst || 0), 0);
+  const pendingContractorsCount = new Set(pendingList.map(c => c.contractor)).size;
+
+  const paidClaimsList = claims.filter(c => c.status === 'Paid');
+  const paidAmountSum = paidClaimsList.reduce((sum, c) => sum + (c.totalIncGst || c.amountExGst || 0), 0);
+  const paidContractorsCount = new Set(paidClaimsList.map(c => c.contractor)).size;
+
+  const overdueClaimsList = claims.filter(c => c.status === 'Overdue');
+  const overdueAmountSum = overdueClaimsList.reduce((sum, c) => sum + (c.totalIncGst || c.amountExGst || 0), 0);
+  const overdueContractorsCount = new Set(overdueClaimsList.map(c => c.contractor)).size;
+
   // Donut Chart Data matching Image 2
   const donutChartData = [
-    { name: 'Paid', value: 9860, color: '#22c55e' },            // Green
-    { name: 'Approved', value: 3120, color: '#3b82f6' },        // Blue
-    { name: 'Pending Approval', value: 2860, color: '#f59e0b' },// Amber
-    { name: 'Overdue', value: 1920, color: '#ef4444' }           // Red
+    { name: 'Paid', value: paidAmountSum || 0, color: '#22c55e' },            // Green
+    { name: 'Approved', value: approvedAmountSum || 0, color: '#3b82f6' },        // Blue
+    { name: 'Pending Approval', value: pendingAmountSum || 0, color: '#f59e0b' },// Amber
+    { name: 'Overdue', value: overdueAmountSum || 0, color: '#ef4444' }           // Red
   ];
 
   // Filtering Logic
@@ -536,8 +427,8 @@ const ContractorPay = () => {
               <UserCheck className="w-3.5 h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">Total Payable</span>
-            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">$15,780.00</div>
-            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">8 contractors</div>
+            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">${totalPayableAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">{totalContractorsCount} contractors</div>
           </div>
           <button onClick={() => showToast('Viewing Total Payable details')} className="mt-1 text-[9px] sm:text-[9.5px] font-bold text-sky-600 hover:text-sky-700 text-left flex items-center gap-0.5 cursor-pointer truncate">
             View details &rarr;
@@ -551,8 +442,8 @@ const ContractorPay = () => {
               <CheckCircle2 className="w-3.5 h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">Approved</span>
-            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">$12,980.00</div>
-            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">6 contractors</div>
+            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">${approvedAmountSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">{approvedContractorsCount} contractors</div>
           </div>
           <button onClick={() => showToast('Viewing Approved details')} className="mt-1 text-[9px] sm:text-[9.5px] font-bold text-sky-600 hover:text-sky-700 text-left flex items-center gap-0.5 cursor-pointer truncate">
             View details &rarr;
@@ -566,8 +457,8 @@ const ContractorPay = () => {
               <Clock className="w-3.5 h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">Pending Approval</span>
-            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">$2,800.00</div>
-            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">2 contractors</div>
+            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">${pendingAmountSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">{pendingContractorsCount} contractors</div>
           </div>
           <button onClick={() => showToast('Viewing Pending items')} className="mt-1 text-[9px] sm:text-[9.5px] font-bold text-sky-600 hover:text-sky-700 text-left flex items-center gap-0.5 cursor-pointer truncate">
             View items &rarr;
@@ -581,8 +472,8 @@ const ContractorPay = () => {
               <CreditCard className="w-3.5 h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">Paid</span>
-            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">$9,860.00</div>
-            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">5 contractors</div>
+            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">${paidAmountSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">{paidContractorsCount} contractors</div>
           </div>
           <button onClick={() => showToast('Viewing Paid payments')} className="mt-1 text-[9px] sm:text-[9.5px] font-bold text-sky-600 hover:text-sky-700 text-left flex items-center gap-0.5 cursor-pointer truncate">
             View payments &rarr;
@@ -596,8 +487,8 @@ const ContractorPay = () => {
               <FileText className="w-3.5 h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">Overdue Payments</span>
-            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">$1,920.00</div>
-            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">1 contractor</div>
+            <div className="text-sm sm:text-base font-black text-slate-900 mt-0.5 truncate">${overdueAmountSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">{overdueContractorsCount} contractor</div>
           </div>
           <button onClick={() => showToast('Viewing Overdue claims')} className="mt-1 text-[9px] sm:text-[9.5px] font-bold text-sky-600 hover:text-sky-700 text-left flex items-center gap-0.5 cursor-pointer truncate">
             View overdue &rarr;
@@ -611,8 +502,8 @@ const ContractorPay = () => {
               <TrendingUp className="w-3.5 h-3.5" />
             </div>
             <span className="text-[9px] sm:text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">Period Growth</span>
-            <div className="text-sm sm:text-base font-black text-emerald-600 mt-0.5 truncate">&uarr; 14.6%</div>
-            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">vs $13,780.00</div>
+            <div className="text-sm sm:text-base font-black text-emerald-600 mt-0.5 truncate">0%</div>
+            <div className="text-[9px] sm:text-[9.5px] font-semibold text-slate-400 mt-0.5 truncate">vs $0.00</div>
           </div>
         </div>
       </div>
@@ -641,12 +532,9 @@ const ContractorPay = () => {
               className="w-full sm:w-auto appearance-none bg-slate-50 border border-slate-200 font-bold text-slate-700 h-10 sm:h-9 pl-3 pr-8 rounded-xl outline-none cursor-pointer text-xs truncate"
             >
               <option value="All">All Contractors</option>
-              <option value="Darren Logistics">Darren Logistics</option>
-              <option value="Coastline Car Carriers">Coastline Car Carriers</option>
-              <option value="AJ Transport">AJ Transport</option>
-              <option value="Northline Haulage">Northline Haulage</option>
-              <option value="Rapid Freight Services">Rapid Freight Services</option>
-              <option value="Swift Car Movers">Swift Car Movers</option>
+              {Array.from(new Set(claims.map(c => c.contractor).filter(Boolean))).map(cName => (
+                <option key={cName} value={cName}>{cName}</option>
+              ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -733,12 +621,12 @@ const ContractorPay = () => {
         {/* Status Tabs (Strict 1-line Horizontal Scroll) */}
         <div className="flex items-center flex-nowrap gap-3 sm:gap-4 text-xs font-bold border-b border-slate-200/80 pb-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto whitespace-nowrap">
           {[
-            { id: 'All', label: 'All (12)' },
-            { id: 'Pending Approval', label: 'Pending Approval (2)' },
-            { id: 'Approved', label: 'Approved (6)' },
-            { id: 'Paid', label: 'Paid (5)' },
-            { id: 'Overdue', label: 'Overdue (1)' },
-            { id: 'Cancelled', label: 'Cancelled (0)' }
+            { id: 'All', label: `All (${claims.length})` },
+            { id: 'Pending Approval', label: `Pending Approval (${claims.filter(c => c.status === 'Pending Approval').length})` },
+            { id: 'Approved', label: `Approved (${claims.filter(c => c.status === 'Approved').length})` },
+            { id: 'Paid', label: `Paid (${claims.filter(c => c.status === 'Paid').length})` },
+            { id: 'Overdue', label: `Overdue (${claims.filter(c => c.status === 'Overdue').length})` },
+            { id: 'Cancelled', label: `Cancelled (${claims.filter(c => c.status === 'Cancelled').length})` }
           ].map(tab => (
             <button
               key={tab.id}
@@ -996,7 +884,7 @@ const ContractorPay = () => {
 
           {/* Table Footer Pagination */}
           <div className="p-3 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-semibold">
-            <div>Showing 1 to {filteredClaims.length} of 12 claims</div>
+            <div>Showing 1 to {filteredClaims.length} of {claims.length} claims</div>
 
             <div className="flex items-center gap-2">
               <button disabled className="px-2 py-1 text-slate-400 cursor-not-allowed">&lt;</button>
@@ -1045,7 +933,9 @@ const ContractorPay = () => {
                 </ResponsiveContainer>
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-1">
-                  <span className="text-[9px] font-black text-slate-900 leading-none tracking-tighter">$15.7k</span>
+                  <span className="text-[9px] font-black text-slate-900 leading-none tracking-tighter">
+                    ${(totalPayableAmount / 1000).toFixed(1)}k
+                  </span>
                   <span className="text-[6.5px] font-extrabold text-slate-400 uppercase tracking-tighter mt-0.5">Payable</span>
                 </div>
               </div>
@@ -1057,28 +947,28 @@ const ContractorPay = () => {
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0" />
                     <span className="truncate">Paid</span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">$9,860</span>
+                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">${paidAmountSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1 min-w-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block shrink-0" />
                     <span className="truncate">Approved</span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">$3,120</span>
+                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">${approvedAmountSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1 min-w-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block shrink-0" />
                     <span className="truncate">Pending</span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">$2,860</span>
+                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">${pendingAmountSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1 min-w-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block shrink-0" />
                     <span className="truncate">Overdue</span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">$1,920</span>
+                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">${overdueAmountSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
             </div>
@@ -1094,21 +984,22 @@ const ContractorPay = () => {
             </div>
 
             <div className="space-y-1.5 text-[10.5px] font-semibold">
-              {[
-                { name: 'Darren Logistics', amount: '$5,170.00' },
-                { name: 'Coastline Car Carriers', amount: '$4,180.00' },
-                { name: 'AJ Transport', amount: '$2,145.00' },
-                { name: 'Northline Haulage', amount: '$1,980.00' },
-                { name: 'Rapid Freight Services', amount: '$1,760.00' }
-              ].map((c, idx) => (
-                <div key={idx} className="flex items-center justify-between text-slate-700 gap-1">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block shrink-0" />
-                    <span className="font-semibold truncate">{c.name}</span>
-                  </div>
-                  <span className="font-black text-slate-900 shrink-0">{c.amount}</span>
-                </div>
-              ))}
+              {claims.length === 0 ? (
+                <div className="text-[10px] text-slate-400 font-medium py-2 text-center">No contractors found</div>
+              ) : (
+                Array.from(new Set(claims.map(c => c.contractor).filter(Boolean))).slice(0, 5).map((cName, idx) => {
+                  const sum = claims.filter(c => c.contractor === cName).reduce((acc, c) => acc + (c.totalIncGst || c.amountExGst || 0), 0);
+                  return (
+                    <div key={idx} className="flex items-center justify-between text-slate-700 gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block shrink-0" />
+                        <span className="font-semibold truncate">{cName}</span>
+                      </div>
+                      <span className="font-black text-slate-900 shrink-0">${sum.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -1122,27 +1013,27 @@ const ContractorPay = () => {
             </div>
 
             <div className="space-y-2">
-              {[
-                { id: 'CC-1026', contractor: 'Darren Logistics', date: '22 May 2026', amount: '$3,520.00' },
-                { id: 'CC-1025', contractor: 'Northline Haulage', date: '21 May 2026', amount: '$1,980.00' },
-                { id: 'CC-1023', contractor: 'Darren Logistics', date: '19 May 2026', amount: '$2,310.00' }
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+              {paidClaimsList.length === 0 ? (
+                <div className="text-[10px] text-slate-400 font-medium py-2 text-center">No recent payments</div>
+              ) : (
+                paidClaimsList.slice(0, 3).map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                        <Check className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-extrabold text-slate-900 block text-[10px] leading-tight truncate">{item.id}</span>
+                        <span className="text-[9px] text-slate-400 font-bold block truncate">{item.contractor}</span>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <span className="font-extrabold text-slate-900 block text-[10px] leading-tight truncate">{item.id}</span>
-                      <span className="text-[9px] text-slate-400 font-bold block truncate">{item.contractor}</span>
+                    <div className="text-right shrink-0">
+                      <span className="font-black text-slate-900 block text-[10.5px] leading-tight">${(item.totalIncGst || item.amountExGst || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-[8.5px] text-slate-400 font-semibold block">{item.claimDate || item.date}</span>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="font-black text-slate-900 block text-[10.5px] leading-tight">{item.amount}</span>
-                    <span className="text-[8.5px] text-slate-400 font-semibold block">{item.date}</span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -1355,11 +1246,10 @@ const ContractorPay = () => {
                   onChange={(e) => setNewClaimForm({ ...newClaimForm, contractor: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-300 font-semibold"
                 >
-                  <option value="Darren Logistics">Darren Logistics</option>
-                  <option value="Coastline Car Carriers">Coastline Car Carriers</option>
-                  <option value="AJ Transport">AJ Transport</option>
-                  <option value="Northline Haulage">Northline Haulage</option>
-                  <option value="Rapid Freight Services">Rapid Freight Services</option>
+                  <option value="">Select Contractor</option>
+                  {Array.from(new Set(claims.map(c => c.contractor).filter(Boolean))).map(cName => (
+                    <option key={cName} value={cName}>{cName}</option>
+                  ))}
                 </select>
               </div>
 

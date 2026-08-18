@@ -6,6 +6,7 @@ import {
   Archive, Trash2, MessageSquare, CheckCircle
 } from 'lucide-react';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const MODAL_STYLE = {
   overlay: {
@@ -249,6 +250,7 @@ function NewGroupModal({ onClose, conversations, onCreate }) {
 
 /* ───────────── MAIN COMPONENT ───────────── */
 export default function CommunicationDepot() {
+  const { user: currentUser } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [selectedConvId, setSelectedConvId] = useState(null);
 
@@ -276,14 +278,17 @@ export default function CommunicationDepot() {
             loadId: conv.loadId || 'N/A',
             time: new Date(conv.updatedAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             unreadCount: 0,
-            messages: conv.messages?.map(m => ({
-              id: m.id,
-              senderId: m.senderId === 'me' ? 'me' : m.senderId,
-              text: m.content,
-              time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              type: m.senderId === 'me' ? 'outgoing' : 'incoming',
-              dateGroup: new Date(m.createdAt).toLocaleDateString()
-            })) || [],
+            messages: conv.messages?.map(m => {
+              const isOutgoing = m.senderId === currentUser?.id || m.senderId === 'me' || m.senderId === 'system_user';
+              return {
+                id: m.id,
+                senderId: m.senderId,
+                text: m.content,
+                time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                type: isOutgoing ? 'outgoing' : 'incoming',
+                dateGroup: new Date(m.createdAt).toLocaleDateString()
+              };
+            }) || [],
             driverInfo: {
               mobile: driver.contactNumber || 'N/A',
               email: driver.email || 'N/A',
@@ -335,10 +340,12 @@ export default function CommunicationDepot() {
   const unreadCount = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
   const groupsCount = conversations.filter(c => c.type === 'group').length;
 
-  const handleSendMessage = () => {
-    if (!newMessageText.trim()) return;
+  const handleSendMessage = async () => {
+    if (!newMessageText.trim() || !selectedConvId) return;
+    const currentText = newMessageText;
+    const tempId = `m-${Date.now()}`;
     const newMessage = {
-      id: `m-${Date.now()}`, senderId: 'me', text: newMessageText,
+      id: tempId, senderId: currentUser?.id || 'me', text: currentText,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       type: 'outgoing', status: 'sent', dateGroup: 'Today'
     };
@@ -346,6 +353,16 @@ export default function CommunicationDepot() {
       conv.id === selectedConvId ? { ...conv, messages: [...conv.messages, newMessage] } : conv
     ));
     setNewMessageText('');
+
+    try {
+      await api.post('/messages', {
+        conversationId: selectedConvId,
+        content: currentText,
+        senderId: currentUser?.id || 'system_user'
+      });
+    } catch (e) {
+      console.warn('API message save failed:', e);
+    }
   };
 
   const handleSendNewMessage = ({ to, subject, message, priority }) => {

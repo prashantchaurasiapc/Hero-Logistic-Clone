@@ -60,7 +60,7 @@ async function resolveUserPermissions(user) {
 
   // 1. Always load master system role (Super Admin Parent)
   const masterRole = await prisma.customRole.findFirst({
-    where: { slug: roleSlug, companyId: null, isSystem: true },
+    where: { OR: [{ slug: roleSlug }, { name: roleSlug }], companyId: null, isSystem: true },
     include: { permissions: true }
   });
 
@@ -82,7 +82,7 @@ async function resolveUserPermissions(user) {
 
   // 2. Load company-level override (Child)
   const companyRole = await prisma.customRole.findFirst({
-    where: { slug: roleSlug, companyId: user.companyId },
+    where: { OR: [{ slug: roleSlug }, { name: roleSlug }], companyId: user.companyId },
     include: { permissions: true }
   });
 

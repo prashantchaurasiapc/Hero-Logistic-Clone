@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -21,13 +20,6 @@ export default function Documents() {
   const [toastMsg, setToastMsg] = useState('');
   const [tipDismissed, setTipDismissed] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-
-  const [vehicleData, setVehicleData] = useState(null);
-  const [activeLoadData, setActiveLoadData] = useState(null);
-  const [vehicleDocs, setVehicleDocs] = useState([]);
-  const [complianceHistory, setComplianceHistory] = useState([]);
 
   // Modals
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -41,32 +33,28 @@ export default function Documents() {
   const [uploadCategory, setUploadCategory] = useState('Personal');
   const [uploadExpiry, setUploadExpiry] = useState('');
 
-  // Documents Data
-  const [documents, setDocuments] = useState([]);
+  // Documents Data (11 Items from screenshot 15.10)
+  const [documents, setDocuments] = useState([
+    { id: 1, name: 'Driver Licence (HC)', type: 'Personal', expiry: '12 Aug 2026', status: 'Valid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: '🆔' },
+    { id: 2, name: 'Medical Certificate', type: 'Personal', expiry: '15 Oct 2025', status: 'Valid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: '🏥' },
+    { id: 3, name: 'FAT / Heavy Vehicle Card', type: 'Personal', expiry: '30 Jun 2025', status: 'Expiring Soon', statusColor: 'bg-amber-50 text-amber-700 border-amber-200', icon: '💳' },
+    { id: 4, name: 'Police Check', type: 'Personal', expiry: '20 Nov 2025', status: 'Valid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: '🛡️' },
+    { id: 5, name: 'Chain of Responsibility', type: 'Compliance', expiry: '05 Jul 2025', status: 'Expiring Soon', statusColor: 'bg-amber-50 text-amber-700 border-amber-200', icon: '🦺' },
+    { id: 6, name: 'First Aid Certificate', type: 'Personal', expiry: '10 Sep 2026', status: 'Valid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: '🚑' },
+    { id: 7, name: 'Dangerous Goods Licence', type: 'Compliance', expiry: '15 May 2025', status: 'Expired', statusColor: 'bg-rose-50 text-rose-700 border-rose-200', icon: '📕' },
+    { id: 8, name: 'Heavy Vehicle Licence Endorsement', type: 'Personal', expiry: 'No Expiry', status: 'Uploaded', statusColor: 'bg-blue-50 text-blue-700 border-blue-200', icon: '🚛' },
+    { id: 9, name: 'Right To Work', type: 'Personal', expiry: 'No Expiry', status: 'Uploaded', statusColor: 'bg-blue-50 text-blue-700 border-blue-200', icon: '📄' },
+    { id: 10, name: 'Vaccination Certificate', type: 'Personal', expiry: 'Not Required', status: 'Not Required', statusColor: 'bg-slate-100 text-slate-600 border-slate-200', icon: '📋' },
+    { id: 11, name: 'Induction Training', type: 'Compliance', expiry: 'Not Required', status: 'Not Required', statusColor: 'bg-slate-100 text-slate-600 border-slate-200', icon: '🎓' },
+  ]);
 
-  useEffect(() => {
-    fetchDocuments();
-  }, []);
-
-  const fetchDocuments = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/driver-portal/documents');
-      const payload = res.data?.data || res.data;
-      if (payload) {
-        if (payload.documents) setDocuments(payload.documents);
-        if (payload.vehicleDocs) setVehicleDocs(payload.vehicleDocs);
-        if (payload.complianceHistory) setComplianceHistory(payload.complianceHistory);
-        setVehicleData(payload.vehicle || null);
-        setActiveLoadData(payload.activeLoad || null);
-      }
-      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    } catch (err) {
-      console.error('Failed to fetch documents:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Vehicle Documents Data
+  const vehicleDocs = [
+    { id: 101, name: 'Vehicle Registration (TRK-101)', expiry: '15 Dec 2025', status: 'Valid', icon: '🚛' },
+    { id: 102, name: 'Trailer Inspection (TRL-305)', expiry: '20 Oct 2025', status: 'Valid', icon: '🚚' },
+    { id: 103, name: 'Comprehensive Insurance Policy', expiry: '31 Aug 2025', status: 'Valid', icon: '🛡️' },
+    { id: 104, name: 'Permit: Overdimensional Load', expiry: '01 Jul 2025', status: 'Expiring Soon', icon: '📄' }
+  ];
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -76,34 +64,29 @@ export default function Documents() {
   const handleFilePicked = (e) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
-      if (!uploadDocName) {
-        setUploadDocName(e.target.files[0].name.replace(/\.[^/.]+$/, ''));
-      }
       triggerToast(`Selected document file: ${e.target.files[0].name}`);
     }
   };
 
-  const handleUploadSubmit = async (e) => {
+  const handleUploadSubmit = (e) => {
     e.preventDefault();
     const docTitle = uploadDocName || (selectedFile ? selectedFile.name : 'New Document');
+    const newDoc = {
+      id: Date.now(),
+      name: docTitle,
+      type: uploadCategory,
+      expiry: uploadExpiry || '12 Dec 2026',
+      status: 'Valid',
+      statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      icon: '📄'
+    };
 
-    try {
-      await api.post('/driver-portal/documents', {
-        name: docTitle,
-        category: uploadCategory,
-        expiryDate: uploadExpiry || null
-      });
-
-      setSelectedFile(null);
-      setUploadDocName('');
-      setUploadExpiry('');
-      setUploadModalOpen(false);
-      triggerToast(`Document "${docTitle}" uploaded & saved successfully!`);
-      fetchDocuments();
-    } catch (err) {
-      triggerToast(`Document "${docTitle}" uploaded successfully!`);
-      fetchDocuments();
-    }
+    setDocuments([newDoc, ...documents]);
+    setSelectedFile(null);
+    setUploadDocName('');
+    setUploadExpiry('');
+    setUploadModalOpen(false);
+    triggerToast(`Document "${docTitle}" uploaded successfully!`);
   };
 
   // Calculations
@@ -114,8 +97,7 @@ export default function Documents() {
   const notRequiredCount = documents.filter(d => d.status === 'Not Required').length;
   const totalDocs = documents.length;
 
-  const requiredTotal = Math.max(1, totalDocs - notRequiredCount);
-  const compliancePercentage = Math.round((validCount / requiredTotal) * 100);
+  const compliancePercentage = Math.round((validCount / (totalDocs - notRequiredCount)) * 100);
 
   // Filtering
   const filteredDocs = documents.filter(d => {
@@ -245,6 +227,7 @@ export default function Documents() {
             <div className="space-y-2.5 font-semibold text-slate-700">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Truck</div>
+<<<<<<< HEAD
                 <div className="font-black text-slate-900 text-xs">{vehicleData?.truck || 'Unassigned'}</div>
                 <div className="text-[11px] text-slate-500">{vehicleData?.truckModel || ''}</div>
               </div>
@@ -257,6 +240,20 @@ export default function Documents() {
                 <div className="text-[10px] text-indigo-500 uppercase font-extrabold">Active Load</div>
                 <div className="font-black text-indigo-900 text-xs">{activeLoadData?.id || 'N/A'}</div>
                 <div className="text-[11px] text-indigo-700">{activeLoadData?.loadType || ''}</div>
+=======
+                <div className="font-black text-slate-900 text-xs">TRK-101</div>
+                <div className="text-[11px] text-slate-500">MAN TGX 26.580</div>
+              </div>
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+                <div className="text-[10px] text-slate-400 uppercase font-extrabold">Trailer</div>
+                <div className="font-black text-slate-900 text-xs">TRL-305</div>
+                <div className="text-[11px] text-slate-500">Car Carrier (4 Level)</div>
+              </div>
+              <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1">
+                <div className="text-[10px] text-indigo-500 uppercase font-extrabold">Active Load</div>
+                <div className="font-black text-indigo-900 text-xs">LD-3987</div>
+                <div className="text-[11px] text-indigo-700">Car Carrier (4 Level)</div>
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
               </div>
             </div>
           </div>
@@ -296,17 +293,14 @@ export default function Documents() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-              <div className="text-[11px] text-slate-500">Last sync: {syncTime}</div>
+              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
-              onClick={() => {
-                fetchDocuments();
-                triggerToast('Documents synced with Compliance Server!');
-              }}
+              onClick={() => triggerToast('Documents synced with Compliance Server!')}
               className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl border border-slate-800 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <FiRefreshCw className={`text-amber-400 ${loading ? 'animate-spin' : ''}`} />
+              <FiRefreshCw className="text-amber-400" />
               <span>Sync Now</span>
             </button>
           </div>
@@ -320,33 +314,57 @@ export default function Documents() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
+<<<<<<< HEAD
                 <div className="text-2xl font-black text-indigo-700 tracking-tight">{activeLoadData?.id || 'N/A'}</div>
                 <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
                   <span>{activeLoadData?.origin || '—'}</span>
                   <span className="text-slate-400">➔</span>
                   <span>{activeLoadData?.destination || '—'}</span>
+=======
+                <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
+                <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
+                  <span>Melbourne VIC</span>
+                  <span className="text-slate-400">➔</span>
+                  <span>Sydney NSW</span>
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Start Date</span>
+<<<<<<< HEAD
                   <span className="font-mono text-slate-900">{activeLoadData?.startDate || '—'}</span>
+=======
+                  <span className="font-mono text-slate-900">29 May 2025</span>
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
+<<<<<<< HEAD
                   <span className="font-mono text-slate-900">{activeLoadData?.estFinish || '—'}</span>
+=======
+                  <span className="font-mono text-slate-900">29 May 2025</span>
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Status</span>
+<<<<<<< HEAD
                   <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">{activeLoadData?.status || '—'}</span>
+=======
+                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">En Route</span>
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Load ID</span>
+<<<<<<< HEAD
                   <span className="font-mono text-indigo-700">{activeLoadData?.poNumber || '—'}</span>
+=======
+                  <span className="font-mono text-indigo-700">PO-65432</span>
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
                 </div>
               </div>
             </div>
@@ -542,7 +560,11 @@ export default function Documents() {
           {/* VEHICLE DOCUMENTS TAB */}
           {activeTab === 'Vehicle Documents' && (
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
+<<<<<<< HEAD
               <h3 className="text-base font-black text-slate-900">Vehicle Documents & Permits ({vehicleData?.truck || 'Unassigned'} / {vehicleData?.trailer || 'N/A'})</h3>
+=======
+              <h3 className="text-base font-black text-slate-900">Vehicle Documents & Permits (TRK-101 / TRL-305)</h3>
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
               <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
                 {vehicleDocs.map((doc) => (
                   <div key={doc.id} className="p-4 flex items-center justify-between gap-3">
@@ -567,15 +589,18 @@ export default function Documents() {
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
               <h3 className="text-base font-black text-slate-900">Compliance Audit Log & History</h3>
               <div className="space-y-2 text-xs font-semibold">
-                {complianceHistory.map((item, idx) => (
+                {[
+                  { title: 'Driver Licence Renewed & Approved', date: '12 Aug 2024', status: 'Approved' },
+                  { title: 'Medical Check Certificate Uploaded', date: '15 Oct 2024', status: 'Approved' },
+                  { title: 'Chain of Responsibility Course Completed', date: '05 Jul 2024', status: 'Approved' },
+                  { title: 'Dangerous Goods Licence Renewal Alert Sent', date: '15 May 2025', status: 'Action Needed' },
+                ].map((item, idx) => (
                   <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
                     <div>
                       <div className="font-black text-slate-900">{item.title}</div>
                       <div className="text-[10px] text-slate-400 font-mono">{item.date}</div>
                     </div>
-                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                      item.status === 'Approved' ? 'bg-indigo-100 text-indigo-800' : 'bg-amber-100 text-amber-800'
-                    }`}>
+                    <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full">
                       {item.status}
                     </span>
                   </div>
@@ -627,15 +652,14 @@ export default function Documents() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">EXPIRING SOON</div>
             <div className="space-y-2">
-              {documents.filter(d => d.status === 'Expiring Soon').slice(0, 2).map(d => (
-                <div key={d.id} className="p-3 bg-amber-50 border border-amber-200 rounded-2xl space-y-1">
-                  <div className="font-black text-amber-900 text-xs">{d.name}</div>
-                  <div className="text-[11px] text-amber-700 font-medium">Expires: {d.expiry}</div>
-                </div>
-              ))}
-              {documents.filter(d => d.status === 'Expiring Soon').length === 0 && (
-                <div className="text-[11px] text-slate-500 font-medium p-2">No credentials expiring soon.</div>
-              )}
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl space-y-1">
+                <div className="font-black text-amber-900 text-xs">FAT / Heavy Vehicle Card</div>
+                <div className="text-[11px] text-amber-700 font-medium">Expires: 30 Jun 2025 (31 days left)</div>
+              </div>
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl space-y-1">
+                <div className="font-black text-amber-900 text-xs">Chain of Responsibility</div>
+                <div className="text-[11px] text-amber-700 font-medium">Expires: 05 Jul 2025 (36 days left)</div>
+              </div>
             </div>
             <button 
               onClick={() => setFilterCategory('EXPIRING_SOON')}
@@ -648,16 +672,9 @@ export default function Documents() {
           {/* EXPIRED DOCUMENTS ALERT BOX */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">EXPIRED DOCUMENTS</div>
-            <div className="space-y-2">
-              {documents.filter(d => d.status === 'Expired').slice(0, 2).map(d => (
-                <div key={d.id} className="p-3 bg-rose-50 border border-rose-200 rounded-2xl space-y-1 text-rose-900">
-                  <div className="font-black text-xs">{d.name}</div>
-                  <div className="text-[11px] text-rose-700 font-medium">Expired: {d.expiry} 🔴</div>
-                </div>
-              ))}
-              {documents.filter(d => d.status === 'Expired').length === 0 && (
-                <div className="text-[11px] text-slate-500 font-medium p-2">No expired documents.</div>
-              )}
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl space-y-1 text-rose-900">
+              <div className="font-black text-xs">Dangerous Goods Licence</div>
+              <div className="text-[11px] text-rose-700 font-medium">Expired: 15 May 2025 (14 days overdue) 🔴</div>
             </div>
             <button 
               onClick={() => setFilterCategory('EXPIRED')}

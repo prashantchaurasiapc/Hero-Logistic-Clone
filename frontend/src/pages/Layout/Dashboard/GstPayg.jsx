@@ -11,9 +11,9 @@ import {
 } from 'recharts';
 
 export default function GstPayg() {
-  const [financialYear, setFinancialYear] = useState('FY 2025/26');
-  const [fromDate, setFromDate] = useState('2025-07-01');
-  const [toDate, setToDate] = useState('2026-06-30');
+  const [financialYear, setFinancialYear] = useState('Current FY');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [paygStatusFilter, setPaygStatusFilter] = useState('All');
   const [activitySearch, setActivitySearch] = useState('');
@@ -22,12 +22,12 @@ export default function GstPayg() {
 
   // Dynamic live tax summary
   const [taxSummary, setTaxSummary] = useState({
-    gstCollected: 24680,
-    gstCredits: 18540,
-    netGstPayable: 6140,
-    paygWithholding: 12450,
-    nextBasDueDate: '28 Jun 2026',
-    nextPaygDueDate: '21 Jun 2026'
+    gstCollected: 0,
+    gstCredits: 0,
+    netGstPayable: 0,
+    paygWithholding: 0,
+    nextBasDueDate: '—',
+    nextPaygDueDate: '—'
   });
 
   const fetchTaxData = async () => {
@@ -65,18 +65,18 @@ export default function GstPayg() {
 
   // Form State for GST Payment Modal
   const [paymentForm, setPaymentForm] = useState({
-    amount: '6140.00',
-    reference: 'BAS-MAY2026-PAY',
+    amount: '',
+    reference: '',
     paymentMethod: 'Electronic Funds Transfer (EFT)',
-    paymentDate: '2026-05-28'
+    paymentDate: ''
   });
 
   // Form State for PAYG Payment Modal
   const [paygPaymentForm, setPaygPaymentForm] = useState({
-    amount: '12450.00',
-    reference: 'PAYG-MAY2026-REMIT',
+    amount: '',
+    reference: '',
     paymentMethod: 'Direct Debit',
-    paymentDate: '2026-05-28'
+    paymentDate: ''
   });
 
   // Close action dropdown menu when clicking outside
@@ -87,52 +87,19 @@ export default function GstPayg() {
   }, []);
 
   // --- MOCK DATA ---
-  const [allObligations, setAllObligations] = useState([
-    { id: 1, period: 'May 2026 (Q4)', periodEnd: '31 May 2026', dueDate: '28 Jun 2026', collected: 24680, credits: 18540, net: 6140, status: 'Due Soon', lodgedDate: '-', action: 'Prepare', fy: 'FY 2025/26' },
-    { id: 2, period: 'Feb 2026 (Q3)', periodEnd: '28 Feb 2026', dueDate: '28 Mar 2026', collected: 22310, credits: 17120, net: 5190, status: 'Lodged', lodgedDate: '24 Mar 2026', action: 'View', fy: 'FY 2025/26' },
-    { id: 3, period: 'Nov 2025 (Q2)', periodEnd: '30 Nov 2025', dueDate: '28 Dec 2025', collected: 20150, credits: 15980, net: 4170, status: 'Lodged', lodgedDate: '23 Dec 2025', action: 'View', fy: 'FY 2025/26' },
-    { id: 4, period: 'Aug 2025 (Q1)', periodEnd: '31 Aug 2025', dueDate: '28 Sep 2025', collected: 18420, credits: 14240, net: 4180, status: 'Lodged', lodgedDate: '24 Sep 2025', action: 'View', fy: 'FY 2025/26' },
-    { id: 5, period: 'May 2025 (Q4)', periodEnd: '31 May 2025', dueDate: '28 Jun 2025', collected: 19810, credits: 15050, net: 4760, status: 'Lodged', lodgedDate: '26 Jun 2025', action: 'View', fy: 'FY 2024/25' },
-    { id: 6, period: 'Feb 2025 (Q3)', periodEnd: '28 Feb 2025', dueDate: '28 Mar 2025', collected: 17550, credits: 13520, net: 4030, status: 'Lodged', lodgedDate: '25 Mar 2025', action: 'View', fy: 'FY 2024/25' },
-    { id: 7, period: 'Nov 2024 (Q2)', periodEnd: '30 Nov 2024', dueDate: '28 Dec 2024', collected: 16420, credits: 12900, net: 3520, status: 'Overdue', lodgedDate: '-', action: 'Prepare', fy: 'FY 2024/25' },
-    { id: 8, period: 'Aug 2024 (Q1)', periodEnd: '31 Aug 2024', dueDate: '28 Sep 2024', collected: 15350, credits: 11960, net: 3390, status: 'Lodged', lodgedDate: '27 Sep 2024', action: 'View', fy: 'FY 2024/25' },
-  ]);
+  const [allObligations, setAllObligations] = useState([]);
 
-  const [paygObligations, setPaygObligations] = useState([
-    { id: 'p1', period: 'May 2026', grossWages: 58400, paygWithheld: 12450, employeesCount: 18, dueDate: '21 Jun 2026', status: 'Due Soon', paymentDate: '-', action: 'Prepare', fy: 'FY 2025/26' },
-    { id: 'p2', period: 'Apr 2026', grossWages: 56200, paygWithheld: 11800, employeesCount: 18, dueDate: '21 May 2026', status: 'Lodged', paymentDate: '18 May 2026', action: 'View', fy: 'FY 2025/26' },
-    { id: 'p3', period: 'Mar 2026', grossWages: 54100, paygWithheld: 11350, employeesCount: 17, dueDate: '21 Apr 2026', status: 'Lodged', paymentDate: '19 Apr 2026', action: 'View', fy: 'FY 2025/26' },
-    { id: 'p4', period: 'Feb 2026', grossWages: 52800, paygWithheld: 10900, employeesCount: 17, dueDate: '21 Mar 2026', status: 'Lodged', paymentDate: '20 Mar 2026', action: 'View', fy: 'FY 2025/26' },
-    { id: 'p5', period: 'Jan 2026', grossWages: 51500, paygWithheld: 10600, employeesCount: 16, dueDate: '21 Feb 2026', status: 'Lodged', paymentDate: '18 Feb 2026', action: 'View', fy: 'FY 2025/26' },
-    { id: 'p6', period: 'Dec 2025', grossWages: 55900, paygWithheld: 11380, employeesCount: 16, dueDate: '21 Jan 2026', status: 'Lodged', paymentDate: '19 Jan 2026', action: 'View', fy: 'FY 2025/26' },
-    { id: 'p7', period: 'Nov 2025', grossWages: 50400, paygWithheld: 10100, employeesCount: 15, dueDate: '21 Dec 2025', status: 'Lodged', paymentDate: '18 Dec 2025', action: 'View', fy: 'FY 2025/26' },
-    { id: 'p8', period: 'Oct 2025', grossWages: 49800, paygWithheld: 9900, employeesCount: 15, dueDate: '21 Nov 2025', status: 'Lodged', paymentDate: '19 Nov 2025', action: 'View', fy: 'FY 2025/26' },
-  ]);
+  const [paygObligations, setPaygObligations] = useState([]);
 
-  const [activityLogs, setActivityLogs] = useState([
-    { id: 'act-1', timestamp: '24 May 2026, 14:32', event: 'GST Q3 Payment Recorded', type: 'GST Payment', amount: 5190.00, user: 'Accounts Admin', ref: 'REC-9941', status: 'Completed' },
-    { id: 'act-2', timestamp: '24 Mar 2026, 11:15', event: 'BAS Lodgement Submitted (Q3)', type: 'BAS Lodgement', amount: 5190.00, user: 'John Accountant', ref: 'ATO-8842', status: 'Lodged' },
-    { id: 'act-3', timestamp: '18 May 2026, 16:40', event: 'PAYG Withholding April Remittance', type: 'PAYG Remittance', amount: 11800.00, user: 'Accounts Admin', ref: 'PAYG-5512', status: 'Completed' },
-    { id: 'act-4', timestamp: '19 Apr 2026, 10:05', event: 'PAYG Withholding March Remittance', type: 'PAYG Remittance', amount: 11350.00, user: 'Accounts Admin', ref: 'PAYG-5401', status: 'Completed' },
-    { id: 'act-5', timestamp: '23 Dec 2025, 09:20', event: 'BAS Lodgement Submitted (Q2)', type: 'BAS Lodgement', amount: 4170.00, user: 'Sarah Accountant', ref: 'ATO-7731', status: 'Lodged' },
-    { id: 'act-6', timestamp: '24 Sep 2025, 15:10', event: 'BAS Lodgement Submitted (Q1)', type: 'BAS Lodgement', amount: 4180.00, user: 'Accounts Admin', ref: 'ATO-6620', status: 'Lodged' },
-    { id: 'act-7', timestamp: '18 Sep 2025, 13:45', event: 'PAYG Withholding August Remittance', type: 'PAYG Remittance', amount: 9900.00, user: 'Accounts Admin', ref: 'PAYG-4902', status: 'Completed' },
-  ]);
+  const [activityLogs, setActivityLogs] = useState([]);
 
-  const cashFlowData = [
-    { name: 'Jul 25', net: 3800, cum: 3800 },
-    { name: 'Aug 25', net: 4100, cum: 7900 },
-    { name: 'Sep 25', net: 4180, cum: 12080 }, // Q1 lodged
-    { name: 'Oct 25', net: 4000, cum: 16080 },
-    { name: 'Nov 25', net: 4200, cum: 20280 },
-    { name: 'Dec 25', net: 4170, cum: 24450 }, // Q2 lodged
-    { name: 'Jan 26', net: 4500, cum: 28950 },
-    { name: 'Feb 26', net: 4600, cum: 33550 },
-    { name: 'Mar 26', net: 5190, cum: 38740 }, // Q3 lodged
-    { name: 'Apr 26', net: 5800, cum: 44540 },
-    { name: 'May 26', net: 6140, cum: 50680 },
-    { name: 'Jun 26', net: 6000, cum: 56680 }, // Estimated
-  ];
+  const cashFlowData = (allObligations && allObligations.length > 0)
+    ? allObligations.map(ob => ({
+        name: ob.period || '',
+        net: ob.net || 0,
+        cum: ob.collected || 0
+      }))
+    : [];
 
   // Export to CSV Function
   const handleExportCSV = () => {
@@ -218,27 +185,24 @@ export default function GstPayg() {
 
   // FY Summary Math
   const fySummary = useMemo(() => {
-    if (financialYear === 'FY 2025/26') {
-      return { collected: 106410.00, credits: 37460.00, net: 68950.00, count: 12, avg: 5745.83 };
-    }
-    const fyRows = allObligations.filter(ob => ob.fy === financialYear);
-    const collected = fyRows.reduce((sum, ob) => sum + ob.collected, 0);
-    const credits = fyRows.reduce((sum, ob) => sum + ob.credits, 0);
-    const net = fyRows.reduce((sum, ob) => sum + ob.net, 0);
+    const fyRows = allObligations.filter(ob => !financialYear || financialYear === 'Current FY' || ob.fy === financialYear);
+    const collected = fyRows.length > 0 ? fyRows.reduce((sum, ob) => sum + (ob.collected || 0), 0) : taxSummary.gstCollected;
+    const credits = fyRows.length > 0 ? fyRows.reduce((sum, ob) => sum + (ob.credits || 0), 0) : taxSummary.gstCredits;
+    const net = fyRows.length > 0 ? fyRows.reduce((sum, ob) => sum + (ob.net || 0), 0) : taxSummary.netGstPayable;
     const count = fyRows.length;
     return { collected, credits, net, count, avg: count > 0 ? net / count : 0 };
-  }, [allObligations, financialYear]);
+  }, [allObligations, financialYear, taxSummary]);
 
   // Current Period data
-  const currentPeriod = allObligations[0]; 
+  const currentPeriod = allObligations[0] || { collected: 0, credits: 0, net: 0 }; 
 
   const kpis = [
-    { title: 'GST Collected (This Period)', value: currentPeriod.collected, trend: 12.5, trendLabel: 'vs Apr 2026', icon: <Building2 className="text-purple-600" size={18}/>, bg: 'bg-purple-50', trendColor: 'text-emerald-500', isUp: true },
-    { title: 'GST Credits (This Period)', value: currentPeriod.credits, trend: 5.5, trendLabel: 'vs Apr 2026', icon: <FileText className="text-emerald-600" size={18}/>, bg: 'bg-emerald-50', trendColor: 'text-emerald-500', isUp: true },
-    { title: 'Net GST Payable', value: currentPeriod.net, trend: 18.4, trendLabel: 'vs Apr 2026', icon: <Activity className="text-blue-600" size={18}/>, bg: 'bg-blue-50', trendColor: 'text-emerald-500', isUp: true },
-    { title: 'PAYG Withholding (This Period)', value: 12450.00, trend: 2.1, trendLabel: 'vs Apr 2026', icon: <Users className="text-amber-600" size={18}/>, bg: 'bg-amber-50', trendColor: 'text-emerald-500', isUp: true },
-    { title: 'Outstanding Liabilities', value: 6140.00, overdueCount: 1, icon: <Calendar className="text-rose-600" size={18}/>, bg: 'bg-rose-50' },
-    { title: 'YTD Net GST Payable', value: 68950.00, trend: 15.7, trendLabel: 'vs FY 2024/25', icon: <PieChartIcon className="text-teal-600" size={18}/>, bg: 'bg-teal-50', trendColor: 'text-emerald-500', isUp: true },
+    { title: 'GST Collected (This Period)', value: taxSummary.gstCollected || currentPeriod.collected || 0, trend: 0, trendLabel: 'vs last period', icon: <Building2 className="text-purple-600" size={18}/>, bg: 'bg-purple-50', trendColor: 'text-slate-400', isUp: true },
+    { title: 'GST Credits (This Period)', value: taxSummary.gstCredits || currentPeriod.credits || 0, trend: 0, trendLabel: 'vs last period', icon: <FileText className="text-emerald-600" size={18}/>, bg: 'bg-emerald-50', trendColor: 'text-slate-400', isUp: true },
+    { title: 'Net GST Payable', value: taxSummary.netGstPayable || currentPeriod.net || 0, trend: 0, trendLabel: 'vs last period', icon: <Activity className="text-blue-600" size={18}/>, bg: 'bg-blue-50', trendColor: 'text-slate-400', isUp: true },
+    { title: 'PAYG Withholding (This Period)', value: taxSummary.paygWithholding || 0, trend: 0, trendLabel: 'vs last period', icon: <Users className="text-amber-600" size={18}/>, bg: 'bg-amber-50', trendColor: 'text-slate-400', isUp: true },
+    { title: 'Outstanding Liabilities', value: allObligations.filter(o=>o.status==='Overdue').reduce((s,o)=>s+o.net, 0) || 0, overdueCount: allObligations.filter(o=>o.status==='Overdue').length, icon: <Calendar className="text-rose-600" size={18}/>, bg: 'bg-rose-50' },
+    { title: 'YTD Net GST Payable', value: allObligations.filter(o=>o.status==='Lodged').reduce((s,o)=>s+o.net, 0) || 0, trend: 0, trendLabel: 'vs last period', icon: <PieChartIcon className="text-teal-600" size={18}/>, bg: 'bg-teal-50', trendColor: 'text-slate-400', isUp: true },
   ];
 
   const formatCurrency = (val) => `$${(val || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
@@ -890,15 +854,15 @@ export default function GstPayg() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-[11px]">
                   <span className="font-medium text-slate-600">Total Withheld</span>
-                  <span className="font-bold text-slate-900">$68,480.00</span>
+                  <span className="font-bold text-slate-900">{formatCurrency(taxSummary.paygWithholding || 0)}</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px]">
                   <span className="font-medium text-slate-600">Total Paid / Lodged</span>
-                  <span className="font-bold text-slate-900">$62,265.00</span>
+                  <span className="font-bold text-slate-900">$0.00</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px] pt-3 border-t border-slate-100">
                   <span className="font-bold text-slate-700">Balance Payable</span>
-                  <span className="font-bold text-rose-500">$6,215.00</span>
+                  <span className="font-bold text-rose-500">{formatCurrency(taxSummary.paygWithholding || 0)}</span>
                 </div>
               </div>
             </div>
@@ -909,19 +873,19 @@ export default function GstPayg() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center text-[11px]">
                   <span className="flex items-center gap-2 text-slate-700 font-medium"><Calendar size={12} className="text-slate-400"/> Next BAS Due</span>
-                  <span className="font-bold text-amber-500">28 Jun 2026</span>
+                  <span className="font-bold text-amber-500">{taxSummary.nextBasDueDate || '—'}</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px]">
                   <span className="flex items-center gap-2 text-slate-700 font-medium"><Calendar size={12} className="text-slate-400"/> Next PAYG Instalment Due</span>
-                  <span className="font-bold text-slate-700">21 Jul 2026</span>
+                  <span className="font-bold text-slate-700">{taxSummary.nextPaygDueDate || '—'}</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px]">
                   <span className="flex items-center gap-2 text-slate-700 font-medium"><Calendar size={12} className="text-slate-400"/> Super Guarantee Due</span>
-                  <span className="font-bold text-slate-700">28 Jul 2026</span>
+                  <span className="font-bold text-slate-700">28th of next month</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px]">
                   <span className="flex items-center gap-2 text-slate-700 font-medium"><Calendar size={12} className="text-slate-400"/> Annual PAYG Summary Due</span>
-                  <span className="font-bold text-slate-700">14 Jul 2026</span>
+                  <span className="font-bold text-slate-700">14 Jul (Annual)</span>
                 </div>
               </div>
             </div>

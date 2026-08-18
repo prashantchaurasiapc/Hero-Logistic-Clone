@@ -71,6 +71,26 @@ export const clockIn = (payload = {}) => api.post('/driver-portal/timesheet/cloc
 export const clockOut = (payload = {}) => api.post('/driver-portal/timesheet/clock-out', payload);
 
 /**
+ * POST /driver-portal/timesheet/clock-in (Alias: createTimesheet)
+ */
+export const createTimesheet = (payload = {}) => api.post('/driver-portal/timesheet/clock-in', payload);
+
+/**
+ * POST /driver-portal/timesheet/break
+ */
+export const toggleBreak = (payload = {}) => api.post('/driver-portal/timesheet/break', payload);
+
+/**
+ * POST /driver-portal/timesheet/note
+ */
+export const addTimesheetNote = (payload = {}) => api.post('/driver-portal/timesheet/note', payload);
+
+/**
+ * POST /driver-portal/timesheet/submit
+ */
+export const submitTimesheet = (payload = {}) => api.post('/driver-portal/timesheet/submit', payload);
+
+/**
  * GET /driver-portal/expenses
  * Returns all expenses for loads assigned to the authenticated driver.
  */

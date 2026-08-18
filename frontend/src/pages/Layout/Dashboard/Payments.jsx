@@ -9,87 +9,9 @@ import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 
 
 const Payments = () => {
   // Master Payments Data matching screenshot
-  const initialPayments = [
-    {
-      id: 'PAY-1078',
-      date: '2026-05-24',
-      dateFormatted: '24 May 2026',
-      customer: 'ABC Auto Transport',
-      invoicesPaid: 'INV-1052',
-      method: 'Bank Transfer',
-      amountReceived: 5280.00,
-      allocatedAmount: 5280.00,
-      unallocatedAmount: 0.00,
-      status: 'Allocated',
-      notes: 'Payment for invoice INV-1052',
-      bankAccount: 'Commonwealth Bank ***** 1234',
-      createdBy: 'Sarah Jones',
-      createdOn: '24 May 2026, 10:15 AM',
-      allocatedInvoices: [
-        { id: 'INV-1052', date: '21 May 2026', dueDate: '04 Jun 2026', amount: 5280.00, paid: 5280.00 }
-      ]
-    },
-    {
-      id: 'PAY-1077',
-      date: '2026-05-23',
-      dateFormatted: '23 May 2026',
-      customer: 'Global Motors',
-      invoicesPaid: 'INV-1051 (Part)',
-      method: 'EFT',
-      amountReceived: 2000.00,
-      allocatedAmount: 2000.00,
-      unallocatedAmount: 0.00,
-      status: 'Allocated',
-      notes: 'Partial payment for INV-1051',
-      bankAccount: 'ANZ Bank ***** 5678',
-      createdBy: 'Sarah Jones',
-      createdOn: '23 May 2026, 02:40 PM',
-      allocatedInvoices: [
-        { id: 'INV-1051', date: '20 May 2026', dueDate: '03 Jun 2026', amount: 4345.00, paid: 2000.00 }
-      ]
-    },
-    {
-      id: 'PAY-1076',
-      date: '2026-05-23',
-      dateFormatted: '23 May 2026',
-      customer: 'FastTrack Logistics',
-      invoicesPaid: 'INV-1054',
-      method: 'Credit Card',
-      amountReceived: 3025.00,
-      allocatedAmount: 3025.00,
-      unallocatedAmount: 0.00,
-      status: 'Allocated',
-      notes: 'Card settlement INV-1054',
-      bankAccount: 'Westpac ***** 9901',
-      createdBy: 'John Smith',
-      createdOn: '23 May 2026, 11:20 AM',
-      allocatedInvoices: [
-        { id: 'INV-1054', date: '19 May 2026', dueDate: '02 Jun 2026', amount: 3025.00, paid: 3025.00 }
-      ]
-    },
-    {
-      id: 'PAY-1075',
-      date: '2026-05-22',
-      dateFormatted: '22 May 2026',
-      customer: 'Prime Carriers',
-      invoicesPaid: 'INV-1049',
-      method: 'Bank Transfer',
-      amountReceived: 6160.00,
-      allocatedAmount: 6160.00,
-      unallocatedAmount: 0.00,
-      status: 'Allocated',
-      notes: 'Full payment for INV-1049',
-      bankAccount: 'Commonwealth Bank ***** 1234',
-      createdBy: 'Sarah Jones',
-      createdOn: '22 May 2026, 09:30 AM',
-      allocatedInvoices: [
-        { id: 'INV-1049', date: '18 May 2026', dueDate: '01 Jun 2026', amount: 6160.00, paid: 6160.00 }
-      ]
-    }
-  ];
-
-  const [payments, setPayments] = useState(initialPayments);
-  const [selectedPayment, setSelectedPayment] = useState(initialPayments[0]);
+  const initialPayments = [];
+  const [payments, setPayments] = useState([]);
+  const [selectedPayment, setSelectedPayment] = useState(null);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [customerFilter, setCustomerFilter] = useState('All');
@@ -103,9 +25,11 @@ const Payments = () => {
     setLoading(true);
     try {
       const res = await api.get('/accounts/payments');
-      if (res.data?.success && Array.isArray(res.data.data?.payments) && res.data.data.payments.length > 0) {
+      if (res.data?.success && Array.isArray(res.data.data?.payments)) {
         setPayments(res.data.data.payments);
-        setSelectedPayment(res.data.data.payments[0]);
+        if (res.data.data.payments.length > 0) {
+          setSelectedPayment(res.data.data.payments[0]);
+        }
       }
     } catch (err) {
       console.warn('Using live fallback payments:', err);
@@ -128,9 +52,9 @@ const Payments = () => {
   const [activeRowMenuId, setActiveRowMenuId] = useState(null);
 
   // Date Filter State
-  const [startDate, setStartDate] = useState('2026-05-18');
-  const [endDate, setEndDate] = useState('2026-05-24');
-  const [datePreset, setDatePreset] = useState('18 May 2026 – 24 May 2026');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [datePreset, setDatePreset] = useState('All Dates');
 
   // Modal View State
   const [showViewModal, setShowViewModal] = useState(false);
@@ -145,6 +69,7 @@ const Payments = () => {
     try {
       await api.post('/accounts/payments/refund', {
         paymentId: payment.id,
+        invoiceId: payment.invoiceId,
         amount: payment.amountReceived,
         reason: 'Customer requested refund'
       });
@@ -155,13 +80,36 @@ const Payments = () => {
     }
   };
 
-  // Payment Summary Donut Chart Data
+  // Payment Summary Donut Chart Data (computed from live payments state)
+  const allocatedTotal = payments.filter(p => p.status === 'Allocated').reduce((s, p) => s + (p.numericAmount || p.amountReceived || 0), 0);
+  const unallocatedTotal = payments.filter(p => p.status === 'Unallocated').reduce((s, p) => s + (p.numericAmount || p.amountReceived || 0), 0);
+  const overpaymentTotal = payments.filter(p => p.status === 'Overpayment').reduce((s, p) => s + (p.numericAmount || p.amountReceived || 0), 0);
+  const refundedTotal = payments.filter(p => p.status === 'Refunded').reduce((s, p) => s + (p.numericAmount || p.amountReceived || 0), 0);
   const summaryDonutData = [
-    { name: 'Allocated', value: 217200, color: '#22c55e' },   // Green
-    { name: 'Unallocated', value: 6150, color: '#3b82f6' },   // Blue
-    { name: 'Overpayments', value: 2850, color: '#eab308' },  // Yellow
-    { name: 'Refunds', value: 1250, color: '#06b6d4' }        // Cyan
+    { name: 'Allocated', value: allocatedTotal || 0, color: '#22c55e' },
+    { name: 'Unallocated', value: unallocatedTotal || 0, color: '#3b82f6' },
+    { name: 'Overpayments', value: overpaymentTotal || 0, color: '#eab308' },
+    { name: 'Refunds', value: refundedTotal || 0, color: '#06b6d4' }
   ];
+
+  // Dynamic KPI calculations
+  const totalReceived = payments.reduce((sum, p) => sum + (p.numericAmount || p.amountReceived || 0), 0);
+  const totalReceivedCount = payments.length;
+
+  const unallocatedPaymentsList = payments.filter(p => p.status === 'Unallocated');
+  const unallocatedAmountSum = unallocatedPaymentsList.reduce((sum, p) => sum + (p.numericAmount || p.amountReceived || 0), 0);
+  const unallocatedCount = unallocatedPaymentsList.length;
+
+  const overpaymentsList = payments.filter(p => p.status === 'Overpayment');
+  const overpaymentAmountSum = overpaymentsList.reduce((sum, p) => sum + (p.numericAmount || p.amountReceived || 0), 0);
+  const overpaymentCount = overpaymentsList.length;
+
+  const refundedPaymentsList = payments.filter(p => p.status === 'Refunded');
+  const refundedAmountSum = refundedPaymentsList.reduce((sum, p) => sum + (p.numericAmount || p.amountReceived || 0), 0);
+  const refundedCount = refundedPaymentsList.length;
+
+  const totalPaidAndUnpaid = totalReceived + overpaymentAmountSum;
+  const colRateVal = totalPaidAndUnpaid > 0 ? ((totalReceived / totalPaidAndUnpaid) * 100).toFixed(1) : '0.0';
 
   // Filtering Logic
   const filteredPayments = payments.filter(pay => {
@@ -303,9 +251,9 @@ const Payments = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Payments Received</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">$242,350.00</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">${totalReceived.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <div className="text-[9px] sm:text-[10px] font-semibold text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 leading-tight">
-              <span className="whitespace-nowrap">12 payments</span> • <span className="text-emerald-600 font-bold flex items-center whitespace-nowrap"><ArrowUp className="w-2.5 h-2.5"/> 18.6%</span>
+              <span className="whitespace-nowrap">{totalReceivedCount} payments</span> • <span className="text-slate-400 font-bold flex items-center whitespace-nowrap">0%</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
@@ -317,9 +265,9 @@ const Payments = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Unallocated Payments</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">$6,150.00</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">${unallocatedAmountSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <div className="text-[9px] sm:text-[10px] font-semibold text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 leading-tight">
-              <span className="whitespace-nowrap">3 payments</span> • <span className="text-sky-600 font-bold cursor-pointer hover:underline whitespace-nowrap">View items &rarr;</span>
+              <span className="whitespace-nowrap">{unallocatedCount} payments</span> • <span className="text-sky-600 font-bold cursor-pointer hover:underline whitespace-nowrap">View items &rarr;</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
@@ -331,9 +279,9 @@ const Payments = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Overpayments</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">$2,850.00</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">${overpaymentAmountSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <div className="text-[9px] sm:text-[10px] font-semibold text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 leading-tight">
-              <span className="whitespace-nowrap">2 payments</span> • <span className="text-sky-600 font-bold cursor-pointer hover:underline whitespace-nowrap">View items &rarr;</span>
+              <span className="whitespace-nowrap">{overpaymentCount} payments</span> • <span className="text-sky-600 font-bold cursor-pointer hover:underline whitespace-nowrap">View items &rarr;</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
@@ -345,9 +293,9 @@ const Payments = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Refunds (This Period)</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">$1,250.00</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">${refundedAmountSum.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <div className="text-[9px] sm:text-[10px] font-semibold text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 leading-tight">
-              <span className="whitespace-nowrap">2 payments</span> • <span className="text-rose-600 font-bold flex items-center whitespace-nowrap"><ArrowDown className="w-2.5 h-2.5"/> 12.5%</span>
+              <span className="whitespace-nowrap">{refundedCount} payments</span> • <span className="text-slate-400 font-bold flex items-center whitespace-nowrap">0%</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
@@ -359,9 +307,9 @@ const Payments = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Avg. Days to Pay</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">26</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">0</div>
             <div className="text-[9px] sm:text-[10px] font-semibold text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 leading-tight">
-              <span className="text-emerald-600 font-bold flex items-center whitespace-nowrap"><ArrowDown className="w-2.5 h-2.5"/> 4 days</span>
+              <span className="text-slate-400 font-bold flex items-center whitespace-nowrap">0 days</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
@@ -373,9 +321,9 @@ const Payments = () => {
         <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 flex-1 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Collection Rate</div>
-            <div className="text-base sm:text-lg font-black text-slate-900 truncate">91.2%</div>
+            <div className="text-base sm:text-lg font-black text-slate-900 truncate">{colRateVal}%</div>
             <div className="text-[9px] sm:text-[10px] font-semibold text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 leading-tight">
-              <span className="text-emerald-600 font-bold flex items-center whitespace-nowrap"><ArrowUp className="w-2.5 h-2.5"/> 3.6%</span>
+              <span className="text-slate-400 font-bold flex items-center whitespace-nowrap">0%</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
@@ -406,12 +354,9 @@ const Payments = () => {
             className="w-full sm:w-auto px-2.5 py-2 bg-sky-50/40 border border-sky-200 hover:border-sky-400 rounded-lg text-xs font-bold text-sky-900 outline-none cursor-pointer focus:ring-2 focus:ring-sky-300 transition-all truncate"
           >
             <option value="All">All Customers</option>
-            <option value="ABC Auto Transport">ABC Auto Transport</option>
-            <option value="Global Motors">Global Motors</option>
-            <option value="FastTrack Logistics">FastTrack Logistics</option>
-            <option value="Prime Carriers">Prime Carriers</option>
-            <option value="Nationwide Transport">Nationwide Transport</option>
-            <option value="Express Freight Co">Express Freight Co</option>
+            {Array.from(new Set(payments.map(p => p.customer).filter(Boolean))).map(cName => (
+              <option key={cName} value={cName}>{cName}</option>
+            ))}
           </select>
 
           <select
@@ -501,11 +446,11 @@ const Payments = () => {
         {/* Status Filter Tabs (Horizontal scroll on mobile) */}
         <div className="flex items-center gap-3 sm:gap-6 text-xs font-bold overflow-x-auto pb-2 sm:pb-0 no-scrollbar w-full sm:w-auto shrink-0">
           {[
-            { id: 'All', label: 'All (24)' },
-            { id: 'Allocated', label: 'Allocated (18)' },
-            { id: 'Unallocated', label: 'Unallocated (3)' },
-            { id: 'Overpayments', label: 'Overpayments (2)' },
-            { id: 'Refunds', label: 'Refunds (2)' }
+            { id: 'All', label: `All (${payments.length})` },
+            { id: 'Allocated', label: `Allocated (${payments.filter(p => p.status === 'Allocated').length})` },
+            { id: 'Unallocated', label: `Unallocated (${payments.filter(p => p.status === 'Unallocated' || p.status === 'Partially Allocated').length})` },
+            { id: 'Overpayments', label: `Overpayments (${payments.filter(p => p.status === 'Overpayment').length})` },
+            { id: 'Refunds', label: `Refunds (${payments.filter(p => p.status === 'Refunded').length})` }
           ].map(tab => (
             <button
               key={tab.id}
@@ -637,7 +582,7 @@ const Payments = () => {
                         <td className="py-3.5 px-3 text-slate-600">{pay.dateFormatted}</td>
                         <td className="py-3.5 px-3 font-bold text-slate-900">{pay.id}</td>
                         <td className="py-3.5 px-3 font-semibold text-slate-800">{pay.customer}</td>
-                        <td className="py-3.5 px-3 font-medium text-slate-700">{pay.invoicesPaid}</td>
+                        <td className="py-3.5 px-3 font-medium text-slate-700">{pay.invoicesPaid || pay.invoiceNumber || 'INV-1024'}</td>
                         <td className="py-3.5 px-3 text-slate-600">
                           {getMethodIcon(pay.method)}
                           <span>{pay.method}</span>
@@ -709,15 +654,13 @@ const Payments = () => {
 
           {/* Table Footer Pagination */}
           <div className="p-3.5 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-semibold">
-            <div>Showing 1 to {filteredPayments.length} of 24 payments</div>
+            <div>Showing {filteredPayments.length > 0 ? 1 : 0} to {filteredPayments.length} of {payments.length} payments</div>
 
             <div className="flex items-center gap-2">
               <button disabled className="px-2 py-1 text-slate-400 cursor-not-allowed">&lt;</button>
               <button className="w-7 h-7 bg-white border border-amber-400 text-amber-600 font-bold rounded-lg flex items-center justify-center shadow-2xs">
                 1
               </button>
-              <button className="w-7 h-7 hover:bg-slate-50 text-slate-600 font-medium rounded-lg flex items-center justify-center">2</button>
-              <button className="w-7 h-7 hover:bg-slate-50 text-slate-600 font-medium rounded-lg flex items-center justify-center">3</button>
               <button className="px-2 py-1 text-slate-600 hover:text-slate-900">&gt;</button>
             </div>
 
@@ -759,7 +702,9 @@ const Payments = () => {
                 </ResponsiveContainer>
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-1">
-                  <span className="text-[9.5px] sm:text-[10px] font-black text-slate-900 leading-none tracking-tight">$242k</span>
+                  <span className="text-[9.5px] sm:text-[10px] font-black text-slate-900 leading-none tracking-tight">
+                    ${(totalReceived / 1000).toFixed(1)}k
+                  </span>
                   <span className="text-[6.5px] sm:text-[7px] font-extrabold text-slate-400 uppercase tracking-tighter mt-0.5">Total</span>
                 </div>
               </div>
@@ -771,28 +716,28 @@ const Payments = () => {
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0" />
                     <span className="truncate">Allocated</span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">$217,200</span>
+                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">${allocatedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1 min-w-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block shrink-0" />
                     <span className="truncate">Unallocated</span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">$6,150</span>
+                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">${unallocatedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1 min-w-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block shrink-0" />
                     <span className="truncate">Overpay</span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">$2,850</span>
+                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">${overpaymentTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1 min-w-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 inline-block shrink-0" />
                     <span className="truncate">Refunds</span>
                   </div>
-                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">$1,250</span>
+                  <span className="font-extrabold text-slate-900 text-[10px] shrink-0">${refundedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
             </div>
@@ -810,28 +755,34 @@ const Payments = () => {
                   <Landmark className="w-3 h-3 text-slate-500" />
                   <span>Bank Transfer</span>
                 </div>
-                <span className="font-bold text-slate-900">$186,400.00 <span className="text-[9px] text-slate-400 font-normal">(76.9%)</span></span>
+                <span className="font-bold text-slate-900">
+                  ${payments.filter(p => p.method === 'Bank Transfer').reduce((sum, p) => sum + (p.numericAmount || p.amountReceived || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <CreditCard className="w-3 h-3 text-slate-500" />
                   <span>EFT</span>
                 </div>
-                <span className="font-bold text-slate-900">$38,300.00 <span className="text-[9px] text-slate-400 font-normal">(15.8%)</span></span>
+                <span className="font-bold text-slate-900">
+                  ${payments.filter(p => p.method === 'EFT').reduce((sum, p) => sum + (p.numericAmount || p.amountReceived || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <CreditCard className="w-3 h-3 text-slate-500" />
                   <span>Credit Card</span>
                 </div>
-                <span className="font-bold text-slate-900">$15,900.00 <span className="text-[9px] text-slate-400 font-normal">(6.6%)</span></span>
+                <span className="font-bold text-slate-900">
+                  ${payments.filter(p => p.method === 'Credit Card').reduce((sum, p) => sum + (p.numericAmount || p.amountReceived || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <DollarSign className="w-3 h-3 text-slate-500" />
                   <span>Other</span>
                 </div>
-                <span className="font-bold text-slate-900">$1,750.00 <span className="text-[9px] text-slate-400 font-normal">(0.7%)</span></span>
+                <span className="font-bold text-slate-900">$0.00</span>
               </div>
             </div>
           </div>
@@ -848,20 +799,20 @@ const Payments = () => {
             </div>
 
             <div className="space-y-2">
-              {[
-                { id: 'PAY-1073', date: '21 May 2026', customer: 'Express Freight Co', amount: '$750.00' },
-                { id: 'PAY-1071', date: '19 May 2026', customer: 'Global Motors', amount: '$1,000.00' },
-                { id: 'PAY-1068', date: '17 May 2026', customer: 'ABC Auto Transport', amount: '$4,400.00' }
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs border-l-2 border-rose-400 pl-2.5 py-0.5">
-                  <div>
-                    <div className="font-extrabold text-slate-900 text-[11px] leading-tight">{item.id}</div>
-                    <div className="text-slate-400 text-[9.5px] font-medium leading-tight">{item.date}</div>
-                    <div className="text-[10px] font-semibold text-slate-600 leading-tight">{item.customer}</div>
+              {unallocatedPaymentsList.length === 0 ? (
+                <div className="text-[10px] text-slate-400 font-medium py-2 text-center">No unallocated payments</div>
+              ) : (
+                unallocatedPaymentsList.slice(0, 3).map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs border-l-2 border-rose-400 pl-2.5 py-0.5">
+                    <div>
+                      <div className="font-extrabold text-slate-900 text-[11px] leading-tight">{item.id}</div>
+                      <div className="text-slate-400 text-[9.5px] font-medium leading-tight">{item.date}</div>
+                      <div className="text-[10px] font-semibold text-slate-600 leading-tight">{item.customer}</div>
+                    </div>
+                    <div className="font-black text-amber-600 text-right text-[11px]">${(item.numericAmount || item.amountReceived || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
                   </div>
-                  <div className="font-black text-amber-600 text-right text-[11px]">{item.amount}</div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 

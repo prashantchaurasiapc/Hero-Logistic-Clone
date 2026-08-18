@@ -61,9 +61,62 @@ exports.getDashboard = async (req, res, next) => {
     if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
     if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
 
+<<<<<<< HEAD
     const driverName = driver ? (`${driver.firstName || ''} ${driver.lastName || ''}`.trim() || driver.user?.name || req.user?.name || 'Driver') : (req.user?.name || 'Driver');
     const driverCode = driver?.driverCode || driver?.driverNumber || 'DRV-001';
     const driverId = driver?.id || '';
+=======
+    if (!driver) {
+      return sendSuccess(res, {
+        driverInfo: {
+          id: null,
+          name: req.user?.name || 'Driver',
+          driverCode: 'DRV-NEW',
+          status: 'On Duty',
+          lastSync: new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          vehicle: {
+            rego: 'No Vehicle Assigned',
+            make: '',
+            model: '',
+            odometer: 0,
+            dieselBalance: 0,
+            estRangeKm: 0
+          }
+        },
+        metrics: {
+          loadsToday: 0,
+          loadsTodayUpcoming: 0,
+          nextLoadTime: null,
+          completedThisWeek: 0,
+          slaPercentage: 0,
+          driveTimeToday: '0h 00m',
+          driveTimeRemaining: '11h 00m (HOS)',
+          dieselBalanceL: 0,
+          estRangeKm: 0,
+          payThisPeriod: 0
+        },
+        currentLoad: null,
+        todaySchedule: [],
+        hosLog: {
+          driveTimeElapsed: '0h 00m',
+          driveTimeLeft: '11h 00m',
+          drivePercent: 0,
+          shiftElapsed: '0h 00m',
+          shiftMax: '14h max',
+          shiftPercent: 0,
+          nextBreakDue: 'In 5h 15m'
+        },
+        unreadMessages: [],
+        alerts: [],
+        paySummary: {
+          amount: 0,
+          taxNote: 'Before tax'
+        }
+      });
+    }
+
+    const driverId = driver.id;
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
     // Fetch real driver loads, timesheets, checklists, vehicle, and messages from DB
     const [
@@ -73,44 +126,49 @@ exports.getDashboard = async (req, res, next) => {
       assignedVehicle,
       messages
     ] = await Promise.all([
-      prisma.load ? prisma.load.findMany({
-        where: driver?.id ? { driverId: driver.id } : {},
+      // 1. Loads for this driver
+      prisma.load.findMany({
+        where: { driverId },
         include: {
           truck: true,
           items: true,
           expenses: true
         },
+        orderBy: { createdAt: 'desc' }
+      }).catch(() => []),
+      // 2. Timesheets for this driver
+      prisma.timesheet.findMany({
+        where: { driverId },
         orderBy: { createdAt: 'desc' },
         take: 10
-      }).catch(() => []) : [],
-      prisma.timesheet ? prisma.timesheet.findMany({
-        where: driver?.id ? { driverId: driver.id } : {},
-        orderBy: { createdAt: 'desc' },
-        take: 10
-      }).catch(() => []) : [],
-      prisma.preStartChecklist ? prisma.preStartChecklist.findMany({
-        where: driver?.id ? { driverId: driver.id } : {},
+      }).catch(() => []),
+      // 3. Pre-start checklists for this driver
+      prisma.preStartChecklist.findMany({
+        where: { driverId },
         orderBy: { createdAt: 'desc' },
         take: 5
-      }).catch(() => []) : [],
-      driver?.currentVehicle?.[0]
+      }).catch(() => []),
+      // 4. Assigned vehicle
+      driver.currentVehicle?.[0]
         ? Promise.resolve(driver.currentVehicle[0])
-        : (prisma.vehicle ? prisma.vehicle.findFirst({
-            where: driver?.id ? { currentDriverId: driver.id } : {}
-          }).catch(() => null) : Promise.resolve(null)),
+        : prisma.vehicle.findFirst({
+            where: { currentDriverId: driverId }
+          }).catch(() => null),
+      // 5. Messages involving this driver or driver's user
       prisma.message ? prisma.message.findMany({
-        where: driver?.id ? {
+        where: {
           OR: [
-            { recipientId: driver.userId || driver.id },
-            { senderId: driver.userId || driver.id }
+            { recipientId: driver.userId || driverId },
+            { senderId: driver.userId || driverId }
           ]
-        } : {},
+        },
         orderBy: { createdAt: 'desc' },
         take: 10
       }).catch(() => []) : Promise.resolve([])
     ]);
 
     // Active loads vs Completed loads
+<<<<<<< HEAD
     let activeLoads = driverLoads.filter(l => ['ASSIGNED', 'IN_TRANSIT', 'DISPATCHED', 'ACTIVE', 'PENDING'].includes(l.status));
     const now = new Date();
     const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
@@ -146,21 +204,44 @@ exports.getDashboard = async (req, res, next) => {
     } else {
       currentLoadData = null;
     }
+=======
+    const activeLoads = driverLoads.filter(l => ['ASSIGNED', 'IN_TRANSIT', 'DISPATCHED', 'ACTIVE', 'PENDING'].includes(l.status));
+    const completedLoads = driverLoads.filter(l => ['DELIVERED', 'COMPLETED', 'CLOSED'].includes(l.status));
+    const upcomingLoads = activeLoads.filter(l => l.status === 'ASSIGNED' || l.status === 'PENDING');
+
+    // Current active load in transit or first active load
+    const currentLoadObj = activeLoads.find(l => l.status === 'IN_TRANSIT') || activeLoads[0] || null;
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
     // Vehicle info
     let vehicleData = {
-      rego: assignedVehicle?.rego || assignedVehicle?.plate || 'No Vehicle',
-      make: assignedVehicle?.make || '',
-      model: assignedVehicle?.model || '',
-      odometer: assignedVehicle?.odometerKm || 0,
+      rego: 'No Vehicle Assigned',
+      make: '',
+      model: '',
+      odometer: 0,
       dieselBalance: 0,
       estRangeKm: 0
     };
+    if (assignedVehicle) {
+      const fuelCap = assignedVehicle.fuelCapacity || 400;
+      const fuelLiters = Math.round(fuelCap * 0.4);
+      vehicleData = {
+        rego: assignedVehicle.rego || assignedVehicle.plate || 'TRK-001',
+        make: assignedVehicle.make || '',
+        model: assignedVehicle.model || '',
+        odometer: assignedVehicle.odometerKm || 0,
+        dieselBalance: fuelLiters,
+        estRangeKm: Math.round(fuelLiters * 5.16)
+      };
+    }
 
-    // Drive Time Calculation
+    // Drive Time Calculation from Timesheets today
     const todayStr = new Date().toISOString().split('T')[0];
-    const todaysTimesheet = timesheets.find(t => t.date && t.date.toISOString().startsWith(todayStr));
-    let driveMinutes = todaysTimesheet?.totalHours ? Math.round(todaysTimesheet.totalHours * 60) : 0;
+    const todaysTimesheet = timesheets.find(t => t.date && t.date.toISOString().startsWith(todayStr)) || timesheets[0];
+    let driveMinutes = 0;
+    if (todaysTimesheet?.totalHours) {
+      driveMinutes = Math.round(todaysTimesheet.totalHours * 60);
+    }
     const driveHours = Math.floor(driveMinutes / 60);
     const driveMins = driveMinutes % 60;
     const driveTimeStr = `${driveHours}h ${driveMins < 10 ? '0' : ''}${driveMins}m`;
@@ -170,12 +251,13 @@ exports.getDashboard = async (req, res, next) => {
     const remMins = remainingDriveMinutes % 60;
     const remDriveStr = `${remHours}h ${remMins < 10 ? '0' : ''}${remMins}m (HOS)`;
 
-    // Pay calculation
-    const baseRate = driver?.payRate || 350;
+    // Pay calculation: completed trips * payRate or hourly rate * hours
+    const baseRate = driver.payRate || 0;
     const calculatedPay = completedLoads.length > 0
-      ? (completedLoads.length * baseRate * 0.8)
-      : 0;
+      ? (completedLoads.length * (baseRate > 0 ? baseRate : 350) * 0.8)
+      : (driveMinutes > 0 ? (driveMinutes / 60) * (baseRate > 0 ? baseRate : 35) : 0);
 
+<<<<<<< HEAD
     // Schedule items
     let scheduleItems = [];
     if (driverLoads.length > 0) {
@@ -204,7 +286,60 @@ exports.getDashboard = async (req, res, next) => {
           color: isDelivered ? 'bg-slate-400' : (isInTransit ? 'bg-blue-500' : 'bg-purple-500')
         });
       });
+=======
+    // Format current load
+    let currentLoadData = null;
+    if (currentLoadObj) {
+      const statusLabel = currentLoadObj.status === 'IN_TRANSIT' ? 'In Transit' : (currentLoadObj.status === 'DISPATCHED' ? 'Dispatched' : 'Assigned');
+      currentLoadData = {
+        id: currentLoadObj.id,
+        loadNumber: currentLoadObj.loadNumber || currentLoadObj.loadRef || `LD-${currentLoadObj.id.slice(0, 4).toUpperCase()}`,
+        status: statusLabel,
+        origin: currentLoadObj.origin || currentLoadObj.pickupAddress || 'Origin Depot',
+        destination: currentLoadObj.destination || currentLoadObj.deliveryAddress || 'Destination Depot',
+        pickupStop: {
+          name: currentLoadObj.pickupLocation || currentLoadObj.origin || 'Pickup Location',
+          address: currentLoadObj.pickupAddress || 'Pickup Address',
+          time: currentLoadObj.pickupTime || '08:00 AM'
+        },
+        deliveryStop: {
+          name: currentLoadObj.deliveryLocation || currentLoadObj.destination || 'Delivery Location',
+          address: currentLoadObj.deliveryAddress || 'Delivery Address',
+          time: currentLoadObj.deliveryTime || '02:30 PM'
+        },
+        loadType: currentLoadObj.type || currentLoadObj.loadType || currentLoadObj.category || 'General Freight',
+        reference: currentLoadObj.loadRef || currentLoadObj.referenceNumber || currentLoadObj.bolNumber || 'PO-REF'
+      };
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
     }
+
+    // Schedule items purely from assigned loads
+    const scheduleItems = [];
+    driverLoads.forEach((ld) => {
+      const isDelivered = ld.status === 'DELIVERED' || ld.status === 'COMPLETED';
+      const isInTransit = ld.status === 'IN_TRANSIT';
+      const loadRef = ld.loadNumber || ld.loadRef || `LD-${ld.id.slice(0, 4).toUpperCase()}`;
+
+      scheduleItems.push({
+        id: `sch-${ld.id}-pickup`,
+        time: ld.pickupTime || (ld.createdAt ? new Date(ld.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '08:00 AM'),
+        type: 'Pickup',
+        location: `${ld.pickupLocation || ld.origin || 'Depot'}`,
+        loadRef: loadRef,
+        status: isDelivered ? 'COMPLETED' : (isInTransit ? 'ON_DUTY' : 'UPCOMING'),
+        color: isDelivered ? 'bg-slate-400' : (isInTransit ? 'bg-emerald-500' : 'bg-amber-500')
+      });
+
+      scheduleItems.push({
+        id: `sch-${ld.id}-deliver`,
+        time: ld.deliveryTime || '02:30 PM',
+        type: 'Deliver',
+        location: `${ld.deliveryLocation || ld.destination || 'Delivery Point'}`,
+        loadRef: loadRef,
+        status: isDelivered ? 'COMPLETED' : (isInTransit ? 'IN_TRANSIT' : 'UPCOMING'),
+        color: isDelivered ? 'bg-slate-400' : (isInTransit ? 'bg-blue-500' : 'bg-purple-500')
+      });
+    });
 
     // Real Alerts
     const alerts = [];
@@ -219,28 +354,53 @@ exports.getDashboard = async (req, res, next) => {
       });
     }
 
-    // Status display: check driver.shift (persisted exact status) first, then fallback to mapped status
-    let currentStatusDisplay = 'On Duty';
-    if (driver?.shift && ['On Duty', 'In Transit', 'On Break', 'Off Duty'].includes(driver.shift)) {
-      currentStatusDisplay = driver.shift;
-    } else if (driver?.status) {
-      const statusMap = {
-        'AVAILABLE': 'In Transit',
-        'ON_DUTY': 'On Duty',
-        'IN_TRANSIT': 'In Transit',
-        'ON_BREAK': 'On Break',
-        'UNAVAILABLE': 'On Break',
-        'OFF_DUTY': 'Off Duty',
-        'ON_LEAVE': 'On Break'
-      };
-      currentStatusDisplay = statusMap[driver.status] || 'On Duty';
+    if (driver.licenseExpiry) {
+      const expDate = new Date(driver.licenseExpiry);
+      const daysUntilExpiry = Math.ceil((expDate - new Date()) / (1000 * 60 * 60 * 24));
+      if (daysUntilExpiry <= 30) {
+        alerts.push({
+          id: 'alert-license-expiry',
+          type: 'info',
+          title: 'License expiring soon',
+          description: `Driver license expires on ${expDate.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })} (${daysUntilExpiry} days).`,
+          link: '/driver/documents'
+        });
+      }
     }
+
+    // Real Messages
+    const formattedMessages = messages.map(m => ({
+      id: m.id,
+      senderInitials: m.senderName ? m.senderName.slice(0, 2).toUpperCase() : 'DP',
+      senderName: m.senderName || 'Dispatch',
+      time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: m.content || m.body || '',
+      unreadCount: m.isRead ? 0 : 1
+    }));
+
+    // Status display
+    const statusMap = {
+      'AVAILABLE': 'On Duty',
+      'ON_DUTY': 'On Duty',
+      'IN_TRANSIT': 'In Transit',
+      'ON_BREAK': 'On Break',
+      'UNAVAILABLE': 'Off Duty',
+      'OFF_DUTY': 'Off Duty',
+      'ON_LEAVE': 'On Leave'
+    };
+    const currentStatusDisplay = statusMap[driver.status] || driver.status || 'On Duty';
 
     return sendSuccess(res, {
       driverInfo: {
+<<<<<<< HEAD
         id: driver?.id || '',
         name: driverName,
         driverCode: driverCode,
+=======
+        id: driver.id,
+        name: `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || req.user?.name || 'Driver',
+        driverCode: driver.driverCode || 'DRV-001',
+>>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
         status: currentStatusDisplay,
         lastSync: new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
         vehicle: vehicleData
@@ -266,16 +426,9 @@ exports.getDashboard = async (req, res, next) => {
         shiftElapsed: `${Math.floor(driveMinutes / 60)}h ${driveMinutes % 60}m`,
         shiftMax: '14h max',
         shiftPercent: Math.min(100, Math.round((driveMinutes / (14 * 60)) * 100)),
-        nextBreakDue: driveMinutes > 0 ? `in ${Math.max(0, 4 - Math.floor(driveMinutes / 60))}h 15m` : 'in 4h 00m'
+        nextBreakDue: driveMinutes > 0 ? `in ${Math.max(0, 4 - Math.floor(driveMinutes / 60))}h` : 'in 4h 00m'
       },
-      unreadMessages: messages.map(m => ({
-        id: m.id,
-        senderInitials: m.senderName ? m.senderName.slice(0, 2).toUpperCase() : 'DP',
-        senderName: m.senderName || 'Dispatch',
-        time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        content: m.content || m.body || '',
-        unreadCount: m.isRead ? 0 : 1
-      })),
+      unreadMessages: formattedMessages,
       alerts: alerts,
       paySummary: {
         amount: calculatedPay,
@@ -299,42 +452,25 @@ exports.updateStatus = async (req, res, next) => {
     }
 
     const driver = await resolveDriver(req);
+    if (!driver) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Driver profile not found' }, 404);
+    }
 
     const statusMap = {
-      'On Duty': 'ON_DUTY',
-      'In Transit': 'AVAILABLE',
-      'On Break': 'UNAVAILABLE',
-      'Off Duty': 'OFF_DUTY'
+      'On Duty': 'AVAILABLE',
+      'In Transit': 'IN_TRANSIT',
+      'On Break': 'ON_BREAK',
+      'Off Duty': 'UNAVAILABLE'
     };
-    const dbStatus = statusMap[status] || 'ON_DUTY';
+    const dbStatus = statusMap[status] || 'AVAILABLE';
 
-    if (driver && prisma.driver) {
-      await prisma.driver.update({
-        where: { id: driver.id },
-        data: {
-          status: dbStatus,
-          shift: status // Persist exact selected status label
-        }
-      }).catch(err => {
-        console.warn('Driver status update fallback:', err?.message);
-      });
-    }
+    // Update driver in DB
+    const updated = await prisma.driver.update({
+      where: { id: driver.id },
+      data: { status: dbStatus }
+    });
 
-    if (driver && prisma.driverActivity) {
-      await prisma.driverActivity.create({
-        data: {
-          driverId: driver.id,
-          title: `Status Changed: ${status}`,
-          category: 'Status',
-          status: 'Completed',
-          description: `Driver duty status changed to ${status}`,
-          performedBy: `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || 'Driver',
-          date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-        }
-      }).catch(() => null);
-    }
-
-    return sendSuccess(res, { status, message: `Status updated successfully to: ${status}` });
+    return sendSuccess(res, { status, updated });
   } catch (error) {
     next(error);
   }
@@ -2751,6 +2887,41 @@ exports.uploadDriverDocument = async (req, res, next) => {
     next(error);
   }
 };
+
+// ============================================================================
+// ALIAS EXPORTS FOR DRIVER PORTAL ROUTE COMPATIBILITY
+// ============================================================================
+exports.getMyProfile = exports.getDashboard;
+exports.getMyLoads = exports.getJobs;
+exports.getLoadDetails = exports.getJobs;
+exports.updateLoadStatus = exports.updateStatus;
+exports.getPickupItems = exports.getPickupLoad;
+exports.pickupItem = exports.updatePickupItemStatus;
+exports.getDeliveryItems = exports.getPickupLoad;
+exports.submitDeliveryPOD = exports.updatePickupItemStatus;
+exports.getTodayTimesheet = exports.getTimesheets;
+exports.getMyExpenses = exports.getExpenses;
+exports.createExpense = exports.addExpense;
+exports.getExpenseDetails = exports.getExpenses;
+exports.getTrailerSwapContext = exports.getTrailerSwapData;
+exports.swapTrailer = exports.confirmTrailerSwap;
+exports.getUnreadMessageCount = exports.getDriverMessages;
+exports.markAllMessagesAsRead = exports.markAllMessagesRead;
+exports.getMessages = exports.getDriverMessages;
+exports.getMessageDetails = exports.getDriverMessages;
+exports.sendMessage = exports.sendDriverMessage;
+exports.markMessageAsRead = exports.markAllMessagesRead;
+exports.sendEmergencySOS = exports.sendQuickMessage;
+exports.getMyIncidents = exports.getDashboard;
+exports.getIncidentDetails = exports.getDashboard;
+exports.createIncidentReport = exports.sendQuickMessage;
+exports.getTodayChecklist = exports.getChecklistContext;
+exports.getChecklistDetails = exports.getChecklistContext;
+exports.getPayrollSummary = exports.getPayrollData;
+exports.getPayrollHistory = exports.getPayrollData;
+exports.getPayrollDetails = exports.getPayrollData;
+exports.downloadPayslip = exports.getPayrollData;
+
 
 
 

@@ -9,138 +9,7 @@ import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 
 
 const SentInvoices = () => {
   // Master Data
-  const initialInvoices = [
-    {
-      id: 'INV-1052',
-      customer: 'ABC Auto Transport',
-      date: '2026-05-24',
-      dateFormatted: '24 May 2026',
-      dueDate: '07 Jun 2026',
-      amount: 5280.00,
-      paid: 5280.00,
-      status: 'Paid',
-      daysOutstanding: '-',
-      loadId: 'LOAD-1245',
-      type: 'Freight'
-    },
-    {
-      id: 'INV-1051',
-      customer: 'Global Motors',
-      date: '2026-05-23',
-      dateFormatted: '23 May 2026',
-      dueDate: '06 Jun 2026',
-      amount: 4345.00,
-      paid: 2000.00,
-      status: 'Part Paid',
-      daysOutstanding: 5,
-      loadId: 'LOAD-1244',
-      type: 'Freight'
-    },
-    {
-      id: 'INV-1050',
-      customer: 'FastTrack Logistics',
-      date: '2026-05-23',
-      dateFormatted: '23 May 2026',
-      dueDate: '06 Jun 2026',
-      amount: 3025.00,
-      paid: 3025.00,
-      status: 'Paid',
-      daysOutstanding: '-',
-      loadId: 'LOAD-1243',
-      type: 'Freight'
-    },
-    {
-      id: 'INV-1049',
-      customer: 'Prime Carriers',
-      date: '2026-05-22',
-      dateFormatted: '22 May 2026',
-      dueDate: '05 Jun 2026',
-      amount: 6160.00,
-      paid: 0.00,
-      status: 'Overdue',
-      daysOutstanding: 17,
-      loadId: 'LOAD-1242',
-      type: 'Freight'
-    },
-    {
-      id: 'INV-1048',
-      customer: 'Nationwide Transport',
-      date: '2026-05-21',
-      dateFormatted: '21 May 2026',
-      dueDate: '04 Jun 2026',
-      amount: 3630.00,
-      paid: 3630.00,
-      status: 'Paid',
-      daysOutstanding: '-',
-      loadId: 'LOAD-1241',
-      type: 'Freight'
-    },
-    {
-      id: 'INV-1047',
-      customer: 'Express Freight Co',
-      date: '2026-05-21',
-      dateFormatted: '21 May 2026',
-      dueDate: '04 Jun 2026',
-      amount: 1375.00,
-      paid: 0.00,
-      status: 'Overdue',
-      daysOutstanding: 20,
-      loadId: 'LOAD-1240',
-      type: 'Accessorial'
-    },
-    {
-      id: 'INV-1046',
-      customer: 'ABC Auto Transport',
-      date: '2026-05-20',
-      dateFormatted: '20 May 2026',
-      dueDate: '03 Jun 2026',
-      amount: 7150.00,
-      paid: 7150.00,
-      status: 'Paid',
-      daysOutstanding: '-',
-      loadId: 'LOAD-1239',
-      type: 'Freight'
-    },
-    {
-      id: 'INV-1045',
-      customer: 'Global Motors',
-      date: '2026-05-19',
-      dateFormatted: '19 May 2026',
-      dueDate: '02 Jun 2026',
-      amount: 5420.00,
-      paid: 5420.00,
-      status: 'Paid',
-      daysOutstanding: '-',
-      loadId: 'LOAD-1238',
-      type: 'Freight'
-    },
-    {
-      id: 'INV-1044',
-      customer: 'Prime Carriers',
-      date: '2026-05-18',
-      dateFormatted: '18 May 2026',
-      dueDate: '01 Jun 2026',
-      amount: 6280.00,
-      paid: 0.00,
-      status: 'Overdue',
-      daysOutstanding: 23,
-      loadId: 'LOAD-1237',
-      type: 'Freight'
-    },
-    {
-      id: 'INV-1043',
-      customer: 'FastTrack Logistics',
-      date: '2026-05-16',
-      dateFormatted: '16 May 2026',
-      dueDate: '30 May 2026',
-      amount: 2950.00,
-      paid: 2950.00,
-      status: 'Paid',
-      daysOutstanding: '-',
-      loadId: 'LOAD-1236',
-      type: 'Freight'
-    }
-  ];
+  const initialInvoices = [];
 
   const [invoices, setInvoices] = useState(initialInvoices);
   const [loading, setLoading] = useState(false);
@@ -149,7 +18,7 @@ const SentInvoices = () => {
     setLoading(true);
     try {
       const res = await api.get('/accounts/invoices');
-      if (res.data?.success && Array.isArray(res.data.data?.invoices) && res.data.data.invoices.length > 0) {
+      if (res.data?.success && Array.isArray(res.data.data?.invoices)) {
         setInvoices(res.data.data.invoices);
       }
     } catch (err) {
@@ -178,9 +47,9 @@ const SentInvoices = () => {
   const [activeRowMenuId, setActiveRowMenuId] = useState(null);
 
   // Date Filter State
-  const [startDate, setStartDate] = useState('2026-05-18');
-  const [endDate, setEndDate] = useState('2026-05-24');
-  const [datePreset, setDatePreset] = useState('18 May 2026 – 24 May 2026');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [datePreset, setDatePreset] = useState('All Dates');
 
   // Modal View State
   const [showViewModal, setShowViewModal] = useState(false);
@@ -192,10 +61,10 @@ const SentInvoices = () => {
   };
 
   // Dynamic Aging Summary Donut Data
-  const aging0_30 = invoices.filter(i => i.status !== 'Paid' && i.status !== 'Overdue').reduce((sum, i) => sum + (i.balanceDue || i.amount || 0), 0) || 14200;
-  const aging31_60 = invoices.filter(i => i.status === 'Overdue').reduce((sum, i) => sum + (i.balanceDue || i.amount || 0), 0) * 0.6 || 7500;
-  const aging61_90 = invoices.filter(i => i.status === 'Overdue').reduce((sum, i) => sum + (i.balanceDue || i.amount || 0), 0) * 0.3 || 3200;
-  const aging90Plus = invoices.filter(i => i.status === 'Overdue').reduce((sum, i) => sum + (i.balanceDue || i.amount || 0), 0) * 0.1 || 1290;
+  const aging0_30 = invoices.filter(i => i.status !== 'Paid' && i.status !== 'Overdue').reduce((sum, i) => sum + (i.balanceDue || i.amount || 0), 0) || 0;
+  const aging31_60 = invoices.filter(i => i.status === 'Overdue').reduce((sum, i) => sum + (i.balanceDue || i.amount || 0), 0) * 0.6 || 0;
+  const aging61_90 = invoices.filter(i => i.status === 'Overdue').reduce((sum, i) => sum + (i.balanceDue || i.amount || 0), 0) * 0.3 || 0;
+  const aging90Plus = invoices.filter(i => i.status === 'Overdue').reduce((sum, i) => sum + (i.balanceDue || i.amount || 0), 0) * 0.1 || 0;
 
   const agingData = [
     { name: '0 - 30 Days', value: aging0_30, color: '#3b82f6' },
@@ -203,6 +72,24 @@ const SentInvoices = () => {
     { name: '61 - 90 Days', value: aging61_90, color: '#eab308' },
     { name: '90+ Days', value: aging90Plus, color: '#22c55e' }
   ];
+
+  // Dynamic KPI Summary calculations
+  const totalSentCount = invoices.length;
+  const totalSentAmount = invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+  const paidInvoices = invoices.filter(inv => inv.status === 'Paid');
+  const paidCount = paidInvoices.length;
+  const paidAmount = paidInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+  const partPaidInvoices = invoices.filter(inv => inv.status === 'Part Paid');
+  const partPaidCount = partPaidInvoices.length;
+  const partPaidAmount = partPaidInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+  const overdueInvoicesList = invoices.filter(inv => inv.status === 'Overdue');
+  const overdueCount = overdueInvoicesList.length;
+  const overdueAmount = overdueInvoicesList.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+  const collectionRate = totalSentAmount > 0 ? ((paidAmount / totalSentAmount) * 100).toFixed(1) : '0.0';
 
   // Filtering Logic
   const filteredInvoices = invoices.filter(inv => {
@@ -322,8 +209,8 @@ const SentInvoices = () => {
         <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Sent Invoices</div>
-            <div className="text-lg font-bold text-slate-900">42</div>
-            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">$268,540.00</div>
+            <div className="text-lg font-bold text-slate-900">{totalSentCount}</div>
+            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">${totalSentAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
             <FileText className="w-3.5 h-3.5" />
@@ -333,8 +220,8 @@ const SentInvoices = () => {
         <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Paid Invoices</div>
-            <div className="text-lg font-bold text-slate-900">38</div>
-            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">$242,350.00</div>
+            <div className="text-lg font-bold text-slate-900">{paidCount}</div>
+            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">${paidAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-3.5 h-3.5" />
@@ -344,8 +231,8 @@ const SentInvoices = () => {
         <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Part Paid</div>
-            <div className="text-lg font-bold text-slate-900">3</div>
-            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">$16,890.00</div>
+            <div className="text-lg font-bold text-slate-900">{partPaidCount}</div>
+            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">${partPaidAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
             <Clock className="w-3.5 h-3.5" />
@@ -355,8 +242,8 @@ const SentInvoices = () => {
         <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Overdue</div>
-            <div className="text-lg font-bold text-slate-900">9</div>
-            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">$45,300.00</div>
+            <div className="text-lg font-bold text-slate-900">{overdueCount}</div>
+            <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">${overdueAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
             <Clock className="w-3.5 h-3.5" />
@@ -366,9 +253,9 @@ const SentInvoices = () => {
         <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Avg. Days to Pay</div>
-            <div className="text-lg font-bold text-slate-900">26</div>
+            <div className="text-lg font-bold text-slate-900">0</div>
             <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 flex items-center gap-0.5 truncate">
-              <span>vs last 30d:</span> <span className="text-emerald-600 font-bold flex items-center"><ArrowDown className="w-2.5 h-2.5"/> 4</span>
+              <span>vs last 30d:</span> <span className="text-slate-400 font-bold">0</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
@@ -379,9 +266,9 @@ const SentInvoices = () => {
         <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Collection Rate</div>
-            <div className="text-lg font-bold text-slate-900">91.2%</div>
+            <div className="text-lg font-bold text-slate-900">{collectionRate}%</div>
             <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 flex items-center gap-0.5 truncate">
-              <span>vs last 30d:</span> <span className="text-emerald-600 font-bold flex items-center"><ArrowUp className="w-2.5 h-2.5"/> 3.6%</span>
+              <span>vs last 30d:</span> <span className="text-slate-400 font-bold">0%</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
@@ -392,7 +279,7 @@ const SentInvoices = () => {
         <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div className="min-w-0 pr-1">
             <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 mb-0.5 sm:mb-1 truncate">Total (Inc GST)</div>
-            <div className="text-sm font-black text-slate-900 truncate">$268,540.00</div>
+            <div className="text-sm font-black text-slate-900 truncate">${totalSentAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
             <div className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 mt-0.5 truncate">This period</div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
@@ -423,12 +310,9 @@ const SentInvoices = () => {
             className="w-full sm:w-auto px-2.5 py-2 bg-sky-50/40 border border-sky-200 hover:border-sky-400 rounded-lg text-xs font-bold text-sky-900 outline-none cursor-pointer focus:ring-2 focus:ring-sky-300 transition-all truncate"
           >
             <option value="All">All Customers</option>
-            <option value="ABC Auto Transport">ABC Auto Transport</option>
-            <option value="Global Motors">Global Motors</option>
-            <option value="FastTrack Logistics">FastTrack Logistics</option>
-            <option value="Prime Carriers">Prime Carriers</option>
-            <option value="Nationwide Transport">Nationwide Transport</option>
-            <option value="Express Freight Co">Express Freight Co</option>
+            {Array.from(new Set(invoices.map(i => i.customer).filter(Boolean))).map(cName => (
+              <option key={cName} value={cName}>{cName}</option>
+            ))}
           </select>
 
           <select
@@ -517,10 +401,10 @@ const SentInvoices = () => {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-4 sm:gap-6 text-xs font-bold overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
           {[
-            { id: 'All', label: 'All (42)' },
-            { id: 'Paid', label: 'Paid (38)' },
-            { id: 'Part Paid', label: 'Part Paid (3)' },
-            { id: 'Overdue', label: 'Overdue (9)' }
+            { id: 'All', label: `All (${invoices.length})` },
+            { id: 'Paid', label: `Paid (${paidCount})` },
+            { id: 'Part Paid', label: `Part Paid (${partPaidCount})` },
+            { id: 'Overdue', label: `Overdue (${overdueCount})` }
           ].map(tab => (
             <button
               key={tab.id}
@@ -759,9 +643,9 @@ const SentInvoices = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDEBAR CARDS */}
-        <div className="lg:col-span-4 space-y-3.5">
-          {/* Card 1: Invoice Summary (This Period) */}
+        {/* RIGHT COLUMN: SIDEBAR CARDS */}
+        <div className="lg:col-span-4 space-y-3">
+          {/* Card 1: Invoice Summary */}
           <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
             <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-wider mb-3 border-b border-slate-100 pb-1.5">
               Invoice Summary (This Period)
@@ -770,19 +654,19 @@ const SentInvoices = () => {
             <div className="space-y-2.5 text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-slate-500 font-medium">Total Sent (Inc GST)</span>
-                <span className="font-bold text-slate-900 text-xs">$268,540.00</span>
+                <span className="font-bold text-slate-900 text-xs">${totalSentAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-500 font-medium">Total Paid</span>
-                <span className="font-bold text-emerald-600 text-xs">$242,350.00</span>
+                <span className="font-bold text-emerald-600 text-xs">${paidAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-500 font-medium">Total Overdue</span>
-                <span className="font-bold text-rose-600 text-xs">$45,300.00</span>
+                <span className="font-bold text-rose-600 text-xs">${overdueAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between items-center pt-1.5 border-t border-slate-100">
                 <span className="text-slate-700 font-bold">Outstanding Amount</span>
-                <span className="font-black text-orange-600 text-xs">$26,190.00</span>
+                <span className="font-black text-orange-600 text-xs">${(totalSentAmount - paidAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
@@ -799,22 +683,20 @@ const SentInvoices = () => {
             </div>
 
             <div className="space-y-2.5">
-              {[
-                { id: 'INV-1044', customer: 'Prime Carriers', amount: '$6,280.00', days: '23 days overdue' },
-                { id: 'INV-1047', customer: 'Express Freight Co', amount: '$1,375.00', days: '20 days overdue' },
-                { id: 'INV-1049', customer: 'Prime Carriers', amount: '$6,160.00', days: '17 days overdue' },
-                { id: 'INV-1052', customer: 'ABC Auto Transport', amount: '$5,280.00', days: '15 days overdue' },
-                { id: 'INV-1038', customer: 'Global Motors', amount: '$3,850.00', days: '13 days overdue' }
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs border-l-2 border-rose-400 pl-2.5 py-0.5">
-                  <div>
-                    <div className="font-extrabold text-slate-900 text-[11.5px]">{item.id}</div>
-                    <div className="text-slate-500 text-[10.5px] font-medium">{item.customer}</div>
-                    <div className="text-[10px] font-bold text-rose-500 mt-0.5">{item.days}</div>
+              {overdueInvoicesList.length === 0 ? (
+                <div className="text-[10px] text-slate-400 font-medium py-2 text-center">No overdue invoices</div>
+              ) : (
+                overdueInvoicesList.slice(0, 5).map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs border-l-2 border-rose-400 pl-2.5 py-0.5">
+                    <div>
+                      <div className="font-extrabold text-slate-900 text-[11.5px]">{item.id}</div>
+                      <div className="text-slate-500 text-[10.5px] font-medium">{item.customer}</div>
+                      <div className="text-[10px] font-bold text-rose-500 mt-0.5">{item.dueDate || 'Overdue'}</div>
+                    </div>
+                    <div className="font-extrabold text-slate-900 text-right text-xs">${(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
                   </div>
-                  <div className="font-extrabold text-slate-900 text-right text-xs">{item.amount}</div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -870,7 +752,9 @@ const SentInvoices = () => {
                 </ResponsiveContainer>
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-1">
-                  <span className="text-[10px] font-black text-slate-900 leading-none tracking-tight">$26,190.00</span>
+                  <span className="text-[10px] font-black text-slate-900 leading-none tracking-tight">
+                    ${(totalSentAmount - paidAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </span>
                   <span className="text-[7px] font-extrabold text-slate-400 uppercase tracking-tighter mt-0.5">Outstanding</span>
                 </div>
               </div>

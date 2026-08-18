@@ -22,6 +22,10 @@ export default function Tools() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  const [stockItems, setStockItems] = useState([]);
+  const [selectedStockItem, setSelectedStockItem] = useState(null);
+  const [loadingStock, setLoadingStock] = useState(false);
+
   const handleTabChange = (targetTab) => {
     navigate(`/warehouse/tools/${targetTab}`);
   };
@@ -113,6 +117,27 @@ export default function Tools() {
   const [docCarrier, setDocCarrier] = useState('');
   const [docDestination, setDocDestination] = useState('');
   const [docNotes, setDocNotes] = useState('');
+
+  React.useEffect(() => {
+    const fetchStock = async () => {
+      setLoadingStock(true);
+      try {
+        const res = await api.get('/warehouse-portal/stock');
+        const data = res.data?.data || [];
+        setStockItems(data);
+        if (data.length > 0) {
+          setSelectedStockItem(data[0]);
+          setDocOrderRef(data[0].vin || data[0].stockRef || `STK-${data[0].id.slice(0,6)}`);
+          setDocDestination(data[0].customerName || data[0].customer?.companyName || 'Melbourne Depot');
+        }
+      } catch (err) {
+        console.error('Failed to fetch stock in tools:', err);
+      } finally {
+        setLoadingStock(false);
+      }
+    };
+    fetchStock();
+  }, []);
   
   const [generatedDocuments, setGeneratedDocuments] = useState([]);
 
@@ -149,47 +174,37 @@ export default function Tools() {
   // ============================================================
   // TAB 3 STATE: QR SCANNER
   // ============================================================
-  const [simulatedScanTarget, setSimulatedScanTarget] = useState('Pallet-A');
+  const [simulatedScanTarget, setSimulatedScanTarget] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
 
-  const handleSimulateScan = () => {
+  const handleSimulateScan = async () => {
+    if (!simulatedScanTarget) {
+      showToast('⚠️ Please select a stock item barcode to scan first!');
+      return;
+    }
     setScanning(true);
-    setTimeout(() => {
-      setScanning(false);
-      if (simulatedScanTarget === 'Pallet-A') {
+    try {
+      const res = await api.post('/warehouse-portal/stock/scan', { code: simulatedScanTarget });
+      if (res.data?.success) {
+        const matched = res.data.data;
         setScanResult({
-          code: 'PAL-889900112233',
-          name: 'Heavy Duty Steel Pallet (Auto Parts)',
-          zone: 'Zone B - Bay 12',
-          qty: '14 Units',
-          weight: '340 kg',
-          dimensions: '1.2m x 1.2m x 1.5m',
-          status: 'In Stock - Verified'
+          code: matched.identifier || simulatedScanTarget,
+          name: matched.nameCategory || 'Stock Item',
+          zone: matched.zoneBinSlot || 'Storage Yard',
+          qty: matched.stockQty || '1 Unit',
+          weight: matched.weight || 'N/A',
+          dimensions: matched.dimensions || 'N/A',
+          status: matched.status || 'In Stock'
         });
-      } else if (simulatedScanTarget === 'Container-B') {
-        setScanResult({
-          code: 'CONT-HJCU1234567',
-          name: '40ft Shipping Container (Electronics)',
-          zone: 'Container Yard - Row 3',
-          qty: '1 Container',
-          weight: '8,200 kg',
-          dimensions: '12.2m x 2.4m x 2.6m',
-          status: 'Staged for Outbound'
-        });
-      } else {
-        setScanResult({
-          code: 'SKU-DRM-902188',
-          name: 'Industrial Lubricant Oil Drums',
-          zone: 'Hazmat Zone - Rack 02',
-          qty: '4 Drums',
-          weight: '800 kg',
-          dimensions: '0.6m x 0.6m x 0.9m',
-          status: 'Quarantined - Awaiting Inspection'
-        });
+        showToast('✓ Barcode Scanned successfully!');
       }
-      showToast('✓ Barcode Scanned Successfully!');
-    }, 1000);
+    } catch (err) {
+      console.error('Scan error:', err);
+      showToast('Item not found or scanner API error.');
+    } finally {
+      setScanning(false);
+    }
   };
 
   // ============================================================
@@ -212,11 +227,73 @@ export default function Tools() {
       return;
     }
     setImporting(true);
-    setTimeout(() => {
-      setImporting(false);
-      setImportFile(null);
-      showToast(`✓ Imported 124 records into ${importSchema}!`);
-    }, 1800);
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target.result;
+        const lines = text.split('\n').filter(Boolean);
+        if (lines.length <= 1) {
+          showToast('⚠️ CSV file is empty or has only headers!');
+          setImporting(false);
+          return;
+        }
+        
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const parsedItems = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',').map(c => c.trim());
+          if (cols.length < headers.length) continue;
+          
+          const item = {};
+          headers.forEach((header, idx) => {
+            item[header] = cols[idx] || '';
+          });
+          parsedItems.push({
+            vin: item.vin || `VIN-${Math.floor(100000 + Math.random() * 900000)}`,
+            make: item.make || 'Generic',
+            model: item.model || 'Item',
+            year: item.year ? parseInt(item.year) : 2026,
+            color: item.color || 'White',
+            type: item.type || 'Vehicle',
+            zone: item.zone || 'Zone A',
+            row: item.row || 'Row 1',
+            bay: item.bay || 'Bay 1',
+            position: item.position || 'P01'
+          });
+        }
+
+        const payload = {
+          inboundType: 'CSV Bulk Upload',
+          inboundNo: `CSV-${Math.floor(100000 + Math.random() * 900000)}`,
+          carrierName: 'Carrier Import',
+          shipperDetails: 'Bulk Upload',
+          items: parsedItems
+        };
+
+        const res = await api.post('/warehouse-portal/inbound/receive', payload);
+        if (res.data?.success) {
+          showToast(`✓ Successfully imported ${parsedItems.length} records into ${importSchema}!`);
+          // Re-fetch stock items to refresh the tools page dropdown
+          const stockRes = await api.get('/warehouse-portal/stock');
+          const data = stockRes.data?.data || [];
+          setStockItems(data);
+          if (data.length > 0) {
+            setSelectedStockItem(data[0]);
+          }
+        } else {
+          showToast('Failed to import records.');
+        }
+      } catch (err) {
+        console.error('Import error:', err);
+        showToast('Error reading or parsing CSV file.');
+      } finally {
+        setImporting(false);
+        setImportFile(null);
+      }
+    };
+    reader.readAsText(importFile);
   };
 
   // ============================================================
@@ -225,6 +302,20 @@ export default function Tools() {
   const [spoolerPaused, setSpoolerPaused] = useState(false);
   const [spoolerActiveCount, setSpoolerActiveCount] = useState(0);
   const [batchQueue, setBatchQueue] = useState([]);
+
+  React.useEffect(() => {
+    if (activeTab === 'batch-printing' && stockItems.length > 0 && batchQueue.length === 0) {
+      const initialQueue = stockItems.slice(0, 3).map((item, idx) => ({
+        id: `JOB-00${idx + 1}`,
+        name: `Label Print: ${item.make ? `${item.make} ${item.model}` : 'Stock Item'} (${item.vin || item.id.slice(0,6)})`,
+        printer: 'Zebra ZD421 (Office)',
+        count: '1 Label',
+        status: idx === 0 ? 'Queued' : 'Completed'
+      }));
+      setBatchQueue(initialQueue);
+      setSpoolerActiveCount(initialQueue.filter(q => q.status === 'Queued').length);
+    }
+  }, [activeTab, stockItems]);
 
   const handlePauseQueue = () => {
     if (spoolerPaused) {
@@ -1114,6 +1205,37 @@ export default function Tools() {
 
               <div className="space-y-3 flex-1">
                 <div>
+                  <label className="wh-light-form-lbl">Select Stock Item</label>
+                  {loadingStock ? (
+                    <div className="text-xs text-slate-500">Loading stock items...</div>
+                  ) : stockItems.length === 0 ? (
+                    <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                      ⚠️ No active stock in warehouse. Using manual entry.
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedStockItem?.id || ''}
+                      onChange={e => {
+                        const matched = stockItems.find(item => item.id === e.target.value);
+                        if (matched) {
+                          setSelectedStockItem(matched);
+                          setDocOrderRef(matched.vin || matched.stockRef || matched.id);
+                          setDocDestination(matched.customerName || matched.customer?.companyName || 'Melbourne Depot');
+                        }
+                      }}
+                      className="wh-light-select w-full"
+                    >
+                      <option value="">-- Choose Stock Item --</option>
+                      {stockItems.map(item => (
+                        <option key={item.id} value={item.id}>
+                          {item.make ? `${item.make} ${item.model || ''}` : (item.description || 'Inventory Item')} - {item.vin || item.rego || item.id.slice(0, 8)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div>
                   <label className="wh-light-form-lbl">Document Template</label>
                   <select value={docType} onChange={e => setDocType(e.target.value)} className="wh-light-select w-full">
                     <option>Outbound Manifest</option>
@@ -1191,8 +1313,18 @@ export default function Tools() {
                 <div><strong>DATE:</strong> {new Date().toLocaleDateString()}</div>
                 <div style={{ margin: '12px 0', border: '1px dashed #CBD5E1', padding: 6 }}>
                   <strong>ITEMIZED CARGO SUMMARY:</strong>
-                  <div>- PLT-908A: HEAVY INDUSTRIAL STEEL COILS (2 UNITS) - 1,420kg</div>
-                  <div>- PLT-441B: AUTOMOTIVE GEARBOX SPARES (6 UNITS) - 480kg</div>
+                  {selectedStockItem ? (
+                    <div>
+                      - {selectedStockItem.vin || selectedStockItem.stockRef || 'N/A'}: {selectedStockItem.make ? `${selectedStockItem.make} ${selectedStockItem.model || ''}` : 'Inventory Item'} ({selectedStockItem.vehicleType || 'Vehicle'})
+                      <div>Location: {selectedStockItem.zone || 'Yard'} / {selectedStockItem.row || '-'} / {selectedStockItem.bay || '-'}</div>
+                      <div>Status: {selectedStockItem.stockStatus || 'IN_STORAGE'}</div>
+                    </div>
+                  ) : (
+                    <>
+                      <div>- PLT-908A: HEAVY INDUSTRIAL STEEL COILS (2 UNITS) - 1,420kg</div>
+                      <div>- PLT-441B: AUTOMOTIVE GEARBOX SPARES (6 UNITS) - 480kg</div>
+                    </>
+                  )}
                 </div>
                 <div><strong>OPERATOR NOTES:</strong> {docNotes}</div>
                 <div style={{ marginTop: 24, fontSize: 8, color: '#64748B', textAlign: 'center' }}>
@@ -1238,11 +1370,26 @@ export default function Tools() {
 
                 <div>
                   <label className="wh-light-form-lbl">Select Simulated Target</label>
-                  <select value={simulatedScanTarget} onChange={e => setSimulatedScanTarget(e.target.value)} className="wh-light-select w-full">
-                    <option value="Pallet-A">Auto Parts Pallet (PAL-889900112233)</option>
-                    <option value="Container-B">40ft Cargo Container (CONT-HJCU1234567)</option>
-                    <option value="Hazmat-C">Lubricant Oil Drums (SKU-DRM-902188)</option>
-                  </select>
+                  {loadingStock ? (
+                    <div className="text-xs text-slate-500">Loading stock barcodes...</div>
+                  ) : stockItems.length === 0 ? (
+                    <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                      ⚠️ No active stock in database to scan.
+                    </div>
+                  ) : (
+                    <select value={simulatedScanTarget} onChange={e => setSimulatedScanTarget(e.target.value)} className="wh-light-select w-full">
+                      <option value="">-- Choose Stock Barcode to Scan --</option>
+                      {stockItems.map(item => {
+                        const actualVal = (item.vin && item.vin !== '-') ? item.vin : ((item.rego && item.rego !== '-') ? item.rego : item.id);
+                        const displayId = (item.vin && item.vin !== '-') ? item.vin : ((item.rego && item.rego !== '-') ? item.rego : item.id.slice(0, 8));
+                        return (
+                          <option key={item.id} value={actualVal}>
+                            {item.make ? `${item.make} ${item.model || ''}` : (item.description || 'Inventory Item')} ({displayId})
+                          </option>
+                        );
+                      })}
+                    </select>
+                  )}
                 </div>
               </div>
 

@@ -76,6 +76,57 @@ const INITIAL_EMAILS = [
   }
 ];
 
+const INITIAL_PORTAL_BOOKINGS = [
+  { 
+    id: 101, 
+    title: 'Customer Booking Request – LD-4736 (PO-10167)', 
+    sender: 'Customer Portal · Direct Customer',   
+    conf: 'High',   
+    isNew: true,  
+    time: 'Today, 12:35 PM',
+    customer: 'Direct Customer',
+    loadType: 'General Freight (abcd)',
+    pickupAddr: '100 Flinders St, Melbourne VIC 3000',
+    dropAddr: 'Nhava Sheva Port, Mumbai MH 400707',
+    items: [
+      { rego: 'LD-4736', vin: 'PO-10167', make: 'General Cargo', model: 'Export Freight Box', year: '2024', colour: 'Blue', conf: 'High' }
+    ],
+    pricing: '$3,450.00'
+  },
+  { 
+    id: 102, 
+    title: 'Commercial Fleet Booking – LD-4246 (PO-9894)',          
+    sender: 'Customer Portal · Fleet Logistics',   
+    conf: 'High', 
+    isNew: false, 
+    time: 'Yesterday, 3:10 PM',
+    customer: 'Fleet Logistics Australia',
+    loadType: 'General Freight (hbasjnsak)',
+    pickupAddr: '88 Industrial Blvd, Geelong VIC 3220',
+    dropAddr: '12 Depot Rd, Sydney NSW 2000',
+    items: [
+      { rego: 'LD-4246', vin: 'PO-9894', make: 'Industrial Equipment', model: 'Palletized Goods', year: '2024', colour: 'Silver', conf: 'High' }
+    ],
+    pricing: '$1,950.00'
+  },
+  { 
+    id: 103, 
+    title: 'Car Carrier Booking – LD-3987 (PO-9876)',                 
+    sender: 'Customer Portal · Auto Logistics',         
+    conf: 'Medium',   
+    isNew: false, 
+    time: '2 days ago',
+    customer: 'Auto Logistics Express',
+    loadType: 'Car Carrier',
+    pickupAddr: '50 Station St, Melbourne VIC 3000',
+    dropAddr: '10 George St, Sydney NSW 2000',
+    items: [
+      { rego: 'LD-3987', vin: 'PO-9876', make: 'Toyota', model: 'Camry Hybrid', year: '2024', colour: 'White', conf: 'Medium' }
+    ],
+    pricing: '$2,100.00'
+  }
+];
+
 const HOW_IT_WORKS = [
   { Icon: Mail,         text: 'AI reads your source'     },
   { Icon: Zap,          text: 'Extracts key information' },
@@ -99,14 +150,16 @@ const inpCls = 'w-full px-3 py-2 bg-white border border-slate-200 focus:border-i
 
 export default function AILoadBuilder({ onBack }) {
   const [step,           setStep]           = useState(1);   // 1 | 2 | 3 | 4
-  const [selectedSource, setSelectedSource] = useState('email');
+  const [selectedSource, setSelectedSource] = useState('portal'); // default to portal so LD-4736 is visible
   const [emails,         setEmails]         = useState(INITIAL_EMAILS);
-  const [selectedEmail,  setSelectedEmail]  = useState(1);
+  const [portalBookings, setPortalBookings] = useState(INITIAL_PORTAL_BOOKINGS);
+  const [selectedEmail,  setSelectedEmail]  = useState(101);
   const [searchQuery,    setSearchQuery]    = useState('');
   const [extractPct,     setExtractPct]     = useState(0);
   const [createdLoadId,  setCreatedLoadId]  = useState(null);
   
-  const selectedEmailData = emails.find(e => e.id === selectedEmail) || emails[0];
+  const activeSourceList = selectedSource === 'portal' ? portalBookings : emails;
+  const selectedEmailData = activeSourceList.find(e => e.id === selectedEmail) || activeSourceList[0];
 
   const [draft, setDraft] = useState({
     customer: selectedEmailData?.customer || 'General Customer',
@@ -129,7 +182,15 @@ export default function AILoadBuilder({ onBack }) {
   const [draftCreated,   setDraftCreated]   = useState(false);
   const [draftSaving,    setDraftSaving]    = useState(false);
 
-  // Synchronize draft when selected email changes
+  // Switch selection default when source tab changes
+  useEffect(() => {
+    const list = selectedSource === 'portal' ? portalBookings : emails;
+    if (list && list.length > 0) {
+      setSelectedEmail(list[0].id);
+    }
+  }, [selectedSource]);
+
+  // Synchronize draft when selected item changes
   useEffect(() => {
     if (selectedEmailData) {
       setDraft(prev => ({
@@ -142,7 +203,7 @@ export default function AILoadBuilder({ onBack }) {
         pricing: selectedEmailData.pricing
       }));
     }
-  }, [selectedEmail]);
+  }, [selectedEmail, selectedSource]);
 
   // Fetch real customers from API if available to populate dropdowns
   useEffect(() => {
@@ -170,17 +231,18 @@ export default function AILoadBuilder({ onBack }) {
     return () => clearInterval(interval);
   }, [step]);
 
-  const emailConf = selectedEmailData ? CONF_COLORS[selectedEmailData.conf] : CONF_COLORS.High;
+  const emailConf = (selectedEmailData && CONF_COLORS[selectedEmailData.conf]) ? CONF_COLORS[selectedEmailData.conf] : CONF_COLORS.High;
 
-  const filteredEmails = emails.filter(e =>
+  const filteredEmails = activeSourceList.filter(e =>
     !searchQuery ||
-    e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.sender.toLowerCase().includes(searchQuery.toLowerCase())
+    (e.title && e.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (e.sender && e.sender.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (e.customer && e.customer.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const updateDraft = (field, value) => setDraft(d => ({ ...d, [field]: value }));
   const updateItem  = (idx, field, value) =>
-    setDraft(d => ({ ...d, items: d.items.map((it, i) => i === idx ? { ...it, [field]: value } : it) }));
+    setDraft(d => ({ ...d, items: (d.items || []).map((it, i) => i === idx ? { ...it, [field]: value } : it) }));
 
   const handleCreateDraft = async () => {
     setDraftSaving(true);
@@ -193,12 +255,12 @@ export default function AILoadBuilder({ onBack }) {
         notes: draft.specialInstructions || 'AI Extracted Draft Load',
         sourceType: 'EMAIL',
         aiExtracted: true,
-        aiConfidence: parseFloat(emailConf.pct) || 94.0,
+        aiConfidence: parseFloat(emailConf?.pct || '94%') || 94.0,
         stops: [
           { type: 'PICKUP', sequenceIndex: 0, address: draft.pickupAddr, contactName: draft.pickupContact },
           { type: 'DROPOFF', sequenceIndex: 1, address: draft.dropAddr, contactName: draft.dropContact }
         ],
-        items: draft.items.map(item => ({
+        items: (draft.items || []).map(item => ({
           stockRef: item.rego || item.vin || 'AI-ITEM',
           make: item.make,
           model: item.model,
@@ -236,8 +298,8 @@ export default function AILoadBuilder({ onBack }) {
   const dynamicExtractionFields = [
     { label: 'Customer Details',        value: draft.customer || 'General Customer' },
     { label: 'Pickup & Drop-off Stops', value: '2 Stops' },
-    { label: 'Cars / Items',            value: `${draft.items.length} ${draft.loadType === 'General Freight' ? 'Items' : 'Cars'}` },
-    { label: 'Rego, VIN, Make, Model',  value: draft.items.length > 0 ? 'Yes' : 'None' },
+    { label: 'Cars / Items',            value: `${(draft.items || []).length} ${draft.loadType === 'General Freight' ? 'Items' : 'Cars'}` },
+    { label: 'Rego, VIN, Make, Model',  value: (draft.items || []).length > 0 ? 'Yes' : 'None' },
     { label: 'Dates & Times',           value: 'Yes' },
     { label: 'Special Instructions',    value: draft.specialInstructions ? 'Yes' : 'No' },
     { label: 'Pricing & Billing Info',  value: draft.pricing || 'Yes' },
@@ -396,43 +458,64 @@ export default function AILoadBuilder({ onBack }) {
                 })}
               </div>
 
-              {/* Select Email Source */}
+              {/* Select Source Sub-panel */}
               <div className="mb-6">
-                <h4 className="text-xs font-black text-slate-900 mb-0.5">Select Email Source</h4>
-                <p className="text-xs text-slate-400 font-medium">Connect your email account to scan for bookings.</p>
+                <h4 className="text-xs font-black text-slate-900 mb-0.5">
+                  {selectedSource === 'portal' ? 'Select Customer Portal Engine' : 'Select Email Source'}
+                </h4>
+                <p className="text-xs text-slate-400 font-medium">
+                  {selectedSource === 'portal' ? 'Connected to Hero Logistics Customer Online Booking Engine.' : 'Connect your email account to scan for bookings.'}
+                </p>
                 <div className="flex flex-col sm:flex-row gap-2.5 mt-3">
                   <select className="flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 appearance-none">
-                    <option>Outlook – dispatch@abcmotors.com.au</option>
-                    <option>Gmail – info@abcmotors.com.au</option>
+                    {selectedSource === 'portal' ? (
+                      <>
+                        <option>Hero Customer Portal – Live Sync (Active)</option>
+                        <option>Partner B2B Portal – API Connector</option>
+                      </>
+                    ) : (
+                      <>
+                        <option>Outlook – dispatch@abcmotors.com.au</option>
+                        <option>Gmail – info@abcmotors.com.au</option>
+                      </>
+                    )}
                   </select>
-                  <button className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors">Disconnect</button>
+                  <button className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors">
+                    {selectedSource === 'portal' ? 'Manage API' : 'Disconnect'}
+                  </button>
                 </div>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mt-3">
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                    <span className="text-xs font-bold text-emerald-600">Connected successfully.<span className="text-slate-400 font-semibold ml-1.5">Last synced: Today, 9:15 AM</span></span>
+                    <span className="text-xs font-bold text-emerald-600">Connected successfully.<span className="text-slate-400 font-semibold ml-1.5">Last synced: Just now</span></span>
                   </div>
-                  <button className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1"><RefreshCw size={12} /> Refresh</button>
+                  <button className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1"><RefreshCw size={12} /> Refresh Sync</button>
                 </div>
               </div>
 
-              {/* Search Emails */}
+              {/* Search Bookings */}
               <div className="mb-6">
-                <h4 className="text-xs font-black text-slate-900 mb-0.5">Search Emails</h4>
-                <p className="text-xs text-slate-400 font-medium">Find the booking email you want to extract.</p>
+                <h4 className="text-xs font-black text-slate-900 mb-0.5">
+                  {selectedSource === 'portal' ? 'Search Customer Bookings' : 'Search Emails'}
+                </h4>
+                <p className="text-xs text-slate-400 font-medium">
+                  {selectedSource === 'portal' ? 'Find the customer booking request (e.g. LD-4736, PO-10167).' : 'Find the booking email you want to extract.'}
+                </p>
                 <div className="flex flex-col sm:flex-row gap-2.5 mt-3">
                   <div className="relative flex-1">
                     <Search size={14} className="text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input type="text" placeholder="Search by subject, customer, reference..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                    <input type="text" placeholder={selectedSource === 'portal' ? "Search by load # (LD-4736), PO ref (PO-10167), customer..." : "Search by subject, customer, reference..."} value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                       className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500" />
                   </div>
                   <button className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5"><Filter size={14} /> Filter</button>
                 </div>
               </div>
 
-              {/* Email list */}
+              {/* Bookings / Emails list */}
               <div className="mb-6">
-                <h4 className="text-xs font-black text-slate-900 mb-3">Recent Booking Emails</h4>
+                <h4 className="text-xs font-black text-slate-900 mb-3">
+                  {selectedSource === 'portal' ? 'Recent Customer Portal Bookings (Live)' : 'Recent Booking Emails'}
+                </h4>
                 <div className="space-y-2.5">
                   {filteredEmails.length === 0 ? (
                     <div className="py-8 text-center text-slate-400 text-xs font-medium">No emails match your search.</div>
@@ -446,7 +529,7 @@ export default function AILoadBuilder({ onBack }) {
                         }`}>
                         <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                           <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
-                            <Mail size={16} />
+                            {selectedSource === 'portal' ? <Globe size={16} /> : <Mail size={16} />}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap mb-0.5">

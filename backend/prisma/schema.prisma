@@ -609,6 +609,7 @@ model Company {
   payPeriods         PayPeriod[]
   equipmentSwaps     EquipmentSwap[]
   offlineSyncItems   OfflineSyncItem[]
+  expenses           LoadExpense[]
   driverMessages     DriverMessage[]
   incidents          DriverIncident[]
   yardTasks          YardTask[]
@@ -942,6 +943,7 @@ model Driver {
   incidents          DriverIncident[]
   yardTasks          YardTask[]
   superInfo          DriverSuperInfo?
+  expenses           LoadExpense[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1151,6 +1153,7 @@ model Vehicle {
   truckLoads   Load[]     @relation("TruckToLoad")
   trailerLoads Load[]     @relation("TrailerToLoad")
   documents    Document[]
+  expenses     LoadExpense[]
 
   telemetryHistory   TelemetryLog[]
   prevEquipmentSwaps EquipmentSwap[] @relation("PrevTrailerSwap")
@@ -2020,14 +2023,23 @@ enum CustomerInvoiceStatus {
 
 model LoadExpense {
   id     String @id @default(uuid())
-  loadId String
-  load   Load   @relation(fields: [loadId], references: [id])
+  loadId String?
+  load   Load?   @relation(fields: [loadId], references: [id])
 
-  date        DateTime
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  date        DateTime @default(now())
   type        String // e.g., "Fuel", "Toll", "Maintenance"
   description String
   amount      Float
   status      ExpenseStatus @default(PENDING)
+
+  // Direct relationship to vehicle and driver for general/vehicle expenses
+  vehicleId String?
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+  driverId  String?
+  driver    Driver?  @relation(fields: [driverId], references: [id])
 
   // Enhanced for Driver Portal Fuel & Expenses screen
   vendorName    String? // e.g., "BP Service Centre - Yass NSW"
@@ -2068,6 +2080,9 @@ model CustomerInvoice {
   status  CustomerInvoiceStatus @default(DRAFT)
   dueDate DateTime?
   pdfUrl  String?
+  notes   String?               @db.Text
+  items   Json?
+  type    String?               @default("Freight")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

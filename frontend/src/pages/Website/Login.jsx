@@ -29,7 +29,7 @@ const tags = [
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { logoUrl } = useTheme();
+  const { logoUrl } = useTheme() || {};
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [loggingInRole, setLoggingInRole] = useState('');
   const [logoSrc, setLogoSrc] = useState('/image.png');
