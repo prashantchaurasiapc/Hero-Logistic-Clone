@@ -9,11 +9,8 @@ import {
   FiNavigation, FiShare2, FiTrash2
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
-<<<<<<< HEAD
 import api from '../../services/api';
-=======
 import { getLoadDetails, getMyLoads, getDeliveryItems, submitDeliveryPOD } from '../../services/driverApi';
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 
 export default function DeliveryPOD() {
   const navigate = useNavigate();
@@ -50,52 +47,6 @@ export default function DeliveryPOD() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureName, setSignatureName] = useState('');
 
-<<<<<<< HEAD
-  // Data State
-  const [loading, setLoading] = useState(true);
-  const [runData, setRunData] = useState(null);
-  const [cars, setCars] = useState([]);
-
-  useEffect(() => {
-    const fetchActiveRun = async () => {
-      try {
-        setLoading(true);
-        const res = await api.get('/driver-portal/active-run');
-        if (res.data?.success && res.data.data.run) {
-          const run = res.data.data.run;
-          setRunData(run);
-          
-          // Map run items to the format expected by DeliveryPOD
-          if (run.items) {
-            const mappedCars = run.items.map(item => ({
-              id: item.id,
-              makeModel: item.makeModel || 'Unknown Vehicle',
-              color: 'Unknown',
-              reg: item.reg || 'UNKNOWN',
-              vin: item.vin || 'UNKNOWN',
-              beforePhotos: { current: 4, total: 4, percent: 100, missingText: '' },
-              deliveryPhotos: { current: 0, total: 4, percent: 0, missingText: 'Missing 4 Photos' },
-              signature: null,
-              damage: null,
-              damageType: 'none',
-              status: item.status === 'DELIVERED' ? 'Delivered' : 'Not Delivered',
-              deliveryTime: null,
-              delivered: item.status === 'DELIVERED',
-            }));
-            setCars(mappedCars);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch active run:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchActiveRun();
-  }, []);
-
-=======
   // Cars assigned to DROP 1 (Fetched from real backend API)
   const [cars, setCars] = useState([]);
 
@@ -174,7 +125,6 @@ export default function DeliveryPOD() {
 
     return () => { isSubscribed = false; };
   }, [paramId, location.state]);
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -406,18 +356,7 @@ export default function DeliveryPOD() {
     }));
   };
 
-<<<<<<< HEAD
-  const handleConfirmDropDelivery = () => {
-    const undeliveredCount = cars.filter(c => !c.delivered).length;
-    if (undeliveredCount > 0 && !afterHoursEnabled) {
-      triggerToast(`⚠️ Note: ${undeliveredCount} cars remaining. You can enable After-Hours mode or mark remaining cars as delivered.`);
-    } else {
-      triggerToast(`🎉 DROP 1 OF ${runData?.stopsCount || 1} DELIVERY CONFIRMED! Dispatch and Customer notified.`);
-    }
-  };
 
-=======
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   // Canvas Handlers for Signature Capture
   const handleClearCanvas = () => {
     const canvas = canvasRef.current;
@@ -578,13 +517,6 @@ export default function DeliveryPOD() {
       {/* TOP HEADER LOAD BANNER CARD */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-2">
-<<<<<<< HEAD
-          <div className="text-2xl font-black text-indigo-700 tracking-tight">{runData?.id || 'LD-XXXX'}</div>
-          <div className="text-sm font-black text-slate-800 flex items-center gap-2">
-            <span>{runData?.origin || 'Origin'}</span>
-            <span className="text-slate-400">➔</span>
-            <span>{runData?.destination || 'Destination'}</span>
-=======
           <div className="text-2xl font-black text-indigo-700 tracking-tight">
             {activeLoad?.loadRef || activeLoad?.displayId || 'Active Load'}
           </div>
@@ -592,47 +524,26 @@ export default function DeliveryPOD() {
             <span>{activeStop?.name || activeStop?.contactName || 'Delivery Drop'}</span>
             <span className="text-slate-400">➔</span>
             <span>{activeStop?.address || 'Destination'}</span>
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
           </div>
 
           <div className="flex flex-wrap items-center gap-6 pt-2 text-xs">
             <div>
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Current Stop</span>
-<<<<<<< HEAD
-              <span className="font-extrabold text-slate-900">DROP 1 OF {runData?.stopsCount || 1}</span>
-=======
               <span className="font-extrabold text-slate-900">{activeStop?.name || 'DROP 1 OF 1'}</span>
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             </div>
 
             <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
 
             <div>
-<<<<<<< HEAD
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Delivery Time</span>
-              <span className="font-extrabold text-slate-900">{runData?.nextStop?.eta || 'TBA'}</span>
-            </div>
-
-            <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
-
-            <div>
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-              <span className="font-extrabold text-slate-900">{runData?.estFinish || 'TBA'}</span>
-=======
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Status</span>
               <span className="font-extrabold text-slate-900">{activeLoad?.status || 'IN_TRANSIT'}</span>
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             </div>
 
             <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
 
             <div>
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Cars for this stop</span>
-<<<<<<< HEAD
-              <span className="font-extrabold text-slate-900">{totalCarsCount} Cars</span>
-=======
               <span className="font-extrabold text-slate-900">{cars.length} Cars</span>
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             </div>
           </div>
         </div>
@@ -694,13 +605,8 @@ export default function DeliveryPOD() {
             {/* Table Header Section */}
             <div className="p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100">
               <div>
-<<<<<<< HEAD
-                <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO DELIVER – DROP 1 OF {runData?.stopsCount || 1} ({totalCarsCount})</h3>
-                <p className="text-xs font-semibold text-slate-500 mt-0.5">Destination: <strong className="text-slate-800">{runData?.nextStop?.name || 'Destination'}</strong></p>
-=======
                 <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO DELIVER ({cars.length})</h3>
                 <p className="text-xs font-semibold text-slate-500 mt-0.5">Destination: <strong className="text-slate-800">{activeStop?.address || 'Delivery Drop'}</strong></p>
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
               </div>
 
               <div className="flex items-center gap-2">
@@ -712,11 +618,7 @@ export default function DeliveryPOD() {
                   <span>Scan VIN</span>
                 </button>
                 <span className="bg-indigo-50 text-indigo-700 text-xs font-black px-3 py-1.5 rounded-lg border border-indigo-100">
-<<<<<<< HEAD
-                  {totalCarsCount} Cars
-=======
                   {cars.length} Cars
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
                 </span>
               </div>
             </div>

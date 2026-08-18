@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import React, { useState, useRef, useEffect } from 'react';
-=======
 import React, { useState, useEffect, useRef } from 'react';
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import {
@@ -54,7 +50,6 @@ export default function AddExpense() {
   const [odometerVal, setOdometerVal] = useState('0');
 
   const [runData, setRunData] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   // Expense Items Data
   const [expenses, setExpenses] = useState([]);
@@ -190,33 +185,6 @@ export default function AddExpense() {
     e.preventDefault();
     if (!formVendor || !formAmount || isSubmitting) return;
 
-<<<<<<< HEAD
-    try {
-      const numAmount = parseFloat(formAmount) || 0;
-      await api.post('/driver-portal/expenses', {
-        type: formCategory,
-        vendorName: formVendor,
-        amount: numAmount,
-        litres: formLitres,
-        pricePerLitre: 2.05,
-        odometer: formOdometer,
-        description: formNotes,
-        loadId: runData?.id
-      });
-
-      setAddExpenseModalOpen(false);
-      setFormVendor('');
-      setFormAmount('');
-      setFormLitres('');
-      setFormNotes('');
-      setFormReceiptAdded(false);
-      triggerToast(`Added ${formCategory} expense of $${numAmount.toFixed(2)} for ${formVendor}!`);
-      
-      fetchData();
-    } catch (err) {
-      triggerToast('Failed to add expense.');
-    }
-=======
     const numAmount = parseFloat(formAmount) || 0;
     if (numAmount <= 0) {
       triggerToast('❌ Error: Please enter a valid expense amount greater than $0.');
@@ -268,7 +236,6 @@ export default function AddExpense() {
       .finally(() => {
         setIsSubmitting(false);
       });
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   };
 
   // Calculations

@@ -295,7 +295,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const config = roleConfigs[role];
-  const { logoUrl } = useTheme();
+  const { logoUrl } = useTheme() || {};
 
   // Helper to check if path matches current location robustly
   const isPathActive = (itemPath) => {

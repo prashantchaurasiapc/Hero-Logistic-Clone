@@ -21,48 +21,13 @@ export default function Timesheets() {
   // Tab & Search States
   const [activeTab, setActiveTab] = useState('Today'); // 'Today', 'This Week', 'This Month', 'All Timesheets'
   const [toastMsg, setToastMsg] = useState('');
-  const [loading, setLoading] = useState(true);
   const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
   // Clock In / Break / Out States
   const [clockStatus, setClockStatus] = useState('Clocked Out'); // 'Clocked In', 'On Break', 'Clocked Out'
   const [secondsToday, setSecondsToday] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
-<<<<<<< HEAD
-  const [sinceText, setSinceText] = useState('');
 
-  // Dynamic Context from API
-  const [todayStats, setTodayStats] = useState({
-    clockIn: '--',
-    breakTime: '00:00',
-    workTime: '00:00',
-    totalTime: '00:00',
-    overtime: '00h 00m'
-  });
-  const [locationData, setLocationData] = useState({
-    name: '',
-    coords: '',
-    geofence: ''
-  });
-  const [weeklySummary, setWeeklySummary] = useState({
-    dateRange: '',
-    totalHours: '0h 00m',
-    scheduled: '0h 00m',
-    balance: '0h 00m',
-    days: [],
-    weekTotal: '0h 00m'
-  });
-  const [weeklyBreakdown, setWeeklyBreakdown] = useState([]);
-  const [monthlySummary, setMonthlySummary] = useState({
-    month: '',
-    totalHours: '0h 00m',
-    estimatedGrossPay: '$0.00'
-  });
-  const [allTimesheets, setAllTimesheets] = useState([]);
-  const [recentTimesheets, setRecentTimesheets] = useState([]);
-  const [activeLoadData, setActiveLoadData] = useState(null);
-=======
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 
   // Note State
   const [noteInput, setNoteInput] = useState('');
@@ -76,45 +41,9 @@ export default function Timesheets() {
   const [timesheetSubmitted, setTimesheetSubmitted] = useState(false);
 
   // Timeline Data
-<<<<<<< HEAD
-  const [timelineEvents, setTimelineEvents] = useState([]);
-
-  useEffect(() => {
-    fetchTimesheets();
-  }, []);
-
-  const fetchTimesheets = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/driver-portal/timesheets');
-      if (res.data) {
-        if (res.data.clockStatus) setClockStatus(res.data.clockStatus);
-        if (res.data.secondsToday !== undefined) setSecondsToday(res.data.secondsToday);
-        if (res.data.isSubmitted !== undefined) setTimesheetSubmitted(res.data.isSubmitted);
-        if (res.data.sinceText) setSinceText(res.data.sinceText);
-        if (res.data.todayStats) setTodayStats(res.data.todayStats);
-        if (res.data.location) setLocationData(res.data.location);
-        if (res.data.timelineEvents) setTimelineEvents(res.data.timelineEvents);
-        if (res.data.weeklySummary) setWeeklySummary(res.data.weeklySummary);
-        if (res.data.weeklyBreakdown) setWeeklyBreakdown(res.data.weeklyBreakdown);
-        if (res.data.monthlySummary) setMonthlySummary(res.data.monthlySummary);
-        if (res.data.allTimesheets) setAllTimesheets(res.data.allTimesheets);
-        if (res.data.recentTimesheets) setRecentTimesheets(res.data.recentTimesheets);
-        if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
-        setTimerRunning(res.data.clockStatus === 'Clocked In');
-      }
-      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    } catch (err) {
-      console.error('Failed to fetch timesheets:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-=======
   const [timelineEvents, setTimelineEvents] = useState([
     { id: 1, type: 'Clocked In', time: '07:45 AM', location: 'Yard - Melbourne VIC (-37.8136, 144.9631)', badge: 'Auto Location', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
   ]);
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 
   // Fetch Today's Timesheet from Backend
   useEffect(() => {
@@ -205,34 +134,6 @@ export default function Timesheets() {
     }
   };
 
-<<<<<<< HEAD
-  const handleClockOut = async () => {
-    try {
-      await api.post('/driver-portal/timesheets/clock-out', {});
-      setClockStatus('Clocked Out');
-      setTimerRunning(false);
-      triggerToast('Clocked Out successfully! Shift ended.');
-      fetchTimesheets();
-    } catch (err) {
-      setClockStatus('Clocked Out');
-      setTimerRunning(false);
-      triggerToast('Clocked Out successfully! Shift ended.');
-    }
-  };
-
-  const handleClockIn = async () => {
-    try {
-      await api.post('/driver-portal/timesheets/clock-in', {});
-      setClockStatus('Clocked In');
-      setTimerRunning(true);
-      triggerToast('Clocked In successfully! Work timer active.');
-      fetchTimesheets();
-    } catch (err) {
-      setClockStatus('Clocked In');
-      setTimerRunning(true);
-      triggerToast('Clocked In successfully! Work timer active.');
-    }
-=======
   const handleClockOut = () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -280,7 +181,6 @@ export default function Timesheets() {
       .finally(() => {
         setIsSubmitting(false);
       });
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   };
 
   const handleAddNote = async (e) => {

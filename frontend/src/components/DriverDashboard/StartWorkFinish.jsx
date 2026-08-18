@@ -13,7 +13,6 @@ export default function StartWork() {
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Photo uploads state
@@ -27,7 +26,6 @@ export default function StartWork() {
   // Active tab inside Safety Procedures modal
   const [activeSafetyTab, setActiveSafetyTab] = useState('prestart');
   const [notes, setNotes] = useState('');
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
 
   // 20 Inspection Checklist Items state
@@ -94,7 +92,7 @@ export default function StartWork() {
 
   const fetchTodayChecklist = async () => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       const res = await getTodayChecklist();
       const existing = res.data?.data?.checklist || res.data?.checklist;
       if (existing) {
@@ -119,7 +117,7 @@ export default function StartWork() {
     } catch (err) {
       console.error('Failed to load today checklist:', err);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -174,24 +172,11 @@ export default function StartWork() {
     if (isSubmitting) return;
 
     try {
-<<<<<<< HEAD
-      const isWarehouse = user?.role === 'WAREHOUSE_MANAGER' || user?.role === 'WAREHOUSE_STAFF' || user?.role === 'YARD_ATTENDANT';
-      const endpoint = '/driver-portal/checklists';
-
-      const payload = {
-        vehicleRef: contextData?.vehicle?.ref || 'N/A',
-        trailerRef: contextData?.trailerRef || 'N/A',
-        totalItems: totalCount,
-        passedCount: passCount,
-        failedCount: failCount,
-        naCount: naCount,
-=======
       setIsSubmitting(true);
       const res = await submitChecklist({
         items,
         notes,
         photos: selectedPhotos.map(p => p.name),
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
         isDraft: false,
         allowUpdate: true
       });
@@ -210,23 +195,11 @@ export default function StartWork() {
     if (isSubmitting) return;
 
     try {
-<<<<<<< HEAD
-      const endpoint = '/driver-portal/checklists';
-
-      const payload = {
-        vehicleRef: contextData?.vehicle?.ref || 'N/A',
-        trailerRef: contextData?.trailerRef || 'N/A',
-        totalItems: totalCount,
-        passedCount: passCount,
-        failedCount: failCount,
-        naCount: naCount,
-=======
       setIsSubmitting(true);
       const res = await submitChecklist({
         items,
         notes,
         photos: selectedPhotos.map(p => p.name),
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
         isDraft: true,
         allowUpdate: true
       });
@@ -365,11 +338,7 @@ export default function StartWork() {
             <div className="space-y-2">
               <button
                 onClick={() => setHistoryModalOpen(true)}
-<<<<<<< HEAD
-                className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
-=======
                 className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
               >
                 <div className="flex items-center gap-2.5">
                   <FiFileText className="text-indigo-600" />
@@ -670,27 +639,6 @@ export default function StartWork() {
             </div>
 
             <div className="space-y-2 text-xs">
-<<<<<<< HEAD
-              {contextData?.lastChecklists && contextData.lastChecklists.length > 0 ? (
-                contextData.lastChecklists.map((chk, i) => (
-                  <div 
-                    key={i} 
-                    onClick={() => { setSelectedHistoryItem(chk); setHistoryModalOpen(true); }}
-                    className="flex justify-between items-center p-2 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-100 font-bold cursor-pointer transition-colors"
-                  >
-                    <div>
-                      <span className="text-slate-800 block">{chk.dateStr}</span>
-                      <span className={chk.status === 'Pass' ? "text-emerald-600 text-[10px]" : "text-rose-600 text-[10px]"}>{chk.status}</span>
-                    </div>
-                    <span className={`font-mono ${chk.status === 'Pass' ? 'text-emerald-600' : 'text-rose-600'}`}>{chk.passedCount} / {chk.totalItems}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center p-3 text-slate-500 font-medium bg-slate-50 rounded-xl border border-slate-100">
-                  No recent checklists found.
-                </div>
-              )}
-=======
               {historyLogs.map((log) => (
                 <div key={log.id} onClick={() => setHistoryModalOpen(true)} className="flex justify-between items-center p-2 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-100 font-bold transition-all cursor-pointer">
                   <div>
@@ -700,7 +648,6 @@ export default function StartWork() {
                   <span className="font-mono text-emerald-600 text-xs">{log.score}</span>
                 </div>
               ))}
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             </div>
           </div>
 
@@ -758,108 +705,6 @@ export default function StartWork() {
 
       </div>
 
-<<<<<<< HEAD
-      {/* ================= INSPECTION HISTORY MODAL ================= */}
-      {historyModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-5 sm:p-6 space-y-5 text-left shadow-2xl max-h-[90vh] flex flex-col">
-            
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-purple-50 text-purple-700 rounded-2xl">
-                  <FiFileText className="text-xl" />
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-900 text-base sm:text-lg">Pre-Start Safety Checklist History</h3>
-                  <p className="text-xs font-semibold text-slate-500">View previous daily vehicle safety inspection audits & sign-offs</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => { setHistoryModalOpen(false); setSelectedHistoryItem(null); }} 
-                className="text-slate-400 hover:text-slate-700 text-xl font-bold p-1 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="overflow-y-auto space-y-3 flex-1 pr-1">
-              {contextData?.lastChecklists && contextData.lastChecklists.length > 0 ? (
-                contextData.lastChecklists.map((chk, idx) => (
-                  <div 
-                    key={chk.id || idx} 
-                    className="p-4 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-2xl space-y-2.5 transition-all"
-                  >
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <span className={`w-2.5 h-2.5 rounded-full ${chk.status === 'Pass' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-                        <span className="font-black text-slate-900 text-sm">{chk.dateStr}</span>
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
-                          chk.status === 'Pass' 
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
-                            : 'bg-rose-100 text-rose-800 border-rose-300'
-                        }`}>
-                          {chk.status === 'Pass' ? 'PASSED' : 'FAILED'}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-xs font-bold">
-                        <span className="text-slate-500">Score:</span>
-                        <span className="font-mono font-black text-slate-900 bg-white border border-slate-200 px-2.5 py-0.5 rounded-lg">
-                          {chk.passedCount} / {chk.totalItems} ({Math.round(((chk.passedCount || 19) / (chk.totalItems || 20)) * 100)}%)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 pt-1 font-semibold">
-                      <div className="bg-white p-2.5 rounded-xl border border-slate-100">
-                        <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Truck Assigned</span>
-                        <span className="text-slate-900 font-bold">{chk.vehicle || contextData?.vehicle?.ref || 'TRK-101'}</span>
-                      </div>
-                      <div className="bg-white p-2.5 rounded-xl border border-slate-100">
-                        <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Trailer Assigned</span>
-                        <span className="text-slate-900 font-bold">{chk.trailer || contextData?.trailerRef || 'TRL-205'}</span>
-                      </div>
-                    </div>
-
-                    {chk.notes && (
-                      <div className="text-[11px] text-slate-600 bg-white p-2.5 rounded-xl border border-slate-100">
-                        <strong className="text-slate-800">Inspector Notes:</strong> {chk.notes}
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-10 text-slate-500 font-medium">
-                  No inspection history logs recorded yet.
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-3 border-t border-slate-100">
-              <span className="text-xs font-bold text-slate-500">
-                Total Logs: <strong className="text-slate-800">{contextData?.lastChecklists?.length || 0} Submissions</strong>
-              </span>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button
-                  onClick={() => showToast('Exporting inspection history PDF...')}
-                  className="flex-1 sm:flex-initial bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer"
-                >
-                  Export PDF
-                </button>
-                <button
-                  onClick={() => setHistoryModalOpen(false)}
-                  className="flex-1 sm:flex-initial bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-
-=======
       {/* ========================================================================= */}
       {/* 1. SAFETY CHECKLIST LOG HISTORY MODAL */}
       {/* ========================================================================= */}

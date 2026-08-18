@@ -69,20 +69,15 @@ export default function ActiveRun() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Interactive States
-  const [loadStatus, setLoadStatus] = useState('Picked Up'); // 'Picked Up', 'Dispatched', 'Delivered'
+  const [loadStatus, setLoadStatus] = useState('Picked Up');
   const [isDispatched, setIsDispatched] = useState(false);
-<<<<<<< HEAD
-=======
-  const [carsPickedUp, setCarsPickedUp] = useState(8);
-  const totalCars = activeLoad?.totalCars || 8;
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
+  const [pickedUpCountState, setCarsPickedUp] = useState(8);
   const [toastMsg, setToastMsg] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
   
   // Data State
-  const [loading, setLoading] = useState(true);
   const [runData, setRunData] = useState(null);
 
   // Modals
@@ -97,27 +92,6 @@ export default function ActiveRun() {
   const [noteText, setNoteText] = useState('');
   const [photoCaption, setPhotoCaption] = useState('');
 
-<<<<<<< HEAD
-  const fetchActiveRun = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/driver-portal/active-run');
-      if (res.data?.success && res.data.data.run) {
-        setRunData(res.data.data.run);
-        setIsDispatched(res.data.data.run.isDispatched);
-        setLoadStatus(res.data.data.run.status);
-      }
-    } catch (error) {
-      console.error('Failed to fetch active run:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchActiveRun();
-  }, []);
-=======
   // Fetch Load from Backend API
   useEffect(() => {
     let isSubscribed = true;
@@ -182,7 +156,6 @@ export default function ActiveRun() {
 
     return () => { isSubscribed = false; };
   }, [paramId, location.state]);
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 
   useEffect(() => {
     if (location.state?.autoOpenDispatchModal && !isDispatched) {
@@ -190,8 +163,8 @@ export default function ActiveRun() {
     }
   }, [location.state, isDispatched]);
 
-  const carsPickedUp = runData ? runData.pickedUpCount : 0;
-  const totalCars = runData ? runData.totalCarsCount : 0;
+  const carsPickedUp = runData ? runData.pickedUpCount : (activeLoad?.carsPickedUp || pickedUpCountState);
+  const totalCars = runData ? runData.totalCarsCount : (activeLoad?.totalCars || 8);
   const deliveredCars = runData ? runData.deliveredCount : 0;
 
   const triggerToast = (msg) => {

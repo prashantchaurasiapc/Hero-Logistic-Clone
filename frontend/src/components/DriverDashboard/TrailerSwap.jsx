@@ -22,7 +22,6 @@ export default function TrailerSwap() {
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMsg, setToastMsg] = useState('');
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
   // Dynamic Driver & Truck States
@@ -164,92 +163,13 @@ export default function TrailerSwap() {
       return;
     }
 
-<<<<<<< HEAD
-    if (currentTrailer && selectedTargetTrailer && currentTrailer.id === selectedTargetTrailer.id) {
-=======
     if (isSubmitting) return;
 
     if (currentTrailer && currentTrailer.id === selectedTargetTrailer?.id) {
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
       triggerToast(`⚠️ ${selectedTargetTrailer.id} is already your active trailer! Select a different trailer to swap.`);
       return;
     }
 
-<<<<<<< HEAD
-    const oldTrailer = { ...(currentTrailer || {}) };
-    const newTrailer = {
-      id: selectedTargetTrailer?.id,
-      name: selectedTargetTrailer?.name,
-      rego: selectedTargetTrailer?.rego,
-      vin: selectedTargetTrailer?.vin,
-      status: 'Current'
-    };
-
-    try {
-      await api.post('/driver-portal/trailer-swap', {
-        prevTrailerId: oldTrailer.id,
-        newTrailerId: newTrailer.id,
-        newTrailerName: newTrailer.name,
-        newTrailerRego: newTrailer.rego,
-        newTrailerVin: newTrailer.vin,
-        swapType,
-        reason: swapReason,
-        location: swapLocation,
-        notes: swapNotes,
-        checklist
-      });
-
-      // 1. Update current active trailer
-      setCurrentTrailer(newTrailer);
-
-      // 2. Update trailers pool: mark old trailer as Available, mark new trailer as In Use
-      setTrailers(prev => prev.map(t => {
-        if (t.id === newTrailer.id) {
-          return { ...t, status: 'In Use', statusColor: 'bg-purple-100 text-purple-800 border-purple-200' };
-        }
-        if (t.id === oldTrailer.id) {
-          return { ...t, status: 'Available', statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
-        }
-        return t;
-      }));
-
-      // 3. Log swap event into Recent Swaps
-      const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const newSwapRecord = {
-        id: Date.now(),
-        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-        swap: `${oldTrailer.id} ➔ ${newTrailer.id}`,
-        location: swapLocation
-      };
-
-      setRecentSwaps([newSwapRecord, ...recentSwaps]);
-
-      // Save swap details for modal popup
-      setLastSwapInfo({
-        oldId: oldTrailer.id,
-        newId: newTrailer.id,
-        rego: newTrailer.rego,
-        name: newTrailer.name,
-        time: currentTimeStr,
-        location: swapLocation
-      });
-
-      // 4. Auto select next available candidate trailer
-      const nextAvailable = trailers.find(t => t.id !== newTrailer.id && t.status === 'Available');
-      if (nextAvailable) {
-        setSelectedTrailerId(nextAvailable.id);
-      }
-
-      // 5. Open Success Modal Popup & Trigger Toast!
-      setSwapSuccessModalOpen(true);
-      triggerToast(`🎉 Trailer swapped successfully to ${newTrailer.id} (${newTrailer.rego})! Dispatch notified.`);
-      fetchTrailerSwapData();
-    } catch (err) {
-      setCurrentTrailer(newTrailer);
-      setSwapSuccessModalOpen(true);
-      triggerToast(`🎉 Trailer swapped successfully to ${newTrailer.id} (${newTrailer.rego})! Dispatch notified.`);
-    }
-=======
     setIsSubmitting(true);
 
     swapTrailer({
@@ -313,7 +233,6 @@ export default function TrailerSwap() {
       .finally(() => {
         setIsSubmitting(false);
       });
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   };
 
   const handleFilterToggle = () => {

@@ -108,10 +108,7 @@ function formatLoadForJobs(rawLoad) {
 
 
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 const STATUS_META = {
   UPCOMING:    { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },
   IN_PROGRESS: { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
@@ -125,10 +122,7 @@ export default function Jobs() {
   const navigate = useNavigate();
   const [jobs, setJobs]                 = useState([]);
   const [loading, setLoading]           = useState(true);
-<<<<<<< HEAD
-=======
   const [error, setError]               = useState(null);
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   const [activeTab, setActiveTab]       = useState('ALL');
   const [searchQuery, setSearchQuery]   = useState('');
   const [page, setPage]                 = useState(1);
@@ -220,12 +214,7 @@ export default function Jobs() {
     return tabOk && searchOk;
   });
 
-<<<<<<< HEAD
   const totalPages = Math.ceil(filtered.length / perPage) || 1;
-=======
-
-  const totalPages = Math.ceil(filtered.length / perPage);
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   const handleTabChange = t => { setActiveTab(t); setPage(1); };

@@ -2719,6 +2719,41 @@ exports.uploadDriverDocument = async (req, res, next) => {
   }
 };
 
+// ============================================================================
+// ALIAS EXPORTS FOR DRIVER PORTAL ROUTE COMPATIBILITY
+// ============================================================================
+exports.getMyProfile = exports.getDashboard;
+exports.getMyLoads = exports.getJobs;
+exports.getLoadDetails = exports.getJobs;
+exports.updateLoadStatus = exports.updateStatus;
+exports.getPickupItems = exports.getPickupLoad;
+exports.pickupItem = exports.updatePickupItemStatus;
+exports.getDeliveryItems = exports.getPickupLoad;
+exports.submitDeliveryPOD = exports.updatePickupItemStatus;
+exports.getTodayTimesheet = exports.getTimesheets;
+exports.getMyExpenses = exports.getExpenses;
+exports.createExpense = exports.addExpense;
+exports.getExpenseDetails = exports.getExpenses;
+exports.getTrailerSwapContext = exports.getTrailerSwapData;
+exports.swapTrailer = exports.confirmTrailerSwap;
+exports.getUnreadMessageCount = exports.getDriverMessages;
+exports.markAllMessagesAsRead = exports.markAllMessagesRead;
+exports.getMessages = exports.getDriverMessages;
+exports.getMessageDetails = exports.getDriverMessages;
+exports.sendMessage = exports.sendDriverMessage;
+exports.markMessageAsRead = exports.markAllMessagesRead;
+exports.sendEmergencySOS = exports.sendQuickMessage;
+exports.getMyIncidents = exports.getDashboard;
+exports.getIncidentDetails = exports.getDashboard;
+exports.createIncidentReport = exports.sendQuickMessage;
+exports.getTodayChecklist = exports.getChecklistContext;
+exports.getChecklistDetails = exports.getChecklistContext;
+exports.getPayrollSummary = exports.getPayrollData;
+exports.getPayrollHistory = exports.getPayrollData;
+exports.getPayrollDetails = exports.getPayrollData;
+exports.downloadPayslip = exports.getPayrollData;
+
+
 
 
 

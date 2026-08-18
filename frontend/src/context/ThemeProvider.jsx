@@ -68,4 +68,10 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    return { themeColor: '#FFD400', logoUrl: null, updateThemeContext: () => {}, isLoading: false };
+  }
+  return context;
+};

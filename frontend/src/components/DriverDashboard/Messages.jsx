@@ -19,18 +19,8 @@ export default function Messages() {
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMsg, setToastMsg] = useState('');
   const [bannerDismissed, setBannerDismissed] = useState(false);
-<<<<<<< HEAD
-  const [loading, setLoading] = useState(true);
-  const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-
-  // Dynamic Context from API
-  const [vehicleData, setVehicleData] = useState(null);
-  const [activeLoadData, setActiveLoadData] = useState(null);
-  const [contactsList, setContactsList] = useState([]);
-=======
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 
   // Modals
   const [newMessageModalOpen, setNewMessageModalOpen] = useState(false);
@@ -46,37 +36,7 @@ export default function Messages() {
   // Chat Input State inside Chat Modal
   const [chatInputText, setChatInputText] = useState('');
 
-  // New Message Form State
-  const [newMessageRecipient, setNewMessageRecipient] = useState('');
-  const [newMessageText, setNewMessageText] = useState('');
-
   // Conversations Data
-<<<<<<< HEAD
-  const [conversations, setConversations] = useState([]);
-
-  useEffect(() => {
-    fetchMessages();
-  }, []);
-
-  const fetchMessages = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/driver-portal/messages');
-      if (res.data) {
-        if (res.data.conversations) setConversations(res.data.conversations);
-        if (res.data.contacts) setContactsList(res.data.contacts);
-        if (res.data.vehicle) setVehicleData(res.data.vehicle);
-        if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
-        if (res.data.contacts && res.data.contacts.length > 0 && !newMessageRecipient) {
-          setNewMessageRecipient(res.data.contacts[0].id);
-        }
-      }
-      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    } catch (err) {
-      console.error('Failed to fetch messages:', err);
-    } finally {
-      setLoading(false);
-=======
   const [conversations, setConversations] = useState([
     {
       id: 1,
@@ -93,75 +53,9 @@ export default function Messages() {
       messages: [
         { id: 101, sender: 'Dispatch Support', text: 'Good morning Noah, your load LD-3987 is confirmed for 08:00 AM departure.', time: '08:00 AM', isMe: false },
         { id: 102, sender: 'Noah (Me)', text: 'Thanks! I am currently completing pre-trip safety checklist.', time: '08:05 AM', isMe: true },
-        { id: 103, sender: 'Dispatch Support', text: 'Please arrive 15 mins early at the yard.', time: '10:15 AM', isMe: false }
       ]
-    },
-    {
-      id: 2,
-      name: 'ABC Car Yard',
-      avatar: 'AC',
-      avatarColor: 'bg-amber-100 text-amber-800',
-      unread: false,
-      unreadCount: 0,
-      important: true,
-      isGroup: false,
-      lastMsg: 'Gate will close at 4:30 PM today.',
-      meta: 'LD-3987 • Pickup',
-      time: '08:42 AM',
-      messages: [
-        { id: 201, sender: 'ABC Car Yard', text: 'Gate will close at 4:30 PM today.', time: '08:42 AM', isMe: false }
-      ]
-    },
-    {
-      id: 3,
-      name: 'Auto World Sydney',
-      avatar: 'AW',
-      avatarColor: 'bg-emerald-100 text-emerald-800',
-      unread: true,
-      unreadCount: 1,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Receiver contact: Mark Wilson 0411 987 654',
-      meta: 'LD-3987 • Delivery',
-      time: 'Yesterday',
-      messages: [
-        { id: 301, sender: 'Auto World Sydney', text: 'Receiver contact: Mark Wilson 0411 987 654', time: 'Yesterday', isMe: false }
-      ]
-    },
-    {
-      id: 4,
-      name: 'Maintenance Team',
-      avatar: 'MS',
-      avatarColor: 'bg-blue-100 text-blue-800',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Your service is due in 5,000 km.',
-      meta: 'TRK-101',
-      time: 'Yesterday',
-      messages: [
-        { id: 401, sender: 'Maintenance Team', text: 'Your service is due in 5,000 km.', time: 'Yesterday', isMe: false }
-      ]
-    },
-    {
-      id: 5,
-      name: 'Safety Team',
-      avatar: 'SB',
-      avatarColor: 'bg-slate-100 text-slate-700',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Reminder: Complete daily safety checklist.',
-      meta: 'General',
-      time: '27 May 2025',
-      messages: [
-        { id: 501, sender: 'Safety Team', text: 'Reminder: Complete daily safety checklist.', time: '27 May 2025', isMe: false }
-      ]
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
     }
-  };
+  ]);
 
   const fetchConversations = async () => {
     setIsLoading(true);
@@ -188,22 +82,12 @@ export default function Messages() {
   };
 
   const handleMarkAllRead = async () => {
-<<<<<<< HEAD
-    try {
-      await api.post('/driver-portal/messages/mark-all-read');
-      setConversations(conversations.map(c => ({ ...c, unread: false, unreadCount: 0 })));
-      triggerToast('All messages marked as read!');
-    } catch (err) {
-      setConversations(conversations.map(c => ({ ...c, unread: false, unreadCount: 0 })));
-      triggerToast('All messages marked as read!');
-=======
     setConversations(conversations.map(c => ({ ...c, unread: false, unreadCount: 0 })));
     triggerToast('All messages marked as read!');
     try {
       await markAllMessagesAsRead();
     } catch (err) {
       console.warn('Failed to sync mark all read:', err.message);
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
     }
   };
 
@@ -211,85 +95,6 @@ export default function Messages() {
     e.preventDefault();
     if (!chatInputText.trim() || !activeChat || isSubmitting) return;
 
-<<<<<<< HEAD
-    const currentText = chatInputText.trim();
-    setChatInputText('');
-
-    try {
-      const res = await api.post('/driver-portal/messages', {
-        conversationId: activeChat.id,
-        content: currentText
-      });
-
-      const newMsg = res.data?.message || {
-        id: Date.now(),
-        sender: 'Driver (Me)',
-        text: currentText,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isMe: true
-      };
-
-      const updatedConversations = conversations.map(c => {
-        if (c.id === activeChat.id) {
-          return {
-            ...c,
-            lastMsg: `Me: ${currentText}`,
-            time: 'Just now',
-            messages: [...(c.messages || []), newMsg]
-          };
-        }
-        return c;
-      });
-
-      setConversations(updatedConversations);
-      setActiveChat(prev => prev ? {
-        ...prev,
-        messages: [...(prev.messages || []), newMsg]
-      } : prev);
-
-      triggerToast('Message sent!');
-    } catch (err) {
-      // Local fallback
-      const fallbackMsg = {
-        id: Date.now(),
-        sender: 'Driver (Me)',
-        text: currentText,
-        time: 'Just now',
-        isMe: true
-      };
-      setConversations(conversations.map(c => c.id === activeChat.id ? {
-        ...c,
-        lastMsg: `Me: ${currentText}`,
-        time: 'Just now',
-        messages: [...(c.messages || []), fallbackMsg]
-      } : c));
-      setActiveChat(prev => prev ? { ...prev, messages: [...(prev.messages || []), fallbackMsg] } : prev);
-      triggerToast('Message sent!');
-    }
-  };
-
-  const handleCreateNewMessage = async (e) => {
-    e.preventDefault();
-    if (!newMessageText.trim()) return;
-
-    const selectedContact = contactsList.find(c => c.id === newMessageRecipient) || contactsList[0] || { name: 'Dispatch Support' };
-    const content = newMessageText.trim();
-    setNewMessageText('');
-    setNewMessageModalOpen(false);
-
-    try {
-      const res = await api.post('/driver-portal/messages', {
-        recipientId: selectedContact.id,
-        recipientName: selectedContact.name,
-        content: content
-      });
-
-      triggerToast(`Message sent to ${selectedContact.name}!`);
-      fetchMessages();
-    } catch (err) {
-      triggerToast(`Message sent to ${selectedContact.name}!`);
-      fetchMessages();
-=======
     const textToSend = chatInputText.trim();
     setIsSubmitting(true);
 
@@ -351,7 +156,6 @@ export default function Messages() {
       triggerToast('Failed to send message: ' + (err.response?.data?.message || err.message));
     } finally {
       setIsSubmitting(false);
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
     }
   };
 
@@ -877,11 +681,7 @@ export default function Messages() {
       {/* NEW MESSAGE MODAL */}
       {newMessageModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[150] flex items-center justify-center p-4">
-<<<<<<< HEAD
-          <form onSubmit={handleCreateNewMessage} className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left">
-=======
           <form onSubmit={handleSendNewMessageModal} className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left">
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <FiMessageSquare className="text-indigo-600 text-lg" />
@@ -893,20 +693,6 @@ export default function Messages() {
             <div className="space-y-3 text-xs font-semibold">
               <div>
                 <label className="text-slate-700 font-bold block mb-1">Select Recipient</label>
-<<<<<<< HEAD
-                <select 
-                  value={newMessageRecipient} 
-                  onChange={(e) => setNewMessageRecipient(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
-                >
-                  {contactsList.length > 0 ? contactsList.map(c => (
-                    <option key={c.id || c.name} value={c.id || c.name}>
-                      {c.name} ({c.role || 'Online'})
-                    </option>
-                  )) : (
-                    <option value="" disabled>No contacts available</option>
-                  )}
-=======
                 <select
                   value={newRecipient}
                   onChange={(e) => setNewRecipient(e.target.value)}
@@ -917,7 +703,6 @@ export default function Messages() {
                   <option value="Auto World Sydney">Auto World Sydney (Online)</option>
                   <option value="Maintenance Team">Maintenance Team (Online)</option>
                   <option value="Safety Team">Safety Team (Online)</option>
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
                 </select>
               </div>
 
@@ -936,12 +721,8 @@ export default function Messages() {
 
             <button
               type="submit"
-<<<<<<< HEAD
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md"
-=======
               disabled={isSubmitting || !newMessageText.trim()}
               className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md"
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             >
               {isSubmitting ? 'Sending...' : 'Send Message'}
             </button>

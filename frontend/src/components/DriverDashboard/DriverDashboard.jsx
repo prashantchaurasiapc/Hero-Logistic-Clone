@@ -32,9 +32,6 @@ const DriverDashboard = () => {
   const [todayChecklist, setTodayChecklist] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
-<<<<<<< HEAD
-  const [driverStatus, setDriverStatus] = useState(() => localStorage.getItem('hero_driver_duty_status') || 'On Duty');
-=======
   const [apiError, setApiError] = useState(null);
 
   // Local UI State
@@ -52,7 +49,6 @@ const DriverDashboard = () => {
       setDriverStatus(statusMap[user.driverProfile.status] || user.driverProfile.status);
     }
   }, [user]);
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [quickMsg, setQuickMsg] = useState('');
@@ -69,16 +65,6 @@ const DriverDashboard = () => {
     setIsLoading(true);
     setApiError(null);
     try {
-<<<<<<< HEAD
-      setIsLoading(true);
-      const res = await api.get('/driver-portal/dashboard');
-      if (res.data?.success && res.data?.data) {
-        setDashboardData(res.data.data);
-        if (res.data.data.driverInfo?.status) {
-          setDriverStatus(res.data.data.driverInfo.status);
-          localStorage.setItem('hero_driver_duty_status', res.data.data.driverInfo.status);
-        }
-=======
       const [
         profileRes,
         loadsRes,
@@ -101,7 +87,6 @@ const DriverDashboard = () => {
       if (profileRes.status === 'fulfilled') {
         const d = profileRes.value.data?.data?.driver || profileRes.value.data?.driver || profileRes.value.data;
         setDriverProfile(d || null);
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
       }
 
       // Loads
@@ -152,22 +137,6 @@ const DriverDashboard = () => {
     fetchDashboardData();
   }, []);
 
-<<<<<<< HEAD
-  const handleStatusChange = async (newStatus) => {
-    try {
-      setDriverStatus(newStatus);
-      localStorage.setItem('hero_driver_duty_status', newStatus);
-      setStatusModalOpen(false);
-      const res = await api.post('/driver-portal/status', { status: newStatus });
-      if (res.data?.success) {
-        showToast(`Driver status updated to: ${newStatus}`);
-        fetchDashboard();
-      }
-    } catch (err) {
-      console.error('Error updating status:', err);
-      showToast(`Status updated locally to: ${newStatus}`);
-    }
-=======
   // ─── Derived Header Values ─────────────────────────────────────────────
   const driverName = isLoading
     ? '...'
@@ -190,7 +159,6 @@ const DriverDashboard = () => {
     ON_LEAVE: 'On Leave',
     UNAVAILABLE: 'Unavailable',
     AVAILABLE: 'Available',
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   };
 
   const handleStatusChange = (newStatus) => {
@@ -311,35 +279,9 @@ const DriverDashboard = () => {
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Driver Dashboard</h1>
-<<<<<<< HEAD
-            <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
-              driverStatus === 'In Transit'
-                ? 'bg-blue-100 text-blue-800 border-blue-300'
-                : (driverStatus === 'On Break'
-                    ? 'bg-amber-100 text-amber-800 border-amber-300'
-                    : (driverStatus === 'Off Duty'
-                        ? 'bg-slate-100 text-slate-700 border-slate-300'
-                        : 'bg-emerald-100 text-emerald-800 border-emerald-300'))
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${
-                driverStatus === 'In Transit'
-                  ? 'bg-blue-500'
-                  : (driverStatus === 'On Break'
-                      ? 'bg-amber-500'
-                      : (driverStatus === 'Off Duty' ? 'bg-slate-500' : 'bg-emerald-500'))
-              }`}></span>
-              {driverStatus}
-            </span>
-            <span className="text-[10px] font-extrabold text-slate-400 border border-slate-200 px-2 py-0.5 rounded-full bg-white whitespace-nowrap flex items-center gap-1">
-              Last sync: {driverInfo.lastSync}
-              <button onClick={fetchDashboard} title="Refresh live data" className="hover:text-slate-700 cursor-pointer ml-1">
-                <FiRefreshCw className={`text-[10px] ${isLoading ? 'animate-spin' : ''}`} />
-              </button>
-=======
             <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               {dbStatus ? (statusDisplayMap[dbStatus] || dbStatus) : driverStatus}
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             </span>
             <button
               onClick={fetchDashboardData}
