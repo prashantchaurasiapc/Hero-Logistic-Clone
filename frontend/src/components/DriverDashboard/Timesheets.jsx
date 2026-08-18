@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import {
   getTodayTimesheet, createTimesheet, clockIn, clockOut,
   toggleBreak, addTimesheetNote, submitTimesheet
@@ -405,23 +406,23 @@ export default function Timesheets() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
+                <div className="text-2xl font-black text-indigo-700 tracking-tight">{activeLoadData?.loadRef || 'No Load'}</div>
                 <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                  <span>Melbourne VIC</span>
+                  <span>{activeLoadData?.origin || '--'}</span>
                   <span className="text-slate-400">➔</span>
-                  <span>Sydney NSW</span>
+                  <span>{activeLoadData?.destination || '--'}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Start Date</span>
-                  <span className="font-mono text-slate-900">29 May 2025</span>
+                  <span className="font-mono text-slate-900">{activeLoadData?.startDate || '--'}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-                  <span className="font-mono text-slate-900">29 May 2025</span>
+                  <span className="font-mono text-slate-900">{activeLoadData?.startDate || '--'}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
@@ -431,7 +432,7 @@ export default function Timesheets() {
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Load ID</span>
-                  <span className="font-mono text-indigo-700">PO-65432</span>
+                  <span className="font-mono text-indigo-700">{activeLoadData?.poNumber || '--'}</span>
                 </div>
               </div>
             </div>
