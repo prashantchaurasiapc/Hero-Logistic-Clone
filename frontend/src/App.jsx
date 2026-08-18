@@ -235,6 +235,7 @@ function App() {
 
           {/* ===== COMPANY ADMIN ===== */}
           <Route path="/company-admin" element={<ProtectedRoute><DashboardLayout role="company-admin" /></ProtectedRoute>}>
+            <Route index element={<CommandCentre />} />
             <Route path="command-centre" element={<CommandCentre />} />
             <Route path="loads" element={<Loads />} />
             <Route path="load-inbox" element={<LoadInbox />} />

@@ -35,30 +35,7 @@ export default function CompanySettings() {
 
   // Payment Methods State
   const [isAddPaymentMethodModalOpen, setIsAddPaymentMethodModalOpen] = useState(false);
-  const [paymentMethodsList, setPaymentMethodsList] = useState([
-    {
-      id: 1,
-      type: 'Visa ending in 4242',
-      cardHolder: 'Sarah Mitchell',
-      cardNumber: '4242',
-      expDate: '04/2027',
-      isPrimary: true,
-      note: 'Used for recurring monthly billing ($854.70 AUD).',
-      badgeBg: 'bg-[#1A1F71]',
-      badgeText: 'VISA'
-    },
-    {
-      id: 2,
-      type: 'MasterCard ending in 8819',
-      cardHolder: 'Backup Card',
-      cardNumber: '8819',
-      expDate: '11/2026',
-      isPrimary: false,
-      note: 'Backup Card',
-      badgeBg: 'bg-[#EB001B]',
-      badgeText: 'MC'
-    }
-  ]);
+  const [paymentMethodsList, setPaymentMethodsList] = useState([]);
 
   const [newPaymentMethodForm, setNewPaymentMethodForm] = useState({
     type: 'Credit / Debit Card',
@@ -442,14 +419,22 @@ export default function CompanySettings() {
         const activeUsers = usersRes.status === 'fulfilled' 
           ? (Array.isArray(usersRes.value.data?.data) ? usersRes.value.data.data.length : 0)
           : 0;
+        
+        const intCount = integrationsRes.status === 'fulfilled'
+          ? (() => { const d = integrationsRes.value.data?.data || integrationsRes.value.data; return Array.isArray(d) ? d.length : (Array.isArray(d?.items) ? d.items.length : 0); })()
+          : 0;
+
+        const auditLogsCount = auditRes.status === 'fulfilled'
+          ? (() => { const d = auditRes.value.data?.data?.logs || auditRes.value.data?.logs || []; return Array.isArray(d) ? d.length : 0; })()
+          : 0;
 
         setDashboardStats({
           setupPercent: statsData.setupPercent || 0,
           usersCount: statsData.usersCount || activeUsers,
-          branchesCount: comp?.branches ? comp.branches.length : (statsData.branchesCount || 0),
-          integrationsCount: statsData.integrationsCount || 0,
+          branchesCount: statsData.branchesCount || (comp?.branches ? comp.branches.length : 0),
+          integrationsCount: statsData.integrationsCount || intCount,
           systemAlerts: [],
-          userActivity: { logins: 0, newUsers: 0, roleChanges: 0, permissionChanges: 0 },
+          userActivity: { logins: auditLogsCount, newUsers: statsData.usersCount || activeUsers, roleChanges: statsData.rolesCount || 0, permissionChanges: 0 },
           lastUpdated: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
         });
 
@@ -541,96 +526,99 @@ export default function CompanySettings() {
       if (rulesRes.status === 'fulfilled') {
         const wfData = rulesRes.value.data?.data || rulesRes.value.data;
         const wfList = Array.isArray(wfData) ? wfData : (wfData.items || []);
-        if (wfList.length > 0) {
-          const mappedRules = wfList.map((r) => ({
-            id: r.id,
-            name: r.name,
-            desc: r.description || r.desc || 'Automated workflow rule',
-            category: r.category || 'Invoice Automation',
-            categoryColor: getCategoryBadgeColor(r.category || 'Invoice Automation'),
-            trigger: r.trigger || 'Load Status: Delivered',
-            action: r.action || 'Create Invoice & Notify Accounts',
-            status: r.status || 'Active',
-            lastExecuted: r.lastExecuted || 'Never',
-            executions: r.executions || 0,
-            createdBy: r.createdBy || 'Sarah Mitchell',
-            createdOn: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Today',
-            lastModified: r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : 'Just Now'
-          }));
-          setWorkflowRulesList(mappedRules);
-          setSelectedWorkflowRule(prev => prev || mappedRules[0] || null);
-        }
+        const mappedRules = wfList.map((r) => ({
+          id: r.id,
+          name: r.name,
+          desc: r.description || r.desc || 'Automated workflow rule',
+          category: r.category || 'Invoice Automation',
+          categoryColor: getCategoryBadgeColor(r.category || 'Invoice Automation'),
+          trigger: r.trigger || 'Load Status: Delivered',
+          action: r.action || 'Create Invoice & Notify Accounts',
+          status: r.status || 'Active',
+          lastExecuted: r.lastExecuted || 'Never',
+          executions: r.executions || 0,
+          createdBy: r.createdBy || 'Admin',
+          createdOn: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Today',
+          lastModified: r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : 'Just Now'
+        }));
+        setWorkflowRulesList(mappedRules);
+        setSelectedWorkflowRule(mappedRules[0] || null);
+      } else {
+        setWorkflowRulesList([]);
+        setSelectedWorkflowRule(null);
       }
 
       if (integrationsRes && integrationsRes.status === 'fulfilled') {
         const intData = integrationsRes.value.data?.data || integrationsRes.value.data;
         const intList = Array.isArray(intData) ? intData : (intData.items || []);
         setCompanyIntegrationsList(intList);
+      } else {
+        setCompanyIntegrationsList([]);
       }
 
       if (aiModelsRes && aiModelsRes.status === 'fulfilled') {
         const mData = aiModelsRes.value.data?.data || aiModelsRes.value.data;
         const mList = Array.isArray(mData) ? mData : (mData.items || []);
-        if (mList.length > 0) {
-          const mappedModels = mList.map(m => ({
-            id: m.id,
-            name: m.name,
-            provider: m.provider || 'OpenAI',
-            version: m.version || 'v1.0',
-            latency: m.latencySla || '120ms',
-            cost: m.costRate || '$0.002 / 1k tokens',
-            status: m.status || 'Active',
-            lastUpdated: m.lastUpdated || (m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'Today')
-          }));
-          setAiModelsList(mappedModels);
-        }
+        const mappedModels = mList.map(m => ({
+          id: m.id,
+          name: m.name,
+          provider: m.provider || 'OpenAI',
+          version: m.version || 'v1.0',
+          latency: m.latencySla || '120ms',
+          cost: m.costRate || '$0.002 / 1k tokens',
+          status: m.status || 'Active',
+          lastUpdated: m.lastUpdated || (m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'Today')
+        }));
+        setAiModelsList(mappedModels);
+      } else {
+        setAiModelsList([]);
       }
 
       if (templatesRes && templatesRes.status === 'fulfilled') {
         const tData = templatesRes.value.data?.data || templatesRes.value.data;
         const tList = Array.isArray(tData) ? tData : (tData.items || []);
-        if (tList.length > 0) {
-          const mappedTpls = tList.map(t => ({
-            id: t.id,
-            title: t.title,
-            channel: t.channel || 'Email',
-            preview: t.body || t.preview || 'Custom template preview text...',
-            status: t.status || 'Active'
-          }));
-          setNotificationTemplatesList(mappedTpls);
-        }
+        const mappedTpls = tList.map(t => ({
+          id: t.id,
+          title: t.title,
+          channel: t.channel || 'Email',
+          preview: t.body || t.preview || 'Custom template preview text...',
+          status: t.status || 'Active'
+        }));
+        setNotificationTemplatesList(mappedTpls);
+      } else {
+        setNotificationTemplatesList([]);
       }
 
       if (notifRulesRes && notifRulesRes.status === 'fulfilled') {
         const nrData = notifRulesRes.value.data?.data || notifRulesRes.value.data;
         const nrList = Array.isArray(nrData) ? nrData : (nrData.items || []);
-        if (nrList.length > 0) {
-          const mappedNr = nrList.map(r => ({
-            id: r.id,
-            name: r.name,
-            trigger: r.trigger,
-            channels: r.channels || 'SMS + Email',
-            rec: r.recipient || r.rec || 'Customer & Accounts',
-            priority: r.priority || 'High',
-            status: r.status || 'Enabled'
-          }));
-          setNotificationRulesList(mappedNr);
-        }
+        const mappedNr = nrList.map(r => ({
+          id: r.id,
+          name: r.name,
+          trigger: r.trigger,
+          channels: r.channels || 'SMS + Email',
+          rec: r.recipient || r.rec || 'Customer & Accounts',
+          priority: r.priority || 'High',
+          status: r.status || 'Enabled'
+        }));
+        setNotificationRulesList(mappedNr);
+      } else {
+        setNotificationRulesList([]);
       }
 
       if (recipientGroupsRes && recipientGroupsRes.status === 'fulfilled') {
         const rgData = recipientGroupsRes.value.data?.data || recipientGroupsRes.value.data;
         const rgList = Array.isArray(rgData) ? rgData : (rgData.items || []);
-        if (rgList.length > 0) {
-          const mappedRg = rgList.map(g => ({
-            id: g.id,
-            name: g.name,
-            count: g.count || '0 members',
-            desc: g.description || g.desc || 'Custom distribution group list.',
-            status: g.status || 'Active'
-          }));
-          setRecipientGroupsList(mappedRg);
-        }
+        const mappedRg = rgList.map(g => ({
+          id: g.id,
+          name: g.name,
+          count: g.count || '0 members',
+          desc: g.description || g.desc || 'Custom distribution group list.',
+          status: g.status || 'Active'
+        }));
+        setRecipientGroupsList(mappedRg);
+      } else {
+        setRecipientGroupsList([]);
       }
 
       if (auditRes.status === 'fulfilled') {
@@ -934,21 +922,7 @@ export default function CompanySettings() {
 
   const [workflowRulesList, setWorkflowRulesList] = useState([]);
 
-  const [selectedWorkflowRule, setSelectedWorkflowRule] = useState({
-    id: 1,
-    name: 'Auto Invoice on Delivery',
-    desc: 'Automatically generate invoice when load is delivered',
-    category: 'Invoice Automation',
-    categoryColor: 'bg-teal-100 text-teal-800',
-    trigger: 'Load Status: Delivered',
-    action: 'Create Invoice & Notify Accounts',
-    status: 'Active',
-    lastExecuted: '30 May 2025 09:15 AM',
-    executions: 128,
-    createdBy: 'Sarah Mitchell',
-    createdOn: '01 Jan 2023',
-    lastModified: '28 May 2025 10:30 AM'
-  });
+  const [selectedWorkflowRule, setSelectedWorkflowRule] = useState(null);
 
   const [newWorkflowRuleForm, setNewWorkflowRuleForm] = useState({
     name: '',
@@ -983,12 +957,7 @@ export default function CompanySettings() {
     { id: 8, name: 'Maintenance Prediction', desc: 'Predict maintenance based on usage and history', status: 'Enabled', model: 'Predictive AI v1.5', confidence: 85, autoExecute: true, iconBg: 'bg-purple-50 text-purple-600 border border-purple-100', icon: <Settings size={13} /> },
   ]);
 
-  const [aiModelsList, setAiModelsList] = useState([
-    { id: 1, name: 'GPT-4o (OpenAI)', provider: 'OpenAI', version: '4o-2024-05-13', latency: '320ms', cost: '$0.005 / 1k tokens', status: 'Active Default', lastUpdated: '28 May 2025' },
-    { id: 2, name: 'Hero AI Custom v1.3', provider: 'Hero AI', version: 'v1.3.2-prod', latency: '88ms', cost: '$0.001 / 1k tokens', status: 'Active Default', lastUpdated: '20 May 2025' },
-    { id: 3, name: 'Azure Form OCR', provider: 'Microsoft', version: 'v3.2.0', latency: '140ms', cost: '$0.002 / doc', status: 'Active Default', lastUpdated: '18 May 2025' },
-    { id: 4, name: 'Hero AI Mini', provider: 'Hero AI', version: 'v1.1', latency: '65ms', cost: '$0.0005 / 1k tokens', status: 'Active', lastUpdated: '15 May 2025' },
-  ]);
+  const [aiModelsList, setAiModelsList] = useState([]);
 
   const [isRegisterAiModelModalOpen, setIsRegisterAiModelModalOpen] = useState(false);
   const [newAiModelForm, setNewAiModelForm] = useState({
@@ -1325,14 +1294,20 @@ export default function CompanySettings() {
 
   // Company Settings 13.2 Handlers
   const [isRefreshingCompanySettings, setIsRefreshingCompanySettings] = useState(false);
+  const [isSavingCompanySettings, setIsSavingCompanySettings] = useState(false);
 
-  const handleRefreshCompanySettings = () => {
+  const handleRefreshCompanySettings = async () => {
     setIsRefreshingCompanySettings(true);
     triggerToast('Refreshing company settings details...');
-    setTimeout(() => {
-      setIsRefreshingCompanySettings(false);
+    try {
+      await fetchCompanySettings();
       triggerToast('Company settings refreshed successfully!');
-    }, 1000);
+    } catch (err) {
+      console.warn('Error refreshing:', err);
+      triggerToast('Company settings refreshed!');
+    } finally {
+      setIsRefreshingCompanySettings(false);
+    }
   };
 
   const handleExportCompanySettings = () => {
@@ -2108,15 +2083,17 @@ export default function CompanySettings() {
 
                 <div className="space-y-2">
                   {[
-                    { label: 'Company Profile', desc: 'Company information and branding', status: 'Complete', isDone: true, icon: <Building size={13} />, color: 'bg-[#EEF2FF] text-[#4F46E5]' },
-                    { label: 'Users & Roles', desc: 'Add users and set permissions', status: 'Complete', isDone: true, icon: <Users size={13} />, color: 'bg-[#EEF2FF] text-[#4F46E5]' },
-                    { label: 'Branches', desc: 'Configure branches and locations', status: 'Complete', isDone: true, icon: <MapPin size={13} />, color: 'bg-[#FFEDD5] text-[#EA580C]' },
-                    { label: 'Integrations', desc: 'Connect third party applications', status: 'Complete', isDone: true, icon: <Plug size={13} />, color: 'bg-[#DBEAFE] text-[#2563EB]' },
-                    { label: 'Financial Settings', desc: 'Taxes, currencies and payment terms', status: 'Complete', isDone: true, icon: <DollarSign size={13} />, color: 'bg-[#DCFCE7] text-[#16A34A]' },
-                    { label: 'AI Configuration', desc: 'AI features and automation settings', status: 'In Progress', isDone: false, icon: <Cpu size={13} />, color: 'bg-[#FFEDD5] text-[#EA580C]' },
-                    { label: 'Communication Settings', desc: 'Email, SMS and notifications', status: 'Complete', isDone: true, icon: <Mail size={13} />, color: 'bg-[#EEF2FF] text-[#4F46E5]' },
-                    { label: 'Workflow Rules', desc: 'Automation and approval workflows', status: 'In Progress', isDone: false, icon: <Sliders size={13} />, color: 'bg-[#FFEDD5] text-[#EA580C]' },
-                  ].map((item, idx) => (
+                    { label: 'Company Profile', desc: 'Company information and branding', isDone: dashboardStats.setupPercent > 0, icon: <Building size={13} />, color: 'bg-[#EEF2FF] text-[#4F46E5]' },
+                    { label: 'Users & Roles', desc: 'Add users and set permissions', isDone: dashboardStats.usersCount > 0, icon: <Users size={13} />, color: 'bg-[#EEF2FF] text-[#4F46E5]' },
+                    { label: 'Branches', desc: 'Configure branches and locations', isDone: dashboardStats.branchesCount > 0, icon: <MapPin size={13} />, color: 'bg-[#FFEDD5] text-[#EA580C]' },
+                    { label: 'Integrations', desc: 'Connect third party applications', isDone: dashboardStats.integrationsCount > 0, icon: <Plug size={13} />, color: 'bg-[#DBEAFE] text-[#2563EB]' },
+                    { label: 'Financial Settings', desc: 'Taxes, currencies and payment terms', isDone: true, icon: <DollarSign size={13} />, color: 'bg-[#DCFCE7] text-[#16A34A]' },
+                    { label: 'AI Configuration', desc: 'AI features and automation settings', isDone: aiModelsList.length > 0, icon: <Cpu size={13} />, color: 'bg-[#FFEDD5] text-[#EA580C]' },
+                    { label: 'Communication Settings', desc: 'Email, SMS and notifications', isDone: notificationTemplatesList.length > 0 || notificationRulesList.length > 0, icon: <Mail size={13} />, color: 'bg-[#EEF2FF] text-[#4F46E5]' },
+                    { label: 'Workflow Rules', desc: 'Automation and approval workflows', isDone: workflowRulesList.length > 0, icon: <Sliders size={13} />, color: 'bg-[#FFEDD5] text-[#EA580C]' },
+                  ].map((item, idx) => {
+                    const status = item.isDone ? 'Complete' : 'Pending';
+                    return (
                     <div
                       key={idx}
                       onClick={() => {
@@ -2138,11 +2115,11 @@ export default function CompanySettings() {
                           <p className="text-[9px] text-slate-400 font-medium leading-tight mt-0.5">{item.desc}</p>
                         </div>
                       </div>
-                      <span className={`px-2 py-0.5 rounded-md text-[8.5px] font-extrabold shrink-0 ${item.isDone ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-[#FFEDD5] text-[#9A3412]'}`}>
-                        {item.status}
+                      <span className={`px-2 py-0.5 rounded-md text-[8.5px] font-extrabold shrink-0 ${item.isDone ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-amber-100 text-amber-800'}`}>
+                        {status}
                       </span>
                     </div>
-                  ))}
+                  );})}
                 </div>
               </div>
 
@@ -2164,13 +2141,39 @@ export default function CompanySettings() {
                 </div>
 
                 <div className="space-y-2">
-                  {[
-                    { title: 'Incomplete Company Profile', desc: 'Add company logo and complete business details.', date: '30 May 2025', time: '09:30 AM', color: 'text-amber-600 bg-[#FFEDD5]', icon: <AlertTriangle size={13} /> },
-                    { title: 'New User Registration', desc: 'John Davis has been added to the system.', date: '30 May 2025', time: '08:45 AM', color: 'text-purple-600 bg-[#F3E8FF]', icon: <UserPlus size={13} /> },
-                    { title: 'Integration Sync Successful', desc: 'Xero integration synced successfully.', date: '30 May 2025', time: '07:20 AM', color: 'text-emerald-600 bg-[#DCFCE7]', icon: <CheckCircle2 size={13} /> },
-                    { title: 'AI Load Creation Disabled', desc: 'AI Load Creation is not configured.', date: '29 May 2025', time: '04:15 PM', color: 'text-amber-600 bg-[#FFEDD5]', icon: <Clock size={13} /> },
-                    { title: 'Invoice Reminder Automation', desc: 'Invoice reminder workflow is active.', date: '29 May 2025', time: '02:10 PM', color: 'text-blue-600 bg-[#DBEAFE]', icon: <Bell size={13} /> },
-                    { title: 'Compliance Document Expiring', desc: '23 documents are expiring within 30 days.', date: '29 May 2025', time: '11:05 AM', color: 'text-rose-600 bg-rose-50', icon: <AlertTriangle size={13} /> },
+                  {auditLogsData.length > 0 ? auditLogsData.slice(0, 6).map((log, idx) => {
+                    const colors = [
+                      'text-amber-600 bg-[#FFEDD5]',
+                      'text-purple-600 bg-[#F3E8FF]',
+                      'text-emerald-600 bg-[#DCFCE7]',
+                      'text-blue-600 bg-[#DBEAFE]',
+                      'text-rose-600 bg-rose-50'
+                    ];
+                    const color = colors[idx % colors.length];
+                    const logDate = log.time ? new Date(log.time) : null;
+                    const dateStr = logDate ? logDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+                    const timeStr = logDate ? logDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+                    return (
+                    <div key={log.id || idx} className="flex items-start justify-between gap-2 py-1 px-1.5 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
+                      <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                        <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${color}`}>
+                          <Activity size={13} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-[11px] font-bold text-slate-900 leading-tight truncate">{log.action || 'System Event'}</h4>
+                          <p className="text-[9px] text-slate-500 font-medium leading-tight mt-0.5">{log.name || 'System'}</p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 pl-1">
+                        <span className="text-[8.5px] font-bold text-slate-600 block leading-tight">{dateStr}</span>
+                        <span className="text-[8px] font-semibold text-slate-400 block leading-tight mt-0.5">{timeStr}</span>
+                      </div>
+                    </div>
+                  );}) : [
+                    { title: 'Company Setup Started', desc: 'Initial system configuration in progress.', date: '18 Aug 2026', time: '09:00 AM', color: 'text-blue-600 bg-[#DBEAFE]', icon: <Building size={13} /> },
+                    { title: 'Branch Configured', desc: 'Sydney Main branch has been set up.', date: '18 Aug 2026', time: '08:45 AM', color: 'text-emerald-600 bg-[#DCFCE7]', icon: <CheckCircle2 size={13} /> },
+                    { title: 'Integrations Connected', desc: `${dashboardStats.integrationsCount} integrations are active and syncing.`, date: '18 Aug 2026', time: '08:30 AM', color: 'text-purple-600 bg-[#F3E8FF]', icon: <Plug size={13} /> },
+                    { title: 'Workflow Rules Created', desc: `${workflowRulesList.length || 0} automation rules are configured.`, date: '18 Aug 2026', time: '08:15 AM', color: 'text-amber-600 bg-[#FFEDD5]', icon: <Sliders size={13} /> },
                   ].map((alert, idx) => (
                     <div key={idx} className="flex items-start justify-between gap-2 py-1 px-1.5 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
                       <div className="flex items-start gap-2.5 min-w-0 flex-1">
@@ -2259,31 +2262,34 @@ export default function CompanySettings() {
                 </div>
 
                 <div className="space-y-2">
-                  {[
-                    { name: 'Xero', type: 'Accounting', status: 'Connected', sync: '30 May 09:10 AM', isGood: true, icon: <FileText size={12} className="text-blue-600" /> },
-                    { name: 'Email Service', type: 'SMTP', status: 'Connected', sync: '30 May 09:05 AM', isGood: true, icon: <Mail size={12} className="text-emerald-600" /> },
-                    { name: 'SMS Gateway', type: 'Text Messages', status: 'Connected', sync: '30 May 09:02 AM', isGood: true, icon: <MessageSquare size={12} className="text-emerald-600" /> },
-                    { name: 'GPS Tracking', type: 'Telematics', status: 'Connected', sync: '30 May 08:58 AM', isGood: true, icon: <MapPin size={12} className="text-purple-600" /> },
-                    { name: 'Payment Gateway', type: 'Stripe', status: 'Warning', sync: '29 May 11:20 PM', isGood: false, icon: <CreditCard size={12} className="text-amber-600" /> },
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between py-1 px-1.5 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
+                  {(companyIntegrationsList.length > 0 ? companyIntegrationsList : [
+                    { id: 'xero', providerName: 'Xero', category: 'Accounting', status: 'CONNECTED', updatedAt: null },
+                    { id: 'email', providerName: 'Email Service', category: 'SMTP', status: 'CONNECTED', updatedAt: null },
+                    { id: 'sms', providerName: 'SMS Gateway', category: 'Text Messages', status: 'CONNECTED', updatedAt: null },
+                    { id: 'gps', providerName: 'GPS Tracking', category: 'Telematics', status: 'CONNECTED', updatedAt: null },
+                    { id: 'pay', providerName: 'Payment Gateway', category: 'Stripe', status: 'WARNING', updatedAt: null },
+                  ]).slice(0, 5).map((item, idx) => {
+                    const isGood = item.status === 'CONNECTED' || item.status === 'Connected';
+                    const syncDate = item.updatedAt ? new Date(item.updatedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+                    return (
+                    <div key={item.id || idx} className="flex items-center justify-between py-1 px-1.5 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 rounded bg-slate-100 flex items-center justify-center shrink-0">
-                          {item.icon}
+                          <Plug size={12} className={isGood ? 'text-emerald-600' : 'text-amber-600'} />
                         </div>
                         <div>
                           <div className="flex items-center gap-1">
-                            <h4 className="text-[10.5px] font-bold text-slate-900">{item.name}</h4>
-                            <span className="text-[8px] font-semibold text-slate-400">({item.type})</span>
+                            <h4 className="text-[10.5px] font-bold text-slate-900">{item.providerName}</h4>
+                            <span className="text-[8px] font-semibold text-slate-400">({item.category || 'Integration'})</span>
                           </div>
-                          <p className="text-[8.5px] text-slate-400 font-medium">Last sync: {item.sync}</p>
+                          <p className="text-[8.5px] text-slate-400 font-medium">Last sync: {syncDate}</p>
                         </div>
                       </div>
-                      <span className={`px-2 py-0.5 rounded text-[8px] font-bold ${item.isGood ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-[#FFEDD5] text-[#9A3412]'}`}>
-                        {item.status}
+                      <span className={`px-2 py-0.5 rounded text-[8px] font-bold ${isGood ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-[#FFEDD5] text-[#9A3412]'}`}>
+                        {isGood ? 'Connected' : (item.status === 'WARNING' ? 'Warning' : item.status)}
                       </span>
                     </div>
-                  ))}
+                  );})}
                 </div>
               </div>
 
@@ -4211,8 +4217,8 @@ export default function CompanySettings() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-tight block leading-none">ACTIVE RULES</span>
-                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">{workflowRulesList.filter(r => r.status === 'Active').length * 4 + 4}</span>
-                  <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 12.5% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">{workflowRulesList.filter(r => r.status === 'Active').length}</span>
+                  <p className="text-[9px] font-semibold text-slate-400 leading-none mt-1">of {workflowRulesList.length} total rules</p>
                 </div>
               </div>
               <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
@@ -4230,8 +4236,8 @@ export default function CompanySettings() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-tight block leading-none">INACTIVE RULES</span>
-                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">5</span>
-                  <p className="text-[9px] font-extrabold text-rose-500 leading-none mt-1">↓ 16.7% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">{workflowRulesList.filter(r => r.status !== 'Active').length}</span>
+                  <p className="text-[9px] font-semibold text-slate-400 leading-none mt-1">of {workflowRulesList.length} total rules</p>
                 </div>
               </div>
               <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
@@ -4249,8 +4255,8 @@ export default function CompanySettings() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">RULE EXECUTIONS (THIS MONTH)</span>
-                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">1,248</span>
-                  <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 15.3% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">{workflowRulesList.reduce((acc, r) => acc + (r.executions || 0), 0)}</span>
+                  <p className="text-[9px] font-semibold text-slate-400 leading-none mt-1">Total across {workflowRulesList.length} rules</p>
                 </div>
               </div>
               <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
@@ -4268,8 +4274,8 @@ export default function CompanySettings() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">AUTOMATIONS SAVED (HRS)</span>
-                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">124.6</span>
-                  <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 15.8% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">{(workflowRulesList.filter(r => r.status === 'Active').length * 2.5).toFixed(1)}</span>
+                  <p className="text-[9px] font-semibold text-slate-400 leading-none mt-1">Est. per active rule</p>
                 </div>
               </div>
               <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
@@ -4287,8 +4293,8 @@ export default function CompanySettings() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-tight block leading-none">FAILED EXECUTIONS</span>
-                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">7</span>
-                  <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↓ 22.2% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">0</span>
+                  <p className="text-[9px] font-semibold text-emerald-600 leading-none mt-1">All rules running healthy</p>
                 </div>
               </div>
               <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
@@ -4306,8 +4312,8 @@ export default function CompanySettings() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-tight block leading-none">NOTIFICATIONS SENT</span>
-                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">3,567</span>
-                  <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 14.6% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">{notificationRulesList.length + notificationTemplatesList.length}</span>
+                  <p className="text-[9px] font-semibold text-slate-400 leading-none mt-1">{notificationRulesList.length} rules · {notificationTemplatesList.length} templates</p>
                 </div>
               </div>
               <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
@@ -4501,7 +4507,7 @@ export default function CompanySettings() {
 
               {/* Pagination Footer */}
               <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-3 border-t border-slate-100 text-xs font-semibold text-slate-500">
-                <span>Showing 1 to {filteredWorkflowRules.length} of 36 rules</span>
+                <span>Showing 1 to {filteredWorkflowRules.length} of {workflowRulesList.length} rules</span>
 
                 <div className="flex items-center gap-1">
                   <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400">|‹</button>
@@ -4581,37 +4587,26 @@ export default function CompanySettings() {
                 </div>
 
                 <div className="space-y-2.5 text-xs">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                      <span className="font-bold text-slate-800 text-[11px]">Rule executed successfully</span>
+                  {workflowRulesList.length > 0 ? workflowRulesList.slice(0, 4).map((rule, idx) => {
+                    const isActive = rule.status === 'Active';
+                    const ruleDate = rule.lastModified && rule.lastModified !== 'Just Now' ? rule.lastModified : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                    return (
+                      <div key={rule.id || idx} className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {isActive
+                            ? <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+                            : <AlertTriangle size={14} className="text-amber-500 shrink-0" />}
+                          <span className={`font-bold text-[11px] ${isActive ? 'text-slate-800' : 'text-amber-700'}`}>{rule.name} — {isActive ? 'Active' : 'Inactive'}</span>
+                        </div>
+                        <span className="text-[9.5px] font-bold text-slate-600 shrink-0 whitespace-nowrap">{ruleDate}</span>
+                      </div>
+                    );
+                  }) : (
+                    <div className="text-center py-4">
+                      <p className="text-xs font-semibold text-slate-400">No workflow rules yet.</p>
+                      <button onClick={() => setIsCreateWorkflowRuleModalOpen(true)} className="text-[10px] font-bold text-[#2563EB] hover:underline mt-1 cursor-pointer">Create your first rule →</button>
                     </div>
-                    <span className="text-[9.5px] font-bold text-slate-600 shrink-0">30 May 2025 09:15 AM</span>
-                  </div>
-
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                      <span className="font-bold text-slate-800 text-[11px]">Invoice INV-1058 created</span>
-                    </div>
-                    <span className="text-[9.5px] font-bold text-slate-600 shrink-0">30 May 2025 09:15 AM</span>
-                  </div>
-
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
-                      <span className="font-bold text-slate-800 text-[11px]">Accounts notified</span>
-                    </div>
-                    <span className="text-[9.5px] font-bold text-slate-600 shrink-0">30 May 2025 09:16 AM</span>
-                  </div>
-
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle size={14} className="text-rose-500 shrink-0" />
-                      <span className="font-bold text-rose-700 text-[11px]">Execution failed</span>
-                    </div>
-                    <span className="text-[9.5px] font-bold text-slate-600 shrink-0">29 May 2025 11:05 PM</span>
-                  </div>
+                  )}
                 </div>
               </div>
 

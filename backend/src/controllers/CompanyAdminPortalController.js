@@ -2607,24 +2607,40 @@ exports.getSettings = async (req, res, next) => {
       return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Company context not found' }, HTTP_STATUS.NOT_FOUND);
     }
 
-    const [company, usersCount, branchesCount, rolesCount] = await Promise.all([
+    const [company, usersCount, branchesCount, rolesCount, integrationsCount, workflowCount] = await Promise.all([
       prisma.company.findUnique({
         where: { id: companyId },
         include: { whiteLabelConfig: true, customRoles: true, branches: true }
       }),
       prisma.user.count({ where: { companyId } }),
       prisma.branch.count({ where: { companyId } }),
-      prisma.customRole.count({ where: { companyId } })
+      prisma.customRole.count({ where: { companyId } }),
+      prisma.companyIntegration.count({ where: { companyId } }),
+      prisma.workflowRule.count({ where: { companyId } })
     ]);
+
+    // Calculate setup percent based on what's actually configured
+    const setupItems = [
+      !!(company?.name && company.name.length > 2),       // Company name set properly
+      !!(company?.adminEmail || company?.email),           // Contact email configured
+      usersCount > 0,                                      // Users added
+      branchesCount > 0,                                   // Branches configured
+      integrationsCount > 0,                               // Integrations connected
+      true,                                                // Financial settings (assumed)
+      workflowCount > 0,                                   // Workflow rules created
+      rolesCount > 0                                       // Custom roles defined
+    ];
+    const setupPercent = Math.round((setupItems.filter(Boolean).length / setupItems.length) * 100);
 
     return sendSuccess(res, {
       company,
       stats: {
-        usersCount: usersCount || 48,
-        branchesCount: branchesCount || 6,
-        rolesCount: rolesCount || 9,
-        setupPercent: 92,
-        integrationsCount: 7,
+        usersCount,
+        branchesCount,
+        rolesCount,
+        setupPercent,
+        integrationsCount,
+        workflowCount,
         health: 'Healthy'
       }
     });
