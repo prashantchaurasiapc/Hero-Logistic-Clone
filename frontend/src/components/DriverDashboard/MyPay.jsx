@@ -39,59 +39,16 @@ export default function MyPay() {
   const [accountName, setAccountName] = useState('Noah Davis');
 
   // Dynamic Context from API
-  const [currentPeriod, setCurrentPeriod] = useState({
-    netPay: '$0.00',
-    grossEarnings: '$0.00',
-    totalDeductions: '$0.00',
-    payFrequency: '--',
-    nextPayment: {
-      date: '--',
-      daysLeft: 0,
-      period: '--',
-      estimatedNetPay: '$0.00',
-      status: '--'
-    }
-  });
+  const [currentPeriod, setCurrentPeriod] = useState(null);
 
-  const [ytdSummary, setYtdSummary] = useState({
-    financialYear: '',
-    totalEarnings: '$0.00',
-    netPayReceived: '$0.00',
-    pendingPayments: '$0.00',
-    totalDeductions: '$0.00'
-  });
+  const [ytdSummary, setYtdSummary] = useState(null);
 
-  const [currentPayBreakdown, setCurrentPayBreakdown] = useState({
-    period: '--',
-    earnings: {
-      basePay: '$0.00',
-      loadAllowance: '$0.00',
-      distanceAllowance: '$0.00',
-      otherAllowances: '$0.00',
-      totalEarnings: '$0.00'
-    },
-    deductions: {
-      paygTax: '$0.00',
-      superannuation: '$0.00',
-      unionFees: '$0.00',
-      otherDeductions: '$0.00',
-      totalDeductions: '$0.00'
-    },
-    estimatedNetPay: '$0.00',
-    paySummaryTotalDeductions: '$0.00'
-  });
+  const [currentPayBreakdown, setCurrentPayBreakdown] = useState(null);
 
   const [payRecords, setPayRecords] = useState([]);
-  const [totalSummary, setTotalSummary] = useState({
-    totalGrossEarnings: '$0.00',
-    totalDeductions: '$0.00',
-    totalNetPaid: '$0.00'
-  });
+  const [totalSummary, setTotalSummary] = useState(null);
 
-  const [ytdEarningsBreakdown, setYtdEarningsBreakdown] = useState({
-    total: '$0.00',
-    items: []
-  });
+  const [ytdEarningsBreakdown, setYtdEarningsBreakdown] = useState(null);
 
   const [taxStatements, setTaxStatements] = useState([]);
   const [activeLoadData, setActiveLoadData] = useState(null);
