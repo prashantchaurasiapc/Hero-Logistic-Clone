@@ -813,13 +813,14 @@ exports.updatePickupItemStatus = async (req, res, next) => {
     
     let updatedItem = null;
     if (prisma.loadItem && itemId) {
+      const targetId = String(itemId);
       const loadItem = await prisma.loadItem.findFirst({
-        where: { id: itemId, load: { driverId: driver.id } }
+        where: { id: targetId, load: { driverId: driver.id } }
       });
       if (!loadItem) return sendError(res, { code: 'FORBIDDEN', message: 'You do not have permission to update this item' }, 403);
 
       updatedItem = await prisma.loadItem.update({
-        where: { id: itemId },
+        where: { id: targetId },
         data: { status: pickedUp ? 'PICKED_UP' : 'PENDING' }
       }).catch(() => null);
     }
@@ -3251,8 +3252,6 @@ exports.markAllNotificationsRead = async (req, res, next) => {
     next(error);
   }
 };
-<<<<<<< HEAD
-=======
 
 
 
@@ -3294,7 +3293,6 @@ exports.clockInOut = async (req, res, next) => {
     return sendSuccess(res, { success: true, message: 'Clock status updated successfully' });
   } catch (error) { next(error); }
 };
-<<<<<<< HEAD
 
 exports.addPickupItem = async (req, res, next) => {
   try {
@@ -3359,6 +3357,3 @@ exports.confirmPickupLoad = async (req, res, next) => {
     return sendSuccess(res, { success: true, status: 'IN_TRANSIT' });
   } catch (error) { next(error); }
 };
-=======
->>>>>>> 727c3fdf5255946a608f346059d70ced994ac8a1
->>>>>>> ad2f3216ef957b250a4c710f473ede30c14ca84c
