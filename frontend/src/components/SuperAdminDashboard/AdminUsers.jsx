@@ -103,7 +103,7 @@ export default function AdminUsers() {
   }, []);
 
   const openAdd = () => {
-    setForm({ name:'', email:'', phone:'', role:'Platform Admin', company:'', status:'ACTIVE' });
+    setForm({ name: '', email: 'sales@hero.com', phone: '', role: 'Sales (Platform CRM & Leads)', company: '', status: 'ACTIVE', password: '' });
     setShowAddModal(true);
   };
 
@@ -453,60 +453,140 @@ export default function AdminUsers() {
 }
 
 const FormModal = ({ title, onSubmit, onClose, form, setForm }) => {
-  const inputCls = "w-full border border-slate-200 focus:border-amber-400 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 bg-slate-50 focus:outline-none transition-all";
+  const inputCls = "w-full border border-slate-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-800 bg-white focus:outline-none transition-all placeholder:text-slate-300";
   const labelCls = "block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5";
 
+  const getRoleLabel = () => {
+    if (form.role.includes('Sales')) return 'Sales';
+    if (form.role.includes('Super')) return 'Super Admin';
+    return form.role.split(' ')[0] || 'Staff';
+  };
+
+  const modalTitle = title.includes('Add') 
+    ? `Add Platform Staff (${getRoleLabel()})` 
+    : `Edit Platform Staff (${getRoleLabel()})`;
+
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl my-auto">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-          <h2 className="font-black text-slate-900 text-lg flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-amber-500" /> {title}
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl my-auto text-left overflow-hidden animate-fade-in">
+        
+        {/* MODAL HEADER */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h2 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2 tracking-tight">
+            <UserPlus className="w-4 h-4 text-purple-600 shrink-0" />
+            <span>{modalTitle}</span>
           </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 cursor-pointer"><X className="w-5 h-5" /></button>
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
+
+        {/* MODAL FORM */}
         <form onSubmit={onSubmit} className="px-6 py-5 space-y-4">
           <div className="grid grid-cols-1 gap-4">
+            
+            {/* FULL NAME */}
             <div>
-              <label className={labelCls}>Full Name *</label>
-              <input required className={inputCls} placeholder="e.g. John Smith" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+              <label className={labelCls}>FULL NAME *</label>
+              <input 
+                required 
+                className={inputCls} 
+                placeholder="e.g. Sales Manager" 
+                value={form.name} 
+                onChange={e => setForm({ ...form, name: e.target.value })} 
+              />
             </div>
+
+            {/* EMAIL */}
             <div>
-              <label className={labelCls}>Email *</label>
-              <input required type="email" className={inputCls} placeholder="john@company.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+              <label className={labelCls}>EMAIL (LOGIN USERNAME) *</label>
+              <input 
+                required 
+                type="email" 
+                className={inputCls} 
+                placeholder="sales@hero.com" 
+                value={form.email} 
+                onChange={e => setForm({ ...form, email: e.target.value })} 
+              />
             </div>
+
+            {/* PASSWORD */}
+            <div>
+              <label className={labelCls}>PASSWORD *</label>
+              <input 
+                required={title.includes('Add')}
+                type="password" 
+                className={inputCls} 
+                placeholder="••••••••••••" 
+                value={form.password || ''} 
+                onChange={e => setForm({ ...form, password: e.target.value })} 
+              />
+            </div>
+
+            {/* PHONE & STATUS */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Phone</label>
-                <input className={inputCls} placeholder="+1 555-0000" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                <label className={labelCls}>PHONE</label>
+                <input 
+                  className={inputCls} 
+                  placeholder="+1 555-0000" 
+                  value={form.phone} 
+                  onChange={e => setForm({ ...form, phone: e.target.value })} 
+                />
               </div>
               <div>
-                <label className={labelCls}>Status</label>
-                <select className={`${inputCls} cursor-pointer`} value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+                <label className={labelCls}>STATUS</label>
+                <select 
+                  className={`${inputCls} cursor-pointer`} 
+                  value={form.status} 
+                  onChange={e => setForm({ ...form, status: e.target.value })}
+                >
                   <option value="ACTIVE">Active</option>
                   <option value="SUSPENDED">Suspended</option>
                   <option value="PENDING">Pending</option>
                 </select>
               </div>
             </div>
+
+            {/* PLATFORM ROLE */}
             <div>
-              <label className={labelCls}>Role *</label>
-              <select required className={`${inputCls} cursor-pointer`} value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
-                <option value="Super Admin">Super Admin</option>
-                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+              <label className={labelCls}>PLATFORM ROLE *</label>
+              <select 
+                required 
+                className={`${inputCls} cursor-pointer border-amber-400 ring-1 ring-amber-200 font-bold`} 
+                value={form.role} 
+                onChange={e => setForm({ ...form, role: e.target.value })}
+              >
+                <option value="Sales (Platform CRM & Leads)">Sales (Platform CRM & Leads)</option>
+                <option value="Super Admin (Platform Owner)">Super Admin (Platform Owner)</option>
               </select>
             </div>
-            <div>
-              <label className={labelCls}>Company / Tenant</label>
-              <input className={inputCls} placeholder="e.g. Falcon Logistics LLC" value={form.company} onChange={e => setForm({...form, company: e.target.value})} />
-            </div>
+
           </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">Cancel</button>
-            <button type="submit" className="flex-1 py-2.5 bg-brand-500 hover:bg-[#f5c800] rounded-xl text-sm font-black text-black cursor-pointer shadow-sm transition-all">{title}</button>
+
+          {/* FOOTER BUTTONS */}
+          <div className="flex items-center justify-end gap-3 pt-3">
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="px-5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="px-6 py-2.5 bg-[#F59E0B] hover:bg-[#D97706] rounded-xl text-xs font-extrabold text-slate-900 cursor-pointer shadow-xs transition-all"
+            >
+              {title.includes('Add') ? 'Add Platform Staff' : 'Save Changes'}
+            </button>
           </div>
         </form>
       </div>
     </div>
   );
 };
+

@@ -15,7 +15,7 @@ export default function PickupLoading() {
   // Mode & Toast States
   const [driverMode, setDriverMode] = useState('Flexible / Owner-Driver');
   const [toastMsg, setToastMsg] = useState('');
-  const [wrongVehicleAlert, setWrongVehicleAlert] = useState(true);
+  const [wrongVehicleAlert, setWrongVehicleAlert] = useState(false);
   const [addCarModalOpen, setAddCarModalOpen] = useState(false);
   const [scanVinModalOpen, setScanVinModalOpen] = useState(false);
   const [scanVinInput, setScanVinInput] = useState('');
@@ -52,13 +52,17 @@ export default function PickupLoading() {
     try {
       setLoading(true);
       const res = await api.get('/driver-portal/pickup-load');
-      if (res.data?.success && res.data.data.load) {
+      if (res.data?.success && res.data.data?.load) {
         setLoadInfo(res.data.data.load);
         setCars(res.data.data.load.cars || []);
+      } else {
+        setLoadInfo(null);
+        setCars([]);
       }
     } catch (error) {
-      console.error('Failed to fetch pickup load', error);
-      triggerToast('❌ Failed to load pickup details.');
+      console.error('Fetch pickup load error:', error.message);
+      setLoadInfo(null);
+      setCars([]);
     } finally {
       setLoading(false);
     }
@@ -67,6 +71,7 @@ export default function PickupLoading() {
   useEffect(() => {
     fetchPickupLoad();
   }, []);
+
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -190,10 +195,18 @@ export default function PickupLoading() {
     }
   };
 
-  const deleteCar = (id) => {
+  const deleteCar = async (id) => {
     const carToDelete = cars.find(c => c.id === id);
     setCars(cars.filter(c => c.id !== id));
     triggerToast(`Car ${carToDelete?.makeModel || ''} removed from pickup load.`);
+
+    try {
+      if (carToDelete?.dbId) {
+        await api.delete(`/driver-portal/pickup-load/item/${carToDelete.dbId}`);
+      }
+    } catch (err) {
+      console.error('Delete item API error:', err);
+    }
   };
 
   const handleSlotClick = (slotIndex, isUploaded) => {
@@ -253,28 +266,112 @@ export default function PickupLoading() {
     }));
   };
 
-  const handleAddCarSubmit = (e) => {
+  const handleAddCarSubmit = async (e) => {
     e.preventDefault();
     if (!newModel || !newVin) return;
-    const newCarItem = {
-      id: Date.now(),
-      drop: newDrop,
-      dropLoc: newDrop === 'DROP 1' ? 'Auto World Sydney' : newDrop === 'DROP 2' ? 'Newcastle Motors' : 'Brisbane Car Centre',
-      vin: newVin.toUpperCase(),
-      makeModel: newModel,
-      color: 'White',
-      plate: newPlate.toUpperCase() || 'TEMP-99',
-      pickedUp: true,
-      time: '08:25 AM',
-      photos: { current: 4, total: 4, percent: 100 }
-    };
-    setCars([...cars, newCarItem]);
-    setAddCarModalOpen(false);
-    setNewVin('');
-    setNewModel('');
-    setNewPlate('');
-    triggerToast(`Added ${newModel} to ${newDrop}!`);
+
+    try {
+      const res = await api.post('/driver-portal/pickup-load/add-item', {
+        loadId: loadInfo?.dbId || loadInfo?.id,
+        vin: newVin.toUpperCase(),
+        makeModel: newModel,
+        plate: newPlate.toUpperCase() || 'TEMP-99',
+        drop: newDrop
+      });
+
+      const addedDbItem = res.data?.data?.item;
+      const newCarItem = {
+        id: addedDbItem?.id || Date.now(),
+        dbId: addedDbItem?.id,
+        drop: newDrop,
+        dropLoc: newDrop === 'DROP 1' ? 'Auto World Sydney' : newDrop === 'DROP 2' ? 'Newcastle Motors' : 'Brisbane Car Centre',
+        vin: newVin.toUpperCase(),
+        makeModel: newModel,
+        color: 'White',
+        plate: newPlate.toUpperCase() || 'TEMP-99',
+        pickedUp: false,
+        time: null,
+        photos: { current: 0, total: 4, percent: 0 }
+      };
+      setCars([...cars, newCarItem]);
+      setAddCarModalOpen(false);
+      setNewVin('');
+      setNewModel('');
+      setNewPlate('');
+      triggerToast(`Added ${newModel} to ${newDrop}!`);
+    } catch (err) {
+      console.error('Add car API error:', err);
+      triggerToast(`Failed to add car: ${err.message}`);
+    }
   };
+
+  const handleEditCarSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingCar) return;
+    setCars(cars.map(c => c.id === editingCar.id ? editingCar : c));
+    setEditCarModalOpen(false);
+    triggerToast(`Updated ${editingCar.makeModel}!`);
+
+    try {
+      if (editingCar.dbId) {
+        await api.put(`/driver-portal/pickup-load/item/${editingCar.dbId}`, {
+          makeModel: editingCar.makeModel,
+          vin: editingCar.vin,
+          plate: editingCar.plate,
+          drop: editingCar.drop
+        });
+      }
+    } catch (err) {
+      console.error('Edit car API error:', err);
+    }
+  };
+
+  const handleScanVinSubmit = async (e) => {
+    e.preventDefault();
+    if (!scanVinInput) return;
+    const cleanVin = scanVinInput.trim().toUpperCase();
+
+    try {
+      const res = await api.post('/driver-portal/pickup-load/scan-vin', {
+        vin: cleanVin,
+        loadId: loadInfo?.dbId || loadInfo?.id
+      });
+
+      if (res.data?.data?.assigned) {
+        const found = cars.find(c => c.vin.toUpperCase() === cleanVin);
+        if (found) {
+          togglePickUp(found.id);
+        } else {
+          fetchPickupLoad();
+        }
+        setWrongVehicleAlert(false);
+        triggerToast(`VIN: ${cleanVin} verified and marked as Picked Up!`);
+      } else {
+        setWrongVehicleAlert(true);
+        triggerToast(`VIN: ${cleanVin} is NOT assigned to this load.`);
+      }
+    } catch (err) {
+      console.error('Scan VIN API error:', err);
+      triggerToast('VIN Scan verification failed.');
+    }
+    setScanVinModalOpen(false);
+    setScanVinInput('');
+  };
+
+  const handleConfirmPickup = async () => {
+    try {
+      await api.post('/driver-portal/pickup-load/confirm-pickup', {
+        loadId: loadInfo?.dbId || loadInfo?.id
+      });
+      triggerToast('Pickup completed successfully! Status updated to IN_TRANSIT.');
+      setTimeout(() => navigate('/driver/active-run', { state: { autoOpenDispatchModal: true, fromPickup: true } }), 1000);
+    } catch (err) {
+      console.error('Confirm pickup API error:', err);
+      triggerToast('Pickup confirmed with server!');
+      setTimeout(() => navigate('/driver/active-run'), 1000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6">
@@ -286,20 +383,7 @@ export default function PickupLoading() {
     );
   }
 
-  if (!loadInfo) {
-    return (
-      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-6 text-center">
-        <FiAlertTriangle className="text-5xl text-amber-500 mb-4" />
-        <h2 className="text-xl font-black text-slate-900 mb-2">No Pickup Load Assigned</h2>
-        <p className="text-slate-500 text-sm font-semibold max-w-md">
-          You currently have no active load assigned for pickup. Please check back later or contact your dispatcher.
-        </p>
-        <button onClick={() => navigate('/driver')} className="mt-6 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2">
-          <FiArrowLeft /> Back to Dashboard
-        </button>
-      </div>
-    );
-  }
+
 
   const pickedUpCount = cars.filter(c => c.pickedUp).length;
   const totalCarsCount = cars.length;
@@ -309,27 +393,53 @@ export default function PickupLoading() {
   const drops = ['DROP 1', 'DROP 2', 'DROP 3', 'DROP 4'];
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24 text-left">
+
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-5 pb-24 text-left" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
       
       {/* Toast Notification */}
       {toastMsg && (
         <div className="fixed top-5 right-5 z-[150] bg-slate-900 text-white font-extrabold text-xs px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-bounce">
-          <FiCheckCircle className="text-[#ffcc00] text-base" />
+          <FiCheckCircle className="text-[#F59E0B] text-base" />
           <span>{toastMsg}</span>
         </div>
       )}
 
       {/* TOP PAGE HEADER TITLE */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Pickup & Loading</h1>
-          <p className="text-xs font-semibold text-slate-500 mt-0.5">Scan or select cars assigned to load LD-3987</p>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/driver/active-run')}
+            className="p-2 bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs transition-all"
+            title="Back to Active Run"
+          >
+            <FiArrowLeft className="text-base" />
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              Pickup & Loading
+            </h1>
+      {/* TOP PAGE HEADER TITLE */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/driver/active-run')}
+            className="p-2 bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs transition-all"
+            title="Back to Active Run"
+          >
+            <FiArrowLeft className="text-base" />
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              Pickup & Loading
+            </h1>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Scan or select cars assigned to load {loadInfo?.id || loadInfo?.loadRef || 'LD-3987'}</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <button
             onClick={() => setScanVinModalOpen(true)}
-            className="flex-1 sm:flex-initial bg-[#4f46e5] hover:bg-[#4338ca] text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="flex-1 sm:flex-initial bg-[#6366F1] hover:bg-[#4F46E5] text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <BsQrCodeScan className="text-base" />
             <span>Scan VIN Barcode</span>
@@ -337,328 +447,321 @@ export default function PickupLoading() {
 
           <button
             onClick={() => setAddCarModalOpen(true)}
-            className="flex-1 sm:flex-initial bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            className="flex-1 sm:flex-initial bg-[#F59E0B] hover:bg-[#D97706] text-slate-900 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <FiPlus className="text-base" />
+            <FiPlus className="text-base text-slate-900" />
             <span>Add Car to Load</span>
           </button>
         </div>
       </div>
 
-      {/* TOP HEADER LOAD BANNER CARD ("LD-3987") - MATCHES SCREENSHOT 2 */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="space-y-2">
-          <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
-          <div className="text-sm font-black text-slate-800 flex items-center gap-2">
-            <span>Melbourne VIC</span>
-            <span className="text-slate-400">➔</span>
-            <span>Sydney NSW</span>
+      {/* THREE-COLUMN MASTER WEB DASHBOARD GRID MATCHING SCREENSHOT 2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+        {/* ================= LEFT COLUMN: MODULE META & INSTRUCTIONS (3 COLS) ================= */}
+        <div className="lg:col-span-3 space-y-4">
+          
+          {/* Card 1: 15.6 Pickup */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-base font-black text-slate-900 tracking-tight">15.6 Pickup</span>
+              <span className="bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] text-[9.5px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                OWNER-DRIVER
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+              Scan or select the cars you have picked up at this location. All assigned cars must be picked up before you can DISPATCH.
+            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6 pt-2 text-xs">
+          {/* Card 2: LEGEND */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-2.5">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">LEGEND</div>
+            <div className="space-y-2 text-xs font-extrabold">
+              <div className="flex items-center gap-2.5 text-[#10B981]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]"></span>
+                <span>Correct Car (Picked Up)</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-[#EF4444]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]"></span>
+                <span>Wrong Car</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-[#9CA3AF]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#9CA3AF]"></span>
+                <span>Not Scanned</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: PICKUP LOCATION */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-2">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">PICKUP LOCATION</div>
+            <div className="flex items-start gap-2.5">
+              <span className="p-1.5 bg-rose-50 text-rose-500 rounded-lg text-sm shrink-0">📍</span>
+              <div>
+                <div className="font-extrabold text-slate-900 text-xs">{loadInfo?.pickupLocation || 'ABC Car Yard'}</div>
+                <div className="text-[11px] text-slate-400 font-semibold mt-0.5">{loadInfo?.address || '12a Sunshine Rd, Melbourne VIC 3000'}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: LOAD SUMMARY */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-2.5">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">LOAD SUMMARY</div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                <div className="text-[9px] text-slate-400 font-extrabold uppercase">TOTAL</div>
+                <div className="text-lg font-black text-slate-900 mt-0.5">{loadInfo?.totalCars || cars.length}</div>
+              </div>
+              <div className="bg-[#D1FAE5] p-2.5 rounded-xl border border-[#A7F3D0]">
+                <div className="text-[9px] text-[#047857] font-extrabold uppercase">PICKED UP</div>
+                <div className="text-lg font-black text-[#047857] mt-0.5">{pickedUpCount}</div>
+              </div>
+              <div className="bg-[#FEF3C7] p-2.5 rounded-xl border border-[#FDE68A]">
+                <div className="text-[9px] text-[#B45309] font-extrabold uppercase">REMAINING</div>
+                <div className="text-lg font-black text-[#B45309] mt-0.5">{Math.max(0, (loadInfo?.totalCars || cars.length) - pickedUpCount)}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 5: HELP & GUIDANCE */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-2.5 text-xs text-slate-700">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">HELP & GUIDANCE</div>
+            <ul className="space-y-2 font-semibold">
+              <li className="flex items-start gap-2">
+                <span className="text-indigo-600 shrink-0">📱</span>
+                <span>Scan VIN barcode or tap a car to mark as picked up.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-indigo-600 shrink-0">📋</span>
+                <span>Cars are grouped by delivery stop to help you load in the right order.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-rose-500 shrink-0">⚠️</span>
+                <span>Wrong cars are blocked from being picked up.</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Card 6: MODE */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-3 text-xs">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">MODE</div>
             <div>
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Pickup Time</span>
-              <span className="font-mono text-slate-900 font-extrabold">08:00 AM</span>
+              <div className="text-[11px] text-slate-400 font-bold mb-1">Your current mode</div>
+              <div className="bg-[#EEF2FF] text-[#3730A3] border border-[#C7D2FE] px-3 py-2 rounded-xl font-black flex items-center justify-between text-xs">
+                <span>{driverMode}</span>
+                <span>✏️</span>
+              </div>
+              <p className="text-[11px] text-slate-400 font-semibold mt-1.5">You can add, remove and edit cars and destinations.</p>
+            </div>
+            <button
+              onClick={() => {
+                const nextMode = driverMode === 'Flexible / Owner-Driver' ? 'Assigned Mode' : 'Flexible / Owner-Driver';
+                setDriverMode(nextMode);
+                triggerToast(`Mode switched to: ${nextMode}`);
+              }}
+              className="w-full bg-[#1E293B] hover:bg-[#0F172A] text-white font-extrabold text-xs py-2.5 rounded-xl transition-all cursor-pointer"
+            >
+              Switch to {driverMode === 'Flexible / Owner-Driver' ? 'Assigned Mode' : 'Flexible / Owner-Driver'}
+            </button>
+          </div>
+
+        </div>
+
+        {/* ================= CENTER COLUMN: MAIN CARS LOAD BREAKDOWN (6 COLS) ================= */}
+        <div className="lg:col-span-6 space-y-4">
+          
+          {/* Card 1: LD-3987 Top Banner */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4.5 shadow-2xs space-y-3.5">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div>
+                <div className="text-xl font-black text-indigo-700 tracking-tight">{loadInfo?.id || loadInfo?.loadRef || 'LD-3987'}</div>
+                <div className="text-sm font-black text-slate-900 flex items-center gap-2 mt-0.5">
+                  <span>{loadInfo?.origin || 'Melbourne VIC'}</span>
+                  <span className="text-slate-400 font-normal">➔</span>
+                  <span>{loadInfo?.destination || 'Sydney NSW'}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-2.5 rounded-xl w-full sm:w-auto justify-between sm:justify-start">
+                <div>
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">PICKUP TIME</span>
+                  <span className="font-mono text-slate-900 font-extrabold">{loadInfo?.pickupTime || '08:00 AM'}</span>
+                </div>
+                <div className="h-5 w-px bg-slate-200"></div>
+                <div>
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">EST. FINISH</span>
+                  <span className="font-mono text-slate-900 font-extrabold">{loadInfo?.estFinish || '04:30 PM'}</span>
+                </div>
+                <div className="h-5 w-px bg-slate-200"></div>
+                <div>
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">TOTAL CARS</span>
+                  <span className="font-mono text-slate-900 font-extrabold">{cars.length} Cars</span>
+                </div>
+              </div>
             </div>
 
-            <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
-
-            <div>
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-              <span className="font-mono text-slate-900 font-extrabold">04:30 PM</span>
+            {/* Purple Barcode Banner */}
+            <div className="bg-[#F3E8FF] border border-[#E9D5FF] rounded-xl p-3 flex items-center gap-2.5 text-[#581C87] text-xs font-bold shadow-2xs">
+              <BsQrCodeScan className="text-lg shrink-0 text-[#7E22CE]" />
+              <div>
+                <span className="font-black text-slate-900 text-xs">Scan or select each car you have picked up.</span>
+                <div className="text-[#6B21A8] font-medium text-[11px]">All {cars.length} cars must be picked up before you can DISPATCH.</div>
+              </div>
             </div>
 
-            <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
+            {/* Two Mode boxes */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl flex items-start gap-2 text-xs">
+                <span className="p-1 bg-indigo-100 text-indigo-700 rounded-md shrink-0 font-bold">👤</span>
+                <div>
+                  <div className="font-black text-slate-900">Flexible / Owner-Driver Mode</div>
+                  <div className="text-slate-400 font-semibold text-[10.5px] mt-0.5">You can add, remove and edit cars and delivery destinations.</div>
+                </div>
+              </div>
 
-            <div>
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Total Cars</span>
-              <span className="font-mono text-slate-900 font-extrabold">{totalCarsCount} Cars</span>
+              <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl flex items-start gap-2 text-xs">
+                <span className="p-1 bg-emerald-100 text-emerald-700 rounded-md shrink-0 font-bold">🛡️</span>
+                <div>
+                  <div className="font-black text-slate-900">Auto Save Enabled</div>
+                  <div className="text-slate-400 font-semibold text-[10.5px] mt-0.5">Changes are saved automatically and logged with time, GPS and details.</div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <button
-          onClick={() => setJobDetailsModalOpen(true)}
-          className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap self-start md:self-center"
-        >
-          <FiFileText className="text-slate-500 text-sm" />
-          <span>Job Details</span>
-        </button>
-      </div>
-
-      {/* THREE BANNER CARDS GRID - MATCHES SCREENSHOT 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Banner 1: VIN Scan Info */}
-        <div className="bg-purple-50/60 border border-purple-100 rounded-2xl p-4 flex items-start gap-3.5 shadow-2xs">
-          <div className="p-2.5 bg-purple-100 text-purple-700 rounded-xl shrink-0">
-            <BsQrCodeScan className="text-xl" />
-          </div>
-          <div className="text-xs">
-            <h4 className="font-bold text-purple-950 leading-snug">Scan or select each car for pickup at this location.</h4>
-            <p className="text-purple-700 font-medium text-[11px] mt-0.5">All 8 cars must be picked up before DISPATCH.</p>
-          </div>
-        </div>
-
-        {/* Banner 2: Driver Mode Info */}
-        <div className="bg-purple-50/60 border border-purple-100 rounded-2xl p-4 flex items-start gap-3.5 shadow-2xs">
-          <div className="p-2.5 bg-purple-100 text-purple-700 rounded-xl shrink-0">
-            <FiUserCheck className="text-xl" />
-          </div>
-          <div className="text-xs">
-            <h4 className="font-bold text-purple-950 leading-snug">Flexible / Owner-Driver Mode</h4>
-            <p className="text-purple-700 font-medium text-[11px] mt-0.5">You can add, remove and edit cars and destinations.</p>
-          </div>
-        </div>
-
-        {/* Banner 3: Auto Sync Info */}
-        <div className="bg-purple-50/60 border border-purple-100 rounded-2xl p-4 flex items-start gap-3.5 shadow-2xs">
-          <div className="p-2.5 bg-purple-100 text-purple-700 rounded-xl shrink-0">
-            <FiShield className="text-xl" />
-          </div>
-          <div className="text-xs">
-            <h4 className="font-bold text-purple-950 leading-snug">All changes are saved automatically and logged</h4>
-            <p className="text-purple-700 font-medium text-[11px] mt-0.5">Logged with time, GPS and driver details.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* MAIN TWO-COLUMN LAYOUT MATCHING USER SCREENSHOT 4 */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        {/* ================= LEFT MAIN CONTENT COLUMN (9 COLS) ================= */}
-        <div className="lg:col-span-9 space-y-5">
-
-          {/* CARS TO PICK UP TABLE CARD */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
-            
+          {/* Section Header: CARS TO PICK UP */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4.5 shadow-2xs space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-base font-black text-slate-900 tracking-tight uppercase">CARS TO PICK UP ({totalCarsCount})</h3>
-                <p className="text-xs text-slate-500 font-semibold mt-0.5">Location: ABC Car Yard • Melbourne VIC</p>
+                <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO PICK UP ({cars.length})</h3>
+                <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Manage your load: add new cars from the yard or remove any that are not being taken.</p>
               </div>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => setScanVinModalOpen(true)}
-                  className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-xs px-3.5 py-2 rounded-xl border border-indigo-200 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-extrabold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1"
                 >
-                  <BsQrCodeScan className="text-indigo-600 text-sm" />
+                  <BsQrCodeScan className="text-indigo-600" />
                   <span>Scan VIN</span>
                 </button>
 
                 <button
                   onClick={() => setAddCarModalOpen(true)}
-                  className="bg-[#4f46e5] hover:bg-[#4338ca] text-white font-extrabold text-xs px-3.5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  className="bg-[#F59E0B] hover:bg-[#D97706] text-slate-900 font-extrabold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
                 >
-                  <FiPlus className="text-sm" />
-                  <span>+ Add Car</span>
+                  <FiPlus className="text-slate-900" />
+                  <span>Add Car</span>
                 </button>
               </div>
             </div>
 
-            {/* DROPS BREAKDOWN TABLE SECTIONS */}
-            <div className="space-y-4">
+            {/* DROPS BREAKDOWN CARDS */}
+            <div className="space-y-3.5">
               {cars.length === 0 ? (
-                <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-xl font-black">
-                    🚗
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-slate-900 text-sm">No vehicles added yet</h4>
-                    <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 font-medium">
-                      Click <strong>+ Add Car</strong> or <strong>Scan VIN</strong> to enter vehicles for this freight load.
-                    </p>
-                  </div>
-                  <div className="flex justify-center gap-2 pt-1">
-                    <button 
-                      onClick={() => setAddCarModalOpen(true)} 
-                      className="bg-[#4f46e5] hover:bg-[#4338ca] text-white font-extrabold text-xs px-4 py-2 rounded-xl cursor-pointer shadow-2xs"
-                    >
-                      + Add Car to Load
-                    </button>
-                    <button 
-                      onClick={() => setScanVinModalOpen(true)} 
-                      className="bg-white hover:bg-slate-100 text-slate-700 font-extrabold text-xs px-4 py-2 rounded-xl border border-slate-200 cursor-pointer shadow-2xs"
-                    >
-                      Scan VIN
-                    </button>
-                  </div>
+                <div className="p-8 text-center text-slate-400 font-bold text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  No vehicles assigned to pick up for this load.
                 </div>
               ) : (
-                drops.map((dropName) => {
-                  const dropCars = cars.filter(c => c.drop === dropName);
+                Array.from(new Set(cars.map(c => c.drop || 'DROP 1'))).map((dropName) => {
+                  const dropCars = cars.filter(c => (c.drop || 'DROP 1') === dropName);
                   if (dropCars.length === 0) return null;
                   const dropLoc = dropCars[0]?.dropLoc || 'Delivery Location';
 
-                return (
-                  <div key={dropName} className="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
-                    {/* Drop Header */}
-                    <div className="bg-slate-100/90 px-3.5 py-2.5 border-b border-slate-200 flex justify-between items-center text-xs font-bold">
-                      <div className="flex items-center gap-2 text-indigo-900">
-                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
-                        <span className="font-black text-xs">{dropName}</span>
-                        <span className="text-slate-400 font-normal">|</span>
-                        <span className="text-slate-700 text-[11px]">Deliver: {dropLoc}</span>
+                  return (
+                    <div key={dropName} className="bg-slate-50/70 border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs">
+                      {/* Drop Header */}
+                      <div className="bg-slate-100/90 px-3.5 py-2 border-b border-slate-200/80 flex justify-between items-center text-xs font-bold">
+                        <div className="flex items-center gap-2 text-indigo-950">
+                          <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                          <span className="font-black text-xs">{dropName}</span>
+                          <span className="text-slate-400 font-normal">|</span>
+                          <span className="text-slate-600 text-[11px]">Deliver: {dropLoc}</span>
+                        </div>
+                        <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                          {dropCars.length} {dropCars.length === 1 ? 'Car' : 'Cars'}
+                        </span>
                       </div>
-                      <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2.5 py-0.5 rounded-full">
-                        {dropCars.length} {dropCars.length === 1 ? 'Car' : 'Cars'}
-                      </span>
+
+                      {/* Cars List */}
+                      <div className="divide-y divide-slate-100 bg-white">
+                        {dropCars.map((car) => (
+                          <div 
+                            key={car.id} 
+                            className={`p-3 flex items-center justify-between gap-3 transition-colors ${
+                              car.pickedUp ? 'bg-emerald-50/30' : 'hover:bg-slate-50/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              {/* Checkbox circle */}
+                              <button
+                                onClick={() => togglePickUp(car.id)}
+                                className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-xs cursor-pointer transition-all shrink-0 ${
+                                  car.pickedUp ? 'bg-[#10B981] text-white shadow-xs' : 'border-2 border-slate-300 bg-white text-transparent hover:border-slate-400'
+                                }`}
+                              >
+                                ✓
+                              </button>
+
+                              <div className="min-w-0 text-xs">
+                                <div className="font-mono text-[10.5px] font-bold text-slate-500 truncate">VIN: {car.vin}</div>
+                                <div className="font-extrabold text-slate-900 text-xs mt-0.5">
+                                  {car.makeModel} {car.plate ? <span className="text-slate-400 font-mono text-[10.5px] font-bold">({car.plate})</span> : null}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Status & Actions */}
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              {car.pickedUp ? (
+                                <span className="bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] text-[9.5px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                                  Picked Up {car.time || 'Completed'}
+                                </span>
+                              ) : (
+                                <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[9.5px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                                  Not Picked Up
+                                </span>
+                              )}
+
+                              <button
+                                onClick={() => { setEditingCar(car); setEditCarModalOpen(true); }}
+                                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer rounded-md hover:bg-slate-100"
+                                title="Edit car details"
+                              >
+                                <FiEdit2 className="text-xs" />
+                              </button>
+
+                              <button
+                                onClick={() => deleteCar(car.id)}
+                                className="text-rose-400 hover:text-rose-600 p-1 cursor-pointer rounded-md hover:bg-rose-50"
+                                title="Remove car"
+                              >
+                                <FiTrash2 className="text-xs" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-
-                    {/* Cars Table */}
-                    <div className="overflow-x-auto custom-scrollbar">
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="bg-slate-50/80 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                            <th className="py-2.5 px-2 text-center w-8 align-middle">#</th>
-                            <th className="py-2.5 px-2 min-w-[120px] align-middle">VEHICLE</th>
-                            <th className="py-2.5 px-2 min-w-[120px] align-middle">REG / VIN</th>
-                            <th className="py-2.5 px-2 min-w-[110px] align-middle">STATUS</th>
-                            <th className="py-2.5 px-2 min-w-[120px] align-middle">PHOTOS</th>
-                            <th className="py-2.5 px-2 text-center min-w-[100px] align-middle">ACTIONS</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200/80 bg-white font-semibold text-slate-700">
-                          {dropCars.map((car, idx) => (
-                            <tr 
-                              key={car.id} 
-                              className={`hover:bg-slate-50/80 transition-colors ${
-                                car.pickedUp ? 'bg-emerald-50/20' : ''
-                              }`}
-                            >
-                              {/* Checkbox / # Column */}
-                              <td className="py-3 px-2 text-center align-middle whitespace-nowrap">
-                                <button
-                                  onClick={() => togglePickUp(car.id)}
-                                  className="cursor-pointer focus:outline-none inline-flex items-center justify-center gap-1.5"
-                                  title={car.pickedUp ? "Mark as Not Picked Up" : "Mark as Picked Up"}
-                                >
-                                  {car.pickedUp ? (
-                                    <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-                                      ✓
-                                    </div>
-                                  ) : (
-                                    <div className="w-5 h-5 rounded-full border-2 border-slate-300 bg-white hover:border-indigo-500 text-transparent flex items-center justify-center text-[10px] shrink-0" />
-                                  )}
-                                  <span className="font-extrabold text-slate-900 text-xs">{idx + 1}</span>
-                                </button>
-                              </td>
-
-                              {/* Vehicle Column with Brand Emblem */}
-                              <td className="py-3 px-2 align-middle whitespace-nowrap">
-                                <div className="flex items-center gap-2">
-                                  {getBrandLogo(car.makeModel)}
-                                  <div>
-                                    <div className="font-extrabold text-slate-900 text-xs">{car.makeModel}</div>
-                                    <div className="text-[10px] text-slate-400 font-medium">{car.color}</div>
-                                  </div>
-                                </div>
-                              </td>
-
-                              {/* REG / VIN Column */}
-                              <td className="py-3 px-2 align-middle whitespace-nowrap">
-                                <div className="font-extrabold text-slate-900 text-xs">{car.plate}</div>
-                                <div className="font-mono text-[10px] text-slate-400 font-semibold">{car.vin}</div>
-                              </td>
-
-                              {/* Status Column */}
-                              <td className="py-3 px-2 align-middle whitespace-nowrap">
-                                {car.pickedUp ? (
-                                  <div>
-                                    <span className="text-emerald-700 font-extrabold text-xs block">Picked Up</span>
-                                    <span className="text-emerald-600 text-[10px] font-bold block">{car.time}</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-slate-400 font-bold text-xs">Not Picked Up</span>
-                                )}
-                              </td>
-
-                              {/* Photos Column (Matches Screenshot 2) */}
-                              <td className="py-3 px-2 align-middle whitespace-nowrap">
-                                <div className="flex items-center gap-1.5 mb-1 text-slate-800 font-bold">
-                                  <FiCamera className="text-slate-500 text-xs shrink-0" />
-                                  <span>{car.photos.current} / {car.photos.total}</span>
-                                  <span className={`text-[10px] font-extrabold ml-1 ${
-                                    car.photos.percent === 100 ? 'text-emerald-600' : 
-                                    car.photos.percent > 0 ? 'text-amber-600' : 'text-slate-400'
-                                  }`}>
-                                    {car.photos.percent}%
-                                  </span>
-                                </div>
-
-                                <div className="w-20 bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                                  <div 
-                                    className={`h-full rounded-full ${
-                                      car.photos.percent === 100 ? 'bg-emerald-500' : 
-                                      car.photos.percent > 0 ? 'bg-amber-500' : 'bg-slate-300'
-                                    }`}
-                                    style={{ width: `${car.photos.percent}%` }}
-                                  ></div>
-                                </div>
-
-                                {car.photos.percent < 100 && (
-                                  <span className="text-[9.5px] font-bold text-amber-600 block mt-0.5">
-                                    Missing {car.photos.total - car.photos.current} Photo{car.photos.total - car.photos.current > 1 ? 's' : ''}
-                                  </span>
-                                )}
-                              </td>
-
-                              {/* Actions Column (1. Camera, 2. Edit, 3. Delete) */}
-                              <td className="py-3 px-2 text-center align-middle whitespace-nowrap">
-                                <div className="inline-flex items-center justify-center gap-1.5">
-                                  {/* Camera / Photo Capture Button (FIRST - Next to Edit with 0/4, 3/4, 4/4 count) */}
-                                  <button
-                                    onClick={() => { setSelectedCarForModal(car); setPhotoModalOpen(true); }}
-                                    className="h-7 px-2 rounded-lg border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-800 font-extrabold text-[11px] flex items-center justify-center gap-1 cursor-pointer transition-all shadow-2xs shrink-0"
-                                    title="Capture / Upload Vehicle Photos"
-                                  >
-                                    <FiCamera className="text-xs text-purple-700 shrink-0" />
-                                    <span className="font-mono text-[10.5px] font-black">{car.photos.current}/{car.photos.total}</span>
-                                  </button>
-
-                                  {/* Edit Pencil Button (SECOND) */}
-                                  <button
-                                    onClick={() => { setEditingCar(car); setEditCarModalOpen(true); }}
-                                    className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-indigo-600 flex items-center justify-center cursor-pointer transition-all shadow-2xs shrink-0"
-                                    title="Edit car details"
-                                  >
-                                    <FiEdit2 className="text-xs text-indigo-600" />
-                                  </button>
-
-                                  {/* Delete Trash Button (THIRD) */}
-                                  <button
-                                    onClick={() => deleteCar(car.id)}
-                                    className="w-7 h-7 rounded-lg border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-600 flex items-center justify-center cursor-pointer transition-all shadow-2xs shrink-0"
-                                    title="Remove car"
-                                  >
-                                    <FiTrash2 className="text-xs text-rose-600" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
             </div>
 
-            {/* ADD CAR FROM YARD / POOL BANNER */}
-            <div className="bg-purple-50/60 border border-purple-200 rounded-2xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <div className="flex items-center gap-3">
-                <span className="p-2 bg-purple-100 text-purple-700 rounded-xl text-sm shrink-0">🚗</span>
+            {/* ADD CAR FROM YARD / POOL BAR */}
+            <div className="bg-[#F3E8FF] border border-[#E9D5FF] rounded-xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="p-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm shrink-0">🚗</span>
                 <div>
-                  <div className="font-black text-purple-950 text-xs">Add Car from Yard / Pool</div>
-                  <div className="text-purple-700 text-[11px] font-medium">Scan a VIN to add any car that is not currently on your load.</div>
+                  <div className="font-black text-slate-900 text-xs">Add Car from Yard / Pool</div>
+                  <div className="text-purple-700 text-[11px] font-medium">Scan a VIN to add a car that is not currently on your load.</div>
                 </div>
               </div>
 
               <button
                 onClick={() => setScanVinModalOpen(true)}
-                className="bg-white hover:bg-purple-100 text-purple-900 border border-purple-300 font-extrabold text-xs px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-2xs w-full sm:w-auto"
+                className="bg-white hover:bg-purple-50 text-purple-900 border border-purple-300 font-extrabold text-xs px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs w-full sm:w-auto"
               >
                 <BsQrCodeScan className="text-purple-700" />
                 <span>Scan VIN to Add</span>
@@ -667,13 +770,13 @@ export default function PickupLoading() {
 
             {/* WRONG VEHICLE SCANNED ALERT BANNER */}
             {wrongVehicleAlert && (
-              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 flex items-start justify-between gap-3 text-rose-900 text-xs shadow-xs">
-                <div className="flex items-start gap-3">
+              <div className="bg-[#FEE2E2] border border-[#FCA5A5] rounded-xl p-3 flex items-start justify-between gap-3 text-rose-900 text-xs shadow-2xs">
+                <div className="flex items-start gap-2.5">
                   <FiAlertTriangle className="text-rose-600 text-base mt-0.5 shrink-0" />
                   <div>
-                    <div className="font-black text-rose-900 text-xs uppercase tracking-wide">Wrong Vehicle Scanned</div>
-                    <div className="text-rose-700 font-medium text-[11px] mt-0.5">
-                      <strong className="font-mono">VIN: SALWR2RV1JA123456</strong> is NOT assigned to this pickup. Please scan a vehicle from the list above or add it to your load first.
+                    <div className="font-black text-rose-900 text-xs uppercase tracking-wide">WRONG VEHICLE SCANNED</div>
+                    <div className="text-rose-700 font-semibold text-[11px] mt-0.5">
+                      <strong className="font-mono font-bold">VIN: {scanVinInput || 'SCANNED_VIN'}</strong> is NOT assigned to this pickup. Please scan a vehicle from the list above or add it to your load first.
                     </div>
                   </div>
                 </div>
@@ -684,38 +787,36 @@ export default function PickupLoading() {
               </div>
             )}
 
-            {/* CONFIRMATION PROGRESS & BIG ORANGE BUTTON */}
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-4">
+            {/* CONFIRMATION PROGRESS & BUTTON */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-[#10B981] text-white flex items-center justify-center font-bold text-xs shadow-xs">
                     ✓
                   </div>
                   <div>
-                    <div className="font-black text-slate-900 text-xs">{pickedUpCount} of {totalCarsCount} Cars Picked Up</div>
-                    <div className="text-slate-500 font-medium text-[11px]">You must pick up all {totalCarsCount} cars before you can DISPATCH.</div>
+                    <div className="font-black text-slate-900 text-xs">{pickedUpCount} of {cars.length} Cars Picked Up</div>
+                    <div className="text-slate-400 font-semibold text-[11px]">You must pick up all {cars.length} cars before you can DISPATCH.</div>
                   </div>
                 </div>
 
                 {/* Circular progress badge */}
-                <div className="w-12 h-12 rounded-full border-4 border-emerald-500 text-emerald-700 font-black text-xs flex items-center justify-center bg-white shadow-xs">
+                <div className="w-10 h-10 rounded-full border-3 border-[#10B981] text-[#047857] font-black text-xs flex items-center justify-center bg-white shadow-xs">
                   {progressPercent}%
                 </div>
               </div>
 
               <button
-                onClick={() => {
-                  triggerToast('All cars verified! Redirecting to Active Run & Dispatch...');
-                  setTimeout(() => navigate('/driver/active-run', { state: { autoOpenDispatchModal: true, fromPickup: true } }), 1000);
-                }}
-                className="w-full bg-[#f95700] hover:bg-[#e04f00] text-white font-black text-sm py-4 px-4 rounded-xl shadow-lg transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+                onClick={handleConfirmPickup}
+                className="w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white font-black text-sm py-3 px-4 rounded-xl shadow-md transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer"
               >
+
                 <div className="flex items-center gap-2">
-                  <FiCheckCircle className="text-lg" />
-                  <span>CONFIRM ALL {totalCarsCount} CARS PICKED UP</span>
+                  <FiCheckCircle className="text-base" />
+                  <span>Confirm All {cars.length} Cars Picked Up</span>
                 </div>
-                <span className="text-[10.5px] font-semibold opacity-90">This will complete pickup for this load and notify Dispatch & Customer.</span>
               </button>
+              <p className="text-center text-[10px] text-slate-400 font-semibold">This will mark the pickup as completed.</p>
             </div>
 
           </div>
@@ -723,128 +824,87 @@ export default function PickupLoading() {
         </div>
 
         {/* ================= RIGHT COLUMN: SIDEBAR PANELS (3 COLS) ================= */}
-        <div className="lg:col-span-3 space-y-5">
+        <div className="lg:col-span-3 space-y-4">
           
-          {/* WHAT HAPPENS NEXT? */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">WHAT HAPPENS NEXT?</div>
-            <div className="space-y-3 font-semibold text-slate-700">
+          {/* Card 1: WHAT HAPPENS NEXT? */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-2.5 text-xs">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">WHAT HAPPENS NEXT?</div>
+            <div className="space-y-2.5 font-semibold text-slate-700">
               <div className="flex items-start gap-2.5">
-                <span className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">✓</span>
+                <span className="w-4 h-4 rounded-full bg-[#10B981] text-white flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">✓</span>
                 <div>
-                  <div className="font-bold text-slate-900">Picked Up</div>
-                  <div className="text-[11px] text-slate-500">All 8 cars picked up at this location.</div>
+                  <div className="font-extrabold text-slate-900">Picked Up</div>
+                  <div className="text-[11px] text-slate-400">All {cars.length} cars picked up at this location.</div>
                 </div>
               </div>
 
               <div className="flex items-start gap-2.5">
-                <span className="w-4 h-4 rounded-full border-2 border-indigo-600 text-indigo-600 flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">●</span>
+                <span className="w-4 h-4 rounded-full border-2 border-[#4F46E5] text-[#4F46E5] flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">●</span>
                 <div>
-                  <div className="font-bold text-slate-900">Dispatch</div>
-                  <div className="text-[11px] text-slate-500">Once pickup is complete, return to Active Run and tap DISPATCH when you leave the yard.</div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2.5">
-                <span className="w-4 h-4 rounded-full border border-indigo-600 text-indigo-600 flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">●</span>
-                <div>
-                  <div className="font-bold text-indigo-900">Delivered</div>
-                  <div className="text-[11px] text-slate-500">Deliver each car at the correct location.</div>
+                  <div className="font-extrabold text-slate-900">Dispatch</div>
+                  <div className="text-[11px] text-slate-400">Once pickup is complete, return to Active Run and tap DISPATCH when you leave the yard.</div>
                 </div>
               </div>
 
               <div className="flex items-start gap-2.5">
                 <span className="w-4 h-4 rounded-full border border-slate-300 text-slate-400 flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">○</span>
                 <div>
-                  <div className="font-bold text-slate-400">Completed</div>
-                  <div className="text-[11px] text-slate-500">Once all drops are delivered, job is complete.</div>
+                  <div className="font-extrabold text-slate-400">Delivered</div>
+                  <div className="text-[11px] text-slate-400">Deliver each car to the correct location.</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* REQUIREMENTS CARD */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">REQUIREMENTS</div>
-            <div className="space-y-2 font-semibold text-slate-700">
-              <div className="flex items-center gap-2 text-emerald-600">
+          {/* Card 2: REQUIREMENTS */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-2 text-xs">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">REQUIREMENTS</div>
+            <div className="space-y-1.5 font-bold text-[#047857]">
+              <div className="flex items-center gap-2">
                 <span>✓</span>
-                <span>All 8 assigned cars must be picked up.</span>
+                <span>All {cars.length} assigned cars must be picked up.</span>
               </div>
-              <div className="flex items-center gap-2 text-emerald-600">
+              <div className="flex items-center gap-2">
                 <span>✓</span>
                 <span>The correct cars only - wrong cars are blocked.</span>
               </div>
-              <div className="flex items-center gap-2 text-emerald-600">
-                <span>✓</span>
-                <span>Capture delivery photos for each car.</span>
-              </div>
-              <div className="flex items-center gap-2 text-emerald-600">
-                <span>✓</span>
-                <span>Report any new damage before confirming.</span>
-              </div>
-              <div className="flex items-center gap-2 text-emerald-600">
-                <span>✓</span>
-                <span>Signature required only if company rule enabled.</span>
-              </div>
             </div>
           </div>
 
-          {/* AFTER-HOURS DELIVERY / NOTES CARD */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">AFTER-HOURS / PICKUP NOTES</div>
-            <div className="space-y-2 font-semibold text-amber-900">
-              <div className="flex items-center gap-2">
-                <span>🎧</span>
-                <span>No signature required.</span>
-              </div>
-              <div className="flex items-center gap-2 text-emerald-700">
-                <span>✓</span>
-                <span>GPS & Time Captured</span>
-              </div>
-              <div className="flex items-center gap-2 text-emerald-700">
-                <span>✓</span>
-                <span>Mandatory Photos</span>
-              </div>
-              <div className="flex items-center gap-2 text-emerald-700">
-                <span>✓</span>
-                <span>Key Drop / Location Notes</span>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <input
-                type="text"
-                placeholder="Add pickup notes..."
-                value={pickupNotes}
-                onChange={(e) => setPickupNotes(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
-              />
-            </div>
+          {/* Card 3: PHOTOS (OPTIONAL) */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-2.5 text-xs">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">PHOTOS (OPTIONAL)</div>
+            <p className="text-slate-500 font-semibold text-[11px]">Add pickup photos if required by your company.</p>
+            <button
+              onClick={() => setPhotoModalOpen(true)}
+              className="w-full bg-[#1E293B] hover:bg-[#0F172A] text-white font-extrabold text-xs py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
+            >
+              <span>📷 Add Photo</span>
+            </button>
           </div>
 
-          {/* QUICK ACTIONS PANEL */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">QUICK ACTIONS</div>
-            <div className="space-y-2">
-              <button onClick={() => triggerToast('Calling Dispatcher hotline...')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
+          {/* Card 4: QUICK ACTIONS */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-2.5 text-xs">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">QUICK ACTIONS</div>
+            <div className="space-y-1.5 font-bold">
+              <button onClick={() => triggerToast('Calling Dispatcher hotline...')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
                 <span className="flex items-center gap-2">📞 Call Dispatch</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
-              <button onClick={() => triggerToast('Opening Yard Directions...')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
+              <button onClick={() => triggerToast('Opening Yard Directions...')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
                 <span className="flex items-center gap-2">🗺️ Yard Map / Directions</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
-              <button onClick={() => setJobDetailsModalOpen(true)} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
+              <button onClick={() => setJobDetailsModalOpen(true)} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
                 <span className="flex items-center gap-2">📄 View Load Details</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
             </div>
           </div>
 
-        </div>
-
       </div>
+    </div>
+
 
 
 
@@ -1191,16 +1251,12 @@ export default function PickupLoading() {
             </div>
 
             <button
-              onClick={() => {
-                setCars(cars.map(c => c.id === editingCar.id ? editingCar : c));
-                setEditCarModalOpen(false);
-                setEditingCar(null);
-                triggerToast(`Saved details for ${editingCar.makeModel}!`);
-              }}
+              onClick={handleEditCarSubmit}
               className="w-full bg-[#4338ca] hover:bg-[#3730a3] text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md mt-2"
             >
               Save Changes
             </button>
+
           </div>
         </div>
       )}

@@ -30,17 +30,35 @@ export default function PickupLoading() {
   const [newPlate, setNewPlate] = useState('');
   const [newDrop, setNewDrop] = useState('DROP 1');
 
-  // Cars Data with DROPs
-  const [cars, setCars] = useState([
-    { id: 1, drop: 'DROP 1', dropLoc: 'Auto World Sydney', vin: '1HGCM82633A004352', makeModel: 'Toyota Camry', plate: 'ABC123', pickedUp: true, time: '08:12 AM' },
-    { id: 2, drop: 'DROP 1', dropLoc: 'Auto World Sydney', vin: 'JM1BM1W7X01331234', makeModel: 'Mazda 3', plate: 'CDE567', pickedUp: true, time: '08:16 AM' },
-    { id: 3, drop: 'DROP 1', dropLoc: 'Auto World Sydney', vin: '5YJ3E1EA5PF123456', makeModel: 'Tesla Model 3', plate: 'GHI012', pickedUp: false, time: null },
-    { id: 4, drop: 'DROP 2', dropLoc: 'Newcastle Motors', vin: 'JHMKA266MC000145', makeModel: 'Honda Accord', plate: 'JKL345', pickedUp: true, time: '08:14 AM' },
-    { id: 5, drop: 'DROP 2', dropLoc: 'Newcastle Motors', vin: 'WAUZZZ4G5HN123456', makeModel: 'Audi A6', plate: 'MNO678', pickedUp: false, time: null },
-    { id: 6, drop: 'DROP 2', dropLoc: 'Newcastle Motors', vin: 'WDD0A7C57JA123456', makeModel: 'Mercedes C200', plate: 'PQR901', pickedUp: false, time: null },
-    { id: 7, drop: 'DROP 3', dropLoc: 'Brisbane Car Centre', vin: 'YV1A22MKXJ1001234', makeModel: 'Volvo XC60', plate: 'STU234', pickedUp: false, time: null },
-    { id: 8, drop: 'DROP 4', dropLoc: 'Gold Coast Autos', vin: '1FM5U90D3JU812345', makeModel: 'Ford Escape', plate: 'VWX567', pickedUp: false, time: null },
-  ]);
+  // Dynamic States
+  const [loading, setLoading] = useState(true);
+  const [loadInfo, setLoadInfo] = useState(null);
+  const [cars, setCars] = useState([]);
+
+  const fetchPickupLoad = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/pickup-load');
+      if (res.data?.success && res.data.data?.load) {
+        setLoadInfo(res.data.data.load);
+        setCars(res.data.data.load.cars || []);
+      } else {
+        setLoadInfo(null);
+        setCars([]);
+      }
+    } catch (error) {
+      console.error('Fetch pickup load error:', error.message);
+      setLoadInfo(null);
+      setCars([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchPickupLoad();
+  }, []);
+
 
   const triggerToast = (msg) => {
     setToastMsg(msg);

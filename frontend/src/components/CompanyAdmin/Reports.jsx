@@ -259,10 +259,10 @@ export default function Reports() {
 
   // Categories Data
   const reportCategories = [
-    { title: 'Operations Reports', desc: 'Loads, drivers, vehicles, warehouse, assets and more', count: '32 Reports', icon: Truck, color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
-    { title: 'Financial Reports', desc: 'Revenue, expenses, P&L, payroll and profitability', count: '28 Reports', icon: DollarSign, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { title: 'Compliance Reports', desc: 'Licences, registrations, insurance and compliance', count: '24 Reports', icon: Shield, color: 'bg-amber-50 text-amber-600 border-amber-100' },
-    { title: 'Analytics & Insights', desc: 'AI insights, trends, forecasts and performance', count: '18 Reports', icon: TrendingUp, color: 'bg-sky-50 text-sky-600 border-sky-100' }
+    { title: 'Operations Reports', desc: 'Loads, drivers, vehicles, warehouse, assets and more', count: `${customReportsList.length > 0 ? customReportsList.length : 0} Reports`, icon: Truck, color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
+    { title: 'Financial Reports', desc: 'Revenue, expenses, P&L, payroll and profitability', count: `${customReportsList.filter(r => (r.category||'').includes('Financial')).length} Reports`, icon: DollarSign, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    { title: 'Compliance Reports', desc: 'Licences, registrations, insurance and compliance', count: `${customReportsList.filter(r => (r.category||'').includes('Compliance')).length} Reports`, icon: Shield, color: 'bg-amber-50 text-amber-600 border-amber-100' },
+    { title: 'Analytics & Insights', desc: 'AI insights, trends, forecasts and performance', count: `${customReportsList.filter(r => (r.category||'').includes('Analytics')).length} Reports`, icon: TrendingUp, color: 'bg-sky-50 text-sky-600 border-sky-100' }
   ];
 
   // Recently Viewed Reports derived from customReportsList
@@ -723,7 +723,7 @@ export default function Reports() {
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL REVENUE (MTD)</span>
               <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalRevenue ? `$${kpiStats.totalRevenue.toLocaleString()}` : '$0.00'}</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
+              <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Current month total</div>
               <button
                 onClick={() => showToast('Opening Total Revenue Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -3703,7 +3703,7 @@ export default function Reports() {
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL REPORTS</span>
             <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalReportsCount ?? customReportsList.length}</div>
-            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
+            <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Active system reports</div>
             <button
               onClick={() => showToast('Showing all reports')}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -3722,7 +3722,7 @@ export default function Reports() {
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">RECENTLY VIEWED</span>
             <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.recentlyViewedCount ?? customReportsList.length}</div>
-            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
+            <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Recent activity logs</div>
             <button
               onClick={() => showToast('Viewing report history')}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -3741,7 +3741,7 @@ export default function Reports() {
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">SCHEDULED REPORTS</span>
             <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.scheduledReportsCount ?? schedulesList.length}</div>
-            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
+            <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Automated email jobs</div>
             <button
               onClick={() => setShowScheduleModal(true)}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -3760,7 +3760,7 @@ export default function Reports() {
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">FAVOURITE REPORTS</span>
             <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.favouritesCount ?? favourites.length}</div>
-            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
+            <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Bookmarked reports</div>
             <button
               onClick={() => showToast('Showing favourite reports')}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -3779,7 +3779,7 @@ export default function Reports() {
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">DOWNLOADS (MTD)</span>
             <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.downloadsMtd ?? 0}</div>
-            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
+            <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Exported this month</div>
             <button
               onClick={() => showToast('Showing report downloads')}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -4094,27 +4094,27 @@ export default function Reports() {
             </div>
           </div>
 
-          {/* Bottom 3 Mini KPI Summary Cards matching Image 2 */}
+          {/* Bottom 3 Mini KPI Summary Cards */}
           <div className="grid grid-cols-3 gap-2.5 mt-2.5 pt-2.5 border-t border-slate-100">
             <div className="bg-[#F5F3FF] rounded-xl p-2.5 border border-[#DDD6FE] text-left shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#6366F1] uppercase tracking-wider">Generated</div>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-black text-slate-900 leading-none">{kpiStats?.totalReportsCount ?? customReportsList.length}</span>
-                <span className="text-[10px] font-bold text-emerald-600">Real DB Data</span>
+                <span className="text-[10px] font-bold text-indigo-600">This Month</span>
               </div>
             </div>
             <div className="bg-[#EFF6FF] rounded-xl p-2.5 border border-[#BFDBFE] text-left shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#2563EB] uppercase tracking-wider">Downloaded</div>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-black text-slate-900 leading-none">{kpiStats?.downloadsMtd ?? 0}</span>
-                <span className="text-[10px] font-bold text-emerald-600">Real DB Data</span>
+                <span className="text-[10px] font-bold text-blue-600">MTD Total</span>
               </div>
             </div>
             <div className="bg-[#FFF7ED] rounded-xl p-2.5 border border-[#FED7AA] text-left shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#EA580C] uppercase tracking-wider">Scheduled</div>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-black text-slate-900 leading-none">{kpiStats?.scheduledReportsCount ?? schedulesList.length}</span>
-                <span className="text-[10px] font-bold text-emerald-600">Real DB Data</span>
+                <span className="text-[10px] font-bold text-orange-600">Active Jobs</span>
               </div>
             </div>
           </div>
