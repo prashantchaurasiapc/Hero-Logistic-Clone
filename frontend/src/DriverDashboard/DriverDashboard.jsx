@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import {
   FiCheckSquare, FiPackage, FiUpload, FiClock,
   FiAlertTriangle, FiFileText, FiTruck, FiCoffee, FiDollarSign,
@@ -15,7 +17,32 @@ const DriverDashboard = () => {
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [quickMsg, setQuickMsg] = useState('');
-  const [scheduleFilter, setScheduleFilter] = useState('ALL'); // ALL, ON_DUTY, IN_TRANSIT, UPCOMING, COMPLETED
+  const [scheduleFilter, setScheduleFilter] = useState('ALL');
+
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    fetchDashboard();
+  }, []);
+
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/dashboard');
+      if (res.data?.success) {
+        setDashboardData(res.data.data);
+        if (res.data.data?.driverInfo?.status) {
+          setDriverStatus(res.data.data.driverInfo.status);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -56,11 +83,11 @@ const DriverDashboard = () => {
               {driverStatus}
             </span>
             <span className="text-[10px] font-extrabold text-slate-400 border border-slate-200 px-2 py-0.5 rounded-full bg-white whitespace-nowrap">
-              Last sync: 29 May 2025, 10:15 AM
+              Last sync: {dashboardData?.driverInfo?.lastSync || 'Syncing...'}
             </span>
           </div>
           <p className="text-xs font-semibold text-slate-500 leading-snug">
-            Welcome back, <strong className="text-slate-800">Noah Williams (JS)</strong> • Vehicle: <strong className="text-slate-800">TX-ROAD88 (Freightliner Cascadia)</strong> • Odometer: <strong className="font-mono text-slate-900">245,678 km</strong>
+            Welcome back, <strong className="text-slate-800">{dashboardData?.driverInfo?.name || 'Driver'}</strong> • Vehicle: <strong className="text-slate-800">{dashboardData?.driverInfo?.vehicle?.rego || 'No Vehicle'} ({dashboardData?.driverInfo?.vehicle?.make || ''} {dashboardData?.driverInfo?.vehicle?.model || ''})</strong> • Odometer: <strong className="font-mono text-slate-900">{dashboardData?.driverInfo?.vehicle?.odometer || 0} km</strong>
           </p>
         </div>
 
@@ -139,8 +166,8 @@ const DriverDashboard = () => {
             <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
               <FiPackage className="text-blue-500 text-sm" /> Loads Today
             </div>
-            <div className="text-2xl font-black text-slate-900 leading-none">2</div>
-            <div className="text-[10.5px] font-bold text-indigo-600 mt-1">1 Upcoming • Next at 08:00 AM</div>
+            <div className="text-2xl font-black text-slate-900 leading-none">{dashboardData?.metrics?.loadsToday || 0}</div>
+            <div className="text-[10.5px] font-bold text-indigo-600 mt-1">{dashboardData?.metrics?.loadsTodayUpcoming || 0} Upcoming {dashboardData?.metrics?.nextLoadTime ? `• Next at ${dashboardData.metrics.nextLoadTime}` : ''}</div>
           </div>
           <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
             <FiNavigation className="text-xl" />
@@ -153,8 +180,8 @@ const DriverDashboard = () => {
             <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
               <FiCheckCircle className="text-emerald-500 text-sm" /> Completed (This Week)
             </div>
-            <div className="text-2xl font-black text-slate-900 leading-none">5</div>
-            <div className="text-[10.5px] font-bold text-emerald-600 mt-1">5 Deliveries • 100% SLA</div>
+            <div className="text-2xl font-black text-slate-900 leading-none">{dashboardData?.metrics?.completedThisWeek || 0}</div>
+            <div className="text-[10.5px] font-bold text-emerald-600 mt-1">{dashboardData?.metrics?.completedThisWeek || 0} Deliveries • {dashboardData?.metrics?.slaPercentage || 0}% SLA</div>
           </div>
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
             <FiShield className="text-xl" />
@@ -167,8 +194,8 @@ const DriverDashboard = () => {
             <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
               <FiClock className="text-amber-500 text-sm" /> Drive Time Today
             </div>
-            <div className="text-2xl font-black text-slate-900 leading-none">3h 45m</div>
-            <div className="text-[10.5px] font-bold text-amber-600 mt-1">Remaining: 7h 15m (HOS)</div>
+            <div className="text-2xl font-black text-slate-900 leading-none">{dashboardData?.metrics?.driveTimeToday || '0h 00m'}</div>
+            <div className="text-[10.5px] font-bold text-amber-600 mt-1">Remaining: {dashboardData?.metrics?.driveTimeRemaining || '0h 00m'}</div>
           </div>
           <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
             <FiCoffee className="text-xl" />
@@ -181,8 +208,8 @@ const DriverDashboard = () => {
             <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
               <FiDroplet className="text-purple-500 text-sm" /> Diesel Balance
             </div>
-            <div className="text-2xl font-black text-slate-900 leading-none">120 L</div>
-            <div className="text-[10.5px] font-bold text-purple-600 mt-1">Est. range: 620 km</div>
+            <div className="text-2xl font-black text-slate-900 leading-none">{dashboardData?.metrics?.dieselBalanceL || 0} L</div>
+            <div className="text-[10.5px] font-bold text-purple-600 mt-1">Est. range: {dashboardData?.metrics?.estRangeKm || 0} km</div>
           </div>
           <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
             <FiDroplet className="text-xl" />
@@ -195,7 +222,7 @@ const DriverDashboard = () => {
             <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
               <FiDollarSign className="text-emerald-500 text-sm" /> Pay This Period
             </div>
-            <div className="text-2xl font-black text-slate-900 leading-none">$1,245.60</div>
+            <div className="text-2xl font-black text-slate-900 leading-none">${(dashboardData?.metrics?.payThisPeriod || 0).toFixed(2)}</div>
             <div className="text-[10.5px] font-bold text-slate-500 mt-1">Before tax</div>
           </div>
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
@@ -258,81 +285,93 @@ const DriverDashboard = () => {
         {/* ================= COLUMN 1: CURRENT LOAD & SCHEDULE ================= */}
         <div className="space-y-6">
           
+          
           {/* Current Assigned Load Card */}
-          <div className="bg-white border border-blue-200 rounded-2xl p-5 shadow-xs relative">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <FiPackage className="text-blue-600" /> CURRENT LOAD
-              </span>
-              <span className="bg-[#ffcc00] text-black font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase">
-                In Transit
-              </span>
-            </div>
+          {dashboardData?.currentLoad ? (
+            <div className="bg-white border border-blue-200 rounded-2xl p-5 shadow-xs relative">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <FiPackage className="text-blue-600" /> CURRENT LOAD
+                </span>
+                <span className="bg-[#ffcc00] text-black font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase">
+                  {dashboardData.currentLoad.status}
+                </span>
+              </div>
 
-            <div className="text-xl font-black text-slate-900">LD-3987</div>
-            <div className="text-sm font-black text-slate-800 mb-4 flex items-center gap-1.5">
-              <span>Melbourne VIC</span>
-              <span className="text-slate-400">➔</span>
-              <span>Sydney NSW</span>
-            </div>
+              <div className="text-xl font-black text-slate-900">{dashboardData.currentLoad.loadNumber}</div>
+              <div className="text-sm font-black text-slate-800 mb-4 flex items-center gap-1.5">
+                <span>{dashboardData.currentLoad.origin}</span>
+                <span className="text-slate-400">➔</span>
+                <span>{dashboardData.currentLoad.destination}</span>
+              </div>
 
-            {/* Route Stops */}
-            <div className="space-y-3 border-t border-slate-100 pt-3">
-              <div className="flex items-start gap-3">
-                <span className="w-3 h-3 rounded-full bg-purple-500 mt-1 shrink-0"></span>
-                <div>
-                  <div className="flex justify-between items-center text-[10.5px]">
-                    <span className="font-extrabold text-slate-400 uppercase">Pickup</span>
-                    <span className="font-mono font-bold text-slate-700">08:00 AM</span>
+              {/* Route Stops */}
+              <div className="space-y-3 border-t border-slate-100 pt-3">
+                <div className="flex items-start gap-3">
+                  <span className="w-3 h-3 rounded-full bg-purple-500 mt-1 shrink-0"></span>
+                  <div>
+                    <div className="flex justify-between items-center text-[10.5px]">
+                      <span className="font-extrabold text-slate-400 uppercase">Pickup</span>
+                      <span className="font-mono font-bold text-slate-700">{dashboardData.currentLoad.pickupStop?.time}</span>
+                    </div>
+                    <div className="font-bold text-slate-900 text-xs">{dashboardData.currentLoad.pickupStop?.name}</div>
+                    <div className="text-xs text-slate-500 font-medium">{dashboardData.currentLoad.pickupStop?.address}</div>
                   </div>
-                  <div className="font-bold text-slate-900 text-xs">ABC Car Yard</div>
-                  <div className="text-xs text-slate-500 font-medium">123 Sunshine Rd, Melbourne VIC 3000</div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <span className="w-3 h-3 rounded-full bg-blue-500 mt-1 shrink-0"></span>
+                  <div>
+                    <div className="flex justify-between items-center text-[10.5px]">
+                      <span className="font-extrabold text-slate-400 uppercase">Delivery</span>
+                      <span className="font-mono font-bold text-slate-700">{dashboardData.currentLoad.deliveryStop?.time}</span>
+                    </div>
+                    <div className="font-bold text-slate-900 text-xs">{dashboardData.currentLoad.deliveryStop?.name}</div>
+                    <div className="text-xs text-slate-500 font-medium">{dashboardData.currentLoad.deliveryStop?.address}</div>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <span className="w-3 h-3 rounded-full bg-blue-500 mt-1 shrink-0"></span>
+              <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-slate-100 text-xs">
                 <div>
-                  <div className="flex justify-between items-center text-[10.5px]">
-                    <span className="font-extrabold text-slate-400 uppercase">Delivery</span>
-                    <span className="font-mono font-bold text-slate-700">02:30 PM</span>
-                  </div>
-                  <div className="font-bold text-slate-900 text-xs">Auto World Sydney</div>
-                  <div className="text-xs text-slate-500 font-medium">45 Parramatta Rd, Sydney NSW 2150</div>
+                  <span className="text-slate-400 font-bold block text-[10px]">Load Type</span>
+                  <span className="font-bold text-slate-800">{dashboardData.currentLoad.loadType}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-bold block text-[10px]">Reference</span>
+                  <span className="font-mono font-bold text-slate-800">{dashboardData.currentLoad.reference}</span>
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-slate-100 text-xs">
-              <div>
-                <span className="text-slate-400 font-bold block text-[10px]">Load Type</span>
-                <span className="font-bold text-slate-800">Car Carrier (4 Level)</span>
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <button
+                  onClick={() => navigate('/driver/active-run')}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+                >
+                  <span>View Active Run</span>
+                  <FiChevronRight />
+                </button>
+                <button
+                  onClick={() => navigate('/driver/documents')}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <FiUpload className="text-slate-600" />
+                  <span>Upload Document</span>
+                </button>
               </div>
-              <div>
-                <span className="text-slate-400 font-bold block text-[10px]">Reference</span>
-                <span className="font-mono font-bold text-slate-800">PO-65432</span>
-              </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              <button
-                onClick={() => navigate('/driver/active-run')}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
-              >
-                <span>View Active Run</span>
-                <FiChevronRight />
-              </button>
-              <button
-                onClick={() => navigate('/driver/documents')}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <FiUpload className="text-slate-600" />
-                <span>Upload Document</span>
-              </button>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-xs flex flex-col items-center justify-center text-center">
+               <FiPackage className="text-slate-300 text-4xl mb-3" />
+               <div className="text-sm font-bold text-slate-800 mb-1">No Active Load</div>
+               <div className="text-xs text-slate-500 mb-4">You have no loads in transit.</div>
+               <button onClick={() => navigate('/driver/jobs')} className="bg-[#ffcc00] text-black font-extrabold text-xs px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer">
+                  View Assigned Jobs
+               </button>
             </div>
-          </div>
-
-          {/* Today's Schedule Timeline */}
+          )}
+          
+{/* Today's Schedule Timeline */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TODAY'S SCHEDULE</h3>
@@ -410,7 +449,7 @@ const DriverDashboard = () => {
               <div>
                 <div className="flex justify-between text-xs font-bold mb-1">
                   <span className="text-slate-600">Work / Drive Left</span>
-                  <span className="text-slate-900 font-mono">7h 15m (3h 45m elapsed)</span>
+                  <span className="text-slate-900 font-mono">{dashboardData?.metrics?.driveTimeRemaining || '0h 00m'} ({dashboardData?.metrics?.driveTimeToday || '0h 00m'} elapsed)</span>
                 </div>
                 <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                   <div className="bg-amber-500 h-full rounded-full" style={{ width: '34%' }}></div>
@@ -451,39 +490,35 @@ const DriverDashboard = () => {
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">UNREAD MESSAGES</h3>
-                <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full">2</span>
+                <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full">{dashboardData?.unreadMessagesCount || 0}</span>
               </div>
               <button onClick={() => navigate('/driver/contact-dispatch')} className="text-xs font-bold text-blue-600 hover:underline cursor-pointer">
                 View all
               </button>
             </div>
 
+            
             <div className="space-y-3 mb-4">
-              <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-purple-600 text-white font-black text-xs flex items-center justify-center shrink-0">DP</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-0.5">
-                    <span className="font-bold text-slate-900 text-xs">Dispatch</span>
-                    <span className="text-[10px] font-medium text-slate-400">10:12 AM</span>
+              {dashboardData?.messages && dashboardData.messages.length > 0 ? (
+                dashboardData.messages.map(msg => (
+                  <div key={msg.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                      {msg.senderName?.slice(0, 2).toUpperCase() || 'DP'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center mb-0.5">
+                        <span className="font-bold text-slate-900 text-xs">{msg.senderName || 'Dispatch'}</span>
+                        <span className="text-[10px] font-medium text-slate-400">{new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                      </div>
+                      <p className="text-xs text-slate-600 font-medium">{msg.content}</p>
+                    </div>
+                    {!msg.isRead && <span className="w-2 h-2 rounded-full bg-blue-500 mt-1.5"></span>}
                   </div>
-                  <p className="text-xs text-slate-600 font-medium">New load update for LD-3987.</p>
-                </div>
-                <span className="bg-blue-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full">1</span>
-              </div>
-
-              <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-700 text-white font-black text-xs flex items-center justify-center shrink-0">AC</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-0.5">
-                    <span className="font-bold text-slate-900 text-xs">Accounts</span>
-                    <span className="text-[10px] font-medium text-slate-400">09:45 AM</span>
-                  </div>
-                  <p className="text-xs text-slate-600 font-medium">Invoice INV-2025-0529 is ready.</p>
-                </div>
-                <span className="bg-blue-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full">1</span>
-              </div>
+                ))
+              ) : (
+                 <div className="text-center p-4 text-xs font-bold text-slate-400">No recent messages.</div>
+              )}
             </div>
-
             {/* Quick Reply Form */}
             <form onSubmit={handleSendQuickMsg} className="flex gap-2">
               <input
@@ -512,32 +547,23 @@ const DriverDashboard = () => {
               <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full">2</span>
             </div>
 
+            
             <div className="space-y-3">
-              <div
-                onClick={() => navigate('/driver/work-status')}
-                className="p-3 bg-red-50/60 border border-red-100 rounded-xl flex items-start gap-3 cursor-pointer hover:border-red-300 transition-all"
-              >
-                <FiAlertTriangle className="text-red-500 text-base mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <div className="font-bold text-slate-900 text-xs">Pre-start checklist pending</div>
-                  <div className="text-xs text-slate-500 mt-0.5">Please complete your daily pre-start checklist.</div>
-                </div>
-                <FiChevronRight className="text-slate-400" />
-              </div>
-
-              <div
-                onClick={() => navigate('/driver/documents')}
-                className="p-3 bg-amber-50/60 border border-amber-100 rounded-xl flex items-start gap-3 cursor-pointer hover:border-amber-300 transition-all"
-              >
-                <FiFileText className="text-amber-600 text-base mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <div className="font-bold text-slate-900 text-xs">Document expiring soon</div>
-                  <div className="text-xs text-slate-500 mt-0.5">Medical Certificate expires on 10 Jun 2025.</div>
-                </div>
-                <FiChevronRight className="text-slate-400" />
-              </div>
+              {dashboardData?.alerts && dashboardData.alerts.length > 0 ? (
+                dashboardData.alerts.map(alert => (
+                  <div key={alert.id} onClick={() => navigate(alert.link)} className={`p-3 border rounded-xl flex items-start gap-3 cursor-pointer transition-all ${alert.type === 'warning' ? 'bg-red-50/60 border-red-100 hover:border-red-300' : 'bg-amber-50/60 border-amber-100 hover:border-amber-300'}`}>
+                    <FiAlertTriangle className={`text-base mt-0.5 shrink-0 ${alert.type === 'warning' ? 'text-red-500' : 'text-amber-600'}`} />
+                    <div className="flex-1">
+                      <div className="font-bold text-slate-900 text-xs">{alert.title}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">{alert.description}</div>
+                    </div>
+                    <FiChevronRight className="text-slate-400" />
+                  </div>
+                ))
+              ) : (
+                <div className="text-center p-4 text-xs font-bold text-slate-400 bg-slate-50 rounded-xl">No active alerts.</div>
+              )}
             </div>
-
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
               <button onClick={() => navigate('/driver/notifications')} className="text-xs font-bold text-amber-600 hover:underline flex items-center gap-1 cursor-pointer">
                 <span>View All Alerts</span>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -196,7 +197,7 @@ export default function TrailerSwap() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Trailer Swap / Equipment Change</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Trailer Swap / Equipment Change</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">Swap trailers or change equipment. Your company settings determine if approval is required.</p>
         </div>
 
@@ -227,7 +228,7 @@ export default function TrailerSwap() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">Equipment</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">15.13 Equipment</span>
               <span className="bg-[#ffcc00]/20 text-yellow-900 border border-[#ffcc00] text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Direct Swap
               </span>

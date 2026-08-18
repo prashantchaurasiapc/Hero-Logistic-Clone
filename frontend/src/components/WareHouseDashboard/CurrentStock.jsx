@@ -93,13 +93,17 @@ export default function CurrentStock() {
         setStockItems(formatted);
         setSelectedItem(formatted[0] || null);
       } else {
+        setFetchError('Unable to load stock data. Please try again.');
         setStockItems([]);
-        setSelectedItem(null);
       }
     } catch (err) {
       console.error('Error fetching stock items:', err);
+      setFetchError(
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        'Failed to load stock data. Check your connection and try again.'
+      );
       setStockItems([]);
-      setSelectedItem(null);
     } finally {
       setLoading(false);
     }
@@ -109,28 +113,32 @@ export default function CurrentStock() {
     fetchStock();
     const fetchLanesAndHolding = async () => {
       try {
-
-        const res = await api.get('/warehouse-portal/stock');
-        const data = res.data?.data || res.data;
-        if (Array.isArray(data)) {
-          setStockItems(data);
-          if (data.length > 0) setSelectedItem(data[0]);
-        } else if (data && data.items) {
-          setStockItems(data.items);
-          if (data.items.length > 0) setSelectedItem(data.items[0]);
-        } else {
-          setStockItems([]);
+        const [lanesRes, holdingRes] = await Promise.allSettled([
+          api.get('/warehouse-portal/load-lanes'),
+          api.get('/warehouse-portal/holding-areas')
+        ]);
+        if (lanesRes.status === 'fulfilled' && lanesRes.value.data?.success) {
+          setLoadLanes(lanesRes.value.data.data || []);
+        }
+        if (holdingRes.status === 'fulfilled' && holdingRes.value.data?.success) {
+          setHoldingAreas(holdingRes.value.data.data || []);
         }
       } catch (err) {
-        console.warn('Error fetching stock items:', err.message);
-        setStockItems([]);
-      } finally {
-        setLoading(false);
-
+        console.warn('Error fetching lanes/holding:', err?.message);
       }
     };
     fetchLanesAndHolding();
   }, []);
+
+  // Dynamic Filter Options
+  const locationOptions = ['All Locations', ...new Set(stockItems.map(i => i.location).filter(Boolean))];
+  const zoneOptions = ['All Zones', ...new Set(stockItems.map(i => i.zone || i.location).filter(Boolean))];
+  const rowOptions = ['All Rows', ...new Set(stockItems.map(i => i.row).filter(Boolean))];
+  const bayOptions = ['All Bays', ...new Set(stockItems.map(i => i.bay).filter(Boolean))];
+  const stagingOptions = ['All Staging Areas', ...new Set(stockItems.map(i => i.loadDetail).filter(Boolean))];
+  const loadOptions = ['All Loads', ...new Set(stockItems.map(i => i.loadJob).filter(Boolean))];
+  const customerOptions = ['All Customers', ...new Set(stockItems.map(i => i.customer).filter(Boolean))];
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('All Types');
@@ -176,17 +184,28 @@ export default function CurrentStock() {
 
   // Filter items matching search & dropdowns
   const filteredItems = stockItems.filter(item => {
+    if (!item) return false;
     const q = searchQuery.toLowerCase().trim();
+    const title = (item.title || '').toLowerCase();
+    const itemNo = (item.itemNo || '').toLowerCase();
+    const vin = (item.vin || '').toLowerCase();
+    const rego = (item.rego || '').toLowerCase();
+    const barcode = (item.barcode || '').toLowerCase();
+    const sku = (item.sku || '').toLowerCase();
+    const customer = (item.customer || '').toLowerCase();
+    const locationDetail = (item.locationDetail || '').toLowerCase();
+    const loadJob = (item.loadJob || '').toLowerCase();
+
     const matchesSearch = !q || (
-      (item.title && item.title.toLowerCase().includes(q)) ||
-      (item.itemNo && item.itemNo.toLowerCase().includes(q)) ||
-      (item.vin && item.vin.toLowerCase().includes(q)) ||
-      (item.rego && item.rego.toLowerCase().includes(q)) ||
-      (item.barcode && item.barcode.toLowerCase().includes(q)) ||
-      (item.sku && item.sku.toLowerCase().includes(q)) ||
-      (item.customer && item.customer.toLowerCase().includes(q)) ||
-      (item.locationDetail && item.locationDetail.toLowerCase().includes(q)) ||
-      (item.loadJob && item.loadJob.toLowerCase().includes(q))
+      title.includes(q) ||
+      itemNo.includes(q) ||
+      vin.includes(q) ||
+      rego.includes(q) ||
+      barcode.includes(q) ||
+      sku.includes(q) ||
+      customer.includes(q) ||
+      locationDetail.includes(q) ||
+      loadJob.includes(q)
     );
 
     const matchesType = selectedType === 'All Types' || (item.type && item.type.toLowerCase().includes(selectedType.toLowerCase())) || (item.typeBadge && item.typeBadge.toLowerCase().includes(selectedType.toLowerCase()));
@@ -1141,16 +1160,7 @@ export default function CurrentStock() {
                   <div className="wh-filter-group">
                     <label>Location</label>
                     <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)}>
-                      <option value="All Locations">All Locations</option>
-                      <option value="Main Yard">Main Yard</option>
-                      <option value="Yard B">Yard B</option>
-                      <option value="Zone A">Zone A</option>
-                      <option value="Depot Bay 01">Depot Bay 01</option>
-                      {Array.from(new Set(stockItems.map(i => i.location).filter(Boolean))).map((loc, idx) => (
-                        !['Main Yard', 'Yard B', 'Zone A', 'Depot Bay 01'].includes(loc) && (
-                          <option key={idx} value={loc}>{loc}</option>
-                        )
-                      ))}
+                      {locationOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
 
@@ -1168,31 +1178,14 @@ export default function CurrentStock() {
                   <div className="wh-filter-group">
                     <label>Load / Job</label>
                     <select value={selectedLoad} onChange={(e) => setSelectedLoad(e.target.value)}>
-                      <option value="All Loads">All Loads</option>
-                      <option value="LD-1001">LD-1001 (Sydney Express)</option>
-                      <option value="LD-1002">LD-1002 (Melbourne Depot)</option>
-                      <option value="LD-1003">LD-1003 (Brisbane Linehaul)</option>
-                      {Array.from(new Set(stockItems.map(i => i.loadJob).filter(Boolean))).map((ld, idx) => (
-                        !['LD-1001', 'LD-1002', 'LD-1003'].includes(ld) && (
-                          <option key={idx} value={ld}>{ld}</option>
-                        )
-                      ))}
+                      {loadOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
 
                   <div className="wh-filter-group">
                     <label>Customer</label>
                     <select value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)}>
-                      <option value="All Customers">All Customers</option>
-                      <option value="Apex Logistics">Apex Logistics</option>
-                      <option value="National Fleet Supply">National Fleet Supply</option>
-                      <option value="Global Auto Transport">Global Auto Transport</option>
-                      <option value="Pacific Carrier Hub">Pacific Carrier Hub</option>
-                      {Array.from(new Set(stockItems.map(i => i.customer).filter(Boolean))).map((c, idx) => (
-                        !['Apex Logistics', 'National Fleet Supply', 'Global Auto Transport', 'Pacific Carrier Hub'].includes(c) && (
-                          <option key={idx} value={c}>{c}</option>
-                        )
-                      ))}
+                      {customerOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
                 </div>
@@ -1213,49 +1206,28 @@ export default function CurrentStock() {
                   <div className="wh-filter-group">
                     <label>Zone</label>
                     <select value={selectedZone} onChange={(e) => setSelectedZone(e.target.value)}>
-                      <option value="All Zones">All Zones</option>
-                      <option value="Zone A">Zone A</option>
-                      <option value="Zone B">Zone B</option>
-                      <option value="Zone C">Zone C</option>
-                      <option value="DG Zone">DG Zone (Dangerous Goods)</option>
+                      {zoneOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
 
                   <div className="wh-filter-group">
                     <label>Row#</label>
                     <select value={selectedRow} onChange={(e) => setSelectedRow(e.target.value)}>
-                      <option value="All Rows">All Rows</option>
-                      <option value="Row 1">Row 1</option>
-                      <option value="Row 2">Row 2</option>
-                      <option value="Row 3">Row 3</option>
-                      <option value="Row 4">Row 4</option>
+                      {rowOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
 
                   <div className="wh-filter-group">
                     <label>Bay#</label>
                     <select value={selectedBay} onChange={(e) => setSelectedBay(e.target.value)}>
-                      <option value="All Bays">All Bays</option>
-                      <option value="Bay 01">Bay 01</option>
-                      <option value="Bay 02">Bay 02</option>
-                      <option value="Bay 03">Bay 03</option>
-                      <option value="Bay 04">Bay 04</option>
-                      <option value="Bay 05">Bay 05</option>
-                      <option value="Bay 12">Bay 12</option>
+                      {bayOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
 
                   <div className="wh-filter-group">
                     <label>Staging Area</label>
                     <select value={selectedStaging} onChange={(e) => setSelectedStaging(e.target.value)}>
-                      <option value="All Staging Areas">All Staging Areas</option>
-                      <option value="SA-01">SA-01 (Priority Staging)</option>
-                      <option value="SA-02">SA-02 (Bulk Holding)</option>
-                      <option value="SA-03">SA-03 (Inspection Bay)</option>
-                      <option value="SA-04">SA-04 (Overflow Holding)</option>
-                      <option value="Lane 1">Lane 1</option>
-                      <option value="Lane 2">Lane 2</option>
-                      <option value="Lane 3">Lane 3</option>
+                      {stagingOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
                 </div>
@@ -1689,7 +1661,20 @@ export default function CurrentStock() {
 
                 <select value={targetLocation} onChange={(e) => setTargetLocation(e.target.value)}>
                   <option value="">Select Target Location...</option>
-
+                  <option value="Yard A / Row 1 / Bay 01">Yard A / Row 1 / Bay 01</option>
+                  <option value="Yard A / Row 2 / Bay 05">Yard A / Row 2 / Bay 05</option>
+                  <option value="Yard B / Row 1 / Bay 10">Yard B / Row 1 / Bay 10</option>
+                  <option value="Main Depot / Row 3 / Bay 04">Main Depot / Row 3 / Bay 04</option>
+                  <option value="Staging Area 1">Staging Area 1</option>
+                  <option value="Staging Area 2">Staging Area 2</option>
+                  <option value="Load Lane 1">Load Lane 1</option>
+                  <option value="Load Lane 2">Load Lane 2</option>
+                  {loadLanes.map(l => (
+                    <option key={l.id} value={l.name || `Load Lane ${l.laneNumber}`}>{l.name || `Load Lane ${l.laneNumber}`}</option>
+                  ))}
+                  {holdingAreas.map(h => (
+                    <option key={h.id} value={h.name || `Holding Area ${h.code}`}>{h.name || `Holding Area ${h.code}`}</option>
+                  ))}
                 </select>
               </div>
 

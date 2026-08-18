@@ -35,18 +35,10 @@ const resolveDriver = async (req) => {
     if (driverByEmail) return driverByEmail;
   }
 
-  // 3. Fallback: find by tenant or first driver in database
-  const fallbackDriver = await prisma.driver.findFirst({
-    where: req.tenantId ? { companyId: req.tenantId } : {},
-    include: {
-      currentVehicle: true,
-      company: true,
-      branch: true
-    },
-    orderBy: { createdAt: 'asc' }
-  });
-
-  return fallbackDriver;
+  
+  // No fallback to random drivers for security.
+  // If the user isn't found as a driver, return null so controllers can reject access.
+  return null;
 };
 
 // ============================================================================
@@ -55,7 +47,6 @@ const resolveDriver = async (req) => {
 exports.getDashboard = async (req, res, next) => {
   try {
     const driver = await resolveDriver(req);
-
     if (!driver) {
       return sendSuccess(res, {
         driverInfo: {
@@ -106,6 +97,8 @@ exports.getDashboard = async (req, res, next) => {
     }
 
     const driverId = driver.id;
+    const driverName = (`${driver.firstName || ''} ${driver.lastName || ''}`.trim() || driver.user?.name || req.user?.name || 'Driver');
+    const driverCode = driver.driverCode || driver.driverNumber || 'DRV-001';
 
     // Fetch real driver loads, timesheets, checklists, vehicle, and messages from DB
     const [
@@ -313,8 +306,8 @@ exports.getDashboard = async (req, res, next) => {
     return sendSuccess(res, {
       driverInfo: {
         id: driver.id,
-        name: `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || req.user?.name || 'Driver',
-        driverCode: driver.driverCode || 'DRV-001',
+        name: driverName,
+        driverCode: driverCode,
         status: currentStatusDisplay,
         lastSync: new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
         vehicle: vehicleData
@@ -543,7 +536,7 @@ exports.getChecklistContext = async (req, res, next) => {
       trailerRef: currentLoadObj ? (currentLoadObj.trailerRego || 'N/A') : 'N/A',
       lastChecklists: lastChecklists,
       template: itemsTemplate,
-      lastSaved: preStartChecklists[0] ? new Date(preStartChecklists[0].createdAt).toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '29 May 2025, 06:15 AM'
+      lastSaved: preStartChecklists[0] ? new Date(preStartChecklists[0].createdAt).toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Never'
     });
   } catch (error) {
     next(error);
@@ -583,10 +576,15 @@ exports.submitChecklist = async (req, res, next) => {
     }
     
     let createdChecklist = null;
-    if (prisma.preStartChecklist) {
-       createdChecklist = await prisma.preStartChecklist.create({
-         data: checklistData
-       }).catch(() => null);
+    try {
+      if (prisma.preStartChecklist) {
+         createdChecklist = await prisma.preStartChecklist.create({
+           data: checklistData
+         });
+      }
+    } catch (err) {
+      console.error('DB ERROR:', err.message);
+      return sendError(res, ERROR_CODES.SERVER_ERROR, 'Failed to save checklist: ' + err.message);
     }
     
     return sendSuccess(res, { success: true, checklist: createdChecklist });
@@ -625,10 +623,10 @@ exports.getJobs = async (req, res, next) => {
       formattedJobs = loads.map(load => {
         let origin = null;
         let destination = null;
-        let pickupName = 'Sydney Depot NSW';
-        let deliveryName = 'Melbourne Terminal VIC';
-        let pickupAddress = '14 Industrial Blvd, Eastern Creek NSW';
-        let deliveryAddress = '92 Logistics Dr, Laverton North VIC';
+        let pickupName = 'Pickup Location';
+        let deliveryName = 'Delivery Location';
+        let pickupAddress = 'No Address Provided';
+        let deliveryAddress = 'No Address Provided';
         
         const pickups = load.stops?.filter(s => s.type === 'PICKUP') || [];
         const deliveries = load.stops?.filter(s => s.type === 'DELIVERY') || [];
@@ -712,7 +710,7 @@ exports.createJobRequest = async (req, res, next) => {
           priority: 'NORMAL',
           notes: notes || 'Driver requested load',
           driverId: driver.id,
-          companyId: driver.companyId || req.tenantId || 'company-demo-id'
+          companyId: driver.companyId || req.tenantId || ''
         }
       }).catch(err => {
         console.warn('Prisma create load catch:', err?.message);
@@ -812,17 +810,25 @@ exports.getPickupLoad = async (req, res, next) => {
 // ============================================================================
 exports.updatePickupItemStatus = async (req, res, next) => {
   try {
+    const driver = await resolveDriver(req);
+    if (!driver) return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Driver profile not found' }, 404);
     const { itemId, pickedUp } = req.body;
     
     let updatedItem = null;
     if (prisma.loadItem && itemId) {
+      const loadItem = await prisma.loadItem.findFirst({
+        where: { id: itemId, load: { driverId: driver.id } }
+      });
+      if (!loadItem) return sendError(res, { code: 'FORBIDDEN', message: 'You do not have permission to update this item' }, 403);
+
       updatedItem = await prisma.loadItem.update({
         where: { id: itemId },
         data: { status: pickedUp ? 'PICKED_UP' : 'PENDING' }
       }).catch(() => null);
     }
     
-    return sendSuccess(res, { success: true, item: updatedItem || { id: itemId, status: pickedUp ? 'PICKED_UP' : 'PENDING' } });
+    if (!updatedItem) return sendError(res, { code: 'NOT_FOUND', message: 'Item not found or could not be updated' }, 404);
+    return sendSuccess(res, { success: true, item: updatedItem });
   } catch (error) {
     next(error);
   }
@@ -833,10 +839,19 @@ exports.updatePickupItemStatus = async (req, res, next) => {
 // ============================================================================
 exports.addPickupItem = async (req, res, next) => {
   try {
+    const driver = await resolveDriver(req);
+    if (!driver) return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Driver profile not found' }, 404);
     const { loadId, vin, makeModel, plate, drop } = req.body;
     
+    if (!loadId) return sendError(res, { code: 'VALIDATION_ERROR', message: 'Load ID is required' }, 400);
+
     let createdItem = null;
     if (prisma.loadItem && loadId) {
+      const load = await prisma.load.findFirst({
+        where: { id: loadId, driverId: driver.id }
+      });
+      if (!load) return sendError(res, { code: 'FORBIDDEN', message: 'You do not have permission to add items to this load' }, 403);
+
       createdItem = await prisma.loadItem.create({
         data: {
           loadId,
@@ -848,17 +863,8 @@ exports.addPickupItem = async (req, res, next) => {
       }).catch(() => null);
     }
     
-    return sendSuccess(res, {
-      success: true,
-      item: createdItem || {
-        id: `item-${Date.now()}`,
-        vin: vin || 'VIN-NEW',
-        makeModel: makeModel || 'Scanned Vehicle',
-        plate: plate || 'VIC-SCAN',
-        drop: drop || 'DROP 1',
-        status: 'PICKED_UP'
-      }
-    });
+    if (!createdItem) return sendError(res, { code: 'INTERNAL_ERROR', message: 'Could not create item' }, 500);
+    return sendSuccess(res, { success: true, item: createdItem });
   } catch (error) {
     next(error);
   }
@@ -1002,10 +1008,16 @@ exports.addExpense = async (req, res, next) => {
     }
 
     const { type, vendorName, amount, litres, pricePerLitre, odometer, description, loadId } = req.body;
-
-    // Find active load if loadId is not provided
     let activeLoadId = loadId;
-    if (!activeLoadId) {
+    if (activeLoadId) {
+      // Verify the provided load belongs to the driver
+      const load = await prisma.load.findFirst({
+        where: { id: activeLoadId, driverId: driver.id }
+      });
+      if (!load) {
+        return sendError(res, { code: 'FORBIDDEN', message: 'You do not have permission to add expenses to this load' }, 403);
+      }
+    } else {
       const activeLoad = await prisma.load.findFirst({
         where: {
           driverId: driver.id,
@@ -1756,6 +1768,12 @@ exports.clockIn = async (req, res, next) => {
       }
 
       if (timesheet && prisma.timesheetEvent) {
+        // Prevent duplicate CLOCK_IN
+        const existingEvents = await prisma.timesheetEvent.findMany({ where: { timesheetId: timesheet.id } });
+        const hasClockIn = existingEvents.some(e => e.type === 'CLOCK_IN');
+        if (hasClockIn) {
+           return sendError(res, { code: ERROR_CODES.BAD_REQUEST, message: 'Already clocked in today' }, 400);
+        }
         await prisma.timesheetEvent.create({
           data: {
             timesheetId: timesheet.id,
@@ -2609,7 +2627,7 @@ exports.clearStorageCache = async (req, res, next) => {
 exports.getDriverDocuments = async (req, res, next) => {
   try {
     const driver = await resolveDriver(req);
-    const driverId = driver?.id || 'demo-driver-id';
+    const driverId = driver?.id || '';
 
     const [dbDocs, dbVehicle, dbLoad, dbActivities] = await Promise.all([
       prisma.document ? prisma.document.findMany({
@@ -2670,7 +2688,7 @@ exports.getDriverDocuments = async (req, res, next) => {
           status,
           statusColor,
           icon: iconMap[d.type] || '📄',
-          fileUrl: d.fileUrl || '/documents/sample.pdf'
+          fileUrl: d.fileUrl || ''
         };
       });
     }
@@ -2777,15 +2795,17 @@ exports.uploadDriverDocument = async (req, res, next) => {
   }
 };
 
-// Aliases for DriverPortalRoutes compatibility
+// ============================================================================
+// ALIAS EXPORTS FOR DRIVER PORTAL ROUTE COMPATIBILITY
+// ============================================================================
 exports.getMyProfile = exports.getDashboard;
 exports.getMyLoads = exports.getJobs;
-exports.getLoadDetails = exports.getPickupLoad;
+exports.getLoadDetails = exports.getJobs;
 exports.updateLoadStatus = exports.updateStatus;
 exports.getPickupItems = exports.getPickupLoad;
 exports.pickupItem = exports.updatePickupItemStatus;
 exports.getDeliveryItems = exports.getPickupLoad;
-exports.submitDeliveryPOD = exports.updateStatus;
+exports.submitDeliveryPOD = exports.updatePickupItemStatus;
 exports.getTodayTimesheet = exports.getTimesheets;
 exports.getMyExpenses = exports.getExpenses;
 exports.createExpense = exports.addExpense;
@@ -2816,3 +2836,74 @@ exports.downloadPayslip = exports.getPayrollData;
 
 
 
+
+
+
+exports.getDeliveryPOD = async (req, res, next) => {
+  try {
+    const driver = await resolveDriver(req);
+    const loads = await prisma.load.findMany({
+      where: { driverId: driver.id, status: { in: ['IN_TRANSIT', 'ARRIVED_DELIVERY', 'UNLOADING'] } },
+      include: { stops: true, items: true },
+      orderBy: { createdAt: 'desc' },
+      take: 1
+    });
+
+    let loadDetails = null;
+    let items = [];
+
+    if (loads.length > 0) {
+      const activeLoad = loads[0];
+      const deliveryStops = activeLoad.stops.filter(s => s.type === 'DELIVERY');
+      const stop = deliveryStops.length > 0 ? deliveryStops[0] : null;
+
+      loadDetails = {
+        id: activeLoad.loadRef || `LD-${activeLoad.id.slice(0, 4).toUpperCase()}`,
+        status: activeLoad.status,
+        deliveryLocation: stop ? stop.address : activeLoad.destination,
+        deliveryTime: stop ? stop.scheduledTime : 'TBD',
+        customerName: stop ? stop.contactName : activeLoad.customer?.name || 'Customer'
+      };
+
+      items = activeLoad.items.map(item => ({
+        id: item.id,
+        description: item.description,
+        vin: item.vin || 'N/A',
+        make: item.make || 'Unknown',
+        model: item.model || 'Unknown',
+        status: item.status || 'PENDING'
+      }));
+    }
+
+    return sendSuccess(res, { loadDetails, items });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+};
+
+exports.updateDeliveryItemStatus = async (req, res, next) => {
+  try {
+    const driver = await resolveDriver(req);
+    if (!driver) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Driver profile not found' }, 404);
+    }
+    const { itemId, status } = req.body;
+    
+    // Verify item belongs to a load owned by the driver
+    const loadItem = await prisma.loadItem.findFirst({
+      where: { id: itemId, load: { driverId: driver.id } }
+    });
+    
+    if (!loadItem) {
+      return sendError(res, { code: 'FORBIDDEN', message: 'You do not have permission to update this item' }, 403);
+    }
+
+    await prisma.loadItem.update({
+      where: { id: itemId },
+      data: { status }
+    });
+    return sendSuccess(res, { message: 'Item status updated' });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+};

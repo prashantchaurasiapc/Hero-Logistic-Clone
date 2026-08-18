@@ -4381,6 +4381,7 @@ exports.clockIn = async (req, res, next) => {
         clockInAt: new Date()
       }
     });
+
     await prisma.timesheetEvent.create({
       data: {
         timesheetId: timesheet.id,
@@ -4422,10 +4423,6 @@ exports.clockOut = async (req, res, next) => {
 
     if (!timesheet || !timesheet.clockInAt) {
       return sendError(res, { message: 'Not clocked in yet' }, HTTP_STATUS.BAD_REQUEST);
-    }
-
-    if (timesheet.clockOutAt) {
-      return sendError(res, { message: 'Already clocked out' }, HTTP_STATUS.BAD_REQUEST);
     }
 
     timesheet = await prisma.timesheet.update({
@@ -4588,9 +4585,113 @@ exports.printManifest = async (req, res, next) => {
   }
 };
 
-// ============================================================================
-// 15. MESSAGES & SUPPORT
-// ============================================================================
+exports.moveStagingAreaToLane = async (req, res, next) => {
+  try {
+    const stagingAreaId = req.params.id;
+    const { loadLaneId } = req.body;
+    let userId = req.user?.userId || req.user?.id;
+
+    const stagingArea = await prisma.stagingArea.findUnique({
+      where: { id: stagingAreaId },
+      include: { loadItems: true }
+    });
+
+    if (!stagingArea) return sendError(res, { message: 'Staging Area not found' }, HTTP_STATUS.NOT_FOUND);
+    if (!loadLaneId) return sendError(res, { message: 'Load Lane ID is required' }, HTTP_STATUS.BAD_REQUEST);
+
+    const targetLane = await prisma.loadLane.findUnique({ where: { id: loadLaneId } });
+    if (!targetLane) return sendError(res, { message: 'Target Load Lane not found' }, HTTP_STATUS.NOT_FOUND);
+
+    const updated = await prisma.$transaction(async (tx) => {
+      // Update all items in this staging area
+      await tx.loadItem.updateMany({
+        where: { stagingAreaId: stagingAreaId },
+        data: {
+          loadLaneId: loadLaneId,
+          stockStatus: 'STAGED',
+          stagingAreaId: null
+        }
+      });
+
+      for (const item of stagingArea.loadItems) {
+        await tx.itemMovement.create({
+          data: {
+            itemId: item.id,
+            type: 'TRANSFER',
+            fromLocation: `Staging Area: ${stagingArea.name}`,
+            toLocation: `Lane: ${targetLane.name}`,
+            reason: 'Staging to Load Lane Move Task',
+            result: 'COMPLETED',
+            performedById: userId === 'dev-user-id' ? null : (userId || null),
+            loadLaneId: loadLaneId
+          }
+        });
+      }
+
+      return { success: true, count: stagingArea.loadItems.length };
+    });
+
+    return sendSuccess(res, updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.assignHoldingAreaToLane = async (req, res, next) => {
+  try {
+    const stagingAreaId = req.params.id;
+    const { loadLaneId } = req.body;
+    let userId = req.user?.userId || req.user?.id;
+
+    if (!loadLaneId) return sendError(res, { message: 'Load Lane ID is required' }, HTTP_STATUS.BAD_REQUEST);
+
+    const updatedArea = await prisma.stagingArea.update({
+      where: { id: stagingAreaId },
+      data: { lane: `Load Lane ${loadLaneId}` } // simple string representation for frontend mapping
+    });
+
+    return sendSuccess(res, { message: 'Assigned successfully', data: updatedArea });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getShiftStatus = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    
+    let realUserId = userId;
+    const driverCheck = await prisma.driver.findFirst({ where: { OR: [{ id: userId }, { userId: userId }] } });
+    if (driverCheck) {
+      realUserId = driverCheck.id;
+    } else {
+      const firstDriver = await prisma.driver.findFirst();
+      if (firstDriver) realUserId = firstDriver.id;
+    }
+
+    // Find the active timesheet (clocked in but not clocked out, most recent first)
+    const timesheet = await prisma.timesheet.findFirst({
+      where: {
+        driverId: realUserId,
+        clockOutAt: null
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    const isClockedIn = !!(timesheet && timesheet.clockInAt);
+
+    return sendSuccess(res, {
+      clockedIn: isClockedIn,
+      clockInTime: timesheet?.clockInAt || null,
+      clockOutTime: timesheet?.clockOutAt || null,
+      timesheet
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 exports.getSupportDashboard = async (req, res, next) => {
   try {
@@ -4756,3 +4857,4 @@ exports.getTasks = exports.getTasks || fallbackHandler;
 exports.getTaskById = exports.getTaskById || fallbackHandler;
 exports.updateTaskStatus = exports.updateTaskStatus || fallbackHandler;
 exports.completeTask = exports.completeTask || fallbackHandler;
+
