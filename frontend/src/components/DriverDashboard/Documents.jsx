@@ -125,6 +125,17 @@ export default function Documents() {
     return d.status.toUpperCase().replace(/\s+/g, '_') === filterCategory.toUpperCase().replace(/\s+/g, '_');
   });
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-bold text-sm">Loading documents...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24 text-left">
       
@@ -234,18 +245,18 @@ export default function Documents() {
             <div className="space-y-2.5 font-semibold text-slate-700">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Truck</div>
-                <div className="font-black text-slate-900 text-xs">{vehicleData.truck}</div>
-                <div className="text-[11px] text-slate-500">{vehicleData.truckModel}</div>
+                <div className="font-black text-slate-900 text-xs">{vehicleData?.truck || 'Unassigned'}</div>
+                <div className="text-[11px] text-slate-500">{vehicleData?.truckModel || ''}</div>
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Trailer</div>
-                <div className="font-black text-slate-900 text-xs">{vehicleData.trailer}</div>
-                <div className="text-[11px] text-slate-500">{vehicleData.trailerType}</div>
+                <div className="font-black text-slate-900 text-xs">{vehicleData?.trailer || 'N/A'}</div>
+                <div className="text-[11px] text-slate-500">{vehicleData?.trailerType || ''}</div>
               </div>
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-indigo-500 uppercase font-extrabold">Active Load</div>
-                <div className="font-black text-indigo-900 text-xs">{activeLoadData.id}</div>
-                <div className="text-[11px] text-indigo-700">{activeLoadData.loadType}</div>
+                <div className="font-black text-indigo-900 text-xs">{activeLoadData?.id || 'N/A'}</div>
+                <div className="text-[11px] text-indigo-700">{activeLoadData?.loadType || ''}</div>
               </div>
             </div>
           </div>
@@ -309,33 +320,33 @@ export default function Documents() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-2xl font-black text-indigo-700 tracking-tight">{activeLoadData.id}</div>
+                <div className="text-2xl font-black text-indigo-700 tracking-tight">{activeLoadData?.id || 'N/A'}</div>
                 <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                  <span>{activeLoadData.origin}</span>
+                  <span>{activeLoadData?.origin || '—'}</span>
                   <span className="text-slate-400">➔</span>
-                  <span>{activeLoadData.destination}</span>
+                  <span>{activeLoadData?.destination || '—'}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Start Date</span>
-                  <span className="font-mono text-slate-900">{activeLoadData.startDate}</span>
+                  <span className="font-mono text-slate-900">{activeLoadData?.startDate || '—'}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-                  <span className="font-mono text-slate-900">{activeLoadData.estFinish}</span>
+                  <span className="font-mono text-slate-900">{activeLoadData?.estFinish || '—'}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Status</span>
-                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">{activeLoadData.status}</span>
+                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">{activeLoadData?.status || '—'}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Load ID</span>
-                  <span className="font-mono text-indigo-700">{activeLoadData.poNumber}</span>
+                  <span className="font-mono text-indigo-700">{activeLoadData?.poNumber || '—'}</span>
                 </div>
               </div>
             </div>
@@ -531,7 +542,7 @@ export default function Documents() {
           {/* VEHICLE DOCUMENTS TAB */}
           {activeTab === 'Vehicle Documents' && (
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
-              <h3 className="text-base font-black text-slate-900">Vehicle Documents & Permits ({vehicleData.truck} / {vehicleData.trailer})</h3>
+              <h3 className="text-base font-black text-slate-900">Vehicle Documents & Permits ({vehicleData?.truck || 'Unassigned'} / {vehicleData?.trailer || 'N/A'})</h3>
               <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
                 {vehicleDocs.map((doc) => (
                   <div key={doc.id} className="p-4 flex items-center justify-between gap-3">

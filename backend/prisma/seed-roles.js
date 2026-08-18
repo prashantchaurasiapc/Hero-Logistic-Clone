@@ -1,10 +1,10 @@
 ﻿require("dotenv").config();
 const { PrismaClient } = require("@prisma/client");
 const { PrismaMariaDb } = require("@prisma/adapter-mariadb");
-const dbUrl = process.env.DATABASE_URL || "mysql://root:@localhost:3306/hero-logistic";
+const dbUrl = process.env.DATABASE_URL || "mysql://root:@localhost:3307/hero-logistic";
 const urlObj = new URL(dbUrl);
 const host = (urlObj.hostname === "localhost" || !urlObj.hostname) ? "127.0.0.1" : urlObj.hostname;
-const adapter = new PrismaMariaDb({ host, port: Number(urlObj.port)||3306, user: urlObj.username||"root", password: urlObj.password||"", database: urlObj.pathname.replace(/^\//,""), connectionLimit: 5, allowPublicKeyRetrieval: true });
+const adapter = new PrismaMariaDb({ host, port: Number(urlObj.port) || 3307, user: urlObj.username || "root", password: urlObj.password || "", database: urlObj.pathname.replace(/^\//, ""), connectionLimit: 5, allowPublicKeyRetrieval: true });
 const p = new PrismaClient({ adapter });
 
 // 8 Fixed System Roles — companyId = null means global (SuperAdmin controls)

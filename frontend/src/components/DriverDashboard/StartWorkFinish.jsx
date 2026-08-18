@@ -2,30 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiCheckCircle, FiCamera, FiAlertTriangle, FiFileText,
-  FiMessageSquare, FiCheck, FiX, FiMinus, FiHelpCircle, FiChevronRight,
-  FiUpload, FiImage, FiShield, FiClock, FiBookOpen, FiInfo, FiTrash2
+  FiMessageSquare, FiCheck, FiX, FiMinus, FiHelpCircle, FiChevronRight
 } from 'react-icons/fi';
-import { getTodayChecklist, submitChecklist } from '../../services/driverApi';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 
 export default function StartWork() {
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
+  const { user } = useAuth();
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Photo uploads state
-  const [selectedPhotos, setSelectedPhotos] = useState([]);
-
-  // Modals state
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
-  const [safetyModalOpen, setSafetyModalOpen] = useState(false);
-  const [inspectionModalOpen, setInspectionModalOpen] = useState(false);
-
-  // Active tab inside Safety Procedures modal
-  const [activeSafetyTab, setActiveSafetyTab] = useState('prestart');
+  const fileInputRef = useRef(null);
   const [notes, setNotes] = useState('');
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
@@ -76,88 +64,15 @@ export default function StartWork() {
     fetchContext();
   }, []);
 
-  // Sample checklist history for modal
-  const historyLogs = [
-    { id: 'CHK-901', date: '29 May 2025, 06:15 AM', status: 'Pass', score: '18 / 20', vehicle: 'TRK-101 (MAN TGX 26.580)', notes: 'All clear. Minor tyre pressure adjustment.' },
-    { id: 'CHK-900', date: '28 May 2025, 06:12 AM', status: 'Pass', score: '20 / 20', vehicle: 'TRK-101 (MAN TGX 26.580)', notes: 'Full pass. Clean vehicle.' },
-    { id: 'CHK-899', date: '27 May 2025, 06:10 AM', status: 'Pass', score: '19 / 20', vehicle: 'TRK-101 (MAN TGX 26.580)', notes: 'Wiper fluid refilled.' },
-    { id: 'CHK-898', date: '26 May 2025, 06:08 AM', status: 'Pass', score: '20 / 20', vehicle: 'TRK-101 (MAN TGX 26.580)', notes: 'Pre-trip check complete.' },
-    { id: 'CHK-897', date: '25 May 2025, 06:11 AM', status: 'Pass', score: '18 / 20', vehicle: 'TRK-101 (MAN TGX 26.580)', notes: 'Right indicator bulb replaced.' },
-  ];
-
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3500);
   };
 
-  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false);
-
-  const fetchTodayChecklist = async () => {
-    try {
-      setIsLoading(true);
-      const res = await getTodayChecklist();
-      const existing = res.data?.data?.checklist || res.data?.checklist;
-      if (existing) {
-        if (!existing.isDraft) setIsAlreadyCompleted(true);
-        if (existing.notes) setNotes(existing.notes);
-        if (Array.isArray(existing.items) && existing.items.length > 0) {
-          setItems(prev =>
-            prev.map(defaultItem => {
-              const matched = existing.items.find(i => i.itemNumber === defaultItem.id || i.itemLabel === defaultItem.label);
-              if (matched) {
-                const statusLower = String(matched.status).toLowerCase();
-                return {
-                  ...defaultItem,
-                  status: statusLower === 'not_checked' ? 'unchecked' : statusLower
-                };
-              }
-              return defaultItem;
-            })
-          );
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load today checklist:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTodayChecklist();
-  }, []);
-
   const handleStatusChange = (id, newStatus) => {
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
     );
-  };
-
-  // Photo Upload Handlers
-  const handleTriggerPhotoUpload = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  const handlePhotoSelect = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    const newPhotoObjs = files.map((file, idx) => ({
-      id: Date.now() + idx,
-      name: file.name,
-      url: URL.createObjectURL(file)
-    }));
-
-    setSelectedPhotos(prev => [...prev, ...newPhotoObjs]);
-    showToast(`📸 ${files.length} photo(s) attached successfully!`);
-    e.target.value = '';
-  };
-
-  const handleRemovePhoto = (id) => {
-    setSelectedPhotos(prev => prev.filter(p => p.id !== id));
-    showToast('Photo removed.');
   };
 
   // Calculate overview counts
@@ -169,12 +84,13 @@ export default function StartWork() {
   const completedCount = passCount + failCount + naCount;
   const completionPercentage = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (isSubmitting) return;
+  const handleSubmit = async () => {
+    if (uncheckedCount > 0) {
+      showToast('⚠️ Please inspect all items before submitting.');
+      return;
+    }
 
     try {
-<<<<<<< HEAD
       const isWarehouse = user?.role === 'WAREHOUSE_MANAGER' || user?.role === 'WAREHOUSE_STAFF' || user?.role === 'YARD_ATTENDANT';
       const endpoint = '/driver-portal/checklists';
 
@@ -185,32 +101,36 @@ export default function StartWork() {
         passedCount: passCount,
         failedCount: failCount,
         naCount: naCount,
-=======
-      setIsSubmitting(true);
-      const res = await submitChecklist({
-        items,
-        notes,
-        photos: selectedPhotos.map(p => p.name),
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
         isDraft: false,
-        allowUpdate: true
-      });
-      const msg = res.data?.data?.message || '✅ Safety Checklist submitted successfully! All clear.';
-      setIsAlreadyCompleted(true);
-      showToast(msg);
+        notes: notes,
+        items: {
+          create: items.map(item => ({
+            itemNumber: item.id,
+            itemLabel: item.label,
+            status: item.status === 'pass' ? 'PASS' : item.status === 'fail' ? 'FAIL' : item.status === 'na' ? 'NA' : 'NOT_CHECKED'
+          }))
+        }
+      };
+
+      const res = await api.post(endpoint, payload);
+      if (res.data?.success) {
+        showToast('✅ Safety Checklist submitted successfully!');
+        setTimeout(() => {
+          if (failCount > 0) {
+            navigate(isWarehouse ? '/warehouse/dashboard' : '/driver/incident-reporting');
+          } else {
+            navigate(isWarehouse ? '/warehouse/dashboard' : '/driver/assigned-jobs');
+          }
+        }, 1500);
+      }
     } catch (err) {
-      console.error('Submit checklist error:', err);
-      showToast(err.response?.data?.message || '❌ Failed to submit safety checklist.');
-    } finally {
-      setIsSubmitting(false);
+      console.error(err);
+      showToast('❌ Failed to submit Safety Checklist.');
     }
   };
 
   const handleSaveDraft = async () => {
-    if (isSubmitting) return;
-
     try {
-<<<<<<< HEAD
       const endpoint = '/driver-portal/checklists';
 
       const payload = {
@@ -220,22 +140,24 @@ export default function StartWork() {
         passedCount: passCount,
         failedCount: failCount,
         naCount: naCount,
-=======
-      setIsSubmitting(true);
-      const res = await submitChecklist({
-        items,
-        notes,
-        photos: selectedPhotos.map(p => p.name),
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
         isDraft: true,
-        allowUpdate: true
-      });
-      showToast(res.data?.data?.message || '💾 Safety Checklist draft saved.');
+        notes: notes,
+        items: {
+          create: items.map(item => ({
+            itemNumber: item.id,
+            itemLabel: item.label,
+            status: item.status === 'pass' ? 'PASS' : item.status === 'fail' ? 'FAIL' : item.status === 'na' ? 'NA' : 'NOT_CHECKED'
+          }))
+        }
+      };
+
+      const res = await api.post(endpoint, payload);
+      if (res.data?.success) {
+        showToast('💾 Safety Checklist draft saved.');
+      }
     } catch (err) {
-      console.error('Save draft error:', err);
-      showToast(err.response?.data?.message || '❌ Failed to save draft.');
-    } finally {
-      setIsSubmitting(false);
+      console.error(err);
+      showToast('❌ Failed to save checklist draft.');
     }
   };
 
@@ -246,16 +168,6 @@ export default function StartWork() {
   return (
     <div className="flex-grow bg-[#f8fafc] p-4 lg:p-6 w-full text-left font-sans overflow-y-auto min-h-screen">
       
-      {/* Hidden File Input for Photo Uploads */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handlePhotoSelect}
-        accept="image/*"
-        multiple
-        className="hidden"
-      />
-
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-5 right-5 z-50 bg-[#ffcc00] text-black font-extrabold text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce">
@@ -264,16 +176,7 @@ export default function StartWork() {
         </div>
       )}
 
-      {/* Completed Status Banner */}
-      {isAlreadyCompleted && (
-        <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs font-bold text-emerald-900 shadow-2xs">
-          <div className="flex items-center gap-2.5">
-            <FiCheckCircle className="text-emerald-600 text-lg shrink-0" />
-            <span>Today's Pre-Start Safety Inspection has been completed & saved to server. You can update any inspection item below.</span>
-          </div>
-          <span className="bg-emerald-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase shrink-0">Completed</span>
-        </div>
-      )}
+      {/* TOP HEADER BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -365,50 +268,34 @@ export default function StartWork() {
             <div className="space-y-2">
               <button
                 onClick={() => setHistoryModalOpen(true)}
-<<<<<<< HEAD
                 className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
-=======
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
               >
-                <div className="flex items-center gap-2.5">
-                  <FiFileText className="text-indigo-600" />
-                  <span>View History</span>
-                </div>
-                <FiChevronRight className="text-slate-400" />
+                <FiFileText className="text-slate-600" />
+                <span>View History</span>
               </button>
 
               <button
                 onClick={() => navigate('/driver/incident-reporting')}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <FiAlertTriangle className="text-rose-600" />
-                  <span>Defect Report</span>
-                </div>
-                <FiChevronRight className="text-slate-400" />
+                <FiAlertTriangle className="text-rose-600" />
+                <span>Defect Report</span>
               </button>
 
               <button
                 onClick={() => navigate('/driver/contact-dispatch')}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <FiMessageSquare className="text-blue-600" />
-                  <span>Message Dispatch</span>
-                </div>
-                <FiChevronRight className="text-slate-400" />
+                <FiMessageSquare className="text-blue-600" />
+                <span>Message Dispatch</span>
               </button>
 
               <button
-                onClick={handleTriggerPhotoUpload}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <FiCamera className="text-purple-600" />
-                  <span>Upload Photo ({selectedPhotos.length})</span>
-                </div>
-                <FiChevronRight className="text-slate-400" />
+                <FiCamera className="text-purple-600" />
+                <span>Upload Photo</span>
               </button>
             </div>
           </div>
@@ -484,7 +371,7 @@ export default function StartWork() {
                       </span>
                     </div>
 
-                    {/* Status Action Buttons */}
+                    {/* Status Action Buttons (Matching height of label & badge - 24px / h-6) */}
                     <div className="flex items-center gap-1.5 shrink-0">
                       {/* PASS Button */}
                       <button
@@ -545,53 +432,30 @@ export default function StartWork() {
                 />
                 <button
                   type="button"
-                  onClick={handleTriggerPhotoUpload}
-                  className="bg-purple-50 hover:bg-purple-100 text-purple-700 p-2.5 rounded-xl border border-purple-200 cursor-pointer flex items-center gap-1.5 font-bold text-xs"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2.5 rounded-xl border border-slate-200 cursor-pointer"
                   title="Upload Photo"
                 >
                   <FiCamera className="text-base" />
-                  <span className="hidden sm:inline">Photo</span>
                 </button>
               </div>
-
-              {/* Uploaded Photos Preview List */}
-              {selectedPhotos.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {selectedPhotos.map((photo) => (
-                    <div key={photo.id} className="relative group bg-slate-100 border border-slate-200 rounded-xl p-1.5 flex items-center gap-2 pr-7">
-                      <img src={photo.url} alt="Attached photo" className="w-7 h-7 object-cover rounded-lg" />
-                      <span className="text-[11px] font-bold text-slate-700 truncate max-w-[120px]">{photo.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePhoto(photo.id)}
-                        className="absolute right-1 text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
-                        title="Remove photo"
-                      >
-                        <FiX className="text-xs" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
 
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   type="button"
-                  disabled={isSubmitting}
                   onClick={handleSaveDraft}
-                  className="bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-300 text-slate-800 font-bold text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center"
+                  className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center"
                 >
-                  {isSubmitting ? 'Saving...' : 'Save Draft'}
+                  Save Draft
                 </button>
 
                 <button
                   type="button"
-                  disabled={isSubmitting}
                   onClick={handleSubmit}
-                  className="bg-[#ffcc00] hover:bg-[#e6b800] disabled:opacity-50 disabled:cursor-not-allowed text-black font-black text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center uppercase"
+                  className="bg-[#ffcc00] hover:bg-[#e6b800] text-black font-black text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center uppercase"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit Checklist'}
+                  Submit Checklist
                 </button>
               </div>
             </div>
@@ -670,7 +534,6 @@ export default function StartWork() {
             </div>
 
             <div className="space-y-2 text-xs">
-<<<<<<< HEAD
               {contextData?.lastChecklists && contextData.lastChecklists.length > 0 ? (
                 contextData.lastChecklists.map((chk, i) => (
                   <div 
@@ -690,17 +553,6 @@ export default function StartWork() {
                   No recent checklists found.
                 </div>
               )}
-=======
-              {historyLogs.map((log) => (
-                <div key={log.id} onClick={() => setHistoryModalOpen(true)} className="flex justify-between items-center p-2 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-100 font-bold transition-all cursor-pointer">
-                  <div>
-                    <span className="text-slate-800 block text-[11px]">{log.date}</span>
-                    <span className="text-emerald-600 text-[10px]">{log.status}</span>
-                  </div>
-                  <span className="font-mono text-emerald-600 text-xs">{log.score}</span>
-                </div>
-              ))}
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             </div>
           </div>
 
@@ -709,46 +561,34 @@ export default function StartWork() {
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">HELP & RESOURCES</h3>
             <div className="space-y-2">
               <button
-                onClick={() => setSafetyModalOpen(true)}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                onClick={() => navigate('/driver/documents')}
+                className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2">
-                  <FiShield className="text-emerald-600 text-sm" />
-                  <span>Safety Procedures</span>
-                </div>
+                <span>Safety Procedures</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
 
               <button
-                onClick={() => setInspectionModalOpen(true)}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                onClick={() => navigate('/driver/documents')}
+                className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2">
-                  <FiBookOpen className="text-indigo-600 text-sm" />
-                  <span>Vehicle Inspection Guide</span>
-                </div>
+                <span>Vehicle Inspection Guide</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
 
               <button
                 onClick={() => navigate('/driver/incident-reporting')}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2">
-                  <FiAlertTriangle className="text-rose-600 text-sm" />
-                  <span>Report an Incident</span>
-                </div>
+                <span>Report an Incident</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
 
               <button
                 onClick={() => navigate('/driver/contact-dispatch')}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+                className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2">
-                  <FiMessageSquare className="text-blue-600 text-sm" />
-                  <span>Contact Support</span>
-                </div>
+                <span>Contact Support</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
             </div>
@@ -758,7 +598,8 @@ export default function StartWork() {
 
       </div>
 
-<<<<<<< HEAD
+      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={(e) => showToast('Photo attached: ' + e.target.files[0]?.name)} />
+
       {/* ================= INSPECTION HISTORY MODAL ================= */}
       {historyModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
@@ -815,11 +656,11 @@ export default function StartWork() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 pt-1 font-semibold">
                       <div className="bg-white p-2.5 rounded-xl border border-slate-100">
                         <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Truck Assigned</span>
-                        <span className="text-slate-900 font-bold">{chk.vehicle || contextData?.vehicle?.ref || 'TRK-101'}</span>
+                        <span className="text-slate-900 font-bold">{chk.vehicle || contextData?.vehicle?.ref || 'No Vehicle'}</span>
                       </div>
                       <div className="bg-white p-2.5 rounded-xl border border-slate-100">
                         <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Trailer Assigned</span>
-                        <span className="text-slate-900 font-bold">{chk.trailer || contextData?.trailerRef || 'TRL-205'}</span>
+                        <span className="text-slate-900 font-bold">{chk.trailer || contextData?.trailerRef || 'No Trailer'}</span>
                       </div>
                     </div>
 
@@ -845,7 +686,7 @@ export default function StartWork() {
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
-                  onClick={() => showToast('Exporting inspection history PDF...')}
+                  onClick={() => window.print()}
                   className="flex-1 sm:flex-initial bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer"
                 >
                   Export PDF
@@ -859,209 +700,6 @@ export default function StartWork() {
               </div>
             </div>
 
-=======
-      {/* ========================================================================= */}
-      {/* 1. SAFETY CHECKLIST LOG HISTORY MODAL */}
-      {/* ========================================================================= */}
-      {historyModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[150] flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 text-left">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
-                <FiFileText className="text-indigo-600 text-lg" />
-                Pre-Start Safety Checklist History Log
-              </h3>
-              <button onClick={() => setHistoryModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
-            </div>
-
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
-              {historyLogs.map((log) => (
-                <div key={log.id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-1.5 text-xs">
-                  <div className="flex justify-between items-center">
-                    <span className="font-black text-slate-900">{log.id} — {log.date}</span>
-                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                      {log.status} ({log.score})
-                    </span>
-                  </div>
-                  <div className="text-slate-600 font-medium">Vehicle: <strong>{log.vehicle}</strong></div>
-                  <div className="text-slate-500 font-bold bg-white p-2 rounded-xl border border-slate-100">Notes: {log.notes}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex justify-end">
-              <button
-                onClick={() => setHistoryModalOpen(false)}
-                className="bg-slate-800 text-white font-black text-xs px-6 py-2.5 rounded-xl cursor-pointer"
-              >
-                Close History Log
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 2. SAFETY PROCEDURES GUIDE MODAL */}
-      {/* ========================================================================= */}
-      {safetyModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[150] flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 text-left">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
-                <FiShield className="text-emerald-600 text-lg" />
-                Heavy Vehicle Safety Procedures & Regulations
-              </h3>
-              <button onClick={() => setSafetyModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
-            </div>
-
-            {/* Sub-tabs inside safety modal */}
-            <div className="flex border-b border-slate-200 text-xs font-black gap-2">
-              <button
-                onClick={() => setActiveSafetyTab('prestart')}
-                className={`pb-2.5 px-3 border-b-2 cursor-pointer transition-colors ${
-                  activeSafetyTab === 'prestart' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                1. Pre-Start Inspection Standard
-              </button>
-              <button
-                onClick={() => setActiveSafetyTab('fatigue')}
-                className={`pb-2.5 px-3 border-b-2 cursor-pointer transition-colors ${
-                  activeSafetyTab === 'fatigue' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                2. NHVR Fatigue Management
-              </button>
-              <button
-                onClick={() => setActiveSafetyTab('load')}
-                className={`pb-2.5 px-3 border-b-2 cursor-pointer transition-colors ${
-                  activeSafetyTab === 'load' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                3. Load Restraint Code
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-slate-700 max-h-[55vh] overflow-y-auto pr-1 font-medium">
-              {activeSafetyTab === 'prestart' && (
-                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <h4 className="font-extrabold text-slate-900 text-sm">Mandatory Pre-Drive Protocol</h4>
-                  <p>Before operating any company heavy vehicle, drivers must conduct a 360° walkaround visual & mechanical inspection.</p>
-                  <ul className="list-disc pl-5 space-y-1 text-slate-600 font-bold">
-                    <li>Inspect all service and park brake operations.</li>
-                    <li>Ensure tyre pressure meets load specifications and tread depth exceeds 1.5mm.</li>
-                    <li>Verify all hazard indicators, brake lights, and headlights operate cleanly.</li>
-                    <li>Check engine oil, coolant reservoir, and air line couplings for any leaks.</li>
-                    <li>Do NOT drive if any critical defect (Brakes/Steering/Tyres) is identified.</li>
-                  </ul>
-                </div>
-              )}
-
-              {activeSafetyTab === 'fatigue' && (
-                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <h4 className="font-extrabold text-slate-900 text-sm">National Heavy Vehicle Regulator (NHVR) Work/Rest Hours</h4>
-                  <p>Compliance with Standard Hours fatigue limits is compulsory across all transport operations.</p>
-                  <div className="grid grid-cols-2 gap-2 pt-1 font-bold text-slate-800">
-                    <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                      <span className="text-[10px] text-slate-400 block uppercase">Max Work Time</span>
-                      <span>12 Hours per 24 hour period</span>
-                    </div>
-                    <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                      <span className="text-[10px] text-slate-400 block uppercase">Rest Break</span>
-                      <span>15 continuous mins rest every 5.25 hrs</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeSafetyTab === 'load' && (
-                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <h4 className="font-extrabold text-slate-900 text-sm">Load Restraint Guide Compliance</h4>
-                  <p>All cargo must be restrained to withstand forces specified in the Performance Standards:</p>
-                  <ul className="list-disc pl-5 space-y-1 text-slate-600 font-bold">
-                    <li>0.8g deceleration forward (hard braking)</li>
-                    <li>0.5g deceleration sideways & rearward (cornering & acceleration)</li>
-                    <li>0.2g acceleration upward</li>
-                    <li>Inspect straps, ratchets, and chains for fraying or damage before tensioning.</li>
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex justify-end">
-              <button
-                onClick={() => setSafetyModalOpen(false)}
-                className="bg-emerald-600 text-white font-black text-xs px-6 py-2.5 rounded-xl cursor-pointer"
-              >
-                I Understand & Comply
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 3. VEHICLE INSPECTION GUIDE MODAL */}
-      {/* ========================================================================= */}
-      {inspectionModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[150] flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 text-left">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
-                <FiBookOpen className="text-indigo-600 text-lg" />
-                Step-by-Step Vehicle & Equipment Inspection Guide
-              </h3>
-              <button onClick={() => setInspectionModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
-            </div>
-
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1 text-xs">
-              <div className="bg-indigo-50/70 border border-indigo-100 p-3 rounded-2xl text-indigo-950 font-bold">
-                Follow this reference guide to correctly evaluate each of the 20 inspection items before marking Pass / Fail / NA.
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-1">
-                  <span className="font-extrabold text-slate-900 block">1. Brakes</span>
-                  <p className="text-slate-600">Test service brake pedal travel. Ensure air pressure builds up to min 600 kPa without audible leaks.</p>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-1">
-                  <span className="font-extrabold text-slate-900 block">2. Tyres</span>
-                  <p className="text-slate-600">Check for minimum 1.5mm tread depth across all tyres. Inspect sidewalls for bulges or exposed cords.</p>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-1">
-                  <span className="font-extrabold text-slate-900 block">3. Lights & Lamps</span>
-                  <p className="text-slate-600">Turn on headlights, high beam, tail lamps, clearance lights, and brake lamps. Replace broken lenses.</p>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-1">
-                  <span className="font-extrabold text-slate-900 block">4. Fluids & Leaks</span>
-                  <p className="text-slate-600">Pull dipstick for engine oil level. Check coolant expansion tank & hydraulic power steering reservoir.</p>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-1">
-                  <span className="font-extrabold text-slate-900 block">5. Couplings & Trailer</span>
-                  <p className="text-slate-600">Verify turntable kingpin lock jaws are fully engaged. Inspect gladhand air hoses and 7-pin electrical plug.</p>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-1">
-                  <span className="font-extrabold text-slate-900 block">6. Emergency Gear</span>
-                  <p className="text-slate-600">Ensure fire extinguisher pressure gauge is in green zone. Confirm first aid kit seal is intact.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex justify-end">
-              <button
-                onClick={() => setInspectionModalOpen(false)}
-                className="bg-indigo-600 text-white font-black text-xs px-6 py-2.5 rounded-xl cursor-pointer"
-              >
-                Close Inspection Guide
-              </button>
-            </div>
->>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
           </div>
         </div>
       )}
