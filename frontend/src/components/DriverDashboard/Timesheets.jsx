@@ -9,9 +9,14 @@ import {
   FiMapPin, FiPlay, FiPause, FiSquare, FiSend, FiFilePlus,
   FiAlertCircle, FiCalendar, FiMap, FiDownload
 } from 'react-icons/fi';
+import { getTodayTimesheet, clockIn, clockOut } from '../../services/driverApi';
 
 export default function Timesheets() {
   const navigate = useNavigate();
+
+  // API & Loading States
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Tab & Search States
   const [activeTab, setActiveTab] = useState('Today'); // 'Today', 'This Week', 'This Month', 'All Timesheets'
@@ -23,6 +28,7 @@ export default function Timesheets() {
   const [clockStatus, setClockStatus] = useState('Clocked Out'); // 'Clocked In', 'On Break', 'Clocked Out'
   const [secondsToday, setSecondsToday] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
+<<<<<<< HEAD
   const [sinceText, setSinceText] = useState('');
 
   // Dynamic Context from API
@@ -55,6 +61,8 @@ export default function Timesheets() {
   const [allTimesheets, setAllTimesheets] = useState([]);
   const [recentTimesheets, setRecentTimesheets] = useState([]);
   const [activeLoadData, setActiveLoadData] = useState(null);
+=======
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 
   // Note State
   const [noteInput, setNoteInput] = useState('');
@@ -68,6 +76,7 @@ export default function Timesheets() {
   const [timesheetSubmitted, setTimesheetSubmitted] = useState(false);
 
   // Timeline Data
+<<<<<<< HEAD
   const [timelineEvents, setTimelineEvents] = useState([]);
 
   useEffect(() => {
@@ -101,6 +110,50 @@ export default function Timesheets() {
       setLoading(false);
     }
   };
+=======
+  const [timelineEvents, setTimelineEvents] = useState([
+    { id: 1, type: 'Clocked In', time: '07:45 AM', location: 'Yard - Melbourne VIC (-37.8136, 144.9631)', badge: 'Auto Location', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
+  ]);
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
+
+  // Fetch Today's Timesheet from Backend
+  useEffect(() => {
+    let isSubscribed = true;
+    setLoading(true);
+
+    getTodayTimesheet()
+      .then(res => {
+        if (!isSubscribed) return;
+        const data = res.data?.data;
+        if (data) {
+          const isClockedIn = data.status === 'CLOCKED_IN';
+          setClockStatus(isClockedIn ? 'Clocked In' : 'Clocked Out');
+          setSecondsToday(data.secondsToday || 0);
+          setTimerRunning(isClockedIn);
+
+          if (data.timesheet?.events && data.timesheet.events.length > 0) {
+            const formattedEvents = data.timesheet.events.map(evt => ({
+              id: evt.id,
+              type: evt.type === 'CLOCK_IN' ? 'Clocked In' : evt.type === 'CLOCK_OUT' ? 'Clocked Out' : evt.type,
+              time: new Date(evt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              location: evt.locationName || 'Yard - Melbourne VIC',
+              badge: evt.type === 'CLOCK_IN' ? 'Auto Location' : null,
+              color: evt.type === 'CLOCK_IN' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200',
+              dot: evt.type === 'CLOCK_IN' ? 'bg-emerald-500' : 'bg-rose-500'
+            }));
+            setTimelineEvents(formattedEvents);
+          }
+        }
+      })
+      .catch(err => {
+        if (isSubscribed) console.error('Error fetching today timesheet:', err);
+      })
+      .finally(() => {
+        if (isSubscribed) setLoading(false);
+      });
+
+    return () => { isSubscribed = false; };
+  }, []);
 
   // Live Timer Effect
   useEffect(() => {
@@ -152,6 +205,7 @@ export default function Timesheets() {
     }
   };
 
+<<<<<<< HEAD
   const handleClockOut = async () => {
     try {
       await api.post('/driver-portal/timesheets/clock-out', {});
@@ -178,6 +232,55 @@ export default function Timesheets() {
       setTimerRunning(true);
       triggerToast('Clocked In successfully! Work timer active.');
     }
+=======
+  const handleClockOut = () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    clockOut({ locationName: 'Yard - Sydney NSW (-33.8688, 151.2093)' })
+      .then(res => {
+        setClockStatus('Clocked Out');
+        setTimerRunning(false);
+        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        triggerToast('Clocked Out successfully! Shift ended.');
+        setTimelineEvents(prev => [
+          ...prev,
+          { id: Date.now(), type: 'Clocked Out', time: nowStr, location: 'Yard - Sydney NSW (-33.8688, 151.2093)', badge: 'End Shift', color: 'bg-rose-50 text-rose-700 border-rose-200', dot: 'bg-rose-500' }
+        ]);
+      })
+      .catch(err => {
+        const msg = err.response?.data?.error?.message || 'Clock Out failed.';
+        triggerToast(`❌ Error: ${msg}`);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+  };
+
+  const handleClockIn = () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    clockIn({ locationName: 'Yard - Melbourne VIC (-37.8136, 144.9631)' })
+      .then(res => {
+        setClockStatus('Clocked In');
+        setTimerRunning(true);
+        setSecondsToday(0);
+        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        triggerToast('Clocked In successfully! Work timer active.');
+        setTimelineEvents(prev => [
+          ...prev,
+          { id: Date.now(), type: 'Clocked In', time: nowStr, location: 'Yard - Melbourne VIC (-37.8136, 144.9631)', badge: 'Auto Location', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
+        ]);
+      })
+      .catch(err => {
+        const msg = err.response?.data?.error?.message || 'Clock In failed.';
+        triggerToast(`❌ Error: ${msg}`);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   };
 
   const handleAddNote = async (e) => {
@@ -234,18 +337,24 @@ export default function Timesheets() {
           {clockStatus === 'Clocked Out' ? (
             <button
               onClick={handleClockIn}
-              className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              disabled={isSubmitting}
+              className={`flex-1 sm:flex-initial text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 ${
+                isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer'
+              }`}
             >
               <FiPlay className="text-base" />
-              <span>Clock In Now</span>
+              <span>{isSubmitting ? 'Clocking In...' : 'Clock In Now'}</span>
             </button>
           ) : (
             <button
               onClick={handleClockOut}
-              className="flex-1 sm:flex-initial bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              disabled={isSubmitting}
+              className={`flex-1 sm:flex-initial text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 ${
+                isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-700 cursor-pointer'
+              }`}
             >
               <FiSquare className="text-base" />
-              <span>Clock Out</span>
+              <span>{isSubmitting ? 'Clocking Out...' : 'Clock Out'}</span>
             </button>
           )}
         </div>

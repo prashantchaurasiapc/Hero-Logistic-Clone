@@ -52,6 +52,25 @@ export const createCustomer = (data) => api.post('/customers', data);
 export const updateCustomer = (id, data) => api.put(`/customers/${id}`, data);
 export const deleteCustomer = (id) => api.delete(`/customers/${id}`);
 
+// Warehouse Portal & Yard Attendant APIs
+export const getWarehouseSafetyChecklists = () => api.get('/warehouse-portal/safety-checklists');
+export const submitWarehouseSafetyChecklist = (payload) => api.post('/warehouse-portal/safety-checklists', payload);
+export const getWarehouseStaffProfile = () => api.get('/warehouse-portal/profile');
+export const getWarehouseStock = (params) => api.get('/warehouse-portal/stock', { params });
+
+// Warehouse Portal — Shift / Time Clock (Phase C)
+export const getCurrentWarehouseShift = () => api.get('/warehouse-portal/shift/current');
+export const clockInWarehouseShift = (payload = {}) => api.post('/warehouse-portal/shift/clock-in', payload);
+export const clockOutWarehouseShift = (payload = {}) => api.post('/warehouse-portal/shift/clock-out', payload);
+export const getWarehouseShiftHistory = (params) => api.get('/warehouse-portal/shift/history', { params });
+
+// Warehouse Portal — Task Management (Phase D)
+export const getWarehouseTasks = (params) => api.get('/warehouse-portal/tasks', { params });
+export const getWarehouseTaskById = (taskId) => api.get(`/warehouse-portal/tasks/${taskId}`);
+export const updateWarehouseTaskStatus = (taskId, payload) => api.patch(`/warehouse-portal/tasks/${taskId}/status`, payload);
+export const completeWarehouseTask = (taskId, payload = {}) => api.post(`/warehouse-portal/tasks/${taskId}/complete`, payload);
+
+
 // Request Interceptor to add access token header dynamically
 api.interceptors.request.use(
   (config) => {

@@ -156,10 +156,13 @@ exports.delete = async (req, res, next) => {
     ]);
 
     await prisma.branch.delete({ where: { id } });
-
     // 204 No Content for successful delete
     return res.status(HTTP_STATUS.NO_CONTENT).send();
   } catch (error) {
+    try {
+      await prisma.$executeRawUnsafe(`SET FOREIGN_KEY_CHECKS=1`);
+    } catch (e) {}
+
     if (error.code === 'P2025') {
       return res.status(HTTP_STATUS.NO_CONTENT).send();
     }

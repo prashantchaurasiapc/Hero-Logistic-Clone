@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   FiCheckCircle, FiClock, FiMapPin, FiPhone, FiChevronRight,
   FiCamera, FiFileText, FiAlertTriangle, FiRefreshCw,
@@ -9,10 +9,23 @@ import {
   FiNavigation, FiShare2, FiTrash2
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
+<<<<<<< HEAD
 import api from '../../services/api';
+=======
+import { getLoadDetails, getMyLoads, getDeliveryItems, submitDeliveryPOD } from '../../services/driverApi';
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 
 export default function DeliveryPOD() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { id: paramId } = useParams();
+
+  // API State
+  const [activeLoad, setActiveLoad] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeStop, setActiveStop] = useState(null);
 
   // Mode & Toggle States
   const [afterHoursEnabled, setAfterHoursEnabled] = useState(false);
@@ -37,6 +50,7 @@ export default function DeliveryPOD() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureName, setSignatureName] = useState('');
 
+<<<<<<< HEAD
   // Data State
   const [loading, setLoading] = useState(true);
   const [runData, setRunData] = useState(null);
@@ -81,6 +95,86 @@ export default function DeliveryPOD() {
     fetchActiveRun();
   }, []);
 
+=======
+  // Cars assigned to DROP 1 (Fetched from real backend API)
+  const [cars, setCars] = useState([]);
+
+  // Fetch Load & Delivery Details from Backend
+  useEffect(() => {
+    let isSubscribed = true;
+    setLoading(true);
+    setError(null);
+
+    const targetId = paramId || location.state?.loadId;
+
+    const loadTask = targetId 
+      ? getLoadDetails(targetId) 
+      : getMyLoads().then(res => {
+          const loads = res.data?.data?.loads || [];
+          const active = loads.find(l => ['IN_TRANSIT', 'ACTIVE', 'ASSIGNED'].includes(l.status)) || loads[0];
+          if (!active) throw new Error('No active load found.');
+          return getLoadDetails(active.id);
+        });
+
+    loadTask
+      .then(res => {
+        if (!isSubscribed) return;
+        const rawLoad = res.data?.data?.load;
+        if (!rawLoad) throw new Error('Load not found.');
+
+        const displayId = rawLoad.loadRef || (rawLoad.id ? `LD-${rawLoad.id.substring(0, 4).toUpperCase()}` : 'LD-0000');
+        setActiveLoad({
+          rawId: rawLoad.id,
+          displayId,
+          loadRef: rawLoad.loadRef,
+          status: rawLoad.status,
+        });
+
+        // Fetch Real Delivery Items from backend
+        return getDeliveryItems(rawLoad.id);
+      })
+      .then(res => {
+        if (!isSubscribed || !res) return;
+        const backendItems = res.data?.data?.items || [];
+        const stops = res.data?.data?.stops || [];
+
+        if (stops.length > 0) setActiveStop(stops[0]);
+
+        const formattedCars = backendItems.map((item, idx) => ({
+          id: item.id,
+          makeModel: `${item.make || ''} ${item.model || 'Vehicle'}`.trim(),
+          color: item.color || 'White',
+          reg: item.rego || `REG-${idx + 101}`,
+          vin: item.vin || `VIN-${String(item.id).substring(0, 8).toUpperCase()}`,
+          beforePhotos: { current: 4, total: 4, percent: 100, missingText: '' },
+          deliveryPhotos: {
+            current: item.status === 'DELIVERED' ? 4 : 0,
+            total: 4,
+            percent: item.status === 'DELIVERED' ? 100 : 0,
+            missingText: item.status === 'DELIVERED' ? '' : 'Missing 4 Photos'
+          },
+          signature: item.status === 'DELIVERED' ? 'Customer Signed' : null,
+          damage: item.damage || 'No Damage',
+          damageType: item.damage ? 'warning' : 'none',
+          status: item.status === 'DELIVERED' ? 'Delivered' : 'Not Delivered',
+          deliveryTime: item.status === 'DELIVERED' ? '11:02 AM' : null,
+          delivered: item.status === 'DELIVERED',
+        }));
+        setCars(formattedCars);
+      })
+      .catch(err => {
+        if (isSubscribed) {
+          const msg = err.response?.data?.error?.message || err.message || 'Could not load delivery details.';
+          setError(msg);
+        }
+      })
+      .finally(() => {
+        if (isSubscribed) setLoading(false);
+      });
+
+    return () => { isSubscribed = false; };
+  }, [paramId, location.state]);
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -120,16 +214,85 @@ export default function DeliveryPOD() {
     setSignatureModalOpen(true);
   };
 
+  const handleConfirmDropDelivery = (signatureData = null, signeeOverride = null) => {
+    const currentLoadId = activeLoad?.rawId || paramId;
+    if (!currentLoadId || isSubmitting) return;
+
+    const signName = signeeOverride || signatureName || selectedCarForModal?.signature || 'John Smith';
+    if (!afterHoursEnabled && (!signName || !signName.trim())) {
+      triggerToast('⚠️ Receiver signature name is required.');
+      return;
+    }
+
+    let canvasDataUrl = signatureData;
+    if (!canvasDataUrl && canvasRef.current) {
+      try {
+        canvasDataUrl = canvasRef.current.toDataURL('image/png');
+      } catch (e) {}
+    }
+
+    if (!afterHoursEnabled && !canvasDataUrl) {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = 300;
+      tempCanvas.height = 100;
+      const ctx = tempCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 300, 100);
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillStyle = '#1e1b4b';
+      ctx.fillText(signName || 'Customer Signed', 20, 50);
+      canvasDataUrl = tempCanvas.toDataURL('image/png');
+    }
+
+    setIsSubmitting(true);
+
+    const payload = {
+      stopId: activeStop?.id,
+      signeeName: signName,
+      signatureData: canvasDataUrl,
+      isAfterHours: afterHoursEnabled,
+      deliveryNotes: deliveryNotes || afterHoursNotes || 'Delivered cleanly',
+      itemIds: cars.map(c => c.id).filter(id => typeof id === 'string')
+    };
+
+    submitDeliveryPOD(currentLoadId, payload)
+      .then(res => {
+        const newLoadStatus = res.data?.data?.loadStatus;
+
+        setCars(prevCars => prevCars.map(c => ({
+          ...c,
+          delivered: true,
+          status: 'Delivered',
+          deliveryTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          signature: signName
+        })));
+
+        if (activeLoad) {
+          setActiveLoad(prev => ({ ...prev, status: newLoadStatus || 'DELIVERED' }));
+        }
+
+        triggerToast('🎉 PROOF OF DELIVERY SUBMITTED! Dispatch & Customer notified.');
+      })
+      .catch(err => {
+        const msg = err.response?.data?.error?.message || 'POD submission failed.';
+        triggerToast(`❌ Error: ${msg}`);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+  };
+
   const handleSaveSignature = () => {
-    if (!signatureName.trim()) {
+    if (!signatureName.trim() && !afterHoursEnabled) {
       triggerToast('Please enter receiver name before saving signature.');
       return;
     }
-    if (selectedCarForModal) {
-      setCars(cars.map(c => c.id === selectedCarForModal.id ? { ...c, signature: signatureName } : c));
+    let dataUrl = null;
+    if (canvasRef.current) {
+      try { dataUrl = canvasRef.current.toDataURL('image/png'); } catch (e) {}
     }
     setSignatureModalOpen(false);
-    triggerToast(`Signature captured for ${signatureName}!`);
+    handleConfirmDropDelivery(dataUrl, signatureName);
   };
 
   const handleAddCarSubmit = (e) => {
@@ -243,6 +406,7 @@ export default function DeliveryPOD() {
     }));
   };
 
+<<<<<<< HEAD
   const handleConfirmDropDelivery = () => {
     const undeliveredCount = cars.filter(c => !c.delivered).length;
     if (undeliveredCount > 0 && !afterHoursEnabled) {
@@ -252,6 +416,8 @@ export default function DeliveryPOD() {
     }
   };
 
+=======
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   // Canvas Handlers for Signature Capture
   const handleClearCanvas = () => {
     const canvas = canvasRef.current;
@@ -409,25 +575,40 @@ export default function DeliveryPOD() {
         </div>
       </div>
 
-      {/* TOP HEADER LOAD BANNER CARD ("LD-3987") */}
+      {/* TOP HEADER LOAD BANNER CARD */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-2">
+<<<<<<< HEAD
           <div className="text-2xl font-black text-indigo-700 tracking-tight">{runData?.id || 'LD-XXXX'}</div>
           <div className="text-sm font-black text-slate-800 flex items-center gap-2">
             <span>{runData?.origin || 'Origin'}</span>
             <span className="text-slate-400">➔</span>
             <span>{runData?.destination || 'Destination'}</span>
+=======
+          <div className="text-2xl font-black text-indigo-700 tracking-tight">
+            {activeLoad?.loadRef || activeLoad?.displayId || 'Active Load'}
+          </div>
+          <div className="text-sm font-black text-slate-800 flex items-center gap-2">
+            <span>{activeStop?.name || activeStop?.contactName || 'Delivery Drop'}</span>
+            <span className="text-slate-400">➔</span>
+            <span>{activeStop?.address || 'Destination'}</span>
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
           </div>
 
           <div className="flex flex-wrap items-center gap-6 pt-2 text-xs">
             <div>
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Current Stop</span>
+<<<<<<< HEAD
               <span className="font-extrabold text-slate-900">DROP 1 OF {runData?.stopsCount || 1}</span>
+=======
+              <span className="font-extrabold text-slate-900">{activeStop?.name || 'DROP 1 OF 1'}</span>
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             </div>
 
             <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
 
             <div>
+<<<<<<< HEAD
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Delivery Time</span>
               <span className="font-extrabold text-slate-900">{runData?.nextStop?.eta || 'TBA'}</span>
             </div>
@@ -437,13 +618,21 @@ export default function DeliveryPOD() {
             <div>
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
               <span className="font-extrabold text-slate-900">{runData?.estFinish || 'TBA'}</span>
+=======
+              <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Status</span>
+              <span className="font-extrabold text-slate-900">{activeLoad?.status || 'IN_TRANSIT'}</span>
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             </div>
 
             <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
 
             <div>
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Cars for this stop</span>
+<<<<<<< HEAD
               <span className="font-extrabold text-slate-900">{totalCarsCount} Cars</span>
+=======
+              <span className="font-extrabold text-slate-900">{cars.length} Cars</span>
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
             </div>
           </div>
         </div>
@@ -505,8 +694,13 @@ export default function DeliveryPOD() {
             {/* Table Header Section */}
             <div className="p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100">
               <div>
+<<<<<<< HEAD
                 <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO DELIVER – DROP 1 OF {runData?.stopsCount || 1} ({totalCarsCount})</h3>
                 <p className="text-xs font-semibold text-slate-500 mt-0.5">Destination: <strong className="text-slate-800">{runData?.nextStop?.name || 'Destination'}</strong></p>
+=======
+                <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO DELIVER ({cars.length})</h3>
+                <p className="text-xs font-semibold text-slate-500 mt-0.5">Destination: <strong className="text-slate-800">{activeStop?.address || 'Delivery Drop'}</strong></p>
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
               </div>
 
               <div className="flex items-center gap-2">
@@ -518,7 +712,11 @@ export default function DeliveryPOD() {
                   <span>Scan VIN</span>
                 </button>
                 <span className="bg-indigo-50 text-indigo-700 text-xs font-black px-3 py-1.5 rounded-lg border border-indigo-100">
+<<<<<<< HEAD
                   {totalCarsCount} Cars
+=======
+                  {cars.length} Cars
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
                 </span>
               </div>
             </div>
@@ -553,7 +751,8 @@ export default function DeliveryPOD() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                  {cars.map((car, index) => (
+                  {cars.length > 0 ? (
+                    cars.map((car, index) => (
                     <tr 
                       key={car.id} 
                       className={`hover:bg-slate-50/80 transition-colors ${
@@ -754,7 +953,14 @@ export default function DeliveryPOD() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="py-12 text-center text-slate-500 font-medium">
+                      No vehicles assigned to this delivery drop. Click "Scan VIN" or "Add Car to Delivery" to add vehicles.
+                    </td>
+                  </tr>
+                )}
                 </tbody>
               </table>
               )}

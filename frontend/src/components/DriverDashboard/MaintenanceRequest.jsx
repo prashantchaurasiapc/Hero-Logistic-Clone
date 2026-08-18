@@ -39,18 +39,28 @@ export default function MaintenanceRequest() {
     triggerToast('Malfunction photo attached.', 'success');
   };
 
+  const [maintenanceList, setMaintenanceList] = useState([]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!issueDetails.trim()) {
       triggerToast('Please describe the issue.', 'error');
       return;
     }
+    const newLog = {
+      id: Date.now(),
+      reportedIssue: issueDetails.trim(),
+      severity: severity.split(' ')[0] || 'Minor',
+      severityColor: severity.includes('Critical') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-700 border border-amber-200',
+      status: 'SUBMITTED',
+      statusColor: 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+    };
+    setMaintenanceList(prev => [newLog, ...prev]);
     triggerToast('Maintenance log successfully submitted.', 'success');
     setIssueDetails('');
     setPhotoAttached(false);
   };
 
-  const mockData = [];
 
   const toggleRow = (id) => {
     setSelectedRows(prev =>
@@ -284,7 +294,8 @@ export default function MaintenanceRequest() {
 
           {/* Mobile Card Layout (Visible only on mobile/small screens) */}
           <div className="block sm:hidden space-y-4">
-            {mockData.map((row, index) => {
+            {maintenanceList.length > 0 ? (
+              maintenanceList.map((row, index) => {
               const isSelected = selectedRows.includes(row.id);
               
               let cardPadding = 'p-4';
@@ -354,7 +365,11 @@ export default function MaintenanceRequest() {
                   )}
                 </div>
               );
-            })}
+            })) : (
+              <div className="p-6 text-center text-xs text-slate-400 font-bold bg-white rounded-2xl border border-slate-200">
+                No maintenance requests logged.
+              </div>
+            )}
           </div>
 
           {/* Desktop Table Layout (Visible on tablet/desktop) */}
@@ -364,11 +379,11 @@ export default function MaintenanceRequest() {
                 <tr className="border-b border-gray-100 bg-white">
                   <th className="p-4 w-12 text-center">
                     <button
-                      onClick={() => setSelectedRows(selectedRows.length === mockData.length ? [] : mockData.map(d => d.id))}
+                      onClick={() => setSelectedRows(selectedRows.length === maintenanceList.length ? [] : maintenanceList.map(d => d.id))}
                       className="cursor-pointer"
                     >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === mockData.length ? 'border-[#D97706] bg-white text-[#D97706]' : 'border-[#94A3B8]'}`}>
-                        {selectedRows.length === mockData.length && <Check className="w-3 h-3" strokeWidth={4} />}
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length > 0 && selectedRows.length === maintenanceList.length ? 'border-[#D97706] bg-white text-[#D97706]' : 'border-[#94A3B8]'}`}>
+                        {selectedRows.length > 0 && selectedRows.length === maintenanceList.length && <Check className="w-3 h-3" strokeWidth={4} />}
                       </div>
                     </button>
                   </th>
@@ -378,7 +393,8 @@ export default function MaintenanceRequest() {
                 </tr>
               </thead>
               <tbody>
-                {mockData.map((row) => {
+                {maintenanceList.length > 0 ? (
+                  maintenanceList.map((row) => {
                   const isSelected = selectedRows.includes(row.id);
                   return (
                     <tr key={row.id} className={`border-b border-gray-50 hover:bg-[#FFFBEB]/50 transition-colors ${
@@ -415,7 +431,13 @@ export default function MaintenanceRequest() {
                       )}
                     </tr>
                   );
-                })}
+                })) : (
+                  <tr>
+                    <td colSpan="4" className="p-8 text-center text-xs text-slate-400 font-bold">
+                      No maintenance requests logged yet. Use the form above to report an issue.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

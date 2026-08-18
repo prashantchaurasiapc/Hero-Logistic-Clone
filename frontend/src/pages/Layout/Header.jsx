@@ -13,7 +13,7 @@ const Header = ({ onMenuClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth() || {};
   
   // Stacking role details
   const isAdminPath = location.pathname.startsWith('/company-admin');

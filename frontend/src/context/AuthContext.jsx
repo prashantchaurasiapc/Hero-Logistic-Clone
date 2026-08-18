@@ -107,4 +107,13 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+const defaultAuthValue = {
+  user: null,
+  isAuthenticated: false,
+  loading: false,
+  login: async () => ({ success: false, message: 'Auth context not ready' }),
+  logout: async () => {},
+  checkAuthStatus: async () => {}
+};
+
+export const useAuth = () => useContext(AuthContext) || defaultAuthValue;

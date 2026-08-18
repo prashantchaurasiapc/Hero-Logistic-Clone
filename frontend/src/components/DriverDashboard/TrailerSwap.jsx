@@ -9,9 +9,14 @@ import {
   FiTruck, FiMapPin, FiCheckSquare, FiSearch, FiArrowRight,
   FiZap, FiInfo, FiSliders, FiList, FiAlertOctagon
 } from 'react-icons/fi';
+import { getTrailerSwapContext, swapTrailer } from '../../services/driverApi';
 
 export default function TrailerSwap() {
   const navigate = useNavigate();
+
+  // Loading & Submitting State
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -113,6 +118,37 @@ export default function TrailerSwap() {
     }
   };
 
+  // Fetch real trailer swap context on mount
+  useEffect(() => {
+    let isSubscribed = true;
+    setLoading(true);
+
+    getTrailerSwapContext()
+      .then(res => {
+        if (!isSubscribed) return;
+        const data = res.data?.data || {};
+        if (data.currentTrailer) {
+          setCurrentTrailer(data.currentTrailer);
+        }
+        if (data.trailers && data.trailers.length > 0) {
+          setTrailers(data.trailers);
+          const firstAvailable = data.trailers.find(t => t.id !== data.currentTrailer?.id);
+          if (firstAvailable) setSelectedTrailerId(firstAvailable.id);
+        }
+        if (data.recentSwaps && data.recentSwaps.length > 0) {
+          setRecentSwaps(data.recentSwaps);
+        }
+      })
+      .catch(err => {
+        if (isSubscribed) console.error('Error fetching trailer swap context:', err);
+      })
+      .finally(() => {
+        if (isSubscribed) setLoading(false);
+      });
+
+    return () => { isSubscribed = false; };
+  }, []);
+
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
@@ -128,11 +164,18 @@ export default function TrailerSwap() {
       return;
     }
 
+<<<<<<< HEAD
     if (currentTrailer && selectedTargetTrailer && currentTrailer.id === selectedTargetTrailer.id) {
+=======
+    if (isSubmitting) return;
+
+    if (currentTrailer && currentTrailer.id === selectedTargetTrailer?.id) {
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
       triggerToast(`⚠️ ${selectedTargetTrailer.id} is already your active trailer! Select a different trailer to swap.`);
       return;
     }
 
+<<<<<<< HEAD
     const oldTrailer = { ...(currentTrailer || {}) };
     const newTrailer = {
       id: selectedTargetTrailer?.id,
@@ -206,6 +249,71 @@ export default function TrailerSwap() {
       setSwapSuccessModalOpen(true);
       triggerToast(`🎉 Trailer swapped successfully to ${newTrailer.id} (${newTrailer.rego})! Dispatch notified.`);
     }
+=======
+    setIsSubmitting(true);
+
+    swapTrailer({
+      oldTrailerId: currentTrailer?.id,
+      newTrailerId: selectedTargetTrailer?.id,
+      swapType: swapType || 'Trailer Swap',
+      reason: swapReason || 'Routine Change',
+      locationName: swapLocation || 'Yass Yard NSW',
+      notes: swapNotes || '',
+      equipmentCheck: confirmedCheck
+    })
+      .then(res => {
+        const data = res.data?.data || {};
+        const newTrailer = data.currentTrailer || {
+          id: selectedTargetTrailer.id,
+          name: selectedTargetTrailer.name,
+          rego: selectedTargetTrailer.rego,
+          vin: selectedTargetTrailer.vin,
+          status: 'Current'
+        };
+
+        const oldTrailer = { ...currentTrailer };
+        setCurrentTrailer(newTrailer);
+
+        setTrailers(prev => prev.map(t => {
+          if (t.id === newTrailer.id) {
+            return { ...t, status: 'In Use', statusColor: 'bg-purple-100 text-purple-800 border-purple-200' };
+          }
+          if (t.id === oldTrailer.id) {
+            return { ...t, status: 'Available', statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+          }
+          return t;
+        }));
+
+        const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const newSwapRecord = {
+          id: Date.now(),
+          date: new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }),
+          swap: `${oldTrailer.rego || oldTrailer.id} ➔ ${newTrailer.rego || newTrailer.id}`,
+          location: swapLocation
+        };
+
+        setRecentSwaps(prev => [newSwapRecord, ...prev]);
+
+        setLastSwapInfo({
+          oldId: oldTrailer.rego || oldTrailer.id,
+          newId: newTrailer.rego || newTrailer.id,
+          rego: newTrailer.rego,
+          name: newTrailer.name,
+          time: currentTimeStr,
+          location: swapLocation
+        });
+
+        setSwapSuccessModalOpen(true);
+        triggerToast(`🎉 Trailer swapped successfully to ${newTrailer.rego || newTrailer.id}! Dispatch notified.`);
+      })
+      .catch(err => {
+        const msg = err.response?.data?.error?.message || 'Failed to execute trailer swap.';
+        triggerToast(`❌ Error: ${msg}`);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+>>>>>>> 942db2529edabcead1dbf19472d97bf3d750d322
   };
 
   const handleFilterToggle = () => {

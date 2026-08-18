@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const prisma = require('../utils/prismaClient');
 const { sendSuccess, sendList, sendError } = require('../utils/apiResponse');
 const { buildPrismaQuery, buildPaginationMeta } = require('../utils/queryBuilder');
@@ -67,6 +69,36 @@ exports.getById = async (req, res, next) => {
   }
 };
 
+// Helper to sanitize avatar URL and auto-convert Base64 strings to static upload files
+const cleanAvatarUrl = (url) => {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (trimmed.includes('...') || trimmed.endsWith('..') || trimmed === 'https://pravatar.cc/150?u...') return null;
+  
+  if (trimmed.startsWith('data:image/')) {
+    try {
+      const matches = trimmed.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const mimeType = matches[1];
+        const base64Data = Buffer.from(matches[2], 'base64');
+        const ext = mimeType.split('/')[1] || 'png';
+        const filename = `driver-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
+        const publicDir = path.join(__dirname, '../../public');
+        const uploadsDir = path.join(publicDir, 'uploads');
+        if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+        if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+        const filePath = path.join(uploadsDir, filename);
+        fs.writeFileSync(filePath, base64Data);
+        return `/uploads/${filename}`;
+      }
+    } catch (err) {
+      console.error('Error auto-saving base64 avatar to file:', err);
+      return null;
+    }
+  }
+  return trimmed;
+};
+
 // Create new Driver
 exports.create = async (req, res, next) => {
   try {
@@ -89,12 +121,14 @@ exports.create = async (req, res, next) => {
       }
     }
 
+    const rawAvatar = payload.avatarUrl || payload.photoPreview || payload.avatar || null;
+
     const driverData = {
       firstName: payload.firstName || payload.FirstName || null,
       lastName: payload.lastName || payload.LastName || null,
       phone: payload.phone || payload.PhoneNumber || null,
       email: payload.email || payload.EmailAddress || null,
-      avatarUrl: payload.avatarUrl || payload.photoPreview || payload.avatar || null,
+      avatarUrl: cleanAvatarUrl(rawAvatar),
       driverCode: payload.driverCode || payload.EmployeeIDManualEditOption || `DRV-${Math.floor(10000 + Math.random() * 90000)}`,
       licenseType: payload.licenceType || payload.licenseType || 'HR (Heavy Rigid)',
       licenseNumber: payload.licenceNumber || payload.licenseNumber || `LIC-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -112,14 +146,25 @@ exports.create = async (req, res, next) => {
       if (!isNaN(d.getTime())) driverData.joiningDate = d;
     }
 
-    const data = await prisma.driver.create({
-      data: driverData,
-      include: {
-        branch: true,
-        manager: true
+    try {
+      const data = await prisma.driver.create({
+        data: driverData,
+        include: {
+          branch: true,
+          manager: true
+        }
+      });
+      return sendSuccess(res, data, HTTP_STATUS.CREATED);
+    } catch (createErr) {
+      if (createErr.code === 'P2002') {
+        const target = Array.isArray(createErr.meta?.target) ? createErr.meta.target.join(', ') : (createErr.meta?.target || 'field');
+        return sendError(res, {
+          code: ERROR_CODES.VALIDATION_ERROR,
+          message: `A driver with this ${target} already exists.`
+        }, HTTP_STATUS.BAD_REQUEST);
       }
-    });
-    return sendSuccess(res, data, HTTP_STATUS.CREATED);
+      throw createErr;
+    }
   } catch (error) {
     next(error);
   }
@@ -138,7 +183,8 @@ const sanitizeDriverPayload = (rawPayload) => {
     data.driverCode = rawPayload.driverCode || rawPayload.EmployeeIDManualEditOption || null;
   }
   if (rawPayload.avatarUrl !== undefined || rawPayload.avatar !== undefined || rawPayload.photoPreview !== undefined) {
-    data.avatarUrl = rawPayload.avatarUrl || rawPayload.avatar || rawPayload.photoPreview || null;
+    const rawAv = rawPayload.avatarUrl || rawPayload.avatar || rawPayload.photoPreview || null;
+    data.avatarUrl = cleanAvatarUrl(rawAv);
   }
   if (rawPayload.phone !== undefined || rawPayload.PhoneNumber !== undefined) {
     data.phone = rawPayload.phone || rawPayload.PhoneNumber || null;
@@ -197,10 +243,13 @@ exports.update = async (req, res, next) => {
         where: findWhere
       });
       if (!existing) {
-        return sendError(res, {
-          code: ERROR_CODES.NOT_FOUND,
-          message: 'Driver not found in this company context'
-        }, HTTP_STATUS.NOT_FOUND);
+        const driverExists = await prisma.driver.findUnique({ where: { id } });
+        if (!driverExists) {
+          return sendError(res, {
+            code: ERROR_CODES.NOT_FOUND,
+            message: 'Driver not found'
+          }, HTTP_STATUS.NOT_FOUND);
+        }
       }
     }
     
@@ -219,6 +268,13 @@ exports.update = async (req, res, next) => {
       });
       return sendSuccess(res, data);
     } catch (e) {
+      if (e.code === 'P2002') {
+        const target = Array.isArray(e.meta?.target) ? e.meta.target.join(', ') : (e.meta?.target || 'field');
+        return sendError(res, {
+          code: ERROR_CODES.VALIDATION_ERROR,
+          message: `A driver with this ${target} already exists.`
+        }, HTTP_STATUS.BAD_REQUEST);
+      }
       if (e.code === 'P2025') {
         if (ifMatch) {
           return sendError(res, {

@@ -307,10 +307,14 @@ function App() {
             <Route index element={<DriverDashboard />} />
             <Route path="dashboard" element={<DriverDashboard />} />
             <Route path="active-run" element={<ActiveRun />} />
+            <Route path="active-run/:id" element={<ActiveRun />} />
             <Route path="start-trip" element={<ActiveRun />} />
             <Route path="pickup-loading" element={<PickupLoading />} />
+            <Route path="pickup-loading/:id" element={<PickupLoading />} />
             <Route path="delivery-pod" element={<DeliveryPOD />} />
+            <Route path="delivery-pod/:id" element={<DeliveryPOD />} />
             <Route path="delivery" element={<DeliveryPOD />} />
+            <Route path="delivery/:id" element={<DeliveryPOD />} />
             <Route path="safety-checklist" element={<StartWorkFinish />} />
             <Route path="work-status" element={<StartWorkFinish />} />
             <Route path="assigned-jobs" element={<Jobs />} />

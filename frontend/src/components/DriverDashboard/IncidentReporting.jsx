@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, CheckCircle2, AlertCircle, Settings, Check, Upload, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, CheckCircle2, AlertCircle, Settings, Check, Upload, Download, Loader2 } from 'lucide-react';
+import { getMyIncidents, createIncidentReport, sendEmergencySOS } from '../../services/driverApi';
 
 export default function IncidentReporting() {
   const [sosModalOpen, setSosModalOpen] = useState(false);
@@ -13,10 +14,16 @@ export default function IncidentReporting() {
   const [category, setCategory] = useState('Highway Road Accident');
   const [description, setDescription] = useState('');
   const [photoAttached, setPhotoAttached] = useState(false);
-  
+  const [photoBase64, setPhotoBase64] = useState(null);
+
   // SOS states
   const [shareGps, setShareGps] = useState(true);
   const [autoNotify, setAutoNotify] = useState(true);
+
+  // API Data & Loading states
+  const [incidents, setIncidents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // History states
   const [viewMode, setViewMode] = useState('DEFAULT'); // COMPACT, DEFAULT, RELAXED
@@ -34,23 +41,59 @@ export default function IncidentReporting() {
     setTimeout(() => setToastMsg(''), 4000);
   };
 
+  const fetchIncidents = async () => {
+    try {
+      setIsLoading(true);
+      const res = await getMyIncidents();
+      const list = res.data?.data?.incidents || res.data?.incidents || [];
+      setIncidents(list);
+    } catch (err) {
+      console.error('Failed to load incidents:', err);
+      triggerToast(err.response?.data?.message || 'Failed to load incident history.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchIncidents();
+  }, []);
+
   const handlePhotoUpload = () => {
+    // Simulated photo attachment with base64 placeholder
+    const dummyBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    setPhotoBase64(dummyBase64);
     setPhotoAttached(true);
     triggerToast('Incident proof photo attached.', 'success');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!description.trim()) {
-      triggerToast('Please provide a description.', 'error');
+      triggerToast('Please provide an incident description.', 'error');
       return;
     }
-    triggerToast('Incident report successfully submitted.', 'success');
-    setDescription('');
-    setPhotoAttached(false);
-  };
+    if (isSubmitting) return;
 
-  const mockData = [];
+    try {
+      setIsSubmitting(true);
+      const res = await createIncidentReport({
+        category,
+        description,
+        photoBase64: photoBase64 || null
+      });
+      triggerToast(res.data?.data?.message || 'Incident report successfully submitted.', 'success');
+      setDescription('');
+      setPhotoAttached(false);
+      setPhotoBase64(null);
+      await fetchIncidents();
+    } catch (err) {
+      console.error('Submit incident error:', err);
+      triggerToast(err.response?.data?.message || 'Failed to submit incident report.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const toggleRow = (id) => {
     setSelectedRows(prev => 
@@ -207,9 +250,17 @@ export default function IncidentReporting() {
 
             <button 
               type="submit"
-              className="w-full bg-[#E11D48] hover:bg-rose-700 text-white font-black py-4 px-6 rounded-2xl transition-all shadow-[0_4px_14px_0_rgba(225,29,72,0.39)] hover:shadow-[0_6px_20px_rgba(225,29,72,0.23)] active:scale-[0.98]"
+              disabled={isSubmitting}
+              className="w-full bg-[#E11D48] hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black py-4 px-6 rounded-2xl transition-all shadow-[0_4px_14px_0_rgba(225,29,72,0.39)] hover:shadow-[0_6px_20px_rgba(225,29,72,0.23)] active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              Submit Incident Report
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Submitting Incident...</span>
+                </>
+              ) : (
+                <span>Submit Incident Report</span>
+              )}
             </button>
           </form>
         </div>
@@ -282,140 +333,145 @@ export default function IncidentReporting() {
             </div>
           </div>
 
-          {/* Mobile Card Layout (Visible only on mobile/small screens) */}
-          <div className="block sm:hidden space-y-4">
-            {mockData.map((row, index) => {
-              const isSelected = selectedRows.includes(row.id);
-              
-              let cardPadding = 'p-4';
-              let spaceBetween = 'space-y-3';
-              let textSize = 'text-sm';
-              let labelSize = 'text-[9px]';
-              let headerText = 'text-sm';
-              
-              if (viewMode === 'COMPACT') {
-                cardPadding = 'p-3';
-                spaceBetween = 'space-y-2';
-                textSize = 'text-xs';
-                labelSize = 'text-[8px]';
-                headerText = 'text-xs';
-              } else if (viewMode === 'RELAXED') {
-                cardPadding = 'p-6';
-                spaceBetween = 'space-y-4';
-                textSize = 'text-base';
-                labelSize = 'text-[10px]';
-                headerText = 'text-base';
-              }
+          {isLoading ? (
+            <div className="p-12 text-center bg-white border border-gray-150 rounded-2xl">
+              <Loader2 className="w-8 h-8 animate-spin text-[#D97706] mx-auto mb-3" />
+              <p className="text-sm font-bold text-gray-500">Loading incident registry...</p>
+            </div>
+          ) : incidents.length === 0 ? (
+            <div className="p-12 text-center bg-white border border-gray-150 rounded-2xl">
+              <Shield className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <h4 className="text-base font-bold text-gray-700">No Incidents Logged</h4>
+              <p className="text-xs text-gray-400 mt-1">All safety logs are clear. Submit a report above if an exception occurs.</p>
+            </div>
+          ) : (
+            <>
+              {/* Mobile Card Layout */}
+              <div className="block sm:hidden space-y-4">
+                {incidents.map((row) => {
+                  const isSelected = selectedRows.includes(row.id);
+                  let cardPadding = viewMode === 'COMPACT' ? 'p-3' : viewMode === 'RELAXED' ? 'p-6' : 'p-4';
+                  let spaceBetween = viewMode === 'COMPACT' ? 'space-y-2' : viewMode === 'RELAXED' ? 'space-y-4' : 'space-y-3';
+                  let textSize = viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-base' : 'text-sm';
+                  let labelSize = viewMode === 'COMPACT' ? 'text-[8px]' : viewMode === 'RELAXED' ? 'text-[10px]' : 'text-[9px]';
+                  let headerText = viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-base' : 'text-sm';
 
-              return (
-                <div 
-                  key={index} 
-                  className={`bg-white border rounded-2xl shadow-sm transition-all duration-200 ${cardPadding} ${spaceBetween} ${
-                    isSelected ? 'bg-[#FFFDF4] border-brand-500 ring-1 ring-brand-500' : 'border-gray-150'
-                  }`}
-                >
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="flex items-center gap-3">
-                      <button 
-                        onClick={() => toggleRow(row.id)}
-                        className="cursor-pointer shrink-0"
-                      >
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                          isSelected ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'
-                        }`}>
-                           {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
+                  return (
+                    <div 
+                      key={row.id} 
+                      className={`bg-white border rounded-2xl shadow-sm transition-all duration-200 ${cardPadding} ${spaceBetween} ${
+                        isSelected ? 'bg-[#FFFDF4] border-brand-500 ring-1 ring-brand-500' : 'border-gray-150'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex items-center gap-3">
+                          <button 
+                            onClick={() => toggleRow(row.id)}
+                            className="cursor-pointer shrink-0"
+                          >
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                              isSelected ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'
+                            }`}>
+                              {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
+                            </div>
+                          </button>
+                          
+                          {visibleColumns.category && (
+                            <div>
+                              <span className={`${labelSize} font-black text-gray-400 uppercase tracking-widest block`}>Category</span>
+                              <span className={`font-black text-[#0F172A] leading-tight ${headerText}`}>
+                                {row.category}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      </button>
+
+                        {visibleColumns.status && (
+                          <span className={`px-2.5 py-1 rounded-full text-[9px] font-black tracking-wider uppercase shrink-0 ${
+                            row.isSos ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-gray-100 text-[#64748B] border border-gray-200'
+                          }`}>
+                            {row.status.replace(/_/g, ' ')}
+                          </span>
+                        )}
+                      </div>
                       
-                      {visibleColumns.category && (
-                        <div>
-                          <span className={`${labelSize} font-black text-gray-400 uppercase tracking-widest block`}>Incident Category</span>
-                          <span className={`font-black text-[#0F172A] leading-tight ${headerText}`}>
-                            {row.category.replace(/\n/g, ' ')}
+                      {visibleColumns.loggedDate && (
+                        <div className="pt-3 border-t border-gray-100">
+                          <span className={`${labelSize} font-black text-gray-400 uppercase tracking-widest block mb-0.5`}>Logged Date</span>
+                          <span className={`font-bold text-[#334155] ${textSize}`}>
+                            {row.loggedDate}
                           </span>
                         </div>
                       )}
                     </div>
+                  );
+                })}
+              </div>
 
-                    {visibleColumns.status && (
-                      <span className={`px-2.5 py-1 rounded-full text-[9px] font-black tracking-wider uppercase shrink-0 ${row.statusColor}`}>
-                        {row.status.replace(/\n/g, ' ')}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {visibleColumns.loggedDate && (
-                    <div className="pt-3 border-t border-gray-100">
-                      <span className={`${labelSize} font-black text-gray-400 uppercase tracking-widest block mb-0.5`}>Logged Date</span>
-                      <span className={`font-bold text-[#334155] ${textSize}`}>
-                        {row.loggedDate}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Desktop Table Layout (Visible on tablet/desktop) */}
-          <div className="hidden sm:block border border-gray-150 rounded-2xl overflow-hidden shadow-sm mt-2">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-gray-100 bg-white">
-                  <th className="p-4 w-12 text-center">
-                    <button 
-                      onClick={() => setSelectedRows(selectedRows.length === mockData.length ? [] : mockData.map(d => d.id))}
-                      className="cursor-pointer"
-                    >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === mockData.length ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
-                        {selectedRows.length === mockData.length && <Check className="w-3 h-3" strokeWidth={4} />}
-                      </div>
-                    </button>
-                  </th>
-                  {visibleColumns.category && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">CATEGORY</th>}
-                  {visibleColumns.loggedDate && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">LOGGED DATE</th>}
-                  {visibleColumns.status && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">STATUS</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {mockData.map((row, index) => {
-                  const isSelected = selectedRows.includes(row.id);
-                  return (
-                  <tr key={index} className={`border-b border-gray-50 hover:bg-[#FFFBEB]/50 transition-colors ${
-                    viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-lg' : 'text-sm'
-                  } ${isSelected ? 'bg-[#FFFBEB]' : ''}`}>
-                    <td className={`p-4 text-center align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                      <button 
-                        onClick={() => toggleRow(row.id)}
-                        className="cursor-pointer"
-                      >
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#D97706] text-[#D97706]' : 'border-[#94A3B8]'}`}>
-                           {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
-                        </div>
-                      </button>
-                    </td>
-                    {visibleColumns.category && (
-                      <td className={`p-4 font-black text-[#0F172A] align-middle whitespace-nowrap ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                        {row.category.replace(/\n/g, ' ')}
-                      </td>
-                    )}
-                    {visibleColumns.loggedDate && (
-                      <td className={`p-4 font-black text-[#334155] align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                        {row.loggedDate}
-                      </td>
-                    )}
-                    {visibleColumns.status && (
-                      <td className={`p-4 align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                        <span className={`inline-block px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wider uppercase whitespace-nowrap ${row.statusColor}`}>
-                          {row.status.replace(/\n/g, ' ')}
-                        </span>
-                      </td>
-                    )}
-                  </tr>
-                )})}
-              </tbody>
-            </table>
-          </div>
+              {/* Desktop Table Layout */}
+              <div className="hidden sm:block border border-gray-150 rounded-2xl overflow-hidden shadow-sm mt-2">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-white">
+                      <th className="p-4 w-12 text-center">
+                        <button 
+                          onClick={() => setSelectedRows(selectedRows.length === incidents.length ? [] : incidents.map(d => d.id))}
+                          className="cursor-pointer"
+                        >
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === incidents.length ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
+                            {selectedRows.length === incidents.length && <Check className="w-3 h-3" strokeWidth={4} />}
+                          </div>
+                        </button>
+                      </th>
+                      {visibleColumns.category && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">CATEGORY</th>}
+                      {visibleColumns.loggedDate && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">LOGGED DATE</th>}
+                      {visibleColumns.status && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">STATUS</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {incidents.map((row) => {
+                      const isSelected = selectedRows.includes(row.id);
+                      return (
+                        <tr key={row.id} className={`border-b border-gray-50 hover:bg-[#FFFBEB]/50 transition-colors ${
+                          viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-lg' : 'text-sm'
+                        } ${isSelected ? 'bg-[#FFFBEB]' : ''}`}>
+                          <td className={`p-4 text-center align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                            <button 
+                              onClick={() => toggleRow(row.id)}
+                              className="cursor-pointer"
+                            >
+                              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#D97706] text-[#D97706]' : 'border-[#94A3B8]'}`}>
+                                {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
+                              </div>
+                            </button>
+                          </td>
+                          {visibleColumns.category && (
+                            <td className={`p-4 font-black text-[#0F172A] align-middle whitespace-nowrap ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                              {row.category}
+                            </td>
+                          )}
+                          {visibleColumns.loggedDate && (
+                            <td className={`p-4 font-black text-[#334155] align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                              {row.loggedDate}
+                            </td>
+                          )}
+                          {visibleColumns.status && (
+                            <td className={`p-4 align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                              <span className={`inline-block px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wider uppercase whitespace-nowrap ${
+                                row.isSos ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-gray-100 text-[#64748B] border border-gray-200'
+                              }`}>
+                                {row.status.replace(/_/g, ' ')}
+                              </span>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -448,17 +504,33 @@ export default function IncidentReporting() {
             </p>
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {[
-                { icon: <Shield className="w-5 h-5 text-red-500" />, label: 'Panic Button', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Panic Alert dispatched!' },
-                { icon: <Truck className="w-5 h-5 text-amber-500" />, label: 'Breakdown', color: 'bg-[#FFFBEB] border-amber-200 text-[#D97706]', msg: 'Breakdown Alert dispatched!' },
-                { icon: <AlertTriangle className="w-5 h-5 text-red-500" />, label: 'Accident', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Accident Alert dispatched!' },
-                { icon: <Heart className="w-5 h-5 text-red-500" />, label: 'Medical', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Medical Emergency Alert dispatched!' },
-              ].map(({ icon, label, color, msg }) => (
+                { icon: <Shield className="w-5 h-5 text-red-500" />, label: 'Panic Button', categoryKey: 'PANIC_ALERT', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Panic Alert dispatched!' },
+                { icon: <Truck className="w-5 h-5 text-amber-500" />, label: 'Breakdown', categoryKey: 'VEHICLE_BREAKDOWN', color: 'bg-[#FFFBEB] border-amber-200 text-[#D97706]', msg: 'Breakdown Alert dispatched!' },
+                { icon: <AlertTriangle className="w-5 h-5 text-red-500" />, label: 'Accident', categoryKey: 'HIGHWAY_ACCIDENT', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Accident Alert dispatched!' },
+                { icon: <Heart className="w-5 h-5 text-red-500" />, label: 'Medical', categoryKey: 'MEDICAL_EMERGENCY', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Medical Emergency Alert dispatched!' },
+              ].map(({ icon, label, categoryKey, color, msg }) => (
                 <button
                   key={label}
-                  onClick={() => {
-                    setActiveSosAlert(msg);
-                    triggerToast(`SOS ACTIVE: ${msg}`);
-                    setSosModalOpen(false);
+                  disabled={isSubmitting}
+                  onClick={async () => {
+                    if (isSubmitting) return;
+                    try {
+                      setIsSubmitting(true);
+                      await sendEmergencySOS({
+                        category: categoryKey,
+                        description: msg,
+                        shareGps,
+                        autoNotify
+                      });
+                      setActiveSosAlert(msg);
+                      triggerToast(`SOS ACTIVE: ${msg}`, 'success');
+                      setSosModalOpen(false);
+                      await fetchIncidents();
+                    } catch (err) {
+                      triggerToast(err.response?.data?.message || 'Failed to dispatch SOS alert.', 'error');
+                    } finally {
+                      setIsSubmitting(false);
+                    }
                   }}
                   className={`p-3.5 sm:p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
                 >
