@@ -42,7 +42,6 @@ export default function CustomerDocuments() {
   const modalFileInputRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
 
-<<<<<<< HEAD
   // Documents List Data State
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -80,10 +79,6 @@ export default function CustomerDocuments() {
   useEffect(() => {
     fetchDocuments();
   }, []);
-=======
-  // Documents List Data State (Matching 2nd Screenshot Exactly)
-  const [documents, setDocuments] = useState([]);
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
   // Bulk Selection Handlers
   const handleSelectAll = () => {

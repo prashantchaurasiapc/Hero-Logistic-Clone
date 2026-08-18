@@ -17,18 +17,6 @@ export default function Profile() {
   };
 
   // Profile Main States
-<<<<<<< HEAD
-  const [name, setName] = useState('');
-  const [role, setRole] = useState('');
-  const [status, setStatus] = useState('');
-  const [employeeId, setEmployeeId] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [department, setDepartment] = useState('');
-  const [depot, setDepot] = useState('');
-  const [reportsTo, setReportsTo] = useState('');
-  const [joinedOn, setJoinedOn] = useState('');
-=======
 
   const [name, setName] = useState('Staff');
   const [role, setRole] = useState('Warehouse Staff');
@@ -71,7 +59,6 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
   // Contact & Address
   const [address, setAddress] = useState('');

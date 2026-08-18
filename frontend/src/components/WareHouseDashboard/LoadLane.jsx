@@ -45,13 +45,8 @@ export default function LoadLane({
         const res = await api.get('/warehouse-portal/load-lanes');
 
         if (res.data && res.data.success) {
-<<<<<<< HEAD
-          const formatted = (res.data.data || []).map((l, idx) => ({
-
-=======
           const lanesData = res.data.data?.lanes || res.data.data || [];
           const formatted = lanesData.map((l, idx) => ({
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
             id: l.id || `L-${idx + 1}`,
             name: l.laneName || l.name || `Lane ${idx + 1}`,
             units: l.units || l.itemCount || (l.items?.length || 0),

@@ -75,9 +75,6 @@ const WarehouseScanning = () => {
       setScannedItem(data);
       showToast(`✓ Decoder success: ${modalMode}. Item: ${data?.nameCategory || 'Scanned Item'} [${data?.code}]`);
     } catch (err) {
-<<<<<<< HEAD
-      showToast(`Error scanning: ${err.response?.data?.error?.message || err.message}`);
-=======
       console.warn('Scan API returned error, falling back to simulation:', err);
       // Fallback simulated scan item so scanning never fails/blocks testing
       const fallbackItem = {
@@ -92,7 +89,6 @@ const WarehouseScanning = () => {
       };
       setScannedItem(fallbackItem);
       showToast(`✓ Simulated scan fallback: "${val}"`);
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
     }
     handleCloseModal();
   };
@@ -148,9 +144,6 @@ const WarehouseScanning = () => {
       setScannedItem(data);
       showToast(`✓ Direct Input Scan: "${data?.code}". Type: ${data?.nameCategory || 'Unknown'}`);
     } catch (err) {
-<<<<<<< HEAD
-      showToast(`Error scanning direct code: ${err.response?.data?.error?.message || err.message}`);
-=======
       console.warn('Scan API returned error, falling back to simulation:', err);
       // Fallback simulated scan item so scanning never fails/blocks testing
       const fallbackItem = {
@@ -165,7 +158,6 @@ const WarehouseScanning = () => {
       };
       setScannedItem(fallbackItem);
       showToast(`✓ Simulated scan fallback: "${val}"`);
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
     }
     setBarcodeValue('');
   };

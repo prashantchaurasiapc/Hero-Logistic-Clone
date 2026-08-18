@@ -40,11 +40,7 @@ const formatDateSafely = (dateVal) => {
 const MyLoads = () => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState('MAIN_LIST'); // 'MAIN_LIST' (14.2) or 'LOAD_DETAILS' (14.3)
-<<<<<<< HEAD
   const [selectedLoadId, setSelectedLoadId] = useState('');
-=======
-  const [selectedLoadId, setSelectedLoadId] = useState(null);
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
   const [activeTabFilter, setActiveTabFilter] = useState('All Loads');
 
   // Filter States
@@ -143,17 +139,10 @@ const MyLoads = () => {
   const [bookCargoType, setBookCargoType] = useState('');
   const [bookCargoSpecs, setBookCargoSpecs] = useState('');
   const [bookWeight, setBookWeight] = useState('');
-<<<<<<< HEAD
   const [bookOrigin, setBookOrigin] = useState('Melbourne VIC');
   const [bookDestination, setBookDestination] = useState('Sydney NSW');
   const [bookPickupDate, setBookPickupDate] = useState(getTodayDateString());
   const [bookDeliveryDate, setBookDeliveryDate] = useState(getFutureDateString(2));
-=======
-  const [bookOrigin, setBookOrigin] = useState('');
-  const [bookDestination, setBookDestination] = useState('');
-  const [bookPickupDate, setBookPickupDate] = useState('');
-  const [bookDeliveryDate, setBookDeliveryDate] = useState('');
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
   const [bookPriority, setBookPriority] = useState('Standard Delivery');
   const [bookNotes, setBookNotes] = useState('');
   const [toast, setToast] = useState(null);
@@ -161,7 +150,6 @@ const MyLoads = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-<<<<<<< HEAD
   // Loads List Data State
   const [loadsList, setLoadsList] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -207,10 +195,6 @@ const MyLoads = () => {
   useEffect(() => {
     fetchLoads();
   }, []);
-=======
-  // Loads List Data (Matching Screenshot 14.2 line-by-line)
-  const [loadsList, setLoadsList] = useState([]);
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
   const handleDownloadLoadsCSV = () => {
     const csvHeader = "Load #,Reference,Route,Type,Status,Driver,Pickup Date,Delivery Date,ETA\n";

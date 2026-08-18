@@ -56,7 +56,6 @@ exports.getDashboard = async (req, res, next) => {
   try {
     const driver = await resolveDriver(req);
 
-<<<<<<< HEAD
     if (!driver) {
       return sendSuccess(res, {
         driverInfo: {
@@ -107,11 +106,6 @@ exports.getDashboard = async (req, res, next) => {
     }
 
     const driverId = driver.id;
-=======
-    const driverName = driver ? (`${driver.firstName || ''} ${driver.lastName || ''}`.trim() || driver.user?.name || req.user?.name || 'Noah Williams') : (req.user?.name || 'Noah Williams');
-    const driverCode = driver?.driverCode || driver?.driverNumber || 'DRV-001';
-    const driverId = driver?.id || 'demo-driver-id';
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
     // Fetch real driver loads, timesheets, checklists, vehicle, and messages from DB
     const [
@@ -121,20 +115,14 @@ exports.getDashboard = async (req, res, next) => {
       assignedVehicle,
       messages
     ] = await Promise.all([
-<<<<<<< HEAD
       // 1. Loads for this driver
       prisma.load.findMany({
         where: { driverId },
-=======
-      prisma.load ? prisma.load.findMany({
-        where: driver?.id ? { driverId: driver.id } : {},
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
         include: {
           truck: true,
           items: true,
           expenses: true
         },
-<<<<<<< HEAD
         orderBy: { createdAt: 'desc' }
       }).catch(() => []),
       // 2. Timesheets for this driver
@@ -163,40 +151,12 @@ exports.getDashboard = async (req, res, next) => {
             { senderId: driver.userId || driverId }
           ]
         },
-=======
-        orderBy: { createdAt: 'desc' },
-        take: 10
-      }).catch(() => []) : [],
-      prisma.timesheet ? prisma.timesheet.findMany({
-        where: driver?.id ? { driverId: driver.id } : {},
-        orderBy: { createdAt: 'desc' },
-        take: 10
-      }).catch(() => []) : [],
-      prisma.preStartChecklist ? prisma.preStartChecklist.findMany({
-        where: driver?.id ? { driverId: driver.id } : {},
-        orderBy: { createdAt: 'desc' },
-        take: 5
-      }).catch(() => []) : [],
-      driver?.currentVehicle?.[0]
-        ? Promise.resolve(driver.currentVehicle[0])
-        : (prisma.vehicle ? prisma.vehicle.findFirst({
-            where: driver?.id ? { currentDriverId: driver.id } : {}
-          }).catch(() => null) : Promise.resolve(null)),
-      prisma.message ? prisma.message.findMany({
-        where: driver?.id ? {
-          OR: [
-            { recipientId: driver.userId || driver.id },
-            { senderId: driver.userId || driver.id }
-          ]
-        } : {},
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
         orderBy: { createdAt: 'desc' },
         take: 10
       }).catch(() => []) : Promise.resolve([])
     ]);
 
     // Active loads vs Completed loads
-<<<<<<< HEAD
     const activeLoads = driverLoads.filter(l => ['ASSIGNED', 'IN_TRANSIT', 'DISPATCHED', 'ACTIVE', 'PENDING'].includes(l.status));
     const completedLoads = driverLoads.filter(l => ['DELIVERED', 'COMPLETED', 'CLOSED'].includes(l.status));
     const upcomingLoads = activeLoads.filter(l => l.status === 'ASSIGNED' || l.status === 'PENDING');
@@ -233,55 +193,6 @@ exports.getDashboard = async (req, res, next) => {
     if (todaysTimesheet?.totalHours) {
       driveMinutes = Math.round(todaysTimesheet.totalHours * 60);
     }
-=======
-    let activeLoads = driverLoads.filter(l => ['ASSIGNED', 'IN_TRANSIT', 'DISPATCHED', 'ACTIVE', 'PENDING'].includes(l.status));
-    let completedLoads = driverLoads.filter(l => ['DELIVERED', 'COMPLETED', 'CLOSED'].includes(l.status));
-    let upcomingLoads = activeLoads.filter(l => l.status === 'ASSIGNED' || l.status === 'PENDING');
-
-    // Current active load
-    let currentLoadData = null;
-    let currentLoadObj = activeLoads.find(l => l.status === 'IN_TRANSIT') || activeLoads[0];
-
-    if (currentLoadObj) {
-      const statusLabel = currentLoadObj.status === 'IN_TRANSIT' ? 'In Transit' : (currentLoadObj.status === 'DISPATCHED' ? 'Dispatched' : 'Assigned');
-      currentLoadData = {
-        id: currentLoadObj.id,
-        loadNumber: currentLoadObj.loadNumber || currentLoadObj.loadRef || `LD-${currentLoadObj.id.slice(0, 4).toUpperCase()}`,
-        status: statusLabel,
-        origin: currentLoadObj.origin || currentLoadObj.pickupAddress || 'Sydney Depot',
-        destination: currentLoadObj.destination || currentLoadObj.deliveryAddress || 'Melbourne Hub',
-        pickupStop: {
-          name: currentLoadObj.pickupLocation || currentLoadObj.origin || 'Sydney Depot NSW',
-          address: currentLoadObj.pickupAddress || '12 Logistics Way, Sydney NSW',
-          time: currentLoadObj.pickupTime || '08:00 AM'
-        },
-        deliveryStop: {
-          name: currentLoadObj.deliveryLocation || currentLoadObj.destination || 'Melbourne Hub VIC',
-          address: currentLoadObj.deliveryAddress || '88 Freight Ave, Melbourne VIC',
-          time: currentLoadObj.deliveryTime || '02:30 PM'
-        },
-        loadType: currentLoadObj.type || currentLoadObj.loadType || currentLoadObj.category || 'General Freight',
-        reference: currentLoadObj.loadRef || currentLoadObj.referenceNumber || currentLoadObj.bolNumber || 'PO-94021'
-      };
-    } else {
-      currentLoadData = null;
-    }
-
-    // Vehicle info
-    let vehicleData = {
-      rego: assignedVehicle?.rego || assignedVehicle?.plate || 'No Vehicle',
-      make: assignedVehicle?.make || '',
-      model: assignedVehicle?.model || '',
-      odometer: assignedVehicle?.odometerKm || 0,
-      dieselBalance: 0,
-      estRangeKm: 0
-    };
-
-    // Drive Time Calculation
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todaysTimesheet = timesheets.find(t => t.date && t.date.toISOString().startsWith(todayStr));
-    let driveMinutes = todaysTimesheet?.totalHours ? Math.round(todaysTimesheet.totalHours * 60) : 0;
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
     const driveHours = Math.floor(driveMinutes / 60);
     const driveMins = driveMinutes % 60;
     const driveTimeStr = `${driveHours}h ${driveMins < 10 ? '0' : ''}${driveMins}m`;
@@ -291,7 +202,6 @@ exports.getDashboard = async (req, res, next) => {
     const remMins = remainingDriveMinutes % 60;
     const remDriveStr = `${remHours}h ${remMins < 10 ? '0' : ''}${remMins}m (HOS)`;
 
-<<<<<<< HEAD
     // Pay calculation: completed trips * payRate or hourly rate * hours
     const baseRate = driver.payRate || 0;
     const calculatedPay = completedLoads.length > 0
@@ -351,44 +261,6 @@ exports.getDashboard = async (req, res, next) => {
       });
     });
 
-=======
-    // Pay calculation
-    const baseRate = driver?.payRate || 350;
-    const calculatedPay = completedLoads.length > 0
-      ? (completedLoads.length * baseRate * 0.8)
-      : 0;
-
-    // Schedule items
-    let scheduleItems = [];
-    if (driverLoads.length > 0) {
-      driverLoads.forEach((ld) => {
-        const isDelivered = ld.status === 'DELIVERED' || ld.status === 'COMPLETED';
-        const isInTransit = ld.status === 'IN_TRANSIT';
-        const loadRef = ld.loadNumber || ld.loadRef || `LD-${ld.id.slice(0, 4).toUpperCase()}`;
-
-        scheduleItems.push({
-          id: `sch-${ld.id}-pickup`,
-          time: ld.pickupTime || '08:00 AM',
-          type: 'Pickup',
-          location: `${ld.pickupLocation || ld.origin || 'Sydney Depot'}`,
-          loadRef: loadRef,
-          status: isDelivered ? 'COMPLETED' : (isInTransit ? 'ON_DUTY' : 'UPCOMING'),
-          color: isDelivered ? 'bg-slate-400' : (isInTransit ? 'bg-emerald-500' : 'bg-amber-500')
-        });
-
-        scheduleItems.push({
-          id: `sch-${ld.id}-deliver`,
-          time: ld.deliveryTime || '02:30 PM',
-          type: 'Deliver',
-          location: `${ld.deliveryLocation || ld.destination || 'Melbourne Hub'}`,
-          loadRef: loadRef,
-          status: isDelivered ? 'COMPLETED' : (isInTransit ? 'IN_TRANSIT' : 'UPCOMING'),
-          color: isDelivered ? 'bg-slate-400' : (isInTransit ? 'bg-blue-500' : 'bg-purple-500')
-        });
-      });
-    }
-
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
     // Real Alerts
     const alerts = [];
     const todayChecklist = preStartChecklists.find(c => c.createdAt && new Date(c.createdAt).toISOString().startsWith(todayStr));
@@ -402,7 +274,6 @@ exports.getDashboard = async (req, res, next) => {
       });
     }
 
-<<<<<<< HEAD
     if (driver.licenseExpiry) {
       const expDate = new Date(driver.licenseExpiry);
       const daysUntilExpiry = Math.ceil((expDate - new Date()) / (1000 * 60 * 60 * 24));
@@ -444,30 +315,6 @@ exports.getDashboard = async (req, res, next) => {
         id: driver.id,
         name: `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || req.user?.name || 'Driver',
         driverCode: driver.driverCode || 'DRV-001',
-=======
-    // Status display: check driver.shift (persisted exact status) first, then fallback to mapped status
-    let currentStatusDisplay = 'On Duty';
-    if (driver?.shift && ['On Duty', 'In Transit', 'On Break', 'Off Duty'].includes(driver.shift)) {
-      currentStatusDisplay = driver.shift;
-    } else if (driver?.status) {
-      const statusMap = {
-        'AVAILABLE': 'In Transit',
-        'ON_DUTY': 'On Duty',
-        'IN_TRANSIT': 'In Transit',
-        'ON_BREAK': 'On Break',
-        'UNAVAILABLE': 'On Break',
-        'OFF_DUTY': 'Off Duty',
-        'ON_LEAVE': 'On Break'
-      };
-      currentStatusDisplay = statusMap[driver.status] || 'On Duty';
-    }
-
-    return sendSuccess(res, {
-      driverInfo: {
-        id: driver?.id || 'demo-id',
-        name: driverName,
-        driverCode: driverCode,
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
         status: currentStatusDisplay,
         lastSync: new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
         vehicle: vehicleData
@@ -493,22 +340,9 @@ exports.getDashboard = async (req, res, next) => {
         shiftElapsed: `${Math.floor(driveMinutes / 60)}h ${driveMinutes % 60}m`,
         shiftMax: '14h max',
         shiftPercent: Math.min(100, Math.round((driveMinutes / (14 * 60)) * 100)),
-<<<<<<< HEAD
         nextBreakDue: driveMinutes > 0 ? `in ${Math.max(0, 4 - Math.floor(driveMinutes / 60))}h` : 'in 4h 00m'
       },
       unreadMessages: formattedMessages,
-=======
-        nextBreakDue: driveMinutes > 0 ? `in ${Math.max(0, 4 - Math.floor(driveMinutes / 60))}h 15m` : 'in 4h 00m'
-      },
-      unreadMessages: messages.map(m => ({
-        id: m.id,
-        senderInitials: m.senderName ? m.senderName.slice(0, 2).toUpperCase() : 'DP',
-        senderName: m.senderName || 'Dispatch',
-        time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        content: m.content || m.body || '',
-        unreadCount: m.isRead ? 0 : 1
-      })),
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
       alerts: alerts,
       paySummary: {
         amount: calculatedPay,
@@ -532,7 +366,6 @@ exports.updateStatus = async (req, res, next) => {
     }
 
     const driver = await resolveDriver(req);
-<<<<<<< HEAD
     if (!driver) {
       return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Driver profile not found' }, 404);
     }
@@ -552,44 +385,6 @@ exports.updateStatus = async (req, res, next) => {
     });
 
     return sendSuccess(res, { status, updated });
-=======
-
-    const statusMap = {
-      'On Duty': 'ON_DUTY',
-      'In Transit': 'AVAILABLE',
-      'On Break': 'UNAVAILABLE',
-      'Off Duty': 'OFF_DUTY'
-    };
-    const dbStatus = statusMap[status] || 'ON_DUTY';
-
-    if (driver && prisma.driver) {
-      await prisma.driver.update({
-        where: { id: driver.id },
-        data: {
-          status: dbStatus,
-          shift: status // Persist exact selected status label
-        }
-      }).catch(err => {
-        console.warn('Driver status update fallback:', err?.message);
-      });
-    }
-
-    if (driver && prisma.driverActivity) {
-      await prisma.driverActivity.create({
-        data: {
-          driverId: driver.id,
-          title: `Status Changed: ${status}`,
-          category: 'Status',
-          status: 'Completed',
-          description: `Driver duty status changed to ${status}`,
-          performedBy: `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || 'Driver',
-          date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-        }
-      }).catch(() => null);
-    }
-
-    return sendSuccess(res, { status, message: `Status updated successfully to: ${status}` });
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
   } catch (error) {
     next(error);
   }
@@ -634,8 +429,6 @@ exports.sendQuickMessage = async (req, res, next) => {
     next(error);
   }
 };
-<<<<<<< HEAD
-=======
 
 // ============================================================================
 // 4. GET CHECKLIST CONTEXT (Vehicle info & Checklist history)
@@ -3023,4 +2816,3 @@ exports.downloadPayslip = exports.getPayrollData;
 
 
 
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2

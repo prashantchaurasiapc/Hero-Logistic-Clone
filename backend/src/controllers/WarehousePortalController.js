@@ -756,21 +756,13 @@ exports.getLoadLanes = async (req, res, next) => {
     const upcomingLoads = await prisma.load.findMany({
       where: {
         loadLaneId: { not: null },
-<<<<<<< HEAD
-        status: { in: ['ASSIGNED', 'IN_TRANSIT', 'ACTIVE', 'PLANNED'] }
-=======
         status: { in: ['ASSIGNED', 'IN_TRANSIT', 'ACTIVE', 'PLANNED'] },
         ...(tenantId && { companyId: tenantId })
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
       },
       include: {
         loadLane: true
       },
-<<<<<<< HEAD
-      orderBy: { loadDate: 'asc' },
-=======
       orderBy: { createdAt: 'desc' },
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
       take: 5
     });
 
@@ -789,17 +781,11 @@ exports.getLoadLanes = async (req, res, next) => {
         emptyCount
       },
       lanes: formattedLanes,
-<<<<<<< HEAD
-
-      upcomingDispatches: []
-
-=======
       upcomingDispatches: upcomingLoads.map(l => ({
         loadRef: l.loadRef || l.id,
         lane: l.loadLane?.name || 'Unassigned',
         time: l.scheduledPickupTime ? new Date(l.scheduledPickupTime).toLocaleString() : 'Pending'
       }))
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
     });
   } catch (error) {
     next(error);
@@ -1021,11 +1007,8 @@ exports.getDispatchReady = async (req, res, next) => {
 exports.dispatchLoad = async (req, res, next) => {
   try {
     const { loadId } = req.params;
-<<<<<<< HEAD
-=======
     // Always resolve identity from JWT — never trust payload
     const userId = req.user?.userId || req.user?.id;
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
     // Verify the load belongs to the authenticated tenant before any mutation
     const existingLoad = await prisma.load.findUnique({ where: { id: loadId } });
@@ -1088,15 +1071,12 @@ exports.getHoldingAreas = async (req, res, next) => {
       orderBy: { name: 'asc' }
     });
 
-<<<<<<< HEAD
-=======
     const stagedItemsCount = await prisma.loadItem.count({
       where: {
         stagingAreaId: { not: null },
         ...(tenantId && { warehouse: { branch: { companyId: tenantId } } })
       }
     });
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
     const activeAreasCount = areas.filter(a => !a.status || a.status.toUpperCase() === 'ACTIVE').length;
     const inactiveAreasCount = areas.filter(a => a.status && a.status.toUpperCase() === 'INACTIVE').length;
@@ -1116,8 +1096,6 @@ exports.getHoldingAreas = async (req, res, next) => {
       oldestItem: '-'
     }));
 
-<<<<<<< HEAD
-=======
     const recentStaged = await prisma.loadItem.findMany({
       where: {
         stagingAreaId: { not: null },
@@ -1129,7 +1107,6 @@ exports.getHoldingAreas = async (req, res, next) => {
       orderBy: { id: 'desc' },
       take: 5
     });
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
     return sendSuccess(res, {
       summary: {
@@ -1414,10 +1391,6 @@ exports.getReportsOverview = async (req, res, next) => {
         select: { sku: true },
         distinct: ['sku']
       }),
-<<<<<<< HEAD
-      prisma.loadItem.count({ where: { damageReportReq: true } }),
-      prisma.loadItem.count({ where: { stockStatus: 'TO_MOVE' } })
-=======
       prisma.loadItem.count({
         where: {
           stockStatus: 'IN_STORAGE',
@@ -1454,7 +1427,6 @@ exports.getReportsOverview = async (req, res, next) => {
         where: { ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) },
         include: { loadItems: true }
       })
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
     ]);
 
     // Calculate accuracy rate (100% - damaged ratio)
@@ -1635,11 +1607,6 @@ exports.getSpoolerQueue = async (req, res, next) => {
 
 exports.getSafetyChecklists = async (req, res, next) => {
   try {
-<<<<<<< HEAD
-    return sendSuccess(res, {
-      currentChecklist: null,
-      recentChecklists: []
-=======
     // Resolve authenticated user from JWT — never trust frontend identity
     const userId = req.user?.userId || req.user?.id;
     if (!userId) {
@@ -1707,7 +1674,6 @@ exports.getSafetyChecklists = async (req, res, next) => {
     return sendSuccess(res, {
       currentChecklist: currentChecklist || null,
       recentChecklists: formattedRecent
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
     });
   } catch (error) {
     next(error);
@@ -1716,57 +1682,6 @@ exports.getSafetyChecklists = async (req, res, next) => {
 
 exports.submitSafetyChecklist = async (req, res, next) => {
   try {
-<<<<<<< HEAD
-    const { vehicleRef, trailerRef, items = [], isDraft = false, notes } = req.body;
-
-    let companyId = req.companyId || req.tenantId;
-    if (!companyId) {
-      const comp = await prisma.company.findFirst();
-      companyId = comp?.id;
-    }
-
-    let driver = null;
-    let userId = req.user?.id || req.user?.userId;
-    if (userId) {
-      driver = await prisma.driver.findFirst({ where: { userId } });
-    }
-    if (!driver && companyId) {
-      driver = await prisma.driver.findFirst({ where: { companyId } });
-    }
-    if (!driver) {
-      driver = await prisma.driver.findFirst();
-    }
-    if (!driver && companyId) {
-      driver = await prisma.driver.create({
-        data: {
-          name: 'Warehouse Safety Operator',
-          email: `wh-safety-${Date.now()}@herologistics.com`,
-          phone: '+61400000000',
-          companyId
-        }
-      });
-    }
-
-    const checklist = await prisma.preStartChecklist.create({
-      data: {
-        companyId,
-        driverId: driver.id,
-        vehicleRef: vehicleRef || 'Warehouse Vehicle Check',
-        trailerRef: trailerRef || 'N/A',
-        notes: notes || (items.length > 0 ? JSON.stringify(items) : 'All Checked'),
-        date: new Date(),
-        isDraft: Boolean(isDraft),
-        totalItems: items.length || 5,
-        passedCount: items.filter(i => i.status === 'pass').length || 5,
-        failedCount: items.filter(i => i.status === 'fail').length || 0
-      }
-    });
-
-    return sendSuccess(res, {
-      success: true,
-      message: isDraft ? 'Checklist draft saved' : 'Safety checklist submitted successfully',
-      checklistId: checklist.id
-=======
     // Resolve authenticated user from JWT — ignore any driverId/companyId from payload
     const userId = req.user?.userId || req.user?.id;
     const { vehicleRef, trailerRef, items, notes, isDraft, loadId, gpsLat, gpsLng, allowUpdate, isUpdate } = req.body || {};
@@ -1779,7 +1694,6 @@ exports.submitSafetyChecklist = async (req, res, next) => {
     const driver = await prisma.driver.findUnique({
       where: { userId },
       select: { id: true, companyId: true }
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
     });
 
     if (!driver) {
@@ -1921,62 +1835,6 @@ exports.submitSafetyChecklist = async (req, res, next) => {
 
 exports.getStaffProfile = async (req, res, next) => {
   try {
-<<<<<<< HEAD
-
-    const user = req.user;
-    const isManager = ['WAREHOUSE', 'COMPANY_ADMIN', 'SUPER_ADMIN'].includes(user?.role);
-
-    let permissions = [];
-    if (isManager) {
-      permissions = [
-        'Monitor entire depot',
-        'Manage areas',
-        'Configure load lanes',
-        'Assign tasks',
-        'Approve exceptions',
-        'Team reports',
-        'Overrides',
-        'Manage capacity',
-        'Manage warehouse configuration',
-        'Supervise handover'
-      ];
-    } else {
-      permissions = [
-        'Execute physical task',
-        'Use assigned areas',
-        'Move items to lanes',
-        'Perform tasks',
-        'Report exceptions',
-        'Own/basic reports',
-        'Normal actions',
-        'Follow capacity',
-        'Scan/receive/move/stage',
-        'Perform handover'
-      ];
-    }
-
-    return sendSuccess(res, {
-      profile: {
-        name: user?.name || 'Warehouse Staff',
-        title: 'Warehouse Staff',
-        status: 'Active',
-        employeeId: user?.userCode || `WS-${user?.id?.slice(0, 4) || '1001'}`,
-        email: user?.email || '-',
-        phone: user?.phone || '-',
-        department: 'Warehouse Operations',
-        depot: 'Main Depot',
-        role: user?.role || 'WAREHOUSE',
-        reportsTo: '-',
-        joinedOn: '-',
-        address: '-',
-        emergencyContact: {
-          name: '-',
-          relationship: '-',
-          phone: '-'
-
-        }
-      },
-=======
     const userId = req.user?.userId || req.user?.id;
     if (!userId) {
       return sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Unable to identify authenticated user.' }, HTTP_STATUS.UNAUTHORIZED);
@@ -2047,20 +1905,12 @@ exports.getStaffProfile = async (req, res, next) => {
 
     return sendSuccess(res, {
       profile,
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
       preferences: {
         language: 'English',
         timeZone: 'Australia/Sydney',
         dateFormat: 'DD/MM/YYYY',
         timeFormat: '12-Hour (AM/PM)'
       },
-<<<<<<< HEAD
-
-      certifications: [],
-      skills: [],
-      permissions: permissions,
-
-=======
       certifications: [
         { name: 'General Induction', status: 'Verified', expiry: '15 Mar 2027' },
         { name: 'Forklift Licence', status: 'Verified', expiry: '22 Oct 2027' },
@@ -2084,7 +1934,6 @@ exports.getStaffProfile = async (req, res, next) => {
         'Report Issues',
         'View Reports'
       ],
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
       security: {
         twoFactor: 'Disabled',
         activeSessions: 1
@@ -2096,8 +1945,6 @@ exports.getStaffProfile = async (req, res, next) => {
 };
 
 // ============================================================================
-<<<<<<< HEAD
-=======
 // 14. YARD ATTENDANT SHIFT / TIME CLOCK — PHASE C
 //
 // All endpoints resolve identity exclusively from req.user.userId and
@@ -4093,7 +3940,6 @@ exports.updateStaffProfile = async (req, res, next) => {
 };
 
 // ============================================================================
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
 exports.reportIssue = async (req, res, next) => {
   try {
@@ -4395,13 +4241,6 @@ exports.clockIn = async (req, res, next) => {
     const userId = req.user?.userId || req.user?.id;
     const companyId = req.tenantId || (await prisma.company.findFirst()).id;
     
-<<<<<<< HEAD
-    // Check if already clocked in today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-=======
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
     let realUserId = userId;
     const driverCheck = await prisma.driver.findFirst({ where: { OR: [{ id: userId }, { userId: userId }] } });
     if (driverCheck) {
@@ -4411,41 +4250,6 @@ exports.clockIn = async (req, res, next) => {
       if (firstDriver) realUserId = firstDriver.id;
     }
 
-<<<<<<< HEAD
-    let timesheet = await prisma.timesheet.findFirst({
-      where: {
-        driverId: realUserId, // Assuming user acts as driver/staff
-        date: today
-      }
-    });
-
-    console.log('--- DEBUG CLOCK IN ---');
-    console.log('Original userId:', userId);
-    console.log('realUserId (Driver):', realUserId);
-    console.log('companyId:', companyId);
-    console.log('Timesheet found?', !!timesheet);
-
-    if (!timesheet) {
-      // Create new timesheet
-      timesheet = await prisma.timesheet.create({
-        data: {
-          driverId: realUserId,
-          companyId: companyId,
-          date: today,
-          status: 'DRAFT',
-          clockInAt: new Date()
-        }
-      });
-    } else if (!timesheet.clockInAt) {
-      timesheet = await prisma.timesheet.update({
-        where: { id: timesheet.id },
-        data: { clockInAt: new Date() }
-      });
-    } else {
-      return sendError(res, { message: 'Already clocked in' }, HTTP_STATUS.BAD_REQUEST);
-    }
-
-=======
     // Always create a new timesheet for today (no restrictions on multiple clock ins)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -4460,7 +4264,6 @@ exports.clockIn = async (req, res, next) => {
       }
     });
 
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
     await prisma.timesheetEvent.create({
       data: {
         timesheetId: timesheet.id,
@@ -4480,12 +4283,6 @@ exports.clockOut = async (req, res, next) => {
   try {
     const userId = req.user?.userId || req.user?.id;
     
-<<<<<<< HEAD
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-=======
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
     let realUserId = userId;
     const driverCheck = await prisma.driver.findFirst({ where: { OR: [{ id: userId }, { userId: userId }] } });
     if (driverCheck) {
@@ -4495,12 +4292,6 @@ exports.clockOut = async (req, res, next) => {
       if (firstDriver) realUserId = firstDriver.id;
     }
 
-<<<<<<< HEAD
-    let timesheet = await prisma.timesheet.findFirst({
-      where: {
-        driverId: realUserId,
-        date: today
-=======
     // Find the active timesheet (most recent one first)
     let timesheet = await prisma.timesheet.findFirst({
       where: {
@@ -4509,7 +4300,6 @@ exports.clockOut = async (req, res, next) => {
       },
       orderBy: {
         createdAt: 'desc'
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
       }
     });
 
@@ -4517,13 +4307,6 @@ exports.clockOut = async (req, res, next) => {
       return sendError(res, { message: 'Not clocked in yet' }, HTTP_STATUS.BAD_REQUEST);
     }
 
-<<<<<<< HEAD
-    if (timesheet.clockOutAt) {
-      return sendError(res, { message: 'Already clocked out' }, HTTP_STATUS.BAD_REQUEST);
-    }
-
-=======
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
     timesheet = await prisma.timesheet.update({
       where: { id: timesheet.id },
       data: { 
@@ -4683,8 +4466,6 @@ exports.printManifest = async (req, res, next) => {
     next(error);
   }
 };
-<<<<<<< HEAD
-=======
 
 exports.moveHoldingAreaStock = async (req, res, next) => {
   try {
@@ -5066,4 +4847,3 @@ exports.createSupportTicket = async (req, res, next) => {
     next(error);
   }
 };
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2

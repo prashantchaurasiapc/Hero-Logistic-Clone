@@ -7,8 +7,6 @@ export default function WarehouseShift() {
   const [clockedIn, setClockedIn] = useState(false);
   const [clockInTime, setClockInTime] = useState(null);
 
-<<<<<<< HEAD
-=======
   useEffect(() => {
     const checkShiftStatus = async () => {
       try {
@@ -24,7 +22,6 @@ export default function WarehouseShift() {
     checkShiftStatus();
   }, []);
 
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);

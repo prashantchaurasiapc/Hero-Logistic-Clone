@@ -1,18 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const DriverPortalController = require('../controllers/DriverPortalController');
-<<<<<<< HEAD
-const { verifyToken } = require('../middlewares/auth');
-const { resolveTenant } = require('../middlewares/tenantResolver');
-
-router.use(verifyToken, resolveTenant);
-
-router.get('/dashboard', DriverPortalController.getDashboard);
-router.post('/status', DriverPortalController.updateStatus);
-router.post('/messages', DriverPortalController.sendQuickMessage);
-
-module.exports = router;
-=======
 const auth = require('../middlewares/auth');
 
 // All driver portal routes require authentication.
@@ -276,9 +264,3 @@ router.post('/offline-sync/settings', DriverPortalController.updateSyncSettings)
 router.post('/offline-sync/clear-cache', DriverPortalController.clearStorageCache);
 
 module.exports = router;
-
-
-
-
-
->>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
