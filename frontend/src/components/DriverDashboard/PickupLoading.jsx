@@ -45,13 +45,7 @@ export default function PickupLoading() {
 
   // Dynamic States
   const [loading, setLoading] = useState(true);
-  const [loadInfo, setLoadInfo] = useState({
-    id: 'LD-XXXX',
-    origin: 'Origin',
-    destination: 'Destination',
-    pickupTime: 'TBA',
-    estFinish: 'TBA'
-  });
+  const [loadInfo, setLoadInfo] = useState(null);
   const [cars, setCars] = useState([]);
 
   const fetchPickupLoad = async () => {
@@ -1114,19 +1108,15 @@ export default function PickupLoading() {
               <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1.5">
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Pickup Location</span>
-                  <span className="text-slate-900 font-black">ABC Car Yard, Melbourne</span>
+                  <span className="text-slate-900 font-black">{loadInfo?.origin || '—'}</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Total Assigned Load</span>
-                  <span className="text-slate-900 font-mono">8 Vehicles Total</span>
+                  <span className="text-slate-900 font-mono">{cars.length} Vehicles Total</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Primary Drop</span>
-                  <span className="text-slate-900">Auto World Sydney</span>
-                </div>
-                <div className="flex justify-between font-bold">
-                  <span className="text-slate-500">Dispatch Hotline</span>
-                  <span className="text-indigo-600">+61 400 123 456</span>
+                  <span className="text-slate-900">{loadInfo?.destination || '—'}</span>
                 </div>
               </div>
             </div>

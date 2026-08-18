@@ -512,13 +512,7 @@ export default function Messages() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">QUICK CONTACTS</div>
             <div className="space-y-2">
-              {(contactsList.length > 0 ? contactsList.slice(0, 5) : [
-                { name: 'Dispatch Support', role: 'Online', avatar: 'DS', color: 'bg-purple-100 text-purple-800' },
-                { name: 'ABC Car Yard', role: 'Online', avatar: 'AC', color: 'bg-amber-100 text-amber-800' },
-                { name: 'Auto World Sydney', role: 'Online', avatar: 'AW', color: 'bg-emerald-100 text-emerald-800' },
-                { name: 'Maintenance', role: 'Online', avatar: 'MS', color: 'bg-blue-100 text-blue-800' },
-                { name: 'Safety Team', role: 'Online', avatar: 'ST', color: 'bg-slate-100 text-slate-800' },
-              ]).map(contact => (
+              {contactsList.length > 0 ? contactsList.slice(0, 5).map(contact => (
                 <div 
                   key={contact.name}
                   onClick={() => {
@@ -551,7 +545,11 @@ export default function Messages() {
                   </div>
                   <FiMessageSquare className="text-indigo-600 text-sm" />
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-4 text-slate-400 text-[11px]">
+                  No contacts available yet.
+                </div>
+              )}
             </div>
 
             <button 
@@ -709,17 +707,13 @@ export default function Messages() {
                   onChange={(e) => setNewMessageRecipient(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
                 >
-                  {(contactsList.length > 0 ? contactsList : [
-                    { id: 'c-dispatch', name: 'Dispatch Support', role: 'Head Dispatcher' },
-                    { id: 'c-yard', name: 'ABC Car Yard', role: 'Yard Manager' },
-                    { id: 'c-autoworld', name: 'Auto World Sydney', role: 'Receiver' },
-                    { id: 'c-maint', name: 'Fleet Maintenance', role: 'Workshop Supervisor' },
-                    { id: 'c-safety', name: 'Safety Officer', role: 'OH&S Compliance' }
-                  ]).map(c => (
+                  {contactsList.length > 0 ? contactsList.map(c => (
                     <option key={c.id || c.name} value={c.id || c.name}>
                       {c.name} ({c.role || 'Online'})
                     </option>
-                  ))}
+                  )) : (
+                    <option value="" disabled>No contacts available</option>
+                  )}
                 </select>
               </div>
 
@@ -759,14 +753,8 @@ export default function Messages() {
             </div>
 
             <div className="space-y-2 text-xs">
-              {(contactsList.length > 0 ? contactsList : [
-                { name: 'Dispatch Support', phone: '0411 111 222', role: 'Head Dispatcher' },
-                { name: 'ABC Car Yard', phone: '0422 333 444', role: 'Yard Manager' },
-                { name: 'Auto World Sydney', phone: '0411 987 654', role: 'Receiver' },
-                { name: 'Fleet Maintenance', phone: '0400 555 666', role: 'Workshop Supervisor' },
-                { name: 'Safety Officer', phone: '0433 777 888', role: 'OH&S Compliance' },
-              ]).map(c => (
-                <div key={c.name} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
+              {contactsList.length > 0 ? contactsList.map(c => (
+                <div key={c.name || c.id} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
                   <div>
                     <div className="font-black text-slate-900">{c.name}</div>
                     <div className="text-[10px] text-slate-500 font-bold">{c.role} • {c.phone}</div>
@@ -806,7 +794,11 @@ export default function Messages() {
                     </button>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-4 text-slate-400 text-[11px]">
+                  No contacts available yet.
+                </div>
+              )}
             </div>
           </div>
         </div>

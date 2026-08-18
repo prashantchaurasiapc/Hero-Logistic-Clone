@@ -549,7 +549,7 @@ export default function ActiveRun() {
                 <div>
                   <span className="font-extrabold text-slate-400 uppercase text-[10px] block">Trailer</span>
                   <div className="font-black text-slate-900">{runData?.vehicle?.trailer || 'TRL-205'}</div>
-                  <div className="text-slate-500 font-semibold">{runData?.vehicle?.trailerType || 'Car Carrier (2 Level)'}</div>
+                  <div className="text-slate-500 font-semibold">{runData?.vehicle?.trailerType || null}</div>
                 </div>
               </div>
 
@@ -792,7 +792,7 @@ export default function ActiveRun() {
               <div className="flex items-start gap-2.5">
                 <FiMapPin className="text-indigo-600 text-sm mt-0.5 shrink-0" />
                 <div>
-                  <span className="font-bold text-slate-900">{runData?.origin || 'ABC Car Yard'}</span>
+                  <span className="font-bold text-slate-900">{runData?.origin || '—'}</span>
                   <div className="text-slate-500 text-[11px]">{runData?.originAddress || '12a Sunshine Rd, Melbourne VIC 3000'}</div>
                 </div>
               </div>

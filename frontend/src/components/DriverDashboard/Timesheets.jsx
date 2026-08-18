@@ -860,29 +860,28 @@ export default function Timesheets() {
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <FiCalendar className="text-indigo-600 text-lg" />
-                Full Week Timesheet (26 May – 01 Jun 2025)
+                Full Week Timesheet {weeklySummary.dateRange ? `(${weeklySummary.dateRange})` : ''}
               </h3>
               <button onClick={() => setFullWeekModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
             </div>
 
             <div className="space-y-2 text-xs font-semibold">
-              {[
-                { day: 'Monday 26 May', hours: '08h 15m', status: 'Approved ✓', color: 'text-emerald-700' },
-                { day: 'Tuesday 27 May', hours: '08h 00m', status: 'Approved ✓', color: 'text-emerald-700' },
-                { day: 'Wednesday 28 May', hours: '08h 30m', status: 'Approved ✓', color: 'text-emerald-700' },
-                { day: 'Thursday 29 May', hours: '04h 30m', status: timesheetSubmitted ? 'Submitted 🟣' : 'Draft', color: 'text-purple-700' },
-                { day: 'Friday 30 May', hours: '00h 00m', status: 'Scheduled ⏳', color: 'text-slate-400' },
-                { day: 'Saturday 31 May', hours: '00h 00m', status: 'Rest Day', color: 'text-slate-400' },
-                { day: 'Sunday 01 June', hours: '00h 00m', status: 'Rest Day', color: 'text-slate-400' }
-              ].map(item => (
-                <div key={item.day} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
-                  <div>
-                    <div className="font-black text-slate-900">{item.day}</div>
-                    <div className={`text-[10px] font-bold ${item.color}`}>{item.status}</div>
+              {weeklySummary.days && weeklySummary.days.length > 0 ? (
+                weeklySummary.days.map(item => (
+                  <div key={item.day} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
+                    <div>
+                      <div className="font-black text-slate-900">{item.day}</div>
+                      <div className={`text-[10px] font-bold ${item.color || 'text-slate-500'}`}>{item.status}</div>
+                    </div>
+                    <span className="font-mono font-black text-slate-900">{item.hours}</span>
                   </div>
-                  <span className="font-mono font-black text-slate-900">{item.hours}</span>
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-400 text-xs">
+                  <FiCalendar className="text-2xl mx-auto mb-2" />
+                  No weekly timesheet data available yet.
                 </div>
-              ))}
+              )}
             </div>
 
             <button
@@ -940,24 +939,25 @@ export default function Timesheets() {
             </div>
 
             <div className="space-y-2 text-xs font-semibold">
-              {[
-                { date: '28 May 2025', hours: '08h 15m', pay: '$288.75', status: 'Approved ✓' },
-                { date: '27 May 2025', hours: '08h 30m', pay: '$297.50', status: 'Approved ✓' },
-                { date: '26 May 2025', hours: '08h 45m', pay: '$306.25', status: 'Approved ✓' },
-                { date: '23 May 2025', hours: '08h 00m', pay: '$280.00', status: 'Paid 💰' },
-                { date: '22 May 2025', hours: '08h 15m', pay: '$288.75', status: 'Paid 💰' }
-              ].map(rec => (
-                <div key={rec.date} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
-                  <div>
-                    <div className="font-black text-slate-900">{rec.date}</div>
-                    <div className="text-[10px] text-emerald-600 font-bold">{rec.status}</div>
+              {allTimesheets.length > 0 ? (
+                allTimesheets.map(rec => (
+                  <div key={rec.date || rec.id} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
+                    <div>
+                      <div className="font-black text-slate-900">{rec.date}</div>
+                      <div className="text-[10px] text-emerald-600 font-bold">{rec.status}</div>
+                    </div>
+                    <div className="text-right font-mono">
+                      <div className="font-black text-slate-900">{rec.hours}</div>
+                      <div className="text-[10px] text-indigo-700 font-bold">{rec.pay}</div>
+                    </div>
                   </div>
-                  <div className="text-right font-mono">
-                    <div className="font-black text-slate-900">{rec.hours}</div>
-                    <div className="text-[10px] text-indigo-700 font-bold">{rec.pay}</div>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-400 text-xs">
+                  <FiBarChart2 className="text-2xl mx-auto mb-2" />
+                  No timesheet history available yet.
                 </div>
-              ))}
+              )}
             </div>
 
             <button
