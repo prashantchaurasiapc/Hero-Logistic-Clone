@@ -275,13 +275,28 @@ export default function PickupLoading() {
     setNewPlate('');
     triggerToast(`Added ${newModel} to ${newDrop}!`);
   };
-  if (loading || !loadInfo) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
           <p className="text-slate-500 font-bold text-sm">Loading pickup load details...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!loadInfo) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-6 text-center">
+        <FiAlertTriangle className="text-5xl text-amber-500 mb-4" />
+        <h2 className="text-xl font-black text-slate-900 mb-2">No Pickup Load Assigned</h2>
+        <p className="text-slate-500 text-sm font-semibold max-w-md">
+          You currently have no active load assigned for pickup. Please check back later or contact your dispatcher.
+        </p>
+        <button onClick={() => navigate('/driver')} className="mt-6 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2">
+          <FiArrowLeft /> Back to Dashboard
+        </button>
       </div>
     );
   }
