@@ -686,12 +686,18 @@ exports.calculatePayroll = async (req, res, next) => {
         totalSuper += superAmount;
         employeeCount++;
 
+        const parseDate = (d) => {
+          if (!d) return new Date();
+          const parsed = new Date(d);
+          return isNaN(parsed.getTime()) ? new Date() : parsed;
+        };
+
         await prisma.payPeriod.create({
           data: {
             companyId,
             driverId,
-            periodStart: periodStart ? new Date(periodStart) : new Date(),
-            periodEnd: periodEnd ? new Date(periodEnd) : new Date(),
+            periodStart: parseDate(periodStart),
+            periodEnd: parseDate(periodEnd),
             status: 'DRAFT',
             frequency: (frequency || 'WEEKLY').toUpperCase(),
             basePay,
@@ -713,12 +719,18 @@ exports.calculatePayroll = async (req, res, next) => {
       const manualNet = manualDed > 0 ? (manualGross - manualDed) : (manualGross - manualPayg);
 
       if (firstDriver) {
+        const parseDate = (d) => {
+          if (!d) return new Date();
+          const parsed = new Date(d);
+          return isNaN(parsed.getTime()) ? new Date() : parsed;
+        };
+
         await prisma.payPeriod.create({
           data: {
             companyId,
             driverId: firstDriver.id,
-            periodStart: periodStart ? new Date(periodStart) : new Date(),
-            periodEnd: periodEnd ? new Date(periodEnd) : new Date(),
+            periodStart: parseDate(periodStart),
+            periodEnd: parseDate(periodEnd),
             status: 'DRAFT',
             frequency: (frequency || 'WEEKLY').toUpperCase(),
             basePay: manualGross,
