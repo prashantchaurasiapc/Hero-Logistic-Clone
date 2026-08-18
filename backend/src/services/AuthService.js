@@ -78,7 +78,7 @@ class AuthService {
     let masterPerms = {};
     if (roleSlug) {
       const masterRole = await prisma.customRole.findFirst({
-        where: { slug: roleSlug, companyId: null, isSystem: true },
+        where: { OR: [{ slug: roleSlug }, { name: roleSlug }], companyId: null, isSystem: true },
         include: { permissions: true }
       });
       if (masterRole?.permissions) {
@@ -94,7 +94,7 @@ class AuthService {
     } else {
       let companyPerms = {};
       const companyRole = await prisma.customRole.findFirst({
-        where: { slug: roleSlug, companyId: user.companyId },
+        where: { OR: [{ slug: roleSlug }, { name: roleSlug }], companyId: user.companyId },
         include: { permissions: true }
       });
       if (companyRole?.permissions) {
