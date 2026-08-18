@@ -73,7 +73,32 @@ export default function YardScan() {
   const [hoveredButtonId, setHoveredButtonId] = useState(null);
 
   // Notification states
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      title: 'New Task Assigned',
+      desc: 'Spot Trailer TR-5540 to Gate 1 by 15:00',
+      time: '2 min ago',
+      unread: true,
+      type: 'task'
+    },
+    {
+      id: 2,
+      title: 'Supervisor Message',
+      desc: 'Keep Gate 3 clear — heavy inbound scheduled at 14:30.',
+      time: '10 min ago',
+      unread: true,
+      type: 'message'
+    },
+    {
+      id: 3,
+      title: 'Emergency Alert',
+      desc: 'Fuel spill near Dock B2. Avoid area. Safety team dispatched.',
+      time: '22 min ago',
+      unread: true,
+      type: 'emergency'
+    }
+  ]);
 
   // Toast notifications state
   const [toast, setToast] = useState(null);

@@ -18,21 +18,12 @@ try {
     host,
     port,
     user,
-<<<<<<< HEAD
-    password: password || '',
-    database,
-    connectionLimit: 50,
-    acquireTimeout: 20000,
-    connectTimeout: 20000
-  }, { useTextProtocol: true });
-=======
     password,
     database,
     connectionLimit: 20,
     allowPublicKeyRetrieval: true,
     connectTimeout: 10000
   });
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 
   prisma = new PrismaClient({ adapter });
 } catch (err) {

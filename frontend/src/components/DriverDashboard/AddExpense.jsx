@@ -20,6 +20,7 @@ export default function AddExpense() {
   const [toastMsg, setToastMsg] = useState('');
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [tipDismissed, setTipDismissed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState(null);
@@ -47,7 +48,7 @@ export default function AddExpense() {
   const [loading, setLoading] = useState(true);
 
   // Odometer State
-  const [odometerVal, setOdometerVal] = useState('450,789');
+  const [odometerVal, setOdometerVal] = useState('0');
 
   // Expense Items Data
   const [expenses, setExpenses] = useState([]);
@@ -118,6 +119,58 @@ export default function AddExpense() {
     }
   };
 
+  const triggerToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3500);
+  };
+
+  const handleFilePicked = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+      triggerToast(`Selected file: ${e.target.files[0].name}`);
+    }
+  };
+
+  const handleUploadSubmit = () => {
+    const fileName = selectedFile ? selectedFile.name : 'Receipt_Scan.jpg';
+    setReceipts([
+      { id: Date.now(), date: '29 May 2025', time: '02:50 PM', vendor: selectedFile ? fileName : 'Uploaded Receipt', amount: '$45.00' },
+      ...receipts
+    ]);
+    setSelectedFile(null);
+    setUploadReceiptModalOpen(false);
+    triggerToast('Receipt file uploaded & attached successfully!');
+  };
+
+  const handleAddExpenseSubmit = async (e) => {
+    e.preventDefault();
+    if (!formVendor || !formAmount) return;
+
+    try {
+      const numAmount = parseFloat(formAmount) || 0;
+      await api.post('/driver-portal/expenses', {
+        type: formCategory,
+        vendorName: formVendor,
+        amount: numAmount,
+        litres: formLitres,
+        pricePerLitre: 2.05,
+        odometer: formOdometer,
+        description: formNotes,
+        loadId: runData?.id
+      });
+
+      setAddExpenseModalOpen(false);
+      setFormVendor('');
+      setFormAmount('');
+      setFormLitres('');
+      setFormNotes('');
+      setFormReceiptAdded(false);
+      triggerToast(`Added ${formCategory} expense of $${numAmount.toFixed(2)} for ${formVendor}!`);
+      
+      fetchData();
+    } catch (err) {
+      triggerToast('Failed to add expense.');
+    }
   };
 
   // Calculations
@@ -151,7 +204,7 @@ export default function AddExpense() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Fuel & Expenses</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Fuel & Expenses</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">Record fuel and operating expenses, upload receipts & track load costs</p>
         </div>
 
@@ -175,7 +228,7 @@ export default function AddExpense() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">15.8 Fuel & Expenses</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">Fuel & Expenses</span>
               <span className="bg-purple-100 text-purple-800 border border-purple-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Active Load
               </span>

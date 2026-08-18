@@ -13,23 +13,6 @@ import {
   Menu, CheckCircle, Award, Filter, Columns, ArrowUpDown, AlertTriangle, Copy, Scale, Palette, Briefcase, Terminal, Cpu, Database, Wind, UploadCloud
 } from 'lucide-react';
 
-const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
-
-const getVehicleImageUrl = (url, isCarFallback = false) => {
-  const fallback = isCarFallback
-    ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60"
-    : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
-  if (!url || typeof url !== 'string' || !url.trim()) return fallback;
-  const trimmed = url.trim();
-  if (trimmed.startsWith('data:image')) return trimmed;
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
-  if (trimmed.startsWith('/uploads/') || trimmed.startsWith('uploads/')) {
-    const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-    return `${BACKEND_URL}${cleanPath}`;
-  }
-  return trimmed;
-};
-
 // Helper upload components moved outside to prevent unmounting on re-renders
 const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
   const defaultPhoto = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop";
@@ -71,7 +54,7 @@ const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
           <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
         </div>
         <img 
-          src={getVehicleImageUrl(photoUrl) || defaultPhoto} 
+          src={photoUrl || defaultPhoto} 
           onError={(e) => {
             e.target.onerror = null;
             e.target.src = defaultPhoto;
@@ -274,7 +257,6 @@ const Vehicles = () => {
   const [vehicles, setVehicles] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [toast, setToast] = React.useState(null);
-  const [moreActionsOpen, setMoreActionsOpen] = React.useState(false);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -930,27 +912,19 @@ const Vehicles = () => {
             <div className="p-6 flex flex-col sm:flex-row gap-8">
               {/* Vehicle Photos */}
               <div className="flex flex-col gap-2 shrink-0">
-                <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100 bg-gray-100">
+                <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100">
                    <img 
-                     src={getVehicleImageUrl(managingVehicle.photoUrl || managingVehicle.img || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null))} 
+                     src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null) || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} 
                      alt="Vehicle Main" 
-                     onError={(e) => {
-                       e.target.onerror = null;
-                       e.target.src = 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60';
-                     }}
                      className="w-full h-full object-cover" 
                    />
                 </div>
                 <div className="grid grid-cols-4 gap-2 w-full sm:w-[300px]">
                    {[1, 2, 3].map((num) => (
-                     <div key={num} className="h-16 rounded-lg overflow-hidden cursor-pointer opacity-70 hover:opacity-100 transition-opacity border border-gray-100 bg-gray-100">
+                     <div key={num} className="h-16 rounded-lg overflow-hidden cursor-pointer opacity-70 hover:opacity-100 transition-opacity border border-gray-100">
                         <img 
-                          src={getVehicleImageUrl(managingVehicle.photoUrl || managingVehicle.img || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null))} 
+                          src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null) || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} 
                           alt="Thumb" 
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60';
-                          }}
                           className="w-full h-full object-cover" 
                         />
                      </div>
@@ -4365,7 +4339,7 @@ const Vehicles = () => {
                            <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
                                  <img 
-                                      src={getVehicleImageUrl(v.photoUrl || v.img, (v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.category && v.category.toLowerCase().includes('car')))} 
+                                      src={v.photoUrl || v.img} 
                                       alt="Vehicle" 
                                       onError={(e) => {
                                          e.target.onerror = null; 

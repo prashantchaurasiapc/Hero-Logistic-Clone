@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-=======
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { getLoadDetails, getMyLoads } from '../../services/driverApi';
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
+import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiNavigation, FiPhone, FiChevronRight,
   FiCamera, FiFileText, FiMessageSquare, FiAlertTriangle, FiRefreshCw,
@@ -17,18 +14,16 @@ export default function ActiveRun() {
   const location = useLocation();
 
   // Interactive States
-  const [loadStatus, setLoadStatus] = useState('Picked Up'); // 'Picked Up', 'Dispatched', 'Delivered'
+  const [loadStatus, setLoadStatus] = useState('Picked Up');
   const [isDispatched, setIsDispatched] = useState(false);
-=======
-  const [pickedUpCountState, setCarsPickedUp] = useState(8);
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
   const [toastMsg, setToastMsg] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
-
+  
   // Data State
   const [runData, setRunData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Modals
   const [dispatchYardModalOpen, setDispatchYardModalOpen] = useState(false);
@@ -68,8 +63,8 @@ export default function ActiveRun() {
     }
   }, [location.state, isDispatched]);
 
-  const carsPickedUp = runData ? runData.pickedUpCount : (activeLoad?.carsPickedUp || pickedUpCountState);
-  const totalCars = runData ? runData.totalCarsCount : (activeLoad?.totalCars || 8);
+  const carsPickedUp = runData ? runData.pickedUpCount : 0;
+  const totalCars = runData ? runData.totalCarsCount : 8;
   const deliveredCars = runData ? runData.deliveredCount : 0;
 
   const triggerToast = (msg) => {
@@ -96,7 +91,7 @@ export default function ActiveRun() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-left font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24">
-
+      
       {/* Toast Notification */}
       {toastMsg && (
         <div className="fixed top-5 right-5 z-[150] bg-slate-900 text-white font-extrabold text-xs px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-bounce border border-slate-700">
@@ -108,7 +103,7 @@ export default function ActiveRun() {
       {/* TOP TITLE & ACTIONS BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Active Run</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Active Run</h1>
         </div>
 
         <div className="flex items-center gap-3 relative w-full sm:w-auto">
@@ -159,7 +154,7 @@ export default function ActiveRun() {
             {moreActionsOpen && (
               <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 py-2 text-xs font-bold text-slate-800">
                 <button onClick={() => { navigate('/driver/delivery-pod'); setMoreActionsOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50 text-indigo-700 font-black">
-                  📦 Delivery & POD (15.7)
+                  📦 Delivery & POD
                 </button>
                 <button onClick={() => { setScanModalOpen(true); setMoreActionsOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50">
                   📷 Scan / Select Vehicles
@@ -187,7 +182,7 @@ export default function ActiveRun() {
 
           {/* LOAD CARRIER DETAILS & STEPPER CARD */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs space-y-6">
-
+            
             {/* Header info */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
@@ -221,13 +216,13 @@ export default function ActiveRun() {
             {/* YOUR PROGRESS STEPPER */}
             <div className="space-y-4 pt-2">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">YOUR PROGRESS</div>
-
+              
               {/* Stepper bar */}
               <div className="relative flex items-center justify-between px-8 sm:px-16 pt-2 pb-1">
                 {/* Connecting line aligned with circle centers (top-6 = 24px) */}
                 <div className="absolute top-6 left-14 right-14 h-1 bg-slate-200 z-0">
-                  <div
-                    className="h-full bg-emerald-500 transition-all duration-500"
+                  <div 
+                    className="h-full bg-emerald-500 transition-all duration-500" 
                     style={{ width: isDispatched ? '100%' : '50%' }}
                   ></div>
                 </div>
@@ -245,15 +240,17 @@ export default function ActiveRun() {
 
                 {/* Step 2: Dispatched */}
                 <div className="relative z-10 flex flex-col items-center text-center space-y-1.5">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-md ring-4 ring-white transition-all ${isDispatched ? 'bg-emerald-600 text-white' : 'bg-[#4338ca] text-white'
-                    }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-md ring-4 ring-white transition-all ${
+                    isDispatched ? 'bg-emerald-600 text-white' : 'bg-[#4338ca] text-white'
+                  }`}>
                     {isDispatched ? '✓' : <span className="w-3 h-3 rounded-full bg-white animate-pulse"></span>}
                   </div>
                   <span className="text-xs font-black text-slate-900 mt-1">Dispatched</span>
-                  <span className={`text-[10.5px] font-extrabold px-2.5 py-0.5 rounded-full border shadow-2xs ${isDispatched
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  <span className={`text-[10.5px] font-extrabold px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                    isDispatched 
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
                       : 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                    }`}>
+                  }`}>
                     {isDispatched ? '✓ Dispatched' : 'Pending Dispatch'}
                   </span>
                 </div>
@@ -343,25 +340,27 @@ export default function ActiveRun() {
             </div>
 
             {/* READY TO DISPATCH? BANNER & DISPATCH BUTTON */}
-            <div className={`border rounded-2xl p-5 text-center space-y-3 transition-all ${isDispatched ? 'bg-emerald-50/80 border-emerald-200' : 'bg-indigo-50/50 border-indigo-100'
-              }`}>
+            <div className={`border rounded-2xl p-5 text-center space-y-3 transition-all ${
+              isDispatched ? 'bg-emerald-50/80 border-emerald-200' : 'bg-indigo-50/50 border-indigo-100'
+            }`}>
               <div>
                 <div className={`text-xs font-black uppercase tracking-wide ${isDispatched ? 'text-emerald-950' : 'text-indigo-950'}`}>
                   {isDispatched ? '✅ DISPATCH CONFIRMED & EN ROUTE' : 'READY TO DISPATCH?'}
                 </div>
                 <p className={`text-xs font-semibold mt-0.5 ${isDispatched ? 'text-emerald-800' : 'text-indigo-800'}`}>
-                  {isDispatched
-                    ? `Departure logged at ${dispatchTime}. GPS location saved & customer notified.`
+                  {isDispatched 
+                    ? `Departure logged at ${dispatchTime}. GPS location saved & customer notified.` 
                     : 'You have picked up all 8 cars. When you leave the yard, tap DISPATCH.'}
                 </p>
               </div>
 
               <button
                 onClick={() => isDispatched ? setDispatchDetailsModalOpen(true) : setDispatchYardModalOpen(true)}
-                className={`w-full max-w-md mx-auto font-black text-sm py-3.5 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 cursor-pointer ${isDispatched
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white transform hover:scale-[1.01]'
+                className={`w-full max-w-md mx-auto font-black text-sm py-3.5 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 cursor-pointer ${
+                  isDispatched 
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white transform hover:scale-[1.01]' 
                     : 'bg-[#4338ca] hover:bg-[#3730a3] text-white transform hover:scale-[1.01]'
-                  }`}
+                }`}
               >
                 <FiTruck className="text-xl shrink-0" />
                 <span>{isDispatched ? '✓ DISPATCHED (En Route) • Tap for Details' : 'DISPATCH • I am leaving the yard'}</span>
@@ -377,7 +376,7 @@ export default function ActiveRun() {
           {/* QUICK ACTIONS BAR */}
           <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">QUICK ACTIONS</div>
-
+            
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
               <button
                 onClick={() => navigate('/driver/pickup-loading')}
@@ -432,7 +431,7 @@ export default function ActiveRun() {
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">RUN SUMMARY</div>
 
             <div className="space-y-3.5 text-xs">
-
+              
               {/* Pickup Location */}
               <div className="flex items-start gap-3">
                 <span className="w-3 h-3 rounded-full bg-emerald-500 mt-1 shrink-0"></span>
@@ -493,14 +492,14 @@ export default function ActiveRun() {
 
             <div className="space-y-1">
               {[
-                { label: 'Safety Procedures', icon: <FiShield className="text-slate-500" /> },
-                { label: 'Driver Guide', icon: <FiBookOpen className="text-slate-500" /> },
-                { label: 'Contact Support', icon: <FiHelpCircle className="text-slate-500" /> },
-                { label: 'Emergency Numbers', icon: <FiLifeBuoy className="text-rose-500" /> },
+                { label: 'Safety Procedures', icon: <FiShield className="text-slate-500" />, action: () => triggerToast('Opening Safety Procedures Guide...') },
+                { label: 'Driver Guide', icon: <FiBookOpen className="text-slate-500" />, action: () => triggerToast('Opening Heavy Vehicle Driver Guide...') },
+                { label: 'Contact Support', icon: <FiHelpCircle className="text-indigo-600" />, action: () => setSupportModalOpen(true) },
+                { label: 'Emergency Numbers', icon: <FiLifeBuoy className="text-rose-500" />, action: () => setSupportModalOpen(true) },
               ].map((item) => (
                 <button
                   key={item.label}
-                  onClick={() => triggerToast(`Opening ${item.label}...`)}
+                  onClick={item.action}
                   className="w-full p-2.5 rounded-xl hover:bg-slate-50 text-xs font-bold text-slate-800 flex items-center justify-between cursor-pointer transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
@@ -775,7 +774,7 @@ export default function ActiveRun() {
             <div className="flex justify-between items-start pb-4 border-b border-slate-100">
               <div>
                 <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                  PAGE 15.5 DISPATCH CONFIRMATION
+                  DISPATCH CONFIRMATION
                 </span>
                 <h3 className="font-black text-slate-900 text-xl tracking-tight mt-1 flex items-center gap-2">
                   <FiTruck className="text-indigo-600" />
@@ -785,8 +784,8 @@ export default function ActiveRun() {
                   Confirm load readiness before departing the pickup yard.
                 </p>
               </div>
-              <button
-                onClick={() => setDispatchYardModalOpen(false)}
+              <button 
+                onClick={() => setDispatchYardModalOpen(false)} 
                 className="text-slate-400 hover:text-slate-600 text-xl cursor-pointer p-1 rounded-lg hover:bg-slate-100"
               >
                 ✕
@@ -799,7 +798,7 @@ export default function ActiveRun() {
                 <span className="text-slate-700">Load Identifier:</span>
                 <span className="text-indigo-700 font-mono text-sm">LD-3987</span>
               </div>
-
+              
               <div className="flex items-start gap-2.5">
                 <FiMapPin className="text-indigo-600 text-sm mt-0.5 shrink-0" />
                 <div>
@@ -819,7 +818,7 @@ export default function ActiveRun() {
             {/* Departure Pre-checks */}
             <div className="space-y-2 text-xs font-semibold">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">DEPARTURE CHECKLIST</div>
-
+              
               <label className="flex items-center gap-3 p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-emerald-950 cursor-pointer">
                 <input type="checkbox" defaultChecked className="w-4 h-4 accent-emerald-600 rounded" />
                 <span>All 8 vehicles securely strapped & height clearance verified</span>
@@ -868,7 +867,7 @@ export default function ActiveRun() {
       {dispatchDetailsModalOpen && (
         <div className="fixed inset-0 bg-slate-900/65 backdrop-blur-xs z-[160] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 text-left animate-in fade-in zoom-in-95 duration-200">
-
+            
             {/* Header */}
             <div className="flex justify-between items-start pb-4 border-b border-slate-100">
               <div>
@@ -884,8 +883,8 @@ export default function ActiveRun() {
                   Departure successfully recorded. Customer & Dispatch notified.
                 </p>
               </div>
-              <button
-                onClick={() => setDispatchDetailsModalOpen(false)}
+              <button 
+                onClick={() => setDispatchDetailsModalOpen(false)} 
                 className="text-slate-400 hover:text-slate-600 text-xl cursor-pointer p-1 rounded-lg hover:bg-slate-100"
               >
                 ✕
@@ -935,7 +934,7 @@ export default function ActiveRun() {
                 }}
                 className="w-full bg-[#4338ca] hover:bg-[#3730a3] text-white font-black text-sm py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>📦 Proceed to Delivery & POD (15.7)</span>
+                <span>📦 Proceed to Delivery & POD</span>
                 <FiChevronRight className="text-lg" />
               </button>
 
@@ -958,6 +957,60 @@ export default function ActiveRun() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* SUPPORT & EMERGENCY HOTLINES MODAL */}
+      {supportModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[160] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                <FiHelpCircle className="text-indigo-600 text-lg" />
+                Driver Support & Hotline Directory
+              </h3>
+              <button onClick={() => setSupportModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between">
+                <div>
+                  <div className="font-black text-rose-950">24/7 Breakdown & Emergency</div>
+                  <div className="text-[10.5px] text-rose-700 font-medium">Roadside & Safety Command</div>
+                </div>
+                <a href="tel:1800555999" className="bg-rose-600 text-white font-mono font-black text-xs px-3 py-1.5 rounded-xl cursor-pointer">
+                  1800 555 999
+                </a>
+              </div>
+
+              <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between">
+                <div>
+                  <div className="font-black text-indigo-950">Fleet Dispatch Center</div>
+                  <div className="text-[10.5px] text-indigo-700 font-medium">Load & Schedule Desk</div>
+                </div>
+                <a href="tel:0411111222" className="bg-indigo-600 text-white font-mono font-black text-xs px-3 py-1.5 rounded-xl cursor-pointer">
+                  0411 111 222
+                </a>
+              </div>
+
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between">
+                <div>
+                  <div className="font-black text-amber-950">Vehicle Maintenance Support</div>
+                  <div className="text-[10.5px] text-amber-700 font-medium">Mechanical Workshop</div>
+                </div>
+                <a href="tel:0400555666" className="bg-amber-600 text-white font-mono font-black text-xs px-3 py-1.5 rounded-xl cursor-pointer">
+                  0400 555 666
+                </a>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSupportModalOpen(false)}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3 rounded-xl cursor-pointer"
+            >
+              Close Support Directory
+            </button>
           </div>
         </div>
       )}

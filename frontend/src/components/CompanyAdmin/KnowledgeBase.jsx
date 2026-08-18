@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
+import React, { useState } from 'react';
 
 // ── SVG Icons ──────────────────────────────────────────────────
 const BookIcon = ({ color = 'currentColor' }) => (
@@ -22,18 +21,6 @@ const SettingsIcon = ({ color = 'currentColor' }) => (
     <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
   </svg>
 );
-const PackageIcon = ({ color = 'currentColor' }) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-    <line x1="12" y1="22.08" x2="12" y2="12"/>
-  </svg>
-);
-const ShieldIcon = ({ color = 'currentColor' }) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-  </svg>
-);
 const DocIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
@@ -50,10 +37,11 @@ const SearchIcon = () => (
   </svg>
 );
 
-const defaultCategories = [
+// ── Data ──────────────────────────────────────────────────────
+const categories = [
   {
     id: 'getting-started', title: 'Getting Started', desc: 'Basic setup and configuration guides',
-    count: 8, icon: 'Book',
+    count: 12, Icon: BookIcon,
     articles: [
       'How to assign a driver to a new load?',
       'Understanding the financial performance metrics',
@@ -67,7 +55,7 @@ const defaultCategories = [
   },
   {
     id: 'fleet-management', title: 'Fleet Management', desc: 'Managing vehicles, maintenance, and assets',
-    count: 8, icon: 'Truck',
+    count: 24, Icon: TruckIcon,
     articles: [
       'Adding a new vehicle to the fleet',
       'Scheduling preventive maintenance',
@@ -80,20 +68,8 @@ const defaultCategories = [
     ],
   },
   {
-    id: 'warehouse-yard', title: 'Warehouse & Yard Operations', desc: 'Holding areas, load lanes, and stock movements',
-    count: 6, icon: 'Package',
-    articles: [
-      'Creating and managing standard load lanes',
-      'Holding area staging and asset relocation',
-      'Inbound delivery inspection workflows',
-      'Yard shift logging and task assignments',
-      'Tracking damaged cargo or delivery issues',
-      'Stock barcode scanning & audit procedures',
-    ],
-  },
-  {
     id: 'billing-subscriptions', title: 'Billing & Subscriptions', desc: 'Invoices, payments, and plan upgrades',
-    count: 8, icon: 'FileText',
+    count: 8, Icon: FileTextIcon,
     articles: [
       'Understanding your invoice breakdown',
       'Upgrading or downgrading your plan',
@@ -106,19 +82,8 @@ const defaultCategories = [
     ],
   },
   {
-    id: 'safety-compliance', title: 'Safety & Checklists', desc: 'Daily inspections, fatigue management, and hazards',
-    count: 5, icon: 'Shield',
-    articles: [
-      'Completing pre-trip safety checklists',
-      'Logging road hazards and vehicle defects',
-      'Driver rest break and fatigue rules',
-      'Emergency response protocols',
-      'Annual compliance certificates upload',
-    ],
-  },
-  {
     id: 'account-settings', title: 'Account Settings', desc: 'User roles, permissions, and company profile',
-    count: 8, icon: 'Settings',
+    count: 15, Icon: SettingsIcon,
     articles: [
       'Changing your password',
       'Setting up two-factor authentication',
@@ -132,60 +97,21 @@ const defaultCategories = [
   },
 ];
 
-const defaultPopularArticles = [
+const popularArticles = [
   { title: 'How to assign a driver to a new load?', catId: 'getting-started' },
   { title: 'Understanding the financial performance metrics', catId: 'getting-started' },
-  { title: 'Creating and managing standard load lanes', catId: 'warehouse-yard' },
+  { title: 'Step-by-step guide to updating company details', catId: 'getting-started' },
   { title: 'Troubleshooting: Asset tracking not updating', catId: 'getting-started' },
-  { title: 'Scheduling preventive maintenance', catId: 'fleet-management' },
-  { title: 'Completing pre-trip safety checklists', catId: 'safety-compliance' },
+  { title: 'Setting up automated billing reports', catId: 'getting-started' },
 ];
-
-export const getIconComponent = (iconName) => {
-  switch (iconName) {
-    case 'Book': return BookIcon;
-    case 'Truck': return TruckIcon;
-    case 'FileText': return FileTextIcon;
-    case 'Settings': return SettingsIcon;
-    case 'Package': return PackageIcon;
-    case 'Shield': return ShieldIcon;
-    default: return BookIcon;
-  }
-};
 
 // ── Main Component ────────────────────────────────────────────
 export default function KnowledgeBase() {
   const [search, setSearch] = useState('');
-  const [categories, setCategories] = useState(defaultCategories);
-  const [popularArticles, setPopularArticles] = useState(defaultPopularArticles);
-  const [loading, setLoading] = useState(false);
-
   // view: 'main' | 'category' | 'article'
   const [view, setView] = useState('main');
   const [activeCategory, setActiveCategory] = useState(null); // category object
   const [activeArticle, setActiveArticle] = useState(null);   // article title string
-
-  useEffect(() => {
-    const fetchKb = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get('/company-admin/knowledge-base');
-        if (res.data?.success && res.data?.data) {
-          if (res.data.data.categories?.length > 0) {
-            setCategories(res.data.data.categories);
-          }
-          if (res.data.data.popularArticles?.length > 0) {
-            setPopularArticles(res.data.data.popularArticles);
-          }
-        }
-      } catch (err) {
-        console.warn('Could not fetch KB data from API, using default KB:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchKb();
-  }, []);
 
   const openCategory = (cat) => { setActiveCategory(cat); setView('category'); setSearch(''); };
   const openArticle = (title, cat = null) => {
@@ -239,7 +165,6 @@ export default function KnowledgeBase() {
   // ── CATEGORY ARTICLES LIST ──────────────────────────────────
   if (view === 'category' && activeCategory) {
     const cat = activeCategory;
-    const CatIcon = typeof cat.Icon === 'function' ? cat.Icon : getIconComponent(cat.icon);
     return (
       <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 lg:p-8 font-sans text-left">
         <div className="max-w-[1200px] mx-auto">
@@ -254,7 +179,7 @@ export default function KnowledgeBase() {
             {/* Category header */}
             <div className="flex items-center gap-4.5 p-6 sm:p-8 border-b border-slate-100">
               <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
-                <CatIcon color="#D97706" />
+                <cat.Icon color="#D97706" />
               </div>
               <div>
                 <h1 className="text-lg font-extrabold text-slate-900 mb-1 leading-tight">{cat.title}</h1>
@@ -338,25 +263,22 @@ export default function KnowledgeBase() {
           <div>
             <h2 className="text-[10px] font-black text-gray-900 tracking-wider uppercase mb-4.5">Browse Categories</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {categories.map(cat => {
-                const CatIcon = typeof cat.Icon === 'function' ? cat.Icon : getIconComponent(cat.icon);
-                return (
-                  <div 
-                    key={cat.id}
-                    onClick={() => openCategory(cat)}
-                    className="bg-white border border-gray-200 rounded-2xl p-5 flex items-start gap-4 cursor-pointer transition-all hover:shadow-md hover:border-slate-300"
-                  >
-                    <div className="w-11 h-11 rounded-xl bg-slate-50 border border-gray-100 flex items-center justify-center shrink-0 text-slate-500">
-                      <CatIcon color="#64748B" />
-                    </div>
-                    <div>
-                      <div className="text-[14.5px] font-extrabold text-gray-900 mb-1 leading-tight">{cat.title}</div>
-                      <div className="text-[11.5px] text-gray-400 font-semibold leading-relaxed mb-2.5">{cat.desc}</div>
-                      <span className="text-[9px] font-black text-yellow-600 tracking-wider uppercase">{cat.count || cat.articles?.length || 0} ARTICLES</span>
-                    </div>
+              {categories.map(cat => (
+                <div 
+                  key={cat.id}
+                  onClick={() => openCategory(cat)}
+                  className="bg-white border border-gray-200 rounded-2xl p-5 flex items-start gap-4 cursor-pointer transition-all hover:shadow-md hover:border-slate-300"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-slate-50 border border-gray-100 flex items-center justify-center shrink-0 text-slate-500">
+                    <cat.Icon color="#64748B" />
                   </div>
-                );
-              })}
+                  <div>
+                    <div className="text-[14.5px] font-extrabold text-gray-900 mb-1 leading-tight">{cat.title}</div>
+                    <div className="text-[11.5px] text-gray-400 font-semibold leading-relaxed mb-2.5">{cat.desc}</div>
+                    <span className="text-[9px] font-black text-yellow-600 tracking-wider uppercase">{cat.count} ARTICLES</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

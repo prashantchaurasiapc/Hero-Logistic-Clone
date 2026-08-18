@@ -12,10 +12,6 @@ import {
   FiTrendingUp,
 } from 'react-icons/fi';
 
-=======
-const ALL_JOBS = [];
-
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 const STATUS_META = {
   UPCOMING:    { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },
   IN_PROGRESS: { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
@@ -95,7 +91,7 @@ export default function Jobs() {
     return tabOk && searchOk;
   });
 
-  const totalPages = Math.ceil(filtered.length / perPage);
+  const totalPages = Math.ceil(filtered.length / perPage) || 1;
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   const handleTabChange = t => { setActiveTab(t); setPage(1); };

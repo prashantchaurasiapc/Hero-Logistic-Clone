@@ -123,6 +123,17 @@ export default function Documents() {
     return d.status && d.status.toUpperCase().replace(/\s+/g, '_') === filterCategory.toUpperCase().replace(/\s+/g, '_');
   });
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-bold text-sm">Loading documents...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24 text-left">
       
@@ -146,7 +157,7 @@ export default function Documents() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Documents & Compliance</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Documents & Compliance</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">Manage your documents, licenses and ensure you stay compliant on the road</p>
         </div>
 
@@ -170,7 +181,7 @@ export default function Documents() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">15.10 Documents</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">Documents</span>
               <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Compliant
               </span>

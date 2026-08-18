@@ -783,7 +783,7 @@ export default function WarehouseMap() {
                   </div>
 
                   {/* CARD 2: CONTAINER YARD */}
-                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Container Yard', 'Yard Stacking', `${mapData?.yardAreas?.containerYard?.count || 0} Containers`)} style={{ border: '1px solid #FDE68A', background: '#FFFFFF' }}>
+                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Container Yard', 'Yard Staging', `${mapData?.yardAreas?.containerYard?.count || 0} Containers`)} style={{ border: '1px solid #FDE68A', background: '#FFFFFF' }}>
                     <div className="flex justify-between items-center mb-1">
                       <div className="flex items-center gap-1.5">
                         <Box size={14} className="text-amber-600" />

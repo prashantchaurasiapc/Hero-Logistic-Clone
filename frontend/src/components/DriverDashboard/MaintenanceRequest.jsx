@@ -320,7 +320,7 @@ export default function MaintenanceRequest() {
 
           {/* Mobile Card Layout (Visible only on mobile/small screens) */}
           <div className="block sm:hidden space-y-4">
-            {records.map((row, index) => {
+            {mockData.map((row, index) => {
               const isSelected = selectedRows.includes(row.id);
               
               let cardPadding = 'p-4';
@@ -400,11 +400,11 @@ export default function MaintenanceRequest() {
                 <tr className="border-b border-gray-100 bg-white">
                   <th className="p-4 w-12 text-center">
                     <button
-                      onClick={() => setSelectedRows(selectedRows.length === records.length ? [] : records.map(d => d.id))}
+                      onClick={() => setSelectedRows(selectedRows.length === mockData.length ? [] : mockData.map(d => d.id))}
                       className="cursor-pointer"
                     >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === records.length ? 'border-[#D97706] bg-white text-[#D97706]' : 'border-[#94A3B8]'}`}>
-                        {selectedRows.length === records.length && <Check className="w-3 h-3" strokeWidth={4} />}
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === mockData.length ? 'border-[#D97706] bg-white text-[#D97706]' : 'border-[#94A3B8]'}`}>
+                        {selectedRows.length === mockData.length && <Check className="w-3 h-3" strokeWidth={4} />}
                       </div>
                     </button>
                   </th>
@@ -414,7 +414,7 @@ export default function MaintenanceRequest() {
                 </tr>
               </thead>
               <tbody>
-                {records.map((row) => {
+                {mockData.map((row) => {
                   const isSelected = selectedRows.includes(row.id);
                   return (
                     <tr key={row.id} className={`border-b border-gray-50 hover:bg-[#FFFBEB]/50 transition-colors ${

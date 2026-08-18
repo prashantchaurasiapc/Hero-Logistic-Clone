@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getMessages, markAllMessagesAsRead, sendMessage } from '../../services/driverApi';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -24,6 +25,42 @@ export default function Messages() {
   const [vehicleData, setVehicleData] = useState(null);
   const [activeLoadData, setActiveLoadData] = useState(null);
   const [contactsList, setContactsList] = useState([]);
+
+  // Modals
+  const [newMessageModalOpen, setNewMessageModalOpen] = useState(false);
+  const [chatModalOpen, setChatModalOpen] = useState(false);
+  const [activeChat, setActiveChat] = useState(null);
+  const [quickContactsModalOpen, setQuickContactsModalOpen] = useState(false);
+  const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
+
+  // Chat Input State inside Chat Modal
+  const [chatInputText, setChatInputText] = useState('');
+
+  // Conversations Data
+  const [conversations, setConversations] = useState([]);
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/messages');
+      if (res.data) {
+        if (res.data.conversations) setConversations(res.data.conversations);
+        if (res.data.contacts) setContactsList(res.data.contacts);
+        if (res.data.vehicle) setVehicleData(res.data.vehicle);
+        if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
+        if (res.data.contacts && res.data.contacts.length > 0 && !newMessageRecipient) {
+          setNewMessageRecipient(res.data.contacts[0].id);
+        }
+      }
+      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    } catch (err) {
+      console.error('Failed to fetch messages:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,7 +80,7 @@ export default function Messages() {
     }
   };
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!chatInputText.trim() || !activeChat) return;
 
@@ -158,7 +195,7 @@ export default function Messages() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Messages</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Messages</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">Communicate with dispatch, customers and team members in real time</p>
         </div>
 
@@ -182,7 +219,7 @@ export default function Messages() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">15.9 Messages</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">Messages</span>
               <span className="bg-purple-100 text-purple-800 border border-purple-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Real-Time
               </span>
@@ -675,6 +712,8 @@ export default function Messages() {
                 <textarea
                   rows="4"
                   placeholder="Type your message to dispatch or team..."
+                  value={newMessageText}
+                  onChange={(e) => setNewMessageText(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
                 ></textarea>
               </div>
@@ -686,7 +725,7 @@ export default function Messages() {
             >
               Send Message
             </button>
-          </div>
+          </form>
         </div>
       )}
 

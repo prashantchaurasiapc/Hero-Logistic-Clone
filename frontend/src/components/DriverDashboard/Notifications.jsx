@@ -109,7 +109,7 @@ export default function Notifications() {
             </span>
           </div>
           <p className="text-slate-500 text-xs font-semibold mt-1">
-            Real-time dispatch updates, safety alerts, and ELD system notifications for <strong className="text-slate-800">Driver</strong>
+            Real-time dispatch updates, safety alerts, and ELD system notifications for <strong className="text-slate-800">Noah Williams</strong>
           </p>
         </div>
 

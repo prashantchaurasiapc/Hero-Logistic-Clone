@@ -174,7 +174,7 @@ export default function JobDetails() {
         statusText: 'In Progress',
         statusCountdown: 'In Transit',
         activities: [
-          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job started by driver', user: 'Driver' },
+          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job started by driver', user: 'Noah Williams' },
           ...job.activities
         ]
       };
@@ -189,7 +189,7 @@ export default function JobDetails() {
         pickup: { ...job.pickup, status: 'COMPLETED' },
         delivery: { ...job.delivery, status: 'COMPLETED' },
         activities: [
-          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job marked completed by driver', user: 'Driver' },
+          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job marked completed by driver', user: 'Noah Williams' },
           ...job.activities
         ]
       };
@@ -216,7 +216,7 @@ export default function JobDetails() {
       ...prev,
       documents: [newDoc, ...prev.documents],
       activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Uploaded document: ${newDoc.name}`, user: 'Driver' },
+        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Uploaded document: ${newDoc.name}`, user: 'Noah Williams' },
         ...prev.activities
       ]
     }));
@@ -243,7 +243,7 @@ export default function JobDetails() {
       photos: [newPhoto, ...prev.photos],
       items: { ...prev.items, photosTaken: prev.items.photosTaken + 1 },
       activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Added photo: ${newPhoto.title}`, user: 'Driver' },
+        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Added photo: ${newPhoto.title}`, user: 'Noah Williams' },
         ...prev.activities
       ]
     }));
@@ -268,7 +268,7 @@ export default function JobDetails() {
       statusText: meta.text,
       statusCountdown: meta.cd,
       activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Status updated to ${meta.text}${statusNote ? `: ${statusNote}` : ''}`, user: 'Driver' },
+        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Status updated to ${meta.text}${statusNote ? `: ${statusNote}` : ''}`, user: 'Noah Williams' },
         ...prev.activities
       ]
     }));
