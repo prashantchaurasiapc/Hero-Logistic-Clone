@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import {
   FiPackage, FiTruck, FiClock, FiCheckCircle,
   FiUpload, FiMessageSquare,
@@ -11,80 +12,7 @@ import {
   FiTrendingUp,
 } from 'react-icons/fi';
 
-const ALL_JOBS = [
-  {
-    id: 'LD-3987', subTitle: 'Car Carrier (4 Level)',
-    status: 'UPCOMING', statusText: 'Upcoming',
-    date: 'Today', time: '06:00 AM', timeColor: '#0f172a',
-    origin: 'Melbourne VIC', destination: 'Sydney NSW',
-    pickupName: 'ABC Car Yard', pickupAddress: '123 Sunshine Rd, Melbourne VIC 3000',
-    deliveryName: 'Auto World Sydney', deliveryAddress: '45 Parramatta Rd, Sydney NSW 2150',
-    loadType: 'Car Carrier', reference: 'PO-65432', stops: '1 Stop', distance: '845 km',
-  },
-  {
-    id: 'LD-3988', subTitle: 'Car Carrier (4 Level)',
-    status: 'UPCOMING', statusText: 'Upcoming',
-    date: 'Tomorrow', time: '07:30 AM', timeColor: '#0f172a',
-    origin: 'Brisbane QLD', destination: 'Perth WA',
-    pickupName: 'Brisbane Port Terminal', pickupAddress: 'Port Dr, Brisbane QLD 4178',
-    deliveryName: 'Perth Freight Hub', deliveryAddress: '12 Freight Ave, Perth WA 6100',
-    loadType: 'Car Carrier', reference: 'PO-65456', stops: '2 Stops', distance: '4,374 km',
-  },
-  {
-    id: 'LD-3986', subTitle: 'Car Carrier (4 Level)',
-    status: 'IN_PROGRESS', statusText: 'In Progress',
-    date: 'Today', time: 'In Transit', timeColor: '#d97706',
-    origin: 'Melbourne VIC', destination: 'Adelaide SA',
-    pickupName: 'Melbourne Vehicle Hub', pickupAddress: '88 Western Hwy, Deer Park VIC 3023',
-    deliveryName: 'Adelaide Vehicle Hub', deliveryAddress: '55 Chief St, Wingfield SA 5013',
-    loadType: 'Car Carrier', reference: 'PO-65421', stops: '1 Stop', distance: '731 km',
-  },
-  {
-    id: 'LD-3985', subTitle: 'Car Carrier (4 Level)',
-    status: 'IN_PROGRESS', statusText: 'In Progress',
-    date: 'Yesterday', time: 'Delivered', timeColor: '#059669',
-    origin: 'Sydney NSW', destination: 'Newcastle NSW',
-    pickupName: 'Sydney Yard', pickupAddress: '10-12 Forsyth St, South Granville NSW 2142',
-    deliveryName: 'Newcastle Yard', deliveryAddress: '61 Munibung Rd, Cardiff NSW 2285',
-    loadType: 'Car Carrier', reference: 'PO-65410', stops: '1 Stop', distance: '170 km',
-  },
-  {
-    id: 'LD-3984', subTitle: 'Car Carrier (4 Level)',
-    status: 'COMPLETED', statusText: 'Completed',
-    date: '27 May 2025', time: 'Completed', timeColor: '#059669',
-    origin: 'Brisbane QLD', destination: 'Gold Coast QLD',
-    pickupName: 'Brisbane Yard', pickupAddress: '12 Trade St, Lytton QLD 4178',
-    deliveryName: 'Gold Coast Yard', deliveryAddress: '24 Bailey Cres, Southport QLD 4215',
-    loadType: 'Car Carrier', reference: 'PO-65398', stops: '1 Stop', distance: '95 km',
-  },
-  {
-    id: 'LD-3983', subTitle: 'Car Carrier (4 Level)',
-    status: 'COMPLETED', statusText: 'Completed',
-    date: '25 May 2025', time: 'Completed', timeColor: '#059669',
-    origin: 'Melbourne VIC', destination: 'Geelong VIC',
-    pickupName: 'Laverton Depot', pickupAddress: '5 Industrial Blvd, Laverton VIC 3028',
-    deliveryName: 'Geelong Auto Hub', deliveryAddress: '18 Port Rd, Geelong VIC 3220',
-    loadType: 'Car Carrier', reference: 'PO-65380', stops: '1 Stop', distance: '75 km',
-  },
-  {
-    id: 'LD-3982', subTitle: 'Car Carrier (4 Level)',
-    status: 'COMPLETED', statusText: 'Completed',
-    date: '23 May 2025', time: 'Completed', timeColor: '#059669',
-    origin: 'Sydney NSW', destination: 'Wollongong NSW',
-    pickupName: 'Sydney South Depot', pickupAddress: '41 Botany Rd, Waterloo NSW 2017',
-    deliveryName: 'Wollongong Freight Park', deliveryAddress: '9 Port Kembla Rd, Wollongong NSW 2500',
-    loadType: 'Car Carrier', reference: 'PO-65361', stops: '1 Stop', distance: '83 km',
-  },
-  {
-    id: 'LD-3981', subTitle: 'Car Carrier (4 Level)',
-    status: 'CANCELLED', statusText: 'Cancelled',
-    date: '22 May 2025', time: 'Cancelled', timeColor: '#e11d48',
-    origin: 'Adelaide SA', destination: 'Darwin NT',
-    pickupName: 'Adelaide South Yard', pickupAddress: '3 Regency Rd, Kilburn SA 5084',
-    deliveryName: 'Darwin Freight Terminal', deliveryAddress: '10 Frances Bay Dr, Darwin NT 0800',
-    loadType: 'Car Carrier', reference: 'PO-65340', stops: '1 Stop', distance: '3,021 km',
-  },
-];
+const ALL_JOBS = [];
 
 const STATUS_META = {
   UPCOMING:    { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },
@@ -97,7 +25,28 @@ const PAGE_SIZE = 5;
 
 export default function Jobs() {
   const navigate = useNavigate();
-  const [jobs, setJobs]                 = useState(ALL_JOBS);
+  
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/jobs');
+      if (res.data?.success) {
+        setJobs(res.data.data?.jobs || []);
+      }
+    } catch (err) {
+      console.error('Error fetching jobs', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const [activeTab, setActiveTab]       = useState('ALL');
   const [searchQuery, setSearchQuery]   = useState('');
   const [page, setPage]                 = useState(1);

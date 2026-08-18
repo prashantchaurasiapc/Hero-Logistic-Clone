@@ -1,62 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, Download, ChevronDown, Search, Filter, RotateCcw, 
   MapPin, Building, Clock, Phone, AlertCircle, CheckCircle2,
   AlertTriangle, XCircle, FileText, Database, Shield, Zap, Info, Key, CheckCircle, Package, Battery, Settings, Laptop, Wrench, Truck,
-  QrCode, MoreHorizontal, Eye, Edit, Trash2
+  QrCode, MoreHorizontal, Eye, Edit, Trash2, Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import AssetDetails from './AssetDetails';
 
-// --- MOCK DATA ---
-const mockAssets = [];
-
-// Reusable Donut Chart Component (SVG)
-const AssetDonutChart = () => {
+// Dynamic Reusable Donut Chart Component (SVG)
+const AssetDonutChart = ({ active = 0, maintenance = 0, outOfService = 0, unassigned = 0 }) => {
   const size = 160;
   const strokeWidth = 16;
   const radius = (size - strokeWidth) / 2;
   const center = size / 2;
   const circumference = 2 * Math.PI * radius;
 
-  // Data matching the screenshot: Active 88 (66.7%), Maintenance 18 (13.6%), Out of Service 6 (4.5%), Unassigned 20 (15.2%)
+  const total = active + maintenance + outOfService + unassigned;
   const data = [
-    { value: 88, color: '#10B981' }, // Active (emerald)
-    { value: 18, color: '#F59E0B' }, // Maintenance (amber)
-    { value: 6, color: '#EF4444' }, // Out of service (red)
-    { value: 20, color: '#94A3B8' }  // Unassigned (slate)
-  ];
+    { value: active, color: '#10B981' }, // Active (emerald)
+    { value: maintenance, color: '#F59E0B' }, // Maintenance (amber)
+    { value: outOfService, color: '#EF4444' }, // Out of service (red)
+    { value: unassigned, color: '#94A3B8' }  // Unassigned (slate)
+  ].filter(item => item.value > 0);
 
-  const total = data.reduce((sum, item) => sum + item.value, 0);
   let currentOffset = 0;
 
   return (
     <div className="relative flex items-center justify-center h-[180px]">
       <svg width={size} height={size} className="transform -rotate-90">
-        {data.map((item, index) => {
-          const dashArray = (item.value / total) * circumference;
-          const strokeDasharray = `${dashArray} ${circumference}`;
-          const strokeDashoffset = -currentOffset;
-          currentOffset += dashArray;
+        {total === 0 ? (
+          <circle
+            cx={center}
+            cy={center}
+            r={radius}
+            fill="transparent"
+            stroke="#E2E8F0"
+            strokeWidth={strokeWidth}
+          />
+        ) : (
+          data.map((item, index) => {
+            const dashArray = (item.value / total) * circumference;
+            const strokeDasharray = `${dashArray} ${circumference}`;
+            const strokeDashoffset = -currentOffset;
+            currentOffset += dashArray;
 
-          return (
-            <circle
-              key={index}
-              cx={center}
-              cy={center}
-              r={radius}
-              fill="transparent"
-              stroke={item.color}
-              strokeWidth={strokeWidth}
-              strokeDasharray={strokeDasharray}
-              strokeDashoffset={strokeDashoffset}
-              className="transition-all duration-1000 ease-out"
-            />
-          );
-        })}
+            return (
+              <circle
+                key={index}
+                cx={center}
+                cy={center}
+                r={radius}
+                fill="transparent"
+                stroke={item.color}
+                strokeWidth={strokeWidth}
+                strokeDasharray={strokeDasharray}
+                strokeDashoffset={strokeDashoffset}
+                className="transition-all duration-1000 ease-out"
+              />
+            );
+          })
+        )}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-black text-slate-800 tracking-tight leading-none">132</span>
+        <span className="text-3xl font-black text-slate-800 tracking-tight leading-none">{total}</span>
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total</span>
       </div>
     </div>
@@ -64,7 +72,10 @@ const AssetDonutChart = () => {
 };
 
 export default function Assets() {
-  const [assetList, setAssetList] = useState(mockAssets);
+  const [assetList, setAssetList] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [editAssetModal, setEditAssetModal] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,7 +83,70 @@ export default function Assets() {
   const [typeFilter, setTypeFilter] = useState('All');
   const [branchFilter, setBranchFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [cardFilter, setCardFilter] = useState('all');
+  const [toast, setToast] = useState(null);
   const navigate = useNavigate();
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const fetchAssets = async () => {
+    setLoading(true);
+    try {
+      const [assetsRes, branchesRes] = await Promise.all([
+        api.get('/company-admin/assets').catch(() => ({ data: { success: false, data: [] } })),
+        api.get('/company-admin/branches').catch(() => ({ data: { success: false, data: [] } }))
+      ]);
+
+      const rawAssets = assetsRes.data?.data?.items || (Array.isArray(assetsRes.data?.data) ? assetsRes.data.data : (Array.isArray(assetsRes.data) ? assetsRes.data : []));
+      const formattedAssets = rawAssets.map((item, idx) => ({
+        id: item.assetId || item.id || `AST-${idx + 1}`,
+        rawId: item.id,
+        name: item.name || 'Unnamed Asset',
+        category: item.category || 'General Equipment',
+        type: item.type || 'Equipment',
+        model: item.model || item.make || '-',
+        year: item.year || '-',
+        branch: item.branch?.name || item.branch || 'Sydney Head Office',
+        location: item.location || 'Yard Storage',
+        assignedTo: item.assignments?.[0]?.assignedTo || item.assignedTo || 'Unassigned',
+        status: item.status ? (item.status === 'ACTIVE' ? 'Active' : (item.status === 'MAINTENANCE' ? 'Maintenance' : 'Out of Service')) : 'Active',
+        condition: item.condition ? (item.condition === 'GOOD' ? 'Good' : (item.condition === 'EXCELLENT' ? 'Excellent' : 'Fair')) : 'Good',
+        nextService: item.nextServiceDue ? new Date(item.nextServiceDue).toLocaleDateString() : '30 Oct 2026',
+        dueIn: 'In 3 months',
+        serialNumber: item.serialNumber || '-',
+        purchasePrice: item.purchasePrice ? `$${item.purchasePrice}` : '-'
+      }));
+      setAssetList(formattedAssets);
+
+      const rawBranches = branchesRes.data?.data?.items || (Array.isArray(branchesRes.data?.data) ? branchesRes.data.data : []);
+      setBranches(rawBranches);
+      if (rawBranches.length > 0) {
+        setSelectedBranch(rawBranches[0]);
+      }
+    } catch (err) {
+      console.warn('Error fetching assets:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAssets();
+  }, []);
+
+  const handleDeleteAsset = async (asset) => {
+    if (!window.confirm(`Are you sure you want to delete asset "${asset.name}" (${asset.id})?`)) return;
+    try {
+      await api.delete(`/company-admin/assets/${asset.rawId || asset.id}`);
+      showToast(`✓ Asset "${asset.name}" deleted successfully.`);
+      fetchAssets();
+    } catch (err) {
+      showToast('❌ Failed to delete asset: ' + (err.response?.data?.message || err.message), 'error');
+    }
+  };
 
   const handleResetFilters = () => {
     setSearchQuery('');
@@ -80,9 +154,27 @@ export default function Assets() {
     setTypeFilter('All');
     setBranchFilter('All');
     setStatusFilter('All');
+    setCardFilter('all');
   };
 
+  // 7 Stat Counts Computed Live from assetList
+  const totalCount = assetList.length;
+  const activeCount = assetList.filter(a => a.status === 'Active').length;
+  const maintenanceCount = assetList.filter(a => a.status === 'Maintenance').length;
+  const outOfServiceCount = assetList.filter(a => a.status === 'Out of Service').length;
+  const complianceCount = assetList.filter(a => a.condition === 'Fair' || a.condition === 'Poor').length;
+  const assignedCount = assetList.filter(a => a.assignedTo && a.assignedTo !== 'Unassigned').length;
+  const unassignedCount = assetList.filter(a => !a.assignedTo || a.assignedTo === 'Unassigned').length;
+
   const filteredAssets = assetList.filter((asset) => {
+    // Card Filter
+    if (cardFilter === 'active' && asset.status !== 'Active') return false;
+    if (cardFilter === 'maintenance' && asset.status !== 'Maintenance') return false;
+    if (cardFilter === 'out_of_service' && asset.status !== 'Out of Service') return false;
+    if (cardFilter === 'compliance' && asset.condition !== 'Fair' && asset.condition !== 'Poor') return false;
+    if (cardFilter === 'assigned' && (!asset.assignedTo || asset.assignedTo === 'Unassigned')) return false;
+    if (cardFilter === 'unassigned' && asset.assignedTo && asset.assignedTo !== 'Unassigned') return false;
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (!asset.id.toLowerCase().includes(q) &&
@@ -253,79 +345,100 @@ export default function Assets() {
           
           {/* 7 Stat Cards Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-            {/* Card 1 */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col gap-2">
+            {/* Card 1: Total */}
+            <div 
+              onClick={() => { setCardFilter('all'); showToast(`Showing all ${totalCount} assets`); }}
+              className={`bg-white rounded-2xl border p-4 shadow-sm flex flex-col gap-2 cursor-pointer transition-all ${cardFilter === 'all' ? 'border-purple-500 bg-purple-50/20 ring-2 ring-purple-100' : 'border-slate-200 hover:border-slate-300'}`}
+            >
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded">
+                <div className="w-7 h-7 flex items-center justify-center bg-purple-50 text-purple-600 rounded">
                   <Package size={14} />
                 </div>
-                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">132</span>
+                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">{totalCount}</span>
               </div>
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Total Assets</div>
             </div>
             
-            {/* Card 2 */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col gap-2">
+            {/* Card 2: Active */}
+            <div 
+              onClick={() => { const n = cardFilter === 'active' ? 'all' : 'active'; setCardFilter(n); showToast(n === 'active' ? 'Filtering Active Assets' : 'Showing all assets'); }}
+              className={`bg-white rounded-2xl border p-4 shadow-sm flex flex-col gap-2 cursor-pointer transition-all ${cardFilter === 'active' ? 'border-emerald-500 bg-emerald-50/20 ring-2 ring-emerald-100' : 'border-slate-200 hover:border-slate-300'}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded">
                   <CheckCircle2 size={14} />
                 </div>
-                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">88</span>
+                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">{activeCount}</span>
               </div>
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Active</div>
             </div>
             
-            {/* Card 3 */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col gap-2">
+            {/* Card 3: Maintenance */}
+            <div 
+              onClick={() => { const n = cardFilter === 'maintenance' ? 'all' : 'maintenance'; setCardFilter(n); showToast(n === 'maintenance' ? 'Filtering Assets in Maintenance' : 'Showing all assets'); }}
+              className={`bg-white rounded-2xl border p-4 shadow-sm flex flex-col gap-2 cursor-pointer transition-all ${cardFilter === 'maintenance' ? 'border-amber-500 bg-amber-50/20 ring-2 ring-amber-100' : 'border-slate-200 hover:border-slate-300'}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 flex items-center justify-center bg-amber-50 text-amber-500 rounded">
                   <Wrench size={14} />
                 </div>
-                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">18</span>
+                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">{maintenanceCount}</span>
               </div>
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Maintenance Due</div>
             </div>
             
-            {/* Card 4 */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col gap-2">
+            {/* Card 4: Out of Service */}
+            <div 
+              onClick={() => { const n = cardFilter === 'out_of_service' ? 'all' : 'out_of_service'; setCardFilter(n); showToast(n === 'out_of_service' ? 'Filtering Out of Service Assets' : 'Showing all assets'); }}
+              className={`bg-white rounded-2xl border p-4 shadow-sm flex flex-col gap-2 cursor-pointer transition-all ${cardFilter === 'out_of_service' ? 'border-red-500 bg-red-50/20 ring-2 ring-red-100' : 'border-slate-200 hover:border-slate-300'}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 flex items-center justify-center bg-red-50 text-red-500 rounded">
                   <AlertTriangle size={14} />
                 </div>
-                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">6</span>
+                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">{outOfServiceCount}</span>
               </div>
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Out of Service</div>
             </div>
             
-            {/* Card 5 */}
-            <div className="bg-white rounded-2xl border border-blue-200 p-4 shadow-sm flex flex-col gap-2 bg-blue-50/10">
+            {/* Card 5: Compliance */}
+            <div 
+              onClick={() => { const n = cardFilter === 'compliance' ? 'all' : 'compliance'; setCardFilter(n); showToast(n === 'compliance' ? 'Filtering Assets with Compliance / Condition Attention' : 'Showing all assets'); }}
+              className={`bg-white rounded-2xl border p-4 shadow-sm flex flex-col gap-2 cursor-pointer transition-all ${cardFilter === 'compliance' ? 'border-blue-500 bg-blue-50/30 ring-2 ring-blue-100' : 'border-blue-200 hover:border-blue-300'}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 flex items-center justify-center bg-blue-50 text-blue-600 rounded">
                   <Shield size={14} />
                 </div>
-                <span className="text-2xl font-black text-blue-600 leading-none tracking-tight">7</span>
+                <span className="text-2xl font-black text-blue-600 leading-none tracking-tight">{complianceCount}</span>
               </div>
               <div className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-1 leading-snug">Expiring Compliance</div>
             </div>
             
-            {/* Card 6 */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col gap-2">
+            {/* Card 6: Assigned */}
+            <div 
+              onClick={() => { const n = cardFilter === 'assigned' ? 'all' : 'assigned'; setCardFilter(n); showToast(n === 'assigned' ? 'Filtering Assigned Assets' : 'Showing all assets'); }}
+              className={`bg-white rounded-2xl border p-4 shadow-sm flex flex-col gap-2 cursor-pointer transition-all ${cardFilter === 'assigned' ? 'border-purple-500 bg-purple-50/20 ring-2 ring-purple-100' : 'border-slate-200 hover:border-slate-300'}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 flex items-center justify-center bg-purple-50 text-purple-600 rounded">
                   <MapPin size={14} />
                 </div>
-                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">13</span>
+                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">{assignedCount}</span>
               </div>
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Assigned</div>
             </div>
             
-            {/* Card 7 */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col gap-2">
+            {/* Card 7: Unassigned */}
+            <div 
+              onClick={() => { const n = cardFilter === 'unassigned' ? 'all' : 'unassigned'; setCardFilter(n); showToast(n === 'unassigned' ? 'Filtering Unassigned Assets' : 'Showing all assets'); }}
+              className={`bg-white rounded-2xl border p-4 shadow-sm flex flex-col gap-2 cursor-pointer transition-all ${cardFilter === 'unassigned' ? 'border-slate-400 bg-slate-50 ring-2 ring-slate-200' : 'border-slate-200 hover:border-slate-300'}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 flex items-center justify-center bg-slate-100 text-slate-500 rounded">
                   <Building size={14} />
                 </div>
-                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">28</span>
+                <span className="text-2xl font-black text-slate-900 leading-none tracking-tight">{unassignedCount}</span>
               </div>
               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Unassigned</div>
             </div>
@@ -563,7 +676,12 @@ export default function Assets() {
           {/* Asset Summary Donut */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
             <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-6">Asset Summary</h3>
-            <AssetDonutChart />
+            <AssetDonutChart 
+              active={activeCount} 
+              maintenance={maintenanceCount} 
+              outOfService={outOfServiceCount} 
+              unassigned={unassignedCount} 
+            />
             
             <div className="mt-8 space-y-3">
               <div className="flex justify-between items-center">
@@ -571,28 +689,48 @@ export default function Assets() {
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
                   <span className="text-xs font-bold text-slate-700">Active</span>
                 </div>
-                <div className="text-xs font-black text-slate-900">88 <span className="text-slate-400 font-semibold ml-1">(66.7%)</span></div>
+                <div className="text-xs font-black text-slate-900">
+                  {activeCount} 
+                  <span className="text-slate-400 font-semibold ml-1">
+                    ({totalCount > 0 ? ((activeCount / totalCount) * 100).toFixed(1) : 0}%)
+                  </span>
+                </div>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
                   <span className="text-xs font-bold text-slate-700">Maintenance</span>
                 </div>
-                <div className="text-xs font-black text-slate-900">18 <span className="text-slate-400 font-semibold ml-1">(13.6%)</span></div>
+                <div className="text-xs font-black text-slate-900">
+                  {maintenanceCount} 
+                  <span className="text-slate-400 font-semibold ml-1">
+                    ({totalCount > 0 ? ((maintenanceCount / totalCount) * 100).toFixed(1) : 0}%)
+                  </span>
+                </div>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
                   <span className="text-xs font-bold text-slate-700">Out of Service</span>
                 </div>
-                <div className="text-xs font-black text-slate-900">6 <span className="text-slate-400 font-semibold ml-1">(4.5%)</span></div>
+                <div className="text-xs font-black text-slate-900">
+                  {outOfServiceCount} 
+                  <span className="text-slate-400 font-semibold ml-1">
+                    ({totalCount > 0 ? ((outOfServiceCount / totalCount) * 100).toFixed(1) : 0}%)
+                  </span>
+                </div>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-slate-400"></div>
                   <span className="text-xs font-bold text-slate-700">Unassigned</span>
                 </div>
-                <div className="text-xs font-black text-slate-900">28 <span className="text-slate-400 font-semibold ml-1">(21.2%)</span></div>
+                <div className="text-xs font-black text-slate-900">
+                  {unassignedCount} 
+                  <span className="text-slate-400 font-semibold ml-1">
+                    ({totalCount > 0 ? ((unassignedCount / totalCount) * 100).toFixed(1) : 0}%)
+                  </span>
+                </div>
               </div>
             </div>
           </div>

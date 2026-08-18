@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import {
   FiArrowLeft, FiMoreVertical, FiNavigation,
   FiCheckCircle, FiClock, FiUpload, FiMessageSquare,
@@ -36,9 +37,9 @@ const INITIAL_JOBS_DB = {
       { id: 6, title: 'Final Ramp Lock', date: '29 May 2025, 08:35 AM', tag: 'Departure' }
     ],
     activities: [
-      { time: '08:12 AM', action: 'Job accepted by driver', user: 'Noah Williams' },
+      { time: '08:12 AM', action: 'Job accepted by driver', user: 'Driver' },
       { time: '08:00 AM', action: 'Job assigned by dispatcher', user: 'Dispatch HQ' },
-      { time: '07:45 AM', action: 'Pre-start checklist completed', user: 'Noah Williams' },
+      { time: '07:45 AM', action: 'Pre-start checklist completed', user: 'Driver' },
       { time: '07:30 AM', action: 'Job created in system', user: 'System' }
     ]
   },
@@ -82,7 +83,7 @@ const INITIAL_JOBS_DB = {
       { id: 2, title: 'Tie Down Inspection', date: '29 May 2025, 06:30 AM', tag: 'Inspection' }
     ],
     activities: [
-      { time: '06:00 AM', action: 'Departed pickup location', user: 'Noah Williams' }
+      { time: '06:00 AM', action: 'Departed pickup location', user: 'Driver' }
     ]
   },
   'LD-3981': {
@@ -177,7 +178,7 @@ export default function JobDetails() {
         statusText: 'In Progress',
         statusCountdown: 'In Transit',
         activities: [
-          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job started by driver', user: 'Noah Williams' },
+          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job started by driver', user: 'Driver' },
           ...job.activities
         ]
       };
@@ -192,7 +193,7 @@ export default function JobDetails() {
         pickup: { ...job.pickup, status: 'COMPLETED' },
         delivery: { ...job.delivery, status: 'COMPLETED' },
         activities: [
-          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job marked completed by driver', user: 'Noah Williams' },
+          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job marked completed by driver', user: 'Driver' },
           ...job.activities
         ]
       };
@@ -219,7 +220,7 @@ export default function JobDetails() {
       ...prev,
       documents: [newDoc, ...prev.documents],
       activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Uploaded document: ${newDoc.name}`, user: 'Noah Williams' },
+        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Uploaded document: ${newDoc.name}`, user: 'Driver' },
         ...prev.activities
       ]
     }));
@@ -246,7 +247,7 @@ export default function JobDetails() {
       photos: [newPhoto, ...prev.photos],
       items: { ...prev.items, photosTaken: prev.items.photosTaken + 1 },
       activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Added photo: ${newPhoto.title}`, user: 'Noah Williams' },
+        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Added photo: ${newPhoto.title}`, user: 'Driver' },
         ...prev.activities
       ]
     }));
@@ -271,7 +272,7 @@ export default function JobDetails() {
       statusText: meta.text,
       statusCountdown: meta.cd,
       activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Status updated to ${meta.text}${statusNote ? `: ${statusNote}` : ''}`, user: 'Noah Williams' },
+        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Status updated to ${meta.text}${statusNote ? `: ${statusNote}` : ''}`, user: 'Driver' },
         ...prev.activities
       ]
     }));

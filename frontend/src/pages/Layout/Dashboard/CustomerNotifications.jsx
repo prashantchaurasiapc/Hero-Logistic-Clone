@@ -20,7 +20,7 @@ const TrashIcon = ({ color }) => (
 );
 
 const CustomerNotifications = () => {
-  // Notifications Data (loaded from API)
+  // Notifications Data State
   const [notifications, setNotifications] = useState([]);
 
   // UI States

@@ -468,8 +468,8 @@ export default function YardLoadLane() {
                   <tbody>
                     {filteredTasks.length === 0 ? (
                       <tr>
-                        <td colSpan="3" style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: 12, fontWeight: '700' }}>
-                          No tasks found matching "{searchQuery}".
+                        <td colSpan="3" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: 12, fontWeight: '600' }}>
+                          {searchQuery ? `No tasks found matching "${searchQuery}".` : 'No yard tasks found. Ready for testing.'}
                         </td>
                       </tr>
                     ) : (

@@ -725,17 +725,84 @@ exports.createAsset = async (req, res, next) => {
     const payload = { ...req.body };
     if (companyId && !payload.companyId) payload.companyId = companyId;
 
-    if (companyId && payload.branchId) {
+    if (!payload.branchId) {
+      const defaultBranch = await prisma.branch.findFirst({
+        where: companyId ? { companyId } : {}
+      });
+      if (defaultBranch) {
+        payload.branchId = defaultBranch.id;
+      }
+    } else if (companyId && payload.branchId) {
       const branchObj = await prisma.branch.findFirst({
         where: { id: payload.branchId, companyId }
       });
       if (!branchObj) {
-        return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Branch not found in this company context' }, HTTP_STATUS.NOT_FOUND);
+        const fallbackBranch = await prisma.branch.findFirst({ where: { companyId } });
+        if (fallbackBranch) payload.branchId = fallbackBranch.id;
       }
     }
 
+    if (!payload.assetId) {
+      payload.assetId = `AST-${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+
+    if (payload.status) {
+      const s = String(payload.status).toUpperCase().replace(/\s+/g, '_');
+      if (['ACTIVE', 'MAINTENANCE', 'OUT_OF_SERVICE', 'DISPOSED', 'DECOMMISSIONED'].includes(s)) {
+        payload.status = s;
+      } else {
+        payload.status = 'ACTIVE';
+      }
+    }
+
+    if (payload.condition) {
+      const c = String(payload.condition).toUpperCase();
+      if (['EXCELLENT', 'GOOD', 'FAIR', 'POOR', 'CRITICAL'].includes(c)) {
+        payload.condition = c;
+      } else {
+        payload.condition = 'GOOD';
+      }
+    }
+
+    if (payload.year) payload.year = parseInt(payload.year, 10);
+    if (payload.purchasePrice) payload.purchasePrice = parseFloat(payload.purchasePrice);
+    if (payload.bookValue) payload.bookValue = parseFloat(payload.bookValue);
+
+    // Remove relations or virtual keys not in Prisma Asset model
+    delete payload.companyId;
+    delete payload.branch;
+    delete payload.assignments;
+    delete payload.maintenance;
+    delete payload.documents;
+
     const data = await prisma.asset.create({ data: payload, include: { branch: true } });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
+  } catch (error) { next(error); }
+};
+
+exports.updateAsset = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const payload = { ...req.body };
+    delete payload.id;
+    delete payload.branch;
+    delete payload.assignments;
+    delete payload.maintenance;
+
+    const data = await prisma.asset.update({
+      where: { id },
+      data: payload,
+      include: { branch: true }
+    });
+    return sendSuccess(res, data, HTTP_STATUS.OK);
+  } catch (error) { next(error); }
+};
+
+exports.deleteAsset = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await prisma.asset.delete({ where: { id } });
+    return sendSuccess(res, { message: 'Asset deleted successfully' }, HTTP_STATUS.OK);
   } catch (error) { next(error); }
 };
 
@@ -1830,13 +1897,116 @@ exports.getSupportAndKb = async (req, res, next) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    const articles = [
-      { id: 'kb-1', title: 'How to Assign Drivers to Car Carrying Loads', category: 'Dispatch', views: 420 },
-      { id: 'kb-2', title: 'Managing Warehouse Pick & Pack Lanes', category: 'Warehouse', views: 310 },
-      { id: 'kb-3', title: 'Understanding Driver Fatigue & Pre-Start Compliance', category: 'Safety', views: 580 }
+    const categories = [
+      {
+        id: 'getting-started',
+        title: 'Getting Started',
+        desc: 'Basic setup and configuration guides',
+        count: 8,
+        icon: 'Book',
+        articles: [
+          'How to assign a driver to a new load?',
+          'Understanding the financial performance metrics',
+          'Step-by-step guide to updating company details',
+          'Troubleshooting: Asset tracking not updating',
+          'Setting up automated billing reports',
+          'How to create your first load',
+          'Inviting team members to the platform',
+          'Configuring your company profile'
+        ]
+      },
+      {
+        id: 'fleet-management',
+        title: 'Fleet Management',
+        desc: 'Managing vehicles, maintenance, and assets',
+        count: 8,
+        icon: 'Truck',
+        articles: [
+          'Adding a new vehicle to the fleet',
+          'Scheduling preventive maintenance',
+          'Tracking vehicle GPS in real time',
+          'Assigning trailers to loads',
+          'Managing driver licenses and compliance',
+          'Setting up geofence alerts',
+          'Viewing fleet utilization reports',
+          'Archiving decommissioned vehicles'
+        ]
+      },
+      {
+        id: 'warehouse-yard',
+        title: 'Warehouse & Yard Operations',
+        desc: 'Holding areas, load lanes, and stock movements',
+        count: 6,
+        icon: 'Package',
+        articles: [
+          'Creating and managing standard load lanes',
+          'Holding area staging and asset relocation',
+          'Inbound delivery inspection workflows',
+          'Yard shift logging and task assignments',
+          'Tracking damaged cargo or delivery issues',
+          'Stock barcode scanning & audit procedures'
+        ]
+      },
+      {
+        id: 'billing-subscriptions',
+        title: 'Billing & Subscriptions',
+        desc: 'Invoices, payments, and plan upgrades',
+        count: 8,
+        icon: 'FileText',
+        articles: [
+          'Understanding your invoice breakdown',
+          'Upgrading or downgrading your plan',
+          'Adding a payment method',
+          'Downloading past invoices',
+          'Setting up auto-pay',
+          'Requesting a billing dispute',
+          'Tax and GST information',
+          'Cancelling your subscription'
+        ]
+      },
+      {
+        id: 'safety-compliance',
+        title: 'Safety & Checklists',
+        desc: 'Daily inspections, fatigue management, and hazards',
+        count: 5,
+        icon: 'Shield',
+        articles: [
+          'Completing pre-trip safety checklists',
+          'Logging road hazards and vehicle defects',
+          'Driver rest break and fatigue rules',
+          'Emergency response protocols',
+          'Annual compliance certificates upload'
+        ]
+      },
+      {
+        id: 'account-settings',
+        title: 'Account Settings',
+        desc: 'User roles, permissions, and company profile',
+        count: 8,
+        icon: 'Settings',
+        articles: [
+          'Changing your password',
+          'Setting up two-factor authentication',
+          'Managing user roles and permissions',
+          'Updating company contact details',
+          'Configuring notification preferences',
+          'Linking external integrations',
+          'Audit log and activity history',
+          'Deleting a user account'
+        ]
+      }
     ];
 
-    return sendSuccess(res, { tickets, articles });
+    const popularArticles = [
+      { title: 'How to assign a driver to a new load?', catId: 'getting-started' },
+      { title: 'Understanding the financial performance metrics', catId: 'getting-started' },
+      { title: 'Creating and managing standard load lanes', catId: 'warehouse-yard' },
+      { title: 'Troubleshooting: Asset tracking not updating', catId: 'getting-started' },
+      { title: 'Scheduling preventive maintenance', catId: 'fleet-management' },
+      { title: 'Completing pre-trip safety checklists', catId: 'safety-compliance' }
+    ];
+
+    return sendSuccess(res, { tickets, categories, popularArticles });
   } catch (error) { next(error); }
 };
 

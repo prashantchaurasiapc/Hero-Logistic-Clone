@@ -16,7 +16,7 @@ export default function CurrentStock() {
   const navigate = useNavigate();
   const location = useLocation();
   const isYard = location.pathname ? location.pathname.startsWith('/yard') : false;
-  // Phase A: start with empty - never show mock data as a fallback
+
   const [stockItems, setStockItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);

@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
-import api from '../services/api';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiCheckCircle, FiCamera, FiAlertTriangle, FiFileText,
   FiMessageSquare, FiCheck, FiX, FiMinus, FiHelpCircle, FiChevronRight
 } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 export default function StartWork() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState('');
+  const fileInputRef = useRef(null);
+  const [notes, setNotes] = useState('');
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
 
   // 20 Inspection Checklist Items state
   const [items, setItems] = useState([
@@ -36,7 +42,27 @@ export default function StartWork() {
     { id: 20, label: 'Other (notes or additional checks)', status: 'unchecked' },
   ]);
 
-  const [notes, setNotes] = useState('');
+  // Dynamic state from backend
+  const [contextData, setContextData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchContext = async () => {
+      try {
+        const res = await api.get('/driver-portal/checklist-context');
+        if (res.data?.success) {
+          const { vehicle, loadRef, trailerRef, lastChecklists, template, lastSaved } = res.data.data;
+          setContextData({ vehicle, loadRef, trailerRef, lastChecklists, lastSaved });
+          setItems(template);
+        }
+      } catch (error) {
+        console.error('Failed to load checklist context', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchContext();
+  }, []);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -56,49 +82,88 @@ export default function StartWork() {
   const uncheckedCount = items.filter((i) => i.status === 'unchecked').length;
   const totalCount = items.length;
   const completedCount = passCount + failCount + naCount;
-  const completionPercentage = Math.round((completedCount / totalCount) * 100);
+  const completionPercentage = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (failCount > 0) {
-      showToast('⚠️ Fail items detected! Please submit defect report before driving.');
+  const handleSubmit = async () => {
+    if (uncheckedCount > 0) {
+      showToast('⚠️ Please inspect all items before submitting.');
       return;
     }
+
     try {
-      const res = await api.post('/warehouse-portal/safety-checklists', {
-        vehicleRef: 'Driver Truck / Vehicle',
-        trailerRef: 'Main Trailer',
-        items: items,
+      const isWarehouse = user?.role === 'WAREHOUSE_MANAGER' || user?.role === 'WAREHOUSE_STAFF' || user?.role === 'YARD_ATTENDANT';
+      const endpoint = '/driver-portal/checklists';
+
+      const payload = {
+        vehicleRef: contextData?.vehicle?.ref || 'N/A',
+        trailerRef: contextData?.trailerRef || 'N/A',
+        totalItems: totalCount,
+        passedCount: passCount,
+        failedCount: failCount,
+        naCount: naCount,
         isDraft: false,
-        notes: notes
-      });
+        notes: notes,
+        items: {
+          create: items.map(item => ({
+            itemNumber: item.id,
+            itemLabel: item.label,
+            status: item.status === 'pass' ? 'PASS' : item.status === 'fail' ? 'FAIL' : item.status === 'na' ? 'NA' : 'NOT_CHECKED'
+          }))
+        }
+      };
+
+      const res = await api.post(endpoint, payload);
       if (res.data?.success) {
-        showToast('✅ Safety Checklist submitted successfully! All clear.');
-        setTimeout(() => navigate('/driver/dashboard'), 2000);
+        showToast('✅ Safety Checklist submitted successfully!');
+        setTimeout(() => {
+          if (failCount > 0) {
+            navigate(isWarehouse ? '/warehouse/dashboard' : '/driver/incident-reporting');
+          } else {
+            navigate(isWarehouse ? '/warehouse/dashboard' : '/driver/assigned-jobs');
+          }
+        }, 1500);
       }
     } catch (err) {
-      console.error('Checklist submit error:', err);
-      showToast('Failed to submit checklist: ' + err.message);
+      console.error(err);
+      showToast('❌ Failed to submit Safety Checklist.');
     }
   };
 
   const handleSaveDraft = async () => {
     try {
-      const res = await api.post('/warehouse-portal/safety-checklists', {
-        vehicleRef: 'Driver Truck / Vehicle',
-        trailerRef: 'Main Trailer',
-        items: items,
+      const endpoint = '/driver-portal/checklists';
+
+      const payload = {
+        vehicleRef: contextData?.vehicle?.ref || 'N/A',
+        trailerRef: contextData?.trailerRef || 'N/A',
+        totalItems: totalCount,
+        passedCount: passCount,
+        failedCount: failCount,
+        naCount: naCount,
         isDraft: true,
-        notes: notes
-      });
+        notes: notes,
+        items: {
+          create: items.map(item => ({
+            itemNumber: item.id,
+            itemLabel: item.label,
+            status: item.status === 'pass' ? 'PASS' : item.status === 'fail' ? 'FAIL' : item.status === 'na' ? 'NA' : 'NOT_CHECKED'
+          }))
+        }
+      };
+
+      const res = await api.post(endpoint, payload);
       if (res.data?.success) {
         showToast('💾 Safety Checklist draft saved.');
       }
     } catch (err) {
-      console.error('Checklist draft error:', err);
-      showToast('Failed to save draft: ' + err.message);
+      console.error(err);
+      showToast('❌ Failed to save checklist draft.');
     }
   };
+
+  if (loading) {
+     return <div className="p-8 text-center text-slate-500 font-bold">Loading Checklist...</div>;
+  }
 
   return (
     <div className="flex-grow bg-[#f8fafc] p-4 lg:p-6 w-full text-left font-sans overflow-y-auto min-h-screen">
@@ -202,7 +267,7 @@ export default function StartWork() {
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">KEY ACTIONS</h3>
             <div className="space-y-2">
               <button
-                onClick={() => showToast('Displaying past safety checklist history.')}
+                onClick={() => setHistoryModalOpen(true)}
                 className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
                 <FiFileText className="text-slate-600" />
@@ -226,7 +291,7 @@ export default function StartWork() {
               </button>
 
               <button
-                onClick={() => showToast('Photo uploader camera opened.')}
+                onClick={() => fileInputRef.current?.click()}
                 className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
                 <FiCamera className="text-purple-600" />
@@ -239,7 +304,7 @@ export default function StartWork() {
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">STATUS</h3>
             <div className="text-xs space-y-1">
-              <div className="text-slate-500 font-medium">Last saved: <strong className="text-slate-800">29 May 2025, 06:10 AM</strong></div>
+              <div className="text-slate-500 font-medium">Last saved: <strong className="text-slate-800">{contextData?.lastSaved || 'Never'}</strong></div>
               <div className="text-emerald-600 font-extrabold flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Synced
               </div>
@@ -269,19 +334,19 @@ export default function StartWork() {
             <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-100 rounded-xl p-3.5 mb-5 text-xs">
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Vehicle</span>
-                <span className="font-black text-slate-900">TRK-101 (MAN TGX 26.580)</span>
+                <span className="font-black text-slate-900">{contextData?.vehicle?.ref || 'N/A'}</span>
               </div>
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Load / Reference</span>
-                <span className="font-black text-purple-700">LD-3987</span>
+                <span className="font-black text-purple-700">{contextData?.loadRef || 'N/A'}</span>
               </div>
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Trailer</span>
-                <span className="font-black text-slate-900">TRL-205 (Car Carrier 4 Level)</span>
+                <span className="font-black text-slate-900">{contextData?.trailerRef || 'N/A'}</span>
               </div>
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Date / Time</span>
-                <span className="font-mono font-bold text-slate-800">29 May 2025, 06:15 AM</span>
+                <span className="font-mono font-bold text-slate-800">{new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             </div>
 
@@ -367,7 +432,7 @@ export default function StartWork() {
                 />
                 <button
                   type="button"
-                  onClick={() => showToast('Camera photo capture triggered.')}
+                  onClick={() => fileInputRef.current?.click()}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2.5 rounded-xl border border-slate-200 cursor-pointer"
                   title="Upload Photo"
                 >
@@ -463,51 +528,31 @@ export default function StartWork() {
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LAST 5 CHECKLISTS</h3>
-              <button onClick={() => showToast('Opening full checklist log history...')} className="text-xs font-bold text-purple-600 hover:underline cursor-pointer">
+              <button onClick={() => setHistoryModalOpen(true)} className="text-xs font-bold text-purple-600 hover:underline cursor-pointer">
                 View all
               </button>
             </div>
 
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100 font-bold">
-                <div>
-                  <span className="text-slate-800 block">29 May 2025, 06:15 AM</span>
-                  <span className="text-emerald-600 text-[10px]">Pass</span>
+              {contextData?.lastChecklists && contextData.lastChecklists.length > 0 ? (
+                contextData.lastChecklists.map((chk, i) => (
+                  <div 
+                    key={i} 
+                    onClick={() => { setSelectedHistoryItem(chk); setHistoryModalOpen(true); }}
+                    className="flex justify-between items-center p-2 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-100 font-bold cursor-pointer transition-colors"
+                  >
+                    <div>
+                      <span className="text-slate-800 block">{chk.dateStr}</span>
+                      <span className={chk.status === 'Pass' ? "text-emerald-600 text-[10px]" : "text-rose-600 text-[10px]"}>{chk.status}</span>
+                    </div>
+                    <span className={`font-mono ${chk.status === 'Pass' ? 'text-emerald-600' : 'text-rose-600'}`}>{chk.passedCount} / {chk.totalItems}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center p-3 text-slate-500 font-medium bg-slate-50 rounded-xl border border-slate-100">
+                  No recent checklists found.
                 </div>
-                <span className="font-mono text-emerald-600">18 / 20</span>
-              </div>
-
-              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100 font-bold">
-                <div>
-                  <span className="text-slate-800 block">28 May 2025, 06:12 AM</span>
-                  <span className="text-emerald-600 text-[10px]">Pass</span>
-                </div>
-                <span className="font-mono text-emerald-600">20 / 20</span>
-              </div>
-
-              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100 font-bold">
-                <div>
-                  <span className="text-slate-800 block">27 May 2025, 06:10 AM</span>
-                  <span className="text-emerald-600 text-[10px]">Pass</span>
-                </div>
-                <span className="font-mono text-emerald-600">19 / 20</span>
-              </div>
-
-              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100 font-bold">
-                <div>
-                  <span className="text-slate-800 block">26 May 2025, 06:08 AM</span>
-                  <span className="text-emerald-600 text-[10px]">Pass</span>
-                </div>
-                <span className="font-mono text-emerald-600">20 / 20</span>
-              </div>
-
-              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100 font-bold">
-                <div>
-                  <span className="text-slate-800 block">25 May 2025, 06:11 AM</span>
-                  <span className="text-emerald-600 text-[10px]">Pass</span>
-                </div>
-                <span className="font-mono text-emerald-600">18 / 20</span>
-              </div>
+              )}
             </div>
           </div>
 
@@ -516,7 +561,7 @@ export default function StartWork() {
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">HELP & RESOURCES</h3>
             <div className="space-y-2">
               <button
-                onClick={() => showToast('Opening Safety Procedures guide...')}
+                onClick={() => navigate('/driver/documents')}
                 className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
                 <span>Safety Procedures</span>
@@ -524,7 +569,7 @@ export default function StartWork() {
               </button>
 
               <button
-                onClick={() => showToast('Opening Vehicle Inspection Guide...')}
+                onClick={() => navigate('/driver/documents')}
                 className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
               >
                 <span>Vehicle Inspection Guide</span>
@@ -552,6 +597,112 @@ export default function StartWork() {
         </div>
 
       </div>
+
+      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={(e) => showToast('Photo attached: ' + e.target.files[0]?.name)} />
+
+      {/* ================= INSPECTION HISTORY MODAL ================= */}
+      {historyModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-5 sm:p-6 space-y-5 text-left shadow-2xl max-h-[90vh] flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-purple-50 text-purple-700 rounded-2xl">
+                  <FiFileText className="text-xl" />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-base sm:text-lg">Pre-Start Safety Checklist History</h3>
+                  <p className="text-xs font-semibold text-slate-500">View previous daily vehicle safety inspection audits & sign-offs</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => { setHistoryModalOpen(false); setSelectedHistoryItem(null); }} 
+                className="text-slate-400 hover:text-slate-700 text-xl font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="overflow-y-auto space-y-3 flex-1 pr-1">
+              {contextData?.lastChecklists && contextData.lastChecklists.length > 0 ? (
+                contextData.lastChecklists.map((chk, idx) => (
+                  <div 
+                    key={chk.id || idx} 
+                    className="p-4 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-2xl space-y-2.5 transition-all"
+                  >
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className={`w-2.5 h-2.5 rounded-full ${chk.status === 'Pass' ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                        <span className="font-black text-slate-900 text-sm">{chk.dateStr}</span>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                          chk.status === 'Pass' 
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+                            : 'bg-rose-100 text-rose-800 border-rose-300'
+                        }`}>
+                          {chk.status === 'Pass' ? 'PASSED' : 'FAILED'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 text-xs font-bold">
+                        <span className="text-slate-500">Score:</span>
+                        <span className="font-mono font-black text-slate-900 bg-white border border-slate-200 px-2.5 py-0.5 rounded-lg">
+                          {chk.passedCount} / {chk.totalItems} ({Math.round(((chk.passedCount || 19) / (chk.totalItems || 20)) * 100)}%)
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 pt-1 font-semibold">
+                      <div className="bg-white p-2.5 rounded-xl border border-slate-100">
+                        <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Truck Assigned</span>
+                        <span className="text-slate-900 font-bold">{chk.vehicle || contextData?.vehicle?.ref || 'No Vehicle'}</span>
+                      </div>
+                      <div className="bg-white p-2.5 rounded-xl border border-slate-100">
+                        <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Trailer Assigned</span>
+                        <span className="text-slate-900 font-bold">{chk.trailer || contextData?.trailerRef || 'No Trailer'}</span>
+                      </div>
+                    </div>
+
+                    {chk.notes && (
+                      <div className="text-[11px] text-slate-600 bg-white p-2.5 rounded-xl border border-slate-100">
+                        <strong className="text-slate-800">Inspector Notes:</strong> {chk.notes}
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-10 text-slate-500 font-medium">
+                  No inspection history logs recorded yet.
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-3 border-t border-slate-100">
+              <span className="text-xs font-bold text-slate-500">
+                Total Logs: <strong className="text-slate-800">{contextData?.lastChecklists?.length || 0} Submissions</strong>
+              </span>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  onClick={() => window.print()}
+                  className="flex-1 sm:flex-initial bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer"
+                >
+                  Export PDF
+                </button>
+                <button
+                  onClick={() => setHistoryModalOpen(false)}
+                  className="flex-1 sm:flex-initial bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

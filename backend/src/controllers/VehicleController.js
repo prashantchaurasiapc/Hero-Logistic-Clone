@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const prisma = require('../utils/prismaClient');
 const syncMissingVehicleColumns = require('../utils/syncDbColumns');
 const { sendSuccess, sendList, sendError } = require('../utils/apiResponse');
@@ -66,8 +68,38 @@ exports.getById = async (req, res, next) => {
   }
 };
 
+// Save Base64 Photo to public/uploads directory
+const saveBase64Photo = (photoData) => {
+  if (!photoData || typeof photoData !== 'string') return null;
+  if (!photoData.startsWith('data:image')) {
+    return photoData;
+  }
+  try {
+    const matches = photoData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return null;
+    }
+    const type = matches[1];
+    const data = Buffer.from(matches[2], 'base64');
+    
+    const publicDir = path.join(__dirname, '../../public');
+    const uploadsDir = path.join(publicDir, 'uploads');
+    if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+    const ext = type.split('/')[1] || 'png';
+    const uniqueFilename = `vehicle-${Date.now()}-${Math.round(Math.random() * 1E6)}.${ext}`;
+    const filePath = path.join(uploadsDir, uniqueFilename);
+    fs.writeFileSync(filePath, data);
+    return `/uploads/${uniqueFilename}`;
+  } catch (err) {
+    console.error('Failed to save base64 vehicle image:', err);
+    return null;
+  }
+};
+
 const ALLOWED_VEHICLE_FIELDS = new Set([
-  'id', 'rego', 'plate', 'make', 'model', 'category', 'color', 'vin', 
+  'rego', 'plate', 'make', 'model', 'category', 'color', 'vin', 
   'engineNumber', 'odometerKm', 'maintenanceDueKm', 'fuelType', 'regType', 
   'regState', 'regIssueDate', 'regExpiryDate', 'maxDistPerTripKm', 
   'primaryMechanic', 'preferredRoutes', 'preferredRegions', 'dgCertified', 
@@ -124,33 +156,47 @@ const sanitizePayload = (rawPayload) => {
     }
   }
 
-  if (rawPayload.engineNumber) clean.engineNumber = String(rawPayload.engineNumber);
-  if (rawPayload.regState) clean.regState = String(rawPayload.regState);
-  if (rawPayload.regType) clean.regType = String(rawPayload.regType);
-  if (rawPayload.primaryMechanic) clean.primaryMechanic = String(rawPayload.primaryMechanic);
-  if (rawPayload.preferredRoutes) clean.preferredRoutes = String(rawPayload.preferredRoutes);
-  if (rawPayload.preferredRegions) clean.preferredRegions = String(rawPayload.preferredRegions);
-  if (rawPayload.maxDistPerTripKm !== undefined) clean.maxDistPerTripKm = parseInt(rawPayload.maxDistPerTripKm) || undefined;
+  if (rawPayload.maintenanceDueKm !== undefined && rawPayload.maintenanceDueKm !== null) {
+    const num = parseInt(String(rawPayload.maintenanceDueKm).replace(/[^0-9]/g, ''), 10);
+    if (!isNaN(num)) clean.maintenanceDueKm = num;
+  }
+
+  if (rawPayload.maxDistPerTripKm !== undefined && rawPayload.maxDistPerTripKm !== null) {
+    const num = parseInt(String(rawPayload.maxDistPerTripKm).replace(/[^0-9]/g, ''), 10);
+    if (!isNaN(num)) clean.maxDistPerTripKm = num;
+  }
+
   if (rawPayload.dgCertified !== undefined) clean.dgCertified = Boolean(rawPayload.dgCertified);
   if (rawPayload.hvCertified !== undefined) clean.hvCertified = Boolean(rawPayload.hvCertified);
 
-  if (rawPayload.branchId !== undefined) {
-    clean.branchId = rawPayload.branchId;
+  const rawPhoto = rawPayload.photoUrl ?? rawPayload.avatarUrl ?? rawPayload.img ?? rawPayload.photoPreview ?? rawPayload.photo;
+  if (rawPhoto !== undefined && rawPhoto !== null) {
+    clean.photoUrl = saveBase64Photo(rawPhoto);
   }
 
-  const rawPhoto = rawPayload.photoUrl || rawPayload.photo || rawPayload.img;
-  if (rawPhoto) {
-    const cleanPhoto = cleanVehiclePhotoUrl(rawPhoto);
-    if (cleanPhoto) {
-      clean.photoUrl = cleanPhoto;
+  [
+    'regType', 'regState', 'fuelType', 'color', 'engineNumber',
+    'primaryMechanic', 'preferredRoutes', 'preferredRegions', 'currentLocation',
+    'currentDriverId', 'branchId'
+  ].forEach(field => {
+    if (rawPayload[field] !== undefined) {
+      clean[field] = rawPayload[field] ? String(rawPayload[field]).trim() : null;
+    }
+  });
+
+  if (rawPayload.dgCertified !== undefined) clean.dgCertified = Boolean(rawPayload.dgCertified);
+  if (rawPayload.hvCertified !== undefined) clean.hvCertified = Boolean(rawPayload.hvCertified);
+
+  // Filter only allowed vehicle fields
+  const filteredClean = {};
+  for (const [key, val] of Object.entries(clean)) {
+    if (ALLOWED_VEHICLE_FIELDS.has(key)) {
+      filteredClean[key] = val;
     }
   }
 
-  return clean;
+  return filteredClean;
 };
-
-const fs = require('fs');
-const path = require('path');
 
 const cleanVehiclePhotoUrl = (url) => {
   if (!url || typeof url !== 'string') return null;

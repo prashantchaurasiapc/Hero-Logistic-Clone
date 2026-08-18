@@ -273,19 +273,26 @@ const EmployeePay = () => {
     try {
       // Split "18 May 2026 – 24 May 2026" or similar
       const parts = newPayRunForm.period.split(' – ');
-      const start = parts[0] || '2026-05-18';
-      const end = parts[1] || '2026-05-24';
+      const start = parts[0] || new Date().toISOString().slice(0, 10);
+      const end = parts[1] || new Date().toISOString().slice(0, 10);
 
       await api.post('/accounts/payroll/calculate', {
         periodStart: start,
-        periodEnd: end
+        periodEnd: end,
+        grossPay: parseFloat(newPayRunForm.grossPay) || 0,
+        deductions: parseFloat(newPayRunForm.deductions) || 0,
+        totalDeductions: parseFloat(newPayRunForm.deductions) || 0,
+        frequency: newPayRunForm.frequency || 'Weekly',
+        employees: parseInt(newPayRunForm.employees) || 1,
+        notes: newPayRunForm.notes || ''
       });
 
-      showToast(`✓ Pay Run calculated and saved successfully.`);
+      showToast(`✓ Pay Run created and saved successfully.`);
       setShowNewPayRunModal(false);
+      setNewPayRunForm({ period: '', frequency: 'Weekly', employees: 0, grossPay: '', deductions: '', notes: '' });
       fetchPayRuns();
     } catch (err) {
-      showToast(`✗ Failed to calculate pay run.`);
+      showToast(`✗ Failed to create pay run: ${err?.response?.data?.error?.message || err.message}`);
     }
   };
 

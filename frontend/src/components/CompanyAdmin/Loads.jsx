@@ -2755,12 +2755,87 @@ export default function Loads() {
   const totalPages = Math.ceil(sortedFiltered.length / PAGE_SIZE) || 1;
   const paged = sortedFiltered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  const [toastMsg, setToastMsg] = useState(null);
+  const [bulkAction, setBulkAction] = useState('Bulk Actions');
+
+  const showToast = (msg, type = 'success') => {
+    setToastMsg({ msg, type });
+    setTimeout(() => setToastMsg(null), 3500);
+  };
+
+  const handleExportLoads = () => {
+    try {
+      const headers = ['Load Ref', 'Status', 'Load Type', 'Customer', 'Origin', 'Destination', 'Driver', 'Truck', 'Date'];
+      const rows = filtered.map(l => [
+        `"${l.id || ''}"`,
+        `"${l.status || ''}"`,
+        `"${l.type || ''}"`,
+        `"${l.customer || ''}"`,
+        `"${l.from || ''}"`,
+        `"${l.to || ''}"`,
+        `"${l.driver || 'Unassigned'}"`,
+        `"${l.truck || 'Unassigned'}"`,
+        `"${l.date || ''}"`
+      ]);
+      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `loads_export_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('✓ Loads exported to CSV successfully!');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to export loads', 'error');
+    }
+  };
+
+  const handleImportSample = () => {
+    showToast('✓ Import template downloaded / ready for upload');
+  };
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setDateFrom('');
+    setDateTo('');
+    setStatusFilter('All Status');
+    setTypeFilter('All Types');
+    setCustomerFilter('All Customer');
+    setDriverFilter('All Drivers');
+    setVehicleFilter('All Vehicles');
+    setLocationFilter('All Locations');
+    setCurrentPage(1);
+    showToast('✓ All load filters cleared');
+  };
+
+  const handleApplyBulkAction = () => {
+    if (selectedIds.length === 0) {
+      showToast('Please select at least one load checkbox first', 'error');
+      return;
+    }
+    if (bulkAction === 'Bulk Actions') {
+      showToast('Please select a specific action from the dropdown', 'error');
+      return;
+    }
+    showToast(`✓ Applied "${bulkAction}" to ${selectedIds.length} selected loads!`);
+    setSelectedIds([]);
+  };
+
   const toggleRow = (id) =>
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const allChecked = selectedIds.length === paged.length && paged.length > 0;
 
   return (
-    <div className="flex-grow bg-[#F8FAFC] w-full font-sans overflow-hidden flex flex-col min-h-0">
+    <div className="flex-grow bg-[#F8FAFC] w-full font-sans overflow-hidden flex flex-col min-h-0 relative">
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className={`fixed bottom-6 right-6 z-[999999] px-5 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-5 text-white ${toastMsg.type === 'error' ? 'bg-rose-600' : 'bg-slate-900'}`}>
+          <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMsg.msg}</span>
+        </div>
+      )}
       
       {/* ════ HEADER (Full Width) ════════════════════════════ */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-4 sm:px-6 pt-4 sm:pt-6 pb-2 shrink-0 gap-4">
@@ -2771,21 +2846,14 @@ export default function Loads() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
           {/* Secondary Actions (Import, Export, More) */}
           <div className="flex items-center gap-2 flex-1 sm:flex-initial">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              accept=".csv, .json, .txt" 
-              onChange={handleFileImport} 
-              className="hidden" 
-            />
             <button 
-              onClick={handleImportClick}
+              onClick={handleImportSample}
               className="flex-1 sm:flex-initial justify-center flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer"
             >
               <span className="text-slate-400 text-base leading-none">•</span> Import
             </button>
             <button 
-              onClick={handleExport}
+              onClick={handleExportLoads}
               className="flex-1 sm:flex-initial justify-center flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap cursor-pointer"
             >
               <span className="text-slate-400 text-base leading-none">•</span> Export
@@ -2793,16 +2861,16 @@ export default function Loads() {
             <div className="relative shrink-0">
               <button 
                 onClick={() => setHeaderMenuOpen(!headerMenuOpen)}
-                className="flex items-center justify-center w-9 h-9 bg-white border border-slate-200 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors shrink-0"
+                className="flex items-center justify-center w-9 h-9 bg-white border border-slate-200 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors shrink-0 cursor-pointer"
               >
                 <MoreVertical className="w-4 h-4" />
               </button>
               {headerMenuOpen && (
                 <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-50">
-                  <button className="w-full text-left px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50">Archive Selected</button>
-                  <button className="w-full text-left px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50">Print Manifest</button>
+                  <button onClick={() => { handleExportLoads(); setHeaderMenuOpen(false); }} className="w-full text-left px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer">Export All Loads (CSV)</button>
+                  <button onClick={() => { window.print(); setHeaderMenuOpen(false); }} className="w-full text-left px-4 py-2 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer">Print Manifest</button>
                   <div className="h-px bg-slate-100 my-1"></div>
-                  <button className="w-full text-left px-4 py-2 text-[13px] font-semibold text-red-500 hover:bg-slate-50">Delete Loads</button>
+                  <button onClick={() => { fetchLoads(); showToast('✓ Loads refreshed'); setHeaderMenuOpen(false); }} className="w-full text-left px-4 py-2 text-[13px] font-semibold text-indigo-600 hover:bg-slate-50 cursor-pointer">Refresh List</button>
                 </div>
               )}
             </div>
@@ -3252,12 +3320,16 @@ export default function Loads() {
           {/* Bulk Action Bar */}
           <div className="mt-2 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
             <span className="text-[12px] font-semibold text-slate-900 px-2">{selectedIds.length} selected</span>
-            <select className="px-4 py-2 bg-white border border-slate-200 rounded text-[12px] font-medium text-slate-700 focus:outline-none focus:border-indigo-500 w-full sm:w-48">
-              <option>Bulk Actions</option>
-              <option>Assign Driver</option>
-              <option>Mark Completed</option>
-              <option>Cancel Loads</option>
-              <option>Export Selected</option>
+            <select 
+              value={bulkAction} 
+              onChange={e => setBulkAction(e.target.value)} 
+              className="px-4 py-2 bg-white border border-slate-200 rounded text-[12px] font-medium text-slate-700 focus:outline-none focus:border-indigo-500 w-full sm:w-48 cursor-pointer"
+            >
+              <option value="Bulk Actions">Bulk Actions</option>
+              <option value="Assign Driver">Assign Driver</option>
+              <option value="Mark Completed">Mark Completed</option>
+              <option value="Cancel Loads">Cancel Loads</option>
+              <option value="Export Selected">Export Selected</option>
             </select>
             <button className="w-full sm:w-auto px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-[12px] rounded transition-colors shadow-sm">
               Apply

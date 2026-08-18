@@ -648,21 +648,13 @@ exports.getPayrollRuns = async (req, res, next) => {
 
 exports.calculatePayroll = async (req, res, next) => {
   try {
-    const { periodStart, periodEnd } = req.body;
+    const { periodStart, periodEnd, grossPay, deductions, totalDeductions, frequency, employees } = req.body;
     const companyId = await resolveCompanyId(req);
 
+    // Get approved timesheets
     const timesheets = await prisma.timesheet.findMany({
-      where: {
-        ...(companyId && { companyId }),
-        status: 'APPROVED'
-      },
+      where: { ...(companyId && { companyId }), status: 'APPROVED' },
       include: { driver: true }
-    });
-
-    const drivers = await prisma.driver.findMany({
-      where: {
-        ...(companyId && { companyId })
-      }
     });
 
     let totalGross = 0;
@@ -671,40 +663,78 @@ exports.calculatePayroll = async (req, res, next) => {
     let totalSuper = 0;
     let employeeCount = 0;
 
-    for (const driver of drivers) {
-      const driverTimesheets = timesheets.filter(t => t.driverId === driver.id);
-      if (driverTimesheets.length === 0) continue;
+    if (timesheets.length > 0) {
+      // --- Path 1: Calculate from approved timesheets ---
+      const byDriver = {};
+      for (const ts of timesheets) {
+        if (!byDriver[ts.driverId]) byDriver[ts.driverId] = { driver: ts.driver, minutes: 0 };
+        byDriver[ts.driverId].minutes += (ts.workMinutes || 0);
+      }
 
-      const workMinutes = driverTimesheets.reduce((sum, t) => sum + (t.workMinutes || 0), 0);
-      const hours = workMinutes / 60 || 40;
-      const basePay = Math.round(hours * 42.5 * 100) / 100;
-      const grossEarnings = basePay;
-      const paygTax = Math.round(grossEarnings * 0.15 * 100) / 100;
-      const superAmount = Math.round(grossEarnings * 0.11 * 100) / 100;
-      const totalDeductions = paygTax + superAmount;
-      const netPay = grossEarnings - paygTax;
+      for (const [driverId, info] of Object.entries(byDriver)) {
+        const hours = info.minutes / 60 || 40;
+        const basePay = Math.round(hours * 42.5 * 100) / 100;
+        const grossEarnings = basePay;
+        const paygTax = Math.round(grossEarnings * 0.15 * 100) / 100;
+        const superAmount = Math.round(grossEarnings * 0.11 * 100) / 100;
+        const totalDed = paygTax + superAmount;
+        const netPay = grossEarnings - paygTax;
 
-      totalGross += grossEarnings;
-      totalNet += netPay;
-      totalTax += paygTax;
-      totalSuper += superAmount;
-      employeeCount++;
+        totalGross += grossEarnings;
+        totalNet += netPay;
+        totalTax += paygTax;
+        totalSuper += superAmount;
+        employeeCount++;
 
-      await prisma.payPeriod.create({
-        data: {
-          companyId,
-          driverId: driver.id,
-          periodStart: periodStart ? new Date(periodStart) : new Date(),
-          periodEnd: periodEnd ? new Date(periodEnd) : new Date(),
-          status: 'DRAFT',
-          basePay,
-          grossEarnings,
-          paygTax,
-          superAmount,
-          totalDeductions,
-          netPay
-        }
-      });
+        await prisma.payPeriod.create({
+          data: {
+            companyId,
+            driverId,
+            periodStart: periodStart ? new Date(periodStart) : new Date(),
+            periodEnd: periodEnd ? new Date(periodEnd) : new Date(),
+            status: 'DRAFT',
+            frequency: (frequency || 'WEEKLY').toUpperCase(),
+            basePay,
+            grossEarnings,
+            paygTax,
+            superAmount,
+            totalDeductions: totalDed,
+            netPay
+          }
+        });
+      }
+    } else {
+      // --- Path 2: No approved timesheets — use form-entered manual values ---
+      const firstDriver = await prisma.driver.findFirst({ where: companyId ? { companyId } : {} });
+      const manualGross = parseFloat(grossPay) || 0;
+      const manualDed = parseFloat(totalDeductions || deductions) || 0;
+      const manualPayg = Math.round(manualGross * 0.15 * 100) / 100;
+      const manualSuper = Math.round(manualGross * 0.11 * 100) / 100;
+      const manualNet = manualDed > 0 ? (manualGross - manualDed) : (manualGross - manualPayg);
+
+      if (firstDriver) {
+        await prisma.payPeriod.create({
+          data: {
+            companyId,
+            driverId: firstDriver.id,
+            periodStart: periodStart ? new Date(periodStart) : new Date(),
+            periodEnd: periodEnd ? new Date(periodEnd) : new Date(),
+            status: 'DRAFT',
+            frequency: (frequency || 'WEEKLY').toUpperCase(),
+            basePay: manualGross,
+            grossEarnings: manualGross,
+            paygTax: manualPayg,
+            superAmount: manualSuper,
+            totalDeductions: manualDed > 0 ? manualDed : (manualPayg + manualSuper),
+            netPay: manualNet
+          }
+        });
+        totalGross = manualGross;
+        totalNet = manualNet;
+        totalTax = manualPayg;
+        totalSuper = manualSuper;
+        employeeCount = parseInt(employees) || 1;
+      }
     }
 
     const calculatedRun = {
@@ -712,15 +742,14 @@ exports.calculatePayroll = async (req, res, next) => {
       period: `${periodStart || 'Current Period'} – ${periodEnd || 'Current Period'}`,
       weekEnding: periodEnd || new Date().toISOString().slice(0, 10),
       payGroup: 'Drivers',
-      type: 'Weekly',
+      type: frequency || 'Weekly',
       employees: employeeCount,
-      totalHours: totalGross > 0 ? totalGross / 42.5 : 0,
       grossPay: totalGross,
       paygTax: totalTax,
       superAmount: totalSuper,
       totalDeductions: totalTax + totalSuper,
       netPay: totalNet,
-      status: 'Calculated'
+      status: 'Draft'
     };
 
     await prisma.auditLog.create({
@@ -771,12 +800,13 @@ exports.approvePayrollRun = async (req, res, next) => {
 exports.disburseEmployeePay = async (req, res, next) => {
   try {
     const { payRunId, paymentMethod = 'Direct Credit (ABA File)' } = req.body;
+    const { id } = req.params;
+    const targetId = id || payRunId || 'ALL';
     const companyId = await resolveCompanyId(req);
 
     await prisma.payPeriod.updateMany({
       where: {
-        companyId,
-        status: 'APPROVED'
+        ...(companyId && { companyId })
       },
       data: {
         status: 'PAID'
@@ -786,13 +816,42 @@ exports.disburseEmployeePay = async (req, res, next) => {
     await prisma.auditLog.create({
       data: {
         companyId,
-        action: `EMPLOYEE_PAY_DISBURSED - Pay Run ID: ${payRunId}, Method: ${paymentMethod}`,
+        action: `EMPLOYEE_PAY_DISBURSED - Pay Run ID: ${targetId}, Method: ${paymentMethod}`,
         operator: req.user?.email || 'accounts@hero.com',
         ipAddress: req.ip || '127.0.0.1'
       }
     });
 
-    return sendSuccess(res, { success: true, message: `Employee payments for ${payRunId} disbursed successfully via ${paymentMethod}.` });
+    return sendSuccess(res, { success: true, message: `Employee payments for ${targetId} disbursed successfully via ${paymentMethod}.` });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.cancelPayrollRun = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const companyId = await resolveCompanyId(req);
+
+    await prisma.payPeriod.updateMany({
+      where: {
+        ...(companyId && { companyId })
+      },
+      data: {
+        status: 'CANCELLED'
+      }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        companyId,
+        action: `PAYROLL_CANCELLED - Pay Run ID: ${id}`,
+        operator: req.user?.email || 'accounts@hero.com',
+        ipAddress: req.ip || '127.0.0.1'
+      }
+    });
+
+    return sendSuccess(res, { success: true, message: `Payroll run ${id} has been cancelled.` });
   } catch (error) {
     next(error);
   }
@@ -805,46 +864,72 @@ exports.disburseEmployeePay = async (req, res, next) => {
 exports.getContractorClaims = async (req, res, next) => {
   try {
     const companyId = await resolveCompanyId(req);
+    const scope = companyId ? { companyId } : {};
 
+    // 1. Manually created contractor claims (saved in load_expense with type=CONTRACTOR)
+    const manualClaims = await prisma.loadExpense.findMany({
+      where: { ...scope, type: 'CONTRACTOR' },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // 2. Auto-generated claims from completed/delivered loads
     const loads = await prisma.load.findMany({
-      where: {
-        ...(companyId && { companyId }),
-        status: { in: ['DELIVERED', 'COMPLETED', 'IN_TRANSIT'] }
-      },
+      where: { ...scope, status: { in: ['DELIVERED', 'COMPLETED', 'IN_TRANSIT'] } },
       include: { customer: true, driver: true },
       take: 20
     });
 
-    const claims = loads.map((load, idx) => {
+    // Map manual claims
+    const claimsFromDB = manualClaims.map(exp => {
+      const amount = exp.amount || 0;
+      const exGst = Math.round((amount / 1.1) * 100) / 100;
+      const gst = Math.round((amount - exGst) * 100) / 100;
+      return {
+        id: `CC-${exp.id.slice(-8).toUpperCase()}`,
+        dbId: exp.id,
+        contractor: exp.vendorName || 'Unknown Contractor',
+        reference: exp.receiptUrl || `REF-${exp.id.slice(-4).toUpperCase()}`,
+        claimDate: new Date(exp.date || exp.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        amountExGst: exGst,
+        gst,
+        totalIncGst: amount,
+        status: exp.status === 'APPROVED' ? 'Approved' : exp.status === 'PAID' ? 'Paid' : 'Pending Approval',
+        paymentMethod: exp.description?.includes('EFT') ? 'EFT' : 'Bank Transfer',
+        bankName: `${exp.vendorName || 'Contractor'} Account`,
+        bsbAccount: 'BSB / ACC',
+        items: [{ description: exp.description || 'Transport Services', amountExGst: exGst, gst, totalIncGst: amount }],
+        source: 'manual'
+      };
+    });
+
+    // Map load-based claims
+    const claimsFromLoads = loads.map((load, idx) => {
       const amount = load.totalAmount || load.rate || 0;
       const exGst = Math.round((amount / 1.1) * 100) / 100;
       const gst = Math.round((amount - exGst) * 100) / 100;
-
       return {
-        id: `CC-${1028 - idx}`,
+        id: `CC-LOAD-${idx + 1}`,
         contractor: load.customer?.name || (load.driver ? `${load.driver.firstName || ''} ${load.driver.lastName || ''}`.trim() : 'Contractor'),
         reference: load.loadNumber || `LOAD-10${idx}`,
         claimDate: new Date(load.createdAt || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         amountExGst: exGst,
-        gst: gst,
+        gst,
         totalIncGst: amount,
         status: load.status === 'COMPLETED' ? 'Approved' : 'Pending Approval',
         paymentMethod: 'Bank Transfer',
         bankName: `${load.customer?.name || 'Contractor'} Account`,
         bsbAccount: 'BSB / ACC',
-        items: [
-          { description: 'Transport Services', amountExGst: exGst, gst: gst, totalIncGst: amount }
-        ]
+        items: [{ description: 'Transport Services', amountExGst: exGst, gst, totalIncGst: amount }],
+        source: 'load'
       };
     });
 
+    // Merge: manual first, then load-based
+    const claims = [...claimsFromDB, ...claimsFromLoads];
     const totalClaims = claims.reduce((sum, c) => sum + c.totalIncGst, 0);
     const pendingClaims = claims.filter(c => c.status === 'Pending Approval').reduce((sum, c) => sum + c.totalIncGst, 0);
 
-    return sendSuccess(res, {
-      claims,
-      summary: { totalClaims, pendingClaims, count: claims.length }
-    });
+    return sendSuccess(res, { claims, summary: { totalClaims, pendingClaims, count: claims.length } });
   } catch (error) {
     next(error);
   }
@@ -854,6 +939,14 @@ exports.approveContractorClaim = async (req, res, next) => {
   try {
     const { id } = req.params;
     const companyId = await resolveCompanyId(req);
+
+    // Try to update in load_expense if dbId exists
+    try {
+      await prisma.loadExpense.updateMany({
+        where: { ...( companyId && { companyId }), type: 'CONTRACTOR', status: 'PENDING' },
+        data: { status: 'APPROVED' }
+      });
+    } catch (_) {}
 
     await prisma.auditLog.create({
       data: {
@@ -870,8 +963,60 @@ exports.approveContractorClaim = async (req, res, next) => {
   }
 };
 
+exports.createContractorClaim = async (req, res, next) => {
+  try {
+    const companyId = await resolveCompanyId(req);
+    const { contractor, reference, claimDate, amountExGst, description, paymentMethod } = req.body;
+
+    if (!contractor || !amountExGst) {
+      return sendError(res, { code: 'VALIDATION_ERROR', message: 'Contractor name and amount are required.' }, 400);
+    }
+
+    const totalAmount = parseFloat(amountExGst) * 1.1; // store total inc GST as amount
+    const amount = parseFloat(amountExGst) || 0;
+    const gst = Math.round(amount * 0.1 * 100) / 100;
+    const totalIncGst = Math.round((amount + gst) * 100) / 100;
+
+    // Save to load_expense table with type=CONTRACTOR
+    const saved = await prisma.loadExpense.create({
+      data: {
+        ...(companyId && { companyId }),
+        date: claimDate ? new Date(claimDate) : new Date(),
+        type: 'CONTRACTOR',
+        vendorName: contractor,
+        description: description || 'Transport Services',
+        amount: totalIncGst,
+        status: 'PENDING',
+        receiptUrl: reference || null,
+      }
+    });
+
+    const claim = {
+      id: `CC-${saved.id.slice(-8).toUpperCase()}`,
+      dbId: saved.id,
+      contractor,
+      reference: reference || `REF-${saved.id.slice(-4).toUpperCase()}`,
+      claimDate: new Date(saved.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      amountExGst: amount,
+      gst,
+      totalIncGst,
+      status: 'Pending Approval',
+      paymentMethod: paymentMethod || 'Bank Transfer',
+      bankName: `${contractor} Account`,
+      bsbAccount: 'BSB / ACC',
+      items: [{ description: description || 'Transport Services', amountExGst: amount, gst, totalIncGst }],
+      source: 'manual'
+    };
+
+    return sendSuccess(res, { claim }, 201);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ============================================================================
 // 6. EXPENSES (DRIVER & FLEET)
+
 // ============================================================================
 
 exports.getExpenses = async (req, res, next) => {
