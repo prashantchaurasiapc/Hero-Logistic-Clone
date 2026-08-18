@@ -37,6 +37,11 @@ const ProtectedRoute = ({ children }) => {
     }
   }
 
+  // Redirect DISPATCHER users away from admin routes to dispatcher portal
+  if (userRole === 'DISPATCHER' && (location.pathname.startsWith('/company-admin') || location.pathname.startsWith('/admin'))) {
+    return <Navigate to="/dispatcher/dashboard" replace />;
+  }
+
   return children;
 };
 

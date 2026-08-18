@@ -418,20 +418,6 @@ export default function PickupLoading() {
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               Pickup & Loading
             </h1>
-      {/* TOP PAGE HEADER TITLE */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => navigate('/driver/active-run')}
-            className="p-2 bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs transition-all"
-            title="Back to Active Run"
-          >
-            <FiArrowLeft className="text-base" />
-          </button>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              Pickup & Loading
-            </h1>
             <p className="text-xs font-semibold text-slate-400 mt-0.5">Scan or select cars assigned to load {loadInfo?.id || loadInfo?.loadRef || 'LD-3987'}</p>
           </div>
         </div>

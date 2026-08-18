@@ -162,14 +162,28 @@ const Header = ({ onMenuClick }) => {
     setNotifications([]);
   };
 
+  const getRolePrefix = () => {
+    if (location.pathname.startsWith('/dispatcher')) return '/dispatcher';
+    if (location.pathname.startsWith('/sales')) return '/sales';
+    if (location.pathname.startsWith('/customer')) return '/customer';
+    if (location.pathname.startsWith('/driver')) return '/driver';
+    if (location.pathname.startsWith('/warehouse')) return '/warehouse';
+    if (location.pathname.startsWith('/yard')) return '/yard';
+    return '/company-admin';
+  };
+
   const handleSearchNavigate = (path) => {
-    navigate(path);
+    const prefix = getRolePrefix();
+    const targetPath = path.replace('/company-admin', prefix);
+    navigate(targetPath);
     setShowSearchPalette(false);
     setSearchQuery('');
   };
 
   const handleMessageClick = () => {
-    if (location.pathname.startsWith('/sales')) {
+    if (location.pathname.startsWith('/dispatcher')) {
+      navigate('/dispatcher/messages');
+    } else if (location.pathname.startsWith('/sales')) {
       navigate('/sales/messages');
     } else if (location.pathname.startsWith('/customer')) {
       navigate('/customer/messages-support');
@@ -180,7 +194,13 @@ const Header = ({ onMenuClick }) => {
 
   const handleProfileSettingsClick = () => {
     setShowDropdown(false);
-    navigate('/company-admin/my-profile');
+    if (location.pathname.startsWith('/dispatcher')) {
+      navigate('/dispatcher/profile');
+    } else if (location.pathname.startsWith('/customer')) {
+      navigate('/customer/profile');
+    } else {
+      navigate('/company-admin/my-profile');
+    }
   };
 
   const filteredSearchItems = searchItems.filter(item => 
