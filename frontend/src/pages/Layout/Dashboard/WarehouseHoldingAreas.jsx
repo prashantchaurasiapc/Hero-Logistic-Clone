@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
 import {
   Search, Filter, Plus, ArrowRight, MoreVertical,
   CheckCircle2, Clock, AlertTriangle, Box, Truck,
@@ -7,9 +8,8 @@ import {
   Download, Layers, SlidersHorizontal, ArrowUpRight, ChevronDown,
   Info, Eye, Tag, AlertCircle
 } from 'lucide-react';
-import api from '../../../services/api';
 
-// Mock data removed in favor of dynamic API data
+
 const initialStagingAreas = [];
 const recentStagedItems = [];
 
@@ -17,8 +17,12 @@ export default function WarehouseHoldingAreas() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [areas, setAreas] = useState(initialStagingAreas);
-  const [summary, setSummary] = useState({
+
+  const [areas, setAreas] = useState([]);
+  const [recentStagedList, setRecentStagedList] = useState([]);
+  const [loadLanes, setLoadLanes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [summaryData, setSummaryData] = useState({
     totalHoldingAreas: 0,
     activeAreas: 0,
     inactiveAreas: 0,
@@ -30,9 +34,8 @@ export default function WarehouseHoldingAreas() {
     waitingUnder2hPercent: 0,
     overduePercent: 0
   });
-  const [topOccupancy, setTopOccupancy] = useState([]);
-  const [recentStagedList, setRecentStagedList] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const summary = summaryData;
+
   const [activeTab, setActiveTab] = useState('All Staging Areas');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -43,12 +46,11 @@ export default function WarehouseHoldingAreas() {
     setLoading(true);
     try {
       const res = await api.get('/warehouse-portal/holding-areas');
-      if (res.data && res.data.success && res.data.data) {
-        const d = res.data.data;
-        if (d.holdingAreas) setAreas(d.holdingAreas);
-        if (d.summary) setSummary(d.summary);
-        if (d.topOccupancy) setTopOccupancy(d.topOccupancy);
-        if (d.recentlyStaged) setRecentStagedList(d.recentlyStaged);
+      const data = res.data?.data || res.data;
+      if (data) {
+        if (data.holdingAreas) setAreas(data.holdingAreas);
+        if (data.recentlyStaged) setRecentStagedList(data.recentlyStaged);
+        if (data.summary) setSummaryData(data.summary);
       }
     } catch (err) {
       console.error('Failed to fetch holding areas:', err);
@@ -57,8 +59,16 @@ export default function WarehouseHoldingAreas() {
     }
   };
 
+  const fetchLanes = async () => {
+    try {
+      const res = await api.get('/warehouse-portal/load-lanes');
+      setLoadLanes(res.data?.data?.lanes || res.data?.data || []);
+    } catch(err) {}
+  };
+
   useEffect(() => {
     fetchHoldingAreas();
+    fetchLanes();
   }, []);
 
   const [createMoveModalOpen, setCreateMoveModalOpen] = useState(false);
@@ -187,16 +197,32 @@ export default function WarehouseHoldingAreas() {
     showToast(`✓ Exported ${exportData.length} holding area records to CSV!`);
   };
 
-  const handleConfirmMove = (e) => {
+  const handleConfirmMove = async (e) => {
     e.preventDefault();
-    setCreateMoveModalOpen(false);
-    showToast(`✓ Move task created from ${selectedAreaForMove} to ${targetLane}!`);
+    if (!selectedAreaForMove || !targetLane) return;
+    try {
+      showToast(`Creating task to move from ${selectedAreaForMove} to lane ${targetLane}...`, 'info');
+      await api.post(`/warehouse-portal/holding-areas/${selectedAreaForMove}/move-stock`, { loadLaneId: targetLane });
+      setCreateMoveModalOpen(false);
+      showToast(`✓ Move task created successfully!`);
+    } catch(err) {
+      console.error(err);
+      showToast('Failed to create move task: ' + (err.response?.data?.message || err.message), 'error');
+    }
   };
 
-  const handleConfirmAssign = (e) => {
+  const handleConfirmAssign = async (e) => {
     e.preventDefault();
-    setAssignModalOpen(false);
-    showToast(`✓ ${selectedAreaForMove} assigned to ${targetLane}!`);
+    if (!selectedAreaForMove || !targetLane) return;
+    try {
+      showToast(`Assigning staging area to lane...`, 'info');
+      await api.patch(`/warehouse-portal/holding-areas/${selectedAreaForMove}/assign`, { loadLaneId: targetLane });
+      setAssignModalOpen(false);
+      showToast(`✓ Area successfully assigned to lane!`);
+    } catch(err) {
+      console.error(err);
+      showToast('Failed to assign area: ' + (err.response?.data?.message || err.message), 'error');
+    }
   };
 
   const handlePrintBarcode = (area) => {
@@ -927,8 +953,10 @@ export default function WarehouseHoldingAreas() {
           </div>
           <div>
             <div className="wh-st-stat-title">TOTAL STAGING AREAS</div>
-            <div className="wh-st-stat-num">{summary.totalHoldingAreas}</div>
-            <div className="wh-st-stat-sub">{summary.activeAreas} Active | {summary.inactiveAreas} Inactive</div>
+
+            <div className="wh-st-stat-num">{summaryData.totalHoldingAreas}</div>
+            <div className="wh-st-stat-sub">{summaryData.activeAreas} Active | {summaryData.inactiveAreas} Inactive</div>
+
           </div>
         </div>
 
@@ -938,7 +966,9 @@ export default function WarehouseHoldingAreas() {
           </div>
           <div>
             <div className="wh-st-stat-title">STAGED ITEMS</div>
-            <div className="wh-st-stat-num">{summary.stagedItemsTotal}</div>
+
+            <div className="wh-st-stat-num">{summaryData.stagedItemsTotal}</div>
+
             <div className="wh-st-stat-sub">Across all areas</div>
           </div>
         </div>
@@ -949,7 +979,9 @@ export default function WarehouseHoldingAreas() {
           </div>
           <div>
             <div className="wh-st-stat-title">AWAITING MOVE</div>
-            <div className="wh-st-stat-num">{summary.awaitingMoveTotal}</div>
+
+            <div className="wh-st-stat-num">{summaryData.awaitingMoveTotal}</div>
+
             <div className="wh-st-stat-sub">Ready for load lane</div>
           </div>
         </div>
@@ -960,7 +992,9 @@ export default function WarehouseHoldingAreas() {
           </div>
           <div>
             <div className="wh-st-stat-title">OVERDUE ITEMS</div>
-            <div className="wh-st-stat-num">{summary.overdueItemsTotal}</div>
+
+            <div className="wh-st-stat-num">{summaryData.overdueItemsTotal}</div>
+
             <div className="wh-st-stat-sub">Exceeding time limit</div>
           </div>
         </div>
@@ -1289,20 +1323,30 @@ export default function WarehouseHoldingAreas() {
             <div className="wh-st-side-title">TOP STAGING AREAS BY OCCUPANCY</div>
 
             <div style={{ marginTop: 8 }}>
-              {topOccupancy.length === 0 ? (
-                <div className="text-[11px] text-slate-400 py-2 text-center">No staging occupancy data</div>
+
+              {areas.length === 0 ? (
+                <p style={{ fontSize: '11px', color: '#94A3B8', textAlign: 'center', padding: '12px 0' }}>No staging areas yet</p>
               ) : (
-                topOccupancy.map((item, idx) => (
-                  <div key={idx} className="wh-occ-rank-row">
-                    <div className="wh-occ-rank-header">
-                      <span>{idx + 1}. {item.name}</span>
-                      <span className={item.occupancy > 80 ? "text-red-600" : item.occupancy > 50 ? "text-amber-600" : "text-green-600"}>{item.occupancy}%</span>
-                    </div>
-                    <div className="wh-occ-rank-bg">
-                      <div className="wh-occ-rank-fill" style={{ width: `${item.occupancy}%`, background: item.occupancy > 80 ? '#EF4444' : item.occupancy > 50 ? '#F59E0B' : '#22C55E' }} />
-                    </div>
-                  </div>
-                ))
+                [...areas]
+                  .sort((a, b) => (b.occupancy || 0) - (a.occupancy || 0))
+                  .slice(0, 5)
+                  .map((area, i) => {
+                    const occ = area.occupancy || 0;
+                    const color = occ >= 90 ? '#EF4444' : occ >= 75 ? '#F59E0B' : '#22C55E';
+                    const textClass = occ >= 90 ? 'text-red-600' : occ >= 75 ? 'text-amber-600' : 'text-green-600';
+                    return (
+                      <div className="wh-occ-rank-row" key={i}>
+                        <div className="wh-occ-rank-header">
+                          <span>{i + 1}. {area.name}</span>
+                          <span className={textClass}>{occ}%</span>
+                        </div>
+                        <div className="wh-occ-rank-bg">
+                          <div className="wh-occ-rank-fill" style={{ width: `${occ}%`, background: color }} />
+                        </div>
+                      </div>
+                    );
+                  })
+
               )}
 
               <div className="text-[10px] font-bold text-blue-600 cursor-pointer mt-2 hover:underline">
@@ -1389,7 +1433,7 @@ export default function WarehouseHoldingAreas() {
                   className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
                 >
                   {areas.map(a => (
-                    <option key={a.id} value={a.name}>{a.name} ({a.subLocation})</option>
+                    <option key={a.id} value={a.id}>{a.name} ({a.subLocation})</option>
                   ))}
                 </select>
               </div>
@@ -1400,10 +1444,9 @@ export default function WarehouseHoldingAreas() {
                   onChange={e => setTargetLane(e.target.value)}
                   className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
                 >
-                  <option value="Lane 1">Lane 1 (Main Yard)</option>
-                  <option value="Lane 2">Lane 2 (Main Yard)</option>
-                  <option value="Lane 3">Lane 3 (Warehouse 1)</option>
-                  <option value="Lane 5">Lane 5 (DG Staging)</option>
+                  {loadLanes.map(l => (
+                    <option key={l.id} value={l.id}>{l.name} ({l.location || 'Yard'})</option>
+                  ))}
                 </select>
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
@@ -1432,7 +1475,7 @@ export default function WarehouseHoldingAreas() {
                   className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
                 >
                   {areas.map(a => (
-                    <option key={a.id} value={a.name}>{a.name} ({a.zone})</option>
+                    <option key={a.id} value={a.id}>{a.name} ({a.zone})</option>
                   ))}
                 </select>
               </div>
@@ -1443,12 +1486,9 @@ export default function WarehouseHoldingAreas() {
                   onChange={e => setTargetLane(e.target.value)}
                   className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
                 >
-                  <option value="Lane 1">Lane 1</option>
-                  <option value="Lane 2">Lane 2</option>
-                  <option value="Lane 3">Lane 3</option>
-                  <option value="Lane 4">Lane 4</option>
-                  <option value="Lane 5">Lane 5</option>
-                  <option value="Lane 6">Lane 6</option>
+                  {loadLanes.map(l => (
+                    <option key={l.id} value={l.id}>{l.name} ({l.location || 'Yard'})</option>
+                  ))}
                 </select>
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">

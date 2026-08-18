@@ -20,41 +20,8 @@ const TrashIcon = ({ color }) => (
 );
 
 const CustomerNotifications = () => {
-  // Mock Notifications Data
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'Shipment',
-      title: 'Load REQ-9912 Dispatched',
-      time: '2 min ago',
-      description: 'Your booking REQ-9912 has been matched with driver David Miller. ETA is 17:45 PM today.',
-      unread: true
-    },
-    {
-      id: 2,
-      type: 'Invoice',
-      title: 'New Invoice Issued',
-      time: '15 min ago',
-      description: 'Invoice INV-3981 for $950.00 is ready for review.',
-      unread: true
-    },
-    {
-      id: 3,
-      type: 'Payment',
-      title: 'Payment Settled',
-      time: '2 hours ago',
-      description: 'Tax Invoice INV-3980 payment was processed and approved.',
-      unread: false
-    },
-    {
-      id: 4,
-      type: 'Shipment',
-      title: 'Shipment Delivered',
-      time: 'Yesterday',
-      description: 'Load LD-9411 was delivered to Springfield Depot. Signed POD uploaded.',
-      unread: false
-    }
-  ]);
+  // Notifications Data State
+  const [notifications, setNotifications] = useState([]);
 
   // UI States
   const [searchQuery, setSearchQuery] = useState('');

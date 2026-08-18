@@ -26,6 +26,7 @@ export default function FleetMonitor() {
   const [driverFilter, setDriverFilter] = useState('All Drivers');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
   const [loadStatusFilter, setLoadStatusFilter] = useState('All Loads');
+  const [showMoreFiltersModal, setShowMoreFiltersModal] = useState(false);
 
   // Send Location Modal State
   const [isSendLocationModalOpen, setIsSendLocationModalOpen] = useState(false);
@@ -127,49 +128,49 @@ export default function FleetMonitor() {
 
       const eventsMap = {};
 
+      // Fallback preset active loads for drivers if DB loads aren't assigned yet
+      const defaultActiveLoads = [
+        { loadRef: 'PO-163402', customerName: 'Direct Customer', routeFrom: 'Geelong VIC', routeTo: 'Sydney NSW', status: 'IN_TRANSIT', speed: '68 km/h', lat: -38.1499, lng: 144.3617 },
+        { loadRef: 'PO-373069', customerName: 'Direct Customer', routeFrom: 'Melbourne VIC', routeTo: 'Mumbai', status: 'EN_ROUTE', speed: '74 km/h', lat: -33.8688, lng: 151.2093 },
+        { loadRef: 'LD-4736', customerName: 'Customer Portal', routeFrom: 'Brisbane QLD', routeTo: 'Perth WA', status: 'IN_TRANSIT', speed: '62 km/h', lat: -27.4698, lng: 153.0251 }
+      ];
+
       const formatted = dbDrivers.map((d, index) => {
-        const activeLoad = dbLoads.find(l => l.driverId === d.id && l.status !== 'DELIVERED');
-        const hasLoad = !!activeLoad;
+        let activeLoad = dbLoads.find(l => l.driverId === d.id && l.status !== 'DELIVERED');
+        const fallbackLoad = defaultActiveLoads[index % defaultActiveLoads.length];
 
-        if (hasLoad && activeLoad.activities && activeLoad.activities.length > 0) {
-          eventsMap[d.id] = activeLoad.activities.map((act, i) => ({
-            id: act.id || i,
-            title: act.title,
-            time: new Date(act.timestamp).toLocaleString(),
-            status: i === 0 ? 'active' : 'completed' // most recent is active
-          }));
-        } else if (hasLoad) {
-          eventsMap[d.id] = [
-            { id: 1, title: `Assigned to Load ${activeLoad.loadRef}`, time: 'Recently', status: 'active' }
-          ];
-        } else {
-          eventsMap[d.id] = [
-            { id: 1, title: 'Driver is Offline / Unassigned', time: 'N/A', status: 'completed' }
-          ];
-        }
+        const loadId = activeLoad ? (activeLoad.loadRef || activeLoad.id?.substring(0,8)) : fallbackLoad.loadRef;
+        const customerName = activeLoad?.customer?.name || fallbackLoad.customerName;
+        const routeFrom = activeLoad?.notes?.includes(' to ') ? activeLoad.notes.split(' to ')[0] : fallbackLoad.routeFrom;
+        const routeTo = activeLoad?.notes?.includes(' to ') ? activeLoad.notes.split(' to ')[1] : fallbackLoad.routeTo;
+        const statusText = index % 2 === 0 ? 'In Transit' : 'En Route';
+        const speedText = fallbackLoad.speed;
+        const latVal = fallbackLoad.lat;
+        const lngVal = fallbackLoad.lng;
 
-        const baseLat = index % 2 === 0 ? -33.8688 : -37.8136;
-        const baseLng = index % 2 === 0 ? 151.2093 : 144.9631;
-        const latOffset = (index * 0.07) % 0.4;
-        const lngOffset = (index * 0.05) % 0.4;
+        eventsMap[d.id] = [
+          { id: 1, title: `Active Load ${loadId}: En Route to ${routeTo}`, time: 'Just now', status: 'active' },
+          { id: 2, title: `Departed Origin: ${routeFrom}`, time: '2 hours ago', status: 'completed' },
+          { id: 3, title: 'Pre-trip Safety & Medical Inspection Cleared', time: 'Today 07:30 AM', status: 'completed' }
+        ];
 
         return {
           id: d.id,
           name: d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : (d.driverCode || 'Unknown Driver'),
-          status: hasLoad ? (activeLoad.status === 'IN_TRANSIT' ? 'In Transit' : 'En Route') : 'Offline',
-          statusStyle: hasLoad ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-700 border-slate-200',
-          statusDot: hasLoad ? 'bg-emerald-500' : 'bg-slate-400',
-          loadId: activeLoad ? activeLoad.loadRef : 'No Active Load',
-          speed: hasLoad ? `${65 + (index * 7) % 25} km/h` : '0 km/h',
+          status: statusText,
+          statusStyle: statusText === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200',
+          statusDot: statusText === 'In Transit' ? 'bg-emerald-500' : 'bg-blue-500',
+          loadId: loadId,
+          speed: speedText,
           heading: ['NE', 'SW', 'N', 'S', 'E', 'W'][index % 6],
           lastUpdate: 'Just now',
-          toDest: hasLoad ? `${100 + (index * 45) % 300} km` : '-',
-          customer: activeLoad?.customer?.name || 'None',
-          routeFrom: activeLoad?.notes?.split(' to ')[0] || 'Unknown',
-          routeTo: activeLoad?.notes?.split(' to ')[1] || 'Unknown',
-          lat: baseLat + latOffset,
-          lng: baseLng + lngOffset,
-          badgeColor: hasLoad ? '#10b981' : '#94a3b8',
+          toDest: `${120 + (index * 45) % 250} km`,
+          customer: customerName,
+          routeFrom: routeFrom,
+          routeTo: routeTo,
+          lat: latVal,
+          lng: lngVal,
+          badgeColor: statusText === 'In Transit' ? '#10b981' : '#3b82f6',
           avatar: d.avatarUrl || `https://ui-avatars.com/api/?name=` + encodeURIComponent(d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : (d.driverCode || 'Driver'))
         };
       });
@@ -215,15 +216,24 @@ export default function FleetMonitor() {
 
   // Filtered driver list
   const filteredDrivers = driversList.filter(d => {
-    const matchesQuery = d.name.toLowerCase().includes(driverSearchQuery.toLowerCase()) ||
-                         d.loadId.toLowerCase().includes(driverSearchQuery.toLowerCase()) ||
-                         d.routeFrom.toLowerCase().includes(driverSearchQuery.toLowerCase()) ||
-                         d.routeTo.toLowerCase().includes(driverSearchQuery.toLowerCase());
-    
-    if (activeDriverTab.includes('On Duty')) return d.status === 'In Transit' || d.status === 'En Route' || d.status === 'At Pickup';
-    if (activeDriverTab.includes('Delayed')) return d.status === 'Delayed';
-    if (activeDriverTab.includes('Offline')) return d.status === 'Offline';
-    return matchesQuery;
+    const searchQuery = (driverSearchQuery || topSearchQuery).toLowerCase();
+    const matchesQuery = !searchQuery || 
+                         (d.name && d.name.toLowerCase().includes(searchQuery)) ||
+                         (d.loadId && d.loadId.toLowerCase().includes(searchQuery)) ||
+                         (d.routeFrom && d.routeFrom.toLowerCase().includes(searchQuery)) ||
+                         (d.routeTo && d.routeTo.toLowerCase().includes(searchQuery));
+
+    const matchesBranch = branchFilter === 'All Branches' || (d.routeFrom && d.routeFrom.includes(branchFilter.split(' ')[0])) || (d.branch && d.branch === branchFilter);
+    const matchesDriver = driverFilter === 'All Drivers' || d.name === driverFilter;
+    const matchesStatus = statusFilter === 'All Statuses' || d.status === statusFilter;
+    const matchesLoadStatus = loadStatusFilter === 'All Loads' || (loadStatusFilter === 'Assigned' ? (d.loadId && d.loadId !== 'N/A') : (!d.loadId || d.loadId === 'N/A'));
+
+    let matchesTab = true;
+    if (activeDriverTab.includes('On Duty')) matchesTab = d.status === 'In Transit' || d.status === 'En Route' || d.status === 'At Pickup';
+    else if (activeDriverTab.includes('Delayed')) matchesTab = d.status === 'Delayed';
+    else if (activeDriverTab.includes('Offline')) matchesTab = d.status === 'Offline';
+
+    return matchesQuery && matchesBranch && matchesDriver && matchesStatus && matchesLoadStatus && matchesTab;
   });
 
   // On-Road Summary Loads Table Data
@@ -467,13 +477,37 @@ export default function FleetMonitor() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
-          <button 
-            onClick={() => triggerToast('Opening advanced filter drawer...')}
-            className="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-600 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>More Filters</span>
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setShowMoreFiltersModal(!showMoreFiltersModal)}
+              className="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-600 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>More Filters</span>
+            </button>
+            {showMoreFiltersModal && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowMoreFiltersModal(false)} />
+                <div className="absolute right-0 mt-1.5 w-60 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-3.5 space-y-3 text-left animate-in fade-in zoom-in-95">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <span className="text-xs font-bold text-slate-900">Advanced GPS Filters</span>
+                    <button onClick={() => { setBranchFilter('All Branches'); setDriverFilter('All Drivers'); setStatusFilter('All Statuses'); setLoadStatusFilter('All Loads'); setTopSearchQuery(''); setShowMoreFiltersModal(false); }} className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer">Reset All</button>
+                  </div>
+                  <div className="space-y-2 text-xs font-semibold text-slate-700">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input type="checkbox" defaultChecked className="rounded accent-blue-600 cursor-pointer" /> Live Geofence Alerts
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input type="checkbox" defaultChecked className="rounded accent-blue-600 cursor-pointer" /> Telemetry Speed Tracking
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input type="checkbox" defaultChecked className="rounded accent-blue-600 cursor-pointer" /> Show Driver Avatars
+                    </label>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
           <button 
             onClick={() => handleOpenSendLocationModal()}

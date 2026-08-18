@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import api from '../../services/api';
 
 // === SVG ICONS ===
 const TruckIcon = ({ color = "currentColor", size = 20 }) => (
@@ -79,12 +80,9 @@ const InfoIcon = ({ color = "currentColor", size = 16 }) => (
   </svg>
 );
 
-// === INITIAL MOCK DATA (Removed) ===
-const initialInboundToday = [];
-const initialLoadLanes = [];
-const initialRecentMovements = [];
 
-const initialNotifications = [];
+// === INITIAL DATA ===
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -98,10 +96,10 @@ export default function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Data states with live API loading
-  const [inboundList, setInboundList] = useState(initialInboundToday);
-  const [loadLanesList, setLoadLanesList] = useState(initialLoadLanes);
-  const [movementsList, setMovementsList] = useState(initialRecentMovements);
-  const [notificationsList, setNotificationsList] = useState(initialNotifications);
+  const [inboundList, setInboundList] = useState([]);
+  const [loadLanesList, setLoadLanesList] = useState([]);
+  const [movementsList, setMovementsList] = useState([]);
+  const [notificationsList, setNotificationsList] = useState([]);
   const [liveKpi, setLiveKpi] = useState({
     inboundAwaiting: 0,
     inYard: 0,
@@ -109,16 +107,16 @@ export default function Dashboard() {
     loadLanes: 0,
     dispatchReady: 0,
     yardCapacityPercent: 0,
-    totalCap: 0,
+
+    totalCap: 100,
     inYardCap: 0,
-    availCap: 0,
-    lastSync: 'Syncing...'
+    availCap: 100,
+    lastSync: '-'
+
   });
 
   const fetchLiveDashboard = async () => {
     try {
-      const apiMod = await import('../../services/api');
-      const api = apiMod.default || apiMod;
       const res = await api.get('/warehouse-portal/dashboard');
       if (res.data && res.data.success && res.data.data) {
         const d = res.data.data;
@@ -130,26 +128,24 @@ export default function Dashboard() {
             loadLanes: d.overview.loadLanes || 0,
             dispatchReady: d.overview.dispatchReady || 0,
             yardCapacityPercent: d.overview.yardCapacity?.usedPercent || 0,
-            totalCap: d.overview.yardCapacity?.total || 0,
+
+            totalCap: d.overview.yardCapacity?.total || 100,
             inYardCap: d.overview.yardCapacity?.inYard || 0,
-            availCap: d.overview.yardCapacity?.available || 0,
-            lastSync: d.overview.lastSync || new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            availCap: d.overview.yardCapacity?.available || 100,
+            lastSync: d.overview.lastSync || '-'
           });
         }
-        if (d.inboundToday) {
-          setInboundList(d.inboundToday);
-        }
-        if (d.loadLanesOverview) {
-          setLoadLanesList(d.loadLanesOverview);
-        }
-        if (d.recentMovements) {
-          setMovementsList(d.recentMovements);
-        }
+        setInboundList(d.inboundToday || []);
+        setLoadLanesList(d.loadLanesOverview || []);
+        setMovementsList(d.recentMovements || []);
+        setNotificationsList(d.notifications || []);
+
       }
     } catch (err) {
-      console.warn('Using dashboard initial state:', err.message);
+      console.warn('Error fetching live dashboard:', err.message);
     }
   };
+
 
   useEffect(() => {
     fetchLiveDashboard();

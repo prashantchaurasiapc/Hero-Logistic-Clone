@@ -1,11 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
 import './CustomerDashboard.css';
+
+const getTodayDateString = () => {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const getFutureDateString = (daysAhead) => {
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const formatDateToEnGB = (dateStr) => {
+  if (!dateStr) return 'N/A';
+  if (dateStr.includes('/')) return dateStr;
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+};
+
+const formatDateSafely = (dateVal) => {
+  if (!dateVal) return 'N/A';
+  const parsed = new Date(dateVal);
+  if (isNaN(parsed.getTime())) return dateVal;
+  return parsed.toLocaleDateString('en-GB');
+};
 
 const MyLoads = () => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState('MAIN_LIST'); // 'MAIN_LIST' (14.2) or 'LOAD_DETAILS' (14.3)
-  const [selectedLoadId, setSelectedLoadId] = useState('LD-3987');
+  const [selectedLoadId, setSelectedLoadId] = useState('');
   const [activeTabFilter, setActiveTabFilter] = useState('All Loads');
 
   // Filter States
@@ -49,18 +84,54 @@ const MyLoads = () => {
     setEditingLoad({ ...row });
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingLoad) return;
-    setLoadsList(prev => prev.map(l => l.id === editingLoad.id ? { ...editingLoad } : l));
-    showToast(`Load ${editingLoad.id} updated successfully!`);
-    setEditingLoad(null);
+    try {
+      const targetDbId = editingLoad.dbId;
+      if (targetDbId) {
+        const payload = {
+          type: editingLoad.type || undefined,
+          status: editingLoad.status ? editingLoad.status.toUpperCase() : undefined,
+          notes: editingLoad.driver || undefined,
+          deliveryEta: editingLoad.eta ? new Date(editingLoad.eta).toISOString() : undefined,
+        };
+        // Strip undefined keys
+        Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+        await api.put(`/company-admin/loads/${targetDbId}`, payload);
+        fetchLoads();
+        showToast(`Load ${editingLoad.id} updated successfully!`);
+      } else {
+        setLoadsList(prev => prev.map(l => l.id === editingLoad.id ? { ...editingLoad } : l));
+        showToast(`Load ${editingLoad.id} updated successfully!`);
+      }
+    } catch (err) {
+      console.error('Failed to update load:', err);
+      showToast('Failed to update load. Please try again.');
+    } finally {
+      setEditingLoad(null);
+    }
   };
 
-  const handleExecuteDelete = () => {
+  const handleExecuteDelete = async () => {
     if (!deletingLoadId) return;
-    setLoadsList(prev => prev.filter(item => item.id !== deletingLoadId));
-    showToast(`Load ${deletingLoadId} deleted successfully.`);
-    setDeletingLoadId(null);
+    try {
+      const targetLoad = loadsList.find(item => item.id === deletingLoadId);
+      const targetDbId = targetLoad?.dbId;
+      if (targetDbId) {
+        await api.delete(`/company-admin/loads/${targetDbId}`);
+        fetchLoads();
+        showToast(`Load ${deletingLoadId} deleted successfully.`);
+      } else {
+        // Fallback for local state only
+        setLoadsList(prev => prev.filter(item => item.id !== deletingLoadId));
+        showToast(`Load ${deletingLoadId} deleted successfully.`);
+      }
+    } catch (err) {
+      console.error('Failed to delete load:', err);
+      showToast('Failed to delete load. Please try again.');
+    } finally {
+      setDeletingLoadId(null);
+    }
   };
 
   const [supportSubject, setSupportSubject] = useState('');
@@ -70,8 +141,8 @@ const MyLoads = () => {
   const [bookWeight, setBookWeight] = useState('');
   const [bookOrigin, setBookOrigin] = useState('Melbourne VIC');
   const [bookDestination, setBookDestination] = useState('Sydney NSW');
-  const [bookPickupDate, setBookPickupDate] = useState('2025-06-05');
-  const [bookDeliveryDate, setBookDeliveryDate] = useState('2025-06-07');
+  const [bookPickupDate, setBookPickupDate] = useState(getTodayDateString());
+  const [bookDeliveryDate, setBookDeliveryDate] = useState(getFutureDateString(2));
   const [bookPriority, setBookPriority] = useState('Standard Delivery');
   const [bookNotes, setBookNotes] = useState('');
   const [toast, setToast] = useState(null);
@@ -79,54 +150,51 @@ const MyLoads = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  // Loads List Data (Matching Screenshot 14.2 line-by-line)
-  const [loadsList, setLoadsList] = useState([
-    // Page 1
-    { id: 'LD-3987', ref: 'PO-9876', route: 'Melbourne VIC → Sydney NSW', type: 'Car Carrier', status: 'In Transit', driver: 'John Davis', pickup: '30 May 2025', delivery: '30 May 2025', eta: 'ETA: 02:30 PM' },
-    { id: 'LD-3981', ref: 'PO-9870', route: 'Brisbane QLD → Perth WA', type: 'General Freight', status: 'In Transit', driver: 'Michael Tan', pickup: '31 May 2025', delivery: '31 May 2025', eta: 'ETA: 11:00 AM' },
-    { id: 'LD-3975', ref: 'PO-9865', route: 'Adelaide SA → Melbourne VIC', type: 'Car Carrier', status: 'Arrived', driver: 'Ravi Wilson', pickup: '30 May 2025', delivery: '30 May 2025', eta: 'Arrived' },
-    { id: 'LD-3962', ref: 'PO-9858', route: 'Sydney NSW → Newcastle NSW', type: 'General Freight', status: 'At Pickup', driver: 'Sarah Mitchell', pickup: '30 May 2025', delivery: '30 May 2025', eta: 'ETA: 09:15 AM' },
-    { id: 'LD-3958', ref: 'PO-9852', route: 'Melbourne VIC → Brisbane QLD', type: 'Car Carrier', status: 'Dispatched', driver: 'Amir Ramia', pickup: '30 May 2025', delivery: '30 May 2025', eta: 'ETA: 07:45 AM' },
-    { id: 'LD-3944', ref: 'PO-9840', route: 'Perth WA → Adelaide SA', type: 'General Freight', status: 'Scheduled', driver: 'Brian Taylor', pickup: '02 Jun 2025', delivery: '05 Jun 2025', eta: 'ETA: 08:00 AM' },
-    { id: 'LD-3941', ref: 'PO-9836', route: 'Sydney NSW → Melbourne VIC', type: 'Car Carrier', status: 'Scheduled', driver: 'Lisa Patel', pickup: '03 Jun 2025', delivery: '05 Jun 2025', eta: 'ETA: 05:00 PM' },
-    { id: 'LD-3938', ref: 'PO-9832', route: 'Brisbane QLD → Sydney NSW', type: 'General Freight', status: 'Confirmed', driver: 'Unassigned', pickup: '04 Jun 2025', delivery: '06 Jun 2025', eta: 'TBD' },
-    // Page 2
-    { id: 'LD-3930', ref: 'PO-9824', route: 'Darwin NT → Adelaide SA', type: 'General Freight', status: 'In Transit', driver: 'Chris Evans', pickup: '05 Jun 2025', delivery: '08 Jun 2025', eta: 'ETA: 04:00 PM' },
-    { id: 'LD-3925', ref: 'PO-9819', route: 'Hobart TAS → Melbourne VIC', type: 'Car Carrier', status: 'Scheduled', driver: 'David King', pickup: '06 Jun 2025', delivery: '09 Jun 2025', eta: 'ETA: 10:30 AM' },
-    { id: 'LD-3920', ref: 'PO-9814', route: 'Geelong VIC → Ballarat VIC', type: 'General Freight', status: 'Arrived', driver: 'Emma Watson', pickup: '07 Jun 2025', delivery: '07 Jun 2025', eta: 'Arrived' },
-    { id: 'LD-3915', ref: 'PO-9809', route: 'Cairns QLD → Townsville QLD', type: 'Dangerous Goods', status: 'Dispatched', driver: 'Frank Castle', pickup: '08 Jun 2025', delivery: '08 Jun 2025', eta: 'ETA: 01:15 PM' },
-    { id: 'LD-3910', ref: 'PO-9804', route: 'Gold Coast QLD → Brisbane QLD', type: 'Car Carrier', status: 'Scheduled', driver: 'George Miller', pickup: '09 Jun 2025', delivery: '09 Jun 2025', eta: 'ETA: 03:45 PM' },
-    { id: 'LD-3905', ref: 'PO-9799', route: 'Wollongong NSW → Sydney NSW', type: 'General Freight', status: 'In Transit', driver: 'Hannah Abbott', pickup: '10 Jun 2025', delivery: '10 Jun 2025', eta: 'ETA: 06:20 PM' },
-    { id: 'LD-3900', ref: 'PO-9794', route: 'Canberra ACT → Sydney NSW', type: 'Warehousing / 3PL', status: 'At Pickup', driver: 'Ian Malcolm', pickup: '11 Jun 2025', delivery: '11 Jun 2025', eta: 'ETA: 11:30 AM' },
-    { id: 'LD-3895', ref: 'PO-9789', route: 'Bendigo VIC → Melbourne VIC', type: 'Car Carrier', status: 'Confirmed', driver: 'Unassigned', pickup: '12 Jun 2025', delivery: '12 Jun 2025', eta: 'TBD' },
-    // Page 3
-    { id: 'LD-3890', ref: 'PO-9784', route: 'Rockhampton QLD → Mackay QLD', type: 'General Freight', status: 'In Transit', driver: 'Jack Sparrow', pickup: '13 Jun 2025', delivery: '14 Jun 2025', eta: 'ETA: 09:00 AM' },
-    { id: 'LD-3885', ref: 'PO-9779', route: 'Toowoomba QLD → Brisbane QLD', type: 'Car Carrier', status: 'Arrived', driver: 'Kevin Bacon', pickup: '14 Jun 2025', delivery: '14 Jun 2025', eta: 'Arrived' },
-    { id: 'LD-3880', ref: 'PO-9774', route: 'Launceston TAS → Hobart TAS', type: 'Dangerous Goods', status: 'Dispatched', driver: 'Liam Neeson', pickup: '15 Jun 2025', delivery: '15 Jun 2025', eta: 'ETA: 02:00 PM' },
-    { id: 'LD-3875', ref: 'PO-9769', route: 'Albury NSW → Melbourne VIC', type: 'General Freight', status: 'Scheduled', driver: 'Morgan Freeman', pickup: '16 Jun 2025', delivery: '17 Jun 2025', eta: 'ETA: 10:00 AM' },
-    { id: 'LD-3870', ref: 'PO-9764', route: 'Dubbo NSW → Sydney NSW', type: 'Car Carrier', status: 'Confirmed', driver: 'Unassigned', pickup: '17 Jun 2025', delivery: '18 Jun 2025', eta: 'TBD' },
-    { id: 'LD-3865', ref: 'PO-9759', route: 'Wagga Wagga NSW → Canberra ACT', type: 'Warehousing / 3PL', status: 'In Transit', driver: 'Nathan Drake', pickup: '18 Jun 2025', delivery: '18 Jun 2025', eta: 'ETA: 04:30 PM' },
-    { id: 'LD-3860', ref: 'PO-9754', route: 'Tamworth NSW → Newcastle NSW', type: 'General Freight', status: 'At Pickup', driver: 'Oscar Isaac', pickup: '19 Jun 2025', delivery: '19 Jun 2025', eta: 'ETA: 08:15 AM' },
-    { id: 'LD-3855', ref: 'PO-9749', route: 'Mildura VIC → Adelaide SA', type: 'Car Carrier', status: 'Arrived', driver: 'Peter Parker', pickup: '20 Jun 2025', delivery: '21 Jun 2025', eta: 'Arrived' },
-    // Page 4
-    { id: 'LD-3850', ref: 'PO-9744', route: 'Bunbury WA → Perth WA', type: 'General Freight', status: 'In Transit', driver: 'Quentin Tarantino', pickup: '21 Jun 2025', delivery: '21 Jun 2025', eta: 'ETA: 01:00 PM' },
-    { id: 'LD-3845', ref: 'PO-9739', route: 'Kalgoorlie WA → Perth WA', type: 'Dangerous Goods', status: 'Scheduled', driver: 'Robert Downey', pickup: '22 Jun 2025', delivery: '23 Jun 2025', eta: 'ETA: 11:45 AM' },
-    { id: 'LD-3840', ref: 'PO-9734', route: 'Geraldton WA → Perth WA', type: 'Car Carrier', status: 'Dispatched', driver: 'Steve Rogers', pickup: '23 Jun 2025', delivery: '24 Jun 2025', eta: 'ETA: 03:15 PM' },
-    { id: 'LD-3835', ref: 'PO-9729', route: 'Mount Gambier SA → Adelaide SA', type: 'General Freight', status: 'Arrived', driver: 'Tom Holland', pickup: '24 Jun 2025', delivery: '24 Jun 2025', eta: 'Arrived' },
-    { id: 'LD-3830', ref: 'PO-9724', route: 'Port Augusta SA → Adelaide SA', type: 'Car Carrier', status: 'Confirmed', driver: 'Unassigned', pickup: '25 Jun 2025', delivery: '26 Jun 2025', eta: 'TBD' },
-    { id: 'LD-3825', ref: 'PO-9719', route: 'Broken Hill NSW → Adelaide SA', type: 'Warehousing / 3PL', status: 'In Transit', driver: 'Victor Stone', pickup: '26 Jun 2025', delivery: '27 Jun 2025', eta: 'ETA: 05:30 PM' },
-    { id: 'LD-3820', ref: 'PO-9714', route: 'Shepparton VIC → Melbourne VIC', type: 'General Freight', status: 'At Pickup', driver: 'Wade Wilson', pickup: '27 Jun 2025', delivery: '27 Jun 2025', eta: 'ETA: 09:45 AM' },
-    { id: 'LD-3815', ref: 'PO-9709', route: 'Traralgon VIC → Melbourne VIC', type: 'Car Carrier', status: 'Dispatched', driver: 'Xander Cage', pickup: '28 Jun 2025', delivery: '28 Jun 2025', eta: 'ETA: 02:20 PM' },
-    // Page 5
-    { id: 'LD-3810', ref: 'PO-9704', route: 'Port Macquarie NSW → Sydney NSW', type: 'General Freight', status: 'In Transit', driver: 'Yuri Boyka', pickup: '29 Jun 2025', delivery: '29 Jun 2025', eta: 'ETA: 07:00 PM' },
-    { id: 'LD-3805', ref: 'PO-9699', route: 'Coffs Harbour NSW → Sydney NSW', type: 'Car Carrier', status: 'Arrived', driver: 'Zack Snyder', pickup: '30 Jun 2025', delivery: '30 Jun 2025', eta: 'Arrived' },
-    { id: 'LD-3800', ref: 'PO-9694', route: 'Ballina NSW → Brisbane QLD', type: 'Dangerous Goods', status: 'Scheduled', driver: 'Arthur Curry', pickup: '01 Jul 2025', delivery: '01 Jul 2025', eta: 'ETA: 10:15 AM' },
-    { id: 'LD-3795', ref: 'PO-9689', route: 'Bundaberg QLD → Brisbane QLD', type: 'General Freight', status: 'Confirmed', driver: 'Unassigned', pickup: '02 Jul 2025', delivery: '03 Jul 2025', eta: 'TBD' },
-    { id: 'LD-3790', ref: 'PO-9684', route: 'Gladstone QLD → Rockhampton QLD', type: 'Car Carrier', status: 'Dispatched', driver: 'Bruce Wayne', pickup: '03 Jul 2025', delivery: '03 Jul 2025', eta: 'ETA: 01:30 PM' },
-    { id: 'LD-3785', ref: 'PO-9679', route: 'Alice Springs NT → Darwin NT', type: 'Warehousing / 3PL', status: 'In Transit', driver: 'Clark Kent', pickup: '04 Jul 2025', delivery: '06 Jul 2025', eta: 'ETA: 08:45 AM' },
-    { id: 'LD-3780', ref: 'PO-9674', route: 'Broome WA → Perth WA', type: 'General Freight', status: 'At Pickup', driver: 'Diana Prince', pickup: '05 Jul 2025', delivery: '08 Jul 2025', eta: 'ETA: 11:15 AM' },
-    { id: 'LD-3775', ref: 'PO-9669', route: 'Karratha WA → Perth WA', type: 'Car Carrier', status: 'Arrived', driver: 'Barry Allen', pickup: '06 Jul 2025', delivery: '09 Jul 2025', eta: 'Arrived' }
-  ]);
+  // Loads List Data State
+  const [loadsList, setLoadsList] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchLoads = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/company-admin/loads');
+      if (res.data) {
+        const raw = Array.isArray(res.data.data) ? res.data.data : (Array.isArray(res.data) ? res.data : (res.data.loads || []));
+        const formatted = raw.map(l => {
+          const pickupStop = l.stops?.find(s => s.type === 'PICKUP');
+          const deliveryStop = l.stops?.find(s => s.type === 'DROPOFF');
+          
+          const pickupLoc = l.pickupLocation || l.origin || pickupStop?.address || 'Origin';
+          const deliveryLoc = l.deliveryLocation || l.destination || deliveryStop?.address || 'Destination';
+          
+          const pickupD = l.pickupDate || l.loadDate || pickupStop?.scheduledDate;
+          const deliveryD = l.deliveryDate || l.deliveryEta || deliveryStop?.scheduledDate;
+
+          return {
+            id: l.loadNumber || l.id || `LD-${l.dbId || l.id}`,
+            dbId: l.id,
+            ref: l.referenceNumber || l.ref || 'N/A',
+            route: `${pickupLoc} → ${deliveryLoc}`,
+            type: l.loadType || l.type || 'General Freight',
+            status: l.status || 'Scheduled',
+            driver: l.driver?.name || l.driverName || 'Unassigned',
+            pickup: formatDateSafely(pickupD),
+            delivery: formatDateSafely(deliveryD),
+            eta: l.eta || 'TBD'
+          };
+        });
+        setLoadsList(formatted);
+      }
+    } catch (err) {
+      console.error('Failed to fetch loads:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLoads();
+  }, []);
 
   const handleDownloadLoadsCSV = () => {
     const csvHeader = "Load #,Reference,Route,Type,Status,Driver,Pickup Date,Delivery Date,ETA\n";
@@ -212,35 +280,59 @@ const MyLoads = () => {
     setSupportDescription('');
   };
 
-  const handleBookSubmit = (e) => {
+  const handleBookSubmit = async (e) => {
     e.preventDefault();
-    const routeText = (bookOrigin && bookDestination)
-      ? `${bookOrigin} → ${bookDestination}`
-      : 'Melbourne VIC → Sydney NSW';
+    try {
+      const payload = {
+        type: bookCargoType || 'General Freight',
+        status: 'PLANNED',
+        priority: bookPriority === 'Express Freight (Urgent)' || bookPriority === 'Overnight Direct' ? 'URGENT' : 'NORMAL',
+        notes: bookNotes || '',
+        loadDate: bookPickupDate ? new Date(bookPickupDate).toISOString() : new Date().toISOString(),
+        deliveryEta: bookDeliveryDate ? new Date(bookDeliveryDate).toISOString() : new Date().toISOString(),
+        stops: [
+          {
+            type: 'PICKUP',
+            sequenceIndex: 0,
+            address: bookOrigin || 'Origin Stop',
+            scheduledDate: bookPickupDate ? new Date(bookPickupDate).toISOString() : new Date().toISOString()
+          },
+          {
+            type: 'DROPOFF',
+            sequenceIndex: 1,
+            address: bookDestination || 'Delivery Stop',
+            scheduledDate: bookDeliveryDate ? new Date(bookDeliveryDate).toISOString() : new Date().toISOString()
+          }
+        ],
+        items: [
+          {
+            stockRef: bookCargoSpecs || 'CARGO-ITEM',
+            notes: `${bookCargoType}${bookCargoSpecs ? ` (${bookCargoSpecs})` : ''}${bookWeight ? `, Weight: ${bookWeight}` : ''}`,
+            quantity: 1
+          }
+        ]
+      };
 
-    const newLoad = {
-      id: `LD-${Math.floor(3990 + Math.random() * 900)}`,
-      ref: `PO-${Math.floor(9880 + Math.random() * 900)}`,
-      route: routeText,
-      type: `${bookCargoType}${bookCargoSpecs ? ` (${bookCargoSpecs})` : ''}`,
-      status: 'Scheduled',
-      driver: 'Unassigned',
-      pickup: bookPickupDate || '05 Jun 2025',
-      delivery: bookDeliveryDate || '07 Jun 2025',
-      eta: 'TBD'
-    };
-    setLoadsList(prev => [newLoad, ...prev]);
-    showToast('Cargo shipment booking submitted successfully!');
-    setShowBookModal(false);
-    setBookCargoType('Car Carrier');
-    setBookCargoSpecs('');
-    setBookWeight('');
-    setBookOrigin('Melbourne VIC');
-    setBookDestination('Sydney NSW');
-    setBookPickupDate('2025-06-05');
-    setBookDeliveryDate('2025-06-07');
-    setBookPriority('Standard Delivery');
-    setBookNotes('');
+      const res = await api.post('/company-admin/loads', payload);
+      if (res.data) {
+        fetchLoads();
+        showToast('Cargo shipment booking submitted successfully!');
+      }
+    } catch (err) {
+      console.error('Failed to submit cargo booking:', err);
+      showToast('Failed to submit booking. Please try again.');
+    } finally {
+      setShowBookModal(false);
+      setBookCargoType('Car Carrier');
+      setBookCargoSpecs('');
+      setBookWeight('');
+      setBookOrigin('Melbourne VIC');
+      setBookDestination('Sydney NSW');
+      setBookPickupDate(getTodayDateString());
+      setBookDeliveryDate(getFutureDateString(2));
+      setBookPriority('Standard Delivery');
+      setBookNotes('');
+    }
   };
 
   return (
@@ -312,94 +404,104 @@ const MyLoads = () => {
           </div>
 
           {/* Top 5 Metric Cards Row */}
-          <div className="myloads-5metrics-grid">
-            {/* Card 1: TOTAL LOADS */}
-            <div className="cp-metric-card" onClick={() => setActiveTabFilter('All Loads')}>
-              <div className="cp-metric-main">
-                <div className="cp-metric-icon icon-blue">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="1" y="3" width="15" height="13"></rect>
-                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                  </svg>
-                </div>
-                <div className="cp-metric-details">
-                  <span className="cp-metric-title">TOTAL LOADS</span>
-                  <span className="cp-metric-value">58</span>
-                </div>
-              </div>
-              <div className="cp-metric-footer">View all loads &rarr;</div>
-            </div>
+          {(() => {
+            const totalLoadsCount = loadsList.length;
+            const inTransitCount = loadsList.filter(l => l.status === 'In Transit' || l.status === 'IN_TRANSIT').length;
+            const upcomingCount = loadsList.filter(l => l.status === 'Scheduled' || l.status === 'Confirmed' || l.status === 'Planned' || l.status === 'ASSIGNED').length;
+            const completedCount = loadsList.filter(l => l.status === 'Completed' || l.status === 'Delivered' || l.status === 'DELIVERED').length;
+            const cancelledCount = loadsList.filter(l => l.status === 'Cancelled' || l.status === 'CANCELLED').length;
 
-            {/* Card 2: IN TRANSIT */}
-            <div className="cp-metric-card" onClick={() => setActiveTabFilter('In Transit')}>
-              <div className="cp-metric-main">
-                <div className="cp-metric-icon icon-green">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                  </svg>
+            return (
+              <div className="myloads-5metrics-grid">
+                {/* Card 1: TOTAL LOADS */}
+                <div className="cp-metric-card" onClick={() => setActiveTabFilter('All Loads')}>
+                  <div className="cp-metric-main">
+                    <div className="cp-metric-icon icon-blue">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="1" y="3" width="15" height="13"></rect>
+                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                      </svg>
+                    </div>
+                    <div className="cp-metric-details">
+                      <span className="cp-metric-title">TOTAL LOADS</span>
+                      <span className="cp-metric-value">{totalLoadsCount}</span>
+                    </div>
+                  </div>
+                  <div className="cp-metric-footer">View all loads &rarr;</div>
                 </div>
-                <div className="cp-metric-details">
-                  <span className="cp-metric-title">IN TRANSIT</span>
-                  <span className="cp-metric-value">18</span>
-                </div>
-              </div>
-              <div className="cp-metric-footer">View in transit &rarr;</div>
-            </div>
 
-            {/* Card 3: UPCOMING */}
-            <div className="cp-metric-card" onClick={() => setActiveTabFilter('Upcoming')}>
-              <div className="cp-metric-main">
-                <div className="cp-metric-icon icon-amber">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
+                {/* Card 2: IN TRANSIT */}
+                <div className="cp-metric-card" onClick={() => setActiveTabFilter('In Transit')}>
+                  <div className="cp-metric-main">
+                    <div className="cp-metric-icon icon-green">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                      </svg>
+                    </div>
+                    <div className="cp-metric-details">
+                      <span className="cp-metric-title">IN TRANSIT</span>
+                      <span className="cp-metric-value">{inTransitCount}</span>
+                    </div>
+                  </div>
+                  <div className="cp-metric-footer">View in transit &rarr;</div>
                 </div>
-                <div className="cp-metric-details">
-                  <span className="cp-metric-title">UPCOMING</span>
-                  <span className="cp-metric-value">14</span>
-                </div>
-              </div>
-              <div className="cp-metric-footer">View upcoming &rarr;</div>
-            </div>
 
-            {/* Card 4: COMPLETED */}
-            <div className="cp-metric-card" onClick={() => setActiveTabFilter('Completed')}>
-              <div className="cp-metric-main">
-                <div className="cp-metric-icon icon-blue-check">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                  </svg>
+                {/* Card 3: UPCOMING */}
+                <div className="cp-metric-card" onClick={() => setActiveTabFilter('Upcoming')}>
+                  <div className="cp-metric-main">
+                    <div className="cp-metric-icon icon-amber">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                      </svg>
+                    </div>
+                    <div className="cp-metric-details">
+                      <span className="cp-metric-title">UPCOMING</span>
+                      <span className="cp-metric-value">{upcomingCount}</span>
+                    </div>
+                  </div>
+                  <div className="cp-metric-footer">View upcoming &rarr;</div>
                 </div>
-                <div className="cp-metric-details">
-                  <span className="cp-metric-title">COMPLETED</span>
-                  <span className="cp-metric-value">23</span>
-                </div>
-              </div>
-              <div className="cp-metric-footer">View completed &rarr;</div>
-            </div>
 
-            {/* Card 5: CANCELLED */}
-            <div className="cp-metric-card" onClick={() => setActiveTabFilter('Cancelled')}>
-              <div className="cp-metric-main">
-                <div className="cp-metric-icon icon-purple">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                  </svg>
+                {/* Card 4: COMPLETED */}
+                <div className="cp-metric-card" onClick={() => setActiveTabFilter('Completed')}>
+                  <div className="cp-metric-main">
+                    <div className="cp-metric-icon icon-blue-check">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                      </svg>
+                    </div>
+                    <div className="cp-metric-details">
+                      <span className="cp-metric-title">COMPLETED</span>
+                      <span className="cp-metric-value">{completedCount}</span>
+                    </div>
+                  </div>
+                  <div className="cp-metric-footer">View completed &rarr;</div>
                 </div>
-                <div className="cp-metric-details">
-                  <span className="cp-metric-title">CANCELLED</span>
-                  <span className="cp-metric-value">3</span>
+
+                {/* Card 5: CANCELLED */}
+                <div className="cp-metric-card" onClick={() => setActiveTabFilter('Cancelled')}>
+                  <div className="cp-metric-main">
+                    <div className="cp-metric-icon icon-purple">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                      </svg>
+                    </div>
+                    <div className="cp-metric-details">
+                      <span className="cp-metric-title">CANCELLED</span>
+                      <span className="cp-metric-value">{cancelledCount}</span>
+                    </div>
+                  </div>
+                  <div className="cp-metric-footer">View cancelled &rarr;</div>
                 </div>
               </div>
-              <div className="cp-metric-footer">View cancelled &rarr;</div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Status Tabs Row */}
           <div className="myloads-status-tabs">
@@ -533,7 +635,7 @@ const MyLoads = () => {
             <div className="cp-card" style={{ padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 className="cp-card-title">LOADS LIST</h2>
-                <span style={{ fontSize: 11, color: '#64748b' }}>Showing {filteredLoads.length} of 58 loads</span>
+                <span style={{ fontSize: 11, color: '#64748b' }}>Showing {filteredLoads.length} loads</span>
               </div>
 
               <div className="cp-table-responsive">
@@ -553,7 +655,14 @@ const MyLoads = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredLoads.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((row) => (
+                    {filteredLoads.length === 0 ? (
+                      <tr>
+                        <td colSpan={10} style={{ padding: '24px 0', textAlign: 'center', color: '#94a3b8', fontSize: 12, fontWeight: 600 }}>
+                          No loads found.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredLoads.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((row) => (
                       <tr key={row.id}>
                         <td
                           className="cp-bold-link"
@@ -696,7 +805,8 @@ const MyLoads = () => {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -752,125 +862,140 @@ const MyLoads = () => {
             </div>
 
             {/* RIGHT COLUMN: 3 SUMMARY CARDS */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {(() => {
+              const totalLoadsCount = loadsList.length;
+              const inTransitCount = loadsList.filter(l => l.status === 'In Transit' || l.status === 'IN_TRANSIT').length;
+              const deliveredCount = loadsList.filter(l => l.status === 'Completed' || l.status === 'Delivered' || l.status === 'DELIVERED').length;
+              const scheduledCount = loadsList.filter(l => l.status === 'Scheduled' || l.status === 'Confirmed' || l.status === 'Planned' || l.status === 'ASSIGNED').length;
+              const dispatchedCount = loadsList.filter(l => l.status === 'Dispatched').length;
+              const cancelledCount = loadsList.filter(l => l.status === 'Cancelled' || l.status === 'CANCELLED').length;
+              const othersCount = Math.max(0, totalLoadsCount - (inTransitCount + deliveredCount + scheduledCount + dispatchedCount + cancelledCount));
 
-              {/* CARD 1: LOADS BY STATUS (Donut Chart Graphic) */}
-              <div className="cp-card">
-                <div className="cp-card-header">
-                  <h2 className="cp-card-title">LOADS BY STATUS</h2>
-                  <button className="cp-link-btn" onClick={() => showToast('Opening loads status report...')}>View full report &rarr;</button>
-                </div>
+              const calcPct = (cnt) => totalLoadsCount > 0 ? ((cnt / totalLoadsCount) * 100).toFixed(1) : '0.0';
 
-                {/* Donut Chart Visual SVG */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '10px 0' }}>
-                  <div style={{ position: 'relative', width: 90, height: 90, flexShrink: 0 }}>
-                    <svg width="90" height="90" viewBox="0 0 36 36">
-                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e2e8f0" strokeWidth="3.8" />
-                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 12 6" fill="none" stroke="#2563eb" strokeWidth="4" />
-                      <path d="M30 8.0845 a 15.9155 15.9155 0 0 1 2 14" fill="none" stroke="#10b981" strokeWidth="4" />
-                      <path d="M32 22.0845 a 15.9155 15.9155 0 0 1 -14 11.831" fill="none" stroke="#f59e0b" strokeWidth="4" />
-                      <path d="M18 33.9155 a 15.9155 15.9155 0 0 1 -12 -6" fill="none" stroke="#9333ea" strokeWidth="4" />
-                    </svg>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: 16, fontWeight: '800', color: '#0f172a', lineHeight: 1 }}>58</span>
-                      <span style={{ fontSize: 8.5, color: '#64748b' }}>Total Loads</span>
+              const carCount = loadsList.filter(l => (l.loadType || l.type || '').toLowerCase().includes('car')).length;
+              const generalCount = loadsList.filter(l => (l.loadType || l.type || '').toLowerCase().includes('general')).length;
+              const dgCount = loadsList.filter(l => (l.loadType || l.type || '').toLowerCase().includes('dangerous') || (l.loadType || l.type || '').toLowerCase().includes('dg')).length;
+              const whCount = Math.max(0, totalLoadsCount - (carCount + generalCount + dgCount));
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                  {/* CARD 1: LOADS BY STATUS (Donut Chart Graphic) */}
+                  <div className="cp-card">
+                    <div className="cp-card-header">
+                      <h2 className="cp-card-title">LOADS BY STATUS</h2>
+                      <button className="cp-link-btn" onClick={() => showToast('Opening loads status report...')}>View full report &rarr;</button>
+                    </div>
+
+                    {/* Donut Chart Visual SVG */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '10px 0' }}>
+                      <div style={{ position: 'relative', width: 90, height: 90, flexShrink: 0 }}>
+                        <svg width="90" height="90" viewBox="0 0 36 36">
+                          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e2e8f0" strokeWidth="3.8" />
+                        </svg>
+                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 16, fontWeight: '800', color: '#0f172a', lineHeight: 1 }}>{totalLoadsCount}</span>
+                          <span style={{ fontSize: 8.5, color: '#64748b' }}>Total Loads</span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                          <span style={{ color: '#334155' }}>🔵 In Transit</span>
+                          <span style={{ fontWeight: '700', color: '#0f172a' }}>{inTransitCount} ({calcPct(inTransitCount)}%)</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                          <span style={{ color: '#334155' }}>🟢 Arrived / Delivered</span>
+                          <span style={{ fontWeight: '700', color: '#0f172a' }}>{deliveredCount} ({calcPct(deliveredCount)}%)</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                          <span style={{ color: '#334155' }}>🟡 Scheduled</span>
+                          <span style={{ fontWeight: '700', color: '#0f172a' }}>{scheduledCount} ({calcPct(scheduledCount)}%)</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                          <span style={{ color: '#334155' }}>🟣 Dispatched</span>
+                          <span style={{ fontWeight: '700', color: '#0f172a' }}>{dispatchedCount} ({calcPct(dispatchedCount)}%)</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                          <span style={{ color: '#334155' }}>⚪ Others</span>
+                          <span style={{ fontWeight: '700', color: '#0f172a' }}>{othersCount} ({calcPct(othersCount)}%)</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                      <span style={{ color: '#334155' }}>🔵 In Transit</span>
-                      <span style={{ fontWeight: '700', color: '#0f172a' }}>18 (31.0%)</span>
+                  {/* CARD 2: LOAD TYPES */}
+                  <div className="cp-card">
+                    <div className="cp-card-header">
+                      <h2 className="cp-card-title">LOAD TYPES</h2>
+                      <button className="cp-link-btn" onClick={() => showToast('Opening load types breakdown...')}>View full report &rarr;</button>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                      <span style={{ color: '#334155' }}>🟢 Arrived / Delivered</span>
-                      <span style={{ fontWeight: '700', color: '#0f172a' }}>10 (17.2%)</span>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
+                        <span style={{ color: '#334155' }}>🚙 Car Carrier</span>
+                        <span style={{ fontWeight: '700', color: '#0f172a' }}>{carCount} ({calcPct(carCount)}%)</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
+                        <span style={{ color: '#334155' }}>📦 General Freight</span>
+                        <span style={{ fontWeight: '700', color: '#0f172a' }}>{generalCount} ({calcPct(generalCount)}%)</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
+                        <span style={{ color: '#334155' }}>⚠️ Dangerous Goods</span>
+                        <span style={{ fontWeight: '700', color: '#0f172a' }}>{dgCount} ({calcPct(dgCount)}%)</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
+                        <span style={{ color: '#334155' }}>🏬 Warehousing / 3PL</span>
+                        <span style={{ fontWeight: '700', color: '#0f172a' }}>{whCount} ({calcPct(whCount)}%)</span>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                      <span style={{ color: '#334155' }}>🟡 Scheduled</span>
-                      <span style={{ fontWeight: '700', color: '#0f172a' }}>14 (24.1%)</span>
+                  </div>
+
+                  {/* CARD 3: QUICK FILTERS */}
+                  <div className="cp-card">
+                    <div className="cp-card-header">
+                      <h2 className="cp-card-title">QUICK FILTERS</h2>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                      <span style={{ color: '#334155' }}>🟣 Dispatched</span>
-                      <span style={{ fontWeight: '700', color: '#0f172a' }}>6 (10.3%)</span>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <div
+                        onClick={() => { setActiveTabFilter('In Transit'); showToast('Filtered: Requires Attention'); }}
+                        style={{ backgroundColor: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 6, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                      >
+                        <span style={{ fontSize: 10.5, fontWeight: '700', color: '#c53030' }}>Requires Attention</span>
+                        <span style={{ backgroundColor: '#e53e3e', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{inTransitCount}</span>
+                      </div>
+
+                      <div
+                        onClick={() => { setActiveTabFilter('In Transit'); showToast('Filtered: Delayed Loads'); }}
+                        style={{ backgroundColor: '#fffaf0', border: '1px solid #feebc8', borderRadius: 6, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                      >
+                        <span style={{ fontSize: 10.5, fontWeight: '700', color: '#c05621' }}>Delayed Loads</span>
+                        <span style={{ backgroundColor: '#dd6b20', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>0</span>
+                      </div>
+
+                      <div
+                        onClick={() => { setActiveTabFilter('Completed'); showToast('Filtered: Proof of Delivery Pending'); }}
+                        style={{ backgroundColor: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 6, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                      >
+                        <span style={{ fontSize: 10.5, fontWeight: '700', color: '#2b6cb0' }}>Proof of Delivery Pending</span>
+                        <span style={{ backgroundColor: '#3182ce', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>0</span>
+                      </div>
+
+                      <div
+                        onClick={() => { navigate('/customer/invoices-payments'); showToast('Filtered: Invoice Pending'); }}
+                        style={{ backgroundColor: '#f0fff4', border: '1px solid #c6f6d5', borderRadius: 6, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                      >
+                        <span style={{ fontSize: 10.5, fontWeight: '700', color: '#276749' }}>Invoice Pending</span>
+                        <span style={{ backgroundColor: '#38a169', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>0</span>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                      <span style={{ color: '#334155' }}>⚪ Others</span>
-                      <span style={{ fontWeight: '700', color: '#0f172a' }}>10 (17.2%)</span>
-                    </div>
                   </div>
+
                 </div>
-              </div>
-
-              {/* CARD 2: LOAD TYPES */}
-              <div className="cp-card">
-                <div className="cp-card-header">
-                  <h2 className="cp-card-title">LOAD TYPES</h2>
-                  <button className="cp-link-btn" onClick={() => showToast('Opening load types breakdown...')}>View full report &rarr;</button>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
-                    <span style={{ color: '#334155' }}>🚙 Car Carrier</span>
-                    <span style={{ fontWeight: '700', color: '#0f172a' }}>32 (55.2%)</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
-                    <span style={{ color: '#334155' }}>📦 General Freight</span>
-                    <span style={{ fontWeight: '700', color: '#0f172a' }}>18 (31.0%)</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
-                    <span style={{ color: '#334155' }}>⚠️ Dangerous Goods</span>
-                    <span style={{ fontWeight: '700', color: '#0f172a' }}>5 (8.6%)</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
-                    <span style={{ color: '#334155' }}>🏬 Warehousing / 3PL</span>
-                    <span style={{ fontWeight: '700', color: '#0f172a' }}>3 (5.2%)</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* CARD 3: QUICK FILTERS */}
-              <div className="cp-card">
-                <div className="cp-card-header">
-                  <h2 className="cp-card-title">QUICK FILTERS</h2>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <div
-                    onClick={() => { setActiveTabFilter('In Transit'); showToast('Filtered: Requires Attention'); }}
-                    style={{ backgroundColor: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 6, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                  >
-                    <span style={{ fontSize: 10.5, fontWeight: '700', color: '#c53030' }}>Requires Attention</span>
-                    <span style={{ backgroundColor: '#e53e3e', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>5</span>
-                  </div>
-
-                  <div
-                    onClick={() => { setActiveTabFilter('In Transit'); showToast('Filtered: Delayed Loads'); }}
-                    style={{ backgroundColor: '#fffaf0', border: '1px solid #feebc8', borderRadius: 6, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                  >
-                    <span style={{ fontSize: 10.5, fontWeight: '700', color: '#c05621' }}>Delayed Loads</span>
-                    <span style={{ backgroundColor: '#dd6b20', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>4</span>
-                  </div>
-
-                  <div
-                    onClick={() => { setActiveTabFilter('Completed'); showToast('Filtered: Proof of Delivery Pending'); }}
-                    style={{ backgroundColor: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 6, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                  >
-                    <span style={{ fontSize: 10.5, fontWeight: '700', color: '#2b6cb0' }}>Proof of Delivery Pending</span>
-                    <span style={{ backgroundColor: '#3182ce', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>8</span>
-                  </div>
-
-                  <div
-                    onClick={() => { navigate('/customer/invoices-payments'); showToast('Filtered: Invoice Pending'); }}
-                    style={{ backgroundColor: '#f0fff4', border: '1px solid #c6f6d5', borderRadius: 6, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                  >
-                    <span style={{ fontSize: 10.5, fontWeight: '700', color: '#276749' }}>Invoice Pending</span>
-                    <span style={{ backgroundColor: '#38a169', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>12</span>
-                  </div>
-                </div>
-              </div>
-
-            </div>
+              );
+            })()}
 
           </div>
         </div>

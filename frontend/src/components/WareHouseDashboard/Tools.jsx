@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import api from '../../services/api';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Printer, QrCode, Search, Filter, ChevronDown, Check, Info,
@@ -46,48 +47,16 @@ export default function Tools() {
   const [includeUserName, setIncludeUserName] = useState(false);
   const [customText, setCustomText] = useState('');
 
-  // Master Categorized Dataset for Labels
+  // Master Categorized Dataset for Labels initialized empty
   const categoryData = useMemo(() => ({
-    Vehicle: [
-      { id: 'VIN: JTDK3...234567', fullCode: 'JTDBK3CD7J2345678', type: 'VIN', name: 'Toyota Hilux SRS (White)', makeModel: 'Toyota Hilux SRS', colour: 'White', year: '2018', rego: 'ABC-123', stageArea: 'Stage Area 1', loadLane: 'Lane 2', status: 'Stage Area 1 Lane 2', warehouse: 'Sydney Depot', zone: 'Zone A' },
-      { id: 'VIN: 1HGCM82633A123456', fullCode: '1HGCM82633A123456', type: 'VIN', name: 'Honda Accord (Silver)', makeModel: 'Honda Accord', colour: 'Silver', year: '2021', rego: 'XYZ-890', stageArea: 'Stage Area 2', loadLane: 'Lane 1', status: 'Stage Area 2 Lane 1', warehouse: 'Sydney Depot', zone: 'Zone A' },
-      { id: 'VIN: 3VWFE213456789012', fullCode: '3VWFE213456789012', type: 'VIN', name: 'Isuzu D-Max Ute (Red)', makeModel: 'Isuzu D-Max Ute', colour: 'Red', year: '2020', rego: 'ISZ-456', stageArea: 'Yard Gate 4', loadLane: 'Lane 3', status: 'Yard Gate 4', warehouse: 'Melbourne Yard', zone: 'Zone B' },
-      { id: 'VIN: 6FPPXXMJ234567890', fullCode: '6FPPXXMJ234567890', type: 'VIN', name: 'Ford Ranger XLT (Black)', makeModel: 'Ford Ranger XLT', colour: 'Black', year: '2022', rego: 'FRD-789', stageArea: 'Stage Area 3', loadLane: 'Lane 2', status: 'Stage Area 3', warehouse: 'Sydney Depot', zone: 'Zone B' },
-      { id: 'VIN: WAUZZZ8K234567890', fullCode: 'WAUZZZ8K234567890', type: 'VIN', name: 'Nissan Navara ST-X (Gray)', makeModel: 'Nissan Navara', colour: 'Gray', year: '2019', rego: 'NAV-112', stageArea: 'Maintenance Bay', loadLane: 'Lane 1', status: 'Maintenance Bay', warehouse: 'Melbourne Yard', zone: 'Zone A' }
-    ],
-    Pallet: [
-      { id: 'PAL-889900112233', fullCode: 'PAL-889900112233', type: 'Pallet', name: 'Pallet - Auto Spare Parts', makeModel: 'Auto Spare Parts', colour: 'N/A', year: '2026', rego: 'PAL-902', stageArea: 'Zone B', loadLane: 'Bay 12', status: 'Zone B - Bay 12', warehouse: 'Sydney Depot', zone: 'Zone B' },
-      { id: 'PAL-991122334455', fullCode: 'PAL-991122334455', type: 'Pallet', name: 'Euro Pallet (Consumer Electronics)', makeModel: 'Electronics Cargo', colour: 'Wood', year: '2026', rego: 'PAL-903', stageArea: 'Zone A', loadLane: 'Rack 04', status: 'Zone A - Rack 04', warehouse: 'Sydney Depot', zone: 'Zone A' },
-      { id: 'PAL-772233445566', fullCode: 'PAL-772233445566', type: 'Pallet', name: 'Heavy Plastic Pallet (Chemicals)', makeModel: 'Chemical Goods', colour: 'Blue', year: '2026', rego: 'PAL-904', stageArea: 'Hazmat Zone', loadLane: 'Bay 01', status: 'Hazmat Zone Bay 01', warehouse: 'Melbourne Yard', zone: 'Zone B' }
-    ],
-    Container: [
-      { id: 'CONT-HJCU1234567', fullCode: 'CONT-HJCU1234567', type: 'Container', name: '40ft High Cube Container', makeModel: 'Shipping Freight 40ft', colour: 'Blue', year: '2025', rego: 'CONT-40', stageArea: 'Container Yard', loadLane: 'Row 3', status: 'Container Yard Row 3', warehouse: 'Sydney Depot', zone: 'Zone B' },
-      { id: 'CONT-MSCU8819203', fullCode: 'CONT-MSCU8819203', type: 'Container', name: '20ft Dry Cargo Container', makeModel: 'Shipping Freight 20ft', colour: 'Red', year: '2025', rego: 'CONT-20', stageArea: 'Container Yard', loadLane: 'Row 1', status: 'Container Yard Row 1', warehouse: 'Melbourne Yard', zone: 'Zone A' }
-    ],
-    'Item / Freight': [
-      { id: 'SKU-EOP-778899', fullCode: 'SKU-EOP-778899', type: 'Equipment', name: 'Forklift Replacement Battery', makeModel: 'Battery 48V', colour: 'Yellow', year: '2024', rego: 'SKU-7788', stageArea: 'Workshop', loadLane: 'Bay 1', status: 'Workshop', warehouse: 'Sydney Depot', zone: 'Zone A' },
-      { id: 'SKU-DRM-902188', fullCode: 'SKU-DRM-902188', type: 'Freight', name: 'Industrial Lubricant Oil Drums', makeModel: 'Lubricant Oil', colour: 'Black', year: '2026', rego: 'SKU-9021', stageArea: 'Hazmat Zone', loadLane: 'Rack 02', status: 'Hazmat Zone Rack 02', warehouse: 'Sydney Depot', zone: 'Zone B' }
-    ],
-    Load: [
-      { id: 'Load ID: LD-0001245', fullCode: 'LD-0001245-SYD-MEL', type: 'Load', name: 'Interstate Freight (Syd to Melb)', makeModel: 'Bulk Haulage', colour: 'N/A', year: '2026', rego: 'LD-1245', stageArea: 'Stage Area 1', loadLane: 'Lane 1', status: 'Dispatch Lane 1', warehouse: 'Sydney Depot', zone: 'Zone A' },
-      { id: 'Load ID: LD-0001246', fullCode: 'LD-0001246-METRO', type: 'Load', name: 'Regional Metro Express Delivery', makeModel: 'Express Courier', colour: 'N/A', year: '2026', rego: 'LD-1246', stageArea: 'Stage Area 2', loadLane: 'Lane 3', status: 'Dispatch Lane 3', warehouse: 'Melbourne Yard', zone: 'Zone B' }
-    ],
-    Location: [
-      { id: 'LOC: ZB-BAY-12', fullCode: 'LOC-ZB-BAY-12', type: 'Location', name: 'Bin Location Zone B Bay 12', makeModel: 'Bin Storage', colour: 'N/A', year: '2026', rego: 'LOC-12', stageArea: 'Zone B', loadLane: 'Bay 12', status: 'Zone B Bay 12', warehouse: 'Sydney Depot', zone: 'Zone B' },
-      { id: 'LOC: ZA-RCK-04', fullCode: 'LOC-ZA-RCK-04', type: 'Location', name: 'Shelf Rack Zone A Position 4', makeModel: 'Rack Storage', colour: 'N/A', year: '2026', rego: 'LOC-04', stageArea: 'Zone A', loadLane: 'Rack 04', status: 'Zone A Rack 04', warehouse: 'Sydney Depot', zone: 'Zone A' }
-    ],
-    'Holding Area': [
-      { id: 'STAGE-01', fullCode: 'STAGE-AREA-01', type: 'Holding Area', name: 'Inbound Inspection Holding Bay 1', makeModel: 'Staging Bay', colour: 'N/A', year: '2026', rego: 'STG-01', stageArea: 'Stage Area 1', loadLane: 'Bay 1', status: 'Stage Area 1 Bay 1', warehouse: 'Sydney Depot', zone: 'Zone A' },
-      { id: 'STAGE-02', fullCode: 'STAGE-AREA-02', type: 'Holding Area', name: 'Outbound Staging Area 2', makeModel: 'Staging Bay', colour: 'N/A', year: '2026', rego: 'STG-02', stageArea: 'Stage Area 2', loadLane: 'Bay 2', status: 'Stage Area 2 Bay 2', warehouse: 'Melbourne Yard', zone: 'Zone B' }
-    ],
-    'Load Lane': [
-      { id: 'LANE-01', fullCode: 'LOAD-LANE-01', type: 'Load Lane', name: 'Heavy Transport Dock Lane 1', makeModel: 'Dock Lane', colour: 'N/A', year: '2026', rego: 'LNE-01', stageArea: 'Dock A', loadLane: 'Lane 1', status: 'Dock A Lane 1 (85% Occupied)', warehouse: 'Sydney Depot', zone: 'Zone A' },
-      { id: 'LANE-02', fullCode: 'LOAD-LANE-02', type: 'Load Lane', name: 'Express Courier Pick Lane 2', makeModel: 'Dock Lane', colour: 'N/A', year: '2026', rego: 'LNE-02', stageArea: 'Dock B', loadLane: 'Lane 2', status: 'Dock B Lane 2 (92% Occupied)', warehouse: 'Sydney Depot', zone: 'Zone B' }
-    ],
-    Other: [
-      { id: 'EQ-FK-09', fullCode: 'EQUIP-FK-09-TOYOTA', type: 'Equipment', name: 'Toyota 2.5T Electric Forklift', makeModel: 'Toyota Electric 2.5T', colour: 'Orange', year: '2023', rego: 'FK-09', stageArea: 'Maintenance Bay', loadLane: 'Bay 1', status: 'Maintenance Bay', warehouse: 'Sydney Depot', zone: 'Zone A' }
-    ]
+    Vehicle: [],
+    Pallet: [],
+    Container: [],
+    Load: [],
+    HoldingArea: [],
+    LoadLane: []
   }), []);
+
 
   // Filtered items list for current active Category & Search & Dropdowns
   const currentCategoryItems = useMemo(() => {
@@ -114,19 +83,13 @@ export default function Tools() {
     }
   }, [activeCategory, currentCategoryItems]);
 
-  const [recentlyPrinted, setRecentlyPrinted] = useState([
-    { id: 'JTDBK3...234567 (Hilux)', type: 'VIN Label', by: 'W. Smith', time: '18/05/26 10:21 AM', copies: '1' },
-    { id: 'PAL-889900112233', type: 'Pallet Label', by: 'W. Smith', time: '18/05/26 10:15 AM', copies: '2' },
-    { id: 'CONT-HJCU1234567', type: 'Container Label', by: 'W. Smith', time: '18/05/26 09:58 AM', copies: '1' },
-    { id: 'Load ID: LD-0001245', type: 'Load Label', by: 'W. Smith', time: '18/05/26 09:42 AM', copies: '1' },
-    { id: 'Stage Area 3', type: 'Holding Area Label', by: 'W. Smith', time: '18/05/26 09:30 AM', copies: '2' }
-  ]);
+  const [recentlyPrinted, setRecentlyPrinted] = useState([]);
 
   const handlePrintLabel = () => {
     const newPrint = {
       id: selectedItem?.id || 'LABEL-PRINTED',
       type: selectedLabelType,
-      by: 'W. Smith',
+      by: 'Me',
       time: 'Just Now',
       copies: String(copies)
     };
@@ -146,28 +109,41 @@ export default function Tools() {
   // TAB 2 STATE: PRINT DOCUMENTS
   // ============================================================
   const [docType, setDocType] = useState('Outbound Manifest');
-  const [docOrderRef, setDocOrderRef] = useState('ORD-90281-SYD');
-  const [docCarrier, setDocCarrier] = useState('FedEx Logistics');
-  const [docDestination, setDocDestination] = useState('Melbourne Distribution Center');
-  const [docNotes, setDocNotes] = useState('Fragile medical cargo. Keep at temperature 2-8°C.');
+  const [docOrderRef, setDocOrderRef] = useState('');
+  const [docCarrier, setDocCarrier] = useState('');
+  const [docDestination, setDocDestination] = useState('');
+  const [docNotes, setDocNotes] = useState('');
   
-  const [generatedDocuments, setGeneratedDocuments] = useState([
-    { id: 'MN-8021', name: 'Outbound Dispatch Manifest #MN-8021', type: 'Manifest', ref: 'Carrier: FedEx Logistics', time: 'Today 03:45 PM', status: 'Ready to Print' },
-    { id: 'CN-9912', name: 'Consignment Note #CN-9912', type: 'Consignment', ref: 'Order #ORD-7819', time: 'Today 02:15 PM', status: 'Printed' },
-    { id: 'IN-4401', name: 'Inbound Putaway Slip #IN-4401', type: 'Putaway Slip', ref: 'Supplier: SteelCorp', time: 'Today 11:30 AM', status: 'Ready to Print' },
-  ]);
+  const [generatedDocuments, setGeneratedDocuments] = useState([]);
 
-  const handleCreateDocument = () => {
-    const newDoc = {
-      id: `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
-      name: `${docType} #${docOrderRef}`,
-      type: docType,
-      ref: `Carrier: ${docCarrier} | Dest: ${docDestination}`,
-      time: 'Just Now',
-      status: 'Ready to Print'
-    };
-    setGeneratedDocuments([newDoc, ...generatedDocuments]);
-    showToast(`✓ Document Generated for Order ${docOrderRef}!`);
+  const handleCreateDocument = async () => {
+    if (!docOrderRef) {
+      showToast('⚠️ Please enter a Document/Order Reference number!');
+      return;
+    }
+    try {
+      const res = await api.post('/warehouse-portal/labels/print', {
+        labelType: docType,
+        itemId: docOrderRef,
+        printerTarget: 'Office Laser Printer',
+        copies: 1
+      });
+      if (res.data?.success) {
+        const newDoc = {
+          id: res.data.jobId || `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
+          name: `${docType} #${docOrderRef}`,
+          type: docType,
+          ref: `Carrier: ${docCarrier} | Dest: ${docDestination}`,
+          time: 'Just Now',
+          status: 'Printed Successfully'
+        };
+        setGeneratedDocuments([newDoc, ...generatedDocuments]);
+        showToast(`✓ Document Generated: Job ID ${res.data.jobId || 'Spooling'}`);
+      }
+    } catch (err) {
+      console.error('Print doc error:', err);
+      showToast('Failed to connect to printer API.');
+    }
   };
 
   // ============================================================
@@ -175,15 +151,7 @@ export default function Tools() {
   // ============================================================
   const [simulatedScanTarget, setSimulatedScanTarget] = useState('Pallet-A');
   const [scanning, setScanning] = useState(false);
-  const [scanResult, setScanResult] = useState({
-    code: 'PAL-889900112233',
-    name: 'Heavy Duty Steel Pallet (Auto Parts)',
-    zone: 'Zone B - Bay 12',
-    qty: '14 Units',
-    weight: '340 kg',
-    dimensions: '1.2m x 1.2m x 1.5m',
-    status: 'In Stock - Verified'
-  });
+  const [scanResult, setScanResult] = useState(null);
 
   const handleSimulateScan = () => {
     setScanning(true);
@@ -255,13 +223,8 @@ export default function Tools() {
   // TAB 5 STATE: BATCH PRINTING
   // ============================================================
   const [spoolerPaused, setSpoolerPaused] = useState(false);
-  const [spoolerActiveCount, setSpoolerActiveCount] = useState(120);
-  const [batchQueue, setBatchQueue] = useState([
-    { id: '#PJ-901', name: 'Batch 120 Pallet Barcodes', printer: 'Zebra ZD421 (Dock A)', count: '120 Labels', status: 'Printing (45%)' },
-    { id: '#PJ-902', name: 'Outbound Manifest Batch #84', printer: 'HP LaserJet Pro (Office)', count: '24 Pages', status: 'Queued' },
-    { id: '#PJ-903', name: 'Location Bin Tags - Zone B', printer: 'Zebra ZD421 (Dock A)', count: '80 Labels', status: 'Queued' },
-    { id: '#PJ-900', name: 'Putaway Slips Morning Shift', printer: 'HP LaserJet Pro (Office)', count: '15 Pages', status: 'Completed' }
-  ]);
+  const [spoolerActiveCount, setSpoolerActiveCount] = useState(0);
+  const [batchQueue, setBatchQueue] = useState([]);
 
   const handlePauseQueue = () => {
     if (spoolerPaused) {

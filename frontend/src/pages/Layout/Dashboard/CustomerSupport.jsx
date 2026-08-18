@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import {
   MessageSquare, Ticket, Clock, CheckCircle2, Search, Send, Paperclip,
   Image as ImageIcon, Smile, ChevronRight, Star, Plus, MoreHorizontal,
@@ -20,144 +21,57 @@ export default function CustomerSupport() {
   const [convSearchTerm, setConvSearchTerm] = useState('');
   const [convCategory, setConvCategory] = useState('All Categories');
 
-  // Conversations List Data State (Matches 2nd Screenshot Exactly)
-  const [conversations, setConversations] = useState([
-    {
-      id: 1,
-      title: 'Dispatch Team',
-      sub: 'General enquiries and load updates',
-      listSub: 'Load LD-3987 update',
-      avatar: 'DT',
-      bg: 'bg-purple-600',
-      time: '10:24 AM',
-      dateStarted: '29 May 2025, 10:15 AM',
-      lastMessage: "Thank you! We'll confirm shortly.",
-      unread: 2,
-      category: 'Dispatch',
-      isBot: true,
-      messages: [
-        { id: 1, sender: 'Dispatch Team', isMe: false, text: 'Hi ABC Transport Solutions,\nYour load LD-3987 is now In Transit.\nEstimated delivery: 30 May 2025 at 02:30 PM', time: '10:15 AM' },
-        { id: 2, sender: 'You', isMe: true, text: 'Hi team,\nThanks for the update. Can you please confirm if there are any delays expected?', time: '10:18 AM', read: true },
-        { id: 3, sender: 'Dispatch Team', isMe: false, text: "At this stage everything is on track. We'll notify you immediately if there are any changes.", time: '10:20 AM' },
-        { id: 4, sender: 'You', isMe: true, text: 'Thank you!', time: '10:21 AM', read: true },
-        { id: 5, sender: 'Dispatch Team', isMe: false, text: "You're welcome! Have a great day.", time: '10:22 AM' }
-      ]
-    },
-    {
-      id: 2,
-      title: 'Support Team',
-      sub: 'Portal access and technical issues',
-      listSub: 'Portal access request',
-      avatar: 'ST',
-      bg: 'bg-blue-600',
-      time: 'Yesterday',
-      dateStarted: '28 May 2025, 03:00 PM',
-      lastMessage: 'We have reset your password. Please...',
-      unread: 0,
-      category: 'Support',
-      isBot: false,
-      messages: [
-        { id: 1, sender: 'Support Team', isMe: false, text: 'Hello John, how can we assist you today?', time: '03:00 PM' },
-        { id: 2, sender: 'You', isMe: true, text: 'Need a password reset link for our new booking staff.', time: '03:05 PM', read: true },
-        { id: 3, sender: 'Support Team', isMe: false, text: 'We have reset your password. Please check your email inbox.', time: '03:10 PM' }
-      ]
-    },
-    {
-      id: 3,
-      title: 'Accounts Team',
-      sub: 'Invoices, rates and billing queries',
-      listSub: 'Invoices, rates and ...',
-      avatar: 'AT',
-      bg: 'bg-teal-600',
-      time: '28 May 2025',
-      dateStarted: '28 May 2025, 09:30 AM',
-      lastMessage: 'Payment received, thank you.',
-      unread: 0,
-      category: 'Accounts',
-      isBot: false,
-      messages: [
-        { id: 1, sender: 'You', isMe: true, text: 'Payment sent for Invoice INV-2025-0529.', time: '09:30 AM', read: true },
-        { id: 2, sender: 'Accounts Team', isMe: false, text: 'Payment received, thank you.', time: '09:45 AM' }
-      ]
-    },
-    {
-      id: 4,
-      title: 'Dispatch Team',
-      sub: 'Booking confirmation #LD-3940',
-      listSub: 'Booking confirmatio...',
-      avatar: 'DT',
-      bg: 'bg-purple-600',
-      time: '26 May 2025',
-      dateStarted: '26 May 2025, 11:00 AM',
-      lastMessage: 'Your booking has been confir...',
-      unread: 0,
-      category: 'Dispatch',
-      isBot: false,
-      messages: [
-        { id: 1, sender: 'You', isMe: true, text: 'Can we add 2 extra pallets to booking LD-3940?', time: '11:00 AM', read: true },
-        { id: 2, sender: 'Dispatch Team', isMe: false, text: 'Your booking has been confirmed with extra space.', time: '11:20 AM' }
-      ]
-    },
-    {
-      id: 5,
-      title: 'Support Team',
-      sub: 'Document upload query',
-      listSub: 'Document upload q...',
-      avatar: 'ST',
-      bg: 'bg-blue-600',
-      time: '24 May 2025',
-      dateStarted: '24 May 2025, 02:15 PM',
-      lastMessage: 'This is now resolved, Thank y...',
-      unread: 0,
-      category: 'Support',
-      isBot: false,
-      messages: [
-        { id: 1, sender: 'You', isMe: true, text: 'Is POD upload working for bulk PDF exports?', time: '02:15 PM', read: true },
-        { id: 2, sender: 'Support Team', isMe: false, text: 'This is now resolved, Thank you.', time: '02:40 PM' }
-      ]
+  const [conversations, setConversations] = useState([]);
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [dashboardKpis, setDashboardKpis] = useState({
+    unreadMessages: 0,
+    openTickets: 0,
+    awaitingResponse: 0,
+    resolvedTickets: 0
+  });
+
+  const fetchDashboardData = async () => {
+    try {
+      const res = await api.get('/warehouse-portal/support/dashboard');
+      if (res.data?.data) {
+        setConversations(res.data.data.conversations || []);
+        setSupportTickets(res.data.data.supportTickets || []);
+        setDashboardKpis(res.data.data.kpi || { unreadMessages: 0, openTickets: 0, awaitingResponse: 0, resolvedTickets: 0 });
+        if (res.data.data.conversations?.length > 0 && selectedConvId === 1) {
+          setSelectedConvId(res.data.data.conversations[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load support dashboard:', error);
     }
-  ]);
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   // Active Chat Message Input State
   const [chatInputText, setChatInputText] = useState('');
 
   // Handle Send Message
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e?.preventDefault();
     if (!chatInputText.trim()) return;
 
-    const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const newMsg = {
-      id: Date.now(),
-      sender: 'You',
-      isMe: true,
-      text: chatInputText,
-      time: timeNow,
-      read: true
-    };
-
-    setConversations(prev => prev.map(conv => {
-      if (conv.id === selectedConvId) {
-        return {
-          ...conv,
-          lastMessage: chatInputText,
-          time: timeNow,
-          messages: [...conv.messages, newMsg]
-        };
-      }
-      return conv;
-    }));
-
-    setChatInputText('');
-    triggerToast('Message sent to dispatch team!');
+    try {
+      await api.post('/warehouse-portal/support/message', {
+        conversationId: selectedConvId,
+        text: chatInputText
+      });
+      setChatInputText('');
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      triggerToast('Error sending message!');
+    }
   };
 
-  // Support Tickets State
-  const [supportTickets, setSupportTickets] = useState([
-    { id: '#SUP-2025-0156', title: 'Portal access for new user', created: '29 May 2025', status: 'Open', statusBg: 'bg-[#FFFBEB] text-[#B45309] border-[#FDE047]' },
-    { id: '#SUP-2025-0148', title: 'Document upload failing', created: '28 May 2025', status: 'In Progress', statusBg: 'bg-blue-50 text-blue-700 border-blue-200' },
-    { id: '#SUP-2025-0123', title: 'Invoice discrepancy query', created: '22 May 2025', status: 'Open', statusBg: 'bg-[#FFFBEB] text-[#B45309] border-[#FDE047]' }
-  ]);
+
 
   // Create Ticket Modal State
   const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] = useState(false);
@@ -168,33 +82,53 @@ export default function CustomerSupport() {
     description: ''
   });
 
-  const handleSaveCreateTicket = (e) => {
+  const handleSaveCreateTicket = async (e) => {
     e.preventDefault();
     if (!ticketForm.subject) return;
 
-    const newTicket = {
-      id: `#SUP-2025-0${Math.floor(160 + Math.random() * 840)}`,
-      title: ticketForm.subject,
-      created: 'Just now',
-      status: 'Open',
-      statusBg: 'bg-[#FFFBEB] text-[#B45309] border-[#FDE047]'
-    };
-
-    setSupportTickets(prev => [newTicket, ...prev]);
-    setIsCreateTicketModalOpen(false);
-    setTicketForm({ subject: '', category: 'Portal Support', priority: 'Normal', description: '' });
-    triggerToast('Support Ticket created successfully!');
+    try {
+      await api.post('/warehouse-portal/support/ticket', {
+        subject: ticketForm.subject,
+        category: ticketForm.category,
+        priority: ticketForm.priority,
+        description: ticketForm.description
+      });
+      setIsCreateTicketModalOpen(false);
+      setTicketForm({ subject: '', category: 'Portal Support', priority: 'Normal', description: '' });
+      fetchDashboardData();
+      triggerToast('Support Ticket created successfully!');
+    } catch (error) {
+      console.error('Failed to create ticket:', error);
+      triggerToast('Error creating ticket!');
+    }
   };
 
   // Quick View Load Modal
   const [isViewLoadModalOpen, setIsViewLoadModalOpen] = useState(false);
 
-  // Filtered Conversations
-  const activeConversation = conversations.find(c => c.id === selectedConvId) || conversations[0];
-  const filteredConversations = conversations.filter(conv => {
-    const matchesSearch = conv.title.toLowerCase().includes(convSearchTerm.toLowerCase()) ||
-                          conv.sub.toLowerCase().includes(convSearchTerm.toLowerCase()) ||
-                          conv.lastMessage.toLowerCase().includes(convSearchTerm.toLowerCase());
+  // Default fallback conversation when conversations array is empty or loading
+  const defaultConversation = {
+    id: 1,
+    title: 'Support Team',
+    sub: 'Dispatch Support',
+    listSub: 'General Support',
+    avatar: 'ST',
+    bg: 'bg-blue-600',
+    time: 'Now',
+    dateStarted: new Date().toLocaleDateString('en-GB'),
+    lastMessage: 'Welcome to Support. How can we assist you today?',
+    unread: 0,
+    category: 'Support',
+    isBot: false,
+    messages: []
+  };
+
+  // Safe active conversation with fallback
+  const activeConversation = (conversations || []).find(c => c.id === selectedConvId) || conversations[0] || defaultConversation;
+  const filteredConversations = (conversations || []).filter(conv => {
+    const matchesSearch = (conv.title || '').toLowerCase().includes(convSearchTerm.toLowerCase()) ||
+                          (conv.sub || '').toLowerCase().includes(convSearchTerm.toLowerCase()) ||
+                          (conv.lastMessage || '').toLowerCase().includes(convSearchTerm.toLowerCase());
     const matchesCategory = convCategory === 'All Categories' || convCategory === 'All' || conv.category === convCategory;
     return matchesSearch && matchesCategory;
   });
@@ -282,7 +216,7 @@ export default function CustomerSupport() {
             </div>
             <div>
               <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">UNREAD MESSAGES</span>
-              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">2</span>
+              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">{dashboardKpis.unreadMessages}</span>
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
@@ -300,7 +234,7 @@ export default function CustomerSupport() {
             </div>
             <div>
               <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">OPEN TICKETS</span>
-              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">3</span>
+              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">{dashboardKpis.openTickets}</span>
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
@@ -318,7 +252,7 @@ export default function CustomerSupport() {
             </div>
             <div>
               <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">AWAITING RESPONSE</span>
-              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">1</span>
+              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">{dashboardKpis.awaitingResponse}</span>
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
@@ -336,7 +270,7 @@ export default function CustomerSupport() {
             </div>
             <div>
               <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">RESOLVED TICKETS (30 DAYS)</span>
-              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">7</span>
+              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">{dashboardKpis.resolvedTickets}</span>
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
@@ -449,17 +383,17 @@ export default function CustomerSupport() {
           <div className="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                {activeConversation.isBot ? <Headphones size={16} /> : activeConversation.avatar}
+                {activeConversation?.isBot ? <Headphones size={16} /> : (activeConversation?.avatar || 'ST')}
               </div>
               <div>
-                <h3 className="text-xs font-black text-slate-900 leading-tight">{activeConversation.title}</h3>
-                <p className="text-[10px] text-slate-500 font-medium">{activeConversation.sub}</p>
+                <h3 className="text-xs font-black text-slate-900 leading-tight">{activeConversation?.title || 'Support Team'}</h3>
+                <p className="text-[10px] text-slate-500 font-medium">{activeConversation?.sub || ''}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-[9.5px] text-slate-400 font-medium hidden sm:inline">
-                Conversation started {activeConversation.dateStarted}
+                Conversation started {activeConversation?.dateStarted || ''}
               </span>
               <button 
                 onClick={() => setIsViewLoadModalOpen(true)}
@@ -487,7 +421,7 @@ export default function CustomerSupport() {
             </div>
 
             {/* Render Chat Messages */}
-            {activeConversation.messages.map((msg) => (
+            {(activeConversation?.messages || []).map((msg) => (
               <div key={msg.id} className={`flex gap-2.5 ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
                 {!msg.isMe && (
                   <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-extrabold text-[9px] flex items-center justify-center shrink-0 mt-0.5">

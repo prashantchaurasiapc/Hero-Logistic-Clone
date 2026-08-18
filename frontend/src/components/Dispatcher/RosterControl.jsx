@@ -266,8 +266,23 @@ export default function RosterControl() {
     showToast('Workforce schedule exported successfully!');
   };
 
-  const handleAssignShift = (form) => {
-    showToast(`Shift assigned successfully${assignForWorker ? ` to ${assignForWorker.name}` : ''}!`);
+  const handleAssignShift = async (form) => {
+    try {
+      const payload = {
+        driverId: assignForWorker?.id,
+        role: form.role || 'Car Carrier Driver',
+        date: new Date(form.date).toISOString(),
+        startTime: new Date(`${form.date}T${form.startTime}:00`).toISOString(),
+        endTime: new Date(`${form.date}T${form.endTime}:00`).toISOString(),
+        notes: form.notes,
+        status: 'SCHEDULED'
+      };
+      await api.post('/shifts', payload);
+      showToast(`Shift assigned successfully${assignForWorker ? ` to ${assignForWorker.name}` : ''}!`);
+    } catch (e) {
+      console.warn("API shift creation failed:", e);
+      showToast('Error saving shift to database', 'error');
+    }
   };
 
   const handleAutoFill = () => {

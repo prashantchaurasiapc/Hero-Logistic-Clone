@@ -61,10 +61,8 @@ const CustomerPayments = () => {
     { key: 'actions', label: 'Actions' }
   ];
 
-  // Payments Data (Set unchecked by default)
-  const [payments, setPayments] = useState([
-    { id: 'PAY-01', paymentId: 'PAY-1002', invoiceId: 'INV-8910', amount: '$850.00', date: '06/15/2026', status: 'Cleared', checked: false }
-  ]);
+  // Payments Data State
+  const [payments, setPayments] = useState([]);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -348,7 +346,14 @@ Status: Cleared & Reconciled`;
               </tr>
             </thead>
             <tbody>
-              {payments.map((row) => (
+              {payments.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ padding: '24px 0', textAlign: 'center', color: '#94a3b8', fontSize: 12, fontWeight: 600 }}>
+                    No payment records found.
+                  </td>
+                </tr>
+              ) : (
+                payments.map((row) => (
                 <tr 
                   key={row.id} 
                   style={{
@@ -391,7 +396,8 @@ Status: Cleared & Reconciled`;
                     </td>
                   )}
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>
