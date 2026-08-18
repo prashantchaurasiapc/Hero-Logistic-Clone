@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Bell, Shield, Truck, AlertTriangle, Heart, X, Phone, 
   MessageSquare, Mic, Link, Wifi, Check, Trash2, CheckCircle2,
   Filter, Volume2, VolumeX, AlertOctagon, Info, Clock, ArrowRight,
   Sparkles, RefreshCw
 } from 'lucide-react';
+import * as driverApi from '../../services/driverApi';
 
 export default function Notifications() {
   const [sosModalOpen, setSosModalOpen] = useState(false);
@@ -24,62 +25,52 @@ export default function Notifications() {
     setTimeout(() => setToastMsg(''), 4000);
   };
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'DISPATCH',
-      title: 'New Load Assigned (LD-3987)',
-      message: 'Melbourne VIC to Sydney NSW assigned. Pickup at 08:00 AM from ABC Car Yard.',
-      time: '10 mins ago',
-      priority: 'HIGH',
-      read: false
-    },
-    {
-      id: 2,
-      type: 'ALERT',
-      title: 'Pre-Start Checklist Pending',
-      message: 'Daily vehicle inspection for TX-ROAD88 needs completion before starting route.',
-      time: '25 mins ago',
-      priority: 'URGENT',
-      read: false
-    },
-    {
-      id: 3,
-      type: 'SYSTEM',
-      title: 'ELD Logbook Sync Successful',
-      message: 'HOS hours and driving log auto-synced with Fleet Command Center.',
-      time: '1 hour ago',
-      priority: 'NORMAL',
-      read: false
-    },
-    {
-      id: 4,
-      type: 'ALERT',
-      title: 'Severe Weather Warning (Hwy M1)',
-      message: 'Heavy rain and reduced visibility reported near Euroa. Maintain safe distance.',
-      time: '2 hours ago',
-      priority: 'HIGH',
-      read: true
-    },
-    {
-      id: 5,
-      type: 'DISPATCH',
-      title: 'Route Adjustment Update',
-      message: 'Detour advised on Hume Hwy due to roadwork. Updated ETA: 02:45 PM.',
-      time: '3 hours ago',
-      priority: 'NORMAL',
-      read: true
-    }
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const markAllRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
-    triggerToast('All notifications marked as read');
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const res = await driverApi.getNotifications();
+      // Map API response to match UI fields
+      const formatted = (res.data?.notifications || []).map(n => ({
+        ...n,
+        read: n.isRead,
+        time: new Date(n.createdAt).toLocaleString(),
+      }));
+      setNotifications(formatted);
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+      triggerToast('Failed to load notifications');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const markRead = (id) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
-    triggerToast('Notification marked as read');
+  const markAllRead = async () => {
+    try {
+      await driverApi.markAllNotificationsRead();
+      setNotifications(notifications.map(n => ({ ...n, read: true, isRead: true })));
+      triggerToast('All notifications marked as read');
+    } catch (err) {
+      console.error('Error marking all as read:', err);
+      triggerToast('Failed to mark all as read');
+    }
+  };
+
+  const markRead = async (id) => {
+    try {
+      await driverApi.markNotificationRead(id);
+      setNotifications(notifications.map(n => n.id === id ? { ...n, read: true, isRead: true } : n));
+      triggerToast('Notification marked as read');
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
+      triggerToast('Failed to mark notification as read');
+    }
   };
 
   const dismiss = (id) => {
@@ -118,7 +109,7 @@ export default function Notifications() {
             </span>
           </div>
           <p className="text-slate-500 text-xs font-semibold mt-1">
-            Real-time dispatch updates, safety alerts, and ELD system notifications for <strong className="text-slate-800">Driver</strong>
+            Real-time dispatch updates, safety alerts, and ELD system notifications for <strong className="text-slate-800">Noah Williams</strong>
           </p>
         </div>
 

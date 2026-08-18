@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, CheckCircle2, AlertCircle, Settings, Check, Upload, Download, Wrench } from 'lucide-react';
 
 export default function MaintenanceRequest() {
@@ -22,11 +23,34 @@ export default function MaintenanceRequest() {
   const [viewMode, setViewMode] = useState('DEFAULT');
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [maintenanceHistory, setMaintenanceHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [visibleColumns, setVisibleColumns] = useState({
     reportedIssue: true,
     severity: true,
     status: true
   });
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/asset-maintenances').catch(() => null);
+      if (res && res.data) {
+        const list = Array.isArray(res.data.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
+        setMaintenanceHistory(list);
+      } else {
+        setMaintenanceHistory([]);
+      }
+    } catch (err) {
+      console.error('Failed to load maintenance history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const triggerToast = (msg, type = 'success') => {
     setToastMsg(msg);
@@ -39,18 +63,30 @@ export default function MaintenanceRequest() {
     triggerToast('Malfunction photo attached.', 'success');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!issueDetails.trim()) {
       triggerToast('Please describe the issue.', 'error');
       return;
     }
-    triggerToast('Maintenance log successfully submitted.', 'success');
-    setIssueDetails('');
-    setPhotoAttached(false);
+
+    try {
+      await api.post('/asset-maintenances', {
+        type: severity.split(' - ')[0] || 'Minor',
+        notes: issueDetails,
+        status: 'SCHEDULED'
+      });
+      triggerToast('Maintenance log successfully submitted.', 'success');
+      setIssueDetails('');
+      setPhotoAttached(false);
+      fetchHistory();
+    } catch (err) {
+      console.error('Failed to submit maintenance request:', err);
+      triggerToast('Failed to submit maintenance log.', 'error');
+    }
   };
 
-  const records = [];
+  const mockData = maintenanceHistory;
 
   const toggleRow = (id) => {
     setSelectedRows(prev =>
@@ -284,7 +320,7 @@ export default function MaintenanceRequest() {
 
           {/* Mobile Card Layout (Visible only on mobile/small screens) */}
           <div className="block sm:hidden space-y-4">
-            {records.map((row, index) => {
+            {mockData.map((row, index) => {
               const isSelected = selectedRows.includes(row.id);
               
               let cardPadding = 'p-4';
@@ -364,11 +400,11 @@ export default function MaintenanceRequest() {
                 <tr className="border-b border-gray-100 bg-white">
                   <th className="p-4 w-12 text-center">
                     <button
-                      onClick={() => setSelectedRows(selectedRows.length === records.length ? [] : records.map(d => d.id))}
+                      onClick={() => setSelectedRows(selectedRows.length === mockData.length ? [] : mockData.map(d => d.id))}
                       className="cursor-pointer"
                     >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === records.length ? 'border-[#D97706] bg-white text-[#D97706]' : 'border-[#94A3B8]'}`}>
-                        {selectedRows.length === records.length && <Check className="w-3 h-3" strokeWidth={4} />}
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === mockData.length ? 'border-[#D97706] bg-white text-[#D97706]' : 'border-[#94A3B8]'}`}>
+                        {selectedRows.length === mockData.length && <Check className="w-3 h-3" strokeWidth={4} />}
                       </div>
                     </button>
                   </th>
@@ -378,7 +414,7 @@ export default function MaintenanceRequest() {
                 </tr>
               </thead>
               <tbody>
-                {records.map((row) => {
+                {mockData.map((row) => {
                   const isSelected = selectedRows.includes(row.id);
                   return (
                     <tr key={row.id} className={`border-b border-gray-50 hover:bg-[#FFFBEB]/50 transition-colors ${
