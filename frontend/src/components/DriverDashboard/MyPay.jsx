@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import { getPayrollSummary, getPayrollHistory, downloadPayslip } from '../../services/driverApi';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
@@ -222,7 +223,7 @@ export default function MyPay() {
             <div className="relative w-32 h-32 mx-auto flex items-center justify-center my-2">
               <div className="w-full h-full rounded-full border-8 border-slate-100 border-t-purple-600 border-r-indigo-600 border-b-purple-600 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-base font-black text-slate-900 font-mono">{ytdSummary.totalEarnings}</div>
+                  <div className="text-base font-black text-slate-900 font-mono">{ytdSummary?.totalEarnings}</div>
                   <div className="text-[9.5px] font-bold text-slate-500">Total Earnings</div>
                 </div>
               </div>
@@ -231,15 +232,15 @@ export default function MyPay() {
             <div className="space-y-1.5 text-xs font-bold border-t border-slate-100 pt-3">
               <div className="flex justify-between text-emerald-700">
                 <span>Net Pay Received</span>
-                <span className="font-mono text-slate-900">{ytdSummary.netPayReceived}</span>
+                <span className="font-mono text-slate-900">{ytdSummary?.netPayReceived}</span>
               </div>
               <div className="flex justify-between text-amber-700">
                 <span>Pending Payments</span>
-                <span className="font-mono text-slate-900">{ytdSummary.pendingPayments}</span>
+                <span className="font-mono text-slate-900">{ytdSummary?.pendingPayments}</span>
               </div>
               <div className="flex justify-between text-rose-700">
                 <span>Total Deductions</span>
-                <span className="font-mono text-slate-900">{ytdSummary.totalDeductions}</span>
+                <span className="font-mono text-slate-900">{ytdSummary?.totalDeductions}</span>
               </div>
             </div>
           </div>
@@ -361,28 +362,28 @@ export default function MyPay() {
                   <div className="flex items-center gap-1.5 text-purple-700 font-black text-xs mb-1">
                     <span>👛 Net Pay (This Period)</span>
                   </div>
-                  <div className="text-xl font-black text-slate-900 font-mono">{currentPeriod.netPay}</div>
+                  <div className="text-xl font-black text-slate-900 font-mono">{currentPeriod?.netPay}</div>
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-emerald-700 font-black text-xs mb-1">
                     <span>🟢 Gross Earnings</span>
                   </div>
-                  <div className="text-xl font-black text-emerald-700 font-mono">{currentPeriod.grossEarnings}</div>
+                  <div className="text-xl font-black text-emerald-700 font-mono">{currentPeriod?.grossEarnings}</div>
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-amber-700 font-black text-xs mb-1">
                     <span>🟠 Total Deductions</span>
                   </div>
-                  <div className="text-xl font-black text-slate-900 font-mono">{currentPeriod.totalDeductions}</div>
+                  <div className="text-xl font-black text-slate-900 font-mono">{currentPeriod?.totalDeductions}</div>
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-blue-700 font-black text-xs mb-1">
                     <span>🏦 Pay Frequency</span>
                   </div>
-                  <div className="text-xl font-black text-slate-900">{currentPeriod.payFrequency}</div>
+                  <div className="text-xl font-black text-slate-900">{currentPeriod?.payFrequency}</div>
                 </div>
               </div>
 
@@ -394,22 +395,22 @@ export default function MyPay() {
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-slate-600">
-                      Your next payment is scheduled for <span className="font-black text-slate-900">{currentPeriod.nextPayment.date}</span>
+                      Your next payment is scheduled for <span className="font-black text-slate-900">{currentPeriod?.nextPayment?.date}</span>
                       <span className="ml-2 bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-200">
-                        in {currentPeriod.nextPayment.daysLeft} Days
+                        in {currentPeriod?.nextPayment?.daysLeft} Days
                       </span>
                     </div>
                     <div className="text-[11px] font-mono text-slate-400 font-bold mt-0.5">
-                      Period: {currentPeriod.nextPayment.period}
+                      Period: {currentPeriod?.nextPayment?.period}
                     </div>
                   </div>
                 </div>
 
                 <div className="text-right w-full sm:w-auto">
                   <div className="text-xs font-semibold text-slate-400">Estimated Net Pay</div>
-                  <div className="text-xl font-black text-indigo-700 font-mono">{currentPeriod.nextPayment.estimatedNetPay}</div>
+                  <div className="text-xl font-black text-indigo-700 font-mono">{currentPeriod?.nextPayment?.estimatedNetPay}</div>
                   <span className="bg-blue-100 text-blue-800 text-[9.5px] font-black px-2 py-0.2 rounded-full border border-blue-200 inline-block mt-0.5">
-                    Status: {currentPeriod.nextPayment.status}
+                    Status: {currentPeriod?.nextPayment?.status}
                   </span>
                 </div>
               </div>
@@ -465,15 +466,15 @@ export default function MyPay() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-xs font-bold text-center">
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Gross Earnings</span>
-                    <span className="font-mono text-slate-900 text-sm font-black">{totalSummary.totalGrossEarnings}</span>
+                    <span className="font-mono text-slate-900 text-sm font-black">{totalSummary?.totalGrossEarnings}</span>
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Deductions</span>
-                    <span className="font-mono text-slate-900 text-sm font-black">{totalSummary.totalDeductions}</span>
+                    <span className="font-mono text-slate-900 text-sm font-black">{totalSummary?.totalDeductions}</span>
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Net Paid</span>
-                    <span className="font-mono text-emerald-700 text-sm font-black">{totalSummary.totalNetPaid}</span>
+                    <span className="font-mono text-emerald-700 text-sm font-black">{totalSummary?.totalNetPaid}</span>
                   </div>
                 </div>
               </div>

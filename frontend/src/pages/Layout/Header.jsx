@@ -187,6 +187,8 @@ const Header = ({ onMenuClick }) => {
       navigate('/sales/messages');
     } else if (location.pathname.startsWith('/customer')) {
       navigate('/customer/messages-support');
+    } else if (location.pathname.startsWith('/driver')) {
+      navigate('/driver/messages');
     } else {
       navigate('/company-admin/messages');
     }

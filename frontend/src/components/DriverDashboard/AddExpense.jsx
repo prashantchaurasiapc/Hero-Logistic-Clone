@@ -271,17 +271,17 @@ export default function AddExpense() {
             <div className="space-y-2.5 font-semibold text-slate-700">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Truck</div>
-                <div className="font-black text-slate-900 text-xs">TRK-101</div>
-                <div className="text-[11px] text-slate-500">MAN TGX 26.580</div>
+                <div className="font-black text-slate-900 text-xs">{runData?.vehicle?.truck || 'Unassigned'}</div>
+                <div className="text-[11px] text-slate-500">--</div>
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Trailer</div>
-                <div className="font-black text-slate-900 text-xs">TRL-305</div>
+                <div className="font-black text-slate-900 text-xs">{runData?.vehicle?.trailer || 'Unassigned'}</div>
                 <div className="text-[11px] text-slate-500">Car Carrier (4 Level)</div>
               </div>
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-indigo-500 uppercase font-extrabold">Active Load</div>
-                <div className="font-black text-indigo-900 text-xs">LD-3987</div>
+                <div className="font-black text-indigo-900 text-xs">{runData?.id || 'No Active Load'}</div>
                 <div className="text-[11px] text-indigo-700">Car Carrier (4 Level)</div>
               </div>
             </div>
@@ -343,11 +343,11 @@ export default function AddExpense() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-2xl font-black text-indigo-700 tracking-tight">{runData?.id || 'LD-3987'}</div>
+                <div className="text-2xl font-black text-indigo-700 tracking-tight">{runData?.id || 'No Active Load'}</div>
                 <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                  <span>{runData?.origin || 'Melbourne VIC'}</span>
+                  <span>{runData?.origin || '--'}</span>
                   <span className="text-slate-400">➔</span>
-                  <span>{runData?.destination || 'Sydney NSW'}</span>
+                  <span>{runData?.destination || '--'}</span>
                 </div>
               </div>
 
@@ -1044,7 +1044,7 @@ export default function AddExpense() {
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <FiBarChart2 className="text-indigo-600 text-lg" />
-                Trip Expense Analytics Report (LD-3987)
+                Trip Expense Analytics Report ({runData?.id || 'No Active Load'})
               </h3>
               <button onClick={() => setReportsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
             </div>

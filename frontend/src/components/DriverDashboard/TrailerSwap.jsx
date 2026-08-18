@@ -329,8 +329,8 @@ export default function TrailerSwap() {
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold flex items-center gap-1.5">
                   <FiTruck /> <span>Truck</span>
                 </div>
-                <div className="font-black text-slate-900 text-xs">TRK-101</div>
-                <div className="text-[11px] text-slate-500">MAN TGX 26.580</div>
+                <div className="font-black text-slate-900 text-xs">{truckInfo?.id || '--'}</div>
+                <div className="text-[11px] text-slate-500">{truckInfo?.make || '--'}</div>
               </div>
 
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1">
@@ -374,7 +374,7 @@ export default function TrailerSwap() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
+              <div className="text-[11px] text-slate-500">Last sync: {syncTime}</div>
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
@@ -405,16 +405,16 @@ export default function TrailerSwap() {
               {/* Driver Details */}
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Driver</div>
-                <div className="font-black text-slate-900">John Smith</div>
-                <div className="text-[10.5px] font-mono text-slate-400">Driver ID: DRV-1021</div>
+                <div className="font-black text-slate-900">{driverInfo?.name || '--'}</div>
+                <div className="text-[10.5px] font-mono text-slate-400">Driver ID: {driverInfo?.driverCode || '--'}</div>
               </div>
 
               {/* Truck Details */}
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Truck</div>
-                <div className="font-black text-slate-900">TRK-101</div>
-                <div className="text-[11px] text-slate-500 font-semibold">MAN TGX 26.580</div>
-                <div className="text-[10px] font-mono text-slate-400">Rego: YQ-45CD • VIN: WMA34XZZJPT123456</div>
+                <div className="font-black text-slate-900">{truckInfo?.id || '--'}</div>
+                <div className="text-[11px] text-slate-500 font-semibold">{truckInfo?.make || '--'}</div>
+                <div className="text-[10px] font-mono text-slate-400">Rego: {truckInfo?.rego || '--'} • VIN: {truckInfo?.vin || '--'}</div>
               </div>
 
               {/* Current Trailer Details */}
