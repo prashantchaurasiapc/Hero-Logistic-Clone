@@ -120,27 +120,25 @@ exports.getDashboard = async (req, res, next) => {
     ]);
 
     // Format Inbound Today items
-    const formattedInboundToday = inboundTodayList.length > 0 ? inboundTodayList.map(r => ({
+    const formattedInboundToday = inboundTodayList.map(r => ({
       id: r.id,
       receiptNo: r.receiptNo || 'GR-1023',
-      from: r.supplier || 'ABC Motors',
-      supplier: r.supplier || 'ABC Motors',
+      from: r.supplier || '-',
+      supplier: r.supplier || '-',
       itemsCount: r.items?.length || 0,
       items: `${r.items?.length || 0} Items`,
       status: r.status || 'Pending',
-      time: r.receivingDate ? new Date(r.receivingDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '10:30 AM',
+      time: r.receivingDate ? new Date(r.receivingDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-',
       date: r.receivingDate
-    })) : [
-      { time: '10:30 AM', receiptNo: 'GR-1023', from: 'ABC Motors', items: '4 Vehicles', status: 'Pending' }
-    ];
+    }));
 
     // Format Load Lanes Overview
-    const formattedLoadLanes = loadLanesList.length > 0 ? loadLanesList.map(lane => {
+    const formattedLoadLanes = loadLanesList.map(lane => {
       const activeLoad = lane.loads?.[0];
       const itemCount = lane.loadItems?.length || 0;
       return {
         id: lane.id,
-        lane: lane.name || 'Lane 1',
+        lane: lane.name || 'Lane',
         load: activeLoad?.loadRef || activeLoad?.draftId || '-',
         current: itemCount,
         total: 10,
@@ -149,21 +147,17 @@ exports.getDashboard = async (req, res, next) => {
         driver: activeLoad?.driver?.licenseNumber || '-',
         trailer: activeLoad?.trailer?.rego || '-'
       };
-    }) : [
-      { lane: 'Lane 1', load: '-', current: 0, total: 10, barColor: '#F59E0B', status: 'Empty' }
-    ];
+    });
 
     // Format Recent Movements
-    const formattedMovements = recentMovementsList.length > 0 ? recentMovementsList.map(m => ({
+    const formattedMovements = recentMovementsList.map(m => ({
       id: m.id,
-      time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '08:10 AM',
-      item: m.item?.rego || m.item?.vin || m.item?.stockRef || 'ABC123',
+      time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-',
+      item: m.item?.rego || m.item?.vin || m.item?.stockRef || 'Item',
       action: m.type || m.reason || 'Moved',
-      location: m.toLocation || 'Yard A / Row 4 / Bay 12',
+      location: m.toLocation || '-',
       staff: m.performedBy?.name || 'Staff'
-    })) : [
-      { time: '08:10 AM', item: 'ABC123', action: 'Moved', location: 'Yard A / Row 4 / Bay 12' }
-    ];
+    }));
 
     const totalCapacity = warehouseRecord?.palletCapacity || 200;
     const inYardCount = inYardItemsCount || 0;
@@ -424,7 +418,33 @@ exports.getStockById = async (req, res, next) => {
 
 exports.moveStock = async (req, res, next) => {
   try {
-    const { itemId, toZone, toRow, toBay, toPosition, toLaneId, toStagingAreaId, reason } = req.body;
+    const { itemId, toZone, toRow, toBay, toPosition, toLaneId, toStagingAreaId, reason, moveType } = req.body;
+    if (!itemId) {
+      return sendError(res, { code: ERROR_CODES.VALIDATION_ERROR, message: 'Item ID is required for stock movement.' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    if (String(itemId).startsWith('MANUAL-')) {
+      return sendSuccess(res, {
+        updatedItem: {
+          id: itemId,
+          zone: toZone || 'Zone A',
+          row: toRow || 'Row 1',
+          bay: toBay || 'Bay 01',
+          position: toPosition || 'P01',
+          stockStatus: toLaneId || toStagingAreaId ? 'STAGED' : 'IN_STORAGE'
+        },
+        movement: {
+          id: `MVT-${Date.now()}`,
+          type: toLaneId ? 'STAGE' : 'RELOCATION',
+          fromLocation: 'Yard / Row 1 / Bay 01',
+          toLocation: toLaneId ? 'Load Lane' : (toStagingAreaId ? 'Holding Area' : `${toZone} / ${toRow} / ${toBay}`),
+          reason: reason || 'Internal Depot Move',
+          result: 'COMPLETED',
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+
     // Always resolve identity from JWT — never trust frontend-supplied IDs
     const userId = req.user?.userId || req.user?.id;
     const tenantId = req.tenantId;
@@ -748,15 +768,27 @@ exports.getLoadLanes = async (req, res, next) => {
         driver: activeLoad?.driver?.user ? activeLoad.driver.user.name : (activeLoad?.driver?.licenseNumber || '-'),
         estDispatch: activeLoad?.scheduledPickupTime ? new Date(activeLoad.scheduledPickupTime).toLocaleString() : '-',
         progress: `${count} / 10`,
-        items: lane.loadItems
+        items: lane.loadItems || []
       };
     });
 
-    const readyCount = formattedLanes.filter(l => l.status.toLowerCase().includes('ready')).length;
-    const inProgressCount = formattedLanes.filter(l => l.status.toLowerCase().includes('progress')).length;
-    const holdCount = formattedLanes.filter(l => l.status.toLowerCase().includes('hold')).length;
-    const emptyCount = formattedLanes.filter(l => l.status.toLowerCase().includes('empty') || l.loadsCount === 0).length;
-    const totalLanesCount = formattedLanes.length;
+    let finalLanes = formattedLanes;
+    if (finalLanes.length === 0) {
+      finalLanes = [
+        { id: 'lane-1', name: 'Lane 1 - North Loading Dock', laneNumber: 'Lane 1', laneName: 'Lane 1 - North Loading Dock', area: 'Main Yard', status: 'Empty', loadsCount: 0, progress: '0 / 10', items: [] },
+        { id: 'lane-2', name: 'Lane 2 - East Bay', laneNumber: 'Lane 2', laneName: 'Lane 2 - East Bay', area: 'Main Yard', status: 'Empty', loadsCount: 0, progress: '0 / 10', items: [] },
+        { id: 'lane-3', name: 'Lane 3 - Express Loading', laneNumber: 'Lane 3', laneName: 'Lane 3 - Express Loading', area: 'Main Yard', status: 'Empty', loadsCount: 0, progress: '0 / 10', items: [] },
+        { id: 'lane-4', name: 'Lane 4 - Heavy Transport', laneNumber: 'Lane 4', laneName: 'Lane 4 - Heavy Transport', area: 'Main Yard', status: 'Empty', loadsCount: 0, progress: '0 / 10', items: [] },
+        { id: 'lane-5', name: 'Lane 5 - Vehicle Staging', laneNumber: 'Lane 5', laneName: 'Lane 5 - Vehicle Staging', area: 'Main Yard', status: 'Empty', loadsCount: 0, progress: '0 / 10', items: [] },
+        { id: 'lane-6', name: 'Lane 6 - Outbound Dock', laneNumber: 'Lane 6', laneName: 'Lane 6 - Outbound Dock', area: 'Main Yard', status: 'Empty', loadsCount: 0, progress: '0 / 10', items: [] }
+      ];
+    }
+
+    const readyCount = finalLanes.filter(l => l.status.toLowerCase().includes('ready')).length;
+    const inProgressCount = finalLanes.filter(l => l.status.toLowerCase().includes('progress')).length;
+    const holdCount = finalLanes.filter(l => l.status.toLowerCase().includes('hold')).length;
+    const emptyCount = finalLanes.filter(l => l.status.toLowerCase().includes('empty') || l.loadsCount === 0).length;
+    const totalLanesCount = finalLanes.length;
 
     const upcomingLoads = await prisma.load.findMany({
       where: {
@@ -783,7 +815,7 @@ exports.getLoadLanes = async (req, res, next) => {
         holdCount,
         emptyCount
       },
-      lanes: formattedLanes,
+      lanes: finalLanes,
       upcomingDispatches: upcomingLoads.map(l => ({
         loadRef: l.loadRef || l.id,
         lane: l.loadLane?.name || 'Unassigned',
@@ -866,149 +898,51 @@ exports.getDispatchReady = async (req, res, next) => {
   try {
     const readyLoads = await prisma.load.findMany({
       where: {
-        status: { in: ['PLANNED', 'ASSIGNED', 'IN_TRANSIT'] }
+        status: { in: ['PLANNED', 'ASSIGNED', 'IN_TRANSIT'] },
+        ...(req.tenantId && { companyId: req.tenantId })
       },
       include: {
         customer: true,
-        driver: true,
+        driver: { include: { user: true } },
         truck: true,
         trailer: true,
-        items: true
+        items: true,
+        loadLane: true
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    const fallbackList = [
-      {
-        id: '1',
-        loadRef: 'LD-3985',
-        poRef: 'PO: 45001234',
-        customer: 'ABC Motors',
-        trailerVehicle: 'TRK-101 / TRL-309',
-        carrierType: 'Car Carrier',
-        driver: 'John Smith',
-        phone: '0411 111 111',
-        loadLane: 'Lane 1',
-        area: 'Main Yard',
-        readySince: '21/07/2026 10:45 AM',
-        status: 'Ready'
-      },
-      {
-        id: '2',
-        loadRef: 'LD-3986',
-        poRef: 'PO: 45001235',
-        customer: 'National Fleet',
-        trailerVehicle: 'TRK-102 / TRL-310',
-        carrierType: 'Car Carrier',
-        driver: 'Mark Davis',
-        phone: '0412 222 222',
-        loadLane: 'Lane 2',
-        area: 'Main Yard',
-        readySince: '21/07/2026 11:05 AM',
-        status: 'Awaiting Pickup'
-      },
-      {
-        id: '3',
-        loadRef: 'LD-3984',
-        poRef: 'PO: 45001236',
-        customer: 'XYZ Imports',
-        trailerVehicle: 'TRK-103 / TRL-311',
-        carrierType: 'Car Carrier',
-        driver: 'Peter Brown',
-        phone: '0403 333 333',
-        loadLane: 'Lane 3',
-        area: 'Main Yard',
-        readySince: '21/07/2026 11:20 AM',
-        status: 'Ready'
-      },
-      {
-        id: '4',
-        loadRef: 'LD-3987',
-        poRef: 'PO: 45001237',
-        customer: 'City Cars',
-        trailerVehicle: 'TRK-104 / TRL-312',
-        carrierType: 'Car Carrier',
-        driver: 'Michael Lee',
-        phone: '0414 444 444',
-        loadLane: 'Lane 4',
-        area: 'Overflow Yard',
-        readySince: '21/07/2026 11:40 AM',
-        status: 'Awaiting Pickup'
-      },
-      {
-        id: '5',
-        loadRef: 'LD-3990',
-        poRef: 'PO: 45001238',
-        customer: 'Tech Supplies',
-        trailerVehicle: 'TRK-105',
-        carrierType: 'General Freight',
-        driver: 'Ravi Patel',
-        phone: '0415 555 555',
-        loadLane: 'Lane 5',
-        area: 'DG Staging',
-        readySince: '21/07/2026 12:05 PM',
-        status: 'Hold'
-      },
-      {
-        id: '6',
-        loadRef: 'LD-3991',
-        poRef: 'PO: 45001239',
-        customer: 'Oceanic Freight',
-        trailerVehicle: 'TRK-201 / TRL-408',
-        carrierType: 'Container',
-        driver: 'Tom Wilson',
-        phone: '0415 666 666',
-        loadLane: 'Lane 6',
-        area: 'Container Bay',
-        readySince: '21/07/2026 12:25 PM',
-        status: 'Ready'
-      },
-      {
-        id: '7',
-        loadRef: 'LD-3992',
-        poRef: 'PO: 45001240',
-        customer: 'Hazchem Pty Ltd',
-        trailerVehicle: 'TRK-106',
-        carrierType: 'Dangerous Goods',
-        driver: 'Ahmed Khan',
-        phone: '0417 777 777',
-        loadLane: 'Lane 5',
-        area: 'DG Staging',
-        readySince: '21/07/2026 12:40 PM',
-        status: 'Hold'
-      },
-      {
-        id: '8',
-        loadRef: 'LD-3993',
-        poRef: 'PO: 45001241',
-        customer: 'Builders Hub',
-        trailerVehicle: 'TRK-107',
-        carrierType: 'General Freight',
-        driver: 'Daniel Green',
-        phone: '0418 888 888',
-        loadLane: 'Lane 2',
-        area: 'Main Yard',
-        readySince: '21/07/2026 01:10 PM',
-        status: 'Ready'
-      }
-    ];
+    const formattedLoads = readyLoads.map(load => ({
+      id: load.id,
+      loadRef: load.loadRef || load.draftId || load.id,
+      poRef: load.customerPo || 'PO: -',
+      customer: load.customer?.companyName || 'Direct Customer',
+      trailerVehicle: `${load.truck?.rego || '-'} / ${load.trailer?.rego || '-'}`,
+      carrierType: load.loadType || 'General Freight',
+      driver: load.driver?.user?.name || load.driver?.licenseNumber || 'Unassigned',
+      phone: load.driver?.user?.phone || '-',
+      loadLane: load.loadLane?.name || 'Unassigned',
+      area: 'Main Yard',
+      readySince: load.createdAt ? new Date(load.createdAt).toLocaleString() : '-',
+      status: load.status === 'IN_TRANSIT' ? 'Ready' : (load.status === 'ASSIGNED' ? 'Awaiting Pickup' : 'Planned')
+    }));
+
+    const readyCount = formattedLoads.filter(l => l.status === 'Ready').length;
+    const awaitingCount = formattedLoads.filter(l => l.status === 'Awaiting Pickup').length;
+    const exceptionsCount = formattedLoads.filter(l => l.status === 'Hold').length;
 
     return sendSuccess(res, {
       summary: {
-        readyToDispatch: 18,
-        todaysDispatch: 12,
-        awaitingPickup: 6,
-        exceptions: 2,
-        readyPercent: 56,
-        awaitingPercent: 33,
-        holdPercent: 11
+        readyToDispatch: readyCount,
+        todaysDispatch: formattedLoads.length,
+        awaitingPickup: awaitingCount,
+        exceptions: exceptionsCount,
+        readyPercent: formattedLoads.length > 0 ? Math.round((readyCount / formattedLoads.length) * 100) : 0,
+        awaitingPercent: formattedLoads.length > 0 ? Math.round((awaitingCount / formattedLoads.length) * 100) : 0,
+        holdPercent: formattedLoads.length > 0 ? Math.round((exceptionsCount / formattedLoads.length) * 100) : 0
       },
-      loads: readyLoads.length > 0 ? readyLoads : fallbackList,
-      nextPickups: [
-        { driver: 'John Smith', time: '11:00 AM', loadRef: 'LD-3985', lane: 'Lane 1', status: 'On Time' },
-        { driver: 'Mark Davis', time: '01:30 PM', loadRef: 'LD-3986', lane: 'Lane 2', status: 'Due Soon' },
-        { driver: 'Michael Lee', time: '02:00 PM', loadRef: 'LD-3987', lane: 'Lane 4', status: 'Due Soon' }
-      ]
+      loads: formattedLoads,
+      nextPickups: []
     });
   } catch (error) {
     next(error);
@@ -1089,8 +1023,29 @@ exports.getHoldingAreas = async (req, res, next) => {
       }
     });
 
-    const activeAreasCount = areas.filter(a => a.status !== 'INACTIVE' && a.status !== 'Inactive').length;
-    const inactiveAreasCount = areas.filter(a => a.status === 'INACTIVE' || a.status === 'Inactive').length;
+    const finalHoldingAreas = areas.length > 0 ? areas.map((a, i) => ({
+      id: a.id,
+      code: `SA-${String(i + 1).padStart(2, '0')}`,
+      name: a.name || `Stage Area ${i + 1}`,
+      zone: a.warehouse?.name || 'Main Yard',
+      location: a.name,
+      subLocation: a.warehouse?.name || 'Main Yard',
+      lane: `Lane ${(i % 6) + 1}`,
+      status: a.status || 'Active',
+      capacity: 25,
+      occupancy: a.loadItems?.length ? Math.min(Math.round((a.loadItems.length / 25) * 100), 100) : 0,
+      stagedItems: a.loadItems?.length || 0,
+      awaitingMove: 0,
+      oldestItem: '-'
+    })) : [
+      { id: 'sa-1', code: 'SA-01', name: 'Holding Area SA-01 (Vehicles)', zone: 'Zone A', location: 'Holding Area SA-01', subLocation: 'Main Yard', lane: 'Lane 1', status: 'Active', capacity: 25, occupancy: 0, stagedItems: 0 },
+      { id: 'sa-2', code: 'SA-02', name: 'Holding Area SA-02 (Heavy Cargo)', zone: 'Zone B', location: 'Holding Area SA-02', subLocation: 'Main Yard', lane: 'Lane 2', status: 'Active', capacity: 25, occupancy: 0, stagedItems: 0 },
+      { id: 'sa-3', code: 'SA-03', name: 'Holding Area SA-03 (Containers)', zone: 'Zone C', location: 'Holding Area SA-03', subLocation: 'Main Yard', lane: 'Lane 3', status: 'Active', capacity: 25, occupancy: 0, stagedItems: 0 },
+      { id: 'sa-4', code: 'SA-04', name: 'Holding Area SA-04 (Rapid Dispatch)', zone: 'Zone D', location: 'Holding Area SA-04', subLocation: 'Main Yard', lane: 'Lane 4', status: 'Active', capacity: 25, occupancy: 0, stagedItems: 0 }
+    ];
+
+    const activeAreasCount = finalHoldingAreas.filter(a => a.status !== 'INACTIVE' && a.status !== 'Inactive').length;
+    const inactiveAreasCount = finalHoldingAreas.filter(a => a.status === 'INACTIVE' || a.status === 'Inactive').length;
 
     const recentStaged = await prisma.loadItem.findMany({
       where: {
@@ -1106,7 +1061,7 @@ exports.getHoldingAreas = async (req, res, next) => {
 
     return sendSuccess(res, {
       summary: {
-        totalHoldingAreas: areas.length,
+        totalHoldingAreas: finalHoldingAreas.length,
         activeAreas: activeAreasCount,
         inactiveAreas: inactiveAreasCount,
         stagedItemsTotal: stagedItemsCount,
@@ -1117,21 +1072,7 @@ exports.getHoldingAreas = async (req, res, next) => {
         waitingUnder2hPercent: 0,
         overduePercent: 0
       },
-      holdingAreas: areas.map((a, i) => ({
-        id: a.id,
-        code: `SA-${String(i + 1).padStart(2, '0')}`,
-        name: a.name || `Stage Area ${i + 1}`,
-        zone: a.warehouse?.name || 'Main Yard',
-        location: a.name,
-        subLocation: a.warehouse?.name || 'Main Yard',
-        lane: `Lane ${(i % 6) + 1}`,
-        status: a.status || 'Active',
-        capacity: 25,
-        occupancy: a.loadItems?.length ? Math.min(Math.round((a.loadItems.length / 25) * 100), 100) : 0,
-        stagedItems: a.loadItems?.length || 0,
-        awaitingMove: 0,
-        oldestItem: '-'
-      })),
+      holdingAreas: finalHoldingAreas,
       topOccupancy: areas.map(a => ({
         name: a.name,
         occupancy: a.loadItems?.length ? Math.min(Math.round((a.loadItems.length / 25) * 100), 100) : 0
@@ -1194,50 +1135,41 @@ exports.getMovements = async (req, res, next) => {
       prisma.itemMovement.count({ where })
     ]);
 
-    const formatted = movements.length > 0 ? movements.map(m => ({
+    const formatted = movements.map(m => ({
       id: m.id,
-      dateTime: m.timestamp ? new Date(m.timestamp).toLocaleDateString('en-GB') + ' ' + new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '21/07/2026 10:45 AM',
+      dateTime: m.timestamp ? new Date(m.timestamp).toLocaleDateString('en-GB') + ' ' + new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-',
       type: m.type || 'Move',
       item: m.item?.make ? `${m.item.make} ${m.item.model || ''}` : (m.item?.stockRef || 'Item'),
       vinRego: `${m.item?.vin || ''} | ${m.item?.rego || ''}`.trim(),
-      fromLocation: m.fromLocation || 'Yard A / Row 4 / Bay 12',
-      toLocation: m.toLocation || 'Lane 1 / Main Yard',
-      loadRef: m.movementRef || 'LD-3985',
-      by: m.performedBy?.name || 'John Smith',
+      fromLocation: m.fromLocation || '-',
+      toLocation: m.toLocation || '-',
+      loadRef: m.movementRef || '-',
+      by: m.performedBy?.name || 'Staff',
       role: 'Staff',
       result: m.result || 'Completed'
-    })) : [
-      { id: '1', dateTime: '21/07/2026 10:45 AM', type: 'Move', item: 'Toyota Camry', vinRego: 'JTDBE32K203456789 | ABC123', fromLocation: 'Zone A / Row 4 / Bay 12 / Position 01', toLocation: 'Lane 1 / Main Yard', loadRef: 'LD-3985', by: 'John Smith', role: 'Driver', result: 'Completed' },
-      { id: '2', dateTime: '21/07/2026 10:20 AM', type: 'Stage', item: 'Pallet – Electrical Parts', vinRego: 'SKU: EL-1001 | Barcode: 9345678901234', fromLocation: 'Warehouse 1 / Aisle 12 / Bay 5', toLocation: 'Lane 5 / DG Staging', loadRef: 'LD-3990', by: 'Michael Lee', role: 'Staff', result: 'Completed' },
-      { id: '3', dateTime: '21/07/2026 09:42 AM', type: 'Transfer', item: '20ft Container', vinRego: 'CONT-MSCU1234567', fromLocation: 'Container Yard / Stack 2 / Slot 4', toLocation: 'Lane 6 / Container Bay', loadRef: 'LD-3991', by: 'Tom Wilson', role: 'Forklift', result: 'Completed' },
-      { id: '4', dateTime: '21/07/2026 09:15 AM', type: 'Receive', item: 'UN1203 – Petrol Drum', vinRego: 'Barcode: 9345678909999', fromLocation: '-', toLocation: 'Zone A / Row 4 / Bay 12 / Position 02', loadRef: 'GR-1038', by: 'Ravi Patel', role: 'Staff', result: 'Completed' },
-      { id: '5', dateTime: '21/07/2026 08:55 AM', type: 'Move', item: 'Mazda 3', vinRego: 'JM0BL10F200123456 | DEF456', fromLocation: 'Lane 2 / Main Yard', toLocation: 'Lane 2 / Main Yard', loadRef: 'LD-3986', by: 'Mark Davis', role: 'Driver', result: 'Completed' },
-      { id: '6', dateTime: '21/07/2026 04:30 PM', type: 'Transfer', item: 'Steel Coils', vinRego: 'SKU: STC-500 | Barcode: 8899001122334', fromLocation: 'Warehouse 2 / Bay 03', toLocation: 'Warehouse 1 / Bay 08', loadRef: 'LD-3975', by: 'Peter Brown', role: 'Forklift', result: 'Completed' },
-      { id: '7', dateTime: '20/07/2026 03:05 PM', type: 'Return', item: 'Damaged Pallet', vinRego: 'REF: RTN-10077', fromLocation: 'Lane 3 / Main Yard', toLocation: '-', loadRef: 'RTN-10077', by: 'Sarah Johnson', role: 'Staff', result: 'Completed' },
-      { id: '8', dateTime: '20/07/2026 11:10 AM', type: 'Stage', item: 'Honda Accord', vinRego: '1HGCM82633A123456 | GHI789', fromLocation: 'Zone B / Row 2 / Bay 06', toLocation: 'Lane 1 / Main Yard', loadRef: 'LD-3972', by: 'James Wright', role: 'Staff', result: 'Failed' }
-    ];
+    }));
 
     return sendList(res, formatted, {
-      total: total || 128,
+      total: total || 0,
       currentPage: parseInt(page),
       pageSize: parseInt(limit),
       summary: {
-        totalMovements: 128,
-        completed: 110,
-        completedPercent: 86,
-        failed: 5,
-        failedPercent: 4,
-        inProgress: 8,
-        inProgressPercent: 6,
-        cancelled: 5,
-        cancelledPercent: 4,
+        totalMovements: total || 0,
+        completed: total || 0,
+        completedPercent: 100,
+        failed: 0,
+        failedPercent: 0,
+        inProgress: 0,
+        inProgressPercent: 0,
+        cancelled: 0,
+        cancelledPercent: 0,
         typeBreakdown: {
-          receiveInbound: 21,
-          moveWithinDepot: 44,
-          transferToAnother: 18,
-          stageToLoadLane: 28,
-          dispatchPickup: 9,
-          returnOutbound: 8
+          receiveInbound: 0,
+          moveWithinDepot: 0,
+          transferToAnother: 0,
+          stageToLoadLane: 0,
+          dispatchPickup: 0,
+          returnOutbound: 0
         }
       }
     });
@@ -1252,44 +1184,79 @@ exports.getMovements = async (req, res, next) => {
 
 exports.getYardMap = async (req, res, next) => {
   try {
+    const tenantId = req.tenantId;
+    const [
+      loadItems,
+      loadLanes
+    ] = await Promise.all([
+      prisma.loadItem.findMany({
+        where: { ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) }
+      }),
+      prisma.loadLane.findMany({
+        where: { ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) },
+        include: { loadItems: true }
+      })
+    ]);
+
+    const vehiclesCount = loadItems.filter(i => i.type === 'VEHICLE' || i.vehicleType).length;
+    const containersCount = loadItems.filter(i => i.type === 'CONTAINER').length;
+    const totalItems = loadItems.length;
+
     return sendSuccess(res, {
+      areas: {
+        receiving: 0,
+        qc: 0,
+        staging: 0,
+        dispatch: 0
+      },
+      zones: {
+        coldStorage: 0,
+        zoneA: { capacity: 0 },
+        zoneB: { capacity: 0 },
+        zoneC: { capacity: 0 },
+        zoneD: { capacity: 0 }
+      },
       warehouseZones: [
-        { code: 'ZONE_A', name: 'ZONE A', capacity: '85% Capacity', status: 'In Use', itemsCount: 34 },
-        { code: 'ZONE_B', name: 'ZONE B', capacity: '62% Capacity', status: 'Available', itemsCount: 25 },
-        { code: 'ZONE_C', name: 'ZONE C', capacity: '74% Capacity', status: 'In Use', itemsCount: 30 },
-        { code: 'ZONE_D', name: 'ZONE D', capacity: '91% Capacity', status: 'Full', itemsCount: 38 },
-        { code: 'COLD_STORAGE', name: 'COLD STORAGE', items: '12 Items', status: 'Available' },
-        { code: 'HAZMAT', name: 'HAZMAT STORAGE', items: '8 Items', status: 'On Hold' },
-        { code: 'VALUE_STORAGE', name: 'VALUE STORAGE', items: '6 Items', status: 'Available' },
-        { code: 'WORKSHOP', name: 'WORKSHOP', status: '1 In Progress' },
-        { code: 'OFFICE', name: 'OFFICE', status: '3 Staff' }
+        { code: 'ZONE_A', name: 'ZONE A', capacity: '0% Capacity', status: 'Available', itemsCount: 0 },
+        { code: 'ZONE_B', name: 'ZONE B', capacity: '0% Capacity', status: 'Available', itemsCount: 0 },
+        { code: 'ZONE_C', name: 'ZONE C', capacity: '0% Capacity', status: 'Available', itemsCount: 0 },
+        { code: 'ZONE_D', name: 'ZONE D', capacity: '0% Capacity', status: 'Available', itemsCount: 0 },
+        { code: 'COLD_STORAGE', name: 'COLD STORAGE', items: '0 Items', status: 'Available' },
+        { code: 'HAZMAT', name: 'HAZMAT STORAGE', items: '0 Items', status: 'Available' },
+        { code: 'VALUE_STORAGE', name: 'VALUE STORAGE', items: '0 Items', status: 'Available' },
+        { code: 'WORKSHOP', name: 'WORKSHOP', status: '0 In Progress' },
+        { code: 'OFFICE', name: 'OFFICE', status: 'Staff Ready' }
       ],
-      loadLanes: [
-        { lane: 'LANE 1', status: 'Ready', progress: '6 / 8' },
-        { lane: 'LANE 2', status: 'Ready', progress: '5 / 8' },
-        { lane: 'LANE 3', status: 'Staging', progress: '7 / 8' },
-        { lane: 'LANE 4', status: 'Ready', progress: '4 / 8' },
-        { lane: 'LANE 5', status: 'Full', progress: '8 / 8' },
+      loadLanes: loadLanes.length > 0 ? loadLanes.map(l => ({
+        lane: l.name,
+        status: l.status || 'Empty',
+        progress: `${l.loadItems?.length || 0} / 8`
+      })) : [
+        { lane: 'LANE 1', status: 'Empty', progress: '0 / 8' },
+        { lane: 'LANE 2', status: 'Empty', progress: '0 / 8' },
+        { lane: 'LANE 3', status: 'Empty', progress: '0 / 8' },
+        { lane: 'LANE 4', status: 'Empty', progress: '0 / 8' },
+        { lane: 'LANE 5', status: 'Empty', progress: '0 / 8' },
         { lane: 'LANE 6', status: 'Empty', progress: '0 / 8' }
       ],
       yardAreas: {
-        vehicleStorage: { name: 'VEHICLE STORAGE', count: 34, inTransit: 12, unit: 'Vehicles' },
-        containerYard: { name: 'CONTAINER YARD', count: 18, inTransit: 6, unit: 'Containers' },
-        equipmentParking: { name: 'EQUIPMENT PARKING', count: 7, inUse: 2, unit: 'Equipment' },
-        emptyPark: { name: 'EMPTY PARK', count: 12, inUse: 4, unit: 'Trailers' }
+        vehicleStorage: { name: 'VEHICLE STORAGE', count: vehiclesCount, inTransit: 0, unit: 'Vehicles' },
+        containerYard: { name: 'CONTAINER YARD', count: containersCount, inTransit: 0, unit: 'Containers' },
+        equipmentParking: { name: 'EQUIPMENT PARKING', count: 0, inUse: 0, unit: 'Equipment' },
+        emptyPark: { name: 'EMPTY PARK', count: 0, inUse: 0, unit: 'Trailers' }
       },
       summary: {
-        totalSlots: 186,
-        available: 112,
-        availablePercent: 60,
-        inUse: 36,
-        inUsePercent: 19,
-        onHold: 20,
-        onHoldPercent: 11,
-        damaged: 10,
-        damagedPercent: 5,
-        other: 8,
-        otherPercent: 5
+        totalSlots: 100,
+        available: Math.max(0, 100 - totalItems),
+        availablePercent: 100,
+        inUse: totalItems,
+        inUsePercent: 0,
+        onHold: 0,
+        onHoldPercent: 0,
+        damaged: 0,
+        damagedPercent: 0,
+        other: 0,
+        otherPercent: 0
       }
     });
   } catch (error) {
@@ -1365,26 +1332,17 @@ exports.getReportsOverview = async (req, res, next) => {
       })
     ]);
 
-    const activeCount = totalItems || 150;
-    const finalInStorage = inStorageCount || 80;
-    const finalStaged = stagedCount || 50;
-    const finalInTransit = inTransitCount || 20;
+    const activeCount = totalItems || 0;
+    const finalInStorage = inStorageCount || 0;
+    const finalStaged = stagedCount || 0;
+    const finalInTransit = inTransitCount || 0;
 
     // Format zone list
     const inventoryByZone = zoneGroups.map(z => ({
       zone: z.zone,
       count: z._count.id,
-      percent: parseFloat(((z._count.id / Math.max(1, activeCount)) * 100).toFixed(1))
+      percent: activeCount > 0 ? parseFloat(((z._count.id / activeCount) * 100).toFixed(1)) : 0
     }));
-
-    if (inventoryByZone.length === 0) {
-      inventoryByZone.push(
-        { zone: 'Zone A', count: 45, percent: 30.0 },
-        { zone: 'Zone B', count: 35, percent: 23.3 },
-        { zone: 'Zone C', count: 50, percent: 33.3 },
-        { zone: 'Zone D', count: 20, percent: 13.4 }
-      );
-    }
 
     // Format load lanes utilization
     const topLoadLanes = laneLanes.map((lane, idx) => {
@@ -1398,59 +1356,40 @@ exports.getReportsOverview = async (req, res, next) => {
       };
     }).sort((a, b) => b.items - a.items).slice(0, 5);
 
-    if (topLoadLanes.length === 0) {
-      topLoadLanes.push(
-        { rank: 1, lane: 'Lane 1', items: 6, utilization: 60 },
-        { rank: 2, lane: 'Lane 2', items: 4, utilization: 40 }
-      );
-    }
-
     return sendSuccess(res, {
       headlineKpis: {
         totalItemsHandled: activeCount,
-        totalItemsTrend: '+5.4%',
-        receivedInbound: inboundReceiptsCount || 10,
-        receivedTrend: '+12.0%',
+        totalItemsTrend: '0%',
+        receivedInbound: inboundReceiptsCount || 0,
+        receivedTrend: '0%',
         dispatchedOutbound: finalInTransit,
-        dispatchedTrend: '+8.3%',
+        dispatchedTrend: '0%',
         stagedItems: finalStaged,
-        stagedTrend: '+6.1%',
-        avgDwellTime: '2h 15m',
-        dwellTrend: '-4.2%',
-        accuracyRate: '99.2%',
-        accuracyTrend: '+0.5%'
+        stagedTrend: '0%',
+        avgDwellTime: '0m',
+        dwellTrend: '0%',
+        accuracyRate: '100%',
+        accuracyTrend: '0%'
       },
-      movementTrend: [
-        { date: '12 May', received: 10, moved: 15, dispatched: 8 },
-        { date: '13 May', received: 12, moved: 18, dispatched: 10 },
-        { date: '14 May', received: 15, moved: 22, dispatched: 11 },
-        { date: '15 May', received: 8, moved: 12, dispatched: 9 }
-      ],
+      movementTrend: [],
       itemsByStatus: {
         total: activeCount,
-        inStock: { count: finalInStorage, percent: parseFloat(((finalInStorage / Math.max(1, activeCount)) * 100).toFixed(1)) },
-        staged: { count: finalStaged, percent: parseFloat(((finalStaged / Math.max(1, activeCount)) * 100).toFixed(1)) },
-        inTransit: { count: finalInTransit, percent: parseFloat(((finalInTransit / Math.max(1, activeCount)) * 100).toFixed(1)) },
+        inStock: { count: finalInStorage, percent: activeCount > 0 ? parseFloat(((finalInStorage / activeCount) * 100).toFixed(1)) : 0 },
+        staged: { count: finalStaged, percent: activeCount > 0 ? parseFloat(((finalStaged / activeCount) * 100).toFixed(1)) : 0 },
+        inTransit: { count: finalInTransit, percent: activeCount > 0 ? parseFloat(((finalInTransit / activeCount) * 100).toFixed(1)) : 0 },
         onHold: { count: 0, percent: 0 },
         damaged: { count: 0, percent: 0 },
         other: { count: 0, percent: 0 }
       },
       topLoadLanes,
-      hourlyMetrics: [
-        { metric: 'Items Received / Hour', thisWeek: '12', vsLastWeek: '▲ 8.2%' },
-        { metric: 'Items Moved / Hour', thisWeek: '25', vsLastWeek: '▲ 10.5%' },
-        { metric: 'Items Dispatched / Hour', thisWeek: '10', vsLastWeek: '▲ 6.1%' },
-        { metric: 'Staging Time / Item', thisWeek: '15m 10s', vsLastWeek: '▼ 5.2%' },
-        { metric: 'Dock to Dispatch Time', thisWeek: '1h 30m', vsLastWeek: '▼ 4.5%' },
-        { metric: 'Inventory Accuracy', thisWeek: '99.2%', vsLastWeek: '▲ 0.5%' }
-      ],
+      hourlyMetrics: [],
       inventoryByZone,
       dwellTimeAnalysis: {
-        average: '2h 15m',
+        average: '0m',
         ranges: [
-          { label: '0 - 2 Hours', count: finalInStorage, percent: 60.0 },
-          { label: '2 - 4 Hours', count: finalStaged, percent: 30.0 },
-          { label: '4+ Hours', count: finalInTransit, percent: 10.0 }
+          { label: '0 - 2 Hours', count: finalInStorage, percent: activeCount > 0 ? parseFloat(((finalInStorage / activeCount) * 100).toFixed(1)) : 0 },
+          { label: '2 - 4 Hours', count: finalStaged, percent: activeCount > 0 ? parseFloat(((finalStaged / activeCount) * 100).toFixed(1)) : 0 },
+          { label: '4+ Hours', count: finalInTransit, percent: activeCount > 0 ? parseFloat(((finalInTransit / activeCount) * 100).toFixed(1)) : 0 }
         ]
       }
     });
@@ -1500,18 +1439,59 @@ exports.printLabel = async (req, res, next) => {
 
 exports.scanBarcode = async (req, res, next) => {
   try {
-    const { code = 'PAL-889900112233' } = req.body;
+    const { code } = req.body;
+    if (!code) {
+      return sendError(res, { code: ERROR_CODES.VALIDATION_ERROR, message: 'Barcode or QR code is required.' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const tenantId = req.tenantId;
+    const cleanCode = code.trim();
+
+    // Query real load items in DB
+    const item = await prisma.loadItem.findFirst({
+      where: {
+        OR: [
+          { vin: { equals: cleanCode } },
+          { rego: { equals: cleanCode } },
+          { stockRef: { equals: cleanCode } },
+          { id: { equals: cleanCode } }
+        ],
+        ...(tenantId && { warehouse: { branch: { companyId: tenantId } } })
+      },
+      include: {
+        loadLane: true,
+        stagingArea: true,
+        warehouse: true
+      }
+    });
+
+    if (item) {
+      return sendSuccess(res, {
+        code: cleanCode,
+        status: `In Stock - ${item.stockStatus || 'VERIFIED'}`,
+        identifier: item.vin || item.rego || item.stockRef || item.id,
+        nameCategory: `${item.make || ''} ${item.model || ''}`.trim() || item.vehicleType || 'Stock Item',
+        zoneBinSlot: `${item.zone || 'Zone A'} / ${item.row || 'Row 1'} / ${item.bay || 'Bay 1'}`,
+        stockQty: '1 Unit',
+        weight: item.weight ? `${item.weight} kg` : 'N/A',
+        dimensions: 'Standard',
+        lastAudit: item.updatedAt ? new Date(item.updatedAt).toLocaleString() : 'Recent',
+        actions: ['Relocate Stock', 'Assign to Load', 'Print Label']
+      });
+    }
+
+    // If item not found in DB
     return sendSuccess(res, {
-      code,
-      status: 'In Stock - Verified',
-      identifier: code,
-      nameCategory: 'Heavy Duty Steel Pallet (Auto Parts)',
-      zoneBinSlot: 'Zone B - Bay 12',
-      stockQty: '14 Units',
-      weight: '340 kg',
-      dimensions: '1.2m x 1.2m x 1.5m',
-      lastAudit: 'Today 08:30 AM',
-      actions: ['Relocate Stock', 'Assign to Load', 'Print Label']
+      code: cleanCode,
+      status: 'Tag Scanned - Unregistered Item',
+      identifier: cleanCode,
+      nameCategory: 'Unknown Asset / External Tag',
+      zoneBinSlot: 'Unassigned',
+      stockQty: '1 Unit',
+      weight: 'N/A',
+      dimensions: 'N/A',
+      lastAudit: new Date().toLocaleString(),
+      actions: ['Ingest to Yard', 'Create Stock Tag']
     });
   } catch (error) {
     next(error);
@@ -1538,6 +1518,72 @@ exports.getSpoolerQueue = async (req, res, next) => {
     next(error);
   }
 };
+
+// ============================================================================
+// 12.5 SHIFT & TIME CLOCK (Yard Attendant & Warehouse Staff)
+// ============================================================================
+
+const activeShiftsStore = {};
+
+exports.getCurrentShift = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?.id || 'attendant_1';
+    const shift = activeShiftsStore[userId];
+    if (shift && shift.status === 'ACTIVE') {
+      return sendSuccess(res, shift);
+    }
+    return sendSuccess(res, null);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.clockInShift = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?.id || 'attendant_1';
+    const shift = {
+      id: `SHIFT-${Date.now()}`,
+      userId,
+      status: 'ACTIVE',
+      clockIn: new Date().toISOString(),
+      clockOut: null,
+      notes: req.body?.notes || ''
+    };
+    activeShiftsStore[userId] = shift;
+    return sendSuccess(res, shift);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.clockOutShift = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?.id || 'attendant_1';
+    const shift = activeShiftsStore[userId] || {
+      id: `SHIFT-${Date.now()}`,
+      userId,
+      clockIn: new Date(Date.now() - 3600000).toISOString()
+    };
+    shift.status = 'COMPLETED';
+    shift.clockOut = new Date().toISOString();
+    activeShiftsStore[userId] = null;
+    return sendSuccess(res, shift);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getShiftHistory = async (req, res, next) => {
+  try {
+    return sendSuccess(res, []);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getShiftStatus = exports.getCurrentShift;
+exports.clockIn = exports.clockInShift;
+exports.clockOut = exports.clockOutShift;
 
 // ============================================================================
 // 12. SAFETY CHECKLIST & PRE-START
@@ -2200,20 +2246,18 @@ exports.reportIssue = async (req, res, next) => {
     const auditRecord = await prisma.auditLog.create({
       data: {
         companyId: tenantId || null,
-        userId: userId || null,
-        userEmail: req.user?.email || 'yard@hero.com',
-        action: 'YARD_ISSUE_LOGGED',
-        resource: 'YARD_EQUIPMENT',
-        resourceId: matchedItem ? matchedItem.id : trailerId,
-        details: JSON.stringify({
+        operator: req.user?.email || 'yard@hero.com',
+        ipAddress: req.ip || '127.0.0.1',
+        action: `YARD_ISSUE_LOGGED:${JSON.stringify({
           category,
           identifier: trailerId,
+          resourceId: matchedItem ? matchedItem.id : trailerId,
           description,
           severity,
           checklist: checklist || {},
           status: 'ACTIVE',
           reportedAt: new Date().toISOString()
-        })
+        })}`
       }
     });
 
@@ -2237,23 +2281,30 @@ exports.getReportedIssues = async (req, res, next) => {
 
     const auditLogs = await prisma.auditLog.findMany({
       where: {
-        action: 'YARD_ISSUE_LOGGED',
+        action: {
+          contains: 'YARD_ISSUE_LOGGED'
+        },
         ...(tenantId && { companyId: tenantId })
       },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { createdAt: 'desc' },
       take: 50
     });
 
     const formatted = auditLogs.map(log => {
       let parsed = {};
-      try { parsed = JSON.parse(log.details); } catch (e) {}
+      try {
+        const jsonPart = log.action.includes('YARD_ISSUE_LOGGED:') 
+          ? log.action.split('YARD_ISSUE_LOGGED:')[1] 
+          : log.action;
+        parsed = JSON.parse(jsonPart);
+      } catch (e) {}
       return {
         id: log.id,
         category: parsed.category ? (parsed.category.includes('Damage') ? 'Damage' : 'Missing Item') : 'Damage',
-        trailerId: parsed.identifier || log.resourceId || 'Unknown',
+        trailerId: parsed.identifier || parsed.resourceId || 'Unknown',
         description: parsed.description || 'Inspection issue reported',
         severity: parsed.severity ? parsed.severity.split(' ')[0] : 'Medium',
-        loggedDate: log.timestamp ? new Date(log.timestamp).toLocaleDateString('en-US') : 'Recent',
+        loggedDate: log.createdAt ? new Date(log.createdAt).toLocaleDateString('en-US') : 'Recent',
         status: parsed.status || 'ACTIVE'
       };
     });
@@ -2267,17 +2318,14 @@ exports.getReportedIssues = async (req, res, next) => {
 exports.resolveReportedIssue = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.userId || req.user?.id;
 
     // Log resolution to audit log
     await prisma.auditLog.create({
       data: {
-        userId: userId || null,
-        userEmail: req.user?.email || 'yard@hero.com',
-        action: 'YARD_ISSUE_RESOLVED',
-        resource: 'YARD_EQUIPMENT',
-        resourceId: id,
-        details: JSON.stringify({ issueId: id, resolvedAt: new Date().toISOString() })
+        companyId: req.tenantId || null,
+        operator: req.user?.email || 'yard@hero.com',
+        ipAddress: req.ip || '127.0.0.1',
+        action: `YARD_ISSUE_RESOLVED:${JSON.stringify({ issueId: id, resolvedAt: new Date().toISOString() })}`
       }
     });
 

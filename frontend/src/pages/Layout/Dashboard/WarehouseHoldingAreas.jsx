@@ -16,7 +16,7 @@ const recentStagedItems = [];
 export default function WarehouseHoldingAreas() {
   const navigate = useNavigate();
   const location = useLocation();
-
+  const isYard = location.pathname ? location.pathname.startsWith('/yard') : false;
 
   const [areas, setAreas] = useState([]);
   const [recentStagedList, setRecentStagedList] = useState([]);
@@ -37,6 +37,7 @@ export default function WarehouseHoldingAreas() {
   const summary = summaryData;
 
   const [activeTab, setActiveTab] = useState('All Staging Areas');
+  const [cardFilter, setCardFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [zoneFilter, setZoneFilter] = useState('All');
@@ -128,9 +129,14 @@ export default function WarehouseHoldingAreas() {
   };
 
   const filteredAreas = areas.filter(area => {
+    // Card Filter
+    if (cardFilter === 'staged' && (!area.stagedItems || area.stagedItems <= 0)) return false;
+    if (cardFilter === 'awaiting' && (!area.awaitingMove || area.awaitingMove <= 0)) return false;
+    if (cardFilter === 'overdue' && area.status !== 'Inactive') return false;
+
     // Tab filter
     if (activeTab === 'Inactive Areas' && area.status !== 'Inactive') return false;
-    if (activeTab === 'All Staging Areas' && area.status === 'Inactive') return false;
+    if (activeTab === 'All Staging Areas' && area.status === 'Inactive' && cardFilter !== 'overdue') return false;
 
     // Dropdown & Search filters
     const matchesSearch = !searchQuery ||
@@ -947,54 +953,126 @@ export default function WarehouseHoldingAreas() {
 
       {/* STAT CARDS 4-GRID */}
       <div className="wh-st-stats-grid">
-        <div className="wh-st-stat-card">
+        {/* Card 1: TOTAL STAGING AREAS */}
+        <div
+          className="wh-st-stat-card"
+          onClick={() => {
+            setCardFilter('all');
+            setActiveTab('All Staging Areas');
+            setStatusFilter('All');
+            setLaneFilter('All');
+            setZoneFilter('All');
+            setSearchQuery('');
+            showToast(`Showing All ${areas.length} Staging Areas`);
+          }}
+          style={{
+            cursor: 'pointer',
+            border: cardFilter === 'all' ? '2px solid #3B82F6' : '1px solid #E2E8F0',
+            backgroundColor: cardFilter === 'all' ? '#EFF6FF' : '#FFFFFF',
+            boxShadow: cardFilter === 'all' ? '0 4px 12px rgba(59, 130, 246, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+            transform: cardFilter === 'all' ? 'translateY(-2px)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
           <div className="wh-st-icon-box blue">
             <Layers size={20} />
           </div>
           <div>
             <div className="wh-st-stat-title">TOTAL STAGING AREAS</div>
-
-            <div className="wh-st-stat-num">{summaryData.totalHoldingAreas}</div>
-            <div className="wh-st-stat-sub">{summaryData.activeAreas} Active | {summaryData.inactiveAreas} Inactive</div>
-
+            <div className="wh-st-stat-num">{areas.length}</div>
+            <div className="wh-st-stat-sub">
+              {areas.filter(a => a.status === 'Active' || a.status !== 'Inactive').length} Active | {areas.filter(a => a.status === 'Inactive').length} Inactive
+            </div>
           </div>
         </div>
 
-        <div className="wh-st-stat-card">
+        {/* Card 2: STAGED ITEMS */}
+        <div
+          className="wh-st-stat-card"
+          onClick={() => {
+            const next = cardFilter === 'staged' ? 'all' : 'staged';
+            setCardFilter(next);
+            showToast(next === 'staged' ? 'Filtering areas with Staged Items' : 'Showing All Staging Areas');
+          }}
+          style={{
+            cursor: 'pointer',
+            border: cardFilter === 'staged' ? '2px solid #10B981' : '1px solid #E2E8F0',
+            backgroundColor: cardFilter === 'staged' ? '#ECFDF5' : '#FFFFFF',
+            boxShadow: cardFilter === 'staged' ? '0 4px 12px rgba(16, 185, 129, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+            transform: cardFilter === 'staged' ? 'translateY(-2px)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
           <div className="wh-st-icon-box green">
             <Box size={20} />
           </div>
           <div>
             <div className="wh-st-stat-title">STAGED ITEMS</div>
-
-            <div className="wh-st-stat-num">{summaryData.stagedItemsTotal}</div>
-
+            <div className="wh-st-stat-num">
+              {areas.reduce((acc, a) => acc + (a.stagedItems || 0), 0)}
+            </div>
             <div className="wh-st-stat-sub">Across all areas</div>
           </div>
         </div>
 
-        <div className="wh-st-stat-card">
+        {/* Card 3: AWAITING MOVE */}
+        <div
+          className="wh-st-stat-card"
+          onClick={() => {
+            const next = cardFilter === 'awaiting' ? 'all' : 'awaiting';
+            setCardFilter(next);
+            showToast(next === 'awaiting' ? 'Filtering areas Awaiting Move to Load Lane' : 'Showing All Staging Areas');
+          }}
+          style={{
+            cursor: 'pointer',
+            border: cardFilter === 'awaiting' ? '2px solid #F59E0B' : '1px solid #E2E8F0',
+            backgroundColor: cardFilter === 'awaiting' ? '#FFFBEB' : '#FFFFFF',
+            boxShadow: cardFilter === 'awaiting' ? '0 4px 12px rgba(245, 158, 11, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+            transform: cardFilter === 'awaiting' ? 'translateY(-2px)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
           <div className="wh-st-icon-box amber">
             <Truck size={20} />
           </div>
           <div>
             <div className="wh-st-stat-title">AWAITING MOVE</div>
-
-            <div className="wh-st-stat-num">{summaryData.awaitingMoveTotal}</div>
-
+            <div className="wh-st-stat-num">
+              {areas.reduce((acc, a) => acc + (a.awaitingMove || 0), 0)}
+            </div>
             <div className="wh-st-stat-sub">Ready for load lane</div>
           </div>
         </div>
 
-        <div className="wh-st-stat-card">
+        {/* Card 4: OVERDUE / INACTIVE ITEMS */}
+        <div
+          className="wh-st-stat-card"
+          onClick={() => {
+            if (cardFilter === 'overdue') {
+              setCardFilter('all');
+              setActiveTab('All Staging Areas');
+              showToast('Showing All Staging Areas');
+            } else {
+              setCardFilter('overdue');
+              setActiveTab('Inactive Areas');
+              showToast('Showing Inactive / Overdue Staging Areas');
+            }
+          }}
+          style={{
+            cursor: 'pointer',
+            border: cardFilter === 'overdue' ? '2px solid #EF4444' : '1px solid #E2E8F0',
+            backgroundColor: cardFilter === 'overdue' ? '#FEF2F2' : '#FFFFFF',
+            boxShadow: cardFilter === 'overdue' ? '0 4px 12px rgba(239, 68, 68, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+            transform: cardFilter === 'overdue' ? 'translateY(-2px)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
           <div className="wh-st-icon-box red">
             <Clock size={20} />
           </div>
           <div>
             <div className="wh-st-stat-title">OVERDUE ITEMS</div>
-
-            <div className="wh-st-stat-num">{summaryData.overdueItemsTotal}</div>
-
+            <div className="wh-st-stat-num">{summaryData.overdueItemsTotal || 0}</div>
             <div className="wh-st-stat-sub">Exceeding time limit</div>
           </div>
         </div>
@@ -1406,7 +1484,7 @@ export default function WarehouseHoldingAreas() {
               <span>Print Labels</span>
             </button>
 
-            <button className="wh-qa-btn" onClick={() => navigate('/warehouse/find-stock')}>
+            <button className="wh-qa-btn" onClick={() => navigate(isYard ? '/yard/current-stock' : '/warehouse/find-stock')}>
               <Search size={14} className="text-purple-500" />
               <span>Find Stock</span>
             </button>

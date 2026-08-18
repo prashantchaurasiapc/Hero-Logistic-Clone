@@ -50,6 +50,8 @@ router.post('/branches', ctrl.createBranch);
 // 7. Assets
 router.get('/assets', ctrl.getAssets);
 router.post('/assets', ctrl.createAsset);
+router.put('/assets/:id', ctrl.updateAsset);
+router.delete('/assets/:id', ctrl.deleteAsset);
 
 // 8. Warehouse
 router.get('/warehouse', ctrl.getWarehouses);

@@ -13,6 +13,26 @@ const WarehouseScanning = () => {
   const [activeTriggerBtn, setActiveTriggerBtn] = useState(null); // 'scan-in', 'scan-out', 'barcode', 'qr', 'manual'
   const [toast, setToast] = useState(null);
   const [scannedItem, setScannedItem] = useState(null);
+  const [stockItems, setStockItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/warehouse-portal/stock');
+        if (res.data?.success) {
+          const items = res.data.data?.items || res.data.data || [];
+          setStockItems(items);
+        }
+      } catch (err) {
+        console.warn('Scan page initial sync:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitialData();
+  }, []);
 
   // Manual Ingestion Form State
   const [manualForm, setManualForm] = useState({

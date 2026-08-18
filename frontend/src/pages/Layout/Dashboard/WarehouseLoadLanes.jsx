@@ -159,18 +159,7 @@ export default function WarehouseLoadLanes() {
     }
   };
 
-  const filteredLanes = lanes.filter(lane => {
-    const matchesSearch = !searchQuery ||
-      lane.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lane.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lane.loadRef.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lane.driver.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lane.vehicle.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'All' || lane.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
 
   const handleCreateLane = async (e) => {
     e.preventDefault();
@@ -259,6 +248,25 @@ export default function WarehouseLoadLanes() {
         return 'badge-empty';
     }
   };
+
+  const [cardFilter, setCardFilter] = useState('all');
+
+  const filteredLanes = lanes.filter(lane => {
+    if (cardFilter === 'in_progress' && !lane.status?.toLowerCase().includes('progress')) return false;
+    if (cardFilter === 'ready' && !lane.status?.toLowerCase().includes('ready')) return false;
+    if (cardFilter === 'overdue' && !lane.status?.toLowerCase().includes('hold') && !lane.status?.toLowerCase().includes('overdue')) return false;
+
+    const matchesSearch = !searchQuery ||
+      lane.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lane.area?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lane.loadRef?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lane.driver?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lane.vehicle?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus = statusFilter === 'All' || lane.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="wh-load-lanes-container" onClick={() => setActionMenuLaneId(null)}>
@@ -822,54 +830,117 @@ export default function WarehouseLoadLanes() {
 
       {/* STAT CARDS ROW */}
       <div className="wh-ll-stats-grid">
-        <div className="wh-ll-stat-card">
+        {/* Card 1: TOTAL LOAD LANES */}
+        <div
+          className="wh-ll-stat-card"
+          onClick={() => {
+            setCardFilter('all');
+            setStatusFilter('All');
+            setSearchQuery('');
+            showToast(`Showing All ${lanes.length} Load Lanes`);
+          }}
+          style={{
+            cursor: 'pointer',
+            border: cardFilter === 'all' ? '2px solid #8B5CF6' : '1px solid #E2E8F0',
+            backgroundColor: cardFilter === 'all' ? '#F5F3FF' : '#FFFFFF',
+            boxShadow: cardFilter === 'all' ? '0 4px 12px rgba(139, 92, 246, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+            transform: cardFilter === 'all' ? 'translateY(-2px)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
           <div className="wh-stat-icon-box purple">
             <Layers size={20} />
           </div>
           <div>
             <div className="wh-stat-title">TOTAL LOAD LANES</div>
-
-            <div className="wh-stat-num">{summaryData.totalLanes}</div>
+            <div className="wh-stat-num">{lanes.length}</div>
             <div className="wh-stat-sub">Active lanes</div>
-
           </div>
         </div>
 
-        <div className="wh-ll-stat-card">
+        {/* Card 2: LOADS IN PROGRESS */}
+        <div
+          className="wh-ll-stat-card"
+          onClick={() => {
+            const next = cardFilter === 'in_progress' ? 'all' : 'in_progress';
+            setCardFilter(next);
+            showToast(next === 'in_progress' ? 'Filtering Lanes with Loads In Progress' : 'Showing All Load Lanes');
+          }}
+          style={{
+            cursor: 'pointer',
+            border: cardFilter === 'in_progress' ? '2px solid #F59E0B' : '1px solid #E2E8F0',
+            backgroundColor: cardFilter === 'in_progress' ? '#FFFBEB' : '#FFFFFF',
+            boxShadow: cardFilter === 'in_progress' ? '0 4px 12px rgba(245, 158, 11, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+            transform: cardFilter === 'in_progress' ? 'translateY(-2px)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
           <div className="wh-stat-icon-box amber">
             <Truck size={20} />
           </div>
           <div>
             <div className="wh-stat-title">LOADS IN PROGRESS</div>
-
-            <div className="wh-stat-num">{summaryData.loadsInProgress}</div>
-
+            <div className="wh-stat-num">
+              {lanes.filter(l => l.status?.toLowerCase().includes('progress')).length}
+            </div>
             <div className="wh-stat-sub">Across all lanes</div>
           </div>
         </div>
 
-        <div className="wh-ll-stat-card">
+        {/* Card 3: READY TO DISPATCH */}
+        <div
+          className="wh-ll-stat-card"
+          onClick={() => {
+            const next = cardFilter === 'ready' ? 'all' : 'ready';
+            setCardFilter(next);
+            showToast(next === 'ready' ? 'Filtering Lanes Ready to Dispatch' : 'Showing All Load Lanes');
+          }}
+          style={{
+            cursor: 'pointer',
+            border: cardFilter === 'ready' ? '2px solid #3B82F6' : '1px solid #E2E8F0',
+            backgroundColor: cardFilter === 'ready' ? '#EFF6FF' : '#FFFFFF',
+            boxShadow: cardFilter === 'ready' ? '0 4px 12px rgba(59, 130, 246, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+            transform: cardFilter === 'ready' ? 'translateY(-2px)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
           <div className="wh-stat-icon-box blue">
             <Box size={20} />
           </div>
           <div>
             <div className="wh-stat-title">READY TO DISPATCH</div>
-
-            <div className="wh-stat-num">{summaryData.readyToDispatch}</div>
-
+            <div className="wh-stat-num">
+              {lanes.filter(l => l.status?.toLowerCase().includes('ready')).length}
+            </div>
             <div className="wh-stat-sub">Waiting for pickup</div>
           </div>
         </div>
 
-        <div className="wh-ll-stat-card">
+        {/* Card 4: OVERDUE / HOLD */}
+        <div
+          className="wh-ll-stat-card"
+          onClick={() => {
+            const next = cardFilter === 'overdue' ? 'all' : 'overdue';
+            setCardFilter(next);
+            showToast(next === 'overdue' ? 'Filtering Overdue / Hold Lanes' : 'Showing All Load Lanes');
+          }}
+          style={{
+            cursor: 'pointer',
+            border: cardFilter === 'overdue' ? '2px solid #EF4444' : '1px solid #E2E8F0',
+            backgroundColor: cardFilter === 'overdue' ? '#FEF2F2' : '#FFFFFF',
+            boxShadow: cardFilter === 'overdue' ? '0 4px 12px rgba(239, 68, 68, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+            transform: cardFilter === 'overdue' ? 'translateY(-2px)' : 'none',
+            transition: 'all 0.2s ease'
+          }}
+        >
           <div className="wh-stat-icon-box red">
             <AlertTriangle size={20} />
           </div>
           <div>
             <div className="wh-stat-title">OVERDUE / HOLD</div>
-
-            <div className="wh-stat-num">{summaryData.overdueHold}</div>
-
+            <div className="wh-stat-num">
+              {lanes.filter(l => l.status?.toLowerCase().includes('hold') || l.status?.toLowerCase().includes('overdue')).length}
+            </div>
             <div className="wh-stat-sub">Requires attention</div>
           </div>
         </div>
@@ -1245,7 +1316,7 @@ export default function WarehouseLoadLanes() {
               <span>Move Items to Lane</span>
             </button>
 
-            <button className="wh-qa-btn" onClick={() => navigate('/warehouse/dispatch-ready')}>
+            <button className="wh-qa-btn" onClick={() => navigate(isYard ? '/yard/outbound' : '/warehouse/dispatch-ready')}>
               <Truck size={14} className="text-green-500" />
               <span>View Dispatch Ready</span>
             </button>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../../services/api';
+import api, { getCurrentWarehouseShift, clockInWarehouseShift, clockOutWarehouseShift } from '../../../services/api';
 import './WarehouseDashboard.css';
 import './YardDashboard.css';
 
@@ -96,25 +96,38 @@ export default function YardDashboard() {
   const [endTime, setEndTime] = useState(null);
   const [timerString, setTimerString] = useState('00:00:00');
   const [dbMetrics, setDbMetrics] = useState({
-    inYard: 4,
-    inbound: 4,
-    yardCapacityPct: 53,
-    activeLoads: 6
+    inYard: 0,
+    inbound: 0,
+    yardCapacityPct: 0,
+    activeLoads: 0
   });
 
   useEffect(() => {
     api.get('/warehouse-portal/dashboard').then(res => {
       if (res.data?.success && res.data.data) {
         const d = res.data.data;
-        const totalCap = d.yardCapacity?.total || 250;
+        const totalCap = d.yardCapacity?.total || 100;
         const used = d.yardCapacity?.inYard || d.overview?.inYard || 0;
-        const pct = Math.min(100, Math.round((used / totalCap) * 100)) || 0;
+        const pct = totalCap > 0 ? Math.min(100, Math.round((used / totalCap) * 100)) : 0;
         setDbMetrics({
-          inYard: d.overview?.inYard ?? 4,
-          inbound: d.overview?.inboundDeliveries ?? 4,
-          yardCapacityPct: pct || 53,
-          activeLoads: d.overview?.loadLanesActive ?? 6
+          inYard: d.overview?.inYard ?? 0,
+          inbound: d.overview?.inboundDeliveries ?? 0,
+          yardCapacityPct: pct || 0,
+          activeLoads: d.overview?.loadLanesActive ?? 0
         });
+      }
+    }).catch(() => {});
+
+    getCurrentWarehouseShift().then(res => {
+      if (res.data?.success && res.data.data) {
+        const s = res.data.data;
+        if (s.status === 'ACTIVE') {
+          setShiftActive(true);
+          const elapsed = Math.floor((Date.now() - new Date(s.clockIn).getTime()) / 1000);
+          setSecondsElapsed(Math.max(0, elapsed));
+          setStartTime(new Date(s.clockIn));
+          setCurrentStatus('Available');
+        }
       }
     }).catch(() => {});
   }, []);
@@ -190,7 +203,7 @@ export default function YardDashboard() {
           const d = statsRes.data.data;
           setStats({
             trailersSpotted: d.overview?.inYard || 0,
-            gateEvents: (d.overview?.receivedInbound || 0) + (d.overview?.dispatchedOutbound || 0) || 4,
+            gateEvents: (d.overview?.receivedInbound || 0) + (d.overview?.dispatchedOutbound || 0) || 0,
             yardCapacityPercent: d.overview?.yardCapacity?.usedPercent || 0
           });
         }
@@ -238,21 +251,38 @@ export default function YardDashboard() {
     setTimerString(`${hrs}:${mins}:${secs}`);
   }, [secondsElapsed]);
 
-  const handleStartWork = () => {
-    const now = new Date();
-    setStartTime(now);
-    setSecondsElapsed(0);
-    setShiftActive(true);
-    setCurrentStatus('Available');
-    triggerToast('Work shift started successfully. Logging GPS telemetry.');
+  const handleStartWork = async () => {
+    try {
+      await clockInWarehouseShift();
+      const now = new Date();
+      setStartTime(now);
+      setSecondsElapsed(0);
+      setShiftActive(true);
+      setCurrentStatus('Available');
+      triggerToast('Work shift started successfully. Logging telemetry.');
+    } catch (err) {
+      // If already clocked in on backend, start timer anyway
+      const now = new Date();
+      setStartTime(now);
+      setSecondsElapsed(0);
+      setShiftActive(true);
+      setCurrentStatus('Available');
+      triggerToast('Work shift active.');
+    }
   };
 
-  const handleFinishWork = () => {
+  const handleFinishWork = async () => {
+    try {
+      await clockOutWarehouseShift();
+    } catch (err) {
+      console.warn('Clock out sync:', err.message);
+    }
     const now = new Date();
     setEndTime(now);
     setShiftActive(false);
     setCurrentStatus('Off Duty');
     setShowSummaryModal(true);
+    triggerToast('Work shift ended successfully.');
   };
 
   const handleMarkAllRead = () => {
@@ -287,22 +317,22 @@ export default function YardDashboard() {
     return (mins * 0.75).toFixed(2);
   };
 
-  // Yard Map slots
+  // Yard Map slots initialized clean
   const yardSlots = [
-    { id: 'A1', type: 'Trailer', val: 'TR-9410', bg: '#FEF3C7', border: '#FDE68A', color: '#B45309' },
-    { id: 'A2', type: 'Trailer (busy)', val: 'TR-1102', bg: '#DBEAFE', border: '#BFDBFE', color: '#1D4ED8' },
+    { id: 'A1', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
+    { id: 'A2', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
     { id: 'A3', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
-    { id: 'A4', type: 'Purple', val: 'TR-7712', bg: '#F3E8FF', border: '#E9D5FF', color: '#7E22CE' },
+    { id: 'A4', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
     { id: 'A5', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
-    { id: 'B1', type: 'Container', val: 'CTR-009', bg: '#D1FAE5', border: '#A7F3D0', color: '#047857' },
+    { id: 'B1', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
     { id: 'B2', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
-    { id: 'B3', type: 'Vehicle', val: 'VEH-4820', bg: '#FEF3C7', border: '#FDE68A', color: '#B45309' },
+    { id: 'B3', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
     { id: 'B4', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
-    { id: 'B5', type: 'Red', val: 'CTR-018', bg: '#FEE2E2', border: '#FCA5A5', color: '#B91C1C' },
+    { id: 'B5', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
     { id: 'C1', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
-    { id: 'C2', type: 'Trailer', val: 'TR-4809', bg: '#FEF3C7', border: '#FDE68A', color: '#B45309' },
+    { id: 'C2', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
     { id: 'C3', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
-    { id: 'C4', type: 'Vehicle', val: 'VEH-1144', bg: '#FFEDD5', border: '#FED7AA', color: '#C2410C' },
+    { id: 'C4', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
     { id: 'C5', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' }
   ];
 
@@ -340,17 +370,19 @@ export default function YardDashboard() {
     return {
       backgroundColor: '#ffffff',
       borderRadius: 16,
-      padding: '18px 20px',
+      padding: '16px 18px',
       border: '1px solid #e2e8f0',
       boxShadow: isHovered ? '0 12px 20px -5px rgba(0, 0, 0, 0.08), 0 8px 8px -5px rgba(0, 0, 0, 0.04)' : '0 1px 3px rgba(0,0,0,0.05)',
-      transform: isHovered ? 'translateY(-6px) scale(1.02)' : 'translateY(0) scale(1)',
-      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+      transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
+      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       textAlign: 'left',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
-      height: 125,
-      boxSizing: 'border-box'
+      minHeight: 142,
+      gap: 8,
+      boxSizing: 'border-box',
+      overflow: 'hidden'
     };
   };
 
@@ -607,107 +639,115 @@ export default function YardDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 20 }}>
         {/* Trailers Spotted */}
         <div
+          onClick={() => navigate('/yard/current-stock')}
           onMouseEnter={() => setHoveredStatCard('trailers')}
           onMouseLeave={() => setHoveredStatCard(null)}
-          style={getStatCardStyle('trailers')}
+          style={{ ...getStatCardStyle('trailers'), cursor: 'pointer' }}
+          title="Click to view Current Stock & Inventory"
         >
           <div>
-
             <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>ITEMS / TRAILERS IN YARD</span>
-            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>{dbMetrics.inYard}</span>
+            <span style={{ fontSize: 26, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>{dbMetrics.inYard}</span>
           </div>
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, fontWeight: '800', color: '#64748b', marginBottom: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: '700', color: '#64748b', marginBottom: 4 }}>
               <span>Occupancy</span>
               <span>{dbMetrics.yardCapacityPct}%</span>
             </div>
             <div style={{ width: '100%', height: 5, backgroundColor: '#f1f5f9', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
               <div style={{ width: `${dbMetrics.yardCapacityPct}%`, height: '100%', backgroundColor: '#ffcc00' }}></div>
-
             </div>
-            <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Active parking spots</span>
+            <span style={{ fontSize: 11, color: '#2563EB', fontWeight: '700', display: 'block' }}>View All Inventory &rarr;</span>
           </div>
         </div>
 
         {/* Gate Events */}
         <div
+          onClick={() => navigate('/yard/inbound')}
           onMouseEnter={() => setHoveredStatCard('gate-events')}
           onMouseLeave={() => setHoveredStatCard(null)}
-          style={getStatCardStyle('gate-events')}
+          style={{ ...getStatCardStyle('gate-events'), cursor: 'pointer' }}
+          title="Click to view Inbound Gate & Deliveries"
         >
           <div>
-
             <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>INBOUND DELIVERIES</span>
-            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>{dbMetrics.inbound}</span>
+            <span style={{ fontSize: 26, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>{dbMetrics.inbound}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Inward/Outward today</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+            <span style={{ fontSize: 11, color: '#2563EB', fontWeight: '700' }}>Inward/Outward &rarr;</span>
             <span style={{ fontSize: 10, fontWeight: '800', color: '#047857', backgroundColor: '#d1fae5', padding: '2px 6px', borderRadius: 4 }}>Live DB</span>
-
           </div>
         </div>
 
         {/* Yard Capacity */}
         <div
+          onClick={() => setShowYardMapModal(true)}
           onMouseEnter={() => setHoveredStatCard('capacity')}
           onMouseLeave={() => setHoveredStatCard(null)}
-          style={getStatCardStyle('capacity')}
+          style={{ ...getStatCardStyle('capacity'), cursor: 'pointer' }}
+          title="Click to open Visual Yard Map Preview"
         >
           <div>
             <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>YARD CAPACITY</span>
-
-            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>{dbMetrics.yardCapacityPct}%</span>
+            <span style={{ fontSize: 26, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>{dbMetrics.yardCapacityPct}%</span>
           </div>
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, fontWeight: '800', color: '#64748b', marginBottom: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: '700', color: '#64748b', marginBottom: 4 }}>
               <span>Capacity Used</span>
               <span>{dbMetrics.yardCapacityPct}%</span>
             </div>
             <div style={{ width: '100%', height: 5, backgroundColor: '#f1f5f9', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
               <div style={{ width: `${dbMetrics.yardCapacityPct}%`, height: '100%', backgroundColor: '#ffcc00' }}></div>
-
             </div>
-            <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Slots occupied</span>
+            <span style={{ fontSize: 11, color: '#2563EB', fontWeight: '700', display: 'block' }}>Open Yard Map &rarr;</span>
           </div>
         </div>
 
         {/* Pending Tasks */}
         <div
+          onClick={() => setShowTasksModal(true)}
           onMouseEnter={() => setHoveredStatCard('pending')}
           onMouseLeave={() => setHoveredStatCard(null)}
-          style={getStatCardStyle('pending')}
+          style={{ ...getStatCardStyle('pending'), cursor: 'pointer' }}
+          title="Click to view My Tasks list"
         >
           <div>
             <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>PENDING TASKS</span>
-            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>
+            <span style={{ fontSize: 26, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>
               {tasks.filter(t => t.status === 'PENDING').length}
             </span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Awaiting action</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+            <span style={{ fontSize: 11, color: '#2563EB', fontWeight: '700' }}>View Tasks &rarr;</span>
             <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', backgroundColor: '#f1f5f9', padding: '2px 6px', borderRadius: 4 }}>Action needed</span>
           </div>
         </div>
 
         {/* Current Shift */}
         <div
+          onClick={() => setShowScheduleModal(true)}
           onMouseEnter={() => setHoveredStatCard('shift')}
           onMouseLeave={() => setHoveredStatCard(null)}
-          style={getStatCardStyle('shift')}
+          style={{ ...getStatCardStyle('shift'), cursor: 'pointer' }}
+          title="Click to view Shift Schedule"
         >
           <div>
             <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>CURRENT SHIFT</span>
-            <span style={{ fontSize: shiftActive ? 22 : 26, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4, fontFamily: shiftActive ? 'monospace' : 'inherit' }}>
+            <span style={{ fontSize: shiftActive ? 20 : 24, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4, fontFamily: shiftActive ? 'monospace' : 'inherit' }}>
               {shiftActive ? timerString : 'Off Duty'}
             </span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Not clocked in</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+            <span style={{ fontSize: 11, color: '#2563EB', fontWeight: '700' }}>Shift Schedule &rarr;</span>
             <span
-              onClick={shiftActive ? handleFinishWork : handleStartWork}
-              style={{ fontSize: 10, fontWeight: '800', color: '#334155', textDecoration: 'underline', cursor: 'pointer' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (shiftActive) handleFinishWork();
+                else handleStartWork();
+              }}
+              style={{ fontSize: 10, fontWeight: '800', color: shiftActive ? '#ef4444' : '#10b981', textDecoration: 'underline', cursor: 'pointer' }}
             >
-              Clock in
+              {shiftActive ? 'Clock out' : 'Clock in'}
             </span>
           </div>
         </div>

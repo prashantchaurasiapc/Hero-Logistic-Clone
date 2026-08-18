@@ -182,28 +182,29 @@ export default function CurrentStock() {
   const filteredItems = stockItems.filter(item => {
     const q = searchQuery.toLowerCase().trim();
     const matchesSearch = !q || (
-      item.title.toLowerCase().includes(q) ||
-      item.itemNo.toLowerCase().includes(q) ||
+      (item.title && item.title.toLowerCase().includes(q)) ||
+      (item.itemNo && item.itemNo.toLowerCase().includes(q)) ||
       (item.vin && item.vin.toLowerCase().includes(q)) ||
       (item.rego && item.rego.toLowerCase().includes(q)) ||
       (item.barcode && item.barcode.toLowerCase().includes(q)) ||
       (item.sku && item.sku.toLowerCase().includes(q)) ||
-      item.customer.toLowerCase().includes(q) ||
-      item.locationDetail.toLowerCase().includes(q) ||
-      item.loadJob.toLowerCase().includes(q)
+      (item.customer && item.customer.toLowerCase().includes(q)) ||
+      (item.locationDetail && item.locationDetail.toLowerCase().includes(q)) ||
+      (item.loadJob && item.loadJob.toLowerCase().includes(q))
     );
 
-    const matchesType = selectedType === 'All Types' || item.type === selectedType;
-    const matchesLocation = selectedLocation === 'All Locations' || item.location === selectedLocation;
-    const matchesStatus = selectedStatus === 'All Statuses' || item.status === selectedStatus;
-    const matchesLoad = selectedLoad === 'All Loads' || item.loadJob === selectedLoad;
-    const matchesCustomer = selectedCustomer === 'All Customers' || item.customer === selectedCustomer;
+    const matchesType = selectedType === 'All Types' || (item.type && item.type.toLowerCase().includes(selectedType.toLowerCase())) || (item.typeBadge && item.typeBadge.toLowerCase().includes(selectedType.toLowerCase()));
+    const matchesLocation = selectedLocation === 'All Locations' || (item.location && item.location.toLowerCase().includes(selectedLocation.toLowerCase())) || (item.locationDetail && item.locationDetail.toLowerCase().includes(selectedLocation.toLowerCase()));
+    const matchesStatus = selectedStatus === 'All Statuses' || (item.status && item.status.toLowerCase() === selectedStatus.toLowerCase());
+    const matchesLoad = selectedLoad === 'All Loads' || (item.loadJob && item.loadJob.toLowerCase().includes(selectedLoad.toLowerCase())) || (item.loadDetail && item.loadDetail.toLowerCase().includes(selectedLoad.toLowerCase()));
+    const matchesCustomer = selectedCustomer === 'All Customers' || (item.customer && item.customer.toLowerCase().includes(selectedCustomer.toLowerCase()));
     const matchesZone = selectedZone === 'All Zones' || (item.locationDetail && item.locationDetail.includes(selectedZone)) || (item.location && item.location.includes(selectedZone));
     const matchesRow = selectedRow === 'All Rows' || (item.locationDetail && item.locationDetail.includes(selectedRow)) || (item.rowBayPos && item.rowBayPos.includes(selectedRow));
     const matchesBay = selectedBay === 'All Bays' || (item.locationDetail && item.locationDetail.includes(selectedBay)) || (item.rowBayPos && item.rowBayPos.includes(selectedBay));
     const matchesStaging = selectedStaging === 'All Staging Areas' || (item.locationDetail && item.locationDetail.includes(selectedStaging)) || (item.loadDetail && item.loadDetail.includes(selectedStaging));
+    const matchesDate = !dateRange || (item.receivedDate && item.receivedDate.includes(dateRange));
 
-    return matchesSearch && matchesType && matchesLocation && matchesStatus && matchesLoad && matchesCustomer && matchesZone && matchesRow && matchesBay && matchesStaging;
+    return matchesSearch && matchesType && matchesLocation && matchesStatus && matchesLoad && matchesCustomer && matchesZone && matchesRow && matchesBay && matchesStaging && matchesDate;
   });
 
   return (
@@ -1145,6 +1146,15 @@ export default function CurrentStock() {
                     <label>Location</label>
                     <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)}>
                       <option value="All Locations">All Locations</option>
+                      <option value="Main Yard">Main Yard</option>
+                      <option value="Yard B">Yard B</option>
+                      <option value="Zone A">Zone A</option>
+                      <option value="Depot Bay 01">Depot Bay 01</option>
+                      {Array.from(new Set(stockItems.map(i => i.location).filter(Boolean))).map((loc, idx) => (
+                        !['Main Yard', 'Yard B', 'Zone A', 'Depot Bay 01'].includes(loc) && (
+                          <option key={idx} value={loc}>{loc}</option>
+                        )
+                      ))}
                     </select>
                   </div>
 
@@ -1163,6 +1173,14 @@ export default function CurrentStock() {
                     <label>Load / Job</label>
                     <select value={selectedLoad} onChange={(e) => setSelectedLoad(e.target.value)}>
                       <option value="All Loads">All Loads</option>
+                      <option value="LD-1001">LD-1001 (Sydney Express)</option>
+                      <option value="LD-1002">LD-1002 (Melbourne Depot)</option>
+                      <option value="LD-1003">LD-1003 (Brisbane Linehaul)</option>
+                      {Array.from(new Set(stockItems.map(i => i.loadJob).filter(Boolean))).map((ld, idx) => (
+                        !['LD-1001', 'LD-1002', 'LD-1003'].includes(ld) && (
+                          <option key={idx} value={ld}>{ld}</option>
+                        )
+                      ))}
                     </select>
                   </div>
 
@@ -1170,6 +1188,15 @@ export default function CurrentStock() {
                     <label>Customer</label>
                     <select value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)}>
                       <option value="All Customers">All Customers</option>
+                      <option value="Apex Logistics">Apex Logistics</option>
+                      <option value="National Fleet Supply">National Fleet Supply</option>
+                      <option value="Global Auto Transport">Global Auto Transport</option>
+                      <option value="Pacific Carrier Hub">Pacific Carrier Hub</option>
+                      {Array.from(new Set(stockItems.map(i => i.customer).filter(Boolean))).map((c, idx) => (
+                        !['Apex Logistics', 'National Fleet Supply', 'Global Auto Transport', 'Pacific Carrier Hub'].includes(c) && (
+                          <option key={idx} value={c}>{c}</option>
+                        )
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -1179,11 +1206,11 @@ export default function CurrentStock() {
                   <div className="wh-filter-group">
                     <label>Date Range</label>
                     <input 
-                      type="text" 
-                      placeholder="Select date range 📅" 
+                      type="date" 
                       value={dateRange}
                       onChange={(e) => setDateRange(e.target.value)}
                       className="wh-date-input"
+                      style={{ cursor: 'pointer' }}
                     />
                   </div>
 
@@ -1191,6 +1218,10 @@ export default function CurrentStock() {
                     <label>Zone</label>
                     <select value={selectedZone} onChange={(e) => setSelectedZone(e.target.value)}>
                       <option value="All Zones">All Zones</option>
+                      <option value="Zone A">Zone A</option>
+                      <option value="Zone B">Zone B</option>
+                      <option value="Zone C">Zone C</option>
+                      <option value="DG Zone">DG Zone (Dangerous Goods)</option>
                     </select>
                   </div>
 
@@ -1198,6 +1229,10 @@ export default function CurrentStock() {
                     <label>Row#</label>
                     <select value={selectedRow} onChange={(e) => setSelectedRow(e.target.value)}>
                       <option value="All Rows">All Rows</option>
+                      <option value="Row 1">Row 1</option>
+                      <option value="Row 2">Row 2</option>
+                      <option value="Row 3">Row 3</option>
+                      <option value="Row 4">Row 4</option>
                     </select>
                   </div>
 
@@ -1205,6 +1240,12 @@ export default function CurrentStock() {
                     <label>Bay#</label>
                     <select value={selectedBay} onChange={(e) => setSelectedBay(e.target.value)}>
                       <option value="All Bays">All Bays</option>
+                      <option value="Bay 01">Bay 01</option>
+                      <option value="Bay 02">Bay 02</option>
+                      <option value="Bay 03">Bay 03</option>
+                      <option value="Bay 04">Bay 04</option>
+                      <option value="Bay 05">Bay 05</option>
+                      <option value="Bay 12">Bay 12</option>
                     </select>
                   </div>
 
@@ -1212,6 +1253,13 @@ export default function CurrentStock() {
                     <label>Staging Area</label>
                     <select value={selectedStaging} onChange={(e) => setSelectedStaging(e.target.value)}>
                       <option value="All Staging Areas">All Staging Areas</option>
+                      <option value="SA-01">SA-01 (Priority Staging)</option>
+                      <option value="SA-02">SA-02 (Bulk Holding)</option>
+                      <option value="SA-03">SA-03 (Inspection Bay)</option>
+                      <option value="SA-04">SA-04 (Overflow Holding)</option>
+                      <option value="Lane 1">Lane 1</option>
+                      <option value="Lane 2">Lane 2</option>
+                      <option value="Lane 3">Lane 3</option>
                     </select>
                   </div>
                 </div>

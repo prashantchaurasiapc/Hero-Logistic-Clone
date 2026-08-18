@@ -201,27 +201,27 @@ const WarehouseLabels = () => {
       <div style={S.statsGrid}>
         <div style={S.statCard}>
           <span style={S.statLabel}>TOTAL LABELS</span>
-          <span style={S.statValue}>4</span>
+          <span style={S.statValue}>{labelsData.length}</span>
           <span style={S.statSub}>Generated tags</span>
         </div>
         <div style={S.statCard}>
           <span style={S.statLabel}>PRINTED LABELS</span>
-          <span style={S.statValue}>1</span>
+          <span style={S.statValue}>{labelsData.filter(l => l.status === 'Printed').length}</span>
           <span style={S.statSub}>Successfully spooled</span>
         </div>
         <div style={S.statCard}>
           <span style={S.statLabel}>PENDING LABELS</span>
-          <span style={S.statValue}>1</span>
+          <span style={S.statValue}>{labelsData.filter(l => l.status === 'Pending').length}</span>
           <span style={S.statSub}>In print queue</span>
         </div>
         <div style={S.statCard}>
           <span style={S.statLabel}>FAILED LABELS</span>
-          <span style={S.statValue}>1</span>
+          <span style={S.statValue}>{labelsData.filter(l => l.status === 'Failed').length}</span>
           <span style={S.statSub}>Printer errors</span>
         </div>
         <div style={S.statCard}>
           <span style={S.statLabel}>REPRINTED LABELS</span>
-          <span style={S.statValue}>1</span>
+          <span style={S.statValue}>{labelsData.filter(l => l.status === 'Reprinted').length}</span>
           <span style={S.statSub}>Duplicate tags</span>
         </div>
       </div>

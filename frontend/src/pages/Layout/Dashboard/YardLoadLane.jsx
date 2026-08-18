@@ -55,12 +55,8 @@ export default function YardLoadLane() {
   // Button Hover States
   const [hoverBtn, setHoverBtn] = useState(null);
 
-  // Mock table data
-  const [tasks, setTasks] = useState([
-    { id: 1, desc: 'Assign TR-9410 to loading lane 3', status: 'PENDING', checked: false },
-    { id: 2, desc: 'Spot container CTR-0029 at gate 12', status: 'IN PROGRESS', checked: false },
-    { id: 3, desc: 'Verify release code for TR-1102', status: 'PENDING', checked: false }
-  ]);
+  // Table data
+  const [tasks, setTasks] = useState([]);
 
   const filteredTasks = tasks.filter(t => {
     const q = searchQuery.toLowerCase().trim();
@@ -472,8 +468,8 @@ export default function YardLoadLane() {
                   <tbody>
                     {filteredTasks.length === 0 ? (
                       <tr>
-                        <td colSpan="3" style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: 12, fontWeight: '700' }}>
-                          No tasks found matching "{searchQuery}".
+                        <td colSpan="3" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: 12, fontWeight: '600' }}>
+                          {searchQuery ? `No tasks found matching "${searchQuery}".` : 'No yard tasks found. Ready for testing.'}
                         </td>
                       </tr>
                     ) : (

@@ -13,6 +13,23 @@ import {
   Menu, CheckCircle, Award, Filter, Columns, ArrowUpDown, AlertTriangle, Copy, Scale, Palette, Briefcase, Terminal, Cpu, Database, Wind, UploadCloud
 } from 'lucide-react';
 
+const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
+
+const getVehicleImageUrl = (url, isCarFallback = false) => {
+  const fallback = isCarFallback
+    ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60"
+    : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
+  if (!url || typeof url !== 'string' || !url.trim()) return fallback;
+  const trimmed = url.trim();
+  if (trimmed.startsWith('data:image')) return trimmed;
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  if (trimmed.startsWith('/uploads/') || trimmed.startsWith('uploads/')) {
+    const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    return `${BACKEND_URL}${cleanPath}`;
+  }
+  return trimmed;
+};
+
 // Helper upload components moved outside to prevent unmounting on re-renders
 const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
   const defaultPhoto = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop";
@@ -54,7 +71,7 @@ const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
           <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
         </div>
         <img 
-          src={photoUrl || defaultPhoto} 
+          src={getVehicleImageUrl(photoUrl) || defaultPhoto} 
           onError={(e) => {
             e.target.onerror = null;
             e.target.src = defaultPhoto;
@@ -257,6 +274,7 @@ const Vehicles = () => {
   const [vehicles, setVehicles] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [toast, setToast] = React.useState(null);
+  const [moreActionsOpen, setMoreActionsOpen] = React.useState(false);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -909,19 +927,27 @@ const Vehicles = () => {
             <div className="p-6 flex flex-col sm:flex-row gap-8">
               {/* Vehicle Photos */}
               <div className="flex flex-col gap-2 shrink-0">
-                <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100">
+                <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100 bg-gray-100">
                    <img 
-                     src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null) || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} 
+                     src={getVehicleImageUrl(managingVehicle.photoUrl || managingVehicle.img || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null))} 
                      alt="Vehicle Main" 
+                     onError={(e) => {
+                       e.target.onerror = null;
+                       e.target.src = 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60';
+                     }}
                      className="w-full h-full object-cover" 
                    />
                 </div>
                 <div className="grid grid-cols-4 gap-2 w-full sm:w-[300px]">
                    {[1, 2, 3].map((num) => (
-                     <div key={num} className="h-16 rounded-lg overflow-hidden cursor-pointer opacity-70 hover:opacity-100 transition-opacity border border-gray-100">
+                     <div key={num} className="h-16 rounded-lg overflow-hidden cursor-pointer opacity-70 hover:opacity-100 transition-opacity border border-gray-100 bg-gray-100">
                         <img 
-                          src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null) || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} 
+                          src={getVehicleImageUrl(managingVehicle.photoUrl || managingVehicle.img || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null))} 
                           alt="Thumb" 
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60';
+                          }}
                           className="w-full h-full object-cover" 
                         />
                      </div>
@@ -3973,9 +3999,65 @@ const Vehicles = () => {
           >
             <Plus className="w-4 h-4" /> Add Vehicle
           </button>
-          <button className="border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center shadow-sm cursor-pointer whitespace-nowrap flex-grow sm:flex-grow-0 justify-center">
-            More Actions <ChevronDownIcon size={14} className="ml-1" />
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setMoreActionsOpen(!moreActionsOpen)}
+              className="border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center shadow-sm cursor-pointer whitespace-nowrap flex-grow sm:flex-grow-0 justify-center"
+            >
+              More Actions <ChevronDownIcon size={14} className="ml-1" />
+            </button>
+            {moreActionsOpen && (
+              <div 
+                className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1 text-left animate-in fade-in zoom-in duration-100"
+                onClick={() => setMoreActionsOpen(false)}
+              >
+                <button 
+                  onClick={() => {
+                    const headers = ['Vehicle ID', 'Make/Model', 'Registration', 'Branch', 'Driver', 'Status', 'Compliance', 'Odometer'];
+                    const rows = vehicles.map(v => [
+                      `"${v.id || ''}"`,
+                      `"${v.make || ''}"`,
+                      `"${v.reg || ''}"`,
+                      `"${v.branch || ''}"`,
+                      `"${v.driver || ''}"`,
+                      `"${v.status || ''}"`,
+                      `"${v.compliance || ''}"`,
+                      `"${v.odometer || ''}"`
+                    ]);
+                    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement('a');
+                    link.setAttribute('href', encodedUri);
+                    link.setAttribute('download', `fleet_vehicles_${new Date().toISOString().slice(0, 10)}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showToast('✓ Fleet vehicles exported to CSV');
+                  }}
+                  className="w-full px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2 cursor-pointer"
+                >
+                  <Download size={14} className="text-purple-600" /> Export Fleet (CSV)
+                </button>
+                <button 
+                  onClick={() => {
+                    window.print();
+                  }}
+                  className="w-full px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2 cursor-pointer"
+                >
+                  <Printer size={14} className="text-slate-600" /> Print Vehicle Registry
+                </button>
+                <button 
+                  onClick={() => {
+                    fetchVehicles();
+                    showToast('✓ Fleet vehicles synced with live database');
+                  }}
+                  className="w-full px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2 cursor-pointer border-t border-gray-100"
+                >
+                  <RefreshCw size={14} className="text-emerald-600" /> Sync / Refresh Fleet
+                </button>
+              </div>
+            )}
+          </div>
           <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white shrink-0">
             <button className="px-2.5 py-2 bg-white hover:bg-gray-50 text-gray-600 border-r border-gray-200 cursor-pointer">
               <ChevronLeft size={16} />
@@ -4120,7 +4202,7 @@ const Vehicles = () => {
                            <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
                                  <img 
-                                      src={v.photoUrl || v.img} 
+                                      src={getVehicleImageUrl(v.photoUrl || v.img, (v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.category && v.category.toLowerCase().includes('car')))} 
                                       alt="Vehicle" 
                                       onError={(e) => {
                                          e.target.onerror = null; 

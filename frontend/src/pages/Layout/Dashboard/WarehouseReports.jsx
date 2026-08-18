@@ -11,14 +11,8 @@ import {
 
 export default function WarehouseReports() {
   const [activeTab, setActiveTab] = useState('Overview');
-  const [dateRange] = useState(() => {
-    const now = new Date();
-    const day = now.getDay();
-    const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-    const fmt = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    return `This Week (${fmt(mon)} – ${fmt(sun)})`;
-  });
+  const [dateRange, setDateRange] = useState('This Week (17 Aug 2026 – 23 Aug 2026)');
+  const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWarehouse, setSelectedWarehouse] = useState('All Warehouses');
   const [selectedZone, setSelectedZone] = useState('All Zones');
@@ -107,75 +101,92 @@ export default function WarehouseReports() {
               `).join('')}
             </div>
 
-            <h3>OPERATIONAL METRICS SUMMARY</h3>
             <table>
               <thead>
                 <tr>
-                  <th>METRIC DESCRIPTION</th>
-                  <th>CURRENT PERFORMANCE</th>
-                  <th>BENCHMARK TARGET</th>
-                  <th>STATUS</th>
+                  <th>Category</th>
+                  <th>Key Metric</th>
+                  <th>Value</th>
+                  <th>Benchmark / Target</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td>Items Handled / Throughput</td><td>2,458 Units</td><td>2,200 Units</td><td><strong style="color: green;">EXCEEDED</strong></td></tr>
-                <tr><td>Receiving (Inbound Volume)</td><td>842 Shipments</td><td>800 Shipments</td><td><strong style="color: green;">ON TARGET</strong></td></tr>
-                <tr><td>Dispatched (Outbound Volume)</td><td>799 Loads</td><td>750 Loads</td><td><strong style="color: green;">EXCEEDED</strong></td></tr>
-                <tr><td>Staging Bay Occupancy</td><td>817 Items (68%)</td><td>80% Max</td><td><strong style="color: green;">OPTIMAL</strong></td></tr>
-                <tr><td>Average Dwell Time</td><td>2h 45m</td><td>3h 00m Max</td><td><strong style="color: green;">IMPROVED</strong></td></tr>
-                <tr><td>Order Accuracy Rate</td><td>98.6%</td><td>98.0% Min</td><td><strong style="color: green;">PASSED</strong></td></tr>
+                <tr>
+                  <td>Volume & Handling</td>
+                  <td>Total Items Handled</td>
+                  <td>${dbKpis?.totalItemsHandled ?? 0}</td>
+                  <td>500 items / day</td>
+                  <td>Optimal</td>
+                </tr>
+                <tr>
+                  <td>Receipt Inbound</td>
+                  <td>Inbound Completed</td>
+                  <td>${dbKpis?.receivedInbound ?? 0}</td>
+                  <td>100% Target</td>
+                  <td>Active</td>
+                </tr>
+                <tr>
+                  <td>Dispatch Outbound</td>
+                  <td>Outbound Loads</td>
+                  <td>${dbKpis?.dispatchedOutbound ?? 0}</td>
+                  <td>On Schedule</td>
+                  <td>Verified</td>
+                </tr>
+                <tr>
+                  <td>Holding / Staging</td>
+                  <td>Items in Staging</td>
+                  <td>${dbKpis?.stagedItems ?? 0}</td>
+                  <td>&lt; 50 units</td>
+                  <td>Normal</td>
+                </tr>
+                <tr>
+                  <td>Quality & Accuracy</td>
+                  <td>Inventory Accuracy Rate</td>
+                  <td>${dbKpis?.accuracyRate || '100%'}</td>
+                  <td>&gt;= 99.5%</td>
+                  <td>Compliant</td>
+                </tr>
               </tbody>
             </table>
 
             <script>
-              window.onload = function() { window.print(); };
+              window.onload = function() { window.print(); }
             </script>
           </body>
         </html>
       `);
       printWindow.document.close();
-      showToast(`✓ Generated Printable PDF Summary for ${type}!`);
+      showToast(`✓ Printable PDF preview generated for ${type}`);
       return;
     }
 
+    // CSV Download
     const kpis = getKpiCards();
-    const headers = ['Metric Name', 'Current Value', 'Trend vs Last Period', 'Report Date', 'Warehouse'];
-    const rows = kpis.map(k => [
-      `"${k.lbl}"`,
-      `"${k.val}"`,
-      `"${k.trend}"`,
-      `"${dateRange}"`,
-      `"${selectedWarehouse}"`
-    ]);
+    let csv = `HERO LOGISTICS - ${type.toUpperCase()} REPORT\n`;
+    csv += `Date Range,${dateRange}\n`;
+    csv += `Warehouse,${selectedWarehouse}\n`;
+    csv += `Zone,${selectedZone}\n`;
+    csv += `Load Lane,${selectedLane}\n`;
+    csv += `Item Type,${selectedItemType}\n\n`;
 
-    rows.push([]);
-    rows.push(['"--- METRIC BREAKDOWN ---"']);
-    rows.push(['"Category"', '"Value"', '"Pct / Details"']);
-    rows.push(['"In Stock Items"', '"1,246"', '"50.7%"']);
-    rows.push(['"Staged Cargo"', '"817"', '"33.2%"']);
-    rows.push(['"In Transit Loads"', '"249"', '"10.1%"']);
-    rows.push(['"On Hold"', '"96"', '"3.9%"']);
-    rows.push(['"Damaged / QC"', '"26"', '"1.1%"']);
+    csv += `METRIC,VALUE,TREND\n`;
+    kpis.forEach(k => {
+      csv += `"${k.lbl}","${k.val}","${k.trend}"\n`;
+    });
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(r => r.join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `${type}_Analytics_Report_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute('download', `Hero_Logistics_${type.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
 
-    showToast(`✓ Exported ${type} analytics data to CSV!`);
+    showToast(`✓ ${type} CSV report downloaded successfully!`);
   };
 
-  // Dynamic KPI Cards per Tab initialized empty / 0
   const getKpiCards = () => {
     switch (activeTab) {
       case 'Inventory':
@@ -246,8 +257,6 @@ export default function WarehouseReports() {
           padding: 16px 20px;
           box-sizing: border-box;
         }
-
-        /* HEADER ROW */
         .wh-rep-header-row {
           display: flex;
           justify-content: space-between;
@@ -256,373 +265,189 @@ export default function WarehouseReports() {
           flex-wrap: wrap;
           gap: 12px;
         }
-        .wh-rep-title {
-          font-size: 17px;
-          font-weight: 900;
-          color: #0F172A;
-          margin: 0;
-          text-transform: uppercase;
-          letter-spacing: -0.3px;
-        }
-        .wh-rep-sub {
-          font-size: 11.5px;
-          color: #64748B;
-          margin-top: 2px;
-        }
-
-        .wh-rep-header-actions {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
+        .wh-rep-title { font-size: 17px; font-weight: 900; color: #0F172A; margin: 0; text-transform: uppercase; letter-spacing: -0.3px; }
+        .wh-rep-sub { font-size: 11.5px; color: #64748B; margin-top: 2px; }
+        .wh-rep-header-actions { display: flex; align-items: center; gap: 10px; }
         .wh-rep-date-picker {
           height: 34px;
           padding: 0 12px;
-          border-radius: 8px;
-          border: 1px solid #CBD5E1;
           background: #FFFFFF;
-          font-size: 11.5px;
-          font-weight: 600;
-          color: #0F172A;
+          border: 1px solid #E2E8F0;
+          border-radius: 8px;
           display: flex;
           align-items: center;
           gap: 8px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #0F172A;
           cursor: pointer;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+          transition: all 0.15s ease;
+        }
+        .wh-rep-date-picker:hover {
+          border-color: #CBD5E1;
+          background: #F8FAFC;
         }
         .wh-btn-export-yellow {
           height: 34px;
-          padding: 0 16px;
-          border-radius: 8px;
+          padding: 0 14px;
+          background: #FFCC00;
           border: none;
-          background: var(--primary-color);
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
           font-size: 11.5px;
           font-weight: 800;
           color: #0F172A;
           cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          box-shadow: 0 2px 6px rgba(255,212,0,0.3);
-          transition: transform 0.15s;
+          transition: background 0.15s ease;
         }
-        .wh-btn-export-yellow:hover { transform: translateY(-1px); }
-
-        /* NAV TABS */
+        .wh-btn-export-yellow:hover { background: #E6B800; }
         .wh-rep-nav-tabs {
           display: flex;
-          gap: 20px;
+          align-items: center;
+          gap: 4px;
           border-bottom: 1px solid #E2E8F0;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
           overflow-x: auto;
         }
         .wh-rep-tab-item {
-          padding: 6px 0 10px 0;
-          font-size: 12px;
+          padding: 8px 14px;
+          font-size: 11.5px;
           font-weight: 700;
           color: #64748B;
           cursor: pointer;
-          position: relative;
+          border-bottom: 2px solid transparent;
+          transition: all 0.15s ease;
           white-space: nowrap;
-          transition: color 0.15s;
         }
         .wh-rep-tab-item:hover { color: #0F172A; }
         .wh-rep-tab-item.active {
           color: #0F172A;
+          border-bottom-color: #FFCC00;
+          font-weight: 800;
         }
-        .wh-rep-tab-item.active::after {
-          content: '';
-          position: absolute;
-          bottom: -1px;
-          left: 0;
-          right: 0;
-          height: 3px;
-          background: var(--primary-color);
-          border-radius: 2px;
-        }
-
-        /* 6 KPI CARDS GRID */
         .wh-rep-kpi-grid {
           display: grid;
           grid-template-columns: repeat(6, 1fr);
           gap: 10px;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
         }
         .wh-rep-kpi-card {
           background: #FFFFFF;
           border: 1px solid #E2E8F0;
           border-radius: 10px;
-          padding: 10px 12px;
+          padding: 12px;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.03);
         }
         .wh-kpi-top-row {
           display: flex;
-          align-items: center;
           justify-content: space-between;
+          align-items: flex-start;
           margin-bottom: 6px;
         }
+        .wh-kpi-lbl {
+          font-size: 9px;
+          font-weight: 800;
+          color: #64748B;
+          text-transform: uppercase;
+          letter-spacing: 0.2px;
+          line-height: 1.2;
+        }
         .wh-kpi-icon-wrap {
-          width: 28px;
-          height: 28px;
+          width: 22px;
+          height: 22px;
           border-radius: 6px;
           display: flex;
           align-items: center;
           justify-content: center;
-        }
-        .wh-kpi-lbl {
-          font-size: 9.5px;
-          font-weight: 800;
-          color: #64748B;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+          flex-shrink: 0;
         }
         .wh-kpi-val {
-          font-size: 20px;
+          font-size: 18px;
           font-weight: 900;
           color: #0F172A;
-          line-height: 1.1;
-          margin-bottom: 2px;
+          margin-bottom: 4px;
+          letter-spacing: -0.5px;
         }
         .wh-kpi-trend {
-          font-size: 9.5px;
+          font-size: 9px;
           font-weight: 700;
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 3px;
         }
-
-        /* FILTERS ROW */
         .wh-rep-filter-bar {
-          background: #FFFFFF;
-          border: 1px solid #E2E8F0;
-          border-radius: 10px;
-          padding: 8px 12px;
           display: flex;
           align-items: center;
           gap: 8px;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
           flex-wrap: wrap;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         }
         .wh-rep-search-input {
           height: 32px;
-          padding: 0 12px 0 30px;
-          background: #F8FAFC;
-          border: 1px solid #CBD5E1;
-          border-radius: 6px;
-          color: #0F172A;
+          width: 100%;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 8px;
+          padding: 0 10px 0 28px;
           font-size: 11px;
+          color: #0F172A;
           outline: none;
-          min-width: 160px;
-          flex: 1;
         }
+        .wh-rep-search-input:focus { border-color: #CBD5E1; }
         .wh-rep-filter-select {
           height: 32px;
           padding: 0 10px;
-          background: #F8FAFC;
-          border: 1px solid #CBD5E1;
-          border-radius: 6px;
-          color: #0F172A;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 8px;
           font-size: 11px;
           font-weight: 600;
+          color: #0F172A;
           outline: none;
           cursor: pointer;
         }
         .wh-rep-filter-btn {
           height: 32px;
-          padding: 0 12px;
-          background: #F8FAFC;
-          border: 1px solid #CBD5E1;
-          border-radius: 6px;
-          color: #0F172A;
-          font-size: 11px;
-          font-weight: 700;
+          padding: 0 10px;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 8px;
           display: flex;
           align-items: center;
-          gap: 5px;
+          gap: 4px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #0F172A;
           cursor: pointer;
         }
-
-        /* COMPACT CARD STYLING */
         .wh-rep-card {
           background: #FFFFFF;
           border: 1px solid #E2E8F0;
           border-radius: 10px;
-          padding: 12px 14px;
+          padding: 12px;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
           display: flex;
           flex-direction: column;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-          height: 100%;
-          box-sizing: border-box;
         }
         .wh-rep-card-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 8px;
+          margin-bottom: 10px;
+          padding-bottom: 6px;
+          border-bottom: 1px solid #F1F5F9;
         }
-        .wh-rep-card-title {
-          font-size: 10.5px;
-          font-weight: 900;
-          color: #0F172A;
-          text-transform: uppercase;
-          letter-spacing: 0.4px;
-          display: flex;
-          align-items: center;
-          gap: 5px;
-        }
-        .wh-rep-card-link {
-          font-size: 10.5px;
-          font-weight: 800;
-          color: #2563EB;
-          cursor: pointer;
-        }
+        .wh-rep-card-title { font-size: 10px; font-weight: 900; color: #0F172A; text-transform: uppercase; letter-spacing: 0.3px; }
+        .wh-rep-card-link { font-size: 9.5px; font-weight: 700; color: #2563EB; cursor: pointer; }
         .wh-rep-card-link:hover { text-decoration: underline; }
-
-        /* SHORTCUTS LIST */
-        .wh-shortcut-item {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 5px 0;
-          border-bottom: 1px solid #F1F5F9;
-          font-size: 10px;
-          color: #334155;
-          font-weight: 700;
-          cursor: pointer;
-          transition: color 0.15s;
-        }
-        .wh-shortcut-item:last-child { border-bottom: none; }
-        .wh-shortcut-item:hover { color: #2563EB; }
-        .wh-shortcut-icon-badge {
-          width: 20px;
-          height: 20px;
-          border-radius: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        /* PROGRESS BARS LIST */
-        .wh-lane-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 6px;
-        }
-        .wh-lane-item:last-child { margin-bottom: 0; }
-        .wh-lane-num {
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          background: #F1F5F9;
-          color: #475569;
-          font-size: 9.5px;
-          font-weight: 800;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-        .wh-lane-meta { flex: 1; min-width: 0; }
-        .wh-lane-name-row {
-          display: flex;
-          justify-content: space-between;
-          font-size: 10px;
-          margin-bottom: 2px;
-        }
-        .wh-lane-bar-bg {
-          height: 5px;
-          background: #E2E8F0;
-          border-radius: 3px;
-          overflow: hidden;
-        }
-        .wh-lane-bar-fill {
-          height: 100%;
-          background: #16A34A;
-          border-radius: 3px;
-        }
-
-        /* TABLE PRODUCTIVITY */
-        .wh-prod-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 10.5px;
-        }
-        .wh-prod-table th {
-          text-align: left;
-          padding: 4px 0;
-          font-size: 9px;
-          font-weight: 800;
-          color: #64748B;
-          border-bottom: 1px solid #E2E8F0;
-          text-transform: uppercase;
-        }
-        .wh-prod-table td {
-          padding: 5px 0;
-          border-bottom: 1px solid #F1F5F9;
-        }
-        .wh-prod-table tr:last-child td { border-bottom: none; }
-
-        /* ZONE HORIZONTAL BARS */
-        .wh-zone-row {
-          margin-bottom: 4px;
-        }
-        .wh-zone-row:last-child { margin-bottom: 0; }
-        .wh-zone-meta {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 10px;
-          margin-bottom: 2px;
-        }
-
-        /* RECENT REPORTS LIST */
-        .wh-recent-rep-item {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 5px 0;
-          border-bottom: 1px solid #F1F5F9;
-        }
-        .wh-recent-rep-item:last-child { border-bottom: none; }
-
-        /* INSIGHTS ALERTS */
-        .wh-alert-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 8px;
-          padding: 5px 0;
-          border-bottom: 1px solid #F1F5F9;
-        }
-        .wh-alert-item:last-child { border-bottom: none; }
-
-        /* BOTTOM TIP BANNER */
-        .wh-bottom-tip-banner {
-          background: #EFF6FF;
-          border: 1px solid #BFDBFE;
-          border-radius: 8px;
-          padding: 10px 14px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          font-size: 11px;
-          color: #1E40AF;
-        }
-
-        @media (max-width: 1280px) {
-          .wh-rep-kpi-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-        @media (max-width: 768px) {
-          .wh-rep-kpi-grid { grid-template-columns: repeat(2, 1fr); }
-        }
+        .wh-lane-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
       `}</style>
 
-      {/* PAGE HEADER ROW */}
       <div className="wh-rep-header-row">
         <div>
           <h1 className="wh-rep-title">REPORTS & ANALYTICS CENTER</h1>
@@ -630,10 +455,62 @@ export default function WarehouseReports() {
         </div>
 
         <div className="wh-rep-header-actions">
-          <div className="wh-rep-date-picker">
-            <Calendar size={14} className="text-slate-500" />
-            <span>{dateRange}</span>
-            <ChevronDown size={14} className="text-slate-400" />
+          <div className="relative">
+            <div 
+              className="wh-rep-date-picker cursor-pointer flex items-center gap-2" 
+              onClick={() => setDateDropdownOpen(!dateDropdownOpen)}
+            >
+              <Calendar size={14} className="text-slate-500" />
+              <span>{dateRange}</span>
+              <ChevronDown size={14} className="text-slate-400" />
+            </div>
+            {dateDropdownOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 'calc(100% + 6px)',
+                  background: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '10px',
+                  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                  padding: '6px',
+                  zIndex: 1000,
+                  minWidth: '260px'
+                }}
+              >
+                {[
+                  'This Week (17 Aug 2026 – 23 Aug 2026)',
+                  'Today (18 Aug 2026)',
+                  'Yesterday (17 Aug 2026)',
+                  'This Month (August 2026)',
+                  'Last 30 Days',
+                  'This Quarter (Q3 2026)',
+                  'Year to Date (2026)'
+                ].map(opt => (
+                  <div
+                    key={opt}
+                    className="wh-dropdown-item"
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '11.5px',
+                      fontWeight: dateRange === opt ? 800 : 600,
+                      color: dateRange === opt ? '#2563EB' : '#0F172A',
+                      background: dateRange === opt ? '#EFF6FF' : 'transparent',
+                      cursor: 'pointer',
+                      borderRadius: '6px'
+                    }}
+                    onClick={() => {
+                      setDateRange(opt);
+                      setDateDropdownOpen(false);
+                      showToast(`Date range set to: ${opt}`);
+                    }}
+                  >
+                    {opt}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="relative">
@@ -642,7 +519,7 @@ export default function WarehouseReports() {
               onClick={() => setExportMenuOpen(!exportMenuOpen)}
             >
               <Download size={14} />
-              <span>Export {activeTab}</span>
+              <span>Export</span>
               <ChevronDown size={12} />
             </button>
 
@@ -662,21 +539,19 @@ export default function WarehouseReports() {
                 }}
               >
                 <div
-                  className="wh-dropdown-item"
                   style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '6px', color: '#0F172A' }}
                   onClick={() => handleExport(activeTab, 'csv')}
                 >
                   <FileSpreadsheet size={14} className="text-emerald-600" />
-                  <span>Export {activeTab} Data (CSV)</span>
+                  <span>Export CSV</span>
                 </div>
 
                 <div
-                  className="wh-dropdown-item"
                   style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '6px', color: '#0F172A' }}
                   onClick={() => handleExport(activeTab, 'pdf')}
                 >
                   <FileText size={14} className="text-blue-600" />
-                  <span>Print PDF Executive Report</span>
+                  <span>Print PDF</span>
                 </div>
               </div>
             )}
@@ -684,23 +559,18 @@ export default function WarehouseReports() {
         </div>
       </div>
 
-      {/* TOP NAVIGATION TABS */}
       <div className="wh-rep-nav-tabs">
         {['Overview', 'Inventory', 'Operations', 'Productivity', 'Dispatch', 'Compliance'].map((tab) => (
           <div
             key={tab}
             className={`wh-rep-tab-item ${activeTab === tab ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab(tab);
-              showToast(`Switched to ${tab} analytics view`);
-            }}
+            onClick={() => setActiveTab(tab)}
           >
             {tab}
           </div>
         ))}
       </div>
 
-      {/* DYNAMIC 6 KPI CARDS GRID BASED ON ACTIVE TAB */}
       <div className="wh-rep-kpi-grid">
         {getKpiCards().map((kpi, idx) => {
           const IconComp = kpi.icon;
@@ -721,9 +591,8 @@ export default function WarehouseReports() {
         })}
       </div>
 
-      {/* FILTERS CONTROL BAR */}
       <div className="wh-rep-filter-bar">
-        <div className="relative flex-1 min-w-[180px]">
+        <div style={{ flex: 1, position: 'relative' }}>
           <Search size={13} className="absolute left-3 top-2.5 text-slate-400" />
           <input
             type="text"
@@ -734,44 +603,85 @@ export default function WarehouseReports() {
           />
         </div>
 
-        <select value={selectedWarehouse} onChange={e => setSelectedWarehouse(e.target.value)} className="wh-rep-filter-select">
-          <option>All Warehouses</option>
-          <option>Sydney Depot</option>
-          <option>Melbourne Yard</option>
+        <select 
+          value={selectedWarehouse} 
+          onChange={e => {
+            setSelectedWarehouse(e.target.value);
+            showToast(`Filtered by Warehouse: ${e.target.value}`);
+          }} 
+          className="wh-rep-filter-select"
+        >
+          <option value="All Warehouses">All Warehouses</option>
+          <option value="Sydney Depot">Sydney Depot</option>
+          <option value="Melbourne Yard">Melbourne Yard</option>
+          <option value="Brisbane Linehaul Depot">Brisbane Linehaul Depot</option>
+          <option value="Perth Logistics Hub">Perth Logistics Hub</option>
         </select>
 
-        <select value={selectedZone} onChange={e => setSelectedZone(e.target.value)} className="wh-rep-filter-select">
-          <option>All Zones</option>
-          <option>Zone A</option>
-          <option>Zone B</option>
-          <option>Zone C</option>
+        <select 
+          value={selectedZone} 
+          onChange={e => {
+            setSelectedZone(e.target.value);
+            showToast(`Filtered by Zone: ${e.target.value}`);
+          }} 
+          className="wh-rep-filter-select"
+        >
+          <option value="All Zones">All Zones</option>
+          <option value="Zone A">Zone A (Fast Moving)</option>
+          <option value="Zone B">Zone B (Bulk Staging)</option>
+          <option value="Zone C">Zone C (Car Storage)</option>
+          <option value="DG Zone">DG Zone (Dangerous Goods)</option>
         </select>
 
-        <select value={selectedLane} onChange={e => setSelectedLane(e.target.value)} className="wh-rep-filter-select">
-          <option>All Load Lanes</option>
-          <option>Lane 1</option>
-          <option>Lane 2</option>
-          <option>Lane 3</option>
+        <select 
+          value={selectedLane} 
+          onChange={e => {
+            setSelectedLane(e.target.value);
+            showToast(`Filtered by Lane: ${e.target.value}`);
+          }} 
+          className="wh-rep-filter-select"
+        >
+          <option value="All Load Lanes">All Load Lanes</option>
+          <option value="Lane 1">Lane 1 (Sydney Express)</option>
+          <option value="Lane 2">Lane 2 (Melbourne Linehaul)</option>
+          <option value="Lane 3">Lane 3 (Brisbane Linehaul)</option>
+          <option value="Lane 4">Lane 4 (Adelaide Route)</option>
+          <option value="Lane 5">Lane 5 (Local Staging)</option>
         </select>
 
-        <select value={selectedItemType} onChange={e => setSelectedItemType(e.target.value)} className="wh-rep-filter-select">
-          <option>All Item Types</option>
-          <option>Pallets</option>
-          <option>Containers</option>
-          <option>Loose Cargo</option>
+        <select 
+          value={selectedItemType} 
+          onChange={e => {
+            setSelectedItemType(e.target.value);
+            showToast(`Filtered by Item Type: ${e.target.value}`);
+          }} 
+          className="wh-rep-filter-select"
+        >
+          <option value="All Item Types">All Item Types</option>
+          <option value="Vehicle">Vehicle (Car Carrying)</option>
+          <option value="Pallets">Pallets & General Freight</option>
+          <option value="Containers">Shipping Containers (20ft/40ft)</option>
+          <option value="Loose Cargo">Loose & Heavy Machinery</option>
+          <option value="Dangerous Goods">Dangerous Goods (Class 3/8)</option>
         </select>
 
-        <button className="wh-rep-filter-btn" onClick={() => showToast('Opening Advanced Filters')}>
+        <button 
+          className="wh-rep-filter-btn" 
+          onClick={() => {
+            setSelectedWarehouse('All Warehouses');
+            setSelectedZone('All Zones');
+            setSelectedLane('All Load Lanes');
+            setSelectedItemType('All Item Types');
+            setSearchQuery('');
+            showToast('✓ All report filters reset to default');
+          }}
+        >
           <Filter size={12} />
-          <span>Filters</span>
-          <ChevronDown size={11} />
+          <span>Reset</span>
         </button>
       </div>
 
-      {/* MASTER DASHBOARD LAYOUT GRID (DYNAMIC PER TAB) */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-3.5 items-stretch">
-
-        {/* ==================== ROW 1 (LEFT 3 CHARTS + RIGHT REPORT SHORTCUTS) ==================== */}
         <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-3.5 items-stretch">
 
           {/* CHART / CARD 1 DEPENDING ON TAB */}

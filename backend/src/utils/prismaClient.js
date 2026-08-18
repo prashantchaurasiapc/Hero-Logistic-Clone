@@ -5,12 +5,12 @@ const { PrismaMariaDb } = require('@prisma/adapter-mariadb');
 let prisma;
 
 try {
-  const dbUrl = process.env.DATABASE_URL || 'mysql://root:@127.0.0.1:3306/hero-logistic';
+  const dbUrl = process.env.DATABASE_URL || 'mysql://root:@127.0.0.1:3306/hero-logihero';
   let host = '127.0.0.1';
   let port = 3306;
   let user = 'root';
   let password = undefined;
-  let database = 'hero-logistic';
+  let database = 'hero-logihero';
 
   try {
     const urlObj = new URL(dbUrl);
