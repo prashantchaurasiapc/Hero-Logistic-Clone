@@ -45,104 +45,7 @@ export default function CustomerInvoices() {
   });
 
   // Invoices List Data State (Exact Match to Screenshot 2)
-  const [invoices, setInvoices] = useState([
-    {
-      id: 'INV-2025-0529',
-      number: 'INV-2025-0529',
-      date: '29 May 2025',
-      dueDate: '28 Jun 2025',
-      loadRef: 'LD-3987',
-      route: 'Melbourne VIC → Sydney NSW',
-      amount: '$8,540.70',
-      numericAmount: 8540.70,
-      status: 'Overdue',
-      statusBadge: 'bg-red-50 text-red-700 border-red-200'
-    },
-    {
-      id: 'INV-2025-0528',
-      number: 'INV-2025-0528',
-      date: '28 May 2025',
-      dueDate: '27 Jun 2025',
-      loadRef: 'LD-3981',
-      route: 'Brisbane QLD → Perth WA',
-      amount: '$6,250.00',
-      numericAmount: 6250.00,
-      status: 'Overdue',
-      statusBadge: 'bg-red-50 text-red-700 border-red-200'
-    },
-    {
-      id: 'INV-2025-0527',
-      number: 'INV-2025-0527',
-      date: '27 May 2025',
-      dueDate: '26 Jun 2025',
-      loadRef: 'LD-3975',
-      route: 'Adelaide SA → Melbourne VIC',
-      amount: '$5,760.50',
-      numericAmount: 5760.50,
-      status: 'Overdue',
-      statusBadge: 'bg-red-50 text-red-700 border-red-200'
-    },
-    {
-      id: 'INV-2025-0519',
-      number: 'INV-2025-0519',
-      date: '19 May 2025',
-      dueDate: '18 Jun 2025',
-      loadRef: 'LD-3962',
-      route: 'Sydney NSW → Newcastle NSW',
-      amount: '$6,980.00',
-      numericAmount: 6980.00,
-      status: 'Paid',
-      statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    },
-    {
-      id: 'INV-2025-0515',
-      number: 'INV-2025-0515',
-      date: '15 May 2025',
-      dueDate: '14 Jun 2025',
-      loadRef: 'LD-3958',
-      route: 'Melbourne VIC → Brisbane QLD',
-      amount: '$4,360.20',
-      numericAmount: 4360.20,
-      status: 'Paid',
-      statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    },
-    {
-      id: 'INV-2025-0507',
-      number: 'INV-2025-0507',
-      date: '07 May 2025',
-      dueDate: '06 Jun 2025',
-      loadRef: 'LD-3951',
-      route: 'Perth WA → Adelaide SA',
-      amount: '$6,120.00',
-      numericAmount: 6120.00,
-      status: 'Paid',
-      statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    },
-    {
-      id: 'INV-2025-0429',
-      number: 'INV-2025-0429',
-      date: '29 Apr 2025',
-      dueDate: '29 May 2025',
-      loadRef: 'LD-3944',
-      route: 'Brisbane QLD → Sydney NSW',
-      amount: '$7,450.00',
-      numericAmount: 7450.00,
-      status: 'Paid',
-      statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    },
-    {
-      id: 'INV-2025-0418',
-      number: 'INV-2025-0418',
-      date: '18 Apr 2025',
-      dueDate: '18 May 2025',
-      loadRef: 'LD-3938',
-      route: 'Sydney NSW → Melbourne VIC',
-      amount: '$5,980.00',
-      numericAmount: 5980.00,
-      status: 'Paid',
-      statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    }
-  ]);
+  const [invoices, setInvoices] = useState([]);
 
   // Bulk Selection Handlers
   const handleSelectAll = () => {
@@ -378,10 +281,10 @@ export default function CustomerInvoices() {
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">OUTSTANDING BALANCE</span>
               <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
-                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">$18,540.00</span>
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${invoices.filter(i => i.status === 'Overdue').reduce((s, i) => s + (i.numericAmount || 0), 0).toFixed(2)}</span>
                 <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
               </div>
-              <span className="text-[10px] font-extrabold text-amber-600 block mt-1 whitespace-nowrap truncate">Due in 6 invoices</span>
+              <span className="text-[10px] font-extrabold text-amber-600 block mt-1 whitespace-nowrap truncate">Due in {invoices.filter(i => i.status !== 'Paid').length} invoices</span>
             </div>
           </div>
           <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
@@ -401,10 +304,10 @@ export default function CustomerInvoices() {
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">OVERDUE AMOUNT</span>
               <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
-                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">$12,450.00</span>
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${invoices.filter(i => i.status === 'Overdue').reduce((s, i) => s + (i.numericAmount || 0), 0).toFixed(2)}</span>
                 <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
               </div>
-              <span className="text-[10px] font-extrabold text-red-600 block mt-1 whitespace-nowrap truncate">6 invoices overdue</span>
+              <span className="text-[10px] font-extrabold text-red-600 block mt-1 whitespace-nowrap truncate">{invoices.filter(i => i.status === 'Overdue').length} invoices overdue</span>
             </div>
           </div>
           <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
@@ -424,10 +327,10 @@ export default function CustomerInvoices() {
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">PAID THIS MONTH</span>
               <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
-                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">$22,680.00</span>
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${invoices.filter(i => i.status === 'Paid').reduce((s, i) => s + (i.numericAmount || 0), 0).toFixed(2)}</span>
                 <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
               </div>
-              <span className="text-[10px] font-extrabold text-emerald-600 block mt-1 whitespace-nowrap truncate">↑ 18.7% vs last month</span>
+              <span className="text-[10px] font-extrabold text-emerald-600 block mt-1 whitespace-nowrap truncate">↑ 0% vs last month</span>
             </div>
           </div>
           <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
@@ -447,7 +350,7 @@ export default function CustomerInvoices() {
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">TOTAL INVOICED (YTD)</span>
               <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
-                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">$245,780.00</span>
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${invoices.reduce((s, i) => s + (i.numericAmount || 0), 0).toFixed(2)}</span>
                 <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
               </div>
               <span className="text-[10px] font-semibold text-transparent block mt-1 whitespace-nowrap select-none">Spacer</span>

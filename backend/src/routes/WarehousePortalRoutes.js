@@ -67,6 +67,7 @@ router.post('/safety-checklists', ctrl.submitSafetyChecklist);
 
 // 12. Staff Profile
 router.get('/profile', ctrl.getStaffProfile);
+router.put('/profile', ctrl.updateStaffProfile);
 
 // 13. Issue Reporting
 router.get('/issues', ctrl.getReportedIssues);

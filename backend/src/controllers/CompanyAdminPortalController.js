@@ -1663,7 +1663,18 @@ exports.sendMessage = async (req, res, next) => {
     }
 
     let targetConvId = conversationId;
-    if (!targetConvId) {
+    let existingConv = null;
+
+    if (targetConvId) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetConvId);
+      if (isUuid) {
+        existingConv = await prisma.conversation.findUnique({
+          where: { id: targetConvId }
+        });
+      }
+    }
+
+    if (!existingConv) {
       const newConv = await prisma.conversation.create({
         data: {
           companyId: compId,

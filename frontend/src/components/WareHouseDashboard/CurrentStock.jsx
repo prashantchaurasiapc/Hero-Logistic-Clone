@@ -53,9 +53,17 @@ export default function CurrentStock() {
           iconType: item.iconType || 'car'
         }));
         setStockItems(formatted);
+        if (formatted.length > 0) {
+          setSelectedItem(formatted[0]);
+        }
+      } else {
+        setStockItems([]);
+        setSelectedItem(null);
       }
     } catch (err) {
       console.error('Error fetching stock items:', err);
+      setStockItems([]);
+      setSelectedItem(null);
     } finally {
       setLoading(false);
     }
@@ -63,29 +71,6 @@ export default function CurrentStock() {
 
   useEffect(() => {
     fetchStock();
-    const fetchLanesAndHolding = async () => {
-      try {
-
-        const res = await api.get('/warehouse-portal/stock');
-        const data = res.data?.data || res.data;
-        if (Array.isArray(data)) {
-          setStockItems(data);
-          if (data.length > 0) setSelectedItem(data[0]);
-        } else if (data && data.items) {
-          setStockItems(data.items);
-          if (data.items.length > 0) setSelectedItem(data.items[0]);
-        } else {
-          setStockItems([]);
-        }
-      } catch (err) {
-        console.warn('Error fetching stock items:', err.message);
-        setStockItems([]);
-      } finally {
-        setLoading(false);
-
-      }
-    };
-    fetchLanesAndHolding();
   }, []);
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');

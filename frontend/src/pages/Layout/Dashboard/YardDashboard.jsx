@@ -96,10 +96,10 @@ export default function YardDashboard() {
   const [endTime, setEndTime] = useState(null);
   const [timerString, setTimerString] = useState('00:00:00');
   const [dbMetrics, setDbMetrics] = useState({
-    inYard: 4,
-    inbound: 4,
-    yardCapacityPct: 53,
-    activeLoads: 6
+    inYard: 0,
+    inbound: 0,
+    yardCapacityPct: 0,
+    activeLoads: 0
   });
 
   useEffect(() => {
@@ -110,10 +110,10 @@ export default function YardDashboard() {
         const used = d.yardCapacity?.inYard || d.overview?.inYard || 0;
         const pct = Math.min(100, Math.round((used / totalCap) * 100)) || 0;
         setDbMetrics({
-          inYard: d.overview?.inYard ?? 4,
-          inbound: d.overview?.inboundDeliveries ?? 4,
-          yardCapacityPct: pct || 53,
-          activeLoads: d.overview?.loadLanesActive ?? 6
+          inYard: d.overview?.inYard ?? 0,
+          inbound: d.overview?.inboundDeliveries ?? 0,
+          yardCapacityPct: pct || 0,
+          activeLoads: d.overview?.loadLanesActive ?? 0
         });
       }
     }).catch(() => {});

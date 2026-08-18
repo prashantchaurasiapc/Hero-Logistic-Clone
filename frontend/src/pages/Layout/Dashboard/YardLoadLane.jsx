@@ -55,12 +55,8 @@ export default function YardLoadLane() {
   // Button Hover States
   const [hoverBtn, setHoverBtn] = useState(null);
 
-  // Mock table data
-  const [tasks, setTasks] = useState([
-    { id: 1, desc: 'Assign TR-9410 to loading lane 3', status: 'PENDING', checked: false },
-    { id: 2, desc: 'Spot container CTR-0029 at gate 12', status: 'IN PROGRESS', checked: false },
-    { id: 3, desc: 'Verify release code for TR-1102', status: 'PENDING', checked: false }
-  ]);
+  // Tasks data (loaded from API)
+  const [tasks, setTasks] = useState([]);
 
   const filteredTasks = tasks.filter(t => {
     const q = searchQuery.toLowerCase().trim();

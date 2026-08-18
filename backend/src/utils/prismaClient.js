@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config(); // Trigger nodemon restart for cleaned fallback entries
 const { PrismaClient } = require('@prisma/client');
 const { PrismaMariaDb } = require('@prisma/adapter-mariadb');
 

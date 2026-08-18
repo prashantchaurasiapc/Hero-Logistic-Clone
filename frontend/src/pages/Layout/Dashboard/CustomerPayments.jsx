@@ -62,9 +62,7 @@ const CustomerPayments = () => {
   ];
 
   // Payments Data (Set unchecked by default)
-  const [payments, setPayments] = useState([
-    { id: 'PAY-01', paymentId: 'PAY-1002', invoiceId: 'INV-8910', amount: '$850.00', date: '06/15/2026', status: 'Cleared', checked: false }
-  ]);
+  const [payments, setPayments] = useState([]);
 
   const showToast = (msg) => {
     setToast(msg);

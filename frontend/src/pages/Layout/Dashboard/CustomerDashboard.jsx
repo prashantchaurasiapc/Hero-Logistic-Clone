@@ -11,6 +11,14 @@ const CustomerDashboard = () => {
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [toast, setToast] = useState(null);
+  const [metrics, setMetrics] = useState({
+    activeLoads: 0,
+    upcomingDeliveries: 0,
+    outstandingInvoices: 0,
+    outstandingBalance: 0.00,
+    paymentsThisMonth: 0.00,
+    documentsCount: 0
+  });
 
   const showToastMsg = (msg) => {
     setToast(msg);
@@ -153,9 +161,9 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">ACTIVE LOADS</span>
-              <span className="cp-metric-value">8</span>
+              <span className="cp-metric-value">{metrics.activeLoads}</span>
               <span className="cp-metric-subtext">
-                <span className="cp-text-green">&uarr; 14.3%</span> vs Last Month
+                <span className="cp-text-green">&uarr; 0%</span> vs Last Month
               </span>
             </div>
           </div>
@@ -177,9 +185,9 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">UPCOMING DELIVERIES</span>
-              <span className="cp-metric-value">12</span>
+              <span className="cp-metric-value">{metrics.upcomingDeliveries}</span>
               <span className="cp-metric-subtext">
-                <span className="cp-text-green">&uarr; 9.1%</span> vs Last Month
+                <span className="cp-text-green">&uarr; 0%</span> vs Last Month
               </span>
             </div>
           </div>
@@ -201,8 +209,8 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">OUTSTANDING INVOICES</span>
-              <span className="cp-metric-value">6</span>
-              <span className="cp-metric-subtext">$42,870.50 AUD</span>
+              <span className="cp-metric-value">{metrics.outstandingInvoices}</span>
+              <span className="cp-metric-subtext">${metrics.outstandingBalance.toFixed(2)} AUD</span>
             </div>
           </div>
           <div className="cp-metric-footer">
@@ -221,8 +229,8 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">OUTSTANDING BALANCE</span>
-              <span className="cp-metric-value-sm">$42,870.50 <span className="cp-unit">AUD</span></span>
-              <span className="cp-metric-subtext cp-text-amber">Due in 6 invoices</span>
+              <span className="cp-metric-value-sm">${metrics.outstandingBalance.toFixed(2)} <span className="cp-unit">AUD</span></span>
+              <span className="cp-metric-subtext cp-text-amber">Due in {metrics.outstandingInvoices} invoices</span>
             </div>
           </div>
           <div className="cp-metric-footer">
@@ -241,9 +249,9 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">PAYMENTS (THIS MONTH)</span>
-              <span className="cp-metric-value-sm">$18,540.00 <span className="cp-unit">AUD</span></span>
+              <span className="cp-metric-value-sm">${metrics.paymentsThisMonth.toFixed(2)} <span className="cp-unit">AUD</span></span>
               <span className="cp-metric-subtext">
-                <span className="cp-text-green">&uarr; 21.7%</span> vs Last Month
+                <span className="cp-text-green">&uarr; 0%</span> vs Last Month
               </span>
             </div>
           </div>
@@ -262,7 +270,7 @@ const CustomerDashboard = () => {
             </div>
             <div className="cp-metric-details">
               <span className="cp-metric-title">DOCUMENTS</span>
-              <span className="cp-metric-value">35</span>
+              <span className="cp-metric-value">{metrics.documentsCount}</span>
               <span className="cp-metric-subtext">Recently added</span>
             </div>
           </div>

@@ -5,7 +5,7 @@ import './CustomerDashboard.css';
 const MyLoads = () => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState('MAIN_LIST'); // 'MAIN_LIST' (14.2) or 'LOAD_DETAILS' (14.3)
-  const [selectedLoadId, setSelectedLoadId] = useState('LD-3987');
+  const [selectedLoadId, setSelectedLoadId] = useState(null);
   const [activeTabFilter, setActiveTabFilter] = useState('All Loads');
 
   // Filter States
@@ -65,13 +65,13 @@ const MyLoads = () => {
 
   const [supportSubject, setSupportSubject] = useState('');
   const [supportDescription, setSupportDescription] = useState('');
-  const [bookCargoType, setBookCargoType] = useState('Car Carrier');
+  const [bookCargoType, setBookCargoType] = useState('');
   const [bookCargoSpecs, setBookCargoSpecs] = useState('');
   const [bookWeight, setBookWeight] = useState('');
-  const [bookOrigin, setBookOrigin] = useState('Melbourne VIC');
-  const [bookDestination, setBookDestination] = useState('Sydney NSW');
-  const [bookPickupDate, setBookPickupDate] = useState('2025-06-05');
-  const [bookDeliveryDate, setBookDeliveryDate] = useState('2025-06-07');
+  const [bookOrigin, setBookOrigin] = useState('');
+  const [bookDestination, setBookDestination] = useState('');
+  const [bookPickupDate, setBookPickupDate] = useState('');
+  const [bookDeliveryDate, setBookDeliveryDate] = useState('');
   const [bookPriority, setBookPriority] = useState('Standard Delivery');
   const [bookNotes, setBookNotes] = useState('');
   const [toast, setToast] = useState(null);
@@ -80,53 +80,7 @@ const MyLoads = () => {
   const itemsPerPage = 8;
 
   // Loads List Data (Matching Screenshot 14.2 line-by-line)
-  const [loadsList, setLoadsList] = useState([
-    // Page 1
-    { id: 'LD-3987', ref: 'PO-9876', route: 'Melbourne VIC → Sydney NSW', type: 'Car Carrier', status: 'In Transit', driver: 'John Davis', pickup: '30 May 2025', delivery: '30 May 2025', eta: 'ETA: 02:30 PM' },
-    { id: 'LD-3981', ref: 'PO-9870', route: 'Brisbane QLD → Perth WA', type: 'General Freight', status: 'In Transit', driver: 'Michael Tan', pickup: '31 May 2025', delivery: '31 May 2025', eta: 'ETA: 11:00 AM' },
-    { id: 'LD-3975', ref: 'PO-9865', route: 'Adelaide SA → Melbourne VIC', type: 'Car Carrier', status: 'Arrived', driver: 'Ravi Wilson', pickup: '30 May 2025', delivery: '30 May 2025', eta: 'Arrived' },
-    { id: 'LD-3962', ref: 'PO-9858', route: 'Sydney NSW → Newcastle NSW', type: 'General Freight', status: 'At Pickup', driver: 'Sarah Mitchell', pickup: '30 May 2025', delivery: '30 May 2025', eta: 'ETA: 09:15 AM' },
-    { id: 'LD-3958', ref: 'PO-9852', route: 'Melbourne VIC → Brisbane QLD', type: 'Car Carrier', status: 'Dispatched', driver: 'Amir Ramia', pickup: '30 May 2025', delivery: '30 May 2025', eta: 'ETA: 07:45 AM' },
-    { id: 'LD-3944', ref: 'PO-9840', route: 'Perth WA → Adelaide SA', type: 'General Freight', status: 'Scheduled', driver: 'Brian Taylor', pickup: '02 Jun 2025', delivery: '05 Jun 2025', eta: 'ETA: 08:00 AM' },
-    { id: 'LD-3941', ref: 'PO-9836', route: 'Sydney NSW → Melbourne VIC', type: 'Car Carrier', status: 'Scheduled', driver: 'Lisa Patel', pickup: '03 Jun 2025', delivery: '05 Jun 2025', eta: 'ETA: 05:00 PM' },
-    { id: 'LD-3938', ref: 'PO-9832', route: 'Brisbane QLD → Sydney NSW', type: 'General Freight', status: 'Confirmed', driver: 'Unassigned', pickup: '04 Jun 2025', delivery: '06 Jun 2025', eta: 'TBD' },
-    // Page 2
-    { id: 'LD-3930', ref: 'PO-9824', route: 'Darwin NT → Adelaide SA', type: 'General Freight', status: 'In Transit', driver: 'Chris Evans', pickup: '05 Jun 2025', delivery: '08 Jun 2025', eta: 'ETA: 04:00 PM' },
-    { id: 'LD-3925', ref: 'PO-9819', route: 'Hobart TAS → Melbourne VIC', type: 'Car Carrier', status: 'Scheduled', driver: 'David King', pickup: '06 Jun 2025', delivery: '09 Jun 2025', eta: 'ETA: 10:30 AM' },
-    { id: 'LD-3920', ref: 'PO-9814', route: 'Geelong VIC → Ballarat VIC', type: 'General Freight', status: 'Arrived', driver: 'Emma Watson', pickup: '07 Jun 2025', delivery: '07 Jun 2025', eta: 'Arrived' },
-    { id: 'LD-3915', ref: 'PO-9809', route: 'Cairns QLD → Townsville QLD', type: 'Dangerous Goods', status: 'Dispatched', driver: 'Frank Castle', pickup: '08 Jun 2025', delivery: '08 Jun 2025', eta: 'ETA: 01:15 PM' },
-    { id: 'LD-3910', ref: 'PO-9804', route: 'Gold Coast QLD → Brisbane QLD', type: 'Car Carrier', status: 'Scheduled', driver: 'George Miller', pickup: '09 Jun 2025', delivery: '09 Jun 2025', eta: 'ETA: 03:45 PM' },
-    { id: 'LD-3905', ref: 'PO-9799', route: 'Wollongong NSW → Sydney NSW', type: 'General Freight', status: 'In Transit', driver: 'Hannah Abbott', pickup: '10 Jun 2025', delivery: '10 Jun 2025', eta: 'ETA: 06:20 PM' },
-    { id: 'LD-3900', ref: 'PO-9794', route: 'Canberra ACT → Sydney NSW', type: 'Warehousing / 3PL', status: 'At Pickup', driver: 'Ian Malcolm', pickup: '11 Jun 2025', delivery: '11 Jun 2025', eta: 'ETA: 11:30 AM' },
-    { id: 'LD-3895', ref: 'PO-9789', route: 'Bendigo VIC → Melbourne VIC', type: 'Car Carrier', status: 'Confirmed', driver: 'Unassigned', pickup: '12 Jun 2025', delivery: '12 Jun 2025', eta: 'TBD' },
-    // Page 3
-    { id: 'LD-3890', ref: 'PO-9784', route: 'Rockhampton QLD → Mackay QLD', type: 'General Freight', status: 'In Transit', driver: 'Jack Sparrow', pickup: '13 Jun 2025', delivery: '14 Jun 2025', eta: 'ETA: 09:00 AM' },
-    { id: 'LD-3885', ref: 'PO-9779', route: 'Toowoomba QLD → Brisbane QLD', type: 'Car Carrier', status: 'Arrived', driver: 'Kevin Bacon', pickup: '14 Jun 2025', delivery: '14 Jun 2025', eta: 'Arrived' },
-    { id: 'LD-3880', ref: 'PO-9774', route: 'Launceston TAS → Hobart TAS', type: 'Dangerous Goods', status: 'Dispatched', driver: 'Liam Neeson', pickup: '15 Jun 2025', delivery: '15 Jun 2025', eta: 'ETA: 02:00 PM' },
-    { id: 'LD-3875', ref: 'PO-9769', route: 'Albury NSW → Melbourne VIC', type: 'General Freight', status: 'Scheduled', driver: 'Morgan Freeman', pickup: '16 Jun 2025', delivery: '17 Jun 2025', eta: 'ETA: 10:00 AM' },
-    { id: 'LD-3870', ref: 'PO-9764', route: 'Dubbo NSW → Sydney NSW', type: 'Car Carrier', status: 'Confirmed', driver: 'Unassigned', pickup: '17 Jun 2025', delivery: '18 Jun 2025', eta: 'TBD' },
-    { id: 'LD-3865', ref: 'PO-9759', route: 'Wagga Wagga NSW → Canberra ACT', type: 'Warehousing / 3PL', status: 'In Transit', driver: 'Nathan Drake', pickup: '18 Jun 2025', delivery: '18 Jun 2025', eta: 'ETA: 04:30 PM' },
-    { id: 'LD-3860', ref: 'PO-9754', route: 'Tamworth NSW → Newcastle NSW', type: 'General Freight', status: 'At Pickup', driver: 'Oscar Isaac', pickup: '19 Jun 2025', delivery: '19 Jun 2025', eta: 'ETA: 08:15 AM' },
-    { id: 'LD-3855', ref: 'PO-9749', route: 'Mildura VIC → Adelaide SA', type: 'Car Carrier', status: 'Arrived', driver: 'Peter Parker', pickup: '20 Jun 2025', delivery: '21 Jun 2025', eta: 'Arrived' },
-    // Page 4
-    { id: 'LD-3850', ref: 'PO-9744', route: 'Bunbury WA → Perth WA', type: 'General Freight', status: 'In Transit', driver: 'Quentin Tarantino', pickup: '21 Jun 2025', delivery: '21 Jun 2025', eta: 'ETA: 01:00 PM' },
-    { id: 'LD-3845', ref: 'PO-9739', route: 'Kalgoorlie WA → Perth WA', type: 'Dangerous Goods', status: 'Scheduled', driver: 'Robert Downey', pickup: '22 Jun 2025', delivery: '23 Jun 2025', eta: 'ETA: 11:45 AM' },
-    { id: 'LD-3840', ref: 'PO-9734', route: 'Geraldton WA → Perth WA', type: 'Car Carrier', status: 'Dispatched', driver: 'Steve Rogers', pickup: '23 Jun 2025', delivery: '24 Jun 2025', eta: 'ETA: 03:15 PM' },
-    { id: 'LD-3835', ref: 'PO-9729', route: 'Mount Gambier SA → Adelaide SA', type: 'General Freight', status: 'Arrived', driver: 'Tom Holland', pickup: '24 Jun 2025', delivery: '24 Jun 2025', eta: 'Arrived' },
-    { id: 'LD-3830', ref: 'PO-9724', route: 'Port Augusta SA → Adelaide SA', type: 'Car Carrier', status: 'Confirmed', driver: 'Unassigned', pickup: '25 Jun 2025', delivery: '26 Jun 2025', eta: 'TBD' },
-    { id: 'LD-3825', ref: 'PO-9719', route: 'Broken Hill NSW → Adelaide SA', type: 'Warehousing / 3PL', status: 'In Transit', driver: 'Victor Stone', pickup: '26 Jun 2025', delivery: '27 Jun 2025', eta: 'ETA: 05:30 PM' },
-    { id: 'LD-3820', ref: 'PO-9714', route: 'Shepparton VIC → Melbourne VIC', type: 'General Freight', status: 'At Pickup', driver: 'Wade Wilson', pickup: '27 Jun 2025', delivery: '27 Jun 2025', eta: 'ETA: 09:45 AM' },
-    { id: 'LD-3815', ref: 'PO-9709', route: 'Traralgon VIC → Melbourne VIC', type: 'Car Carrier', status: 'Dispatched', driver: 'Xander Cage', pickup: '28 Jun 2025', delivery: '28 Jun 2025', eta: 'ETA: 02:20 PM' },
-    // Page 5
-    { id: 'LD-3810', ref: 'PO-9704', route: 'Port Macquarie NSW → Sydney NSW', type: 'General Freight', status: 'In Transit', driver: 'Yuri Boyka', pickup: '29 Jun 2025', delivery: '29 Jun 2025', eta: 'ETA: 07:00 PM' },
-    { id: 'LD-3805', ref: 'PO-9699', route: 'Coffs Harbour NSW → Sydney NSW', type: 'Car Carrier', status: 'Arrived', driver: 'Zack Snyder', pickup: '30 Jun 2025', delivery: '30 Jun 2025', eta: 'Arrived' },
-    { id: 'LD-3800', ref: 'PO-9694', route: 'Ballina NSW → Brisbane QLD', type: 'Dangerous Goods', status: 'Scheduled', driver: 'Arthur Curry', pickup: '01 Jul 2025', delivery: '01 Jul 2025', eta: 'ETA: 10:15 AM' },
-    { id: 'LD-3795', ref: 'PO-9689', route: 'Bundaberg QLD → Brisbane QLD', type: 'General Freight', status: 'Confirmed', driver: 'Unassigned', pickup: '02 Jul 2025', delivery: '03 Jul 2025', eta: 'TBD' },
-    { id: 'LD-3790', ref: 'PO-9684', route: 'Gladstone QLD → Rockhampton QLD', type: 'Car Carrier', status: 'Dispatched', driver: 'Bruce Wayne', pickup: '03 Jul 2025', delivery: '03 Jul 2025', eta: 'ETA: 01:30 PM' },
-    { id: 'LD-3785', ref: 'PO-9679', route: 'Alice Springs NT → Darwin NT', type: 'Warehousing / 3PL', status: 'In Transit', driver: 'Clark Kent', pickup: '04 Jul 2025', delivery: '06 Jul 2025', eta: 'ETA: 08:45 AM' },
-    { id: 'LD-3780', ref: 'PO-9674', route: 'Broome WA → Perth WA', type: 'General Freight', status: 'At Pickup', driver: 'Diana Prince', pickup: '05 Jul 2025', delivery: '08 Jul 2025', eta: 'ETA: 11:15 AM' },
-    { id: 'LD-3775', ref: 'PO-9669', route: 'Karratha WA → Perth WA', type: 'Car Carrier', status: 'Arrived', driver: 'Barry Allen', pickup: '06 Jul 2025', delivery: '09 Jul 2025', eta: 'Arrived' }
-  ]);
+  const [loadsList, setLoadsList] = useState([]);
 
   const handleDownloadLoadsCSV = () => {
     const csvHeader = "Load #,Reference,Route,Type,Status,Driver,Pickup Date,Delivery Date,ETA\n";

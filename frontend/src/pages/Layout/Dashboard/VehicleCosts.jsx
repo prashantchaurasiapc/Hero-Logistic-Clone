@@ -18,7 +18,7 @@ export default function VehicleCosts() {
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState('All Vehicle Types');
   const [vehicleFilter, setVehicleFilter] = useState('All Vehicles');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
-  const [dateRange, setDateRange] = useState('1 May 2026 – 31 May 2026');
+  const [dateRange, setDateRange] = useState('All Dates');
   const [activeTab, setActiveTab] = useState('Vehicle Summary');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -40,18 +40,13 @@ export default function VehicleCosts() {
   };
 
   // --- RAW MOCK DATA ---
-  const [rawVehicleData, setRawVehicleData] = useState([
-    { id: 1, name: 'MAN TGX 26.580', desc: 'Prime Mover', type: 'Truck', rego: 'XYZ-123', fuel: 5800, maintenance: 3900, tyres: 1200, insurance: 1600, other: 3175, costPerKm: '$0.92', costPerDay: '$45.83', vsApr: 8.6, img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=100&h=100&q=80' },
-    { id: 2, name: 'Volvo FH16 750', desc: 'Prime Mover', type: 'Truck', rego: 'ABC-456', fuel: 5200, maintenance: 3500, tyres: 1100, insurance: 1450, other: 2896, costPerKm: '$0.88', costPerDay: '$40.42', vsApr: 5.2, img: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=100&h=100&q=80' },
-    { id: 3, name: 'Scania R660', desc: 'Prime Mover', type: 'Truck', rego: 'DEF-789', fuel: 4800, maintenance: 3200, tyres: 1000, insurance: 1350, other: 2762, costPerKm: '$0.95', costPerDay: '$43.17', vsApr: -12.1, img: 'https://images.unsplash.com/photo-1605276373954-0c4a0dac5b12?auto=format&fit=crop&w=100&h=100&q=80' },
-    { id: 4, name: 'MaxiTRANS ST3', desc: 'Car Carrier Trailer', type: 'Trailer', rego: 'TR-001', fuel: 0, maintenance: 2100, tyres: 1400, insurance: 1100, other: 1648, costPerKm: '$0.41', costPerDay: '$20.15', vsApr: 2.7, img: 'https://images.unsplash.com/photo-1583344165581-9b19e917d3b5?auto=format&fit=crop&w=100&h=100&q=80' }
-  ]);
+  const [rawVehicleData, setRawVehicleData] = useState([]);
 
   const fetchVehicleCosts = async () => {
     setLoading(true);
     try {
       const res = await api.get('/accounts/vehicle-costs');
-      if (res.data?.success && Array.isArray(res.data.data?.vehicles) && res.data.data.vehicles.length > 0) {
+      if (res.data?.success && Array.isArray(res.data.data?.vehicles)) {
         setRawVehicleData(res.data.data.vehicles);
       }
     } catch (err) {
@@ -66,51 +61,14 @@ export default function VehicleCosts() {
   }, []);
 
   // Data for Tab 2: Transactions
-  const [rawTransactions, setRawTransactions] = useState([
-    { id: 'TX-901', date: '28 May 2026', vehicle: 'MAN TGX 26.580', rego: 'XYZ-123', type: 'Truck', category: 'Fuel', desc: 'Shell Diesel Depot #402', ref: 'INV-88301', amountEx: 1450.00, amountInc: 1595.00, payment: 'Fuel Card', status: 'Paid' },
-    { id: 'TX-902', date: '26 May 2026', vehicle: 'Volvo FH16 750', rego: 'ABC-456', type: 'Truck', category: 'Maintenance & Repairs', desc: 'Hydraulic Hose Replacement', ref: 'INV-88240', amountEx: 850.00, amountInc: 935.00, payment: 'Direct Credit', status: 'Paid' },
-    { id: 'TX-903', date: '24 May 2026', vehicle: 'Scania R660', rego: 'DEF-789', type: 'Truck', category: 'Fuel', desc: 'BP Truckstop Marulan', ref: 'INV-88190', amountEx: 1200.00, amountInc: 1320.00, payment: 'Fuel Card', status: 'Paid' },
-    { id: 'TX-904', date: '22 May 2026', vehicle: 'MaxiTRANS ST3', rego: 'TR-001', type: 'Trailer', category: 'Tyres', desc: '2x Bridgestone R249 Steer Tyres', ref: 'INV-88050', amountEx: 1400.00, amountInc: 1540.00, payment: 'Account 30-Day', status: 'Pending' },
-    { id: 'TX-905', date: '20 May 2026', vehicle: 'Mercedes Actros 2653', rego: 'GHI-012', type: 'Truck', category: 'Insurance', desc: 'Fleet Premium Q2 Installment', ref: 'INS-9921', amountEx: 1200.00, amountInc: 1320.00, payment: 'Direct Debit', status: 'Paid' },
-    { id: 'TX-906', date: '18 May 2026', vehicle: 'Kenworth T909', rego: 'JKL-345', type: 'Truck', category: 'Fuel', desc: 'Caltex StarCard Refuel', ref: 'INV-87990', amountEx: 1650.00, amountInc: 1815.00, payment: 'Fuel Card', status: 'Paid' },
-    { id: 'TX-907', date: '15 May 2026', vehicle: 'MTE Deck Widener', rego: 'TR-003', type: 'Trailer', category: 'Maintenance & Repairs', desc: 'Brake Pad & Drum Overhaul', ref: 'INV-87840', amountEx: 1950.00, amountInc: 2145.00, payment: 'Direct Credit', status: 'Paid' },
-    { id: 'TX-908', date: '12 May 2026', vehicle: 'MAN TGX 26.580', rego: 'XYZ-123', type: 'Truck', category: 'Other Costs', desc: 'NSW Tolls & Permit Clearance', ref: 'TOL-44210', amountEx: 375.00, amountInc: 412.50, payment: 'E-Toll Account', status: 'Paid' },
-  ]);
+  const [rawTransactions, setRawTransactions] = useState([]);
 
   // Data for Tab 3: Upcoming Costs
-  const [rawUpcomingCosts, setRawUpcomingCosts] = useState([
-    { id: 'UC-101', title: 'Schedule B Service - MAN TGX 26.580', vehicle: 'MAN TGX 26.580', rego: 'XYZ-123', type: 'Truck', date: '04 Jun 2026', category: 'Maintenance & Repairs', amount: 1250.00, priority: 'High', status: 'Due Soon', workshop: 'MAN Truck Centre Sydney' },
-    { id: 'UC-102', title: 'Steer Tyre Replacement (Scania R660)', vehicle: 'Scania R660', rego: 'DEF-789', type: 'Truck', date: '08 Jun 2026', category: 'Tyres', amount: 2860.00, priority: 'High', status: 'Due Soon', workshop: 'Bridgestone Fleet Care' },
-    { id: 'UC-103', title: 'Quarterly Fleet Insurance Installment', vehicle: 'Volvo FH16 750', rego: 'ABC-456', type: 'Truck', date: '15 Jun 2026', category: 'Insurance', amount: 4455.00, priority: 'Medium', status: 'Due Soon', workshop: 'NTI Insurance' },
-    { id: 'UC-104', title: 'Annual Heavy Vehicle Registration', vehicle: 'Mercedes Actros 2653', rego: 'GHI-012', type: 'Truck', date: '20 Jun 2026', category: 'Other Costs', amount: 850.00, priority: 'Normal', status: 'Scheduled', workshop: 'Transport for NSW' },
-    { id: 'UC-105', title: 'Trailer Ramp Hydraulics Inspection', vehicle: 'MaxiTRANS ST3', rego: 'TR-001', type: 'Trailer', date: '25 Jun 2026', category: 'Maintenance & Repairs', amount: 620.00, priority: 'Normal', status: 'Scheduled', workshop: 'MaxiTRANS Service Hub' },
-    { id: 'UC-106', title: 'Transmission Fluid & Filter Service', vehicle: 'Kenworth T909', rego: 'JKL-345', type: 'Truck', date: '02 Jul 2026', category: 'Maintenance & Repairs', amount: 1890.00, priority: 'Normal', status: 'Scheduled', workshop: 'Cummins South Pacific' }
-  ]);
+  const [rawUpcomingCosts, setRawUpcomingCosts] = useState([]);
 
   // Data for Tab 4: Service History
-  const [rawServiceHistory, setRawServiceHistory] = useState([
-    { id: 'SH-501', date: '15 Apr 2026', vehicle: 'MAN TGX 26.580', rego: 'XYZ-123', type: 'Truck', odo: '245,800 km', serviceType: 'Full Major Service (100k km)', workshop: 'MAN Truck Centre Sydney', invoice: 'INV-77210', cost: 3900.00, status: 'Completed' },
-    { id: 'SH-502', date: '02 Apr 2026', vehicle: 'Volvo FH16 750', rego: 'ABC-456', type: 'Truck', odo: '189,400 km', serviceType: 'Engine Oil & Filter Change', workshop: 'Volvo Commercial Vehicles', invoice: 'INV-76904', cost: 1850.00, status: 'Completed' },
-    { id: 'SH-503', date: '18 Mar 2026', vehicle: 'Scania R660', rego: 'DEF-789', type: 'Truck', odo: '312,150 km', serviceType: 'Brake Linings & Air System Check', workshop: 'Scania Australia Workshop', invoice: 'INV-75400', cost: 2400.00, status: 'Completed' },
-    { id: 'SH-504', date: '10 Mar 2026', vehicle: 'MaxiTRANS ST3', rego: 'TR-001', type: 'Trailer', odo: 'N/A (Trailer)', serviceType: 'Kingpin & Turntable Service', workshop: 'MaxiTRANS Fleet Hub', invoice: 'INV-74890', cost: 1100.00, status: 'Completed' },
-    { id: 'SH-505', date: '24 Feb 2026', vehicle: 'Mercedes Actros 2653', rego: 'GHI-012', type: 'Truck', odo: '142,300 km', serviceType: 'AdBlue System Flush & Sensor Swap', workshop: 'Daimler Truck Centre', invoice: 'INV-73210', cost: 2150.00, status: 'Completed' },
-    { id: 'SH-506', date: '12 Feb 2026', vehicle: 'Kenworth T909', rego: 'JKL-345', type: 'Truck', odo: '410,900 km', serviceType: 'Differential Oil Replacement', workshop: 'Brown & Hurley Kenworth', invoice: 'INV-72100', cost: 1650.00, status: 'Completed' },
-  ]);
+  const [rawServiceHistory, setRawServiceHistory] = useState([]);
 
-  const trendData = [
-    { name: 'Jun 2025', cost: 45000 },
-    { name: 'Jul 2025', cost: 48000 },
-    { name: 'Aug 2025', cost: 47000 },
-    { name: 'Sep 2025', cost: 52000 },
-    { name: 'Oct 2025', cost: 58000 },
-    { name: 'Nov 2025', cost: 65000 },
-    { name: 'Dec 2025', cost: 72000 },
-    { name: 'Jan 2026', cost: 68000 },
-    { name: 'Feb 2026', cost: 69000 },
-    { name: 'Mar 2026', cost: 74000 },
-    { name: 'Apr 2026', cost: 82000 },
-    { name: 'May 2026', cost: 87540 },
-  ];
 
   // --- FILTERING LOGIC FOR ALL TABS ---
   const filteredVehicles = useMemo(() => {
@@ -196,13 +154,21 @@ export default function VehicleCosts() {
 
   const totalIncGst = totals.exGst * 1.1; // adding 10% GST
 
+  const trendData = (filteredVehicles && filteredVehicles.length > 0)
+    ? [
+        { name: 'Mar 2026', cost: totalIncGst * 0.9 },
+        { name: 'Apr 2026', cost: totalIncGst * 0.95 },
+        { name: 'May 2026', cost: totalIncGst }
+      ]
+    : [];
+
   const kpiData = [
-    { title: 'Total Vehicle Costs (This Period)', value: `$${totalIncGst.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 12.8, trendLabel: 'vs Apr 2026', icon: <DollarSign size={20} className="text-blue-500" />, iconBg: 'bg-blue-50', trendColor: 'text-emerald-500' },
-    { title: 'Fuel Costs', value: `$${(totals.fuel * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 9.4, trendLabel: 'vs Apr 2026', icon: <Droplets size={20} className="text-emerald-500" />, iconBg: 'bg-emerald-50', trendColor: 'text-emerald-500' },
-    { title: 'Maintenance & Repairs', value: `$${(totals.maintenance * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 16.1, trendLabel: 'vs Apr 2026', icon: <Wrench size={20} className="text-amber-500" />, iconBg: 'bg-amber-50', trendColor: 'text-emerald-500' },
-    { title: 'Tyres', value: `$${(totals.tyres * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: -3.2, trendLabel: 'vs Apr 2026', icon: <CircleDashed size={20} className="text-blue-500" />, iconBg: 'bg-blue-50', trendColor: 'text-rose-500' },
-    { title: 'Insurance', value: `$${(totals.insurance * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 2.6, trendLabel: 'vs Apr 2026', icon: <Shield size={20} className="text-purple-500" />, iconBg: 'bg-purple-50', trendColor: 'text-emerald-500' },
-    { title: 'Other Costs', value: `$${(totals.other * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 22.1, trendLabel: 'vs Apr 2026', icon: <FileText size={20} className="text-slate-500" />, iconBg: 'bg-slate-100', trendColor: 'text-emerald-500' },
+    { title: 'Total Vehicle Costs (This Period)', value: `$${totalIncGst.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <DollarSign size={20} className="text-blue-500" />, iconBg: 'bg-blue-50', trendColor: 'text-slate-400' },
+    { title: 'Fuel Costs', value: `$${(totals.fuel * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <Droplets size={20} className="text-emerald-500" />, iconBg: 'bg-emerald-50', trendColor: 'text-slate-400' },
+    { title: 'Maintenance & Repairs', value: `$${(totals.maintenance * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <Wrench size={20} className="text-amber-500" />, iconBg: 'bg-amber-50', trendColor: 'text-slate-400' },
+    { title: 'Tyres', value: `$${(totals.tyres * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <CircleDashed size={20} className="text-blue-500" />, iconBg: 'bg-blue-50', trendColor: 'text-slate-400' },
+    { title: 'Insurance', value: `$${(totals.insurance * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <Shield size={20} className="text-purple-500" />, iconBg: 'bg-purple-50', trendColor: 'text-slate-400' },
+    { title: 'Other Costs', value: `$${(totals.other * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <FileText size={20} className="text-slate-500" />, iconBg: 'bg-slate-100', trendColor: 'text-slate-400' },
   ];
 
   const pieData = [
