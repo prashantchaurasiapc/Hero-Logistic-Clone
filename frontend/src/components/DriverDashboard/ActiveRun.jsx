@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { getLoadDetails, getMyLoads } from '../../services/driverApi';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   FiCheckCircle, FiClock, FiNavigation, FiPhone, FiChevronRight,
   FiCamera, FiFileText, FiMessageSquare, FiAlertTriangle, FiRefreshCw,
@@ -9,40 +8,19 @@ import {
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
 
-const formatBackendActiveLoad = (raw) => {
-  if (!raw) return null;
-  return {
-    id: raw.id || raw.loadId || 'LD-3987',
-    loadNumber: raw.loadNumber || raw.id || 'LD-3987',
-    origin: raw.origin || raw.pickupLocation || 'Melbourne VIC',
-    destination: raw.destination || raw.deliveryLocation || 'Sydney NSW',
-    totalCars: raw.vehicles?.length || raw.totalCars || 8,
-    carsPickedUp: raw.vehicles?.filter(v => v.status === 'PICKED_UP')?.length || 8,
-    isDispatched: raw.status === 'DISPATCHED' || raw.status === 'IN_TRANSIT',
-    isDelivered: raw.status === 'DELIVERED',
-  };
-};
-
 export default function ActiveRun() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { id: paramId } = useParams();
-
-  const [activeLoad, setActiveLoad] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // Interactive States
-  const [loadStatus, setLoadStatus] = useState('Picked Up');
+  const [loadStatus, setLoadStatus] = useState('Picked Up'); // 'Picked Up', 'Dispatched', 'Delivered'
   const [isDispatched, setIsDispatched] = useState(false);
-  const [pickedUpCountState, setCarsPickedUp] = useState(8);
+  const [carsPickedUp, setCarsPickedUp] = useState(8);
+  const totalCars = 8;
   const [toastMsg, setToastMsg] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
-  
-  // Data State
-  const [runData, setRunData] = useState(null);
 
   // Modals
   const [dispatchYardModalOpen, setDispatchYardModalOpen] = useState(false);
@@ -56,80 +34,11 @@ export default function ActiveRun() {
   const [noteText, setNoteText] = useState('');
   const [photoCaption, setPhotoCaption] = useState('');
 
-  // Fetch Load from Backend API
-  useEffect(() => {
-    let isSubscribed = true;
-    setLoading(true);
-    setError(null);
-
-    const targetId = paramId || location.state?.loadId;
-
-    if (targetId) {
-      getLoadDetails(targetId)
-        .then(res => {
-          if (isSubscribed) {
-            const raw = res.data?.data?.load;
-            if (raw) {
-              const formatted = formatBackendActiveLoad(raw);
-              setActiveLoad(formatted);
-              setIsDispatched(formatted.isDispatched);
-              setCarsPickedUp(formatted.totalCars);
-              setLoadStatus(formatted.isDelivered ? 'Delivered' : formatted.isDispatched ? 'Dispatched' : 'Picked Up');
-            } else {
-              setError('Active load details not found.');
-            }
-          }
-        })
-        .catch(err => {
-          if (isSubscribed) {
-            const msg = err.response?.data?.error?.message || 'Could not load active run details.';
-            setError(msg);
-          }
-        })
-        .finally(() => {
-          if (isSubscribed) setLoading(false);
-        });
-    } else {
-      // Fetch driver's assigned loads to pick current active load
-      getMyLoads()
-        .then(res => {
-          if (isSubscribed) {
-            const loads = res.data?.data?.loads || [];
-            if (loads.length > 0) {
-              const current = loads.find(l => ['IN_TRANSIT', 'ACTIVE', 'ASSIGNED'].includes(l.status)) || loads[0];
-              const formatted = formatBackendActiveLoad(current);
-              setActiveLoad(formatted);
-              setIsDispatched(formatted.isDispatched);
-              setCarsPickedUp(formatted.totalCars);
-              setLoadStatus(formatted.isDelivered ? 'Delivered' : formatted.isDispatched ? 'Dispatched' : 'Picked Up');
-            } else {
-              setError('No active loads assigned to your account.');
-            }
-          }
-        })
-        .catch(err => {
-          if (isSubscribed) {
-            const msg = err.response?.data?.error?.message || 'Could not load active run details.';
-            setError(msg);
-          }
-        })
-        .finally(() => {
-          if (isSubscribed) setLoading(false);
-        });
-    }
-
-    return () => { isSubscribed = false; };
-  }, [paramId, location.state]);
-
   useEffect(() => {
     if (location.state?.autoOpenDispatchModal && !isDispatched) {
       setDispatchYardModalOpen(true);
     }
   }, [location.state, isDispatched]);
-
-  const carsPickedUp = runData ? runData.pickedUpCount : (activeLoad?.carsPickedUp || pickedUpCountState);
-  const totalCars = runData ? runData.totalCarsCount : (activeLoad?.totalCars || 8);
-  const deliveredCars = runData ? runData.deliveredCount : 0;
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -167,7 +76,7 @@ export default function ActiveRun() {
       {/* TOP TITLE & ACTIONS BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Active Run</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Active Run</h1>
         </div>
 
         <div className="flex items-center gap-3 relative w-full sm:w-auto">
@@ -218,7 +127,7 @@ export default function ActiveRun() {
             {moreActionsOpen && (
               <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 py-2 text-xs font-bold text-slate-800">
                 <button onClick={() => { navigate('/driver/delivery-pod'); setMoreActionsOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50 text-indigo-700 font-black">
-                  📦 Delivery & POD
+                  📦 Delivery & POD (15.7)
                 </button>
                 <button onClick={() => { setScanModalOpen(true); setMoreActionsOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50">
                   📷 Scan / Select Vehicles
@@ -556,14 +465,14 @@ export default function ActiveRun() {
 
             <div className="space-y-1">
               {[
-                { label: 'Safety Procedures', icon: <FiShield className="text-slate-500" />, action: () => triggerToast('Opening Safety Procedures Guide...') },
-                { label: 'Driver Guide', icon: <FiBookOpen className="text-slate-500" />, action: () => triggerToast('Opening Heavy Vehicle Driver Guide...') },
-                { label: 'Contact Support', icon: <FiHelpCircle className="text-indigo-600" />, action: () => setSupportModalOpen(true) },
-                { label: 'Emergency Numbers', icon: <FiLifeBuoy className="text-rose-500" />, action: () => setSupportModalOpen(true) },
+                { label: 'Safety Procedures', icon: <FiShield className="text-slate-500" /> },
+                { label: 'Driver Guide', icon: <FiBookOpen className="text-slate-500" /> },
+                { label: 'Contact Support', icon: <FiHelpCircle className="text-slate-500" /> },
+                { label: 'Emergency Numbers', icon: <FiLifeBuoy className="text-rose-500" /> },
               ].map((item) => (
                 <button
                   key={item.label}
-                  onClick={item.action}
+                  onClick={() => triggerToast(`Opening ${item.label}...`)}
                   className="w-full p-2.5 rounded-xl hover:bg-slate-50 text-xs font-bold text-slate-800 flex items-center justify-between cursor-pointer transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
@@ -838,7 +747,7 @@ export default function ActiveRun() {
             <div className="flex justify-between items-start pb-4 border-b border-slate-100">
               <div>
                 <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                  DISPATCH CONFIRMATION
+                  PAGE 15.5 DISPATCH CONFIRMATION
                 </span>
                 <h3 className="font-black text-slate-900 text-xl tracking-tight mt-1 flex items-center gap-2">
                   <FiTruck className="text-indigo-600" />
@@ -998,7 +907,7 @@ export default function ActiveRun() {
                 }}
                 className="w-full bg-[#4338ca] hover:bg-[#3730a3] text-white font-black text-sm py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>📦 Proceed to Delivery & POD</span>
+                <span>📦 Proceed to Delivery & POD (15.7)</span>
                 <FiChevronRight className="text-lg" />
               </button>
 
@@ -1021,60 +930,6 @@ export default function ActiveRun() {
               </button>
             </div>
 
-          </div>
-        </div>
-      )}
-
-      {/* SUPPORT & EMERGENCY HOTLINES MODAL */}
-      {supportModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[160] flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
-                <FiHelpCircle className="text-indigo-600 text-lg" />
-                Driver Support & Hotline Directory
-              </h3>
-              <button onClick={() => setSupportModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between">
-                <div>
-                  <div className="font-black text-rose-950">24/7 Breakdown & Emergency</div>
-                  <div className="text-[10.5px] text-rose-700 font-medium">Roadside & Safety Command</div>
-                </div>
-                <a href="tel:1800555999" className="bg-rose-600 text-white font-mono font-black text-xs px-3 py-1.5 rounded-xl cursor-pointer">
-                  1800 555 999
-                </a>
-              </div>
-
-              <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between">
-                <div>
-                  <div className="font-black text-indigo-950">Fleet Dispatch Center</div>
-                  <div className="text-[10.5px] text-indigo-700 font-medium">Load & Schedule Desk</div>
-                </div>
-                <a href="tel:0411111222" className="bg-indigo-600 text-white font-mono font-black text-xs px-3 py-1.5 rounded-xl cursor-pointer">
-                  0411 111 222
-                </a>
-              </div>
-
-              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between">
-                <div>
-                  <div className="font-black text-amber-950">Vehicle Maintenance Support</div>
-                  <div className="text-[10.5px] text-amber-700 font-medium">Mechanical Workshop</div>
-                </div>
-                <a href="tel:0400555666" className="bg-amber-600 text-white font-mono font-black text-xs px-3 py-1.5 rounded-xl cursor-pointer">
-                  0400 555 666
-                </a>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setSupportModalOpen(false)}
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3 rounded-xl cursor-pointer"
-            >
-              Close Support Directory
-            </button>
           </div>
         </div>
       )}

@@ -6,30 +6,24 @@ let prisma;
 
 try {
   const dbUrl = process.env.DATABASE_URL || 'mysql://root:@127.0.0.1:3306/hero-logistic';
-  let host = '127.0.0.1';
-  let port = 3306;
-  let user = 'root';
-  let password = undefined;
-  let database = 'hero-logistic';
-
-  try {
-    const urlObj = new URL(dbUrl);
-    host = (urlObj.hostname === 'localhost' || !urlObj.hostname) ? '127.0.0.1' : urlObj.hostname;
-    port = Number(urlObj.port) || 3306;
-    user = urlObj.username || 'root';
-    if (urlObj.password) password = decodeURIComponent(urlObj.password);
-    if (urlObj.pathname) database = urlObj.pathname.replace(/^\//, '');
-  } catch (e) {
-    // fallback to defaults
-  }
+  const urlObj = new URL(dbUrl);
+  
+  const host = (urlObj.hostname === 'localhost' || !urlObj.hostname) ? '127.0.0.1' : urlObj.hostname;
+  const port = Number(urlObj.port) || 3306;
+  const user = urlObj.username || 'root';
+  const password = urlObj.password ? decodeURIComponent(urlObj.password) : '';
+  const database = urlObj.pathname ? urlObj.pathname.replace(/^\//, '') : 'hero-logistic';
 
   const adapter = new PrismaMariaDb({
     host,
     port,
     user,
-    password: password || '',
-    database
-  }, { useTextProtocol: true });
+    password,
+    database,
+    connectionLimit: 20,
+    allowPublicKeyRetrieval: true,
+    connectTimeout: 10000
+  });
 
   prisma = new PrismaClient({ adapter });
 } catch (err) {

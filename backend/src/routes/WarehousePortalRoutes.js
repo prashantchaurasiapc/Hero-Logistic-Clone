@@ -5,7 +5,7 @@ const { verifyToken, authorizeRoles } = require('../middlewares/auth');
 const { resolveTenant } = require('../middlewares/tenantResolver');
 
 // Apply auth & tenant resolver middleware across all Warehouse Portal routes
-router.use(verifyToken, resolveTenant, authorizeRoles(['WAREHOUSE', 'YARD', 'DRIVER', 'COMPANY_ADMIN', 'SUPER_ADMIN']));
+router.use(verifyToken, resolveTenant, authorizeRoles(['WAREHOUSE', 'YARD', 'DRIVER', 'COMPANY_ADMIN', 'SUPER_ADMIN', 'CUSTOMER']));
 
 // 1. Warehouse Overview & Dashboard
 router.get('/overview', ctrl.getDashboard);
@@ -33,7 +33,6 @@ router.post('/load-lanes/:laneId/stage-items', ctrl.stageItemsToLane);
 router.post('/load-lanes/move-items', ctrl.moveLaneItems);
 router.post('/load-lanes/:laneId/clear', ctrl.clearLoadLane);
 router.get('/load-lanes/:laneId/manifest', ctrl.printManifest);
-
 // 5. Dispatch Ready & Outbound
 router.get('/dispatch-ready', ctrl.getDispatchReady);
 router.post('/dispatch-ready/:loadId/dispatch', ctrl.dispatchLoad);
@@ -53,8 +52,8 @@ router.get('/map', ctrl.getYardMap);
 router.get('/yard-map', ctrl.getYardMap);
 
 // 9. Reports & Analytics (Managers Only)
-router.get('/reports/overview', authorizeRoles(['WAREHOUSE', 'YARD', 'COMPANY_ADMIN', 'SUPER_ADMIN']), ctrl.getReportsOverview);
-router.get('/reports', authorizeRoles(['WAREHOUSE', 'YARD', 'COMPANY_ADMIN', 'SUPER_ADMIN']), ctrl.getReportsOverview);
+router.get('/reports/overview', authorizeRoles(['WAREHOUSE', 'COMPANY_ADMIN', 'SUPER_ADMIN']), ctrl.getReportsOverview);
+router.get('/reports', authorizeRoles(['WAREHOUSE', 'COMPANY_ADMIN', 'SUPER_ADMIN']), ctrl.getReportsOverview);
 
 // 10. Labels, Tools & Spooler
 router.get('/labels', ctrl.getLabels);
@@ -90,7 +89,6 @@ router.post('/report-issue', ctrl.reportIssue);
 router.delete('/issues/:id', ctrl.resolveReportedIssue);
 
 // 12.5 Shifts & Timesheets
-router.get('/shift/status', ctrl.getShiftStatus);
 router.post('/shift/clock-in', ctrl.clockIn);
 router.post('/shift/clock-out', ctrl.clockOut);
 

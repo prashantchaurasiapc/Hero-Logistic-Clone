@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { swapTrailer } from '../../services/driverApi';
+import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -17,21 +17,6 @@ export default function TrailerSwap() {
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMsg, setToastMsg] = useState('');
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
-  const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Dynamic Driver & Truck States
-  const [driverInfo, setDriverInfo] = useState({
-    name: '--',
-    driverCode: '--'
-  });
-
-  const [truckInfo, setTruckInfo] = useState({
-    id: '--',
-    make: '--',
-    rego: '--',
-    vin: '--'
-  });
 
   // Current Equipment State
   const [currentTrailer, setCurrentTrailer] = useState({
@@ -106,76 +91,64 @@ export default function TrailerSwap() {
       return;
     }
 
-    if (isSubmitting) return;
-
-    if (currentTrailer && currentTrailer.id === selectedTargetTrailer?.id) {
+    if (currentTrailer.id === selectedTargetTrailer.id) {
       triggerToast(`⚠️ ${selectedTargetTrailer.id} is already your active trailer! Select a different trailer to swap.`);
       return;
     }
 
-    setIsSubmitting(true);
+    const oldTrailer = { ...currentTrailer };
+    const newTrailer = {
+      id: selectedTargetTrailer.id,
+      name: selectedTargetTrailer.name,
+      rego: selectedTargetTrailer.rego,
+      vin: selectedTargetTrailer.vin,
+      status: 'Current'
+    };
 
-    swapTrailer({
-      oldTrailerId: currentTrailer?.id,
-      newTrailerId: selectedTargetTrailer?.id,
-      swapType: swapType || 'Trailer Swap',
-      reason: swapReason || 'Routine Change',
-      locationName: swapLocation || 'Yass Yard NSW',
-      notes: swapNotes || '',
-      equipmentCheck: confirmedCheck
-    })
-      .then(res => {
-        const data = res.data?.data || {};
-        const newTrailer = data.currentTrailer || {
-          id: selectedTargetTrailer.id,
-          name: selectedTargetTrailer.name,
-          rego: selectedTargetTrailer.rego,
-          vin: selectedTargetTrailer.vin,
-          status: 'Current'
-        };
+    // 1. Update current active trailer
+    setCurrentTrailer(newTrailer);
 
-        const oldTrailer = { ...currentTrailer };
-        setCurrentTrailer(newTrailer);
+    // 2. Update trailers pool: mark old trailer as Available, mark new trailer as In Use
+    setTrailers(prev => prev.map(t => {
+      if (t.id === newTrailer.id) {
+        return { ...t, status: 'In Use', statusColor: 'bg-purple-100 text-purple-800 border-purple-200' };
+      }
+      if (t.id === oldTrailer.id) {
+        return { ...t, status: 'Available', statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+      }
+      return t;
+    }));
 
-        setTrailers(prev => prev.map(t => {
-          if (t.id === newTrailer.id) {
-            return { ...t, status: 'In Use', statusColor: 'bg-purple-100 text-purple-800 border-purple-200' };
-          }
-          if (t.id === oldTrailer.id) {
-            return { ...t, status: 'Available', statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
-          }
-          return t;
-        }));
+    // 3. Log swap event into Recent Swaps
+    const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const newSwapRecord = {
+      id: Date.now(),
+      date: `29 May 2025 ${currentTimeStr}`,
+      swap: `${oldTrailer.id} ➔ ${newTrailer.id}`,
+      location: swapLocation
+    };
 
-        const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const newSwapRecord = {
-          id: Date.now(),
-          date: new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }),
-          swap: `${oldTrailer.rego || oldTrailer.id} ➔ ${newTrailer.rego || newTrailer.id}`,
-          location: swapLocation
-        };
+    setRecentSwaps([newSwapRecord, ...recentSwaps]);
 
-        setRecentSwaps(prev => [newSwapRecord, ...prev]);
+    // Save swap details for modal popup
+    setLastSwapInfo({
+      oldId: oldTrailer.id,
+      newId: newTrailer.id,
+      rego: newTrailer.rego,
+      name: newTrailer.name,
+      time: currentTimeStr,
+      location: swapLocation
+    });
 
-        setLastSwapInfo({
-          oldId: oldTrailer.rego || oldTrailer.id,
-          newId: newTrailer.rego || newTrailer.id,
-          rego: newTrailer.rego,
-          name: newTrailer.name,
-          time: currentTimeStr,
-          location: swapLocation
-        });
+    // 4. Auto select next available candidate trailer
+    const nextAvailable = trailers.find(t => t.id !== newTrailer.id && t.status === 'Available');
+    if (nextAvailable) {
+      setSelectedTrailerId(nextAvailable.id);
+    }
 
-        setSwapSuccessModalOpen(true);
-        triggerToast(`🎉 Trailer swapped successfully to ${newTrailer.rego || newTrailer.id}! Dispatch notified.`);
-      })
-      .catch(err => {
-        const msg = err.response?.data?.error?.message || 'Failed to execute trailer swap.';
-        triggerToast(`❌ Error: ${msg}`);
-      })
-      .finally(() => {
-        setIsSubmitting(false);
-      });
+    // 5. Open Success Modal Popup & Trigger Toast!
+    setSwapSuccessModalOpen(true);
+    triggerToast(`🎉 Trailer swapped successfully to ${newTrailer.id} (${newTrailer.rego})! Dispatch notified.`);
   };
 
   const handleFilterToggle = () => {
@@ -224,7 +197,7 @@ export default function TrailerSwap() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Trailer Swap / Equipment Change</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Trailer Swap / Equipment Change</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">Swap trailers or change equipment. Your company settings determine if approval is required.</p>
         </div>
 
@@ -255,7 +228,7 @@ export default function TrailerSwap() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">Equipment</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">15.13 Equipment</span>
               <span className="bg-[#ffcc00]/20 text-yellow-900 border border-[#ffcc00] text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Direct Swap
               </span>

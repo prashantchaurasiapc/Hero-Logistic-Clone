@@ -21,7 +21,11 @@ export default function WarehouseMovements() {
   // ── FORM VIEW STATES ──
   const [movementType, setMovementType] = useState('within');
   const [refNo, setRefNo] = useState('');
-  const [dateTime, setDateTime] = useState('');
+  const [dateTime, setDateTime] = useState(() => {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  });
   const [reason, setReason] = useState('');
   const [priority, setPriority] = useState('Normal');
   const [notes, setNotes] = useState('');
@@ -83,7 +87,9 @@ export default function WarehouseMovements() {
       fetchHistory();
     } else {
       setRefNo(`TRF-${Math.floor(100000 + Math.random() * 900000)}`);
-      setDateTime(new Date().toLocaleString('en-GB'));
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      setDateTime(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
     }
   }, [isHistoryView]);
 
@@ -206,7 +212,11 @@ export default function WarehouseMovements() {
       );
 
       showToast(`✓ Transfer ${refNo} created! ${formItems.length} item(s) moved successfully.`);
-      setTimeout(() => navigate(isYard ? '/yard/movements' : '/warehouse/movement-history'), 1800);
+      // Reset items in form to stay on current page
+      setFormItems([]);
+      setReason('');
+      setNotes('');
+      setRefNo(`TRF-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
     } catch (err) {
       console.error('Failed to execute transfer:', err);
       showToast('Failed to create transfer: ' + (err.response?.data?.message || err.message), 'error');
@@ -1493,8 +1503,13 @@ export default function WarehouseMovements() {
                 <div className="mvt-form-grp">
                   <label className="mvt-lbl">Date / Time *</label>
                   <div className="mvt-inp-wrap">
-                    <input type="text" value={dateTime} onChange={e => setDateTime(e.target.value)} className="mvt-inp" />
-                    <Calendar size={13} className="mvt-inp-icon" />
+                    <input
+                      type="datetime-local"
+                      value={dateTime}
+                      onChange={e => setDateTime(e.target.value)}
+                      className="mvt-inp"
+                      style={{ cursor: 'pointer' }}
+                    />
                   </div>
                 </div>
                 <div className="mvt-form-grp">

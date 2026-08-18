@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMyExpenses, createExpense } from '../../services/driverApi';
+import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -19,7 +19,6 @@ export default function AddExpense() {
   const [toastMsg, setToastMsg] = useState('');
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [tipDismissed, setTipDismissed] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState(null);
@@ -43,7 +42,7 @@ export default function AddExpense() {
   const [formReceiptAdded, setFormReceiptAdded] = useState(false);
 
   // Odometer State
-  const [odometerVal, setOdometerVal] = useState('0');
+  const [odometerVal, setOdometerVal] = useState('450,789');
 
   // Expense Items Data
   const [expenses, setExpenses] = useState([
@@ -61,34 +60,6 @@ export default function AddExpense() {
     { id: 3, date: '27 May 2025', time: '11:45 AM', vendor: 'Tyre Power', amount: '$45.00' },
     { id: 4, date: '26 May 2025', time: '12:20 PM', vendor: 'M5 Motorway', amount: '$12.60' },
   ]);
-
-  // Fetch Live Expenses from API
-  useEffect(() => {
-    let isSubscribed = true;
-    getMyExpenses()
-      .then(res => {
-        if (!isSubscribed) return;
-        const list = res.data?.data?.expenses || res.data?.data || [];
-        if (Array.isArray(list) && list.length > 0) {
-          const categoryColors = { Fuel: 'purple', Maintenance: 'emerald', Tyres: 'amber', Tolls: 'blue', Other: 'slate' };
-          const categoryIcons = { Fuel: '⛽', Maintenance: '🔧', Tyres: '🛞', Tolls: '🛣️', Other: '🧽' };
-          const formattedList = list.map(item => ({
-            id: item.id,
-            category: item.category || item.type || 'Other',
-            categoryColor: categoryColors[item.category] || 'slate',
-            icon: categoryIcons[item.category] || '📄',
-            vendor: item.vendorName || item.vendor || 'Vendor Service',
-            details: item.description || (item.litres ? `${item.litres} L` : 'Expense Logged'),
-            date: item.createdAt ? new Date(item.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '29 May 2025',
-            amount: parseFloat(item.amount) || 0,
-            status: item.status || 'Approved'
-          }));
-          setExpenses(formattedList);
-        }
-      })
-      .catch(() => {});
-    return () => { isSubscribed = false; };
-  }, []);
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -146,51 +117,13 @@ export default function AddExpense() {
       }, ...receipts]);
     }
 
-    setIsSubmitting(true);
-
-    createExpense({
-      category: formCategory,
-      type: formCategory,
-      amount: numAmount,
-      vendorName: formVendor,
-      litres: formLitres ? parseFloat(formLitres) : undefined,
-      odometer: formOdometer,
-      description: formNotes || `${formCategory} expense at ${formVendor}`,
-      receiptUrl: formReceiptAdded ? '/uploads/receipt_sample.jpg' : undefined
-    })
-      .then(res => {
-        const newExp = res.data?.data?.expense;
-        const categoryColors = { Fuel: 'purple', Maintenance: 'emerald', Tyres: 'amber', Tolls: 'blue', Other: 'slate' };
-        const categoryIcons = { Fuel: '⛽', Maintenance: '🔧', Tyres: '🛞', Tolls: '🛣️', Other: '🧽' };
-
-        const formattedNew = {
-          id: newExp?.id || Date.now(),
-          category: formCategory,
-          categoryColor: categoryColors[formCategory] || 'slate',
-          icon: categoryIcons[formCategory] || '📄',
-          vendor: formVendor,
-          details: formCategory === 'Fuel' && formLitres ? `${formOdometer} km • ${formLitres} L` : formNotes || 'Receipt Logged',
-          date: new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }),
-          amount: numAmount,
-          status: 'Pending'
-        };
-
-        setExpenses(prev => [formattedNew, ...prev]);
-        setAddExpenseModalOpen(false);
-        setFormVendor('');
-        setFormAmount('');
-        setFormLitres('');
-        setFormNotes('');
-        setFormReceiptAdded(false);
-        triggerToast(`🎉 Added ${formCategory} expense of $${numAmount.toFixed(2)} for ${formVendor}!`);
-      })
-      .catch(err => {
-        const msg = err.response?.data?.error?.message || 'Failed to submit expense.';
-        triggerToast(`❌ Error: ${msg}`);
-      })
-      .finally(() => {
-        setIsSubmitting(false);
-      });
+    setAddExpenseModalOpen(false);
+    setFormVendor('');
+    setFormAmount('');
+    setFormLitres('');
+    setFormNotes('');
+    setFormReceiptAdded(false);
+    triggerToast(`Added ${formCategory} expense of $${numAmount.toFixed(2)} for ${formVendor}!`);
   };
 
   // Calculations
@@ -219,7 +152,7 @@ export default function AddExpense() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Fuel & Expenses</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Fuel & Expenses</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">Record fuel and operating expenses, upload receipts & track load costs</p>
         </div>
 
@@ -243,7 +176,7 @@ export default function AddExpense() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">Fuel & Expenses</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">15.8 Fuel & Expenses</span>
               <span className="bg-purple-100 text-purple-800 border border-purple-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Active Load
               </span>

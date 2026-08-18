@@ -60,20 +60,23 @@ const Header = ({ onMenuClick }) => {
       try {
         const res = await api.get('/audit-logs?pageSize=4&sort=-createdAt');
         if (res.data?.success) {
-          const mappedNotifications = res.data.data.map(log => {
-            const parts = log.action.split('_');
-            const type = parts[0] || 'SYSTEM';
-            // Translate action to user friendly label
-            const readableAction = log.action.toLowerCase().replace(/_/g, ' ');
-            const formattedAction = readableAction.charAt(0).toUpperCase() + readableAction.slice(1);
-            return {
-              id: log.id,
-              type: type,
-              text: `${formattedAction} by ${log.operator || 'System'}`,
-              time: new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              read: false
-            };
-          });
+          const clearedTime = parseInt(localStorage.getItem('clearedNotificationsTime') || '0', 10);
+          const mappedNotifications = res.data.data
+            .filter(log => new Date(log.createdAt).getTime() > clearedTime)
+            .map(log => {
+              const parts = log.action.split('_');
+              const type = parts[0] || 'SYSTEM';
+              // Translate action to user friendly label
+              const readableAction = log.action.toLowerCase().replace(/_/g, ' ');
+              const formattedAction = readableAction.charAt(0).toUpperCase() + readableAction.slice(1);
+              return {
+                id: log.id,
+                type: type,
+                text: `${formattedAction} by ${log.operator || 'System'}`,
+                time: new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                read: false
+              };
+            });
           setNotifications(mappedNotifications);
           setUnreadCount(mappedNotifications.length);
         }
@@ -154,8 +157,9 @@ const Header = ({ onMenuClick }) => {
   }, [showSearchPalette]);
 
   const handleClearNotifications = () => {
+    localStorage.setItem('clearedNotificationsTime', Date.now().toString());
     setUnreadCount(0);
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications([]);
   };
 
   const handleSearchNavigate = (path) => {
@@ -167,6 +171,8 @@ const Header = ({ onMenuClick }) => {
   const handleMessageClick = () => {
     if (location.pathname.startsWith('/sales')) {
       navigate('/sales/messages');
+    } else if (location.pathname.startsWith('/customer')) {
+      navigate('/customer/messages-support');
     } else {
       navigate('/company-admin/messages');
     }

@@ -80,6 +80,34 @@ export default function CustomerDocuments() {
     fetchDocuments();
   }, []);
 
+  const handleDownloadDocument = (doc) => {
+    if (!doc) return;
+    triggerToast(`Downloading ${doc.name}...`);
+    const content = `==================================================
+HERO LOGISTICS - SECURE DOCUMENT VAULT
+==================================================
+Document Reference: ${doc.id || 'N/A'}
+Document Name:      ${doc.name || 'document.pdf'}
+Category/Type:      ${doc.type || 'N/A'}
+Associated Load:    ${doc.loadRef || 'N/A'}
+Upload Date:        ${doc.date || 'N/A'}
+Uploaded By:        ${doc.uploadedBy || 'N/A'}
+--------------------------------------------------
+This file has been securely retrieved from the Hero Logistics platform.
+Verification Token: ${Math.random().toString(36).substring(2, 10).toUpperCase()}
+==================================================`;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const downloadName = doc.name.endsWith('.pdf') ? doc.name.replace('.pdf', '_receipt.txt') : (doc.name.includes('.') ? doc.name : `${doc.name}.txt`);
+    link.setAttribute("href", url);
+    link.setAttribute("download", downloadName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // Bulk Selection Handlers
   const handleSelectAll = () => {
     if (selectedDocIds.length === documents.length) {
@@ -224,6 +252,17 @@ export default function CustomerDocuments() {
     return matchesSearch && matchesTab && matchesTypeDropdown;
   });
 
+  const totalCount = documents.length;
+  const podsCount = documents.filter(d => (d.type || '').toLowerCase().includes('pod') || (d.type || '').toLowerCase().includes('proof')).length;
+  const invoicesCount = documents.filter(d => (d.type || '').toLowerCase().includes('invoice') || (d.type || '').toLowerCase().includes('bill')).length;
+  const reportsCount = documents.filter(d => (d.type || '').toLowerCase().includes('report') || (d.type || '').toLowerCase().includes('condition')).length;
+  const otherCount = Math.max(0, totalCount - (podsCount + invoicesCount + reportsCount));
+
+  const podPct = totalCount > 0 ? Math.round((podsCount / totalCount) * 100) : 0;
+  const invPct = totalCount > 0 ? Math.round((invoicesCount / totalCount) * 100) : 0;
+  const repPct = totalCount > 0 ? Math.round((reportsCount / totalCount) * 100) : 0;
+  const othPct = totalCount > 0 ? Math.round((otherCount / totalCount) * 100) : 0;
+
   return (
     <div className="w-full min-h-screen bg-[#F8FAFC] text-slate-800 text-left font-sans p-4 sm:p-6 space-y-6">
       
@@ -313,7 +352,13 @@ export default function CustomerDocuments() {
               if (selectedDocIds.length === 0) {
                 triggerToast("Please select documents using checkboxes to download bulk files.");
               } else {
-                triggerToast(`Downloading ${selectedDocIds.length} selected documents as ZIP archive...`);
+                triggerToast(`Downloading ${selectedDocIds.length} selected documents...`);
+                selectedDocIds.forEach((id, index) => {
+                  const target = documents.find(d => d.id === id);
+                  if (target) {
+                    setTimeout(() => handleDownloadDocument(target), index * 300);
+                  }
+                });
               }
             }}
             className="px-4 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
@@ -418,7 +463,7 @@ export default function CustomerDocuments() {
             </div>
             <div>
               <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">TOTAL DOCUMENTS</span>
-              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">128</span>
+              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">{totalCount}</span>
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
@@ -436,7 +481,7 @@ export default function CustomerDocuments() {
             </div>
             <div>
               <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">PODS (PROOF OF DELIVERY)</span>
-              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">64</span>
+              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">{podsCount}</span>
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
@@ -454,7 +499,7 @@ export default function CustomerDocuments() {
             </div>
             <div>
               <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">INVOICES</span>
-              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">24</span>
+              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">{invoicesCount}</span>
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
@@ -472,7 +517,7 @@ export default function CustomerDocuments() {
             </div>
             <div>
               <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">CONDITION REPORTS</span>
-              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">18</span>
+              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">{reportsCount}</span>
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
@@ -490,7 +535,7 @@ export default function CustomerDocuments() {
             </div>
             <div>
               <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">OTHER DOCUMENTS</span>
-              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">22</span>
+              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">{otherCount}</span>
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
@@ -771,7 +816,7 @@ export default function CustomerDocuments() {
                                     <button
                                       onClick={() => {
                                         setActiveMenuDocId(null);
-                                        triggerToast(`Downloading ${doc.name}...`);
+                                        handleDownloadDocument(doc);
                                       }}
                                       className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-extrabold rounded-lg cursor-pointer transition-colors"
                                     >
@@ -880,7 +925,7 @@ export default function CustomerDocuments() {
                 </svg>
                 
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-sm font-black text-slate-900 leading-none">128</span>
+                  <span className="text-sm font-black text-slate-900 leading-none">{totalCount}</span>
                   <span className="text-[7.5px] font-extrabold text-slate-400 uppercase">Total</span>
                 </div>
               </div>
@@ -890,22 +935,22 @@ export default function CustomerDocuments() {
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
                   <span className="text-slate-600 font-medium text-[10px]">PODs:</span>
-                  <span className="font-extrabold text-slate-900 text-[10px]">64 (50%)</span>
+                  <span className="font-extrabold text-slate-900 text-[10px]">{podsCount} ({podPct}%)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
                   <span className="text-slate-600 font-medium text-[10px]">Invoices:</span>
-                  <span className="font-extrabold text-slate-900 text-[10px]">24 (19%)</span>
+                  <span className="font-extrabold text-slate-900 text-[10px]">{invoicesCount} ({invPct}%)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
                   <span className="text-slate-600 font-medium text-[10px]">Reports:</span>
-                  <span className="font-extrabold text-slate-900 text-[10px]">18 (14%)</span>
+                  <span className="font-extrabold text-slate-900 text-[10px]">{reportsCount} ({repPct}%)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0"></span>
                   <span className="text-slate-600 font-medium text-[10px]">Other:</span>
-                  <span className="font-extrabold text-slate-900 text-[10px]">22 (17%)</span>
+                  <span className="font-extrabold text-slate-900 text-[10px]">{otherCount} ({othPct}%)</span>
                 </div>
               </div>
 
@@ -1355,18 +1400,49 @@ export default function CustomerDocuments() {
                 </div>
               </div>
 
-              {/* Document Preview Box */}
-              <div className="border border-slate-200 rounded-xl p-6 text-center bg-slate-100 flex flex-col items-center justify-center space-y-2 min-h-[160px]">
-                <FileText size={40} className="text-blue-600" />
-                <p className="font-extrabold text-slate-800 text-xs">{previewDoc.name}</p>
-                <p className="text-[10px] text-slate-500">Document ready for viewing and download</p>
+              {/* Document Preview Paper Sheet */}
+              <div className="border border-slate-300 rounded-2xl p-5 bg-white text-left font-sans shadow-md space-y-4">
+                <div className="flex justify-between items-start border-b border-slate-200 pb-3">
+                  <div>
+                    <span className="text-[10px] font-black tracking-widest text-blue-600 uppercase block">HERO LOGISTICS VAULT</span>
+                    <h4 className="text-sm font-black text-slate-900 leading-tight">{previewDoc.name}</h4>
+                    <span className="text-[9.5px] text-slate-400 font-mono font-bold">REF: {previewDoc.id}</span>
+                  </div>
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 text-[9px] font-extrabold rounded-md uppercase">
+                    VERIFIED OFFICIAL
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-[11px]">
+                  <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 text-[9.5px] font-bold block uppercase">Category</span>
+                    <span className="font-extrabold text-slate-800">{previewDoc.type}</span>
+                  </div>
+                  <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 text-[9.5px] font-bold block uppercase">Load Reference</span>
+                    <span className="font-mono font-extrabold text-blue-600">{previewDoc.loadRef}</span>
+                  </div>
+                  <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 text-[9.5px] font-bold block uppercase">Upload Date</span>
+                    <span className="font-extrabold text-slate-800">{previewDoc.date}</span>
+                  </div>
+                  <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
+                    <span className="text-slate-400 text-[9.5px] font-bold block uppercase">Uploaded By</span>
+                    <span className="font-extrabold text-slate-800">{previewDoc.uploadedBy}</span>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-dashed border-slate-200 flex items-center justify-between text-[9.5px] text-slate-400 font-mono">
+                  <span>SYSTEM VERIFIED DOCUMENT</span>
+                  <span>STATUS: COMPLIANT</span>
+                </div>
               </div>
 
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <button 
                   type="button" 
                   onClick={() => {
-                    triggerToast(`Downloading ${previewDoc.name}...`);
+                    handleDownloadDocument(previewDoc);
                   }}
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >

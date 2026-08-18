@@ -61,7 +61,7 @@ const CustomerPayments = () => {
     { key: 'actions', label: 'Actions' }
   ];
 
-  // Payments Data (Set unchecked by default)
+  // Payments Data State
   const [payments, setPayments] = useState([]);
 
   const showToast = (msg) => {
