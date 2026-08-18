@@ -15,6 +15,28 @@ export default function MyPay() {
 
   // Tab & Search States
   const [activeTab, setActiveTab] = useState('Overview'); // 'Overview', 'Pay History', 'Earnings', 'Deductions', 'Tax'
+  const [currentPeriod, setCurrentPeriod] = useState({
+    netPay: '$2,405.25',
+    grossEarnings: '$3,500.00',
+    totalDeductions: '$1,094.75',
+    payFrequency: 'Fortnightly',
+    nextPayment: {
+      date: '12 Jun 2025',
+      daysLeft: 4,
+      period: '26 May – 08 Jun 2025',
+      estimatedNetPay: '$2,405.25',
+      status: 'Scheduled'
+    }
+  });
+
+  const [ytdSummary, setYtdSummary] = useState({
+    totalEarnings: '$28,345.50',
+    netPayReceived: '$21,450.00',
+    pendingPayments: '$2,405.25',
+    totalDeductions: '$4,490.25'
+  });
+
+  const [currentPayBreakdown, setCurrentPayBreakdown] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
   const [tipDismissed, setTipDismissed] = useState(false);
 

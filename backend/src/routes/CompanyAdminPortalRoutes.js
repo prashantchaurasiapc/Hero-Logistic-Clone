@@ -52,9 +52,14 @@ router.delete('/branches/:id', ctrl.deleteBranch);
 
 // 7. Assets
 router.get('/assets', ctrl.getAssets);
+router.get('/assets/export', ctrl.exportAssets);
 router.post('/assets', ctrl.createAsset);
+router.get('/assets/:id', ctrl.getAssetById);
 router.put('/assets/:id', ctrl.updateAsset);
 router.delete('/assets/:id', ctrl.deleteAsset);
+router.post('/assets/:id/assignments', ctrl.createAssetAssignment);
+router.post('/assets/:id/maintenance', ctrl.createAssetMaintenance);
+router.post('/assets/:id/documents', ctrl.createAssetDocument);
 
 // 8. Warehouse
 router.get('/warehouse', ctrl.getWarehouses);

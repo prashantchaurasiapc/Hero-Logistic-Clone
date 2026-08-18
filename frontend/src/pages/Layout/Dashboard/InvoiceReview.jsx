@@ -683,8 +683,8 @@ const InvoiceReview = () => {
       {/* ============================================================
          3. INVOICES TABLE (WITH WHITESPACE-NOWRAP & SMOOTH MOBILE SCROLL)
          ============================================================ */}
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs relative mb-5 sm:mb-6">
-        <div className="overflow-x-visible sm:overflow-x-auto w-full min-h-[380px]">
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden mb-5 sm:mb-6">
+        <div className="overflow-x-auto w-full">
           <table className="w-full text-left border-collapse min-w-[900px] whitespace-nowrap">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-[10px] sm:text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">
@@ -717,7 +717,7 @@ const InvoiceReview = () => {
                   </td>
                 </tr>
               ) : (
-                filteredInvoices.map((inv, rowIndex) => {
+                filteredInvoices.map((inv) => {
                   const isSelected = selectedInvoiceId === inv.id;
                   const isChecked = selectedRowIds.includes(inv.id);
                   const isMenuOpen = activeRowMenuId === inv.id;
@@ -793,7 +793,7 @@ const InvoiceReview = () => {
                             </button>
 
                             {isMenuOpen && (
-                              <div className="absolute right-full top-0 mr-2 w-48 bg-white rounded-xl border border-slate-200 shadow-2xl py-1.5 z-[9999] text-left font-normal animate-in fade-in zoom-in-95 duration-100">
+                              <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl border border-slate-200 shadow-2xl py-1.5 z-50 animate-in fade-in duration-150 text-left font-normal">
                                 <button
                                   onClick={() => handleEyeIconClick(inv)}
                                   className="w-full px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2"

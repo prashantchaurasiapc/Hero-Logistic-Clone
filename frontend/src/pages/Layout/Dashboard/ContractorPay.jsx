@@ -35,8 +35,8 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
-
 const ContractorPay = () => {
+  const initialClaims = [];
 
   // State
   const [claims, setClaims] = useState([]);
@@ -364,35 +364,35 @@ const ContractorPay = () => {
     showToast(`Claim ${claimId} rejected.`);
   };
 
-  // Add New Claim Submit — connected to real API
-  const handleCreateClaimSubmit = async (e) => {
+  // Add New Claim Submit
+  const handleCreateClaimSubmit = (e) => {
     e.preventDefault();
-    if (!newClaimForm.contractor) {
-      showToast('Please select a contractor.');
-      return;
-    }
-    try {
-      const res = await api.post('/accounts/contractors/claims', {
-        contractor: newClaimForm.contractor,
-        reference: newClaimForm.reference,
-        claimDate: newClaimForm.claimDate,
-        amountExGst: parseFloat(newClaimForm.amountExGst) || 0,
-        description: newClaimForm.description,
-        paymentMethod: newClaimForm.paymentMethod
-      });
+    const amount = parseFloat(newClaimForm.amountExGst) || 0;
+    const gstVal = amount * 0.10;
+    const totalVal = amount + gstVal;
+    const newId = `CC-${1029 + claims.length}`;
 
-      const newEntry = res.data?.data?.claim;
-      if (newEntry) {
-        setClaims(prev => [newEntry, ...prev]);
-        setSelectedClaim(newEntry);
-      }
-      setShowNewClaimModal(false);
-      setNewClaimForm({ contractor: '', reference: '', claimDate: new Date().toISOString().slice(0, 10), amountExGst: '', description: 'Transport Services', paymentMethod: 'Bank Transfer' });
-      showToast(`✓ Contractor claim ${newEntry?.id || ''} created successfully.`);
-      fetchClaims();
-    } catch (err) {
-      showToast(`✗ Failed to create claim: ${err?.response?.data?.error?.message || err.message}`);
-    }
+    const newEntry = {
+      id: newId,
+      contractor: newClaimForm.contractor,
+      reference: newClaimForm.reference || `LOAD-${1246 + claims.length}`,
+      claimDate: '25 May 2026',
+      amountExGst: amount,
+      gst: gstVal,
+      totalIncGst: totalVal,
+      status: 'Pending Approval',
+      paymentMethod: newClaimForm.paymentMethod,
+      bankName: `${newClaimForm.contractor} Ltd`,
+      bsbAccount: '062-110 / 88920192',
+      items: [
+        { description: newClaimForm.description || 'Freight Delivery', amountExGst: amount, gst: gstVal, totalIncGst: totalVal }
+      ]
+    };
+
+    setClaims([newEntry, ...claims]);
+    setSelectedClaim(newEntry);
+    setShowNewClaimModal(false);
+    showToast(`New contractor claim ${newId} created successfully.`);
   };
 
   return (
@@ -647,16 +647,10 @@ const ContractorPay = () => {
           {/* CSV Export Button */}
           <button
             onClick={() => handleExportCSV(filteredClaims)}
-            title={`Export ${filteredClaims.length} claim(s) to CSV`}
-            className="col-span-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold px-3 h-10 sm:h-9 rounded-xl shadow-xs text-xs cursor-pointer active:scale-[0.98] transition-all"
+            className="col-span-1 flex items-center justify-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-bold px-3 h-10 sm:h-9 rounded-xl shadow-2xs text-xs cursor-pointer active:scale-98 transition-all"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-            {filteredClaims.length > 0 && (
-              <span className="bg-white/20 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
-                {filteredClaims.length}
-              </span>
-            )}
+            <Upload className="w-3.5 h-3.5 text-slate-500" />
+            <span>Export</span>
           </button>
 
           {/* Interactive Bulk Actions Dropdown */}
@@ -1123,129 +1117,33 @@ const ContractorPay = () => {
               </div>
             </div>
 
-            {/* Right Action Buttons Column — status-aware */}
+            {/* Right Action Buttons Column */}
             <div className="lg:col-span-3 grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-col gap-2 pl-0 lg:pl-2">
               <span className="col-span-2 sm:col-span-3 lg:col-span-1 text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Actions</span>
 
-              {/* --- PENDING APPROVAL --- */}
-              {selectedClaim.status === 'Pending Approval' && (
-                <>
-                  <button
-                    onClick={() => handleApproveClaimAction(selectedClaim.id)}
-                    className="col-span-2 sm:col-span-3 lg:col-span-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    <span>✓ Approve Claim</span>
-                  </button>
-                  <button
-                    onClick={() => handleOpenEditModal(selectedClaim)}
-                    className="py-2 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <Edit className="w-3 h-3 text-slate-500" />
-                    <span>Edit</span>
-                  </button>
-                  <button
-                    onClick={() => handleRejectClaim(selectedClaim.id)}
-                    className="py-2 px-3 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <X className="w-3 h-3" />
-                    <span>Reject</span>
-                  </button>
-                </>
-              )}
+              <button
+                onClick={() => handleApproveClaim(selectedClaim.id)}
+                className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer transition-all flex items-center justify-center gap-1.5"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Approve Claim</span>
+              </button>
 
-              {/* --- APPROVED — Mark Paid or Void --- */}
-              {selectedClaim.status === 'Approved' && (
-                <>
-                  <button
-                    onClick={() => {
-                      setClaims(prev => prev.map(c => c.id === selectedClaim.id ? { ...c, status: 'Paid' } : c));
-                      setSelectedClaim(prev => ({ ...prev, status: 'Paid' }));
-                      showToast(`✓ Claim ${selectedClaim.id} marked as Paid.`);
-                    }}
-                    className="col-span-2 sm:col-span-3 lg:col-span-1 py-2.5 px-3 bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>Mark as Paid</span>
-                  </button>
-                  <button
-                    onClick={() => handleOpenEditModal(selectedClaim)}
-                    className="py-2 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <Edit className="w-3 h-3 text-slate-500" />
-                    <span>Edit</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setClaims(prev => prev.map(c => c.id === selectedClaim.id ? { ...c, status: 'Cancelled' } : c));
-                      setSelectedClaim(prev => ({ ...prev, status: 'Cancelled' }));
-                      showToast(`Claim ${selectedClaim.id} voided.`);
-                    }}
-                    className="py-2 px-3 bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-rose-600 hover:border-rose-200 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                    <span>Void</span>
-                  </button>
-                </>
-              )}
+              <button
+                onClick={() => handleOpenEditModal(selectedClaim)}
+                className="py-2 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Edit className="w-3.5 h-3.5 text-slate-500" />
+                <span>Edit Claim</span>
+              </button>
 
-              {/* --- PAID --- */}
-              {selectedClaim.status === 'Paid' && (
-                <>
-                  <div className="col-span-2 sm:col-span-3 lg:col-span-1 py-2.5 px-3 bg-emerald-50 border border-emerald-200 text-emerald-700 font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Payment Completed</span>
-                  </div>
-                  <button
-                    onClick={() => handleOpenEditModal(selectedClaim)}
-                    className="col-span-2 sm:col-span-3 lg:col-span-1 py-2 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <Eye className="w-3 h-3 text-slate-500" />
-                    <span>View / Print Receipt</span>
-                  </button>
-                </>
-              )}
-
-              {/* --- CANCELLED / REJECTED --- */}
-              {selectedClaim.status === 'Cancelled' && (
-                <>
-                  <div className="col-span-2 sm:col-span-3 lg:col-span-1 py-2 px-3 bg-rose-50 border border-rose-200 text-rose-600 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
-                    <X className="w-3.5 h-3.5" />
-                    <span>Claim Rejected / Voided</span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setClaims(prev => prev.map(c => c.id === selectedClaim.id ? { ...c, status: 'Pending Approval' } : c));
-                      setSelectedClaim(prev => ({ ...prev, status: 'Pending Approval' }));
-                      showToast(`Claim ${selectedClaim.id} reactivated.`);
-                    }}
-                    className="col-span-2 sm:col-span-3 lg:col-span-1 py-2 px-3 bg-white border border-slate-200 hover:bg-amber-50 hover:border-amber-300 text-slate-700 hover:text-amber-700 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>Reactivate Claim</span>
-                  </button>
-                </>
-              )}
-
-              {/* --- OVERDUE --- */}
-              {selectedClaim.status === 'Overdue' && (
-                <>
-                  <button
-                    onClick={() => handleApproveClaimAction(selectedClaim.id)}
-                    className="col-span-2 sm:col-span-3 lg:col-span-1 py-2.5 px-3 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Force Approve</span>
-                  </button>
-                  <button
-                    onClick={() => handleRejectClaim(selectedClaim.id)}
-                    className="col-span-2 sm:col-span-3 lg:col-span-1 py-2 px-3 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <X className="w-3 h-3" />
-                    <span>Reject</span>
-                  </button>
-                </>
-              )}
+              <button
+                onClick={() => handleRejectClaim(selectedClaim.id)}
+                className="col-span-2 sm:col-span-1 py-2 px-3 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <X className="w-3.5 h-3.5 text-rose-500" />
+                <span>Reject Claim</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1343,14 +1241,16 @@ const ContractorPay = () => {
             <form onSubmit={handleCreateClaimSubmit} className="space-y-4 text-xs">
               <div>
                 <label className="block text-[11px] font-extrabold text-slate-700 mb-1">Contractor Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Darren Logistics Pty Ltd"
+                <select
                   value={newClaimForm.contractor}
                   onChange={(e) => setNewClaimForm({ ...newClaimForm, contractor: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-300 font-medium"
-                />
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-amber-300 font-semibold"
+                >
+                  <option value="">Select Contractor</option>
+                  {Array.from(new Set(claims.map(c => c.contractor).filter(Boolean))).map(cName => (
+                    <option key={cName} value={cName}>{cName}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

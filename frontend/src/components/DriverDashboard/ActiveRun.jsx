@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiNavigation, FiPhone, FiChevronRight,
   FiCamera, FiFileText, FiMessageSquare, FiAlertTriangle, FiRefreshCw,
@@ -13,14 +14,16 @@ export default function ActiveRun() {
   const location = useLocation();
 
   // Interactive States
-  const [loadStatus, setLoadStatus] = useState('Picked Up'); // 'Picked Up', 'Dispatched', 'Delivered'
+  const [loadStatus, setLoadStatus] = useState('Picked Up');
   const [isDispatched, setIsDispatched] = useState(false);
-  const [carsPickedUp, setCarsPickedUp] = useState(8);
-  const totalCars = 8;
   const [toastMsg, setToastMsg] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
+  
+  // Data State
+  const [runData, setRunData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Modals
   const [dispatchYardModalOpen, setDispatchYardModalOpen] = useState(false);
@@ -34,11 +37,35 @@ export default function ActiveRun() {
   const [noteText, setNoteText] = useState('');
   const [photoCaption, setPhotoCaption] = useState('');
 
+  const fetchActiveRun = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/active-run');
+      if (res.data?.success && res.data.data.run) {
+        setRunData(res.data.data.run);
+        setIsDispatched(res.data.data.run.isDispatched);
+        setLoadStatus(res.data.data.run.status);
+      }
+    } catch (error) {
+      console.error('Failed to fetch active run:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchActiveRun();
+  }, []);
+
   useEffect(() => {
     if (location.state?.autoOpenDispatchModal && !isDispatched) {
       setDispatchYardModalOpen(true);
     }
   }, [location.state, isDispatched]);
+
+  const carsPickedUp = runData ? runData.pickedUpCount : 0;
+  const totalCars = runData ? runData.totalCarsCount : 8;
+  const deliveredCars = runData ? runData.deliveredCount : 0;
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -76,7 +103,7 @@ export default function ActiveRun() {
       {/* TOP TITLE & ACTIONS BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Active Run</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Active Run</h1>
         </div>
 
         <div className="flex items-center gap-3 relative w-full sm:w-auto">
@@ -127,7 +154,7 @@ export default function ActiveRun() {
             {moreActionsOpen && (
               <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 py-2 text-xs font-bold text-slate-800">
                 <button onClick={() => { navigate('/driver/delivery-pod'); setMoreActionsOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50 text-indigo-700 font-black">
-                  📦 Delivery & POD (15.7)
+                  📦 Delivery & POD
                 </button>
                 <button onClick={() => { setScanModalOpen(true); setMoreActionsOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50">
                   📷 Scan / Select Vehicles
@@ -465,14 +492,14 @@ export default function ActiveRun() {
 
             <div className="space-y-1">
               {[
-                { label: 'Safety Procedures', icon: <FiShield className="text-slate-500" /> },
-                { label: 'Driver Guide', icon: <FiBookOpen className="text-slate-500" /> },
-                { label: 'Contact Support', icon: <FiHelpCircle className="text-slate-500" /> },
-                { label: 'Emergency Numbers', icon: <FiLifeBuoy className="text-rose-500" /> },
+                { label: 'Safety Procedures', icon: <FiShield className="text-slate-500" />, action: () => triggerToast('Opening Safety Procedures Guide...') },
+                { label: 'Driver Guide', icon: <FiBookOpen className="text-slate-500" />, action: () => triggerToast('Opening Heavy Vehicle Driver Guide...') },
+                { label: 'Contact Support', icon: <FiHelpCircle className="text-indigo-600" />, action: () => setSupportModalOpen(true) },
+                { label: 'Emergency Numbers', icon: <FiLifeBuoy className="text-rose-500" />, action: () => setSupportModalOpen(true) },
               ].map((item) => (
                 <button
                   key={item.label}
-                  onClick={() => triggerToast(`Opening ${item.label}...`)}
+                  onClick={item.action}
                   className="w-full p-2.5 rounded-xl hover:bg-slate-50 text-xs font-bold text-slate-800 flex items-center justify-between cursor-pointer transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
@@ -747,7 +774,7 @@ export default function ActiveRun() {
             <div className="flex justify-between items-start pb-4 border-b border-slate-100">
               <div>
                 <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                  PAGE 15.5 DISPATCH CONFIRMATION
+                  DISPATCH CONFIRMATION
                 </span>
                 <h3 className="font-black text-slate-900 text-xl tracking-tight mt-1 flex items-center gap-2">
                   <FiTruck className="text-indigo-600" />
@@ -907,7 +934,7 @@ export default function ActiveRun() {
                 }}
                 className="w-full bg-[#4338ca] hover:bg-[#3730a3] text-white font-black text-sm py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>📦 Proceed to Delivery & POD (15.7)</span>
+                <span>📦 Proceed to Delivery & POD</span>
                 <FiChevronRight className="text-lg" />
               </button>
 
@@ -930,6 +957,60 @@ export default function ActiveRun() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* SUPPORT & EMERGENCY HOTLINES MODAL */}
+      {supportModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[160] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                <FiHelpCircle className="text-indigo-600 text-lg" />
+                Driver Support & Hotline Directory
+              </h3>
+              <button onClick={() => setSupportModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between">
+                <div>
+                  <div className="font-black text-rose-950">24/7 Breakdown & Emergency</div>
+                  <div className="text-[10.5px] text-rose-700 font-medium">Roadside & Safety Command</div>
+                </div>
+                <a href="tel:1800555999" className="bg-rose-600 text-white font-mono font-black text-xs px-3 py-1.5 rounded-xl cursor-pointer">
+                  1800 555 999
+                </a>
+              </div>
+
+              <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between">
+                <div>
+                  <div className="font-black text-indigo-950">Fleet Dispatch Center</div>
+                  <div className="text-[10.5px] text-indigo-700 font-medium">Load & Schedule Desk</div>
+                </div>
+                <a href="tel:0411111222" className="bg-indigo-600 text-white font-mono font-black text-xs px-3 py-1.5 rounded-xl cursor-pointer">
+                  0411 111 222
+                </a>
+              </div>
+
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between">
+                <div>
+                  <div className="font-black text-amber-950">Vehicle Maintenance Support</div>
+                  <div className="text-[10.5px] text-amber-700 font-medium">Mechanical Workshop</div>
+                </div>
+                <a href="tel:0400555666" className="bg-amber-600 text-white font-mono font-black text-xs px-3 py-1.5 rounded-xl cursor-pointer">
+                  0400 555 666
+                </a>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSupportModalOpen(false)}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3 rounded-xl cursor-pointer"
+            >
+              Close Support Directory
+            </button>
           </div>
         </div>
       )}

@@ -230,11 +230,20 @@ export const getPayrollDetails = (id) => api.get(`/driver-portal/payroll/${id}`)
  */
 export const downloadPayslip = (id) => api.get(`/driver-portal/payroll/${id}/payslip`, { responseType: 'blob' });
 
+/**
+ * GET /driver-portal/notifications
+ * Returns all notifications for the authenticated driver.
+ */
+export const getNotifications = () => api.get('/driver-portal/notifications');
 
+/**
+ * PATCH /driver-portal/notifications/:id/read
+ * Marks a specific notification as read.
+ */
+export const markNotificationRead = (id) => api.patch(`/driver-portal/notifications/${id}/read`);
 
-
-
-
-
-
-
+/**
+ * PATCH /driver-portal/notifications/read-all
+ * Marks all notifications for the authenticated driver as read.
+ */
+export const markAllNotificationsRead = () => api.patch('/driver-portal/notifications/read-all');

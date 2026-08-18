@@ -36,7 +36,7 @@ const Login = () => {
   const [errorMsg, setErrorMsg] = useState('');
 
   // Input states
-  const [emailInput, setEmailInput] = useState('admin@hero.com');
+  const [emailInput, setEmailInput] = useState('super-admin@hero.com');
   const [passwordInput, setPasswordInput] = useState('123456');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -69,9 +69,10 @@ const Login = () => {
   }, []);
 
   const handleRoleLogin = (roleId) => {
-    const roleEmail = roleId === 'super-admin' ? 'admin@hero.com' : `${roleId}@hero.com`;
+    const roleEmail = roleId === 'super-admin' ? 'super-admin@hero.com' : `${roleId}@hero.com`;
     setEmailInput(roleEmail);
     setPasswordInput('123456');
+    setErrorMsg('');
   };
 
   const handleLogin = async (e) => {
@@ -81,11 +82,11 @@ const Login = () => {
     setLoggingInRole('Loading...');
 
     const res = await login(emailInput, passwordInput);
-    
+
     if (res.success) {
       const userRole = res.user?.role || 'SUPER_ADMIN';
       setLoggingInRole(userRole);
-      
+
       let targetPath = '/admin/dashboard';
       if (userRole === 'DRIVER') targetPath = '/driver/dashboard';
       else if (userRole === 'DISPATCHER') targetPath = '/dispatcher/command-center';
@@ -95,10 +96,11 @@ const Login = () => {
       else if (userRole === 'YARD') targetPath = '/yard/dashboard';
       else if (userRole === 'ACCOUNTS') targetPath = '/accounts/dashboard';
       else if (userRole === 'CUSTOMER') targetPath = '/customer/dashboard';
+      else if (userRole === 'SUPER_ADMIN') targetPath = '/admin/dashboard';
 
       setTimeout(() => {
         navigate(targetPath);
-      }, 1600);
+      }, 900);
     } else {
       setIsAuthenticating(false);
       setErrorMsg(res.message || 'Invalid email or password');
@@ -166,7 +168,7 @@ const Login = () => {
           </div>
 
           <div className="demo-credentials">
-            <span className="text-yellow">Demo credentials:</span> admin@hero.com / 123456
+            <span className="text-yellow">Demo credentials:</span> super-admin@hero.com / 123456
           </div>
         </div>
       </div>

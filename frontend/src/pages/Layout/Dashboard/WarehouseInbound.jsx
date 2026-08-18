@@ -22,11 +22,7 @@ export default function WarehouseInbound() {
   const [transportType, setTransportType] = useState('');
   const [driver, setDriver] = useState('');
   const [vehicleTrailer, setVehicleTrailer] = useState('');
-  const [dateTime, setDateTime] = useState(() => {
-    const d = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  });
+  const [dateTime, setDateTime] = useState('');
   const [notes, setNotes] = useState('');
 
   // Location state
@@ -76,26 +72,6 @@ export default function WarehouseInbound() {
     fetchLocations();
   }, []);
 
-  const getSupplierDisplayName = () => {
-    if (!supplier) return 'Primary Supplier';
-    const found = dbSuppliers.find(s => s.id === supplier || s.name === supplier);
-    if (found && found.name) return found.name;
-    if (typeof supplier === 'string' && supplier.length > 20 && supplier.includes('-')) {
-      return dbSuppliers[0]?.name || 'Primary Supplier';
-    }
-    return supplier;
-  };
-
-  const formatDateTimeDisplay = (dtStr) => {
-    if (!dtStr) return 'Not Set';
-    try {
-      const d = new Date(dtStr);
-      if (isNaN(d.getTime())) return dtStr;
-      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch (e) {
-      return dtStr;
-    }
-  };
 
   // Item Entry state
   const [entryTab, setEntryTab] = useState('manual');
@@ -261,15 +237,8 @@ export default function WarehouseInbound() {
       const res = await api.post('/warehouse-portal/inbound/receive', payload);
       
       if (res.data && res.data.success) {
-        alert(`✓ Inbound Receipt ${inboundNo || ''} confirmed & received successfully! Total ${itemsToReceive.length} items logged.`);
-        // Reset form to allow more items to be received on the same page
-        setInboundNo(`RCV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
-        setItemsToReceive([]);
-        setNotes('');
-        setVinInput('');
-        setTitleInput('');
-        setTypeInput('Vehicle');
-        fetchRecentIntakes();
+        alert(`Inbound Receipt ${inboundNo || 'created'} confirmed & received successfully! Total ${itemsToReceive.length} items logged.`);
+        navigate(isYard ? '/yard/current-stock' : '/warehouse/find-stock');
       } else {
         alert('Failed to process inbound receipt. Check console.');
       }
@@ -791,45 +760,30 @@ export default function WarehouseInbound() {
         .summary-card {
           background: #FFFFFF;
           border: 1px solid #E2E8F0;
-          border-radius: 12px;
-          padding: 14px 16px;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+          border-radius: 10px;
+          padding: 12px;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
         }
 
         .summary-row {
           display: flex;
           justify-content: space-between;
-          align-items: flex-start;
-          font-size: 11px;
-          padding: 8px 0;
+          align-items: center;
+          font-size: 10.5px;
+          padding: 4px 0;
           border-bottom: 1px solid #F1F5F9;
-          gap: 12px;
         }
 
-        .summary-label { 
-          color: #64748B; 
-          font-weight: 700; 
-          font-size: 11px;
-          flex-shrink: 0;
-        }
-        .summary-val { 
-          font-weight: 800; 
-          color: #0F172A; 
-          font-size: 11px;
-          text-align: right;
-          word-break: break-word;
-          max-width: 65%;
-          line-height: 1.35;
-        }
+        .summary-label { color: #64748B; font-weight: 600; }
+        .summary-val { font-weight: 800; color: #0F172A; }
 
         .summary-badge-receiving {
-          padding: 2px 8px;
-          border-radius: 6px;
-          font-size: 9.5px;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 9px;
           font-weight: 800;
           background: #FEF3C7;
           color: #B45309;
-          letter-spacing: 0.02em;
         }
 
         .side-item-row {
@@ -1090,16 +1044,7 @@ export default function WarehouseInbound() {
                 </div>
                 <div className="rcv-form-group">
                   <label title="DATE / TIME *">DATE / TIME *</label>
-                  <input
-                    type="datetime-local"
-                    value={dateTime}
-                    onChange={e => setDateTime(e.target.value)}
-                    style={{
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      color: '#0f172a'
-                    }}
-                  />
+                  <input type="text" value={dateTime} onChange={e => setDateTime(e.target.value)} />
                 </div>
               </div>
 
@@ -1507,23 +1452,21 @@ export default function WarehouseInbound() {
           
           {/* INBOUND SUMMARY CARD */}
           <div className="summary-card">
-            <div className="card-num-title" style={{ marginBottom: '8px' }}>INBOUND SUMMARY</div>
+            <div className="card-num-title" style={{ marginBottom: '6px' }}>INBOUND SUMMARY</div>
             
             <div className="summary-row">
               <span className="summary-label">Inbound No.</span>
-              <span className="summary-val">{inboundNo || 'Auto-generated'}</span>
+              <span className="summary-val">{inboundNo}</span>
             </div>
 
             <div className="summary-row">
               <span className="summary-label">Supplier</span>
-              <span className="summary-val text-slate-800" title={getSupplierDisplayName()}>
-                {getSupplierDisplayName()}
-              </span>
+              <span className="summary-val">{supplier}</span>
             </div>
 
             <div className="summary-row">
               <span className="summary-label">Date / Time</span>
-              <span className="summary-val">{formatDateTimeDisplay(dateTime)}</span>
+              <span className="summary-val">{dateTime}</span>
             </div>
 
             <div className="summary-row">

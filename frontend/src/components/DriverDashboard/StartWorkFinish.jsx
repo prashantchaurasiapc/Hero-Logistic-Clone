@@ -15,9 +15,10 @@ export default function StartWork() {
   const [toastMessage, setToastMessage] = useState('');
   const fileInputRef = useRef(null);
   const [notes, setNotes] = useState('');
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
-
+  const [loading, setLoading] = useState(true);
+  const [contextData, setContextData] = useState(null);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
   // 20 Inspection Checklist Items state
   const [items, setItems] = useState([
     { id: 1, label: 'Brakes (service & park brake)', status: 'pass' },
@@ -41,10 +42,6 @@ export default function StartWork() {
     { id: 19, label: 'Load secured / Straps & chains checked', status: 'na' },
     { id: 20, label: 'Other (notes or additional checks)', status: 'unchecked' },
   ]);
-
-  // Dynamic state from backend
-  const [contextData, setContextData] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchContext = async () => {
@@ -82,7 +79,7 @@ export default function StartWork() {
   const uncheckedCount = items.filter((i) => i.status === 'unchecked').length;
   const totalCount = items.length;
   const completedCount = passCount + failCount + naCount;
-  const completionPercentage = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+  const completionPercentage = Math.round((completedCount / totalCount) * 100);
 
   const handleSubmit = async () => {
     if (uncheckedCount > 0) {
@@ -160,10 +157,6 @@ export default function StartWork() {
       showToast('❌ Failed to save checklist draft.');
     }
   };
-
-  if (loading) {
-     return <div className="p-8 text-center text-slate-500 font-bold">Loading Checklist...</div>;
-  }
 
   return (
     <div className="flex-grow bg-[#f8fafc] p-4 lg:p-6 w-full text-left font-sans overflow-y-auto min-h-screen">
@@ -304,7 +297,7 @@ export default function StartWork() {
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">STATUS</h3>
             <div className="text-xs space-y-1">
-              <div className="text-slate-500 font-medium">Last saved: <strong className="text-slate-800">{contextData?.lastSaved || 'Never'}</strong></div>
+              <div className="text-slate-500 font-medium">Last saved: <strong className="text-slate-800">29 May 2025, 06:10 AM</strong></div>
               <div className="text-emerald-600 font-extrabold flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Synced
               </div>
@@ -334,19 +327,19 @@ export default function StartWork() {
             <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-100 rounded-xl p-3.5 mb-5 text-xs">
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Vehicle</span>
-                <span className="font-black text-slate-900">{contextData?.vehicle?.ref || 'N/A'}</span>
+                <span className="font-black text-slate-900">TRK-101 (MAN TGX 26.580)</span>
               </div>
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Load / Reference</span>
-                <span className="font-black text-purple-700">{contextData?.loadRef || 'N/A'}</span>
+                <span className="font-black text-purple-700">LD-3987</span>
               </div>
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Trailer</span>
-                <span className="font-black text-slate-900">{contextData?.trailerRef || 'N/A'}</span>
+                <span className="font-black text-slate-900">TRL-205 (Car Carrier 4 Level)</span>
               </div>
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Date / Time</span>
-                <span className="font-mono font-bold text-slate-800">{new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                <span className="font-mono font-bold text-slate-800">29 May 2025, 06:15 AM</span>
               </div>
             </div>
 
@@ -528,7 +521,7 @@ export default function StartWork() {
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LAST 5 CHECKLISTS</h3>
-              <button onClick={() => setHistoryModalOpen(true)} className="text-xs font-bold text-purple-600 hover:underline cursor-pointer">
+              <button onClick={() => showToast('Opening full checklist log history...')} className="text-xs font-bold text-purple-600 hover:underline cursor-pointer">
                 View all
               </button>
             </div>

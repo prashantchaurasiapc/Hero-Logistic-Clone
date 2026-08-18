@@ -233,53 +233,8 @@ export default function YardMoveItem() {
                 Loading inventory...
               </div>
             ) : filteredStock.length === 0 ? (
-              <div style={{ padding: '24px 16px', textAlign: 'center', background: '#F8FAFC', borderRadius: 12, border: '1px dashed #CBD5E1' }}>
-                <p style={{ color: '#64748B', fontSize: 12, margin: '0 0 12px 0', fontWeight: 600 }}>
-                  No items currently stored in yard inventory.
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const code = searchQuery.trim() || `TR-${Math.floor(1000 + Math.random() * 9000)}`;
-                      handleSelectItem({
-                        id: `MANUAL-${Date.now()}`,
-                        title: `Yard Asset (${code})`,
-                        vin: code,
-                        rego: code,
-                        zone: 'Zone A',
-                        row: 'Row 1',
-                        bay: 'Bay 01',
-                        locationDetail: 'Zone A / Row 1 / Bay 01'
-                      });
-                    }}
-                    style={{
-                      backgroundColor: '#FFCC00',
-                      border: 'none',
-                      borderRadius: 8,
-                      padding: '8px 14px',
-                      fontSize: 11.5,
-                      fontWeight: 800,
-                      color: '#000000',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    + Relocate Custom Asset ({searchQuery.trim() || 'TR-9410'})
-                  </button>
-                  <a
-                    href="/yard/inbound"
-                    style={{
-                      fontSize: 11,
-                      color: '#2563EB',
-                      fontWeight: 700,
-                      textDecoration: 'none',
-                      display: 'block',
-                      marginTop: 4
-                    }}
-                  >
-                    Receive Inbound Items First &rarr;
-                  </a>
-                </div>
+              <div style={{ padding: 30, textAlign: 'center', color: '#94A3B8', fontSize: 12 }}>
+                No matching yard items found.
               </div>
             ) : (
               filteredStock.map(item => {

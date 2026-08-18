@@ -5,7 +5,7 @@ const { verifyToken, authorizeRoles } = require('../middlewares/auth');
 const { resolveTenant } = require('../middlewares/tenantResolver');
 
 // Apply auth & tenant resolver middleware across all Warehouse Portal routes
-router.use(verifyToken, resolveTenant, authorizeRoles(['WAREHOUSE', 'YARD', 'COMPANY_ADMIN', 'SUPER_ADMIN']));
+router.use(verifyToken, resolveTenant, authorizeRoles(['WAREHOUSE', 'YARD', 'DRIVER', 'COMPANY_ADMIN', 'SUPER_ADMIN', 'CUSTOMER']));
 
 // 1. Warehouse Overview & Dashboard
 router.get('/overview', ctrl.getDashboard);

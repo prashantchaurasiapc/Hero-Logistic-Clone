@@ -12,8 +12,6 @@ import {
   FiTrendingUp,
 } from 'react-icons/fi';
 
-const ALL_JOBS = [];
-
 const STATUS_META = {
   UPCOMING:    { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },
   IN_PROGRESS: { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
@@ -25,28 +23,8 @@ const PAGE_SIZE = 5;
 
 export default function Jobs() {
   const navigate = useNavigate();
-  
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchJobs();
-  }, []);
-
-  const fetchJobs = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/driver-portal/jobs');
-      if (res.data?.success) {
-        setJobs(res.data.data?.jobs || []);
-      }
-    } catch (err) {
-      console.error('Error fetching jobs', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const [jobs, setJobs]                 = useState([]);
+  const [loading, setLoading]           = useState(true);
   const [activeTab, setActiveTab]       = useState('ALL');
   const [searchQuery, setSearchQuery]   = useState('');
   const [page, setPage]                 = useState(1);
@@ -62,6 +40,25 @@ export default function Jobs() {
     pickupTime: '', deliveryTime: '', customer: '', reference: '',
     loadType: 'Car Carrier (4 Level)', stops: '1 Stop', notes: '',
   });
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/jobs');
+      if (res.data?.success) {
+        setJobs(res.data.data.jobs || []);
+      }
+    } catch (error) {
+      console.error('Failed to load jobs', error);
+      showToast('❌ Failed to load jobs.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
 
   useEffect(() => {
     const handler = e => {
@@ -94,7 +91,7 @@ export default function Jobs() {
     return tabOk && searchOk;
   });
 
-  const totalPages = Math.ceil(filtered.length / perPage);
+  const totalPages = Math.ceil(filtered.length / perPage) || 1;
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   const handleTabChange = t => { setActiveTab(t); setPage(1); };

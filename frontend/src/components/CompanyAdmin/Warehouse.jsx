@@ -1050,9 +1050,9 @@ export default function Warehouse() {
         <div className="wh-header">
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-              <span>Home</span><span style={{ color: '#CBD5E1' }}>›</span><span>Warehouse</span><span style={{ color: '#CBD5E1' }}>›</span><span style={{ color: '#0F172A' }}>Warehouse Dashboard</span>
+              <span>Home</span><span style={{ color: '#CBD5E1' }}>›</span><span style={{ color: '#0F172A' }}>Warehouse</span>
             </div>
-            <h1 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>Warehouse Dashboard / List</h1>
+            <h1 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>Warehouse</h1>
             <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0', fontWeight: 500 }}>View all warehouses, stock overview and real-time operational summary.</p>
           </div>
           <div className="wh-header-actions">
@@ -1082,11 +1082,11 @@ export default function Warehouse() {
         {/* Metric Cards */}
         <div className="wh-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
           <MetricCard icon={<BoxIcon color="#8B5CF6" />} bg="#F5F3FF" label="TOTAL WAREHOUSES" value={(kpiStats?.totalWarehouses ?? 0).toString()} sub="Active Warehouses" linkText="View all warehouses" onClick={() => {}} />
-          <MetricCard icon={<CheckCircleIcon color="#10B981" />} bg="#F0FDF4" label="TOTAL INVENTORY VALUE" value={kpiStats?.totalInventoryValue || '$0.00'} sub="Across all warehouses" linkText="View inventory" onClick={() => navigate('/warehouse/current-stock')} />
-          <MetricCard icon={<BoxIcon color="#F59E0B" />} bg="#FFFBEB" label="TOTAL STOCK ITEMS" value={(kpiStats?.totalStockItems ?? 0).toLocaleString()} sub="All warehouses" linkText="View stock" onClick={() => navigate('/warehouse/current-stock')} />
-          <MetricCard icon={<ClockIcon color="#3B82F6" />} bg="#EFF6FF" label="PENDING PICK TASKS" value={(kpiStats?.pendingTasks ?? 0).toString()} sub="Requires attention" linkText="View tasks" onClick={() => navigate('/warehouse/movements')} />
-          <MetricCard icon={<TruckIcon color="#8B5CF6" />} bg="#F5F3FF" label="INCOMING SHIPMENTS" value={(kpiStats?.incomingShipments ?? 0).toString()} sub="In transit / Expected" linkText="View shipments" onClick={() => navigate('/warehouse/inbound')} />
-          <MetricCard icon={<TruckIcon color="#EF4444" />} bg="#FEF2F2" label="OUTGOING SHIPMENTS" value={(kpiStats?.outgoingShipments ?? 0).toString()} sub="Scheduled / In progress" linkText="View shipments" onClick={() => navigate('/warehouse/outbound')} />
+          <MetricCard icon={<CheckCircleIcon color="#10B981" />} bg="#F0FDF4" label="TOTAL INVENTORY VALUE" value={kpiStats?.totalInventoryValue || '$0.00'} sub="Across all warehouses" linkText="View inventory" onClick={() => navigate(location.pathname.startsWith('/dispatcher') ? '/dispatcher/current-stock' : '/warehouse/current-stock')} />
+          <MetricCard icon={<BoxIcon color="#F59E0B" />} bg="#FFFBEB" label="TOTAL STOCK ITEMS" value={(kpiStats?.totalStockItems ?? 0).toLocaleString()} sub="All warehouses" linkText="View stock" onClick={() => navigate(location.pathname.startsWith('/dispatcher') ? '/dispatcher/current-stock' : '/warehouse/current-stock')} />
+          <MetricCard icon={<ClockIcon color="#3B82F6" />} bg="#EFF6FF" label="PENDING PICK TASKS" value={(kpiStats?.pendingTasks ?? 0).toString()} sub="Requires attention" linkText="View tasks" onClick={() => navigate(location.pathname.startsWith('/dispatcher') ? '/dispatcher/movements' : '/warehouse/movements')} />
+          <MetricCard icon={<TruckIcon color="#8B5CF6" />} bg="#F5F3FF" label="INCOMING SHIPMENTS" value={(kpiStats?.incomingShipments ?? 0).toString()} sub="In transit / Expected" linkText="View shipments" onClick={() => navigate(location.pathname.startsWith('/dispatcher') ? '/dispatcher/inbound' : '/warehouse/inbound')} />
+          <MetricCard icon={<TruckIcon color="#EF4444" />} bg="#FEF2F2" label="OUTGOING SHIPMENTS" value={(kpiStats?.outgoingShipments ?? 0).toString()} sub="Scheduled / In progress" linkText="View shipments" onClick={() => navigate(location.pathname.startsWith('/dispatcher') ? '/dispatcher/outbound' : '/warehouse/outbound')} />
         </div>
 
         {/* Middle Section */}

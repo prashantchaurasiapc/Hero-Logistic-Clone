@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import { getPayrollSummary, getPayrollHistory, downloadPayslip } from '../../services/driverApi';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -17,6 +17,8 @@ export default function MyPay() {
   const [activeTab, setActiveTab] = useState('Overview'); // 'Overview', 'Pay History', 'Earnings', 'Deductions', 'Tax'
   const [toastMsg, setToastMsg] = useState('');
   const [tipDismissed, setTipDismissed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
   // Modals
   const [bankModalOpen, setBankModalOpen] = useState(false);
@@ -26,31 +28,108 @@ export default function MyPay() {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [breakdownModalOpen, setBreakdownModalOpen] = useState(false);
 
+  // Settings State
+  const [emailPayslips, setEmailPayslips] = useState(true);
+  const [smsAlerts, setSmsAlerts] = useState(true);
+
   // Bank Form State
   const [bankName, setBankName] = useState('Westpac Banking Corporation');
   const [bsbNumber, setBsbNumber] = useState('032-000');
   const [accountNumber, setAccountNumber] = useState('1234 5678');
   const [accountName, setAccountName] = useState('Noah Davis');
 
-  // Pay History Data (6 Items from screenshot 15.12)
-  const [payRecords, setPayRecords] = useState([
-    { id: 1, period: '12 May 2025 – 25 May 2025', payDate: 'Paid on 28 May 2025', netPay: '$2,740.25', status: 'Paid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', amount: 2740.25 },
-    { id: 2, period: '26 May 2025 – 08 Jun 2025', payDate: 'Pay Date: 13 Jun 2025', netPay: '$2,820.50', status: 'Processing', statusColor: 'bg-blue-50 text-blue-700 border-blue-200', amount: 2820.50 },
-    { id: 3, period: '12 May 2025 – 25 May 2025', payDate: 'Pay Date: 28 May 2025', netPay: '$2,510.00', status: 'Pending', statusColor: 'bg-amber-50 text-amber-700 border-amber-200', amount: 2510.00 },
-    { id: 4, period: '28 Apr 2025 – 11 May 2025', payDate: 'Paid on 14 May 2025', netPay: '$2,560.75', status: 'Paid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', amount: 2560.75 },
-    { id: 5, period: '14 Apr 2025 – 27 Apr 2025', payDate: 'Paid on 30 Apr 2025', netPay: '$2,615.50', status: 'Paid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', amount: 2615.50 },
-    { id: 6, period: '31 Mar 2025 – 13 Apr 2025', payDate: 'Cancelled on 18 Apr 2025', netPay: '$0.00', status: 'Cancelled', statusColor: 'bg-rose-50 text-rose-700 border-rose-200', amount: 0.00 },
-  ]);
+  // Dynamic Context from API
+  const [currentPeriod, setCurrentPeriod] = useState({
+    netPay: '$2,405.25',
+    grossEarnings: '$3,500.00',
+    totalDeductions: '$1,094.75',
+    payFrequency: 'Fortnightly',
+    nextPayment: {
+      date: '12 Jun 2025',
+      daysLeft: 4,
+      period: '26 May – 08 Jun 2025',
+      estimatedNetPay: '$2,405.25',
+      status: 'Scheduled'
+    }
+  });
+
+  const [ytdSummary, setYtdSummary] = useState({
+    totalEarnings: '$28,345.50',
+    netPayReceived: '$21,450.00',
+    pendingPayments: '$2,405.25',
+    totalDeductions: '$4,490.25'
+  });
+
+  const [currentPayBreakdown, setCurrentPayBreakdown] = useState(null);
+
+  const [payRecords, setPayRecords] = useState([]);
+  const [totalSummary, setTotalSummary] = useState({
+    totalGrossEarnings: '$28,345.50',
+    totalDeductions: '$4,490.25',
+    totalNetPaid: '$21,450.00'
+  });
+
+
+  const [ytdEarningsBreakdown, setYtdEarningsBreakdown] = useState(null);
+
+  const [taxStatements, setTaxStatements] = useState([]);
+  const [activeLoadData, setActiveLoadData] = useState(null);
+
+  useEffect(() => {
+    fetchPayrollData();
+  }, []);
+
+  const fetchPayrollData = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/payroll');
+      if (res.data) {
+        if (res.data.driverInfo) {
+          if (res.data.driverInfo.bankName) setBankName(res.data.driverInfo.bankName);
+          if (res.data.driverInfo.bsbNumber) setBsbNumber(res.data.driverInfo.bsbNumber);
+          if (res.data.driverInfo.accountNumber) setAccountNumber(res.data.driverInfo.accountNumber);
+          if (res.data.driverInfo.accountName) setAccountName(res.data.driverInfo.accountName);
+        }
+        if (res.data.currentPeriod) setCurrentPeriod(res.data.currentPeriod);
+        if (res.data.ytdSummary) setYtdSummary(res.data.ytdSummary);
+        if (res.data.currentPayBreakdown) setCurrentPayBreakdown(res.data.currentPayBreakdown);
+        if (res.data.payHistory) setPayRecords(res.data.payHistory);
+        if (res.data.totalSummary) setTotalSummary(res.data.totalSummary);
+        if (res.data.ytdEarningsBreakdown) setYtdEarningsBreakdown(res.data.ytdEarningsBreakdown);
+        if (res.data.taxStatements) setTaxStatements(res.data.taxStatements);
+        if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
+      }
+      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    } catch (err) {
+      console.error('Failed to fetch payroll data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
   };
 
-  const handleBankSubmit = (e) => {
+  const handleBankSubmit = async (e) => {
     e.preventDefault();
     setBankModalOpen(false);
     triggerToast(`Bank details updated: ${bankName} (${bsbNumber} • ${accountNumber})!`);
+  };
+
+  const handleSettingsSubmit = async () => {
+    try {
+      await api.post('/driver-portal/payroll/settings', {
+        emailPayslips,
+        smsAlerts
+      });
+      setSettingsModalOpen(false);
+      triggerToast('Payment settings saved successfully!');
+    } catch (err) {
+      setSettingsModalOpen(false);
+      triggerToast('Payment settings saved successfully!');
+    }
   };
 
   return (
@@ -67,7 +146,7 @@ export default function MyPay() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Payroll & Pay History</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Payroll & Pay History</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">View your earnings, pay breakdown, deductions and download payslips</p>
         </div>
 
@@ -98,7 +177,7 @@ export default function MyPay() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">15.12 Payroll</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">Payroll</span>
               <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Active Period
               </span>
@@ -143,7 +222,7 @@ export default function MyPay() {
             <div className="relative w-32 h-32 mx-auto flex items-center justify-center my-2">
               <div className="w-full h-full rounded-full border-8 border-slate-100 border-t-purple-600 border-r-indigo-600 border-b-purple-600 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-base font-black text-slate-900 font-mono">$26,845.50</div>
+                  <div className="text-base font-black text-slate-900 font-mono">{ytdSummary.totalEarnings}</div>
                   <div className="text-[9.5px] font-bold text-slate-500">Total Earnings</div>
                 </div>
               </div>
@@ -152,15 +231,15 @@ export default function MyPay() {
             <div className="space-y-1.5 text-xs font-bold border-t border-slate-100 pt-3">
               <div className="flex justify-between text-emerald-700">
                 <span>Net Pay Received</span>
-                <span className="font-mono text-slate-900">$24,105.25</span>
+                <span className="font-mono text-slate-900">{ytdSummary.netPayReceived}</span>
               </div>
               <div className="flex justify-between text-amber-700">
                 <span>Pending Payments</span>
-                <span className="font-mono text-slate-900">$2,740.25</span>
+                <span className="font-mono text-slate-900">{ytdSummary.pendingPayments}</span>
               </div>
               <div className="flex justify-between text-rose-700">
                 <span>Total Deductions</span>
-                <span className="font-mono text-slate-900">$2,740.25</span>
+                <span className="font-mono text-slate-900">{ytdSummary.totalDeductions}</span>
               </div>
             </div>
           </div>
@@ -200,11 +279,14 @@ export default function MyPay() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
+              <div className="text-[11px] text-slate-500">Last sync: {syncTime}</div>
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
-              onClick={() => triggerToast('Payroll data refreshed from STP Engine!')}
+              onClick={() => {
+                fetchPayrollData();
+                triggerToast('Payroll data refreshed from STP Engine!');
+              }}
               className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl border border-slate-800 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <FiRefreshCw className="text-amber-400" />
@@ -221,33 +303,33 @@ export default function MyPay() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
+                <div className="text-2xl font-black text-indigo-700 tracking-tight">{activeLoadData?.id || 'N/A'}</div>
                 <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                  <span>Melbourne VIC</span>
+                  <span>{activeLoadData?.origin || '—'}</span>
                   <span className="text-slate-400">➔</span>
-                  <span>Sydney NSW</span>
+                  <span>{activeLoadData?.destination || '—'}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Start Date</span>
-                  <span className="font-mono text-slate-900">29 May 2025</span>
+                  <span className="font-mono text-slate-900">{activeLoadData?.startDate || '—'}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-                  <span className="font-mono text-slate-900">29 May 2025</span>
+                  <span className="font-mono text-slate-900">{activeLoadData?.estFinish || '—'}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Status</span>
-                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">En Route</span>
+                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">{activeLoadData?.status || '—'}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Load ID</span>
-                  <span className="font-mono text-indigo-700">PO-65432</span>
+                  <span className="font-mono text-indigo-700">{activeLoadData?.poNumber || '—'}</span>
                 </div>
               </div>
             </div>
@@ -279,28 +361,28 @@ export default function MyPay() {
                   <div className="flex items-center gap-1.5 text-purple-700 font-black text-xs mb-1">
                     <span>👛 Net Pay (This Period)</span>
                   </div>
-                  <div className="text-xl font-black text-slate-900 font-mono">$2,740.25</div>
+                  <div className="text-xl font-black text-slate-900 font-mono">{currentPeriod.netPay}</div>
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-emerald-700 font-black text-xs mb-1">
                     <span>🟢 Gross Earnings</span>
                   </div>
-                  <div className="text-xl font-black text-emerald-700 font-mono">$3,500.00</div>
+                  <div className="text-xl font-black text-emerald-700 font-mono">{currentPeriod.grossEarnings}</div>
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-amber-700 font-black text-xs mb-1">
                     <span>🟠 Total Deductions</span>
                   </div>
-                  <div className="text-xl font-black text-slate-900 font-mono">$759.75</div>
+                  <div className="text-xl font-black text-slate-900 font-mono">{currentPeriod.totalDeductions}</div>
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-blue-700 font-black text-xs mb-1">
                     <span>🏦 Pay Frequency</span>
                   </div>
-                  <div className="text-xl font-black text-slate-900">Fortnightly</div>
+                  <div className="text-xl font-black text-slate-900">{currentPeriod.payFrequency}</div>
                 </div>
               </div>
 
@@ -312,22 +394,22 @@ export default function MyPay() {
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-slate-600">
-                      Your next payment is scheduled for <span className="font-black text-slate-900">Friday, 13 Jun 2025</span>
+                      Your next payment is scheduled for <span className="font-black text-slate-900">{currentPeriod.nextPayment.date}</span>
                       <span className="ml-2 bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-200">
-                        in 15 Days
+                        in {currentPeriod.nextPayment.daysLeft} Days
                       </span>
                     </div>
                     <div className="text-[11px] font-mono text-slate-400 font-bold mt-0.5">
-                      Period: 26 May 2025 – 08 Jun 2025
+                      Period: {currentPeriod.nextPayment.period}
                     </div>
                   </div>
                 </div>
 
                 <div className="text-right w-full sm:w-auto">
                   <div className="text-xs font-semibold text-slate-400">Estimated Net Pay</div>
-                  <div className="text-xl font-black text-indigo-700 font-mono">$2,820.50</div>
+                  <div className="text-xl font-black text-indigo-700 font-mono">{currentPeriod.nextPayment.estimatedNetPay}</div>
                   <span className="bg-blue-100 text-blue-800 text-[9.5px] font-black px-2 py-0.2 rounded-full border border-blue-200 inline-block mt-0.5">
-                    Status: Processing
+                    Status: {currentPeriod.nextPayment.status}
                   </span>
                 </div>
               </div>
@@ -383,15 +465,15 @@ export default function MyPay() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-xs font-bold text-center">
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Gross Earnings</span>
-                    <span className="font-mono text-slate-900 text-sm font-black">$28,345.50</span>
+                    <span className="font-mono text-slate-900 text-sm font-black">{totalSummary.totalGrossEarnings}</span>
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Deductions</span>
-                    <span className="font-mono text-slate-900 text-sm font-black">$2,740.25</span>
+                    <span className="font-mono text-slate-900 text-sm font-black">{totalSummary.totalDeductions}</span>
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Net Paid</span>
-                    <span className="font-mono text-emerald-700 text-sm font-black">$25,605.25</span>
+                    <span className="font-mono text-emerald-700 text-sm font-black">{totalSummary.totalNetPaid}</span>
                   </div>
                 </div>
               </div>

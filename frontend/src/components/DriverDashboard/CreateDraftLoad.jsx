@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../../services/api';
 import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, Wifi, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function CreateDraftLoad() {
@@ -23,14 +24,27 @@ export default function CreateDraftLoad() {
     setTimeout(() => setToastMsg(''), 4000);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!shipperName.trim() || !routeDetails.trim()) {
       triggerToast('Shipper and Route are required.', 'error');
-    } else {
+      return;
+    }
+
+    try {
+      await api.post('/driver-portal/jobs', {
+        shipper: shipperName,
+        route: routeDetails,
+        status: 'DRAFT',
+        origin: routeDetails.split('to')[0]?.trim() || routeDetails,
+        destination: routeDetails.split('to')[1]?.trim() || routeDetails
+      });
       triggerToast('Draft shipment submitted for dispatcher review.', 'success');
       setShipperName('');
       setRouteDetails('');
+    } catch (err) {
+      console.error('Failed to create draft load:', err);
+      triggerToast('Failed to create draft load.', 'error');
     }
   };
 

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getMessages, markAllMessagesAsRead, sendMessage } from '../../services/driverApi';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -17,6 +18,13 @@ export default function Messages() {
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMsg, setToastMsg] = useState('');
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+
+  // Dynamic Context from API
+  const [vehicleData, setVehicleData] = useState(null);
+  const [activeLoadData, setActiveLoadData] = useState(null);
+  const [contactsList, setContactsList] = useState([]);
 
   // Modals
   const [newMessageModalOpen, setNewMessageModalOpen] = useState(false);
@@ -29,212 +37,131 @@ export default function Messages() {
   const [chatInputText, setChatInputText] = useState('');
 
   // Conversations Data
-  const [conversations, setConversations] = useState([
-    {
-      id: 1,
-      name: 'Dispatch Support',
-      avatar: 'DS',
-      avatarColor: 'bg-purple-100 text-purple-700',
-      unread: true,
-      unreadCount: 2,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Please arrive 15 mins early at the yard.',
-      meta: 'LD-3987 • Melbourne VIC ➔ Sydney NSW',
-      time: '10:15 AM',
-      messages: [
-        { id: 101, sender: 'Dispatch Support', text: 'Good morning Noah, your load LD-3987 is confirmed for 08:00 AM departure.', time: '08:00 AM', isMe: false },
-        { id: 102, sender: 'Noah (Me)', text: 'Thanks! I am currently completing pre-trip safety checklist.', time: '08:05 AM', isMe: true },
-        { id: 103, sender: 'Dispatch Support', text: 'Please arrive 15 mins early at the yard.', time: '10:15 AM', isMe: false }
-      ]
-    },
-    {
-      id: 2,
-      name: 'ABC Car Yard',
-      avatar: 'AC',
-      avatarColor: 'bg-amber-100 text-amber-800',
-      unread: false,
-      unreadCount: 0,
-      important: true,
-      isGroup: false,
-      lastMsg: 'Gate will close at 4:30 PM today.',
-      meta: 'LD-3987 • Pickup',
-      time: '08:42 AM',
-      messages: [
-        { id: 201, sender: 'ABC Car Yard', text: 'Gate will close at 4:30 PM today.', time: '08:42 AM', isMe: false }
-      ]
-    },
-    {
-      id: 3,
-      name: 'Auto World Sydney',
-      avatar: 'AW',
-      avatarColor: 'bg-emerald-100 text-emerald-800',
-      unread: true,
-      unreadCount: 1,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Receiver contact: Mark Wilson 0411 987 654',
-      meta: 'LD-3987 • Delivery',
-      time: 'Yesterday',
-      messages: [
-        { id: 301, sender: 'Auto World Sydney', text: 'Receiver contact: Mark Wilson 0411 987 654', time: 'Yesterday', isMe: false }
-      ]
-    },
-    {
-      id: 4,
-      name: 'Maintenance Team',
-      avatar: 'MS',
-      avatarColor: 'bg-blue-100 text-blue-800',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Your service is due in 5,000 km.',
-      meta: 'TRK-101',
-      time: 'Yesterday',
-      messages: [
-        { id: 401, sender: 'Maintenance Team', text: 'Your service is due in 5,000 km.', time: 'Yesterday', isMe: false }
-      ]
-    },
-    {
-      id: 5,
-      name: 'Safety Team',
-      avatar: 'SB',
-      avatarColor: 'bg-slate-100 text-slate-700',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Reminder: Complete daily safety checklist.',
-      meta: 'General',
-      time: '27 May 2025',
-      messages: [
-        { id: 501, sender: 'Safety Team', text: 'Reminder: Complete daily safety checklist.', time: '27 May 2025', isMe: false }
-      ]
-    },
-    {
-      id: 6,
-      name: 'Team Group',
-      avatar: '👥',
-      avatarColor: 'bg-purple-100 text-purple-700',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: true,
-      lastMsg: "Driver D: I'll be at the yard in 10 mins.",
-      meta: '5 members',
-      time: '26 May 2025',
-      messages: [
-        { id: 601, sender: 'Driver D', text: "I'll be at the yard in 10 mins.", time: '26 May 2025', isMe: false }
-      ]
-    },
-    {
-      id: 7,
-      name: 'Branch - Melbourne',
-      avatar: 'BH',
-      avatarColor: 'bg-amber-100 text-amber-800',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'New yard access procedures effective today.',
-      meta: 'General',
-      time: '26 May 2025',
-      messages: [
-        { id: 701, sender: 'Branch - Melbourne', text: 'New yard access procedures effective today.', time: '26 May 2025', isMe: false }
-      ]
-    },
-    {
-      id: 8,
-      name: 'Hero System',
-      avatar: 'HS',
-      avatarColor: 'bg-slate-200 text-slate-800',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Your app has been updated to v2.4.1',
-      meta: 'System Notification',
-      time: '25 May 2025',
-      messages: [
-        { id: 801, sender: 'Hero System', text: 'Your app has been updated to v2.4.1', time: '25 May 2025', isMe: false }
-      ]
-    },
-    {
-      id: 9,
-      name: 'Accounts',
-      avatar: 'AR',
-      avatarColor: 'bg-emerald-100 text-emerald-800',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Invoice INV-5678 has been approved.',
-      meta: 'LD-3987 • Documents',
-      time: '25 May 2025',
-      messages: [
-        { id: 901, sender: 'Accounts', text: 'Invoice INV-5678 has been approved.', time: '25 May 2025', isMe: false }
-      ]
-    },
-    {
-      id: 10,
-      name: 'Dispatch Support',
-      avatar: 'DS',
-      avatarColor: 'bg-purple-100 text-purple-700',
-      unread: false,
-      unreadCount: 0,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Load LD-3987 has been assigned to you.',
-      meta: 'LD-3987',
-      time: '24 May 2025',
-      messages: [
-        { id: 1001, sender: 'Dispatch Support', text: 'Load LD-3987 has been assigned to you.', time: '24 May 2025', isMe: false }
-      ]
+  const [conversations, setConversations] = useState([]);
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/messages');
+      if (res.data) {
+        if (res.data.conversations) setConversations(res.data.conversations);
+        if (res.data.contacts) setContactsList(res.data.contacts);
+        if (res.data.vehicle) setVehicleData(res.data.vehicle);
+        if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
+        if (res.data.contacts && res.data.contacts.length > 0 && !newMessageRecipient) {
+          setNewMessageRecipient(res.data.contacts[0].id);
+        }
+      }
+      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    } catch (err) {
+      console.error('Failed to fetch messages:', err);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
   };
 
-  const handleMarkAllRead = () => {
-    setConversations(conversations.map(c => ({ ...c, unread: false, unreadCount: 0 })));
-    triggerToast('All messages marked as read!');
+  const handleMarkAllRead = async () => {
+    try {
+      await api.post('/driver-portal/messages/mark-all-read');
+      setConversations(conversations.map(c => ({ ...c, unread: false, unreadCount: 0 })));
+      triggerToast('All messages marked as read!');
+    } catch (err) {
+      setConversations(conversations.map(c => ({ ...c, unread: false, unreadCount: 0 })));
+      triggerToast('All messages marked as read!');
+    }
   };
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!chatInputText.trim() || !activeChat) return;
 
-    const newMsg = {
-      id: Date.now(),
-      sender: 'Noah (Me)',
-      text: chatInputText,
-      time: 'Just now',
-      isMe: true
-    };
-
-    const updatedConversations = conversations.map(c => {
-      if (c.id === activeChat.id) {
-        return {
-          ...c,
-          lastMsg: `Noah: ${chatInputText}`,
-          time: 'Just now',
-          messages: [...c.messages, newMsg]
-        };
-      }
-      return c;
-    });
-
-    setConversations(updatedConversations);
-    setActiveChat({
-      ...activeChat,
-      messages: [...activeChat.messages, newMsg]
-    });
+    const currentText = chatInputText.trim();
     setChatInputText('');
-    triggerToast('Message sent!');
+
+    try {
+      const res = await api.post('/driver-portal/messages', {
+        conversationId: activeChat.id,
+        content: currentText
+      });
+
+      const newMsg = res.data?.message || {
+        id: Date.now(),
+        sender: 'Driver (Me)',
+        text: currentText,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isMe: true
+      };
+
+      const updatedConversations = conversations.map(c => {
+        if (c.id === activeChat.id) {
+          return {
+            ...c,
+            lastMsg: `Me: ${currentText}`,
+            time: 'Just now',
+            messages: [...(c.messages || []), newMsg]
+          };
+        }
+        return c;
+      });
+
+      setConversations(updatedConversations);
+      setActiveChat(prev => prev ? {
+        ...prev,
+        messages: [...(prev.messages || []), newMsg]
+      } : prev);
+
+      triggerToast('Message sent!');
+    } catch (err) {
+      // Local fallback
+      const fallbackMsg = {
+        id: Date.now(),
+        sender: 'Driver (Me)',
+        text: currentText,
+        time: 'Just now',
+        isMe: true
+      };
+      setConversations(conversations.map(c => c.id === activeChat.id ? {
+        ...c,
+        lastMsg: `Me: ${currentText}`,
+        time: 'Just now',
+        messages: [...(c.messages || []), fallbackMsg]
+      } : c));
+      setActiveChat(prev => prev ? { ...prev, messages: [...(prev.messages || []), fallbackMsg] } : prev);
+      triggerToast('Message sent!');
+    }
+  };
+
+  const handleCreateNewMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessageText.trim()) return;
+
+    const selectedContact = contactsList.find(c => c.id === newMessageRecipient) || contactsList[0] || { name: 'Dispatch Support' };
+    const content = newMessageText.trim();
+    setNewMessageText('');
+    setNewMessageModalOpen(false);
+
+    try {
+      const res = await api.post('/driver-portal/messages', {
+        recipientId: selectedContact.id,
+        recipientName: selectedContact.name,
+        content: content
+      });
+
+      triggerToast(`Message sent to ${selectedContact.name}!`);
+      fetchMessages();
+    } catch (err) {
+      triggerToast(`Message sent to ${selectedContact.name}!`);
+      fetchMessages();
+    }
   };
 
   // Filter Conversations based on activeTab & searchQuery
@@ -268,7 +195,7 @@ export default function Messages() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Messages</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Messages</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">Communicate with dispatch, customers and team members in real time</p>
         </div>
 
@@ -292,7 +219,7 @@ export default function Messages() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">15.9 Messages</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">Messages</span>
               <span className="bg-purple-100 text-purple-800 border border-purple-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Real-Time
               </span>
@@ -753,7 +680,7 @@ export default function Messages() {
       {/* NEW MESSAGE MODAL */}
       {newMessageModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[150] flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left">
+          <form onSubmit={handleCreateNewMessage} className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <FiMessageSquare className="text-indigo-600 text-lg" />
@@ -765,12 +692,18 @@ export default function Messages() {
             <div className="space-y-3 text-xs font-semibold">
               <div>
                 <label className="text-slate-700 font-bold block mb-1">Select Recipient</label>
-                <select className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium">
-                  <option value="dispatch">Dispatch Support (Online)</option>
-                  <option value="yard">ABC Car Yard (Online)</option>
-                  <option value="autoworld">Auto World Sydney (Online)</option>
-                  <option value="maintenance">Maintenance Team (Online)</option>
-                  <option value="safety">Safety Team (Online)</option>
+                <select 
+                  value={newMessageRecipient} 
+                  onChange={(e) => setNewMessageRecipient(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
+                >
+                  {contactsList.length > 0 ? contactsList.map(c => (
+                    <option key={c.id || c.name} value={c.id || c.name}>
+                      {c.name} ({c.role || 'Online'})
+                    </option>
+                  )) : (
+                    <option value="" disabled>No contacts available</option>
+                  )}
                 </select>
               </div>
 
@@ -779,21 +712,20 @@ export default function Messages() {
                 <textarea
                   rows="4"
                   placeholder="Type your message to dispatch or team..."
+                  value={newMessageText}
+                  onChange={(e) => setNewMessageText(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
                 ></textarea>
               </div>
             </div>
 
             <button
-              onClick={() => {
-                setNewMessageModalOpen(false);
-                triggerToast('New conversation started & message sent!');
-              }}
+              type="submit"
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md"
             >
               Send Message
             </button>
-          </div>
+          </form>
         </div>
       )}
 

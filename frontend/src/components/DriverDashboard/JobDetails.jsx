@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import {
@@ -9,104 +9,6 @@ import {
   FiPackage, FiAlertTriangle, FiEdit2, FiX, FiDownload,
   FiFileText, FiPrinter, FiEye, FiPlus, FiCheck
 } from 'react-icons/fi';
-
-/* ── Shared job data ─────────────────────────────────── */
-const INITIAL_JOBS_DB = {
-  'LD-3987': {
-    id: 'LD-3987', subTitle: 'Car Carrier (4 Level)',
-    status: 'UPCOMING', statusText: 'Upcoming', statusCountdown: 'Starts in 5h 45m',
-    origin: 'Melbourne VIC', destination: 'Sydney NSW',
-    date: '29 May 2025', startTime: '08:00 AM', endTime: '02:30 PM',
-    loadType: 'Car Carrier (4 Level)', stops: '1 Stop', reference: 'PO-65432', priority: 'Normal',
-    trailer: 'TRL-205 (Car Carrier 4 Level)',
-    specialInstructions: 'Handle with care. Check all vehicles for existing damage. Report any issues immediately.',
-    pickup: { name: 'ABC Car Yard', address: '123 Sunshine Rd', suburb: 'Melbourne VIC 3000', contact: 'John Smith', phone: '0412 345 678', time: '08:00 AM', date: '29 May 2025', status: 'UPCOMING' },
-    delivery: { name: 'Auto World Sydney', address: '45 Parramatta Rd', suburb: 'Sydney NSW 2150', contact: 'Mark Wilson', phone: '0411 987 654', time: '02:30 PM', date: '29 May 2025', status: 'UPCOMING' },
-    items: { total: 6, damaged: 0, photosRequired: 0, photosTaken: 6 },
-    totalVehicles: 8,
-    documents: [
-      { id: 1, name: 'Consignment Note – LD-3987.pdf', type: 'PDF', date: '29 May 2025', size: '1.2 MB' },
-      { id: 2, name: 'Pickup Receipt – ABC Car Yard.pdf', type: 'PDF', date: '29 May 2025', size: '850 KB' }
-    ],
-    photos: [
-      { id: 1, title: 'Front Loading View', date: '29 May 2025, 08:15 AM', tag: 'Pickup' },
-      { id: 2, title: 'Rear Vehicle Straps', date: '29 May 2025, 08:20 AM', tag: 'Inspection' },
-      { id: 3, title: 'Left Side Clearance', date: '29 May 2025, 08:22 AM', tag: 'Safety' },
-      { id: 4, title: 'Vehicle VIN Verification', date: '29 May 2025, 08:25 AM', tag: 'Check' },
-      { id: 5, title: 'Upper Deck Alignment', date: '29 May 2025, 08:30 AM', tag: 'Loading' },
-      { id: 6, title: 'Final Ramp Lock', date: '29 May 2025, 08:35 AM', tag: 'Departure' }
-    ],
-    activities: [
-      { time: '08:12 AM', action: 'Job accepted by driver', user: 'Driver' },
-      { time: '08:00 AM', action: 'Job assigned by dispatcher', user: 'Dispatch HQ' },
-      { time: '07:45 AM', action: 'Pre-start checklist completed', user: 'Driver' },
-      { time: '07:30 AM', action: 'Job created in system', user: 'System' }
-    ]
-  },
-  'LD-3988': {
-    id: 'LD-3988', subTitle: 'Car Carrier (4 Level)',
-    status: 'UPCOMING', statusText: 'Upcoming', statusCountdown: 'Starts tomorrow 07:30 AM',
-    origin: 'Brisbane QLD', destination: 'Perth WA',
-    date: '30 May 2025', startTime: '07:30 AM', endTime: '06:00 PM',
-    loadType: 'Car Carrier (4 Level)', stops: '2 Stops', reference: 'PO-65456', priority: 'High',
-    trailer: 'TRL-208 (Car Carrier 4 Level)',
-    specialInstructions: 'Long haul interstate. Check tyre pressure before departure.',
-    pickup: { name: 'Brisbane Port Terminal', address: 'Port Dr', suburb: 'Brisbane QLD 4178', contact: 'Sarah Lee', phone: '0413 222 333', time: '07:30 AM', date: '30 May 2025', status: 'UPCOMING' },
-    delivery: { name: 'Perth Freight Hub', address: '12 Freight Ave', suburb: 'Perth WA 6100', contact: 'David Park', phone: '0414 555 666', time: '06:00 PM', date: '31 May 2025', status: 'UPCOMING' },
-    items: { total: 10, damaged: 0, photosRequired: 2, photosTaken: 0 },
-    totalVehicles: 10,
-    documents: [
-      { id: 1, name: 'Bill of Lading – LD-3988.pdf', type: 'PDF', date: '30 May 2025', size: '2.1 MB' }
-    ],
-    photos: [],
-    activities: [
-      { time: '07:30 AM', action: 'Job created in system', user: 'System' }
-    ]
-  },
-  'LD-3986': {
-    id: 'LD-3986', subTitle: 'Car Carrier (4 Level)',
-    status: 'IN_PROGRESS', statusText: 'In Progress', statusCountdown: 'In Transit',
-    origin: 'Melbourne VIC', destination: 'Adelaide SA',
-    date: '29 May 2025', startTime: '06:00 AM', endTime: 'In Transit',
-    loadType: 'Car Carrier (4 Level)', stops: '1 Stop', reference: 'PO-65421', priority: 'Normal',
-    trailer: 'TRL-201 (Car Carrier 4 Level)',
-    specialInstructions: 'Vehicles are high-value. Secure straps every 150km.',
-    pickup: { name: 'Melbourne Vehicle Hub', address: '88 Western Hwy', suburb: 'Deer Park VIC 3023', contact: 'Alex Turner', phone: '0415 111 222', time: '06:00 AM', date: '29 May 2025', status: 'COMPLETED' },
-    delivery: { name: 'Adelaide Vehicle Hub', address: '55 Chief St', suburb: 'Wingfield SA 5013', contact: 'Lisa Chen', phone: '0416 333 444', time: 'In Transit', date: '29 May 2025', status: 'UPCOMING' },
-    items: { total: 6, damaged: 0, photosRequired: 0, photosTaken: 4 },
-    totalVehicles: 6,
-    documents: [
-      { id: 1, name: 'Consignment Note – LD-3986.pdf', type: 'PDF', date: '29 May 2025', size: '1.5 MB' }
-    ],
-    photos: [
-      { id: 1, title: 'Melbourne Loading Deck', date: '29 May 2025, 06:15 AM', tag: 'Pickup' },
-      { id: 2, title: 'Tie Down Inspection', date: '29 May 2025, 06:30 AM', tag: 'Inspection' }
-    ],
-    activities: [
-      { time: '06:00 AM', action: 'Departed pickup location', user: 'Driver' }
-    ]
-  },
-  'LD-3981': {
-    id: 'LD-3981', subTitle: 'Car Carrier (4 Level)',
-    status: 'CANCELLED', statusText: 'Cancelled', statusCountdown: 'Cancelled',
-    origin: 'Adelaide SA', destination: 'Darwin NT',
-    date: '22 May 2025', startTime: 'N/A', endTime: 'N/A',
-    loadType: 'Car Carrier (4 Level)', stops: '1 Stop', reference: 'PO-65340', priority: 'Normal',
-    trailer: 'N/A',
-    specialInstructions: 'Load cancelled by customer. Do not proceed.',
-    pickup: { name: 'Adelaide South Yard', address: '3 Regency Rd', suburb: 'Kilburn SA 5084', contact: 'Ian Foster', phone: '0425 555 666', time: 'N/A', date: '22 May 2025', status: 'CANCELLED' },
-    delivery: { name: 'Darwin Freight Terminal', address: '10 Frances Bay Dr', suburb: 'Darwin NT 0800', contact: 'Cathy Liu', phone: '0426 777 888', time: 'N/A', date: 'N/A', status: 'CANCELLED' },
-    items: { total: 0, damaged: 0, photosRequired: 0, photosTaken: 0 },
-    totalVehicles: 0,
-    documents: [
-      { id: 1, name: 'Cancellation Notice – LD-3981.pdf', type: 'PDF', date: '22 May 2025', size: '420 KB' }
-    ],
-    photos: [],
-    activities: [
-      { time: '09:00 AM', action: 'Job cancelled by dispatch', user: 'Dispatch HQ' }
-    ]
-  }
-};
 
 const STATUS_META = {
   UPCOMING:    { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd', btnBg: '#7c3aed', btnText: 'Start Job' },
@@ -128,10 +30,8 @@ export default function JobDetails() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Overview');
   const [toast, setToast] = useState('');
-
-  // Local job state for dynamic updates
-  const jobId = id && INITIAL_JOBS_DB[id] ? id : 'LD-3981';
-  const [job, setJob] = useState(INITIAL_JOBS_DB[jobId]);
+  const [loading, setLoading] = useState(true);
+  const [job, setJob] = useState(null);
 
   // Modals state
   const [showDocUploadModal, setShowDocUploadModal] = useState(false);
@@ -145,12 +45,108 @@ export default function JobDetails() {
   const [viewPhotoModal, setViewPhotoModal] = useState(null);
 
   const [showStatusModal, setShowStatusModal] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState(job.status);
+  const [selectedStatus, setSelectedStatus] = useState('UPCOMING');
   const [statusNote, setStatusNote] = useState('');
 
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [showDirectionsModal, setShowDirectionsModal] = useState(null); // 'pickup' or 'delivery'
   const [showItemsModal, setShowItemsModal] = useState(false);
+
+  useEffect(() => {
+    fetchJobDetails();
+  }, [id]);
+
+  const fetchJobDetails = async () => {
+    try {
+      setLoading(true);
+      // Try fetching by load ID or look up in driver jobs
+      let loadData = null;
+      if (id) {
+        const res = await api.get(`/loads/${id}`).catch(() => null);
+        if (res && res.data) {
+          loadData = res.data.data || res.data;
+        }
+      }
+
+      if (!loadData) {
+        const jobsRes = await api.get('/driver-portal/jobs').catch(() => null);
+        const list = jobsRes?.data?.data?.jobs || jobsRes?.data?.jobs || [];
+        loadData = list.find(j => j.id === id || j.loadNumber === id) || list[0];
+      }
+
+      if (loadData) {
+        const pickupStop = (loadData.stops || []).find(s => s.type === 'PICKUP') || {};
+        const deliveryStop = (loadData.stops || []).find(s => s.type === 'DROPOFF' || s.type === 'DELIVERY') || {};
+        
+        const formatted = {
+          id: loadData.loadNumber || loadData.id || id,
+          subTitle: loadData.loadType || 'General Freight',
+          status: loadData.status === 'ACTIVE' ? 'IN_PROGRESS' : loadData.status || 'UPCOMING',
+          statusText: loadData.status || 'Upcoming',
+          statusCountdown: '',
+          origin: loadData.origin || pickupStop.address || 'Origin',
+          destination: loadData.destination || deliveryStop.address || 'Destination',
+          date: loadData.createdAt ? new Date(loadData.createdAt).toLocaleDateString() : 'Today',
+          startTime: '08:00 AM',
+          endTime: '05:00 PM',
+          loadType: loadData.loadType || 'General Freight',
+          stops: `${(loadData.stops || []).length || 2} Stops`,
+          reference: loadData.poNumber || loadData.loadNumber || loadData.id,
+          priority: 'Normal',
+          trailer: loadData.trailer?.rego || loadData.trailerId || 'Unassigned',
+          specialInstructions: loadData.specialInstructions || 'Handle with care.',
+          pickup: {
+            name: pickupStop.name || 'Pickup Terminal',
+            address: pickupStop.address || loadData.origin || 'Pickup Address',
+            suburb: pickupStop.city || '',
+            contact: pickupStop.contactName || 'Site Contact',
+            phone: pickupStop.contactPhone || '',
+            time: '08:00 AM',
+            date: 'Today',
+            status: pickupStop.status || 'UPCOMING'
+          },
+          delivery: {
+            name: deliveryStop.name || 'Delivery Terminal',
+            address: deliveryStop.address || loadData.destination || 'Delivery Address',
+            suburb: deliveryStop.city || '',
+            contact: deliveryStop.contactName || 'Site Contact',
+            phone: deliveryStop.contactPhone || '',
+            time: '05:00 PM',
+            date: 'Today',
+            status: deliveryStop.status || 'UPCOMING'
+          },
+          items: {
+            total: (loadData.items || []).length,
+            damaged: (loadData.items || []).filter(i => i.condition === 'DAMAGED').length,
+            photosRequired: 0,
+            photosTaken: (loadData.items || []).filter(i => i.photoUrl).length
+          },
+          totalVehicles: (loadData.items || []).length,
+          documents: (loadData.documents || []).map(d => ({
+            id: d.id,
+            name: d.title || d.fileName || 'Document.pdf',
+            type: 'PDF',
+            date: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Recent',
+            size: '1 MB'
+          })),
+          photos: [],
+          activities: (loadData.activities || []).map(a => ({
+            time: a.createdAt ? new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today',
+            action: a.description || a.type || 'Activity logged',
+            user: a.performedBy || 'System'
+          }))
+        };
+        setJob(formatted);
+        setSelectedStatus(formatted.status);
+      } else {
+        setJob(null);
+      }
+    } catch (err) {
+      console.error('Failed to load job details:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const meta = STATUS_META[job.status] || STATUS_META.UPCOMING;
   const pickupStop = STOP_STATUS[job.pickup?.status] || STOP_STATUS.UPCOMING;
@@ -178,7 +174,7 @@ export default function JobDetails() {
         statusText: 'In Progress',
         statusCountdown: 'In Transit',
         activities: [
-          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job started by driver', user: 'Driver' },
+          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job started by driver', user: 'Noah Williams' },
           ...job.activities
         ]
       };
@@ -193,7 +189,7 @@ export default function JobDetails() {
         pickup: { ...job.pickup, status: 'COMPLETED' },
         delivery: { ...job.delivery, status: 'COMPLETED' },
         activities: [
-          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job marked completed by driver', user: 'Driver' },
+          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job marked completed by driver', user: 'Noah Williams' },
           ...job.activities
         ]
       };
@@ -220,7 +216,7 @@ export default function JobDetails() {
       ...prev,
       documents: [newDoc, ...prev.documents],
       activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Uploaded document: ${newDoc.name}`, user: 'Driver' },
+        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Uploaded document: ${newDoc.name}`, user: 'Noah Williams' },
         ...prev.activities
       ]
     }));
@@ -247,7 +243,7 @@ export default function JobDetails() {
       photos: [newPhoto, ...prev.photos],
       items: { ...prev.items, photosTaken: prev.items.photosTaken + 1 },
       activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Added photo: ${newPhoto.title}`, user: 'Driver' },
+        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Added photo: ${newPhoto.title}`, user: 'Noah Williams' },
         ...prev.activities
       ]
     }));
@@ -272,7 +268,7 @@ export default function JobDetails() {
       statusText: meta.text,
       statusCountdown: meta.cd,
       activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Status updated to ${meta.text}${statusNote ? `: ${statusNote}` : ''}`, user: 'Driver' },
+        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Status updated to ${meta.text}${statusNote ? `: ${statusNote}` : ''}`, user: 'Noah Williams' },
         ...prev.activities
       ]
     }));
@@ -290,6 +286,32 @@ export default function JobDetails() {
       }
     </div>
   );
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 40, height: 40, border: '4px solid #e0e7ff', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+          <p style={{ color: '#64748b', fontWeight: 700, fontSize: 14 }}>Loading job details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!job) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center' }}>
+        <div style={{ background: '#fff', padding: 32, borderRadius: 24, border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', maxWidth: 420, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+          <span style={{ fontSize: 40 }}>📦</span>
+          <h2 style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', margin: 0 }}>No Job Record Found</h2>
+          <p style={{ color: '#64748b', fontSize: 13, margin: 0 }}>No assigned load details could be found for this reference.</p>
+          <button onClick={() => navigate('/driver/assigned-jobs')} style={{ background: '#4f46e5', color: '#fff', fontWeight: 800, padding: '10px 20px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13, marginTop: 8 }}>
+            Back to Assigned Loads
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ fontFamily: "'Inter','Segoe UI',sans-serif", background: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
