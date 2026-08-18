@@ -86,11 +86,7 @@ export default function MaintenanceRequest() {
     }
   };
 
-<<<<<<< HEAD
   const mockData = maintenanceHistory;
-=======
-  const records = [];
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 
   const toggleRow = (id) => {
     setSelectedRows(prev =>

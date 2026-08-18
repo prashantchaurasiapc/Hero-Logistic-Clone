@@ -1,11 +1,6 @@
-<<<<<<< HEAD
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMyExpenses, createExpense } from '../../services/driverApi';
-=======
-import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
@@ -60,7 +55,6 @@ export default function AddExpense() {
   // Receipts Thumbnails Data
   const [receipts, setReceipts] = useState([]);
 
-<<<<<<< HEAD
   useEffect(() => {
     fetchData();
   }, []);
@@ -124,99 +118,6 @@ export default function AddExpense() {
     }
   };
 
-=======
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
-  const triggerToast = (msg) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 3500);
-  };
-
-  const handleFilePicked = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
-      triggerToast(`Selected file: ${e.target.files[0].name}`);
-    }
-  };
-
-  const handleUploadSubmit = () => {
-    const fileName = selectedFile ? selectedFile.name : 'Receipt_Scan.jpg';
-    setReceipts([
-      { id: Date.now(), date: '29 May 2025', time: '02:50 PM', vendor: selectedFile ? fileName : 'Uploaded Receipt', amount: '$45.00' },
-      ...receipts
-    ]);
-    setSelectedFile(null);
-    setUploadReceiptModalOpen(false);
-    triggerToast('Receipt file uploaded & attached successfully!');
-  };
-
-  const handleAddExpenseSubmit = async (e) => {
-    e.preventDefault();
-    if (!formVendor || !formAmount) return;
-
-<<<<<<< HEAD
-    try {
-      const numAmount = parseFloat(formAmount) || 0;
-      await api.post('/driver-portal/expenses', {
-        type: formCategory,
-        vendorName: formVendor,
-        amount: numAmount,
-        litres: formLitres,
-        pricePerLitre: 2.05,
-        odometer: formOdometer,
-        description: formNotes,
-        loadId: runData?.id
-      });
-
-      setAddExpenseModalOpen(false);
-      setFormVendor('');
-      setFormAmount('');
-      setFormLitres('');
-      setFormNotes('');
-      setFormReceiptAdded(false);
-      triggerToast(`Added ${formCategory} expense of $${numAmount.toFixed(2)} for ${formVendor}!`);
-      
-      fetchData();
-    } catch (err) {
-      triggerToast('Failed to add expense.');
-    }
-=======
-    const numAmount = parseFloat(formAmount) || 0;
-    const categoryColors = { Fuel: 'purple', Maintenance: 'emerald', Tyres: 'amber', Tolls: 'blue', Other: 'slate' };
-    const categoryIcons = { Fuel: '⛽', Maintenance: '🔧', Tyres: '🛞', Tolls: '🛣️', Other: '🧽' };
-
-    const newExpense = {
-      id: Date.now(),
-      category: formCategory,
-      categoryColor: categoryColors[formCategory] || 'slate',
-      icon: categoryIcons[formCategory] || '📄',
-      vendor: formVendor,
-      details: formCategory === 'Fuel' && formLitres ? `${formOdometer} km • ${formLitres} L @ $2.05/L` : formNotes || 'Receipt Logged',
-      date: '29 May 2025 02:45 PM',
-      amount: numAmount,
-      status: 'Approved'
-    };
-
-    setExpenses([newExpense, ...expenses]);
-
-    // Also add to receipts if receipt uploaded
-    if (formReceiptAdded) {
-      setReceipts([{
-        id: Date.now(),
-        date: '29 May 2025',
-        time: '02:45 PM',
-        vendor: formVendor,
-        amount: `$${numAmount.toFixed(2)}`
-      }, ...receipts]);
-    }
-
-    setAddExpenseModalOpen(false);
-    setFormVendor('');
-    setFormAmount('');
-    setFormLitres('');
-    setFormNotes('');
-    setFormReceiptAdded(false);
-    triggerToast(`Added ${formCategory} expense of $${numAmount.toFixed(2)} for ${formVendor}!`);
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
   };
 
   // Calculations

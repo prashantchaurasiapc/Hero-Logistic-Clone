@@ -18,7 +18,6 @@ export default function Timesheets() {
   const [toastMsg, setToastMsg] = useState('');
 
   // Clock In / Break / Out States
-<<<<<<< HEAD
   const [clockStatus, setClockStatus] = useState('Clocked Out'); // 'Clocked In', 'On Break', 'Clocked Out'
   const [secondsToday, setSecondsToday] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -54,11 +53,6 @@ export default function Timesheets() {
   const [allTimesheets, setAllTimesheets] = useState([]);
   const [recentTimesheets, setRecentTimesheets] = useState([]);
   const [activeLoadData, setActiveLoadData] = useState(null);
-=======
-  const [clockStatus, setClockStatus] = useState('Clocked In'); // 'Clocked In', 'On Break', 'Clocked Out'
-  const [secondsToday, setSecondsToday] = useState(13515); // 3h 45m 15s
-  const [timerRunning, setTimerRunning] = useState(true);
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 
   // Note State
   const [noteInput, setNoteInput] = useState('');
@@ -72,7 +66,6 @@ export default function Timesheets() {
   const [timesheetSubmitted, setTimesheetSubmitted] = useState(false);
 
   // Timeline Data
-<<<<<<< HEAD
   const [timelineEvents, setTimelineEvents] = useState([]);
 
   useEffect(() => {
@@ -106,15 +99,6 @@ export default function Timesheets() {
       setLoading(false);
     }
   };
-=======
-  const [timelineEvents, setTimelineEvents] = useState([
-    { id: 1, type: 'Clocked In', time: '07:45 AM', location: 'Yard - Melbourne VIC (-37.8136, 144.9631)', badge: 'Auto Location', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-    { id: 2, type: 'Break Started', time: '12:00 PM', location: 'Yass NSW (-34.8020, 148.9097)', badge: '45 min', color: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
-    { id: 3, type: 'Break Ended', time: '12:45 PM', location: 'Yass NSW (-34.8020, 148.9097)', badge: null, color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-    { id: 4, type: 'Note Added', time: '01:05 PM', location: 'Lunch break completed. Continuing journey.', badge: null, color: 'bg-slate-100 text-slate-700 border-slate-200', dot: 'bg-slate-400' },
-    { id: 5, type: 'Still Working', time: '11:00 AM – Now', location: 'Yass NSW (-34.8020, 148.9097)', badge: 'On Site', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
-  ]);
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 
   // Live Timer Effect
   useEffect(() => {
@@ -140,7 +124,6 @@ export default function Timesheets() {
   };
 
   const handleStartBreak = () => {
-<<<<<<< HEAD
     if (isSubmitting) return;
     setIsSubmitting(true);
     const isEndingBreak = clockStatus === 'On Break';
@@ -183,18 +166,6 @@ export default function Timesheets() {
     try {
       await api.post('/driver-portal/timesheets/clock-out', {});
       setClockStatus('Clocked Out');
-=======
-    if (clockStatus === 'On Break') {
-      setClockStatus('Clocked In');
-      setTimerRunning(true);
-      triggerToast('Break ended! Work timer resumed.');
-      setTimelineEvents([
-        ...timelineEvents,
-        { id: Date.now(), type: 'Break Ended', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: 'Yass NSW (-34.8020, 148.9097)', badge: null, color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
-      ]);
-    } else {
-      setClockStatus('On Break');
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
       setTimerRunning(false);
       triggerToast('Break started! Timer paused.');
       setTimelineEvents([
@@ -204,7 +175,6 @@ export default function Timesheets() {
     }
   };
 
-<<<<<<< HEAD
   const handleClockIn = async () => {
     try {
       await api.post('/driver-portal/timesheets/clock-in', {});
@@ -217,26 +187,6 @@ export default function Timesheets() {
       setTimerRunning(true);
       triggerToast('Clocked In successfully! Work timer active.');
     }
-=======
-  const handleClockOut = () => {
-    setClockStatus('Clocked Out');
-    setTimerRunning(false);
-    triggerToast('Clocked Out successfully! Shift ended.');
-    setTimelineEvents([
-      ...timelineEvents,
-      { id: Date.now(), type: 'Clocked Out', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: 'Yard - Sydney NSW (-33.8688, 151.2093)', badge: 'End Shift', color: 'bg-rose-50 text-rose-700 border-rose-200', dot: 'bg-rose-500' }
-    ]);
-  };
-
-  const handleClockIn = () => {
-    setClockStatus('Clocked In');
-    setTimerRunning(true);
-    triggerToast('Clocked In successfully! Work timer active.');
-    setTimelineEvents([
-      ...timelineEvents,
-      { id: Date.now(), type: 'Clocked In', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: 'Yard - Melbourne VIC (-37.8136, 144.9631)', badge: 'Auto Location', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
-    ]);
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
   };
 
   const handleAddNote = (e) => {

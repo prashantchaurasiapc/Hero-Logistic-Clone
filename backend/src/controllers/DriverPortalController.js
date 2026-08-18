@@ -56,62 +56,9 @@ exports.getDashboard = async (req, res, next) => {
   try {
     const driver = await resolveDriver(req);
 
-<<<<<<< HEAD
     const driverName = driver ? (`${driver.firstName || ''} ${driver.lastName || ''}`.trim() || driver.user?.name || req.user?.name || 'Driver') : (req.user?.name || 'Driver');
     const driverCode = driver?.driverCode || driver?.driverNumber || 'DRV-001';
     const driverId = driver?.id || '';
-=======
-    if (!driver) {
-      return sendSuccess(res, {
-        driverInfo: {
-          id: null,
-          name: req.user?.name || 'Driver',
-          driverCode: 'DRV-NEW',
-          status: 'On Duty',
-          lastSync: new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-          vehicle: {
-            rego: 'No Vehicle Assigned',
-            make: '',
-            model: '',
-            odometer: 0,
-            dieselBalance: 0,
-            estRangeKm: 0
-          }
-        },
-        metrics: {
-          loadsToday: 0,
-          loadsTodayUpcoming: 0,
-          nextLoadTime: null,
-          completedThisWeek: 0,
-          slaPercentage: 0,
-          driveTimeToday: '0h 00m',
-          driveTimeRemaining: '11h 00m (HOS)',
-          dieselBalanceL: 0,
-          estRangeKm: 0,
-          payThisPeriod: 0
-        },
-        currentLoad: null,
-        todaySchedule: [],
-        hosLog: {
-          driveTimeElapsed: '0h 00m',
-          driveTimeLeft: '11h 00m',
-          drivePercent: 0,
-          shiftElapsed: '0h 00m',
-          shiftMax: '14h max',
-          shiftPercent: 0,
-          nextBreakDue: 'In 5h 15m'
-        },
-        unreadMessages: [],
-        alerts: [],
-        paySummary: {
-          amount: 0,
-          taxNote: 'Before tax'
-        }
-      });
-    }
-
-    const driverId = driver.id;
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 
     // Fetch real driver loads, timesheets, checklists, vehicle, and messages from DB
     const [

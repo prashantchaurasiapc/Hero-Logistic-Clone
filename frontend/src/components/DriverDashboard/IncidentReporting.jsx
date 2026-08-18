@@ -87,11 +87,7 @@ export default function IncidentReporting() {
     }
   };
 
-<<<<<<< HEAD
   const mockData = incidentHistory;
-=======
-  const records = [];
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 
   const toggleRow = (id) => {
     setSelectedRows(prev => 

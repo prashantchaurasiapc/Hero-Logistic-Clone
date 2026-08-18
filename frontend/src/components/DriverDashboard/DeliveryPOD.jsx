@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-<<<<<<< HEAD
 =======
 import api from '../../services/api';
 >>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
@@ -11,22 +10,7 @@ import {
   FiUserCheck, FiMoon, FiSun, FiLock
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
-<<<<<<< HEAD
 import api from '../../services/api';
-=======
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
-
-export default function DeliveryPOD() {
-  const navigate = useNavigate();
-
-<<<<<<< HEAD
-  // Mode & Toggle States
-  const [afterHoursEnabled, setAfterHoursEnabled] = useState(false);
-=======
-  // Mode & Toast States
-  const [driverMode, setDriverMode] = useState('Flexible / Owner-Driver');
-  const [deliveryMode, setDeliveryMode] = useState('normal'); // 'normal' or 'after-hours'
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
   const [toastMsg, setToastMsg] = useState('');
   const [wrongVehicleAlert, setWrongVehicleAlert] = useState(true);
 
@@ -50,7 +34,6 @@ export default function DeliveryPOD() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState(null);
 
-<<<<<<< HEAD
   // Data State
   const [loading, setLoading] = useState(true);
   const [runData, setRunData] = useState(null);
@@ -283,9 +266,6 @@ export default function DeliveryPOD() {
 
   // Canvas Handlers for Signature Capture
   const handleClearCanvas = () => {
-=======
-  const handleClearSignature = () => {
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -438,7 +418,6 @@ export default function DeliveryPOD() {
         </div>
       </div>
 
-<<<<<<< HEAD
       {/* TOP HEADER LOAD BANNER CARD ("LD-3987") */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-2">
@@ -528,13 +507,6 @@ export default function DeliveryPOD() {
         
         {/* ================= LEFT MAIN CONTENT AREA (9 COLS) ================= */}
         <div className="lg:col-span-9 space-y-5">
-=======
-      {/* THREE-COLUMN MASTER WEB DASHBOARD GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        {/* ================= LEFT COLUMN: MODULE META & INSTRUCTIONS (3 COLS) ================= */}
-        <div className="lg:col-span-3 space-y-6">
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
           
           {/* Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
@@ -575,7 +547,6 @@ export default function DeliveryPOD() {
             <div className="flex items-start gap-3">
               <span className="p-2 bg-indigo-50 text-indigo-600 rounded-xl font-bold text-base">📍</span>
               <div>
-<<<<<<< HEAD
                 <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO DELIVER – DROP 1 OF {runData?.stopsCount || 1} ({totalCarsCount})</h3>
                 <p className="text-xs font-semibold text-slate-500 mt-0.5">Destination: <strong className="text-slate-800">{runData?.nextStop?.name || 'Destination'}</strong></p>
               </div>
@@ -591,10 +562,6 @@ export default function DeliveryPOD() {
                 <span className="bg-indigo-50 text-indigo-700 text-xs font-black px-3 py-1.5 rounded-lg border border-indigo-100">
                   {totalCarsCount} Cars
                 </span>
-=======
-                <div className="font-black text-slate-900 text-sm">Auto World Sydney</div>
-                <div className="text-slate-500 font-medium mt-0.5">45 Parramatta Rd, Sydney NSW 2150</div>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
               </div>
             </div>
           </div>

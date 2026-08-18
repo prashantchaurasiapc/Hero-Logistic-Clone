@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-<<<<<<< HEAD
 =======
 import { useAuth } from '../../context/AuthContext';
 >>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
@@ -15,15 +14,10 @@ import {
 const DriverDashboard = () => {
   const navigate = useNavigate();
 
-<<<<<<< HEAD
   // State
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [driverStatus, setDriverStatus] = useState(() => localStorage.getItem('hero_driver_duty_status') || 'On Duty');
-=======
-  // Status & Modal states
-  const [driverStatus, setDriverStatus] = useState('On Duty');
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [quickMsg, setQuickMsg] = useState('');
@@ -59,7 +53,6 @@ const DriverDashboard = () => {
     setTimeout(() => setToastMessage(''), 3500);
   };
 
-<<<<<<< HEAD
   const fetchDashboard = async () => {
     try {
       setIsLoading(true);
@@ -100,15 +93,6 @@ const DriverDashboard = () => {
   };
 
   const handleSendQuickMsg = async (e) => {
-=======
-  const handleStatusChange = (newStatus) => {
-    setDriverStatus(newStatus);
-    setStatusModalOpen(false);
-    showToast(`Driver status updated to: ${newStatus}`);
-  };
-
-  const handleSendQuickMsg = (e) => {
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
     e.preventDefault();
     if (!quickMsg.trim()) return;
     showToast(`Message sent to Dispatch: "${quickMsg}"`);
@@ -131,7 +115,6 @@ const DriverDashboard = () => {
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Driver Dashboard</h1>
-<<<<<<< HEAD
             <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
               driverStatus === 'In Transit'
                 ? 'bg-blue-100 text-blue-800 border-blue-300'
@@ -155,14 +138,6 @@ const DriverDashboard = () => {
               <button onClick={fetchDashboard} title="Refresh live data" className="hover:text-slate-700 cursor-pointer ml-1">
                 <FiRefreshCw className={`text-[10px] ${isLoading ? 'animate-spin' : ''}`} />
               </button>
-=======
-            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              {driverStatus}
-            </span>
-            <span className="text-[10px] font-extrabold text-slate-400 border border-slate-200 px-2 py-0.5 rounded-full bg-white whitespace-nowrap">
-              Last sync: {dashboardData?.driverInfo?.lastSync || 'Syncing...'}
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
             </span>
           </div>
           <p className="text-xs font-semibold text-slate-500 leading-snug">

@@ -17,144 +17,20 @@ export default function MyPay() {
   const [activeTab, setActiveTab] = useState('Overview'); // 'Overview', 'Pay History', 'Earnings', 'Deductions', 'Tax'
   const [toastMsg, setToastMsg] = useState('');
   const [tipDismissed, setTipDismissed] = useState(false);
-<<<<<<< HEAD
   const [loading, setLoading] = useState(true);
   const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-=======
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
-
-  // Modals
-  const [bankModalOpen, setBankModalOpen] = useState(false);
-  const [payslipModalOpen, setPayslipModalOpen] = useState(false);
-  const [selectedPayslip, setSelectedPayslip] = useState(null);
-  const [taxModalOpen, setTaxModalOpen] = useState(false);
-  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
-  const [breakdownModalOpen, setBreakdownModalOpen] = useState(false);
-
-  // Bank Form State
-  const [bankName, setBankName] = useState('Westpac Banking Corporation');
-  const [bsbNumber, setBsbNumber] = useState('032-000');
-  const [accountNumber, setAccountNumber] = useState('1234 5678');
-  const [accountName, setAccountName] = useState('Noah Davis');
-
-<<<<<<< HEAD
-  // Dynamic Context from API
-  const [currentPeriod, setCurrentPeriod] = useState({
-    netPay: '$0.00',
-    grossEarnings: '$0.00',
-    totalDeductions: '$0.00',
-    payFrequency: '--',
-    nextPayment: {
-      date: '--',
-      daysLeft: 0,
-      period: '--',
-      estimatedNetPay: '$0.00',
-      status: '--'
-    }
-  });
-
-  const [ytdSummary, setYtdSummary] = useState({
-    financialYear: '',
-    totalEarnings: '$0.00',
-    netPayReceived: '$0.00',
-    pendingPayments: '$0.00',
-    totalDeductions: '$0.00'
-  });
-
-  const [currentPayBreakdown, setCurrentPayBreakdown] = useState({
-    period: '--',
-    earnings: {
-      basePay: '$0.00',
-      loadAllowance: '$0.00',
-      distanceAllowance: '$0.00',
-      otherAllowances: '$0.00',
-      totalEarnings: '$0.00'
-    },
-    deductions: {
-      paygTax: '$0.00',
-      superannuation: '$0.00',
-      unionFees: '$0.00',
-      otherDeductions: '$0.00',
-      totalDeductions: '$0.00'
-    },
-    estimatedNetPay: '$0.00',
-    paySummaryTotalDeductions: '$0.00'
-  });
-
-  const [payRecords, setPayRecords] = useState([]);
-  const [totalSummary, setTotalSummary] = useState({
-    totalGrossEarnings: '$0.00',
-    totalDeductions: '$0.00',
-    totalNetPaid: '$0.00'
-  });
-
-  const [ytdEarningsBreakdown, setYtdEarningsBreakdown] = useState({
-    total: '$0.00',
-    items: []
-  });
-
-  const [taxStatements, setTaxStatements] = useState([]);
-  const [activeLoadData, setActiveLoadData] = useState(null);
-
-  useEffect(() => {
-    fetchPayrollData();
-  }, []);
-
-  const fetchPayrollData = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/driver-portal/payroll');
-      if (res.data) {
-        if (res.data.driverInfo) {
-          if (res.data.driverInfo.bankName) setBankName(res.data.driverInfo.bankName);
-          if (res.data.driverInfo.bsbNumber) setBsbNumber(res.data.driverInfo.bsbNumber);
-          if (res.data.driverInfo.accountNumber) setAccountNumber(res.data.driverInfo.accountNumber);
-          if (res.data.driverInfo.accountName) setAccountName(res.data.driverInfo.accountName);
-        }
-        if (res.data.currentPeriod) setCurrentPeriod(res.data.currentPeriod);
-        if (res.data.ytdSummary) setYtdSummary(res.data.ytdSummary);
-        if (res.data.currentPayBreakdown) setCurrentPayBreakdown(res.data.currentPayBreakdown);
-        if (res.data.payHistory) setPayRecords(res.data.payHistory);
-        if (res.data.totalSummary) setTotalSummary(res.data.totalSummary);
-        if (res.data.ytdEarningsBreakdown) setYtdEarningsBreakdown(res.data.ytdEarningsBreakdown);
-        if (res.data.taxStatements) setTaxStatements(res.data.taxStatements);
-        if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
-      }
-      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    } catch (err) {
-      console.error('Failed to fetch payroll data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-=======
-  // Pay History Data (6 Items from screenshot 15.12)
-  const [payRecords, setPayRecords] = useState([
-    { id: 1, period: '12 May 2025 – 25 May 2025', payDate: 'Paid on 28 May 2025', netPay: '$2,740.25', status: 'Paid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', amount: 2740.25 },
-    { id: 2, period: '26 May 2025 – 08 Jun 2025', payDate: 'Pay Date: 13 Jun 2025', netPay: '$2,820.50', status: 'Processing', statusColor: 'bg-blue-50 text-blue-700 border-blue-200', amount: 2820.50 },
-    { id: 3, period: '12 May 2025 – 25 May 2025', payDate: 'Pay Date: 28 May 2025', netPay: '$2,510.00', status: 'Pending', statusColor: 'bg-amber-50 text-amber-700 border-amber-200', amount: 2510.00 },
-    { id: 4, period: '28 Apr 2025 – 11 May 2025', payDate: 'Paid on 14 May 2025', netPay: '$2,560.75', status: 'Paid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', amount: 2560.75 },
-    { id: 5, period: '14 Apr 2025 – 27 Apr 2025', payDate: 'Paid on 30 Apr 2025', netPay: '$2,615.50', status: 'Paid', statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200', amount: 2615.50 },
-    { id: 6, period: '31 Mar 2025 – 13 Apr 2025', payDate: 'Cancelled on 18 Apr 2025', netPay: '$0.00', status: 'Cancelled', statusColor: 'bg-rose-50 text-rose-700 border-rose-200', amount: 0.00 },
-  ]);
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
   };
 
-<<<<<<< HEAD
   const handleBankSubmit = async (e) => {
-=======
-  const handleBankSubmit = (e) => {
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
     e.preventDefault();
     setBankModalOpen(false);
     triggerToast(`Bank details updated: ${bankName} (${bsbNumber} • ${accountNumber})!`);
   };
 
-<<<<<<< HEAD
   const handleSettingsSubmit = async () => {
     try {
       await api.post('/driver-portal/payroll/settings', {
@@ -169,103 +45,6 @@ export default function MyPay() {
     }
   };
 
-=======
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
-  return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24 text-left">
-      
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="fixed top-5 right-5 z-[150] bg-slate-900 text-white font-extrabold text-xs px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-bounce border border-slate-700">
-          <FiCheckCircle className="text-[#ffcc00] text-base shrink-0" />
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
-      {/* TOP HEADER TITLE BAR */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Payroll & Pay History</h1>
-          <p className="text-xs font-semibold text-slate-500 mt-0.5">View your earnings, pay breakdown, deductions and download payslips</p>
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button
-            onClick={() => setTaxModalOpen(true)}
-            className="flex-1 sm:flex-initial bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <FiFileText className="text-indigo-600 text-base" />
-            <span>Tax Statements</span>
-          </button>
-          <button
-            onClick={() => setBankModalOpen(true)}
-            className="flex-1 sm:flex-initial bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <FiCreditCard className="text-base" />
-            <span>Bank Details</span>
-          </button>
-        </div>
-      </div>
-
-      {/* THREE-COLUMN MASTER WEB DASHBOARD GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        {/* ================= LEFT COLUMN: MODULE META & INSTRUCTIONS (3 COLS) ================= */}
-        <div className="lg:col-span-3 space-y-6">
-          
-          {/* Module Header Card */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">15.12 Payroll</span>
-              <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
-                Active Period
-              </span>
-            </div>
-            <p className="text-xs text-slate-600 font-semibold leading-relaxed">
-              View your earnings, pay breakdown, deductions and download payslips.
-            </p>
-          </div>
-
-          {/* LEGEND CARD */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LEGEND</div>
-            <div className="space-y-2 font-bold">
-              <div className="flex items-center gap-2.5 text-emerald-700">
-                <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                <span>Paid</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-amber-700">
-                <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-                <span>Pending</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-blue-700">
-                <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                <span>Processing</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-rose-700">
-                <span className="w-3 h-3 rounded-full bg-rose-500"></span>
-                <span>Cancelled</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-slate-400">
-                <span className="w-3 h-3 rounded-full bg-slate-300"></span>
-                <span>Draft</span>
-              </div>
-            </div>
-          </div>
-
-          {/* PAY SUMMARY (YTD) */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs text-center">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">PAY SUMMARY (YTD)</div>
-            <div className="text-[11px] text-slate-400 font-bold text-left">Financial Year 2024/25</div>
-
-            <div className="relative w-32 h-32 mx-auto flex items-center justify-center my-2">
-              <div className="w-full h-full rounded-full border-8 border-slate-100 border-t-purple-600 border-r-indigo-600 border-b-purple-600 flex items-center justify-center">
-                <div className="text-center">
-<<<<<<< HEAD
-                  <div className="text-base font-black text-slate-900 font-mono">{ytdSummary.totalEarnings}</div>
-=======
-                  <div className="text-base font-black text-slate-900 font-mono">$26,845.50</div>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                   <div className="text-[9.5px] font-bold text-slate-500">Total Earnings</div>
                 </div>
               </div>
@@ -274,11 +53,7 @@ export default function MyPay() {
             <div className="space-y-1.5 text-xs font-bold border-t border-slate-100 pt-3">
               <div className="flex justify-between text-emerald-700">
                 <span>Net Pay Received</span>
-<<<<<<< HEAD
                 <span className="font-mono text-slate-900">{ytdSummary.netPayReceived}</span>
-=======
-                <span className="font-mono text-slate-900">$24,105.25</span>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
               </div>
               <div className="flex justify-between text-amber-700">
                 <span>Pending Payments</span>
@@ -286,11 +61,7 @@ export default function MyPay() {
               </div>
               <div className="flex justify-between text-rose-700">
                 <span>Total Deductions</span>
-<<<<<<< HEAD
                 <span className="font-mono text-slate-900">{ytdSummary.totalDeductions}</span>
-=======
-                <span className="font-mono text-slate-900">$2,740.25</span>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
               </div>
             </div>
           </div>
@@ -330,7 +101,6 @@ export default function MyPay() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-<<<<<<< HEAD
               <div className="text-[11px] text-slate-500">Last sync: {syncTime}</div>
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
@@ -339,13 +109,6 @@ export default function MyPay() {
                 fetchPayrollData();
                 triggerToast('Payroll data refreshed from STP Engine!');
               }}
-=======
-              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
-              <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
-            </div>
-            <button
-              onClick={() => triggerToast('Payroll data refreshed from STP Engine!')}
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
               className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl border border-slate-800 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <FiRefreshCw className="text-amber-400" />
@@ -362,57 +125,33 @@ export default function MyPay() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-<<<<<<< HEAD
                 <div className="text-2xl font-black text-indigo-700 tracking-tight">{activeLoadData?.id || 'N/A'}</div>
                 <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
                   <span>{activeLoadData?.origin || '—'}</span>
                   <span className="text-slate-400">➔</span>
                   <span>{activeLoadData?.destination || '—'}</span>
-=======
-                <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
-                <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                  <span>Melbourne VIC</span>
-                  <span className="text-slate-400">➔</span>
-                  <span>Sydney NSW</span>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Start Date</span>
-<<<<<<< HEAD
                   <span className="font-mono text-slate-900">{activeLoadData?.startDate || '—'}</span>
-=======
-                  <span className="font-mono text-slate-900">29 May 2025</span>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-<<<<<<< HEAD
                   <span className="font-mono text-slate-900">{activeLoadData?.estFinish || '—'}</span>
-=======
-                  <span className="font-mono text-slate-900">29 May 2025</span>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Status</span>
-<<<<<<< HEAD
                   <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">{activeLoadData?.status || '—'}</span>
-=======
-                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">En Route</span>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Load ID</span>
-<<<<<<< HEAD
                   <span className="font-mono text-indigo-700">{activeLoadData?.poNumber || '—'}</span>
-=======
-                  <span className="font-mono text-indigo-700">PO-65432</span>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
               </div>
             </div>
@@ -444,44 +183,28 @@ export default function MyPay() {
                   <div className="flex items-center gap-1.5 text-purple-700 font-black text-xs mb-1">
                     <span>👛 Net Pay (This Period)</span>
                   </div>
-<<<<<<< HEAD
                   <div className="text-xl font-black text-slate-900 font-mono">{currentPeriod.netPay}</div>
-=======
-                  <div className="text-xl font-black text-slate-900 font-mono">$2,740.25</div>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-emerald-700 font-black text-xs mb-1">
                     <span>🟢 Gross Earnings</span>
                   </div>
-<<<<<<< HEAD
                   <div className="text-xl font-black text-emerald-700 font-mono">{currentPeriod.grossEarnings}</div>
-=======
-                  <div className="text-xl font-black text-emerald-700 font-mono">$3,500.00</div>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-amber-700 font-black text-xs mb-1">
                     <span>🟠 Total Deductions</span>
                   </div>
-<<<<<<< HEAD
                   <div className="text-xl font-black text-slate-900 font-mono">{currentPeriod.totalDeductions}</div>
-=======
-                  <div className="text-xl font-black text-slate-900 font-mono">$759.75</div>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-blue-700 font-black text-xs mb-1">
                     <span>🏦 Pay Frequency</span>
                   </div>
-<<<<<<< HEAD
                   <div className="text-xl font-black text-slate-900">{currentPeriod.payFrequency}</div>
-=======
-                  <div className="text-xl font-black text-slate-900">Fortnightly</div>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
               </div>
 
@@ -499,11 +222,7 @@ export default function MyPay() {
                       </span>
                     </div>
                     <div className="text-[11px] font-mono text-slate-400 font-bold mt-0.5">
-<<<<<<< HEAD
                       Period: {currentPeriod.nextPayment.period}
-=======
-                      Period: 26 May 2025 – 08 Jun 2025
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                     </div>
                   </div>
                 </div>
@@ -568,11 +287,7 @@ export default function MyPay() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-xs font-bold text-center">
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Gross Earnings</span>
-<<<<<<< HEAD
                     <span className="font-mono text-slate-900 text-sm font-black">{totalSummary.totalGrossEarnings}</span>
-=======
-                    <span className="font-mono text-slate-900 text-sm font-black">$28,345.50</span>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Deductions</span>
@@ -580,11 +295,7 @@ export default function MyPay() {
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Net Paid</span>
-<<<<<<< HEAD
                     <span className="font-mono text-emerald-700 text-sm font-black">{totalSummary.totalNetPaid}</span>
-=======
-                    <span className="font-mono text-emerald-700 text-sm font-black">$25,605.25</span>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                   </div>
                 </div>
               </div>

@@ -310,11 +310,7 @@ export default function OfflineSyncQueue() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-<<<<<<< HEAD
               <div className="text-[11px] text-slate-500">Last sync: {lastSyncTime}</div>
-=======
-              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
@@ -358,11 +354,7 @@ export default function OfflineSyncQueue() {
             <div className="flex justify-between items-center">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">QUEUE SUMMARY</div>
               <div className="flex items-center gap-1 text-[11px] text-slate-400 font-bold">
-<<<<<<< HEAD
                 <span>Last updated: {lastSyncTime}</span>
-=======
-                <span>Last updated: 29 May 2025, 10:15 AM</span>
->>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 <FiRefreshCw className="text-indigo-600 cursor-pointer hover:rotate-180 transition-transform" onClick={handleSyncNow} />
               </div>
             </div>

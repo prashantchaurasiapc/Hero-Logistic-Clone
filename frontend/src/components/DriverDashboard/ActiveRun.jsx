@@ -19,7 +19,6 @@ export default function ActiveRun() {
   // Interactive States
   const [loadStatus, setLoadStatus] = useState('Picked Up'); // 'Picked Up', 'Dispatched', 'Delivered'
   const [isDispatched, setIsDispatched] = useState(false);
-<<<<<<< HEAD
 =======
   const [pickedUpCountState, setCarsPickedUp] = useState(8);
 >>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
@@ -43,7 +42,6 @@ export default function ActiveRun() {
   const [noteText, setNoteText] = useState('');
   const [photoCaption, setPhotoCaption] = useState('');
 
-<<<<<<< HEAD
   const fetchActiveRun = async () => {
     try {
       setLoading(true);
@@ -63,72 +61,6 @@ export default function ActiveRun() {
   useEffect(() => {
     fetchActiveRun();
   }, []);
-=======
-  // Fetch Load from Backend API
-  useEffect(() => {
-    let isSubscribed = true;
-    setLoading(true);
-    setError(null);
-
-    const targetId = paramId || location.state?.loadId;
-
-    if (targetId) {
-      getLoadDetails(targetId)
-        .then(res => {
-          if (isSubscribed) {
-            const raw = res.data?.data?.load;
-            if (raw) {
-              const formatted = formatBackendActiveLoad(raw);
-              setActiveLoad(formatted);
-              setIsDispatched(formatted.isDispatched);
-              setCarsPickedUp(formatted.totalCars);
-              setLoadStatus(formatted.isDelivered ? 'Delivered' : formatted.isDispatched ? 'Dispatched' : 'Picked Up');
-            } else {
-              setError('Active load details not found.');
-            }
-          }
-        })
-        .catch(err => {
-          if (isSubscribed) {
-            const msg = err.response?.data?.error?.message || 'Could not load active run details.';
-            setError(msg);
-          }
-        })
-        .finally(() => {
-          if (isSubscribed) setLoading(false);
-        });
-    } else {
-      // Fetch driver's assigned loads to pick current active load
-      getMyLoads()
-        .then(res => {
-          if (isSubscribed) {
-            const loads = res.data?.data?.loads || [];
-            if (loads.length > 0) {
-              const current = loads.find(l => ['IN_TRANSIT', 'ACTIVE', 'ASSIGNED'].includes(l.status)) || loads[0];
-              const formatted = formatBackendActiveLoad(current);
-              setActiveLoad(formatted);
-              setIsDispatched(formatted.isDispatched);
-              setCarsPickedUp(formatted.totalCars);
-              setLoadStatus(formatted.isDelivered ? 'Delivered' : formatted.isDispatched ? 'Dispatched' : 'Picked Up');
-            } else {
-              setError('No active loads assigned to your account.');
-            }
-          }
-        })
-        .catch(err => {
-          if (isSubscribed) {
-            const msg = err.response?.data?.error?.message || 'Could not load active run details.';
-            setError(msg);
-          }
-        })
-        .finally(() => {
-          if (isSubscribed) setLoading(false);
-        });
-    }
-
-    return () => { isSubscribed = false; };
-  }, [paramId, location.state]);
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
   useEffect(() => {
     if (location.state?.autoOpenDispatchModal && !isDispatched) {
