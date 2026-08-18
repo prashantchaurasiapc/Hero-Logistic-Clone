@@ -457,16 +457,16 @@ export default function UserManagement() {
         <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto w-full sm:w-auto">
           <button
             onClick={exportCSV}
-            className="border border-[#e2e8f0] hover:bg-slate-50 text-amber-500 font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer bg-white whitespace-nowrap flex-1 sm:flex-none"
+            className="border border-[#F59E0B] text-[#D97706] hover:bg-amber-50 font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer bg-white whitespace-nowrap flex-1 sm:flex-none"
           >
             Export CSV
           </button>
 
           <button
             onClick={() => setShowAddUserModal(true)}
-            className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap flex-1 sm:flex-none"
+            className="bg-[#F59E0B] hover:bg-[#D97706] text-slate-900 font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap flex-1 sm:flex-none"
           >
-            <UserPlus className="w-4 h-4" /> Add Tenant User
+            <UserPlus className="w-4 h-4 text-slate-900" /> Add Tenant User
           </button>
         </div>
       </div>
@@ -591,14 +591,15 @@ export default function UserManagement() {
                     onClick={() => setDensity(mode)}
                     className={`px-3 py-1.5 text-[9px] font-black rounded-lg transition-all cursor-pointer ${
                       density === mode
-                        ? 'bg-brand-500 text-black shadow-xs font-black'
-                        : 'text-black hover:bg-slate-200/50'
+                        ? 'bg-[#F59E0B] text-slate-900 shadow-xs font-black'
+                        : 'text-slate-700 hover:bg-slate-200/50'
                     }`}
                   >
                     {mode}
                   </button>
                 ))}
               </div>
+
 
               {/* Columns button */}
               <div className="relative text-left shrink-0" ref={columnsMenuRef}>
@@ -1071,10 +1072,11 @@ export default function UserManagement() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-black font-black text-xs rounded-xl shadow-xs cursor-pointer"
+                  className="px-5 py-2.5 bg-[#F59E0B] hover:bg-[#D97706] text-slate-900 font-extrabold text-xs rounded-xl shadow-xs cursor-pointer"
                 >
                   Save User
                 </button>
+
               </div>
             </form>
           </div>
