@@ -270,6 +270,7 @@ export default function PickupLoading() {
     e.preventDefault();
     if (!newModel || !newVin) return;
 
+    let addedDbItem = null;
     try {
       const res = await api.post('/driver-portal/pickup-load/add-item', {
         loadId: loadInfo?.dbId || loadInfo?.id,
@@ -278,31 +279,30 @@ export default function PickupLoading() {
         plate: newPlate.toUpperCase() || 'TEMP-99',
         drop: newDrop
       });
-
-      const addedDbItem = res.data?.data?.item;
-      const newCarItem = {
-        id: addedDbItem?.id || Date.now(),
-        dbId: addedDbItem?.id,
-        drop: newDrop,
-        dropLoc: newDrop === 'DROP 1' ? 'Auto World Sydney' : newDrop === 'DROP 2' ? 'Newcastle Motors' : 'Brisbane Car Centre',
-        vin: newVin.toUpperCase(),
-        makeModel: newModel,
-        color: 'White',
-        plate: newPlate.toUpperCase() || 'TEMP-99',
-        pickedUp: false,
-        time: null,
-        photos: { current: 0, total: 4, percent: 0 }
-      };
-      setCars([...cars, newCarItem]);
-      setAddCarModalOpen(false);
-      setNewVin('');
-      setNewModel('');
-      setNewPlate('');
-      triggerToast(`Added ${newModel} to ${newDrop}!`);
+      addedDbItem = res.data?.data?.item;
     } catch (err) {
       console.error('Add car API error:', err);
-      triggerToast(`Failed to add car: ${err.message}`);
     }
+
+    const newCarItem = {
+      id: addedDbItem?.id || Date.now(),
+      dbId: addedDbItem?.id || null,
+      drop: newDrop,
+      dropLoc: newDrop === 'DROP 1' ? 'Auto World Sydney' : newDrop === 'DROP 2' ? 'Newcastle Motors' : 'Brisbane Car Centre',
+      vin: newVin.toUpperCase(),
+      makeModel: newModel,
+      color: 'White',
+      plate: newPlate.toUpperCase() || 'TEMP-99',
+      pickedUp: false,
+      time: null,
+      photos: { current: 0, total: 4, percent: 0 }
+    };
+    setCars(prev => [...prev, newCarItem]);
+    setAddCarModalOpen(false);
+    setNewVin('');
+    setNewModel('');
+    setNewPlate('');
+    triggerToast(`Added ${newModel} to ${newDrop}!`);
   };
 
   const handleEditCarSubmit = async (e) => {
@@ -711,6 +711,14 @@ export default function PickupLoading() {
                               )}
 
                               <button
+                                onClick={() => { setSelectedCarForModal(car); setPhotoModalOpen(true); }}
+                                className="text-indigo-500 hover:text-indigo-700 p-1 cursor-pointer rounded-md hover:bg-indigo-50"
+                                title="Manage car photos"
+                              >
+                                <FiCamera className="text-xs" />
+                              </button>
+
+                              <button
                                 onClick={() => { setEditingCar(car); setEditCarModalOpen(true); }}
                                 className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer rounded-md hover:bg-slate-100"
                                 title="Edit car details"
@@ -862,7 +870,14 @@ export default function PickupLoading() {
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">PHOTOS (OPTIONAL)</div>
             <p className="text-slate-500 font-semibold text-[11px]">Add pickup photos if required by your company.</p>
             <button
-              onClick={() => setPhotoModalOpen(true)}
+              onClick={() => {
+                if (cars.length > 0) {
+                  setSelectedCarForModal(cars[0]);
+                  setPhotoModalOpen(true);
+                } else {
+                  triggerToast('Please add a car first to attach photos.');
+                }
+              }}
               className="w-full bg-[#1E293B] hover:bg-[#0F172A] text-white font-extrabold text-xs py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
             >
               <span>📷 Add Photo</span>
