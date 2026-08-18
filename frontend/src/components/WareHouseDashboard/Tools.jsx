@@ -117,6 +117,11 @@ export default function Tools() {
   const [docCarrier, setDocCarrier] = useState('');
   const [docDestination, setDocDestination] = useState('');
   const [docNotes, setDocNotes] = useState('');
+<<<<<<< HEAD
+  
+  const [generatedDocuments, setGeneratedDocuments] = useState([]);
+
+=======
 
   React.useEffect(() => {
     const fetchStock = async () => {
@@ -141,6 +146,7 @@ export default function Tools() {
   
   const [generatedDocuments, setGeneratedDocuments] = useState([]);
 
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
   const handleCreateDocument = async () => {
     if (!docOrderRef) {
       showToast('⚠️ Please enter a Document/Order Reference number!');
@@ -302,6 +308,8 @@ export default function Tools() {
   const [spoolerPaused, setSpoolerPaused] = useState(false);
   const [spoolerActiveCount, setSpoolerActiveCount] = useState(0);
   const [batchQueue, setBatchQueue] = useState([]);
+<<<<<<< HEAD
+=======
 
   React.useEffect(() => {
     if (activeTab === 'batch-printing' && stockItems.length > 0 && batchQueue.length === 0) {
@@ -316,6 +324,7 @@ export default function Tools() {
       setSpoolerActiveCount(initialQueue.filter(q => q.status === 'Queued').length);
     }
   }, [activeTab, stockItems]);
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
   const handlePauseQueue = () => {
     if (spoolerPaused) {

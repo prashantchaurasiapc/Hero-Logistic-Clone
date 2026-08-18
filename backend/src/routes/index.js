@@ -100,6 +100,8 @@ router.use('/driver-portal', DriverPortalRoutes);
 router.use('/auth', authRoutes);
 router.use('/workflow-rules', WorkflowRuleRoutes);
 router.use('/companys', CompanyRoutes);
+router.use('/companies/branches', BranchRoutes);
+router.use('/companies', CompanyRoutes);
 router.use('/subscription-plans', SubscriptionPlanRoutes);
 router.use('/support-tickets', SupportTicketRoutes);
 router.use('/billing-records', BillingRecordRoutes);
@@ -213,6 +215,12 @@ router.use('/dashboard-metrics', SuperAdminDashboardRoutes);
 // Warehouse Portal routes & aliases
 router.use('/warehouse-portal', WarehousePortalRoutes);
 
+<<<<<<< HEAD
+// Driver Portal dedicated routes
+const DriverPortalRoutes = require('./DriverPortalRoutes');
+router.use('/driver-portal', DriverPortalRoutes);
+=======
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
 // Accounts Portal dedicated routes
 const AccountsPortalRoutes = require('./AccountsPortalRoutes');

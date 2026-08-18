@@ -31,8 +31,11 @@ export default function WarehouseReports() {
   const [dbItemsByStatus, setDbItemsByStatus] = useState(null);
   const [dbZones, setDbZones] = useState([]);
   const [dbDwell, setDbDwell] = useState(null);
+<<<<<<< HEAD
+=======
   const [dbTopLanes, setDbTopLanes] = useState([]);
   const [dbTopCarriers, setDbTopCarriers] = useState([]);
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -44,8 +47,11 @@ export default function WarehouseReports() {
           if (data.itemsByStatus) setDbItemsByStatus(data.itemsByStatus);
           if (data.inventoryByZone) setDbZones(data.inventoryByZone);
           if (data.dwellTimeAnalysis) setDbDwell(data.dwellTimeAnalysis);
+<<<<<<< HEAD
+=======
           if (data.topLoadLanes) setDbTopLanes(data.topLoadLanes);
           if (data.topCarriers) setDbTopCarriers(data.topCarriers);
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
         }
       } catch (err) {
         console.error('Failed to fetch reports:', err);
@@ -184,6 +190,50 @@ export default function WarehouseReports() {
     switch (activeTab) {
       case 'Inventory':
         return [
+<<<<<<< HEAD
+          { lbl: 'TOTAL SKU COUNT', val: String(dbKpis?.totalSkus ?? 0), trend: '+5%', isUp: true, icon: Box, bg: 'bg-blue-50 text-blue-600' },
+          { lbl: 'TOTAL STOCK VALUE', val: dbKpis?.totalItemsHandled ? '$' + (dbKpis.totalItemsHandled * 35000).toLocaleString() : '$0', trend: '+12%', isUp: true, icon: DollarSign, bg: 'bg-emerald-50 text-emerald-600' },
+          { lbl: 'LOW STOCK SKUS', val: '0 SKUs', trend: '0%', isUp: false, icon: AlertTriangle, bg: 'bg-amber-50 text-amber-600' },
+          { lbl: 'DEAD STOCK RATIO', val: '0%', trend: '0%', isUp: false, icon: Layers, bg: 'bg-purple-50 text-purple-600' },
+          { lbl: 'CYCLE COUNT ACCURACY', val: dbKpis?.accuracyRate || '100%', trend: '+0.1%', isUp: true, icon: Target, bg: 'bg-sky-50 text-sky-600' },
+          { lbl: 'AVG STOCK TURNOVER', val: '14 Days', trend: '-2 Days', isUp: false, icon: RefreshCw, bg: 'bg-amber-100 text-amber-700' }
+        ];
+      case 'Operations':
+        return [
+          { lbl: 'ACTIVE STAFF ON FLOOR', val: '12 Operators', trend: '+2 Staff', isUp: true, icon: Users, bg: 'bg-blue-50 text-blue-600' },
+          { lbl: 'FORKLIFT UTILIZATION', val: '6 / 8 (75%)', trend: '+5%', isUp: true, icon: Truck, bg: 'bg-emerald-50 text-emerald-600' },
+          { lbl: 'DOCK DOOR OCCUPANCY', val: '3 / 4 (75%)', trend: '+25%', isUp: true, icon: MapPin, bg: 'bg-purple-50 text-purple-600' },
+          { lbl: 'STAGING BAY USAGE', val: dbKpis?.stagedItems ? Math.min(100, Math.round((dbKpis.stagedItems / 100) * 100)) + '% Capacity' : '0% Capacity', trend: '+2%', isUp: false, icon: Layers, bg: 'bg-amber-50 text-amber-600' },
+          { lbl: 'AVG DOCK TURNAROUND', val: '45m', trend: '-5m', isUp: false, icon: Clock, bg: 'bg-sky-50 text-sky-600' },
+          { lbl: 'DAILY INBOUND/OUTBOUND', val: String((dbKpis?.receivedInbound ?? 0) + (dbKpis?.dispatchedOutbound ?? 0)) + ' Items', trend: '+10%', isUp: true, icon: Activity, bg: 'bg-amber-100 text-amber-700' }
+        ];
+      case 'Productivity':
+        return [
+          { lbl: 'PICKS PER HOUR', val: '45 / hr', trend: '+8%', isUp: true, icon: Zap, bg: 'bg-blue-50 text-blue-600' },
+          { lbl: 'PUTAWAY RATE', val: '38 items / hr', trend: '+12%', isUp: true, icon: Box, bg: 'bg-emerald-50 text-emerald-600' },
+          { lbl: 'PACKING SPEED', val: '22 boxes / hr', trend: '+4%', isUp: true, icon: Package, bg: 'bg-purple-50 text-purple-600' },
+          { lbl: 'PICKER ACCURACY RATE', val: '99.8%', trend: '+0.1%', isUp: true, icon: Target, bg: 'bg-amber-50 text-amber-600' },
+          { lbl: 'ORDER CYCLE TIME', val: '18m', trend: '-2m', isUp: false, icon: Clock, bg: 'bg-sky-50 text-sky-600' },
+          { lbl: 'WORKER UTILIZATION', val: '88%', trend: '+3%', isUp: true, icon: Users, bg: 'bg-amber-100 text-amber-700' }
+        ];
+      case 'Dispatch':
+        return [
+          { lbl: 'TOTAL SHIPMENTS', val: String(dbKpis?.dispatchedOutbound ?? 0) + ' Shipments', trend: '+15%', isUp: true, icon: Truck, bg: 'bg-blue-50 text-blue-600' },
+          { lbl: 'ON-TIME DISPATCH RATE', val: '98.5%', trend: '+0.5%', isUp: true, icon: CheckCircle2, bg: 'bg-emerald-50 text-emerald-600' },
+          { lbl: 'CARRIER COMPLIANCE', val: '97.2%', trend: '+1.2%', isUp: true, icon: Shield, bg: 'bg-purple-50 text-purple-600' },
+          { lbl: 'AVG LOADING TIME', val: '22m', trend: '-3m', isUp: false, icon: Clock, bg: 'bg-amber-50 text-amber-600' },
+          { lbl: 'PENDING OUTBOUND', val: String(dbKpis?.stagedItems ?? 0) + ' Items', trend: '-2 Items', isUp: false, icon: Layers, bg: 'bg-sky-50 text-sky-600' },
+          { lbl: 'TRANSIT DAMAGE RATE', val: '0.1%', trend: '-0.05%', isUp: false, icon: AlertTriangle, bg: 'bg-amber-100 text-amber-700' }
+        ];
+      case 'Compliance':
+        return [
+          { lbl: 'INCIDENT-FREE DAYS', val: '240 Days', trend: '+1 Day', isUp: true, icon: Shield, bg: 'bg-blue-50 text-blue-600' },
+          { lbl: 'AUDIT READINESS SCORE', val: '98 / 100', trend: '+2 pts', isUp: true, icon: CheckSquare, bg: 'bg-emerald-50 text-emerald-600' },
+          { lbl: 'HAZMAT COMPLIANCE', val: '100%', trend: '100% Pass', isUp: true, icon: AlertCircle, bg: 'bg-purple-50 text-purple-600' },
+          { lbl: 'WHS CHECKLIST STATUS', val: 'PASSED', trend: 'Clear', isUp: true, icon: HardHat, bg: 'bg-amber-50 text-amber-600' },
+          { lbl: 'TEMP CONTROL VARIANCE', val: '±0.2 °C', trend: 'Within Specs', isUp: true, icon: Thermometer, bg: 'bg-sky-50 text-sky-600' },
+          { lbl: 'STAFF CERTIFIED', val: '100%', trend: '100% Active', isUp: true, icon: Users, bg: 'bg-amber-100 text-amber-700' }
+=======
           { lbl: 'TOTAL SKU COUNT', val: String(dbKpis?.totalSkus ?? 0), trend: '0%', isUp: true, icon: Box, bg: 'bg-blue-50 text-blue-600' },
           { lbl: 'TOTAL STOCK VALUE', val: dbKpis?.totalItemsHandled ? '$' + (dbKpis.totalItemsHandled * 35000).toLocaleString() : '$0', trend: '0%', isUp: true, icon: DollarSign, bg: 'bg-emerald-50 text-emerald-600' },
           { lbl: 'LOW STOCK SKUS', val: '0 SKUs', trend: '0%', isUp: false, icon: AlertTriangle, bg: 'bg-amber-50 text-amber-600' },
@@ -226,6 +276,7 @@ export default function WarehouseReports() {
           { lbl: 'WHS CHECKLIST STATUS', val: 'N/A', trend: '0%', isUp: true, icon: HardHat, bg: 'bg-amber-50 text-amber-600' },
           { lbl: 'TEMP CONTROL VARIANCE', val: 'N/A', trend: '0%', isUp: true, icon: Thermometer, bg: 'bg-sky-50 text-sky-600' },
           { lbl: 'STAFF CERTIFIED', val: 'N/A', trend: '0%', isUp: true, icon: Users, bg: 'bg-amber-100 text-amber-700' }
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
         ];
       default: // Overview
         return [

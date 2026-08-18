@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import api from '../../../services/api';
 import {
   FileText, FileCheck, Receipt, FileSearch, Folder, Search, Filter, RefreshCw,
   Upload, Download, Plus, Star, MoreHorizontal, ExternalLink, Eye, ChevronRight,
@@ -32,7 +33,7 @@ export default function CustomerDocuments() {
   // Email Document Modal State
   const [emailModalDoc, setEmailModalDoc] = useState(null);
   const [emailForm, setEmailForm] = useState({
-    recipientEmail: 'accounts@abctransport.com.au',
+    recipientEmail: '',
     subject: '',
     message: ''
   });
@@ -41,8 +42,48 @@ export default function CustomerDocuments() {
   const modalFileInputRef = useRef(null);
   const [attachedFile, setAttachedFile] = useState(null);
 
+<<<<<<< HEAD
+  // Documents List Data State
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchDocuments = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/company-admin/documents');
+      if (res.data) {
+        const raw = res.data.data?.documents || (Array.isArray(res.data) ? res.data : (res.data.documents || []));
+        const formatted = raw.map(doc => ({
+          id: doc.id || `DOC-${doc.dbId}`,
+          dbId: doc.id,
+          name: doc.name || doc.filename || 'Document.pdf',
+          type: doc.type || 'Other',
+          typeBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+          iconColor: 'text-blue-500',
+          relatedTo: doc.relatedTo || 'Company',
+          loadRef: doc.loadRef || doc.loadNumber || 'N/A',
+          route: doc.route || 'N/A',
+          date: doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('en-GB') : 'N/A',
+          uploadedBy: doc.uploadedBy || 'System',
+          size: doc.size || 'N/A',
+          url: doc.url || ''
+        }));
+        setDocuments(formatted);
+      }
+    } catch (err) {
+      console.error('Failed to fetch documents:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+=======
   // Documents List Data State (Matching 2nd Screenshot Exactly)
   const [documents, setDocuments] = useState([]);
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
   // Bulk Selection Handlers
   const handleSelectAll = () => {
@@ -103,31 +144,29 @@ export default function CustomerDocuments() {
     }
   };
 
-  const handleSaveUpload = (e) => {
+  const handleSaveUpload = async (e) => {
     e.preventDefault();
     const finalDocName = uploadForm.docName || attachedFile?.name || 'Uploaded_Document.pdf';
-
-    const newDoc = {
-      id: `DOC-${Date.now()}`,
-      name: finalDocName.endsWith('.pdf') || finalDocName.endsWith('.jpg') || finalDocName.endsWith('.png') || finalDocName.endsWith('.xlsx')
-        ? finalDocName 
-        : `${finalDocName}.pdf`,
-      type: uploadForm.docType.includes('POD') ? 'POD' : uploadForm.docType.includes('Invoice') ? 'Invoice' : 'Other',
-      typeBadge: uploadForm.docType.includes('POD') ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200',
-      iconColor: uploadForm.docType.includes('POD') ? 'text-emerald-500' : 'text-blue-500',
-      relatedTo: 'ABC Transport Solutions',
-      loadRef: uploadForm.loadRef,
-      route: 'Sydney NSW → Melbourne VIC',
-      date: 'Just now',
-      uploadedBy: 'Portal User',
-      size: attachedFile?.size || '240 KB'
-    };
-
-    setDocuments(prev => [newDoc, ...prev]);
-    setIsUploadModalOpen(false);
-    setUploadForm({ docName: '', docType: 'POD (Proof of Delivery)', loadRef: 'LD-3987' });
-    setAttachedFile(null);
-    triggerToast('Document uploaded successfully!');
+    try {
+      const payload = {
+        title: finalDocName.endsWith('.pdf') || finalDocName.endsWith('.jpg') || finalDocName.endsWith('.png') || finalDocName.endsWith('.xlsx')
+          ? finalDocName 
+          : `${finalDocName}.pdf`,
+        category: uploadForm.docType.includes('POD') ? 'POD' : uploadForm.docType.includes('Invoice') ? 'Invoice' : 'Other'
+      };
+      const res = await api.post('/company-admin/documents', payload);
+      if (res.data) {
+        fetchDocuments();
+        triggerToast('Document uploaded successfully!');
+      }
+    } catch (err) {
+      console.error('Failed to upload document:', err);
+      triggerToast('Document upload failed. Please try again.');
+    } finally {
+      setIsUploadModalOpen(false);
+      setUploadForm({ docName: '', docType: 'POD (Proof of Delivery)', loadRef: 'LD-3987' });
+      setAttachedFile(null);
+    }
   };
 
   // Request Document Modal Form
@@ -150,10 +189,24 @@ export default function CustomerDocuments() {
     setEmailModalDoc(null);
   };
 
-  const handleDeleteDoc = (id, name) => {
-    setDocuments(prev => prev.filter(d => d.id !== id));
-    setActiveMenuDocId(null);
-    triggerToast(`Document ${name} deleted successfully.`);
+  const handleDeleteDoc = async (id, name) => {
+    try {
+      const targetDoc = documents.find(d => d.id === id);
+      const targetDbId = targetDoc?.dbId;
+      if (targetDbId) {
+        await api.delete(`/company-admin/documents/${targetDbId}`);
+        fetchDocuments();
+        triggerToast(`Document ${name} deleted successfully.`);
+      } else {
+        setDocuments(prev => prev.filter(d => d.id !== id));
+        triggerToast(`Document ${name} deleted successfully.`);
+      }
+    } catch (err) {
+      console.error('Failed to delete document:', err);
+      triggerToast('Failed to delete document. Please try again.');
+    } finally {
+      setActiveMenuDocId(null);
+    }
   };
 
   // Filtered Documents Logic

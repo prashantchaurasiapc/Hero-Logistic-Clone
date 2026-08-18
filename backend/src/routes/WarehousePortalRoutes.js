@@ -5,7 +5,11 @@ const { verifyToken, authorizeRoles } = require('../middlewares/auth');
 const { resolveTenant } = require('../middlewares/tenantResolver');
 
 // Apply auth & tenant resolver middleware across all Warehouse Portal routes
+<<<<<<< HEAD
+router.use(verifyToken, resolveTenant, authorizeRoles(['WAREHOUSE', 'YARD', 'COMPANY_ADMIN', 'SUPER_ADMIN']));
+=======
 router.use(verifyToken, resolveTenant, authorizeRoles(['WAREHOUSE', 'YARD', 'DRIVER', 'COMPANY_ADMIN', 'SUPER_ADMIN']));
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
 // 1. Warehouse Overview & Dashboard
 router.get('/overview', ctrl.getDashboard);
@@ -52,8 +56,13 @@ router.get('/map', ctrl.getYardMap);
 router.get('/yard-map', ctrl.getYardMap);
 
 // 9. Reports & Analytics (Managers Only)
+<<<<<<< HEAD
+router.get('/reports/overview', authorizeRoles(['WAREHOUSE', 'COMPANY_ADMIN', 'SUPER_ADMIN']), ctrl.getReportsOverview);
+router.get('/reports', authorizeRoles(['WAREHOUSE', 'COMPANY_ADMIN', 'SUPER_ADMIN']), ctrl.getReportsOverview);
+=======
 router.get('/reports/overview', authorizeRoles(['WAREHOUSE', 'YARD', 'COMPANY_ADMIN', 'SUPER_ADMIN']), ctrl.getReportsOverview);
 router.get('/reports', authorizeRoles(['WAREHOUSE', 'YARD', 'COMPANY_ADMIN', 'SUPER_ADMIN']), ctrl.getReportsOverview);
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
 // 10. Labels, Tools & Spooler
 router.get('/labels', ctrl.getLabels);
@@ -89,7 +98,10 @@ router.post('/report-issue', ctrl.reportIssue);
 router.delete('/issues/:id', ctrl.resolveReportedIssue);
 
 // 12.5 Shifts & Timesheets
+<<<<<<< HEAD
+=======
 router.get('/shift/status', ctrl.getShiftStatus);
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 router.post('/shift/clock-in', ctrl.clockIn);
 router.post('/shift/clock-out', ctrl.clockOut);
 

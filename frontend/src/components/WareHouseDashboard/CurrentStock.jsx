@@ -16,7 +16,11 @@ export default function CurrentStock() {
   const navigate = useNavigate();
   const location = useLocation();
   const isYard = location.pathname ? location.pathname.startsWith('/yard') : false;
+<<<<<<< HEAD
+
+=======
   // Phase A: start with empty - never show mock data as a fallback
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
   const [stockItems, setStockItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
@@ -107,6 +111,32 @@ export default function CurrentStock() {
 
   useEffect(() => {
     fetchStock();
+<<<<<<< HEAD
+    const fetchLanesAndHolding = async () => {
+      try {
+
+        const res = await api.get('/warehouse-portal/stock');
+        const data = res.data?.data || res.data;
+        if (Array.isArray(data)) {
+          setStockItems(data);
+          if (data.length > 0) setSelectedItem(data[0]);
+        } else if (data && data.items) {
+          setStockItems(data.items);
+          if (data.items.length > 0) setSelectedItem(data.items[0]);
+        } else {
+          setStockItems([]);
+        }
+      } catch (err) {
+        console.warn('Error fetching stock items:', err.message);
+        setStockItems([]);
+      } finally {
+        setLoading(false);
+
+      }
+    };
+    fetchLanesAndHolding();
+=======
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
   }, []);
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');

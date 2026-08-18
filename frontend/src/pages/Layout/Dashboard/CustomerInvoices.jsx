@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import {
   Receipt, CreditCard, DollarSign, Clock, ShieldCheck, Search, Filter, RefreshCw,
   Download, Eye, Plus, Star, ChevronRight, CheckCircle2, ArrowRight, X, Check,
@@ -41,11 +42,58 @@ export default function CustomerInvoices() {
     cardExpiry: '12/28',
     cardCvc: '•••',
     nameOnCard: 'ABC Transport Solutions',
-    amount: '18540.00'
+    amount: '0.00'
   });
 
+<<<<<<< HEAD
+  // Invoices List Data State
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchInvoices = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/accounts-portal/invoices');
+      if (res.data) {
+        const raw = res.data.data?.invoices || (Array.isArray(res.data) ? res.data : (res.data.invoices || []));
+        const formatted = raw.map(inv => {
+          const numAmt = Number(inv.amount || inv.total || 0);
+          const st = inv.status || 'Pending';
+          let badge = 'bg-amber-50 text-amber-700 border-amber-200';
+          if (st === 'Paid') badge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+          if (st === 'Overdue') badge = 'bg-red-50 text-red-700 border-red-200';
+          if (st === 'Partial') badge = 'bg-blue-50 text-blue-700 border-blue-200';
+
+          return {
+            id: inv.invoiceNumber || inv.id || `INV-${inv.dbId || inv.id}`,
+            dbId: inv.id,
+            number: inv.invoiceNumber || inv.id,
+            date: inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-GB') : 'N/A',
+            dueDate: inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('en-GB') : 'N/A',
+            loadRef: inv.loadRef || inv.load?.loadNumber || 'N/A',
+            route: inv.route || (inv.load ? `${inv.load.pickupLocation || ''} → ${inv.load.deliveryLocation || ''}` : 'General Freight'),
+            amount: `$${numAmt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            numericAmount: numAmt,
+            status: st,
+            statusBadge: badge
+          };
+        });
+        setInvoices(formatted);
+      }
+    } catch (err) {
+      console.error('Failed to fetch invoices:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
+=======
   // Invoices List Data State (Exact Match to Screenshot 2)
   const [invoices, setInvoices] = useState([]);
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
 
   // Bulk Selection Handlers
   const handleSelectAll = () => {
@@ -65,27 +113,34 @@ export default function CustomerInvoices() {
   };
 
   // Submit Payment Handler
-  const handleProcessPayment = (e) => {
+  const handleProcessPayment = async (e) => {
     e.preventDefault();
-    if (payInvoiceTarget) {
-      // Pay specific invoice
-      setInvoices(prev => prev.map(inv => 
-        inv.id === payInvoiceTarget.id 
-          ? { ...inv, status: 'Paid', statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
-          : inv
-      ));
-      triggerToast(`Payment of ${payInvoiceTarget.amount} for invoice ${payInvoiceTarget.number} successful!`);
-    } else {
-      // Pay all overdue
-      setInvoices(prev => prev.map(inv => 
-        inv.status === 'Overdue' 
-          ? { ...inv, status: 'Paid', statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
-          : inv
-      ));
-      triggerToast('Full outstanding balance payment of $18,540.00 AUD processed successfully!');
+    try {
+      if (payInvoiceTarget) {
+        if (payInvoiceTarget.dbId) {
+          await api.put(`/company-admin/finance/invoices/${payInvoiceTarget.dbId}/status`, { status: 'PAID' });
+        }
+        triggerToast(`Payment of ${payInvoiceTarget.amount} for invoice ${payInvoiceTarget.number} successful!`);
+      } else {
+        const overdueInvoices = invoices.filter(inv => inv.status === 'Overdue');
+        await Promise.all(
+          overdueInvoices.map(inv => {
+            if (inv.dbId) {
+              return api.put(`/company-admin/finance/invoices/${inv.dbId}/status`, { status: 'PAID' });
+            }
+            return Promise.resolve();
+          })
+        );
+        triggerToast('Full outstanding balance payment processed successfully!');
+      }
+      fetchInvoices();
+    } catch (err) {
+      console.error('Payment failed:', err);
+      triggerToast('Payment processing failed. Please try again.');
+    } finally {
+      setIsMakePaymentModalOpen(false);
+      setPayInvoiceTarget(null);
     }
-    setIsMakePaymentModalOpen(false);
-    setPayInvoiceTarget(null);
   };
 
   // Filtered Invoices Logic
@@ -270,6 +325,40 @@ export default function CustomerInvoices() {
       {/* =========================================================================
          TOP 5 METRIC SUMMARY CARDS (Exact Match 2nd Screenshot Vertical Stack)
          ========================================================================= */}
+<<<<<<< HEAD
+      {(() => {
+        const totalOutstanding = invoices.filter(i => i.status === 'Overdue' || i.status === 'Outstanding' || i.status === 'Pending').reduce((acc, i) => acc + (i.numericAmount || 0), 0);
+        const overdueAmt = invoices.filter(i => i.status === 'Overdue').reduce((acc, i) => acc + (i.numericAmount || 0), 0);
+        const overdueCnt = invoices.filter(i => i.status === 'Overdue').length;
+        const outstandingCnt = invoices.filter(i => i.status === 'Overdue' || i.status === 'Outstanding' || i.status === 'Pending').length;
+        const paidThisMonth = invoices.filter(i => i.status === 'Paid').reduce((acc, i) => acc + (i.numericAmount || 0), 0);
+        const totalInvoicedYTD = invoices.reduce((acc, i) => acc + (i.numericAmount || 0), 0);
+
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            
+            {/* Card 1: OUTSTANDING BALANCE */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+                  <Receipt size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">OUTSTANDING BALANCE</span>
+                  <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                    <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${totalOutstanding.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+                  </div>
+                  <span className="text-[10px] font-extrabold text-amber-600 block mt-1 whitespace-nowrap truncate">Due in {outstandingCnt} invoices</span>
+                </div>
+              </div>
+              <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
+                <button onClick={() => setSelectedStatus('Overdue')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+                  <span>View outstanding</span>
+                  <ArrowRight size={11} />
+                </button>
+              </div>
+=======
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         
         {/* Card 1: OUTSTANDING BALANCE */}
@@ -331,16 +420,25 @@ export default function CustomerInvoices() {
                 <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
               </div>
               <span className="text-[10px] font-extrabold text-emerald-600 block mt-1 whitespace-nowrap truncate">↑ 0% vs last month</span>
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
             </div>
-          </div>
-          <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
-            <button onClick={() => setSelectedStatus('Paid')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
-              <span>View payments</span>
-              <ArrowRight size={11} />
-            </button>
-          </div>
-        </div>
 
+<<<<<<< HEAD
+            {/* Card 2: OVERDUE AMOUNT */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 border border-red-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+                  <Clock size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">OVERDUE AMOUNT</span>
+                  <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                    <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${overdueAmt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+                  </div>
+                  <span className="text-[10px] font-extrabold text-red-600 block mt-1 whitespace-nowrap truncate">{overdueCnt} invoices overdue</span>
+                </div>
+=======
         {/* Card 4: TOTAL INVOICED (YTD) */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
           <div className="flex items-start gap-2.5">
@@ -352,42 +450,88 @@ export default function CustomerInvoices() {
               <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
                 <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${invoices.reduce((s, i) => s + (i.numericAmount || 0), 0).toFixed(2)}</span>
                 <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+>>>>>>> a11974143e328523b1e9500d17002fd6015a68b2
               </div>
-              <span className="text-[10px] font-semibold text-transparent block mt-1 whitespace-nowrap select-none">Spacer</span>
-            </div>
-          </div>
-          <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
-            <button onClick={() => setSelectedStatus('All Status')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
-              <span>View summary</span>
-              <ArrowRight size={11} />
-            </button>
-          </div>
-        </div>
-
-        {/* Card 5: CREDIT BALANCE */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
-          <div className="flex items-start gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
-              <CreditCard size={16} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">CREDIT BALANCE</span>
-              <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
-                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">$0.00</span>
-                <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+              <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
+                <button onClick={() => setSelectedStatus('Overdue')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+                  <span>View overdue</span>
+                  <ArrowRight size={11} />
+                </button>
               </div>
-              <span className="text-[10px] font-semibold text-slate-400 block mt-1 whitespace-nowrap truncate">No credit available</span>
             </div>
-          </div>
-          <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
-            <button onClick={() => triggerToast("Viewing credit statement...")} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
-              <span>View statement</span>
-              <ArrowRight size={11} />
-            </button>
-          </div>
-        </div>
 
-      </div>
+            {/* Card 3: PAID THIS MONTH */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+                  <CheckCircle2 size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">PAID THIS MONTH</span>
+                  <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                    <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${paidThisMonth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+                  </div>
+                  <span className="text-[10px] font-extrabold text-emerald-600 block mt-1 whitespace-nowrap truncate">Settled transactions</span>
+                </div>
+              </div>
+              <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
+                <button onClick={() => setSelectedStatus('Paid')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+                  <span>View payments</span>
+                  <ArrowRight size={11} />
+                </button>
+              </div>
+            </div>
+
+            {/* Card 4: TOTAL INVOICED (YTD) */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+                  <DollarSign size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">TOTAL INVOICED (YTD)</span>
+                  <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                    <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">${totalInvoicedYTD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-transparent block mt-1 whitespace-nowrap select-none">Spacer</span>
+                </div>
+              </div>
+              <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
+                <button onClick={() => setSelectedStatus('All Status')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+                  <span>View summary</span>
+                  <ArrowRight size={11} />
+                </button>
+              </div>
+            </div>
+
+            {/* Card 5: CREDIT BALANCE */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+                  <CreditCard size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">CREDIT BALANCE</span>
+                  <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                    <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">$0.00</span>
+                    <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-slate-400 block mt-1 whitespace-nowrap truncate">Current credit</span>
+                </div>
+              </div>
+              <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
+                <button onClick={() => triggerToast('No active credit notes')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+                  <span>View credits</span>
+                  <ArrowRight size={11} />
+                </button>
+              </div>
+            </div>
+
+          </div>
+        );
+      })()}
 
       {/* =========================================================================
          FILTERS & SEARCH TOOLBAR ROW (Fully Working Live Search & Date Pickers)
@@ -492,11 +636,11 @@ export default function CustomerInvoices() {
           
           <div className="space-y-3">
             
-            {/* Table Top Title Header - INVOICES Tab Badge (Exact Match 1st Screenshot) */}
+            {/* Table Top Title Header - INVOICES Tab Badge */}
             <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
               <span className="text-xs font-black text-blue-600 tracking-wider uppercase">INVOICES</span>
               <span className="min-w-5 h-5 px-1.5 rounded-full bg-[#2563EB] text-white text-[10px] font-black flex items-center justify-center shadow-2xs">
-                24
+                {invoices.length}
               </span>
             </div>
 
@@ -623,7 +767,7 @@ export default function CustomerInvoices() {
 
             {/* Table Pagination */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 font-semibold pt-3 border-t border-slate-100">
-              <span>Showing 1 to {filteredInvoices.length} of 24 invoices</span>
+              <span>Showing {filteredInvoices.length === 0 ? 0 : 1} to {filteredInvoices.length} of {invoices.length} invoices</span>
               
               <div className="flex items-center gap-1 text-xs font-bold text-slate-600">
                 <button className="px-2 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-400">&lt;&lt;</button>
@@ -669,94 +813,94 @@ export default function CustomerInvoices() {
         {/* COLUMN 2 (4 Cols): SIDE CARDS (Donut Chart, Make Payment, Recent Payments) */}
         <div className="lg:col-span-4 space-y-3">
           
-          {/* CARD 1: OUTSTANDING SUMMARY (Donut Chart & Ageing Legend) */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-3">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">OUTSTANDING SUMMARY</h2>
-              <button onClick={() => triggerToast("Generating full ageing report...")} className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer flex items-center gap-0.5">
-                View ageing report <ArrowRight size={9} />
-              </button>
-            </div>
+          {(() => {
+            const totalOutstanding = invoices.filter(i => i.status === 'Overdue' || i.status === 'Outstanding' || i.status === 'Pending').reduce((acc, i) => acc + (i.numericAmount || 0), 0);
 
-            <div className="flex items-center justify-around gap-3 py-1">
-              
-              {/* Donut Ring Visual Representation */}
-              <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                  {/* Background Circle */}
-                  <path className="text-slate-100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  {/* Segment 1: 0-30 Days (33%) - Blue */}
-                  <path className="text-blue-600" strokeDasharray="33, 100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  {/* Segment 2: 31-60 Days (40%) - Amber */}
-                  <path className="text-amber-500" strokeDasharray="40, 100" strokeDashoffset="-33" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  {/* Segment 3: 61-90 Days (20%) - Orange */}
-                  <path className="text-orange-500" strokeDasharray="20, 100" strokeDashoffset="-73" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  {/* Segment 4: 90+ Days (7%) - Red */}
-                  <path className="text-red-500" strokeDasharray="7, 100" strokeDashoffset="-93" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                </svg>
-                
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-xs font-black text-slate-900 leading-none">$18,540</span>
-                  <span className="text-[7.5px] font-extrabold text-slate-400 uppercase">Outstanding</span>
+            return (
+              <>
+                {/* CARD 1: OUTSTANDING SUMMARY (Donut Chart & Ageing Legend) */}
+                <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                    <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">OUTSTANDING SUMMARY</h2>
+                    <button onClick={() => triggerToast("Generating full ageing report...")} className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer flex items-center gap-0.5">
+                      View ageing report <ArrowRight size={9} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-around gap-3 py-1">
+                    
+                    {/* Donut Ring Visual Representation */}
+                    <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
+                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                        {/* Background Circle */}
+                        <path className="text-slate-100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                      </svg>
+                      
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span className="text-xs font-black text-slate-900 leading-none">${Math.round(totalOutstanding).toLocaleString('en-US')}</span>
+                        <span className="text-[7.5px] font-extrabold text-slate-400 uppercase">Outstanding</span>
+                      </div>
+                    </div>
+
+                    {/* Legend Breakdown */}
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
+                        <span className="text-slate-600 font-medium text-[10px]">0 - 30 Days:</span>
+                        <span className="font-extrabold text-slate-900 text-[10px]">$0 (0%)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                        <span className="text-slate-600 font-medium text-[10px]">31 - 60 Days:</span>
+                        <span className="font-extrabold text-slate-900 text-[10px]">$0 (0%)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
+                        <span className="text-slate-600 font-medium text-[10px]">61 - 90 Days:</span>
+                        <span className="font-extrabold text-slate-900 text-[10px]">$0 (0%)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                        <span className="text-slate-600 font-medium text-[10px]">90+ Days:</span>
+                        <span className="font-extrabold text-slate-900 text-[10px]">$0 (0%)</span>
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
-              </div>
 
-              {/* Legend Breakdown */}
-              <div className="space-y-1 text-xs">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
-                  <span className="text-slate-600 font-medium text-[10px]">0 - 30 Days:</span>
-                  <span className="font-extrabold text-slate-900 text-[10px]">$5,090 (33%)</span>
+                {/* CARD 2: MAKE A PAYMENT */}
+                <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                    <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">MAKE A PAYMENT</h2>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-500">Total Outstanding</span>
+                      <span className="text-base font-black text-red-600">${totalOutstanding.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AUD</span>
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        setPayInvoiceTarget(null);
+                        setIsMakePaymentModalOpen(true);
+                      }}
+                      className="w-full py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Lock size={13} />
+                      <span>Pay Now</span>
+                    </button>
+
+                    <div className="text-center space-y-0.5">
+                      <span className="text-[9.5px] font-bold text-slate-400 block">Secure payment powered by Stripe</span>
+                      <span className="text-[9px] font-medium text-slate-400 block">Cards, Apple Pay and Google Pay accepted</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
-                  <span className="text-slate-600 font-medium text-[10px]">31 - 60 Days:</span>
-                  <span className="font-extrabold text-slate-900 text-[10px]">$7,450 (40%)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
-                  <span className="text-slate-600 font-medium text-[10px]">61 - 90 Days:</span>
-                  <span className="font-extrabold text-slate-900 text-[10px]">$3,780 (20%)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
-                  <span className="text-slate-600 font-medium text-[10px]">90+ Days:</span>
-                  <span className="font-extrabold text-slate-900 text-[10px]">$1,220 (7%)</span>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* CARD 2: MAKE A PAYMENT */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-3">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">MAKE A PAYMENT</h2>
-            </div>
-
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">Total Outstanding</span>
-                <span className="text-base font-black text-red-600">$18,540.00 AUD</span>
-              </div>
-
-              <button 
-                onClick={() => {
-                  setPayInvoiceTarget(null);
-                  setIsMakePaymentModalOpen(true);
-                }}
-                className="w-full py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2 transition-colors"
-              >
-                <Lock size={13} />
-                <span>Pay Now</span>
-              </button>
-
-              <div className="text-center space-y-0.5">
-                <span className="text-[9.5px] font-bold text-slate-400 block">Secure payment powered by Stripe</span>
-                <span className="text-[9px] font-medium text-slate-400 block">Cards, Apple Pay and Google Pay accepted</span>
-              </div>
-            </div>
-          </div>
+              </>
+            );
+          })()}
 
           {/* CARD 3: RECENT PAYMENTS */}
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-3">
