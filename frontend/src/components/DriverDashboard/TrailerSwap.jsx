@@ -121,8 +121,8 @@ export default function TrailerSwap() {
       return;
     }
 
-    if (currentTrailer && selectedTargetTrailer && currentTrailer.id === selectedTargetTrailer.id) {
-      triggerToast(`⚠️ ${selectedTargetTrailer.id} is already your active trailer! Select a different trailer to swap.`);
+    if (currentTrailer && selectedTargetTrailer && currentTrailer?.id === selectedTargetTrailer?.id) {
+      triggerToast(`⚠️ ${selectedTargetTrailer?.id || "N/A"} is already your active trailer! Select a different trailer to swap.`);
       return;
     }
 
@@ -467,7 +467,7 @@ export default function TrailerSwap() {
             <div className="space-y-2.5">
               {filteredTrailers.map((trl) => {
                 const isSelected = selectedTrailerId === trl.id;
-                const isCurrentActive = currentTrailer.id === trl.id;
+                const isCurrentActive = currentTrailer?.id === trl.id;
 
                 return (
                   <div
@@ -684,9 +684,9 @@ export default function TrailerSwap() {
             <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold">
               <div>
                 <div className="text-[10px] text-slate-400 font-extrabold uppercase">Current Trailer</div>
-                <div className="font-black text-slate-900 text-sm">{currentTrailer.id}</div>
-                <div className="text-[11px] text-slate-500">{currentTrailer.name}</div>
-                <div className="text-[10px] font-mono text-slate-400">Rego: {currentTrailer.rego}</div>
+                <div className="font-black text-slate-900 text-sm">{currentTrailer?.id || "N/A"}</div>
+                <div className="text-[11px] text-slate-500">{currentTrailer?.name || "Unknown"}</div>
+                <div className="text-[10px] font-mono text-slate-400">Rego: {currentTrailer?.rego || "N/A"}</div>
               </div>
 
               <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg font-black shrink-0">
@@ -695,9 +695,9 @@ export default function TrailerSwap() {
 
               <div className="text-right">
                 <div className="text-[10px] text-indigo-500 font-extrabold uppercase">New Trailer</div>
-                <div className="font-black text-indigo-900 text-sm">{selectedTargetTrailer.id}</div>
-                <div className="text-[11px] text-indigo-700">{selectedTargetTrailer.name}</div>
-                <div className="text-[10px] font-mono text-indigo-500">Rego: {selectedTargetTrailer.rego}</div>
+                <div className="font-black text-indigo-900 text-sm">{selectedTargetTrailer?.id || "N/A"}</div>
+                <div className="text-[11px] text-indigo-700">{selectedTargetTrailer?.name || "Unknown"}</div>
+                <div className="text-[10px] font-mono text-indigo-500">Rego: {selectedTargetTrailer?.rego || "N/A"}</div>
               </div>
             </div>
 
@@ -925,16 +925,16 @@ export default function TrailerSwap() {
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <FiTruck className="text-indigo-600 text-lg" />
-                Trailer Specifications ({currentTrailer.id})
+                Trailer Specifications ({currentTrailer?.id || "N/A"})
               </h3>
               <button onClick={() => setEquipmentDetailsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
             </div>
 
             <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2 text-xs font-semibold">
-              <div className="flex justify-between"><span>Trailer ID:</span><span className="font-black text-slate-900">{currentTrailer.id}</span></div>
-              <div className="flex justify-between"><span>Model:</span><span className="font-black text-slate-900">{currentTrailer.name}</span></div>
-              <div className="flex justify-between"><span>Registration:</span><span className="font-mono font-black text-slate-900">{currentTrailer.rego}</span></div>
-              <div className="flex justify-between"><span>VIN:</span><span className="font-mono font-black text-slate-900">{currentTrailer.vin}</span></div>
+              <div className="flex justify-between"><span>Trailer ID:</span><span className="font-black text-slate-900">{currentTrailer?.id || "N/A"}</span></div>
+              <div className="flex justify-between"><span>Model:</span><span className="font-black text-slate-900">{currentTrailer?.name || "Unknown"}</span></div>
+              <div className="flex justify-between"><span>Registration:</span><span className="font-mono font-black text-slate-900">{currentTrailer?.rego || "N/A"}</span></div>
+              <div className="flex justify-between"><span>VIN:</span><span className="font-mono font-black text-slate-900">{currentTrailer?.vin || "N/A"}</span></div>
               <div className="flex justify-between"><span>Capacity:</span><span className="font-black text-slate-900">4 Vehicles</span></div>
             </div>
 
