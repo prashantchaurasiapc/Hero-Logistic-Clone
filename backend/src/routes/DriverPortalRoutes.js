@@ -9,6 +9,10 @@ router.use(verifyToken, resolveTenant);
 router.get('/dashboard', DriverPortalController.getDashboard);
 router.post('/status', DriverPortalController.updateStatus);
 
+router.get('/notifications', DriverPortalController.getNotifications);
+router.patch('/notifications/read-all', DriverPortalController.markAllNotificationsRead);
+router.patch('/notifications/:id/read', DriverPortalController.markNotificationRead);
+
 router.get('/messages', DriverPortalController.getDriverMessages);
 router.post('/messages', DriverPortalController.sendDriverMessage);
 router.post('/messages/mark-all-read', DriverPortalController.markAllMessagesRead);

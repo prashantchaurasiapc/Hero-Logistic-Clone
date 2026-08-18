@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import api from '../../services/api';
 import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, CheckCircle2, AlertCircle, Settings, Check, Calendar, Download } from 'lucide-react';
 
 export default function LeaveManagement() {
@@ -27,11 +28,34 @@ export default function LeaveManagement() {
   const [viewMode, setViewMode] = useState('DEFAULT'); // COMPACT, DEFAULT, RELAXED
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [leaveHistory, setLeaveHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [visibleColumns, setVisibleColumns] = useState({
     type: true,
     dates: true,
     status: true
   });
+
+  useEffect(() => {
+    fetchLeaveHistory();
+  }, []);
+
+  const fetchLeaveHistory = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-leave-requests').catch(() => null);
+      if (res && res.data) {
+        const list = Array.isArray(res.data.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
+        setLeaveHistory(list);
+      } else {
+        setLeaveHistory([]);
+      }
+    } catch (err) {
+      console.error('Failed to load leave history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const triggerToast = (msg, type = 'success') => {
     setToastMsg(msg);
@@ -39,7 +63,7 @@ export default function LeaveManagement() {
     setTimeout(() => setToastMsg(''), 4000);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!startDate) {
       setShowErrorPopup(true);
@@ -50,15 +74,40 @@ export default function LeaveManagement() {
     }
     
     setShowErrorPopup(false);
-    triggerToast('Successfully submitted', 'success');
     
-    // Reset form
-    setStartDate('');
-    setEndDate('');
-    setReason('');
+    try {
+      const datesStr = endDate ? `${startDate} to ${endDate}` : startDate;
+      // Resolve driver from auth context if needed
+      await api.post('/driver-leave-requests', {
+        type: leaveType,
+        dates: datesStr,
+        notes: reason
+      }).catch(async () => {
+        // If driverId is required by backend controller without auto-resolve
+        const me = await api.get('/auth/me').catch(() => null);
+        const driverId = me?.data?.driver?.id || me?.data?.id;
+        if (driverId) {
+          await api.post('/driver-leave-requests', {
+            driverId,
+            type: leaveType,
+            dates: datesStr,
+            notes: reason
+          });
+        }
+      });
+
+      triggerToast('Successfully submitted', 'success');
+      setStartDate('');
+      setEndDate('');
+      setReason('');
+      fetchLeaveHistory();
+    } catch (err) {
+      console.error('Failed to submit leave request:', err);
+      triggerToast('Failed to submit leave request.', 'error');
+    }
   };
 
-  const mockData = [];
+  const mockData = leaveHistory;
 
   const toggleRow = (id) => {
     setSelectedRows(prev => 

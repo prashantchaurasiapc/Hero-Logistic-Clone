@@ -18,7 +18,6 @@ export default function Messages() {
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMsg, setToastMsg] = useState('');
   const [bannerDismissed, setBannerDismissed] = useState(false);
-<<<<<<< HEAD
   const [loading, setLoading] = useState(true);
   const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
@@ -26,10 +25,6 @@ export default function Messages() {
   const [vehicleData, setVehicleData] = useState(null);
   const [activeLoadData, setActiveLoadData] = useState(null);
   const [contactsList, setContactsList] = useState([]);
-=======
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
   // Modals
   const [newMessageModalOpen, setNewMessageModalOpen] = useState(false);
@@ -38,18 +33,10 @@ export default function Messages() {
   const [quickContactsModalOpen, setQuickContactsModalOpen] = useState(false);
   const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
 
-<<<<<<< HEAD
-=======
-  // New Message Form State
-  const [newRecipient, setNewRecipient] = useState('Dispatch Support');
-  const [newMessageText, setNewMessageText] = useState('');
-
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
   // Chat Input State inside Chat Modal
   const [chatInputText, setChatInputText] = useState('');
 
   // Conversations Data
-<<<<<<< HEAD
   const [conversations, setConversations] = useState([]);
 
   useEffect(() => {
@@ -74,27 +61,8 @@ export default function Messages() {
       console.error('Failed to fetch messages:', err);
     } finally {
       setLoading(false);
-=======
-  const [conversations, setConversations] = useState([
-    {
-      id: 1,
-      name: 'Dispatch Support',
-      avatar: 'DS',
-      avatarColor: 'bg-purple-100 text-purple-700',
-      unread: true,
-      unreadCount: 2,
-      important: false,
-      isGroup: false,
-      lastMsg: 'Please arrive 15 mins early at the yard.',
-      meta: 'LD-3987 • Melbourne VIC ➔ Sydney NSW',
-      time: '10:15 AM',
-      messages: [
-        { id: 101, sender: 'Dispatch Support', text: 'Good morning Noah, your load LD-3987 is confirmed for 08:00 AM departure.', time: '08:00 AM', isMe: false },
-        { id: 102, sender: 'Noah (Me)', text: 'Thanks! I am currently completing pre-trip safety checklist.', time: '08:05 AM', isMe: true },
-      ]
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
     }
-  ]);
+  };
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -102,7 +70,6 @@ export default function Messages() {
   };
 
   const handleMarkAllRead = async () => {
-<<<<<<< HEAD
     try {
       await api.post('/driver-portal/messages/mark-all-read');
       setConversations(conversations.map(c => ({ ...c, unread: false, unreadCount: 0 })));
@@ -110,14 +77,6 @@ export default function Messages() {
     } catch (err) {
       setConversations(conversations.map(c => ({ ...c, unread: false, unreadCount: 0 })));
       triggerToast('All messages marked as read!');
-=======
-    setConversations(conversations.map(c => ({ ...c, unread: false, unreadCount: 0 })));
-    triggerToast('All messages marked as read!');
-    try {
-      await markAllMessagesAsRead();
-    } catch (err) {
-      console.warn('Failed to sync mark all read:', err.message);
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
     }
   };
 
@@ -125,7 +84,6 @@ export default function Messages() {
     e.preventDefault();
     if (!chatInputText.trim() || !activeChat) return;
 
-<<<<<<< HEAD
     const currentText = chatInputText.trim();
     setChatInputText('');
 
@@ -203,69 +161,6 @@ export default function Messages() {
     } catch (err) {
       triggerToast(`Message sent to ${selectedContact.name}!`);
       fetchMessages();
-=======
-    const textToSend = chatInputText.trim();
-    setIsSubmitting(true);
-
-    const newMsg = {
-      id: Date.now(),
-      sender: 'Noah (Me)',
-      text: chatInputText,
-      time: 'Just now',
-      isMe: true
-    };
-
-    const updatedConversations = conversations.map(c => {
-      if (c.id === activeChat.id) {
-        return {
-          ...c,
-          lastMsg: `Noah: ${chatInputText}`,
-          time: 'Just now',
-          messages: [...c.messages, newMsg]
-        };
-      }
-      return c;
-    });
-
-    setConversations(updatedConversations);
-    setActiveChat({
-      ...activeChat,
-      messages: [...activeChat.messages, newMsg]
-    });
-    setChatInputText('');
-    triggerToast('Message sent!');
-
-    try {
-      await sendMessage({
-        recipient: activeChat.name,
-        body: textToSend
-      });
-    } catch (err) {
-      console.warn('Backend sendMessage sync notice:', err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSendNewMessageModal = async (e) => {
-    if (e) e.preventDefault();
-    if (!newMessageText.trim() || isSubmitting) return;
-
-    const textToSend = newMessageText.trim();
-    const recipient = newRecipient || 'Dispatch Support';
-    setIsSubmitting(true);
-
-    try {
-      await sendMessage({ recipient, body: textToSend });
-      triggerToast('New conversation started & message sent!');
-      setNewMessageModalOpen(false);
-      setNewMessageText('');
-      fetchConversations();
-    } catch (err) {
-      triggerToast('Failed to send message: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setIsSubmitting(false);
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
     }
   };
 
@@ -785,11 +680,7 @@ export default function Messages() {
       {/* NEW MESSAGE MODAL */}
       {newMessageModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[150] flex items-center justify-center p-4">
-<<<<<<< HEAD
           <form onSubmit={handleCreateNewMessage} className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left">
-=======
-          <form onSubmit={handleSendNewMessageModal} className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left">
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <FiMessageSquare className="text-indigo-600 text-lg" />
@@ -801,7 +692,6 @@ export default function Messages() {
             <div className="space-y-3 text-xs font-semibold">
               <div>
                 <label className="text-slate-700 font-bold block mb-1">Select Recipient</label>
-<<<<<<< HEAD
                 <select 
                   value={newMessageRecipient} 
                   onChange={(e) => setNewMessageRecipient(e.target.value)}
@@ -814,18 +704,6 @@ export default function Messages() {
                   )) : (
                     <option value="" disabled>No contacts available</option>
                   )}
-=======
-                <select
-                  value={newRecipient}
-                  onChange={(e) => setNewRecipient(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
-                >
-                  <option value="Dispatch Support">Dispatch Support (Online)</option>
-                  <option value="ABC Car Yard">ABC Car Yard (Online)</option>
-                  <option value="Auto World Sydney">Auto World Sydney (Online)</option>
-                  <option value="Maintenance Team">Maintenance Team (Online)</option>
-                  <option value="Safety Team">Safety Team (Online)</option>
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
                 </select>
               </div>
 
@@ -843,12 +721,7 @@ export default function Messages() {
 
             <button
               type="submit"
-<<<<<<< HEAD
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md"
-=======
-              disabled={isSubmitting || !newMessageText.trim()}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md"
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
             >
               Send Message
             </button>

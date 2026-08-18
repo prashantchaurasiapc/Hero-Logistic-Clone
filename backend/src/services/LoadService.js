@@ -70,6 +70,20 @@ class LoadService {
         }
       });
 
+      // Create Notification if driver is assigned
+      const newDriverId = assignment.driverId || load.driverId;
+      if (newDriverId && newDriverId !== load.driverId) {
+        await tx.notification.create({
+          data: {
+            driverId: newDriverId,
+            type: 'DISPATCH',
+            title: 'New Load Assigned',
+            message: `Load ${updatedLoad.loadNumber || updatedLoad.id} has been assigned to you.`,
+            priority: 'HIGH'
+          }
+        });
+      }
+
       return updatedLoad;
     });
   }
@@ -107,7 +121,7 @@ class LoadService {
     const load = await prisma.load.findFirst({ where });
     if (!load) throw { code: ERROR_CODES.NOT_FOUND, message: 'Load not found' };
 
-    return await prisma.load.update({
+    const updatedLoad = await prisma.load.update({
       where: { id: loadId },
       data: {
         driverId: assignment.driverId || load.driverId,
@@ -116,6 +130,22 @@ class LoadService {
         version: { increment: 1 }
       }
     });
+
+    // Create Notification if driver is assigned
+    const newDriverId = assignment.driverId || load.driverId;
+    if (newDriverId && newDriverId !== load.driverId) {
+      await prisma.notification.create({
+        data: {
+          driverId: newDriverId,
+          type: 'DISPATCH',
+          title: 'New Load Assigned',
+          message: `Load ${updatedLoad.loadNumber || updatedLoad.id} has been assigned to you.`,
+          priority: 'HIGH'
+        }
+      });
+    }
+
+    return updatedLoad;
   }
 }
 

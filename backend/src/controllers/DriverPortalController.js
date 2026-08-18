@@ -61,62 +61,9 @@ exports.getDashboard = async (req, res, next) => {
     if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
     if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
 
-<<<<<<< HEAD
     const driverName = driver ? (`${driver.firstName || ''} ${driver.lastName || ''}`.trim() || driver.user?.name || req.user?.name || 'Driver') : (req.user?.name || 'Driver');
     const driverCode = driver?.driverCode || driver?.driverNumber || 'DRV-001';
     const driverId = driver?.id || '';
-=======
-    if (!driver) {
-      return sendSuccess(res, {
-        driverInfo: {
-          id: null,
-          name: req.user?.name || 'Driver',
-          driverCode: 'DRV-NEW',
-          status: 'On Duty',
-          lastSync: new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-          vehicle: {
-            rego: 'No Vehicle Assigned',
-            make: '',
-            model: '',
-            odometer: 0,
-            dieselBalance: 0,
-            estRangeKm: 0
-          }
-        },
-        metrics: {
-          loadsToday: 0,
-          loadsTodayUpcoming: 0,
-          nextLoadTime: null,
-          completedThisWeek: 0,
-          slaPercentage: 0,
-          driveTimeToday: '0h 00m',
-          driveTimeRemaining: '11h 00m (HOS)',
-          dieselBalanceL: 0,
-          estRangeKm: 0,
-          payThisPeriod: 0
-        },
-        currentLoad: null,
-        todaySchedule: [],
-        hosLog: {
-          driveTimeElapsed: '0h 00m',
-          driveTimeLeft: '11h 00m',
-          drivePercent: 0,
-          shiftElapsed: '0h 00m',
-          shiftMax: '14h max',
-          shiftPercent: 0,
-          nextBreakDue: 'In 5h 15m'
-        },
-        unreadMessages: [],
-        alerts: [],
-        paySummary: {
-          amount: 0,
-          taxNote: 'Before tax'
-        }
-      });
-    }
-
-    const driverId = driver.id;
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
     // Fetch real driver loads, timesheets, checklists, vehicle, and messages from DB
     const [
@@ -168,7 +115,6 @@ exports.getDashboard = async (req, res, next) => {
     ]);
 
     // Active loads vs Completed loads
-<<<<<<< HEAD
     let activeLoads = driverLoads.filter(l => ['ASSIGNED', 'IN_TRANSIT', 'DISPATCHED', 'ACTIVE', 'PENDING'].includes(l.status));
     const now = new Date();
     const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
@@ -204,14 +150,6 @@ exports.getDashboard = async (req, res, next) => {
     } else {
       currentLoadData = null;
     }
-=======
-    const activeLoads = driverLoads.filter(l => ['ASSIGNED', 'IN_TRANSIT', 'DISPATCHED', 'ACTIVE', 'PENDING'].includes(l.status));
-    const completedLoads = driverLoads.filter(l => ['DELIVERED', 'COMPLETED', 'CLOSED'].includes(l.status));
-    const upcomingLoads = activeLoads.filter(l => l.status === 'ASSIGNED' || l.status === 'PENDING');
-
-    // Current active load in transit or first active load
-    const currentLoadObj = activeLoads.find(l => l.status === 'IN_TRANSIT') || activeLoads[0] || null;
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
     // Vehicle info
     let vehicleData = {
@@ -256,62 +194,6 @@ exports.getDashboard = async (req, res, next) => {
     const calculatedPay = completedLoads.length > 0
       ? (completedLoads.length * (baseRate > 0 ? baseRate : 350) * 0.8)
       : (driveMinutes > 0 ? (driveMinutes / 60) * (baseRate > 0 ? baseRate : 35) : 0);
-
-<<<<<<< HEAD
-    // Schedule items
-    let scheduleItems = [];
-    if (driverLoads.length > 0) {
-      driverLoads.forEach((ld) => {
-        const isDelivered = ld.status === 'DELIVERED' || ld.status === 'COMPLETED';
-        const isInTransit = ld.status === 'IN_TRANSIT';
-        const loadRef = ld.loadNumber || ld.loadRef || `LD-${ld.id.slice(0, 4).toUpperCase()}`;
-
-        scheduleItems.push({
-          id: `sch-${ld.id}-pickup`,
-          time: ld.pickupTime || '08:00 AM',
-          type: 'Pickup',
-          location: `${ld.pickupLocation || ld.origin || 'Pickup Location'}`,
-          loadRef: loadRef,
-          status: isDelivered ? 'COMPLETED' : (isInTransit ? 'ON_DUTY' : 'UPCOMING'),
-          color: isDelivered ? 'bg-slate-400' : (isInTransit ? 'bg-emerald-500' : 'bg-amber-500')
-        });
-
-        scheduleItems.push({
-          id: `sch-${ld.id}-deliver`,
-          time: ld.deliveryTime || '02:30 PM',
-          type: 'Deliver',
-          location: `${ld.deliveryLocation || ld.destination || 'Delivery Location'}`,
-          loadRef: loadRef,
-          status: isDelivered ? 'COMPLETED' : (isInTransit ? 'IN_TRANSIT' : 'UPCOMING'),
-          color: isDelivered ? 'bg-slate-400' : (isInTransit ? 'bg-blue-500' : 'bg-purple-500')
-        });
-      });
-=======
-    // Format current load
-    let currentLoadData = null;
-    if (currentLoadObj) {
-      const statusLabel = currentLoadObj.status === 'IN_TRANSIT' ? 'In Transit' : (currentLoadObj.status === 'DISPATCHED' ? 'Dispatched' : 'Assigned');
-      currentLoadData = {
-        id: currentLoadObj.id,
-        loadNumber: currentLoadObj.loadNumber || currentLoadObj.loadRef || `LD-${currentLoadObj.id.slice(0, 4).toUpperCase()}`,
-        status: statusLabel,
-        origin: currentLoadObj.origin || currentLoadObj.pickupAddress || 'Origin Depot',
-        destination: currentLoadObj.destination || currentLoadObj.deliveryAddress || 'Destination Depot',
-        pickupStop: {
-          name: currentLoadObj.pickupLocation || currentLoadObj.origin || 'Pickup Location',
-          address: currentLoadObj.pickupAddress || 'Pickup Address',
-          time: currentLoadObj.pickupTime || '08:00 AM'
-        },
-        deliveryStop: {
-          name: currentLoadObj.deliveryLocation || currentLoadObj.destination || 'Delivery Location',
-          address: currentLoadObj.deliveryAddress || 'Delivery Address',
-          time: currentLoadObj.deliveryTime || '02:30 PM'
-        },
-        loadType: currentLoadObj.type || currentLoadObj.loadType || currentLoadObj.category || 'General Freight',
-        reference: currentLoadObj.loadRef || currentLoadObj.referenceNumber || currentLoadObj.bolNumber || 'PO-REF'
-      };
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
-    }
 
     // Schedule items purely from assigned loads
     const scheduleItems = [];
@@ -392,15 +274,9 @@ exports.getDashboard = async (req, res, next) => {
 
     return sendSuccess(res, {
       driverInfo: {
-<<<<<<< HEAD
         id: driver?.id || '',
         name: driverName,
         driverCode: driverCode,
-=======
-        id: driver.id,
-        name: `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || req.user?.name || 'Driver',
-        driverCode: driver.driverCode || 'DRV-001',
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
         status: currentStatusDisplay,
         lastSync: new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
         vehicle: vehicleData
@@ -1255,9 +1131,9 @@ exports.getDriverMessages = async (req, res, next) => {
     ];
 
     companyUsers.forEach(u => {
-      if (!contacts.some(c => c.name.toLowerCase() === u.name.toLowerCase())) {
-        const uWords = u.name.trim().split(' ');
-        const av = uWords.length > 1 ? `${uWords[0][0]}${uWords[1][0]}`.toUpperCase() : u.name.slice(0, 2).toUpperCase();
+      if (!contacts.some(c => c.name && u.name && c.name.toLowerCase() === u.name.toLowerCase())) {
+        const uWords = u.name ? u.name.trim().split(' ') : ['U'];
+        const av = uWords.length > 1 ? `${uWords[0][0]}${uWords[1][0]}`.toUpperCase() : (u.name ? u.name.slice(0, 2).toUpperCase() : 'U');
         contacts.push({
           id: u.id,
           name: u.name,
@@ -2998,5 +2874,66 @@ exports.updateDeliveryItemStatus = async (req, res, next) => {
     return sendSuccess(res, { message: 'Item status updated' });
   } catch (error) {
     return sendError(res, error, 500);
+  }
+};
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+exports.getNotifications = async (req, res, next) => {
+  try {
+    const driver = await resolveDriver(req);
+    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
+
+    const notifications = await prisma.notification.findMany({
+      where: { driverId: driver.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50
+    });
+
+    return sendSuccess(res, { notifications });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.markNotificationRead = async (req, res, next) => {
+  try {
+    const driver = await resolveDriver(req);
+    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
+
+    const { id } = req.params;
+
+    const notification = await prisma.notification.findFirst({
+      where: { id, driverId: driver.id }
+    });
+
+    if (!notification) return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Notification not found' }, 404);
+
+    const updated = await prisma.notification.update({
+      where: { id },
+      data: { isRead: true, readAt: new Date() }
+    });
+
+    return sendSuccess(res, { notification: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.markAllNotificationsRead = async (req, res, next) => {
+  try {
+    const driver = await resolveDriver(req);
+    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
+
+    await prisma.notification.updateMany({
+      where: { driverId: driver.id, isRead: false },
+      data: { isRead: true, readAt: new Date() }
+    });
+
+    return sendSuccess(res, { message: 'All marked as read' });
+  } catch (error) {
+    next(error);
   }
 };

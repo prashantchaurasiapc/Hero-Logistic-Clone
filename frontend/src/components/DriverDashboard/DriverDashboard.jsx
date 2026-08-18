@@ -2,14 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-<<<<<<< HEAD
-=======
-import {
-  getMyProfile, getMyLoads, getTodayTimesheet,
-  getPayrollSummary, getMessages, getUnreadMessageCount,
-  getTodayChecklist
-} from '../../services/driverApi';
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 import {
   FiCheckSquare, FiPackage, FiUpload, FiClock,
   FiAlertTriangle, FiFileText, FiTruck, FiCoffee, FiDollarSign,
@@ -22,32 +14,9 @@ const DriverDashboard = () => {
   const { user } = useAuth();
 
   // State
-<<<<<<< HEAD
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [driverStatus, setDriverStatus] = useState(() => localStorage.getItem('hero_driver_duty_status') || 'On Duty');
-=======
-  const [driverProfile, setDriverProfile] = useState(null);
-  const [dashboardData, setDashboardData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [apiError, setApiError] = useState(null);
-
-  // Local UI State
-  const [driverStatus, setDriverStatus] = useState('On Duty');
-
-  useEffect(() => {
-    if (user?.driverProfile?.status) {
-      const statusMap = {
-        'AVAILABLE': 'On Duty',
-        'UNAVAILABLE': 'Off Duty',
-        'ON_DUTY': 'On Duty',
-        'OFF_DUTY': 'Off Duty',
-        'ON_LEAVE': 'On Leave'
-      };
-      setDriverStatus(statusMap[user.driverProfile.status] || user.driverProfile.status);
-    }
-  }, [user]);
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [quickMsg, setQuickMsg] = useState('');
@@ -59,7 +28,6 @@ const DriverDashboard = () => {
     setTimeout(() => setToastMessage(''), 3500);
   };
 
-<<<<<<< HEAD
   const fetchDashboard = async () => {
     try {
       setIsLoading(true);
@@ -70,44 +38,6 @@ const DriverDashboard = () => {
           setDriverStatus(res.data.data.driverInfo.status);
           localStorage.setItem('hero_driver_duty_status', res.data.data.driverInfo.status);
         }
-=======
-  const handleStatusChange = async (newStatus) => {
-    try {
-      setDriverStatus(newStatus);
-      setStatusModalOpen(false);
-      showToast(`Status updated to: ${newStatus}`);
-      await api.post('/driver-portal/me/status', { status: newStatus }).catch(() => {});
-    } catch (err) {
-      console.error('Status change error:', err);
-      showToast(`Status updated to: ${newStatus}`);
-    }
-  };
-
-  const fetchDashboard = async () => {
-    try {
-      const [
-        profileRes,
-        loadsRes,
-        timesheetRes,
-        payrollRes,
-        messagesRes,
-        unreadRes,
-        checklistRes
-      ] = await Promise.allSettled([
-        getMyProfile(),
-        getMyLoads(),
-        getTodayTimesheet(),
-        getPayrollSummary(),
-        getMessages(),
-        getUnreadMessageCount(),
-        getTodayChecklist()
-      ]);
-
-      // Profile
-      if (profileRes.status === 'fulfilled') {
-        const d = profileRes.value.data?.data?.driver || profileRes.value.data?.driver || profileRes.value.data;
-        setDriverProfile(d || null);
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
       }
     } catch (err) {
       console.error('Error fetching driver dashboard:', err);
@@ -121,7 +51,6 @@ const DriverDashboard = () => {
     fetchDashboard();
   }, []);
 
-<<<<<<< HEAD
   const handleStatusChange = async (newStatus) => {
     try {
       setDriverStatus(newStatus);
@@ -136,30 +65,6 @@ const DriverDashboard = () => {
       console.error('Error updating status:', err);
       showToast(`Status updated locally to: ${newStatus}`);
     }
-=======
-  // ─── Derived Header Values ─────────────────────────────────────────────
-  const driverName = isLoading
-    ? '...'
-    : driverProfile
-    ? `${driverProfile.firstName || ''} ${driverProfile.lastName || ''}`.trim() || driverProfile.email
-    : 'Driver';
-
-  const assignedVehicle = driverProfile?.currentVehicle?.[0] || driverProfile?.vehicle || null;
-  const vehicleLabel = assignedVehicle
-    ? `${assignedVehicle.rego || assignedVehicle.plate || 'TRK'} (${assignedVehicle.make || ''} ${assignedVehicle.model || ''})`.trim()
-    : 'No vehicle assigned';
-  const odometerLabel = assignedVehicle?.odometerKm
-    ? `${assignedVehicle.odometerKm.toLocaleString()} km`
-    : '—';
-
-  const dbStatus = driverProfile?.status || null;
-  const statusDisplayMap = {
-    ON_DUTY: 'On Duty',
-    OFF_DUTY: 'Off Duty',
-    ON_LEAVE: 'On Leave',
-    UNAVAILABLE: 'Unavailable',
-    AVAILABLE: 'Available',
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
   };
 
   const handleSendQuickMsg = async (e) => {
@@ -251,7 +156,6 @@ const DriverDashboard = () => {
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Driver Dashboard</h1>
-<<<<<<< HEAD
             <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
               driverStatus === 'In Transit'
                 ? 'bg-blue-100 text-blue-800 border-blue-300'
@@ -275,11 +179,6 @@ const DriverDashboard = () => {
               <button onClick={fetchDashboard} title="Refresh live data" className="hover:text-slate-700 cursor-pointer ml-1">
                 <FiRefreshCw className={`text-[10px] ${isLoading ? 'animate-spin' : ''}`} />
               </button>
-=======
-            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              {dbStatus ? (statusDisplayMap[dbStatus] || dbStatus) : driverStatus}
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
             </span>
           </div>
           <p className="text-xs font-semibold text-slate-500 leading-snug">

@@ -28,7 +28,10 @@ try {
     port,
     user,
     password: password || '',
-    database
+    database,
+    connectionLimit: 50,
+    acquireTimeout: 20000,
+    connectTimeout: 20000
   }, { useTextProtocol: true });
 
   prisma = new PrismaClient({ adapter });

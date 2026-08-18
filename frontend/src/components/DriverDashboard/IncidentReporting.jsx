@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, CheckCircle2, AlertCircle, Settings, Check, Upload, Download } from 'lucide-react';
 
 export default function IncidentReporting() {
@@ -22,11 +23,34 @@ export default function IncidentReporting() {
   const [viewMode, setViewMode] = useState('DEFAULT'); // COMPACT, DEFAULT, RELAXED
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [incidentHistory, setIncidentHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [visibleColumns, setVisibleColumns] = useState({
     category: true,
     loggedDate: true,
     status: true
   });
+
+  useEffect(() => {
+    fetchIncidents();
+  }, []);
+
+  const fetchIncidents = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/warehouse-portal/issues').catch(() => null);
+      if (res && res.data) {
+        const list = Array.isArray(res.data.data) ? res.data.data : Array.isArray(res.data.issues) ? res.data.issues : Array.isArray(res.data) ? res.data : [];
+        setIncidentHistory(list);
+      } else {
+        setIncidentHistory([]);
+      }
+    } catch (err) {
+      console.error('Failed to load incident history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const triggerToast = (msg, type = 'success') => {
     setToastMsg(msg);
@@ -39,18 +63,31 @@ export default function IncidentReporting() {
     triggerToast('Incident proof photo attached.', 'success');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!description.trim()) {
       triggerToast('Please provide a description.', 'error');
       return;
     }
-    triggerToast('Incident report successfully submitted.', 'success');
-    setDescription('');
-    setPhotoAttached(false);
+
+    try {
+      await api.post('/warehouse-portal/report-issue', {
+        type: category,
+        title: category,
+        description: description,
+        severity: 'HIGH'
+      });
+      triggerToast('Incident report successfully submitted.', 'success');
+      setDescription('');
+      setPhotoAttached(false);
+      fetchIncidents();
+    } catch (err) {
+      console.error('Failed to report incident:', err);
+      triggerToast('Failed to submit incident report.', 'error');
+    }
   };
 
-  const mockData = [];
+  const mockData = incidentHistory;
 
   const toggleRow = (id) => {
     setSelectedRows(prev => 

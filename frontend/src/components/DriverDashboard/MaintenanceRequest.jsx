@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, CheckCircle2, AlertCircle, Settings, Check, Upload, Download, Wrench } from 'lucide-react';
 
 export default function MaintenanceRequest() {
@@ -22,11 +23,34 @@ export default function MaintenanceRequest() {
   const [viewMode, setViewMode] = useState('DEFAULT');
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [maintenanceHistory, setMaintenanceHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [visibleColumns, setVisibleColumns] = useState({
     reportedIssue: true,
     severity: true,
     status: true
   });
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/asset-maintenances').catch(() => null);
+      if (res && res.data) {
+        const list = Array.isArray(res.data.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
+        setMaintenanceHistory(list);
+      } else {
+        setMaintenanceHistory([]);
+      }
+    } catch (err) {
+      console.error('Failed to load maintenance history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const triggerToast = (msg, type = 'success') => {
     setToastMsg(msg);
@@ -39,18 +63,30 @@ export default function MaintenanceRequest() {
     triggerToast('Malfunction photo attached.', 'success');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!issueDetails.trim()) {
       triggerToast('Please describe the issue.', 'error');
       return;
     }
-    triggerToast('Maintenance log successfully submitted.', 'success');
-    setIssueDetails('');
-    setPhotoAttached(false);
+
+    try {
+      await api.post('/asset-maintenances', {
+        type: severity.split(' - ')[0] || 'Minor',
+        notes: issueDetails,
+        status: 'SCHEDULED'
+      });
+      triggerToast('Maintenance log successfully submitted.', 'success');
+      setIssueDetails('');
+      setPhotoAttached(false);
+      fetchHistory();
+    } catch (err) {
+      console.error('Failed to submit maintenance request:', err);
+      triggerToast('Failed to submit maintenance log.', 'error');
+    }
   };
 
-  const mockData = [];
+  const mockData = maintenanceHistory;
 
   const toggleRow = (id) => {
     setSelectedRows(prev =>

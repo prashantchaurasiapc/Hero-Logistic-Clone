@@ -461,33 +461,33 @@ enum WarehouseDocType {
 // ----------------------------------------------------------------------
 
 model YardTask {
-  id          String    @id @default(uuid())
+  id          String  @id @default(uuid())
   title       String
-  description String?   @db.Text
-  status      String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
-  priority    String    @default("MEDIUM")  // LOW, MEDIUM, HIGH, URGENT
-  taskType    String    @default("GENERAL") // SPOT, RELOCATE, INSPECT, AUDIT, GENERAL
-  
-  gate        String?   // e.g. "Gate 4"
-  trailerRef  String?   // e.g. "TR-9410"
+  description String? @db.Text
+  status      String  @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  priority    String  @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  taskType    String  @default("GENERAL") // SPOT, RELOCATE, INSPECT, AUDIT, GENERAL
+
+  gate        String? // e.g. "Gate 4"
+  trailerRef  String? // e.g. "TR-9410"
   dueDate     DateTime?
   completedAt DateTime?
   notes       String?   @db.Text
 
-  driverId    String?
-  driver      Driver?   @relation(fields: [driverId], references: [id])
+  driverId String?
+  driver   Driver? @relation(fields: [driverId], references: [id])
 
-  userId      String?
-  user        User?     @relation("AssignedYardTasks", fields: [userId], references: [id])
+  userId String?
+  user   User?   @relation("AssignedYardTasks", fields: [userId], references: [id])
 
   warehouseId String?
   warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
 
-  companyId   String
-  company     Company   @relation(fields: [companyId], references: [id])
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([companyId])
   @@index([userId])
@@ -530,8 +530,8 @@ model User {
   assignedAssets    AssetAssignment[]
   itemMovements     ItemMovement[]
 
-  branchId          String?
-  branch            Branch?           @relation(fields: [branchId], references: [id])
+  branchId String?
+  branch   Branch? @relation(fields: [branchId], references: [id])
 
   salesLeads      Lead[]          @relation("SalesRepresentative")
   presentedDemos  DemoBooking[]   @relation("DemoPresenter")
@@ -944,6 +944,7 @@ model Driver {
   yardTasks          YardTask[]
   superInfo          DriverSuperInfo?
   expenses           LoadExpense[]
+  notifications      Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -952,20 +953,20 @@ model Driver {
 }
 
 model PerformanceLog {
-  id         String   @id @default(uuid())
+  id         String  @id @default(uuid())
   date       String
   assignment String
   route      String
   score      String
-  status     String   @default("EXCELLENT")
-  remarks    String?  @db.Text
+  status     String  @default("EXCELLENT")
+  remarks    String? @db.Text
   evaluator  String?
 
-  driverId   String
-  driver     Driver   @relation(fields: [driverId], references: [id])
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("performance_log")
 }
@@ -1006,12 +1007,12 @@ model DriverDeduction {
 }
 
 model DriverLeaveRequest {
-  id       String @id @default(uuid())
+  id       String  @id @default(uuid())
   type     String
   dates    String
   days     String
-  approver String @default("HR Director")
-  status   String @default("Pending Approval")
+  approver String  @default("HR Director")
+  status   String  @default("Pending Approval")
   notes    String? @db.Text
 
   driverId String
@@ -1041,68 +1042,68 @@ model DriverPayRate {
 }
 
 model DriverActivity {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   title       String
-  category    String   @default("Assignments")
-  status      String   @default("Verified")
-  description String   @db.Text
-  performedBy String   @default("Fleet Admin User")
+  category    String  @default("Assignments")
+  status      String  @default("Verified")
+  description String  @db.Text
+  performedBy String  @default("Fleet Admin User")
   time        String?
   date        String?
 
-  driverId    String
-  driver      Driver   @relation(fields: [driverId], references: [id])
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("driver_activity")
 }
 
 model DriverMessage {
-  id          String   @id @default(uuid())
-  subject     String?
-  message     String?  @db.Text
-  body        String?  @db.Text
-  sender      String?  @default("Fleet Admin")
-  senderName  String?
-  senderRole  String?
-  recipient   String?
-  category    String?  @default("General")
-  status      String   @default("Sent")
+  id           String  @id @default(uuid())
+  subject      String?
+  message      String? @db.Text
+  body         String? @db.Text
+  sender       String? @default("Fleet Admin")
+  senderName   String?
+  senderRole   String?
+  recipient    String?
+  category     String? @default("General")
+  status       String  @default("Sent")
   isFromDriver Boolean @default(false)
-  isRead      Boolean  @default(false)
-  important   Boolean  @default(false)
-  isGroup     Boolean  @default(false)
-  meta        String?
-  threadId    String?
+  isRead       Boolean @default(false)
+  important    Boolean @default(false)
+  isGroup      Boolean @default(false)
+  meta         String?
+  threadId     String?
 
-  driverId    String
-  driver      Driver   @relation(fields: [driverId], references: [id])
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
 
-  companyId   String?
-  company     Company? @relation(fields: [companyId], references: [id])
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("driver_message")
 }
 
 model DriverSuperInfo {
-  id              String   @id @default(uuid())
-  fundName        String   @default("AustralianSuper")
-  memberNumber    String   @default("AS-102948")
-  usi             String   @default("STA0100AU")
-  rate            String   @default("11.5%")
-  ytdContribution String   @default("$0.00")
-  status          String   @default("Active & Compliant")
+  id              String @id @default(uuid())
+  fundName        String @default("AustralianSuper")
+  memberNumber    String @default("AS-102948")
+  usi             String @default("STA0100AU")
+  rate            String @default("11.5%")
+  ytdContribution String @default("$0.00")
+  status          String @default("Active & Compliant")
 
-  driverId        String   @unique
-  driver          Driver   @relation(fields: [driverId], references: [id])
+  driverId String @unique
+  driver   Driver @relation(fields: [driverId], references: [id])
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("driver_super_info")
 }
@@ -1150,8 +1151,8 @@ model Vehicle {
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
 
-  truckLoads   Load[]     @relation("TruckToLoad")
-  trailerLoads Load[]     @relation("TrailerToLoad")
+  truckLoads   Load[]        @relation("TruckToLoad")
+  trailerLoads Load[]        @relation("TrailerToLoad")
   documents    Document[]
   expenses     LoadExpense[]
 
@@ -1159,8 +1160,8 @@ model Vehicle {
   prevEquipmentSwaps EquipmentSwap[] @relation("PrevTrailerSwap")
   newEquipmentSwaps  EquipmentSwap[] @relation("NewTrailerSwap")
 
-  branchId          String?
-  branch            Branch?           @relation(fields: [branchId], references: [id])
+  branchId String?
+  branch   Branch? @relation(fields: [branchId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1223,8 +1224,8 @@ model Load {
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
 
-  branchId          String?
-  branch            Branch?           @relation(fields: [branchId], references: [id])
+  branchId String?
+  branch   Branch? @relation(fields: [branchId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1530,10 +1531,10 @@ model AiActivityLog {
 
 model CustomRole {
   id        String   @id @default(uuid())
-  name      String   // e.g., "Dispatcher"
-  slug      String?  // machine-readable key e.g. "DISPATCHER" — unique for system roles
+  name      String // e.g., "Dispatcher"
+  slug      String? // machine-readable key e.g. "DISPATCHER" — unique for system roles
   isSystem  Boolean  @default(false) @map("is_system") // System roles cannot be deleted or renamed
-  companyId String?  // Optional: If null, it's a global platform role
+  companyId String? // Optional: If null, it's a global platform role
   company   Company? @relation(fields: [companyId], references: [id])
 
   permissions CustomPermission[]
@@ -1545,8 +1546,6 @@ model CustomRole {
   @@unique([slug, companyId]) // unique per company (or globally if companyId is null)
   @@map("custom_role")
 }
-
-
 
 model CustomPermission {
   id     String     @id @default(uuid())
@@ -1602,8 +1601,8 @@ model Customer {
   loadItems        LoadItem[]
   invoices         CustomerInvoice[]
 
-  branchId          String?
-  branch            Branch?           @relation(fields: [branchId], references: [id])
+  branchId String?
+  branch   Branch? @relation(fields: [branchId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1872,24 +1871,24 @@ model SalesActivity {
 }
 
 model OnboardingHandover {
-  id              String   @id @default(uuid())
-  leadId          String   @unique
-  lead            Lead     @relation(fields: [leadId], references: [id])
-  companyName     String
-  primaryContact  String
-  adminEmail      String
-  adminPhone      String?
-  transportNiche  String?
-  fleetSize       String?
-  selectedPlan    String?
-  billingFreq     String?  @default("Monthly")
-  agreedPrice     Float?
-  status          String   @default("READY_FOR_PROVISIONING")
-  notes           String?  @db.Text
-  companyId       String?
-  company         Company? @relation(fields: [companyId], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(uuid())
+  leadId         String   @unique
+  lead           Lead     @relation(fields: [leadId], references: [id])
+  companyName    String
+  primaryContact String
+  adminEmail     String
+  adminPhone     String?
+  transportNiche String?
+  fleetSize      String?
+  selectedPlan   String?
+  billingFreq    String?  @default("Monthly")
+  agreedPrice    Float?
+  status         String   @default("READY_FOR_PROVISIONING")
+  notes          String?  @db.Text
+  companyId      String?
+  company        Company? @relation(fields: [companyId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@map("onboarding_handover")
 }
@@ -2022,14 +2021,14 @@ enum CustomerInvoiceStatus {
 }
 
 model LoadExpense {
-  id     String @id @default(uuid())
+  id     String  @id @default(uuid())
   loadId String?
   load   Load?   @relation(fields: [loadId], references: [id])
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
 
-  date        DateTime @default(now())
+  date        DateTime      @default(now())
   type        String // e.g., "Fuel", "Toll", "Maintenance"
   description String
   amount      Float
@@ -2173,7 +2172,7 @@ model ItemMovement {
   type         MovementType
   fromLocation String?
   toLocation   String
-  quantity     Int?     @default(1)
+  quantity     Int?         @default(1)
 
   // Enhanced for Warehouse Portal Movement History screen
   movementRef String? // e.g., MT-1045
@@ -2850,6 +2849,29 @@ model ImpersonationSession {
 }
 
 // ----------------------------------------------------------------------
+// DRIVER PORTAL: NOTIFICATIONS
+// ----------------------------------------------------------------------
+
+model Notification {
+  id       String    @id @default(uuid())
+  driverId String
+  driver   Driver    @relation(fields: [driverId], references: [id])
+  type     String // e.g., 'DISPATCH', 'ALERT', 'SYSTEM'
+  title    String
+  message  String
+  isRead   Boolean   @default(false)
+  readAt   DateTime?
+  priority String?   @default("NORMAL")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([driverId])
+  @@index([driverId, isRead])
+  @@map("notification")
+}
+
+// ----------------------------------------------------------------------
 // DRIVER PORTAL: INCIDENT & EMERGENCY SOS REPORTING
 // ----------------------------------------------------------------------
 
@@ -2863,7 +2885,7 @@ model DriverIncident {
   load   Load?   @relation(fields: [loadId], references: [id])
 
   incidentType String  @default("INCIDENT") // "INCIDENT" | "SOS"
-  category     String  // e.g. "Highway Road Accident", "Cargo Damage", "Vehicle Breakdown"
+  category     String // e.g. "Highway Road Accident", "Cargo Damage", "Vehicle Breakdown"
   description  String  @db.Text
   photoUrl     String?
   status       String  @default("UNDER_REVIEW") // UNDER_REVIEW, INVESTIGATING, RESOLVED, CLOSED

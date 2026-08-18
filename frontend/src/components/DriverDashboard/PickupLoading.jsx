@@ -1,13 +1,6 @@
-<<<<<<< HEAD
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-=======
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import api from '../../services/api';
-import { getLoadDetails, getMyLoads, getPickupItems, pickupItem } from '../../services/driverApi';
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 import {
   FiArrowLeft, FiHelpCircle, FiMoreVertical, FiCheck, FiTrash2, FiEdit2,
   FiPlus, FiCamera, FiAlertTriangle, FiPhone, FiNavigation, FiChevronRight,
@@ -18,16 +11,6 @@ import { BsQrCodeScan } from 'react-icons/bs';
 
 export default function PickupLoading() {
   const navigate = useNavigate();
-<<<<<<< HEAD
-=======
-  const { id: paramId } = useParams();
-  const location = useLocation();
-
-  const [activeLoad, setActiveLoad] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
   // Mode & Toast States
   const [driverMode, setDriverMode] = useState('Flexible / Owner-Driver');
@@ -60,7 +43,6 @@ export default function PickupLoading() {
     'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=500&auto=format&fit=crop'
   ];
 
-<<<<<<< HEAD
   // Dynamic States
   const [loading, setLoading] = useState(true);
   const [loadInfo, setLoadInfo] = useState(null);
@@ -85,84 +67,12 @@ export default function PickupLoading() {
   useEffect(() => {
     fetchPickupLoad();
   }, []);
-=======
-  // Cars Data with DROPs (Fetched dynamically from real backend API)
-  const [cars, setCars] = useState([]);
-
-  // Fetch Load & Pickup Items from Backend
-  useEffect(() => {
-    let isSubscribed = true;
-    setLoading(true);
-    setError(null);
-
-    const targetId = paramId || location.state?.loadId;
-
-    const loadTask = targetId 
-      ? getLoadDetails(targetId) 
-      : getMyLoads().then(res => {
-          const loads = res.data?.data?.loads || [];
-          const active = loads.find(l => ['IN_TRANSIT', 'ACTIVE', 'ASSIGNED'].includes(l.status)) || loads[0];
-          if (!active) throw new Error('No active load found.');
-          return getLoadDetails(active.id);
-        });
-
-    loadTask
-      .then(res => {
-        if (!isSubscribed) return;
-        const rawLoad = res.data?.data?.load;
-        if (!rawLoad) throw new Error('Load not found.');
-
-        const displayId = rawLoad.loadRef || (rawLoad.id ? `LD-${rawLoad.id.substring(0, 4).toUpperCase()}` : 'LD-0000');
-        setActiveLoad({
-          rawId: rawLoad.id,
-          displayId,
-          loadRef: rawLoad.loadRef,
-          status: rawLoad.status,
-        });
-
-        // Fetch Real Load Items from backend
-        return getPickupItems(rawLoad.id);
-      })
-      .then(res => {
-        if (!isSubscribed || !res) return;
-        const backendItems = res.data?.data?.items || [];
-        const formattedCars = backendItems.map((item, idx) => ({
-          id: item.id,
-          drop: item.dropoffStop?.contactName ? `DROP ${idx + 1}` : `DROP ${(idx % 4) + 1}`,
-          dropLoc: item.dropoffStop?.address || item.dropoffStop?.contactName || 'Auto World Sydney',
-          vin: item.vin || `VIN-${String(item.id).substring(0, 8).toUpperCase()}`,
-          makeModel: `${item.make || ''} ${item.model || 'Vehicle'}`.trim(),
-          color: item.color || 'White',
-          plate: item.rego || `REG-${idx + 101}`,
-          pickedUp: item.status === 'PICKED_UP',
-          time: item.status === 'PICKED_UP' ? '08:15 AM' : null,
-          photos: { current: item.status === 'PICKED_UP' ? 4 : 0, total: 4, percent: item.status === 'PICKED_UP' ? 100 : 0 }
-        }));
-        setCars(formattedCars);
-      })
-      .catch(err => {
-        if (isSubscribed) {
-          const msg = err.response?.data?.error?.message || err.message || 'Could not load pickup details.';
-          setError(msg);
-        }
-      })
-      .finally(() => {
-        if (isSubscribed) setLoading(false);
-      });
-
-    return () => { isSubscribed = false; };
-  }, [paramId, location.state]);
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
   };
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
   const getBrandLogo = (makeModel = '') => {
     const name = makeModel.toLowerCase();
 
@@ -256,7 +166,6 @@ export default function PickupLoading() {
     );
   };
 
-<<<<<<< HEAD
   const togglePickUp = async (id) => {
     const car = cars.find(c => c.id === id);
     if (!car) return;
@@ -279,54 +188,6 @@ export default function PickupLoading() {
       console.error(err);
       triggerToast(`Failed to update ${car.makeModel} on server.`);
     }
-=======
-  const handlePickupVinApi = (targetVinOrId, carObj = null) => {
-    const currentLoadId = activeLoad?.rawId || paramId;
-    if (!currentLoadId || isSubmitting) return;
-    setIsSubmitting(true);
-    setWrongVehicleAlert(false);
-
-    pickupItem(currentLoadId, { vin: targetVinOrId, itemId: carObj?.id, note: pickupNotes })
-      .then(res => {
-        const updatedItem = res.data?.data?.item;
-        const targetVin = updatedItem?.vin || targetVinOrId;
-        const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        setCars(prevCars => prevCars.map(c => {
-          if (c.id === carObj?.id || c.id === updatedItem?.id || (c.vin && c.vin.toUpperCase() === targetVin.toUpperCase())) {
-            return {
-              ...c,
-              pickedUp: true,
-              time: nowTime,
-              photos: { current: 4, total: 4, percent: 100 }
-            };
-          }
-          return c;
-        }));
-
-        triggerToast(`✅ VIN ${targetVin} Verified! Vehicle marked as Picked Up.`);
-      })
-      .catch(err => {
-        const msg = err.response?.data?.error?.message || 'VIN scan validation failed.';
-        triggerToast(`❌ Error: ${msg}`);
-        setWrongVehicleAlert(true);
-      })
-      .finally(() => {
-        setIsSubmitting(false);
-      });
-  };
-
-  const togglePickUp = (id) => {
-    const carObj = cars.find(c => c.id === id);
-    if (!carObj) return;
-
-    if (carObj.pickedUp) {
-      triggerToast(`Vehicle ${carObj.makeModel} (VIN: ${carObj.vin}) is already picked up.`);
-      return;
-    }
-
-    handlePickupVinApi(carObj.vin, carObj);
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
   };
 
   const deleteCar = (id) => {
@@ -582,7 +443,6 @@ export default function PickupLoading() {
 
             {/* DROPS BREAKDOWN TABLE SECTIONS */}
             <div className="space-y-4">
-<<<<<<< HEAD
               {cars.length === 0 ? (
                 <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center space-y-3">
                   <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-xl font-black">
@@ -614,13 +474,6 @@ export default function PickupLoading() {
                   const dropCars = cars.filter(c => c.drop === dropName);
                   if (dropCars.length === 0) return null;
                   const dropLoc = dropCars[0]?.dropLoc || 'Delivery Location';
-=======
-              {cars.length > 0 ? (
-                drops.map((dropName) => {
-                const dropCars = cars.filter(c => c.drop === dropName);
-                if (dropCars.length === 0) return null;
-                const dropLoc = dropCars[0]?.dropLoc || 'Delivery Location';
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
                 return (
                   <div key={dropName} className="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
@@ -775,17 +628,7 @@ export default function PickupLoading() {
                   </div>
                 );
               })
-<<<<<<< HEAD
             )}
-=======
-            ) : (
-                <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl">
-                  <FiTruck className="mx-auto text-3xl text-slate-300 mb-2" />
-                  <p className="font-bold text-slate-700 text-sm">No vehicles assigned to pick up on this load.</p>
-                  <p className="text-xs text-slate-400 mt-1">Use "+ Add Car" or "Scan VIN" to scan or add vehicles manually.</p>
-                </div>
-              )}
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
             </div>
 
             {/* ADD CAR FROM YARD / POOL BANNER */}

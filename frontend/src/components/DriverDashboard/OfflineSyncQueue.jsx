@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -21,6 +22,7 @@ export default function OfflineSyncQueue() {
   const [tipDismissed, setTipDismissed] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncPaused, setSyncPaused] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Modals
   const [syncSettingsModalOpen, setSyncSettingsModalOpen] = useState(false);
@@ -29,25 +31,50 @@ export default function OfflineSyncQueue() {
   const [helpTitle, setHelpTitle] = useState('');
   const [selectedItemDetails, setSelectedItemDetails] = useState(null);
 
-  // Sync Queue Items Data (Matching Screenshot 15.14)
-  const [syncItems, setSyncItems] = useState([
-    { id: 1, name: 'Pre-Start Check', ref: 'PSC-290525-001', type: 'Safety', status: 'Pending', color: 'bg-amber-50 text-amber-700 border-amber-200', date: '29 May 2025, 08:45 AM', size: '120 KB', icon: '📋', progress: 0 },
-    { id: 2, name: 'Load Photos (3)', ref: 'LP-290525-001', type: 'Photos', status: 'Uploading', color: 'bg-blue-50 text-blue-700 border-blue-200', date: '29 May 2025, 09:02 AM', size: '3.4 MB', icon: '📷', progress: 85 },
-    { id: 3, name: 'POD Signature', ref: 'POD-290525-001', type: 'Delivery', status: 'Synced', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', date: '29 May 2025, 09:10 AM', size: '68 KB', icon: '✍️', progress: 100 },
-    { id: 4, name: 'Fuel Purchase', ref: 'FUEL-290525-001', type: 'Expense', status: 'Pending', color: 'bg-amber-50 text-amber-700 border-amber-200', date: '29 May 2025, 09:28 AM', size: '215 KB', icon: '⛽', progress: 0 },
-    { id: 5, name: 'Trailer Swap', ref: 'TS-290525-001', type: 'Equipment', status: 'Queued', color: 'bg-purple-50 text-purple-700 border-purple-200', date: '29 May 2025, 09:43 AM', size: '95 KB', icon: '🚛', progress: 0 },
-    { id: 6, name: 'Damage Report', ref: 'DMG-290525-001', type: 'Damage', status: 'Failed', color: 'bg-rose-50 text-rose-700 border-rose-200', date: '29 May 2025, 09:55 AM', size: '370 KB', icon: '⚠️', progress: 0, errorMsg: 'Failed to sync. Please check your connection and try again.' },
-    { id: 7, name: 'Yard Check-In Photo', ref: 'VCI-290525-001', type: 'Photos', status: 'Uploading', color: 'bg-blue-50 text-blue-700 border-blue-200', date: '29 May 2025, 10:05 AM', size: '1.1 MB', icon: '📷', progress: 50 },
-    { id: 8, name: 'Daily Checklist', ref: 'DC-290525-001', type: 'General', status: 'Synced', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', date: '29 May 2025, 10:08 AM', size: '60 KB', icon: '📋', progress: 100 },
-  ]);
+  // Sync Queue Items Data from Database / Local Sync Items
+  const [syncItems, setSyncItems] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
 
-  // Recent Activity Feed Data
-  const [recentActivity, setRecentActivity] = useState([
-    { id: 1, name: 'Pre-Start Check', status: 'Synced', color: 'text-emerald-700', date: '29 May, 09:10 AM' },
-    { id: 2, name: 'POD Signature', status: 'Synced', color: 'text-emerald-700', date: '29 May, 09:10 AM' },
-    { id: 3, name: 'Load Photos (3)', status: 'Uploading', color: 'text-blue-700', date: '29 May, 09:02 AM' },
-    { id: 4, name: 'Damage Report', status: 'Failed', color: 'text-rose-700', date: '29 May, 09:55 AM' },
-  ]);
+  useEffect(() => {
+    fetchSyncQueue();
+  }, []);
+
+  const fetchSyncQueue = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/offline-sync-items').catch(() => null);
+      if (res && res.data) {
+        const items = Array.isArray(res.data.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
+        const formatted = items.map(item => ({
+          id: item.id,
+          name: item.name || item.type || 'Sync Record',
+          ref: item.ref || item.referenceNumber || `SYNC-${item.id.substring(0, 6)}`,
+          type: item.type || 'General',
+          status: item.status || 'Synced',
+          color: item.status === 'Synced' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : item.status === 'Failed' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-amber-50 text-amber-700 border-amber-200',
+          date: item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Recent',
+          size: item.size || '50 KB',
+          icon: '📋',
+          progress: item.status === 'Synced' ? 100 : 0
+        }));
+        setSyncItems(formatted);
+        setRecentActivity(formatted.slice(0, 5).map(f => ({
+          id: f.id,
+          name: f.name,
+          status: f.status,
+          color: f.status === 'Synced' ? 'text-emerald-700' : 'text-amber-700',
+          date: f.date
+        })));
+      } else {
+        setSyncItems([]);
+        setRecentActivity([]);
+      }
+    } catch (err) {
+      console.error('Failed to load offline sync items:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -126,6 +153,9 @@ export default function OfflineSyncQueue() {
   const uploadingCount = syncItems.filter(i => i.status === 'Uploading').length;
   const queuedCount = syncItems.filter(i => i.status === 'Queued').length;
   const failedCount = syncItems.filter(i => i.status === 'Failed').length;
+
+  const syncedItemsList = syncItems.filter(i => i.status === 'Synced');
+  const lastSyncTime = syncedItemsList.length > 0 ? syncedItemsList[syncedItemsList.length - 1].date : 'Never';
 
   // Filter Items according to active tab, search & type
   const filteredItems = syncItems.filter(item => {
@@ -280,11 +310,7 @@ export default function OfflineSyncQueue() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-<<<<<<< HEAD
               <div className="text-[11px] text-slate-500">Last sync: {lastSyncTime}</div>
-=======
-              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
@@ -328,11 +354,7 @@ export default function OfflineSyncQueue() {
             <div className="flex justify-between items-center">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">QUEUE SUMMARY</div>
               <div className="flex items-center gap-1 text-[11px] text-slate-400 font-bold">
-<<<<<<< HEAD
                 <span>Last updated: {lastSyncTime}</span>
-=======
-                <span>Last updated: 29 May 2025, 10:15 AM</span>
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
                 <FiRefreshCw className="text-indigo-600 cursor-pointer hover:rotate-180 transition-transform" onClick={handleSyncNow} />
               </div>
             </div>

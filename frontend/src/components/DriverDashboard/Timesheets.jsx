@@ -27,7 +27,6 @@ export default function Timesheets() {
   const [clockStatus, setClockStatus] = useState('Clocked Out'); // 'Clocked In', 'On Break', 'Clocked Out'
   const [secondsToday, setSecondsToday] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
-<<<<<<< HEAD
   const [sinceText, setSinceText] = useState('');
 
   // Dynamic Context from API
@@ -60,8 +59,6 @@ export default function Timesheets() {
   const [allTimesheets, setAllTimesheets] = useState([]);
   const [recentTimesheets, setRecentTimesheets] = useState([]);
   const [activeLoadData, setActiveLoadData] = useState(null);
-=======
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
   // Note State
   const [noteInput, setNoteInput] = useState('');
@@ -75,7 +72,6 @@ export default function Timesheets() {
   const [timesheetSubmitted, setTimesheetSubmitted] = useState(false);
 
   // Timeline Data
-<<<<<<< HEAD
   const [timelineEvents, setTimelineEvents] = useState([]);
 
   useEffect(() => {
@@ -109,56 +105,6 @@ export default function Timesheets() {
       setLoading(false);
     }
   };
-=======
-  const [timelineEvents, setTimelineEvents] = useState([
-    { id: 1, type: 'Clocked In', time: '07:45 AM', location: 'Yard - Melbourne VIC (-37.8136, 144.9631)', badge: 'Auto Location', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-    { id: 2, type: 'Break Started', time: '12:00 PM', location: 'Yass NSW (-34.8020, 148.9097)', badge: '45 min', color: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
-    { id: 3, type: 'Break Ended', time: '12:45 PM', location: 'Yass NSW (-34.8020, 148.9097)', badge: null, color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-    { id: 4, type: 'Note Added', time: '01:05 PM', location: 'Lunch break completed. Continuing journey.', badge: null, color: 'bg-slate-100 text-slate-700 border-slate-200', dot: 'bg-slate-400' },
-    { id: 5, type: 'Still Working', time: '11:00 AM – Now', location: 'Yass NSW (-34.8020, 148.9097)', badge: 'On Site', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
-  ]);
-
-  // Fetch Today's Timesheet from Backend
-  useEffect(() => {
-    let isSubscribed = true;
-    setLoading(true);
-
-    getTodayTimesheet()
-      .then(res => {
-        if (!isSubscribed) return;
-        const data = res.data?.data;
-        if (data) {
-          const status = data.clockStatus || (data.status === 'CLOCKED_IN' ? 'Clocked In' : 'Clocked Out');
-          setClockStatus(status);
-          setSecondsToday(data.secondsToday || 0);
-          setTimerRunning(status === 'Clocked In');
-
-          if (Array.isArray(data.timelineEvents) && data.timelineEvents.length > 0) {
-            setTimelineEvents(data.timelineEvents);
-          } else if (data.timesheet?.events && data.timesheet.events.length > 0) {
-            const formattedEvents = data.timesheet.events.map(evt => ({
-              id: evt.id,
-              type: evt.type === 'CLOCK_IN' ? 'Clocked In' : evt.type === 'CLOCK_OUT' ? 'Clocked Out' : evt.type,
-              time: new Date(evt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              location: evt.locationName || 'Yard - Melbourne VIC',
-              badge: evt.type === 'CLOCK_IN' ? 'Auto Location' : null,
-              color: evt.type === 'CLOCK_IN' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200',
-              dot: evt.type === 'CLOCK_IN' ? 'bg-emerald-500' : 'bg-rose-500'
-            }));
-            setTimelineEvents(formattedEvents);
-          }
-        }
-      })
-      .catch(err => {
-        if (isSubscribed) console.error('Error fetching today timesheet:', err);
-      })
-      .finally(() => {
-        if (isSubscribed) setLoading(false);
-      });
-
-    return () => { isSubscribed = false; };
-  }, []);
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
 
   // Live Timer Effect
   useEffect(() => {
@@ -222,7 +168,6 @@ export default function Timesheets() {
       .finally(() => setIsSubmitting(false));
   };
 
-<<<<<<< HEAD
   const handleClockOut = async () => {
     try {
       await api.post('/driver-portal/timesheets/clock-out', {});
@@ -249,53 +194,6 @@ export default function Timesheets() {
       setTimerRunning(true);
       triggerToast('Clocked In successfully! Work timer active.');
     }
-=======
-  const handleClockOut = () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
-    clockOut({ locationName: 'Yard - Sydney NSW (-33.8688, 151.2093)' })
-      .then(() => {
-        setClockStatus('Clocked Out');
-        setTimerRunning(false);
-        triggerToast('Clocked Out successfully! Shift ended.');
-        setTimelineEvents(prev => [
-          ...prev,
-          { id: Date.now(), type: 'Clocked Out', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: 'Yard - Sydney NSW (-33.8688, 151.2093)', badge: 'End Shift', color: 'bg-rose-50 text-rose-700 border-rose-200', dot: 'bg-rose-500' }
-        ]);
-      })
-      .catch(err => {
-        setClockStatus('Clocked Out');
-        setTimerRunning(false);
-        triggerToast('Clocked Out successfully! Shift ended.');
-      })
-      .finally(() => setIsSubmitting(false));
-  };
-
-  const handleClockIn = () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
-    clockIn({ locationName: 'Yard - Melbourne VIC (-37.8136, 144.9631)' })
-      .then(res => {
-        setClockStatus('Clocked In');
-        setTimerRunning(true);
-        setSecondsToday(0);
-        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        triggerToast('Clocked In successfully! Work timer active.');
-        setTimelineEvents(prev => [
-          ...prev,
-          { id: Date.now(), type: 'Clocked In', time: nowStr, location: 'Yard - Melbourne VIC (-37.8136, 144.9631)', badge: 'Auto Location', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
-        ]);
-      })
-      .catch(err => {
-        const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Clock In failed.';
-        triggerToast(`❌ Error: ${msg}`);
-      })
-      .finally(() => {
-        setIsSubmitting(false);
-      });
->>>>>>> 0064eea5cab4fd432f8f1212e82ae0df611bc83a
   };
 
   const handleAddNote = (e) => {
