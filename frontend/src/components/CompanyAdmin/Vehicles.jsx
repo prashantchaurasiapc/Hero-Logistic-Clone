@@ -427,6 +427,8 @@ const Vehicles = () => {
   const [editingDocModal, setEditingDocModal] = React.useState(null);
   const [viewingMaintenanceModal, setViewingMaintenanceModal] = React.useState(null);
   const [showUploadDocModal, setShowUploadDocModal] = React.useState(false);
+  const [isComplianceModalOpen, setIsComplianceModalOpen] = React.useState(false);
+  const [isAIInsightsModalOpen, setIsAIInsightsModalOpen] = React.useState(false);
   const [docToastMessage, setDocToastMessage] = React.useState(null);
   const [docPage, setDocPage] = React.useState(1);
   const [docRowsPerPage, setDocRowsPerPage] = React.useState(10);
@@ -4490,7 +4492,7 @@ const Vehicles = () => {
             <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
                <div className="flex justify-between items-center mb-4">
                   <h3 className="text-[13px] font-bold text-gray-900">Upcoming Compliance <span className="text-gray-500 font-normal block sm:inline">(Next 30 Days)</span></h3>
-                  <a href="#" className="text-[11px] font-semibold text-purple-700 flex items-center gap-0.5 hover:underline whitespace-nowrap">View All <ArrowRight size={12} /></a>
+                  <button onClick={() => setIsComplianceModalOpen(true)} className="text-[11px] font-semibold text-purple-700 flex items-center gap-0.5 hover:underline whitespace-nowrap cursor-pointer bg-transparent border-0">View All <ArrowRight size={12} /></button>
                </div>
                <div className="flex flex-col gap-4">
                   {vehicles.filter(v => v.regExpiryDate || v.compliance === 'Expiring Soon' || v.compliance === 'Overdue').length === 0 ? (
@@ -4535,7 +4537,10 @@ const Vehicles = () => {
                      </>
                   )}
                </ul>
-               <button className="w-full py-2 bg-white border border-purple-200 text-purple-700 rounded-xl text-[12px] font-semibold hover:bg-purple-50 transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+               <button 
+                  onClick={() => setIsAIInsightsModalOpen(true)}
+                  className="w-full py-2 bg-white border border-purple-200 text-purple-700 rounded-xl text-[12px] font-semibold hover:bg-purple-50 transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+               >
                   <Star size={14} className="fill-purple-700" /> View AI Insights
                </button>
             </div>

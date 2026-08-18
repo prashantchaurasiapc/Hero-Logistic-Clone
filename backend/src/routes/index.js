@@ -218,6 +218,7 @@ router.use('/warehouse-portal', WarehousePortalRoutes);
 // Accounts Portal dedicated routes
 const AccountsPortalRoutes = require('./AccountsPortalRoutes');
 router.use('/accounts', AccountsPortalRoutes);
+router.use('/accounts-portal', AccountsPortalRoutes);
 
 // Direct menu aliases for top-level routes
 router.use('/live-tracking', CompanyAdminPortalRoutes);

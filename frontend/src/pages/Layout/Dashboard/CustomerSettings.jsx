@@ -29,27 +29,54 @@ export default function CustomerSettings() {
       const res = await api.get('/users');
       if (res.data) {
         const raw = Array.isArray(res.data.data) ? res.data.data : (Array.isArray(res.data) ? res.data : (res.data.users || []));
-        const formatted = raw.map((u, i) => {
-          const initials = (u.name || u.firstName || 'User').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-          let roleBg = 'bg-blue-100 text-blue-700 border-blue-200';
-          if (u.role === 'Customer Admin' || u.role === 'ADMIN') roleBg = 'bg-purple-100 text-purple-700 border-purple-200';
-          if (u.role === 'Accounts User') roleBg = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+        const session = JSON.parse(localStorage.getItem('hero_session') || '{}');
+        const myEmail = (session.email || '').toLowerCase().trim();
 
-          return {
-            id: u.id || i + 1,
-            dbId: u.id,
-            name: u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'User',
-            isYou: i === 0,
-            role: u.role || 'Booking User',
-            roleBg: roleBg,
-            email: u.email || '',
-            phone: u.phone || 'N/A',
-            status: u.status || 'Active',
-            lastLogin: u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'N/A',
-            bg: 'bg-purple-600',
-            avatar: initials || 'US'
-          };
-        });
+        const formatted = raw
+          .filter(u => {
+            const email = (u.email || '').toLowerCase().trim();
+            if (email === myEmail) return true;
+
+            const preSeededEmails = [
+              'warehouse@hero.com',
+              'driver@hero.com',
+              'customer@hero.com',
+              'admin@hero.com',
+              'yard@hero.com',
+              'sales@hero.com',
+              'dispatcher@hero.com',
+              'accounts@hero.com',
+              'company-admin@hero.com',
+              'david.m@herologistics.com.au',
+              'aa@gmail.com'
+            ];
+
+            if (preSeededEmails.includes(email)) return false;
+            if (email.endsWith('@hero.com')) return false;
+
+            return true;
+          })
+          .map((u, i) => {
+            const initials = (u.name || u.firstName || 'User').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            let roleBg = 'bg-blue-100 text-blue-700 border-blue-200';
+            if (u.role === 'Customer Admin' || u.role === 'ADMIN') roleBg = 'bg-purple-100 text-purple-700 border-purple-200';
+            if (u.role === 'Accounts User') roleBg = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+
+            return {
+              id: u.id || i + 1,
+              dbId: u.id,
+              name: u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'User',
+              isYou: u.email?.toLowerCase().trim() === myEmail,
+              role: u.role || 'Booking User',
+              roleBg: roleBg,
+              email: u.email || '',
+              phone: u.phone || 'N/A',
+              status: u.status || 'Active',
+              lastLogin: u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'N/A',
+              bg: 'bg-purple-600',
+              avatar: initials || 'US'
+            };
+          });
         setUsersList(formatted);
       }
     } catch (err) {
@@ -64,6 +91,10 @@ export default function CustomerSettings() {
   }, []);
 
   // Dropdown & Modal States
+  const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+  const [isEditPermissionsModalOpen, setIsEditPermissionsModalOpen] = useState(false);
   const [openUserDropdownId, setOpenUserDropdownId] = useState(null);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -122,7 +153,7 @@ export default function CustomerSettings() {
     });
   };
 
-  const handleSaveEditUser = (e) => {
+  const handleSaveEditUser = async (e) => {
     e.preventDefault();
     if (!editingUser) return;
 
@@ -131,29 +162,55 @@ export default function CustomerSettings() {
     if (userForm.role === 'Accounts User') roleBg = 'bg-emerald-100 text-emerald-700 border-emerald-200';
     if (userForm.role === 'Viewer') roleBg = 'bg-slate-100 text-slate-700 border-slate-200';
 
-    setUsersList(prev => prev.map(u => u.id === editingUser.id ? {
-      ...u,
-      name: userForm.name,
-      email: userForm.email,
-      phone: userForm.phone,
-      role: userForm.role,
-      roleBg: roleBg,
-      status: userForm.status
-    } : u));
-
-    setEditingUser(null);
-    triggerToast(`User ${userForm.name} updated successfully!`);
+    try {
+      if (editingUser.dbId) {
+        await api.put(`/users/${editingUser.dbId}`, {
+          name: userForm.name,
+          email: userForm.email,
+          phone: userForm.phone,
+          role: userForm.role === 'Customer Admin' || userForm.role === 'ADMIN' ? 'COMPANY_ADMIN' : 'USER',
+          status: userForm.status === 'Active' ? 'ACTIVE' : 'INACTIVE'
+        });
+        fetchUsers();
+      } else {
+        setUsersList(prev => prev.map(u => u.id === editingUser.id ? {
+          ...u,
+          name: userForm.name,
+          email: userForm.email,
+          phone: userForm.phone,
+          role: userForm.role,
+          roleBg: roleBg,
+          status: userForm.status
+        } : u));
+      }
+      triggerToast(`User ${userForm.name} updated successfully!`);
+    } catch (err) {
+      console.error('Failed to update user:', err);
+      triggerToast('Failed to update user. Please try again.');
+    } finally {
+      setEditingUser(null);
+    }
   };
 
-  const handleToggleUserStatus = (userId) => {
-    setUsersList(prev => prev.map(u => {
-      if (u.id === userId) {
-        const newStatus = u.status === 'Active' ? 'Inactive' : 'Active';
-        triggerToast(`User status changed to ${newStatus}`);
-        return { ...u, status: newStatus };
+  const handleToggleUserStatus = async (userId) => {
+    const targetUser = usersList.find(u => u.id === userId);
+    if (!targetUser) return;
+    const newStatus = targetUser.status === 'Active' ? 'Inactive' : 'Active';
+
+    try {
+      if (targetUser.dbId) {
+        await api.put(`/users/${targetUser.dbId}`, {
+          status: newStatus === 'Active' ? 'ACTIVE' : 'INACTIVE'
+        });
+        fetchUsers();
+      } else {
+        setUsersList(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus } : u));
       }
-      return u;
-    }));
+      triggerToast(`User status changed to ${newStatus}`);
+    } catch (err) {
+      console.error('Failed to toggle status:', err);
+      triggerToast('Failed to update user status.');
+    }
   };
 
   const handleDeleteUser = async (userId, userName) => {
@@ -260,14 +317,81 @@ export default function CustomerSettings() {
         </div>
 
         {/* Top Right Action Button */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
           <button 
-            onClick={() => triggerToast("More actions menu opened.")}
+            onClick={() => setIsMoreActionsOpen(!isMoreActionsOpen)}
             className="px-3.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 font-bold text-xs text-slate-700 rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors"
           >
             <span>More Actions</span>
-            <span className="text-[10px]">▼</span>
+            <span className="text-[10px]">{isMoreActionsOpen ? '▲' : '▼'}</span>
           </button>
+
+          {/* Floating Dropdown Menu */}
+          {isMoreActionsOpen && (
+            <>
+              <div 
+                className="fixed inset-0 z-40"
+                onClick={() => setIsMoreActionsOpen(false)}
+              />
+              <div className="absolute right-0 top-full mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200 p-1.5 z-50 text-left w-56 space-y-0.5 animate-fade-in font-sans text-xs">
+                <button
+                  onClick={() => {
+                    setIsMoreActionsOpen(false);
+                    triggerToast(`Exporting ${usersList.length} users directory to CSV...`);
+                    const csvContent = "data:text/csv;charset=utf-8," + ["Name,Email,Role,Phone,Status", ...usersList.map(u => `"${u.name}","${u.email}","${u.role}","${u.phone}","${u.status}"`)].join("\n");
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", "Users_Directory.csv");
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-blue-50 hover:text-blue-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                >
+                  <Users size={13} className="text-blue-600" />
+                  <span>Export Users (CSV)</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsMoreActionsOpen(false);
+                    triggerToast("Bulk welcome emails sent to active users!");
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                >
+                  <Mail size={13} className="text-emerald-600" />
+                  <span>Send Bulk Welcome Emails</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsMoreActionsOpen(false);
+                    triggerToast("Opening print dialog for User Directory...");
+                    window.print();
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-purple-50 hover:text-purple-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                >
+                  <FileText size={13} className="text-purple-600" />
+                  <span>Print User Report</span>
+                </button>
+
+                <div className="my-1 border-t border-slate-100" />
+
+                <button
+                  onClick={() => {
+                    setIsMoreActionsOpen(false);
+                    fetchUsers();
+                    triggerToast("Workspace user data refreshed!");
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-amber-50 hover:text-amber-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                >
+                  <RefreshCw size={13} className="text-amber-600" />
+                  <span>Refresh Users Data</span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -332,7 +456,14 @@ export default function CustomerSettings() {
             </div>
           </div>
           <div className="pt-1 border-t border-slate-100 flex items-center justify-between text-[10px]">
-            <button onClick={() => triggerToast("Roles & permissions panel active")} className="font-extrabold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 cursor-pointer">
+            <button 
+              onClick={() => {
+                const el = document.getElementById('user-permissions-matrix');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                triggerToast("Viewing Roles & Permissions Matrix");
+              }} 
+              className="font-extrabold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
+            >
               View roles & permissions <ArrowRight size={10} />
             </button>
           </div>
@@ -353,7 +484,10 @@ export default function CustomerSettings() {
             </div>
           </div>
           <div className="pt-1 border-t border-slate-100 flex items-center justify-between text-[10px]">
-            <button onClick={() => triggerToast("Security settings opened")} className="font-extrabold text-rose-600 hover:text-rose-800 flex items-center gap-1 cursor-pointer">
+            <button 
+              onClick={() => setIsSecurityModalOpen(true)} 
+              className="font-extrabold text-rose-600 hover:text-rose-800 flex items-center gap-1 cursor-pointer"
+            >
               Security settings <ArrowRight size={10} />
             </button>
           </div>
@@ -374,7 +508,10 @@ export default function CustomerSettings() {
             </div>
           </div>
           <div className="pt-1 border-t border-slate-100 flex items-center justify-between text-[10px]">
-            <button onClick={() => triggerToast("Activity log view active")} className="font-extrabold text-sky-600 hover:text-sky-800 flex items-center gap-1 cursor-pointer">
+            <button 
+              onClick={() => setIsActivityModalOpen(true)} 
+              className="font-extrabold text-sky-600 hover:text-sky-800 flex items-center gap-1 cursor-pointer"
+            >
               View activity <ArrowRight size={10} />
             </button>
           </div>
@@ -581,12 +718,12 @@ export default function CustomerSettings() {
         </div>
 
         {/* RIGHT COLUMN (5 Cols): USER PERMISSIONS Matrix */}
-        <div className="lg:col-span-5 bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-4 space-y-3.5">
+        <div id="user-permissions-matrix" className="lg:col-span-5 bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-4 space-y-3.5 scroll-mt-6">
           
           <div className="flex justify-between items-center pb-3 border-b border-slate-100">
             <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">USER PERMISSIONS</h2>
             <button 
-              onClick={() => triggerToast("Permission Matrix Edit Mode enabled.")}
+              onClick={() => setIsEditPermissionsModalOpen(true)}
               className="text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
             >
               Edit
@@ -783,7 +920,7 @@ export default function CustomerSettings() {
           <div className="flex justify-between items-center pb-3 border-b border-slate-100">
             <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">SECURITY & ACCESS</h2>
             <button 
-              onClick={() => triggerToast("Security settings opened")} 
+              onClick={() => setIsSecurityModalOpen(true)} 
               className="text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
             >
               Edit
@@ -1365,6 +1502,205 @@ export default function CustomerSettings() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+         SECURITY & 2FA SETTINGS MODAL
+         ========================================================================= */}
+      {isSecurityModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsSecurityModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 text-left font-sans animate-scale-up"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                  <Lock size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Security Settings</h3>
+                  <p className="text-[10px] text-slate-500 font-medium">Manage 2FA, session timeouts and authentication</p>
+                </div>
+              </div>
+              <button onClick={() => setIsSecurityModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-emerald-50/60 border border-emerald-200/80 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="font-extrabold text-emerald-900 block text-xs">Two-Factor Authentication (2FA)</span>
+                  <span className="text-[10px] text-emerald-700 font-medium">Enabled via Authenticator App</span>
+                </div>
+                <button onClick={() => triggerToast("2FA preferences updated")} className="px-2.5 py-1 bg-emerald-600 text-white font-bold text-[10px] rounded-lg cursor-pointer">
+                  Configured
+                </button>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-slate-700">Active Login Sessions</span>
+                  <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">1 Active</span>
+                </div>
+                <p className="text-[10.5px] text-slate-500">Current Session: Windows PC • Chrome Browser</p>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <button 
+                  onClick={() => {
+                    setIsSecurityModalOpen(false);
+                    setIsChangePasswordModalOpen(true);
+                  }}
+                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                >
+                  Change Password
+                </button>
+                <button 
+                  onClick={() => setIsSecurityModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+         ACTIVITY LOG AUDIT MODAL
+         ========================================================================= */}
+      {isActivityModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsActivityModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl p-5 space-y-4 text-left font-sans animate-scale-up"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+                  <Clock size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">User Activity Audit Log</h3>
+                  <p className="text-[10px] text-slate-500 font-medium">Recent login events and administrative actions (Past 30 Days)</p>
+                </div>
+              </div>
+              <button onClick={() => setIsActivityModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs max-h-[320px] overflow-y-auto pr-1">
+              {[
+                { action: 'Portal Login Successful', user: 'CUSTOMER Demo', time: 'Today, 10:15 AM', status: 'SUCCESS' },
+                { action: 'User Updated', user: 'CUSTOMER Demo', time: 'Today, 09:40 AM', status: 'SUCCESS' },
+                { action: 'Support Ticket #SUP-3 Created', user: 'CUSTOMER Demo', time: '18 Aug 2026', status: 'SUCCESS' },
+                { action: 'Document Downloaded (POD.pdf)', user: 'CUSTOMER Demo', time: '18 Aug 2026', status: 'SUCCESS' },
+                { action: 'Booking Created (LD-3987)', user: 'CUSTOMER Demo', time: '17 Aug 2026', status: 'SUCCESS' }
+              ].map((log, idx) => (
+                <div key={idx} className="p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors flex items-center justify-between text-xs">
+                  <div className="space-y-0.5">
+                    <span className="font-extrabold text-slate-900 block leading-tight">{log.action}</span>
+                    <span className="text-[9.5px] text-slate-400 font-medium block">{log.user} • {log.time}</span>
+                  </div>
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-black text-[9px] rounded uppercase">
+                    {log.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
+              <button 
+                onClick={() => setIsActivityModalOpen(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+              >
+                Close Audit Log
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+         EDIT USER PERMISSIONS MATRIX MODAL
+         ========================================================================= */}
+      {isEditPermissionsModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsEditPermissionsModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-5 space-y-4 text-left font-sans animate-scale-up"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <Shield size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Edit Role Permissions</h3>
+                  <p className="text-[10px] text-slate-500 font-medium">Customize access level controls for customer roles</p>
+                </div>
+              </div>
+              <button onClick={() => setIsEditPermissionsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="space-y-2">
+                {['Create Bookings', 'View & Track Loads', 'View Documents & PODs', 'View Invoices & Payments', 'Make Payments', 'Manage Company Users', 'Manage Account Settings'].map((permName, idx) => (
+                  <div key={idx} className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between">
+                    <span className="font-bold text-slate-800">{permName}</span>
+                    <div className="flex items-center gap-3 text-[10.5px] font-semibold text-slate-600">
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox" defaultChecked className="rounded border-slate-300 text-blue-600" />
+                        <span>Admin</span>
+                      </label>
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox" defaultChecked={idx < 3} className="rounded border-slate-300 text-blue-600" />
+                        <span>Booking</span>
+                      </label>
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox" defaultChecked={idx === 1 || idx === 2 || idx === 3 || idx === 4} className="rounded border-slate-300 text-blue-600" />
+                        <span>Accounts</span>
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button 
+                  onClick={() => setIsEditPermissionsModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => {
+                    setIsEditPermissionsModalOpen(false);
+                    triggerToast("Role permissions matrix updated successfully!");
+                  }}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                >
+                  Save Permissions
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

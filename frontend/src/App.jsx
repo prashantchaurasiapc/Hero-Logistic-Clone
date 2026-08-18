@@ -286,6 +286,10 @@ function App() {
             <Route path="vehicles" element={<Vehicles />} />
             <Route path="customers" element={<Customers />} />
             <Route path="warehouse" element={<Warehouse />} />
+            <Route path="current-stock" element={<WarehouseCurrentStock />} />
+            <Route path="movements" element={<WarehouseMovements />} />
+            <Route path="inbound" element={<WarehouseInbound />} />
+            <Route path="outbound" element={<WarehouseOutbound />} />
             <Route path="workforce-availability" element={<RosterControl />} />
             <Route path="roster-control" element={<RosterControl />} />
             <Route path="messages" element={<CommunicationDepot />} />
@@ -446,6 +450,7 @@ function App() {
             <Route path="notifications" element={<CustomerNotifications />} />
             <Route path="dispatcher-chat" element={<CustomerDispatcherChat />} />
             <Route path="support" element={<CustomerSupport />} />
+            <Route path="messages" element={<CustomerSupport />} />
             <Route path="settings" element={<Navigate to="/customer/account-users" replace />} />
           </Route>
 

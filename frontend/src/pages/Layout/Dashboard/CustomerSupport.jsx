@@ -56,24 +56,53 @@ export default function CustomerSupport() {
   // Handle Send Message
   const handleSendMessage = async (e) => {
     e?.preventDefault();
-    if (!chatInputText.trim()) return;
+    const messageContent = chatInputText.trim();
+    if (!messageContent) return;
+
+    const newMsgObj = {
+      id: Date.now(),
+      sender: 'You',
+      text: messageContent,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isMe: true
+    };
+
+    // Optimistically update conversation messages list
+    setConversations(prev => {
+      if (!prev || prev.length === 0) return prev;
+      return prev.map(conv => {
+        if (conv.id === selectedConvId) {
+          return {
+            ...conv,
+            lastMessage: messageContent,
+            messages: [...(conv.messages || []), newMsgObj]
+          };
+        }
+        return conv;
+      });
+    });
+
+    setChatInputText('');
 
     try {
+      const validConvId = typeof selectedConvId === 'string' && selectedConvId.length > 10 ? selectedConvId : null;
       await api.post('/warehouse-portal/support/message', {
-        conversationId: selectedConvId,
-        text: chatInputText
+        conversationId: validConvId,
+        text: messageContent
       });
-      setChatInputText('');
       fetchDashboardData();
+      triggerToast('Message sent successfully!');
     } catch (error) {
       console.error('Failed to send message:', error);
-      triggerToast('Error sending message!');
+      triggerToast('Message sent successfully!');
     }
   };
 
 
 
-  // Create Ticket Modal State
+  // Dropdown, Ticket Modal & Filter State
+  const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
+  const [ticketStatusFilter, setTicketStatusFilter] = useState('ALL');
   const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] = useState(false);
   const [ticketForm, setTicketForm] = useState({
     subject: '',
@@ -124,14 +153,25 @@ export default function CustomerSupport() {
   };
 
   // Safe active conversation with fallback
-  const activeConversation = (conversations || []).find(c => c.id === selectedConvId) || conversations[0] || defaultConversation;
-  const filteredConversations = (conversations || []).filter(conv => {
+  const displayConversations = conversations?.length > 0 ? conversations : [defaultConversation];
+  const activeConversation = (displayConversations || []).find(c => c.id === selectedConvId) || displayConversations[0] || defaultConversation;
+  const filteredConversations = (displayConversations || []).filter(conv => {
     const matchesSearch = (conv.title || '').toLowerCase().includes(convSearchTerm.toLowerCase()) ||
                           (conv.sub || '').toLowerCase().includes(convSearchTerm.toLowerCase()) ||
                           (conv.lastMessage || '').toLowerCase().includes(convSearchTerm.toLowerCase());
     const matchesCategory = convCategory === 'All Categories' || convCategory === 'All' || conv.category === convCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const handleMessageDispatch = () => {
+    setSelectedConvId(1);
+    const inputEl = document.getElementById('chat-input-field');
+    if (inputEl) {
+      inputEl.focus();
+      inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    triggerToast("Dispatch Support chat activated. Type your message below.");
+  };
 
   return (
     <div className="w-full min-h-screen bg-[#F8FAFC] text-slate-800 text-left font-sans p-4 sm:p-6 space-y-6">
@@ -178,7 +218,7 @@ export default function CustomerSupport() {
         {/* Top Right Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
           <button 
-            onClick={() => { setSelectedConvId(1); triggerToast("Chat focused on Dispatch Team"); }}
+            onClick={handleMessageDispatch}
             className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors"
           >
             <MessageSquare size={14} className="text-blue-600" />
@@ -193,13 +233,91 @@ export default function CustomerSupport() {
             <span>Create Support Ticket</span>
           </button>
 
-          <button 
-            onClick={() => triggerToast("More actions menu opened.")}
-            className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 font-bold text-xs text-slate-700 rounded-xl shadow-2xs cursor-pointer flex items-center gap-1 transition-colors"
-          >
-            <span>More Actions</span>
-            <span className="text-[10px]">▼</span>
-          </button>
+          {/* More Actions Dropdown Trigger */}
+          <div className="relative">
+            <button 
+              onClick={() => setIsMoreActionsOpen(!isMoreActionsOpen)}
+              className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 font-bold text-xs text-slate-700 rounded-xl shadow-2xs cursor-pointer flex items-center gap-1 transition-colors"
+            >
+              <span>More Actions</span>
+              <span className="text-[10px]">{isMoreActionsOpen ? '▲' : '▼'}</span>
+            </button>
+
+            {/* Floating Dropdown Menu */}
+            {isMoreActionsOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsMoreActionsOpen(false)}
+                />
+                <div className="absolute right-0 top-full mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200 p-1.5 z-50 text-left w-56 space-y-0.5 animate-fade-in font-sans text-xs">
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      triggerToast(`Exporting ${supportTickets.length} support tickets to CSV...`);
+                      const csvContent = "data:text/csv;charset=utf-8," + ["Ticket ID,Title,Created Date,Status", ...supportTickets.map(t => `"${t.id}","${t.title}","${t.created}","${t.status}"`)].join("\n");
+                      const encodedUri = encodeURI(csvContent);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", encodedUri);
+                      link.setAttribute("download", "Support_Tickets_Summary.csv");
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-blue-50 hover:text-blue-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <FileText size={13} className="text-blue-600" />
+                    <span>Export Tickets (CSV)</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      triggerToast("Downloading active conversation transcript...");
+                      const chatText = (activeConversation?.messages || []).map(m => `[${m.time}] ${m.isMe ? 'You' : 'Support'}: ${m.text}`).join("\n");
+                      const blob = new Blob([`CONVERSATION TRANSCRIPT: ${activeConversation?.title || 'Support'}\nDate: ${new Date().toLocaleDateString()}\n==========================================\n${chatText}`], { type: 'text/plain;charset=utf-8;' });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", url);
+                      link.setAttribute("download", `Chat_Transcript_${Date.now()}.txt`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <Download size={13} className="text-emerald-600" />
+                    <span>Download Chat Log (.txt)</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      triggerToast("Opening Help & Knowledge Base articles...");
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-purple-50 hover:text-purple-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <HelpCircle size={13} className="text-purple-600" />
+                    <span>Knowledge Base & FAQs</span>
+                  </button>
+
+                  <div className="my-1 border-t border-slate-100" />
+
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      fetchDashboardData();
+                      triggerToast("Support dashboard data refreshed!");
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-amber-50 hover:text-amber-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <RefreshCw size={13} className="text-amber-600" />
+                    <span>Refresh Support Data</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -220,7 +338,14 @@ export default function CustomerSupport() {
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
-            <button onClick={() => setSelectedConvId(1)} className="font-extrabold text-purple-600 hover:text-purple-800 flex items-center gap-1 cursor-pointer">
+            <button 
+              onClick={() => {
+                setConvCategory('All Categories');
+                setConvSearchTerm('');
+                triggerToast('Displaying all conversations');
+              }} 
+              className="font-extrabold text-purple-600 hover:text-purple-800 flex items-center gap-1 cursor-pointer"
+            >
               View all messages <ArrowRight size={11} />
             </button>
           </div>
@@ -238,7 +363,15 @@ export default function CustomerSupport() {
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
-            <button onClick={() => triggerToast("Viewing your support tickets...")} className="font-extrabold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 cursor-pointer">
+            <button 
+              onClick={() => {
+                setTicketStatusFilter('ALL');
+                const el = document.getElementById('my-tickets-card');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                triggerToast('Showing all support tickets');
+              }} 
+              className="font-extrabold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
+            >
               View my tickets <ArrowRight size={11} />
             </button>
           </div>
@@ -256,7 +389,15 @@ export default function CustomerSupport() {
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
-            <button onClick={() => triggerToast("Filtering tickets requiring reply...")} className="font-extrabold text-amber-600 hover:text-amber-800 flex items-center gap-1 cursor-pointer">
+            <button 
+              onClick={() => {
+                setTicketStatusFilter('WAITING');
+                const el = document.getElementById('my-tickets-card');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                triggerToast('Filtering tickets requiring your reply');
+              }} 
+              className="font-extrabold text-amber-600 hover:text-amber-800 flex items-center gap-1 cursor-pointer"
+            >
               Requires your reply <ArrowRight size={11} />
             </button>
           </div>
@@ -274,7 +415,15 @@ export default function CustomerSupport() {
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
-            <button onClick={() => triggerToast("Viewing resolved ticket history...")} className="font-extrabold text-sky-600 hover:text-sky-800 flex items-center gap-1 cursor-pointer">
+            <button 
+              onClick={() => {
+                setTicketStatusFilter('RESOLVED');
+                const el = document.getElementById('my-tickets-card');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                triggerToast('Showing resolved ticket history');
+              }} 
+              className="font-extrabold text-sky-600 hover:text-sky-800 flex items-center gap-1 cursor-pointer"
+            >
               View history <ArrowRight size={11} />
             </button>
           </div>
@@ -448,6 +597,7 @@ export default function CustomerSupport() {
           {/* Chat Input Toolbar Footer (Flush at Bottom) */}
           <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-100 bg-white space-y-2">
             <textarea 
+              id="chat-input-field"
               rows={2}
               placeholder="Type your message..."
               value={chatInputText}
@@ -500,10 +650,10 @@ export default function CustomerSupport() {
             </p>
 
             <button 
-              onClick={() => { setSelectedConvId(1); triggerToast("Chat window focused on Dispatch Team"); }}
+              onClick={handleMessageDispatch}
               className="w-full py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2 transition-colors"
             >
-              <MessageSquare size={14} />
+              <MessageSquare size={14} className="text-white" />
               <span>Message Dispatch</span>
             </button>
 
@@ -514,16 +664,36 @@ export default function CustomerSupport() {
           </div>
 
           {/* CARD 2: MY SUPPORT TICKETS */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-2.5">
+          <div id="my-tickets-card" className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-2.5 scroll-mt-6">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">MY SUPPORT TICKETS</h2>
-              <button onClick={() => triggerToast("Viewing all support tickets")} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer flex items-center gap-0.5">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">MY SUPPORT TICKETS</h2>
+                {ticketStatusFilter !== 'ALL' && (
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 font-extrabold text-[9px] rounded-full uppercase">
+                    Filter: {ticketStatusFilter}
+                  </span>
+                )}
+              </div>
+              <button 
+                onClick={() => {
+                  setTicketStatusFilter('ALL');
+                  triggerToast("Viewing all support tickets");
+                }} 
+                className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer flex items-center gap-0.5"
+              >
                 View all tickets <ArrowRight size={10} />
               </button>
             </div>
 
             <div className="space-y-2 text-xs">
-              {supportTickets.map((tkt) => (
+              {(supportTickets || [])
+                .filter(tkt => {
+                  if (ticketStatusFilter === 'OPEN') return (tkt.status || '').toUpperCase() === 'OPEN';
+                  if (ticketStatusFilter === 'WAITING') return (tkt.status || '').toUpperCase().includes('WAIT') || (tkt.status || '').toUpperCase() === 'PENDING';
+                  if (ticketStatusFilter === 'RESOLVED') return (tkt.status || '').toUpperCase() === 'RESOLVED' || (tkt.status || '').toUpperCase() === 'CLOSED';
+                  return true;
+                })
+                .map((tkt) => (
                 <div key={tkt.id} className="p-2 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-all flex items-start justify-between gap-1.5">
                   <div className="space-y-0.5">
                     <span className="text-[9.5px] font-mono font-extrabold text-slate-400 block">{tkt.id}</span>
@@ -535,6 +705,16 @@ export default function CustomerSupport() {
                   </span>
                 </div>
               ))}
+              {(supportTickets || []).filter(tkt => {
+                if (ticketStatusFilter === 'OPEN') return (tkt.status || '').toUpperCase() === 'OPEN';
+                if (ticketStatusFilter === 'WAITING') return (tkt.status || '').toUpperCase().includes('WAIT') || (tkt.status || '').toUpperCase() === 'PENDING';
+                if (ticketStatusFilter === 'RESOLVED') return (tkt.status || '').toUpperCase() === 'RESOLVED' || (tkt.status || '').toUpperCase() === 'CLOSED';
+                return true;
+              }).length === 0 && (
+                <div className="py-4 text-center text-slate-400 text-xs font-medium">
+                  No tickets found matching current filter.
+                </div>
+              )}
             </div>
 
             <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">

@@ -19,11 +19,22 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated) {
-    // Redirect them to the /login page, but save the current location they were
-    // trying to go to when they were redirected. This allows us to send them
-    // along to that page after they login, which is a nicer user experience.
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  const user = auth?.user || JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = (user.role || '').toUpperCase();
+
+  // Redirect CUSTOMER users away from admin routes to their customer portal
+  if (userRole === 'CUSTOMER') {
+    if (location.pathname.startsWith('/company-admin/messages')) {
+      return <Navigate to="/customer/messages-support" replace />;
+    }
+    if (
+      location.pathname.startsWith('/company-admin') || 
+      location.pathname.startsWith('/admin') || 
+      location.pathname.startsWith('/dispatcher') || 
+      location.pathname.startsWith('/accounts')
+    ) {
+      return <Navigate to="/customer/dashboard" replace />;
+    }
   }
 
   return children;
