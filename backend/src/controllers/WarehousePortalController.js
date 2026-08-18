@@ -756,13 +756,21 @@ exports.getLoadLanes = async (req, res, next) => {
     const upcomingLoads = await prisma.load.findMany({
       where: {
         loadLaneId: { not: null },
+<<<<<<< HEAD
         status: { in: ['ASSIGNED', 'IN_TRANSIT', 'ACTIVE', 'PLANNED'] },
         ...(tenantId && { companyId: tenantId })
+=======
+        status: { in: ['ASSIGNED', 'IN_TRANSIT', 'ACTIVE', 'PLANNED'] }
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
       },
       include: {
         loadLane: true
       },
+<<<<<<< HEAD
       orderBy: { createdAt: 'desc' },
+=======
+      orderBy: { loadDate: 'asc' },
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
       take: 5
     });
 
@@ -781,11 +789,17 @@ exports.getLoadLanes = async (req, res, next) => {
         emptyCount
       },
       lanes: formattedLanes,
+<<<<<<< HEAD
       upcomingDispatches: upcomingLoads.map(l => ({
         loadRef: l.loadRef || l.id,
         lane: l.loadLane?.name || 'Unassigned',
         time: l.scheduledPickupTime ? new Date(l.scheduledPickupTime).toLocaleString() : 'Pending'
       }))
+=======
+
+      upcomingDispatches: []
+
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
     });
   } catch (error) {
     next(error);
@@ -1007,8 +1021,11 @@ exports.getDispatchReady = async (req, res, next) => {
 exports.dispatchLoad = async (req, res, next) => {
   try {
     const { loadId } = req.params;
+<<<<<<< HEAD
     // Always resolve identity from JWT — never trust payload
     const userId = req.user?.userId || req.user?.id;
+=======
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
 
     // Verify the load belongs to the authenticated tenant before any mutation
     const existingLoad = await prisma.load.findUnique({ where: { id: loadId } });
@@ -1071,12 +1088,15 @@ exports.getHoldingAreas = async (req, res, next) => {
       orderBy: { name: 'asc' }
     });
 
+<<<<<<< HEAD
     const stagedItemsCount = await prisma.loadItem.count({
       where: {
         stagingAreaId: { not: null },
         ...(tenantId && { warehouse: { branch: { companyId: tenantId } } })
       }
     });
+=======
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
 
     const activeAreasCount = areas.filter(a => !a.status || a.status.toUpperCase() === 'ACTIVE').length;
     const inactiveAreasCount = areas.filter(a => a.status && a.status.toUpperCase() === 'INACTIVE').length;
@@ -1096,6 +1116,7 @@ exports.getHoldingAreas = async (req, res, next) => {
       oldestItem: '-'
     }));
 
+<<<<<<< HEAD
     const recentStaged = await prisma.loadItem.findMany({
       where: {
         stagingAreaId: { not: null },
@@ -1107,6 +1128,8 @@ exports.getHoldingAreas = async (req, res, next) => {
       orderBy: { id: 'desc' },
       take: 5
     });
+=======
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
 
     return sendSuccess(res, {
       summary: {
@@ -1391,6 +1414,7 @@ exports.getReportsOverview = async (req, res, next) => {
         select: { sku: true },
         distinct: ['sku']
       }),
+<<<<<<< HEAD
       prisma.loadItem.count({
         where: {
           stockStatus: 'IN_STORAGE',
@@ -1427,6 +1451,10 @@ exports.getReportsOverview = async (req, res, next) => {
         where: { ...(tenantId && { warehouse: { branch: { companyId: tenantId } } }) },
         include: { loadItems: true }
       })
+=======
+      prisma.loadItem.count({ where: { damageReportReq: true } }),
+      prisma.loadItem.count({ where: { stockStatus: 'TO_MOVE' } })
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
     ]);
 
     // Calculate accuracy rate (100% - damaged ratio)
@@ -1607,6 +1635,7 @@ exports.getSpoolerQueue = async (req, res, next) => {
 
 exports.getSafetyChecklists = async (req, res, next) => {
   try {
+<<<<<<< HEAD
     // Resolve authenticated user from JWT — never trust frontend identity
     const userId = req.user?.userId || req.user?.id;
     if (!userId) {
@@ -1674,6 +1703,11 @@ exports.getSafetyChecklists = async (req, res, next) => {
     return sendSuccess(res, {
       currentChecklist: currentChecklist || null,
       recentChecklists: formattedRecent
+=======
+    return sendSuccess(res, {
+      currentChecklist: null,
+      recentChecklists: []
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
     });
   } catch (error) {
     next(error);
@@ -1682,6 +1716,7 @@ exports.getSafetyChecklists = async (req, res, next) => {
 
 exports.submitSafetyChecklist = async (req, res, next) => {
   try {
+<<<<<<< HEAD
     // Resolve authenticated user from JWT — ignore any driverId/companyId from payload
     const userId = req.user?.userId || req.user?.id;
     const { vehicleRef, trailerRef, items, notes, isDraft, loadId, gpsLat, gpsLng, allowUpdate, isUpdate } = req.body || {};
@@ -1694,6 +1729,57 @@ exports.submitSafetyChecklist = async (req, res, next) => {
     const driver = await prisma.driver.findUnique({
       where: { userId },
       select: { id: true, companyId: true }
+=======
+    const { vehicleRef, trailerRef, items = [], isDraft = false, notes } = req.body;
+
+    let companyId = req.companyId || req.tenantId;
+    if (!companyId) {
+      const comp = await prisma.company.findFirst();
+      companyId = comp?.id;
+    }
+
+    let driver = null;
+    let userId = req.user?.id || req.user?.userId;
+    if (userId) {
+      driver = await prisma.driver.findFirst({ where: { userId } });
+    }
+    if (!driver && companyId) {
+      driver = await prisma.driver.findFirst({ where: { companyId } });
+    }
+    if (!driver) {
+      driver = await prisma.driver.findFirst();
+    }
+    if (!driver && companyId) {
+      driver = await prisma.driver.create({
+        data: {
+          name: 'Warehouse Safety Operator',
+          email: `wh-safety-${Date.now()}@herologistics.com`,
+          phone: '+61400000000',
+          companyId
+        }
+      });
+    }
+
+    const checklist = await prisma.preStartChecklist.create({
+      data: {
+        companyId,
+        driverId: driver.id,
+        vehicleRef: vehicleRef || 'Warehouse Vehicle Check',
+        trailerRef: trailerRef || 'N/A',
+        notes: notes || (items.length > 0 ? JSON.stringify(items) : 'All Checked'),
+        date: new Date(),
+        isDraft: Boolean(isDraft),
+        totalItems: items.length || 5,
+        passedCount: items.filter(i => i.status === 'pass').length || 5,
+        failedCount: items.filter(i => i.status === 'fail').length || 0
+      }
+    });
+
+    return sendSuccess(res, {
+      success: true,
+      message: isDraft ? 'Checklist draft saved' : 'Safety checklist submitted successfully',
+      checklistId: checklist.id
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
     });
 
     if (!driver) {
@@ -1835,6 +1921,7 @@ exports.submitSafetyChecklist = async (req, res, next) => {
 
 exports.getStaffProfile = async (req, res, next) => {
   try {
+<<<<<<< HEAD
     const userId = req.user?.userId || req.user?.id;
     if (!userId) {
       return sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Unable to identify authenticated user.' }, HTTP_STATUS.UNAUTHORIZED);
@@ -1905,12 +1992,69 @@ exports.getStaffProfile = async (req, res, next) => {
 
     return sendSuccess(res, {
       profile,
+=======
+
+    const user = req.user;
+    const isManager = ['WAREHOUSE', 'COMPANY_ADMIN', 'SUPER_ADMIN'].includes(user?.role);
+
+    let permissions = [];
+    if (isManager) {
+      permissions = [
+        'Monitor entire depot',
+        'Manage areas',
+        'Configure load lanes',
+        'Assign tasks',
+        'Approve exceptions',
+        'Team reports',
+        'Overrides',
+        'Manage capacity',
+        'Manage warehouse configuration',
+        'Supervise handover'
+      ];
+    } else {
+      permissions = [
+        'Execute physical task',
+        'Use assigned areas',
+        'Move items to lanes',
+        'Perform tasks',
+        'Report exceptions',
+        'Own/basic reports',
+        'Normal actions',
+        'Follow capacity',
+        'Scan/receive/move/stage',
+        'Perform handover'
+      ];
+    }
+
+    return sendSuccess(res, {
+      profile: {
+        name: user?.name || 'Warehouse Staff',
+        title: 'Warehouse Staff',
+        status: 'Active',
+        employeeId: user?.userCode || `WS-${user?.id?.slice(0, 4) || '1001'}`,
+        email: user?.email || '-',
+        phone: user?.phone || '-',
+        department: 'Warehouse Operations',
+        depot: 'Main Depot',
+        role: user?.role || 'WAREHOUSE',
+        reportsTo: '-',
+        joinedOn: '-',
+        address: '-',
+        emergencyContact: {
+          name: '-',
+          relationship: '-',
+          phone: '-'
+
+        }
+      },
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
       preferences: {
         language: 'English',
         timeZone: 'Australia/Sydney',
         dateFormat: 'DD/MM/YYYY',
         timeFormat: '12-Hour (AM/PM)'
       },
+<<<<<<< HEAD
       certifications: [
         { name: 'General Induction', status: 'Verified', expiry: '15 Mar 2027' },
         { name: 'Forklift Licence', status: 'Verified', expiry: '22 Oct 2027' },
@@ -1934,6 +2078,13 @@ exports.getStaffProfile = async (req, res, next) => {
         'Report Issues',
         'View Reports'
       ],
+=======
+
+      certifications: [],
+      skills: [],
+      permissions: permissions,
+
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
       security: {
         twoFactor: 'Disabled',
         activeSessions: 1
@@ -1945,6 +2096,7 @@ exports.getStaffProfile = async (req, res, next) => {
 };
 
 // ============================================================================
+<<<<<<< HEAD
 // 14. YARD ATTENDANT SHIFT / TIME CLOCK — PHASE C
 //
 // All endpoints resolve identity exclusively from req.user.userId and
@@ -3940,6 +4092,8 @@ exports.updateStaffProfile = async (req, res, next) => {
 };
 
 // ============================================================================
+=======
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
 
 exports.reportIssue = async (req, res, next) => {
   try {
@@ -4241,6 +4395,13 @@ exports.clockIn = async (req, res, next) => {
     const userId = req.user?.userId || req.user?.id;
     const companyId = req.tenantId || (await prisma.company.findFirst()).id;
     
+<<<<<<< HEAD
+=======
+    // Check if already clocked in today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
     let realUserId = userId;
     const driverCheck = await prisma.driver.findFirst({ where: { OR: [{ id: userId }, { userId: userId }] } });
     if (driverCheck) {
@@ -4250,6 +4411,7 @@ exports.clockIn = async (req, res, next) => {
       if (firstDriver) realUserId = firstDriver.id;
     }
 
+<<<<<<< HEAD
     // Always create a new timesheet for today (no restrictions on multiple clock ins)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -4264,6 +4426,41 @@ exports.clockIn = async (req, res, next) => {
       }
     });
 
+=======
+    let timesheet = await prisma.timesheet.findFirst({
+      where: {
+        driverId: realUserId, // Assuming user acts as driver/staff
+        date: today
+      }
+    });
+
+    console.log('--- DEBUG CLOCK IN ---');
+    console.log('Original userId:', userId);
+    console.log('realUserId (Driver):', realUserId);
+    console.log('companyId:', companyId);
+    console.log('Timesheet found?', !!timesheet);
+
+    if (!timesheet) {
+      // Create new timesheet
+      timesheet = await prisma.timesheet.create({
+        data: {
+          driverId: realUserId,
+          companyId: companyId,
+          date: today,
+          status: 'DRAFT',
+          clockInAt: new Date()
+        }
+      });
+    } else if (!timesheet.clockInAt) {
+      timesheet = await prisma.timesheet.update({
+        where: { id: timesheet.id },
+        data: { clockInAt: new Date() }
+      });
+    } else {
+      return sendError(res, { message: 'Already clocked in' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
     await prisma.timesheetEvent.create({
       data: {
         timesheetId: timesheet.id,
@@ -4283,6 +4480,12 @@ exports.clockOut = async (req, res, next) => {
   try {
     const userId = req.user?.userId || req.user?.id;
     
+<<<<<<< HEAD
+=======
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
     let realUserId = userId;
     const driverCheck = await prisma.driver.findFirst({ where: { OR: [{ id: userId }, { userId: userId }] } });
     if (driverCheck) {
@@ -4292,6 +4495,7 @@ exports.clockOut = async (req, res, next) => {
       if (firstDriver) realUserId = firstDriver.id;
     }
 
+<<<<<<< HEAD
     // Find the active timesheet (most recent one first)
     let timesheet = await prisma.timesheet.findFirst({
       where: {
@@ -4300,6 +4504,12 @@ exports.clockOut = async (req, res, next) => {
       },
       orderBy: {
         createdAt: 'desc'
+=======
+    let timesheet = await prisma.timesheet.findFirst({
+      where: {
+        driverId: realUserId,
+        date: today
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
       }
     });
 
@@ -4307,6 +4517,13 @@ exports.clockOut = async (req, res, next) => {
       return sendError(res, { message: 'Not clocked in yet' }, HTTP_STATUS.BAD_REQUEST);
     }
 
+<<<<<<< HEAD
+=======
+    if (timesheet.clockOutAt) {
+      return sendError(res, { message: 'Already clocked out' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
     timesheet = await prisma.timesheet.update({
       where: { id: timesheet.id },
       data: { 
@@ -4467,16 +4684,9 @@ exports.printManifest = async (req, res, next) => {
   }
 };
 
-exports.moveHoldingAreaStock = async (req, res, next) => {
-  try {
-    const stagingAreaId = req.params.id;
-    const { loadLaneId } = req.body;
-    let userId = req.user?.userId || req.user?.id;
-    if (userId === 'dev-user-id') {
-       const firstUser = await prisma.user.findFirst();
-       if (firstUser) userId = firstUser.id;
-    }
+const fallbackHandler = async (req, res) => sendSuccess(res, { success: true });
 
+<<<<<<< HEAD
     const stagingArea = await prisma.stagingArea.findUnique({
       where: { id: stagingAreaId },
       include: { loadItems: true }
@@ -4847,3 +5057,18 @@ exports.createSupportTicket = async (req, res, next) => {
     next(error);
   }
 };
+=======
+exports.getOverview = exports.getDashboard || fallbackHandler;
+exports.updateStaffProfile = exports.getStaffProfile || fallbackHandler;
+exports.getShiftStatus = fallbackHandler;
+exports.getCurrentShift = fallbackHandler;
+exports.clockInShift = fallbackHandler;
+exports.clockOutShift = fallbackHandler;
+exports.clockIn = fallbackHandler;
+exports.clockOut = fallbackHandler;
+exports.getShiftHistory = fallbackHandler;
+exports.getTasks = fallbackHandler;
+exports.getTaskById = fallbackHandler;
+exports.updateTaskStatus = fallbackHandler;
+exports.completeTask = fallbackHandler;
+>>>>>>> 526a677e4270f0c9385556ffaaba2707367c7187
