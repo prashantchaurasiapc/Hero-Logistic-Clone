@@ -69,6 +69,11 @@ export default function DispatcherLoads() {
   const [dateFilter, setDateFilter] = useState('Any Date');
   const [showColumnModal, setShowColumnModal] = useState(false);
   const [hiddenCols, setHiddenCols] = useState([]);
+  const [isInstructionsModalOpen, setIsInstructionsModalOpen] = useState(false);
+  const [isSwapTrailerModalOpen, setIsSwapTrailerModalOpen] = useState(false);
+  const [isTransferLoadModalOpen, setIsTransferLoadModalOpen] = useState(false);
+  const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
+  const [newNoteText, setNewNoteText] = useState('');
 
   // Leaflet Map Ref for Details Drawer
   const mapContainerRef = useRef(null);
@@ -1563,7 +1568,10 @@ export default function DispatcherLoads() {
 
                 <div className="grid grid-cols-3 gap-2">
                   <button
-                    onClick={() => triggerToast(`Messaging ${activeLoadDetails.driver}...`)}
+                    onClick={() => {
+                      navigate('/dispatcher/messages');
+                      triggerToast(`Opening messaging workspace for ${activeLoadDetails.driver}...`);
+                    }}
                     className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
                   >
                     <MessageSquare className="w-4 h-4 text-blue-600" />
@@ -1571,7 +1579,10 @@ export default function DispatcherLoads() {
                   </button>
 
                   <button
-                    onClick={() => triggerToast(`Calling ${activeLoadDetails.driver}...`)}
+                    onClick={() => {
+                      window.location.href = "tel:+61400123456";
+                      triggerToast(`Initiating direct call to ${activeLoadDetails.driver}...`);
+                    }}
                     className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
                   >
                     <Phone className="w-4 h-4 text-emerald-600" />
@@ -1579,7 +1590,7 @@ export default function DispatcherLoads() {
                   </button>
 
                   <button
-                    onClick={() => triggerToast('Opening driver dispatch instructions...')}
+                    onClick={() => setIsInstructionsModalOpen(true)}
                     className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
                   >
                     <FileText className="w-4 h-4 text-purple-600" />
@@ -1587,7 +1598,7 @@ export default function DispatcherLoads() {
                   </button>
 
                   <button
-                    onClick={() => triggerToast('Opening trailer swap interface...')}
+                    onClick={() => setIsSwapTrailerModalOpen(true)}
                     className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
                   >
                     <RefreshCcw className="w-4 h-4 text-amber-600" />
@@ -1595,7 +1606,7 @@ export default function DispatcherLoads() {
                   </button>
 
                   <button
-                    onClick={() => triggerToast('Opening load transfer wizard...')}
+                    onClick={() => setIsTransferLoadModalOpen(true)}
                     className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
                   >
                     <Truck className="w-4 h-4 text-sky-600" />
@@ -1603,7 +1614,7 @@ export default function DispatcherLoads() {
                   </button>
 
                   <button
-                    onClick={() => triggerToast('Opening dispatch note entry...')}
+                    onClick={() => setIsAddNoteModalOpen(true)}
                     className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
                   >
                     <FileCheck className="w-4 h-4 text-indigo-600" />
@@ -1624,6 +1635,184 @@ export default function DispatcherLoads() {
         </div>
 
       </div>
+
+      {/* =========================================================================
+         VIEW INSTRUCTIONS MODAL
+         ========================================================================= */}
+      {isInstructionsModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsInstructionsModalOpen(false)}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 text-left font-sans animate-scale-up" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <FileText className="text-purple-600" size={18} />
+                <h3 className="text-sm font-black text-slate-900">Dispatch Special Instructions</h3>
+              </div>
+              <button onClick={() => setIsInstructionsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-purple-50 border border-purple-100 rounded-xl">
+                <span className="font-extrabold text-purple-900 block mb-1">Pickup Site Rules ({selectedLoadId})</span>
+                <p className="text-[11px] text-purple-700 font-medium">Driver must wear full PPE (High-Vis Vest, Steel-Cap Boots, Hard Hat). Call site contact 30 mins prior to arrival.</p>
+              </div>
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <span className="font-bold text-slate-800 block mb-1">Delivery Contact</span>
+                <p className="text-[11px] text-slate-600">Contact: John Smith • Phone: +61 400 987 654</p>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-slate-100 flex justify-end">
+              <button onClick={() => setIsInstructionsModalOpen(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">
+                Close Instructions
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+         SWAP TRAILER MODAL
+         ========================================================================= */}
+      {isSwapTrailerModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsSwapTrailerModalOpen(false)}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 text-left font-sans animate-scale-up" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <RefreshCcw className="text-amber-600" size={18} />
+                <h3 className="text-sm font-black text-slate-900">Swap Trailer for {selectedLoadId}</h3>
+              </div>
+              <button onClick={() => setIsSwapTrailerModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Select New Trailer</label>
+                <select className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800">
+                  <option>TRL-201 | 8 Car Carrier (Available)</option>
+                  <option>TRL-202 | Flatbed B-Double (Available)</option>
+                  <option>TRL-203 | Enclosed Carrier (Depot Yard)</option>
+                </select>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+              <button onClick={() => setIsSwapTrailerModalOpen(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  setIsSwapTrailerModalOpen(false);
+                  triggerToast(`Trailer swapped successfully for load ${selectedLoadId}!`);
+                }} 
+                className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+              >
+                Confirm Swap
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+         TRANSFER LOAD MODAL
+         ========================================================================= */}
+      {isTransferLoadModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsTransferLoadModalOpen(false)}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 text-left font-sans animate-scale-up" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Truck className="text-sky-600" size={18} />
+                <h3 className="text-sm font-black text-slate-900">Transfer / Reassign Load {selectedLoadId}</h3>
+              </div>
+              <button onClick={() => setIsTransferLoadModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Reassign to Driver</label>
+                <select className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800">
+                  <option>Mike Thompson (DRV-101)</option>
+                  <option>Sarah Mitchell (DRV-102)</option>
+                  <option>David Miller (DRV-103)</option>
+                </select>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+              <button onClick={() => setIsTransferLoadModalOpen(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  setIsTransferLoadModalOpen(false);
+                  triggerToast(`Load ${selectedLoadId} transferred & reassigned!`);
+                }} 
+                className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+              >
+                Confirm Transfer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+         ADD NOTE MODAL
+         ========================================================================= */}
+      {isAddNoteModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsAddNoteModalOpen(false)}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 text-left font-sans animate-scale-up" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <FileCheck className="text-indigo-600" size={18} />
+                <h3 className="text-sm font-black text-slate-900">Add Dispatcher Note ({selectedLoadId})</h3>
+              </div>
+              <button onClick={() => setIsAddNoteModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Dispatch Note</label>
+                <textarea 
+                  rows={3} 
+                  value={newNoteText}
+                  onChange={e => setNewNoteText(e.target.value)}
+                  placeholder="Type internal dispatch note or update details..."
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-indigo-400 resize-none"
+                />
+              </div>
+            </div>
+            <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+              <button onClick={() => setIsAddNoteModalOpen(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  setIsAddNoteModalOpen(false);
+                  setNewNoteText('');
+                  triggerToast(`Dispatch note saved for load ${selectedLoadId}!`);
+                }} 
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+              >
+                Save Note
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

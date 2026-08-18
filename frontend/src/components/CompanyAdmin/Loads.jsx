@@ -2569,11 +2569,12 @@ export default function Loads() {
   const fileInputRef = useRef(null);
 
   const handleExport = () => {
-    const listToExport = filtered && filtered.length > 0 ? filtered : loadsList;
+    const listToExport = (filtered && filtered.length > 0) ? filtered : (loadsList && loadsList.length > 0 ? loadsList : LOADS);
     if (!listToExport || listToExport.length === 0) {
-      alert('No loads available to export.');
+      triggerToast('No loads available to export.', 'warning');
       return;
     }
+    triggerToast(`Exporting ${listToExport.length} active load(s) to CSV...`, 'info');
     const headers = ['Load Ref', 'Date', 'Status', 'Load Type', 'Customer', 'Pickup Location', 'Dropoff Location', 'Driver', 'Truck'];
     const csvRows = listToExport.map(l => [
       `"${l.id || ''}"`,
@@ -2591,7 +2592,7 @@ export default function Loads() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `loads_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `active_loads_export_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

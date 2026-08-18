@@ -4320,7 +4320,13 @@ exports.sendMessage = async (req, res, next) => {
     if (!text) return sendError(res, { code: 'BAD_REQUEST', message: 'Text is required' }, HTTP_STATUS.BAD_REQUEST);
 
     let targetConvId = conversationId;
-    if (!targetConvId) {
+    let existingConv = null;
+
+    if (targetConvId && typeof targetConvId === 'string' && targetConvId.length > 10) {
+      existingConv = await prisma.conversation.findUnique({ where: { id: targetConvId } }).catch(() => null);
+    }
+
+    if (!existingConv) {
       const companyId = req.tenantId || (await prisma.company.findFirst()).id;
       const conv = await prisma.conversation.create({
         data: {
@@ -4358,6 +4364,14 @@ exports.createSupportTicket = async (req, res, next) => {
   try {
     const { subject, category, priority, description } = req.body;
     const companyId = req.tenantId || (await prisma.company.findFirst()).id;
+    const senderId = req.user?.id;
+
+    // Find an Admin user in the system to assign/notify
+    const adminUser = await prisma.user.findFirst({
+      where: {
+        role: { in: ['COMPANY_ADMIN', 'SUPER_ADMIN', 'ADMIN'] }
+      }
+    });
 
     const ticket = await prisma.supportTicket.create({
       data: {
@@ -4366,9 +4380,12 @@ exports.createSupportTicket = async (req, res, next) => {
         priority: priority === 'High' ? 'HIGH' : (priority === 'Urgent' ? 'URGENT' : 'MEDIUM'),
         message: description || subject,
         companyId,
-        status: 'OPEN'
+        status: 'OPEN',
+        assignedAgentId: adminUser ? adminUser.id : null
       }
     });
+
+    console.log(`[TICKET NOTIFICATION] New Support Ticket #${ticket.ticketNumber || ticket.id} created by Customer (${senderId || 'Demo'}) for Admin (${adminUser?.email || 'System Admin'})`);
 
     return sendSuccess(res, { ticket }, HTTP_STATUS.CREATED);
   } catch (error) {

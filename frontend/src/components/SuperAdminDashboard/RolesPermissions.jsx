@@ -358,7 +358,11 @@ export default function RolesPermissions() {
     }
   };
 
-  const filtered = roles.filter(r => r.name.toLowerCase().includes(search.toLowerCase()));
+  const isCompanyAdmin = window.location.pathname.includes('/company-admin');
+  const filtered = roles.filter(r => {
+    if (isCompanyAdmin && r.name.toLowerCase() === 'sales') return false;
+    return r.name.toLowerCase().includes(search.toLowerCase());
+  });
 
   return (
     <div className="flex-grow bg-[#F8FAFC] p-4 sm:p-6 overflow-y-auto w-full text-left font-sans min-h-screen relative">
@@ -380,12 +384,15 @@ export default function RolesPermissions() {
             Manage platform roles and module-level access permissions for Hero Logistics.
           </p>
         </div>
-        <button
-          onClick={openAdd}
-          className="flex items-center justify-center gap-2 bg-brand-500 hover:bg-[#f5c800] text-black font-black text-xs px-5 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto"
-        >
-          <Plus className="w-4 h-4" /> + Create Role
-        </button>
+        {isCompanyAdmin ? (
+          <div className="flex items-center gap-1.5 bg-pink-50 border border-pink-200 text-pink-700 font-extrabold text-xs px-4 py-2 rounded-full whitespace-nowrap">
+            <Shield className="w-3.5 h-3.5" /> 7 Company Roles (Child)
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 bg-purple-50 border border-purple-200 text-purple-700 font-extrabold text-xs px-4 py-2 rounded-full whitespace-nowrap">
+            <Shield className="w-3.5 h-3.5" /> 8 Fixed Platform Roles (Master)
+          </div>
+        )}
       </div>
 
       {/* ── TOOLBAR ── */}
