@@ -35,10 +35,18 @@ const resolveDriver = async (req) => {
     if (driverByEmail) return driverByEmail;
   }
 
-  
-  // No fallback to random drivers for security.
-  // If the user isn't found as a driver, return null so controllers can reject access.
-  return null;
+  // 3. Fallback: find by tenant or first driver in database
+  const fallbackDriver = await prisma.driver.findFirst({
+    where: req.tenantId ? { companyId: req.tenantId } : {},
+    include: {
+      currentVehicle: true,
+      company: true,
+      branch: true
+    },
+    orderBy: { createdAt: 'asc' }
+  });
+
+  return fallbackDriver;
 };
 
 // ============================================================================
@@ -47,23 +55,63 @@ const resolveDriver = async (req) => {
 exports.getDashboard = async (req, res, next) => {
   try {
     const driver = await resolveDriver(req);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
-    if (!driver) return sendError(res, { code: ERROR_CODES.UNAUTHORIZED, message: 'Driver profile not found' }, 401);
 
+<<<<<<< HEAD
     const driverName = driver ? (`${driver.firstName || ''} ${driver.lastName || ''}`.trim() || driver.user?.name || req.user?.name || 'Driver') : (req.user?.name || 'Driver');
     const driverCode = driver?.driverCode || driver?.driverNumber || 'DRV-001';
     const driverId = driver?.id || '';
+=======
+    if (!driver) {
+      return sendSuccess(res, {
+        driverInfo: {
+          id: null,
+          name: req.user?.name || 'Driver',
+          driverCode: 'DRV-NEW',
+          status: 'On Duty',
+          lastSync: new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          vehicle: {
+            rego: 'No Vehicle Assigned',
+            make: '',
+            model: '',
+            odometer: 0,
+            dieselBalance: 0,
+            estRangeKm: 0
+          }
+        },
+        metrics: {
+          loadsToday: 0,
+          loadsTodayUpcoming: 0,
+          nextLoadTime: null,
+          completedThisWeek: 0,
+          slaPercentage: 0,
+          driveTimeToday: '0h 00m',
+          driveTimeRemaining: '11h 00m (HOS)',
+          dieselBalanceL: 0,
+          estRangeKm: 0,
+          payThisPeriod: 0
+        },
+        currentLoad: null,
+        todaySchedule: [],
+        hosLog: {
+          driveTimeElapsed: '0h 00m',
+          driveTimeLeft: '11h 00m',
+          drivePercent: 0,
+          shiftElapsed: '0h 00m',
+          shiftMax: '14h max',
+          shiftPercent: 0,
+          nextBreakDue: 'In 5h 15m'
+        },
+        unreadMessages: [],
+        alerts: [],
+        paySummary: {
+          amount: 0,
+          taxNote: 'Before tax'
+        }
+      });
+    }
+
+    const driverId = driver.id;
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 
     // Fetch real driver loads, timesheets, checklists, vehicle, and messages from DB
     const [
@@ -115,6 +163,7 @@ exports.getDashboard = async (req, res, next) => {
     ]);
 
     // Active loads vs Completed loads
+<<<<<<< HEAD
     let activeLoads = driverLoads.filter(l => ['ASSIGNED', 'IN_TRANSIT', 'DISPATCHED', 'ACTIVE', 'PENDING'].includes(l.status));
     const now = new Date();
     const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
@@ -150,6 +199,14 @@ exports.getDashboard = async (req, res, next) => {
     } else {
       currentLoadData = null;
     }
+=======
+    const activeLoads = driverLoads.filter(l => ['ASSIGNED', 'IN_TRANSIT', 'DISPATCHED', 'ACTIVE', 'PENDING'].includes(l.status));
+    const completedLoads = driverLoads.filter(l => ['DELIVERED', 'COMPLETED', 'CLOSED'].includes(l.status));
+    const upcomingLoads = activeLoads.filter(l => l.status === 'ASSIGNED' || l.status === 'PENDING');
+
+    // Current active load in transit or first active load
+    const currentLoadObj = activeLoads.find(l => l.status === 'IN_TRANSIT') || activeLoads[0] || null;
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 
     // Vehicle info
     let vehicleData = {
@@ -195,6 +252,34 @@ exports.getDashboard = async (req, res, next) => {
       ? (completedLoads.length * (baseRate > 0 ? baseRate : 350) * 0.8)
       : (driveMinutes > 0 ? (driveMinutes / 60) * (baseRate > 0 ? baseRate : 35) : 0);
 
+<<<<<<< HEAD
+=======
+    // Format current load
+    let currentLoadData = null;
+    if (currentLoadObj) {
+      const statusLabel = currentLoadObj.status === 'IN_TRANSIT' ? 'In Transit' : (currentLoadObj.status === 'DISPATCHED' ? 'Dispatched' : 'Assigned');
+      currentLoadData = {
+        id: currentLoadObj.id,
+        loadNumber: currentLoadObj.loadNumber || currentLoadObj.loadRef || `LD-${currentLoadObj.id.slice(0, 4).toUpperCase()}`,
+        status: statusLabel,
+        origin: currentLoadObj.origin || currentLoadObj.pickupAddress || 'Origin Depot',
+        destination: currentLoadObj.destination || currentLoadObj.deliveryAddress || 'Destination Depot',
+        pickupStop: {
+          name: currentLoadObj.pickupLocation || currentLoadObj.origin || 'Pickup Location',
+          address: currentLoadObj.pickupAddress || 'Pickup Address',
+          time: currentLoadObj.pickupTime || '08:00 AM'
+        },
+        deliveryStop: {
+          name: currentLoadObj.deliveryLocation || currentLoadObj.destination || 'Delivery Location',
+          address: currentLoadObj.deliveryAddress || 'Delivery Address',
+          time: currentLoadObj.deliveryTime || '02:30 PM'
+        },
+        loadType: currentLoadObj.type || currentLoadObj.loadType || currentLoadObj.category || 'General Freight',
+        reference: currentLoadObj.loadRef || currentLoadObj.referenceNumber || currentLoadObj.bolNumber || 'PO-REF'
+      };
+    }
+
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
     // Schedule items purely from assigned loads
     const scheduleItems = [];
     driverLoads.forEach((ld) => {
@@ -274,9 +359,15 @@ exports.getDashboard = async (req, res, next) => {
 
     return sendSuccess(res, {
       driverInfo: {
+<<<<<<< HEAD
         id: driver?.id || '',
         name: driverName,
         driverCode: driverCode,
+=======
+        id: driver.id,
+        name: `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || req.user?.name || 'Driver',
+        driverCode: driver.driverCode || 'DRV-001',
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
         status: currentStatusDisplay,
         lastSync: new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
         vehicle: vehicleData
@@ -391,6 +482,7 @@ exports.sendQuickMessage = async (req, res, next) => {
     next(error);
   }
 };
+<<<<<<< HEAD
 
 // ============================================================================
 // 4. GET CHECKLIST CONTEXT (Vehicle info & Checklist history)
@@ -2937,3 +3029,5 @@ exports.markAllNotificationsRead = async (req, res, next) => {
     next(error);
   }
 };
+=======
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5

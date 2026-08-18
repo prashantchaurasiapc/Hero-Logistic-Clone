@@ -117,27 +117,6 @@ export default function Tools() {
   const [docCarrier, setDocCarrier] = useState('');
   const [docDestination, setDocDestination] = useState('');
   const [docNotes, setDocNotes] = useState('');
-
-  React.useEffect(() => {
-    const fetchStock = async () => {
-      setLoadingStock(true);
-      try {
-        const res = await api.get('/warehouse-portal/stock');
-        const data = res.data?.data || [];
-        setStockItems(data);
-        if (data.length > 0) {
-          setSelectedStockItem(data[0]);
-          setDocOrderRef(data[0].vin || data[0].stockRef || `STK-${data[0].id.slice(0,6)}`);
-          setDocDestination(data[0].customerName || data[0].customer?.companyName || 'Melbourne Depot');
-        }
-      } catch (err) {
-        console.error('Failed to fetch stock in tools:', err);
-      } finally {
-        setLoadingStock(false);
-      }
-    };
-    fetchStock();
-  }, []);
   
   const [generatedDocuments, setGeneratedDocuments] = useState([]);
 
@@ -302,20 +281,6 @@ export default function Tools() {
   const [spoolerPaused, setSpoolerPaused] = useState(false);
   const [spoolerActiveCount, setSpoolerActiveCount] = useState(0);
   const [batchQueue, setBatchQueue] = useState([]);
-
-  React.useEffect(() => {
-    if (activeTab === 'batch-printing' && stockItems.length > 0 && batchQueue.length === 0) {
-      const initialQueue = stockItems.slice(0, 3).map((item, idx) => ({
-        id: `JOB-00${idx + 1}`,
-        name: `Label Print: ${item.make ? `${item.make} ${item.model}` : 'Stock Item'} (${item.vin || item.id.slice(0,6)})`,
-        printer: 'Zebra ZD421 (Office)',
-        count: '1 Label',
-        status: idx === 0 ? 'Queued' : 'Completed'
-      }));
-      setBatchQueue(initialQueue);
-      setSpoolerActiveCount(initialQueue.filter(q => q.status === 'Queued').length);
-    }
-  }, [activeTab, stockItems]);
 
   const handlePauseQueue = () => {
     if (spoolerPaused) {

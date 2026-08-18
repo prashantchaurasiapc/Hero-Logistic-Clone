@@ -1,17 +1,100 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, CheckCircle2, Box, MapPin, Activity, 
-  Wrench, FileText, DollarSign, Info, Calendar, UploadCloud, File
+  Wrench, FileText, DollarSign, Info, Calendar, UploadCloud, File, Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 
 export default function CreateAsset() {
   const navigate = useNavigate();
+  const [branches, setBranches] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  // Form State
+  const [name, setName] = useState('');
+  const [assetId, setAssetId] = useState('');
+  const [category, setCategory] = useState('Workshop Equipment');
+  const [type, setType] = useState('Equipment');
+  const [model, setModel] = useState('');
+  const [year, setYear] = useState('');
+  const [branchId, setBranchId] = useState('');
+  const [location, setLocation] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
   const [activeStatus, setActiveStatus] = useState('Active');
+  const [condition, setCondition] = useState('Good');
+  const [purchasePrice, setPurchasePrice] = useState('');
+  const [purchaseDate, setPurchaseDate] = useState('');
+  const [supplier, setSupplier] = useState('');
+  const [warrantyExpiry, setWarrantyExpiry] = useState('');
+  const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    const loadBranches = async () => {
+      try {
+        const res = await api.get('/company-admin/branches');
+        const list = res.data?.data?.items || (Array.isArray(res.data?.data) ? res.data.data : []);
+        setBranches(list);
+        if (list.length > 0) setBranchId(list[0].id);
+      } catch (err) {
+        console.warn('Failed to fetch branches:', err);
+      }
+    };
+    loadBranches();
+  }, []);
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleSave = async (e) => {
+    if (e) e.preventDefault();
+    if (!name.trim()) {
+      alert('Asset Name is required!');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const payload = {
+        name: name.trim(),
+        assetId: assetId.trim() || undefined,
+        category,
+        type: type || 'Equipment',
+        model: model.trim() || undefined,
+        year: year ? parseInt(year, 10) : undefined,
+        branchId: branchId || undefined,
+        status: activeStatus,
+        condition,
+        purchasePrice: purchasePrice ? parseFloat(purchasePrice) : undefined,
+        purchaseDate: purchaseDate ? new Date(purchaseDate) : undefined,
+        supplier: supplier.trim() || undefined,
+        warrantyExpiry: warrantyExpiry ? new Date(warrantyExpiry) : undefined
+      };
+
+      const res = await api.post('/company-admin/assets', payload);
+      if (res.data?.success) {
+        showToast('✓ Asset created successfully!');
+        setTimeout(() => navigate('/company-admin/assets'), 800);
+      } else {
+        alert(res.data?.error?.message || 'Failed to create asset');
+      }
+    } catch (err) {
+      alert('Error creating asset: ' + (err.response?.data?.error?.message || err.message));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex-grow bg-[#F8FAFC] p-4 sm:p-6 w-full text-left font-sans custom-scrollbar overflow-y-auto min-h-screen" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
-      
+      {toast && (
+        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 99999, background: '#10B981', color: '#fff', padding: '12px 20px', borderRadius: 10, fontWeight: 800, fontSize: 13, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+          {toast.msg}
+        </div>
+      )}
+
       {/* HEADER SECTION */}
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div className="flex items-start gap-4">
@@ -37,8 +120,13 @@ export default function CreateAsset() {
           >
             Cancel
           </button>
-          <button onClick={() => navigate('/company-admin/assets')} className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition-colors flex items-center gap-2 shadow-sm">
-            <CheckCircle2 size={16} /> Save Asset
+          <button 
+            onClick={handleSave} 
+            disabled={submitting}
+            className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
+          >
+            {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+            {submitting ? 'Saving Asset...' : 'Save Asset'}
           </button>
         </div>
       </div>
@@ -60,27 +148,61 @@ export default function CreateAsset() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Asset Name *</label>
-              <input type="text" placeholder="e.g. Air Compressor 100L" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" />
+              <input 
+                type="text" 
+                placeholder="e.g. Air Compressor 100L" 
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" 
+              />
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Asset ID / Serial Number</label>
-              <input type="text" placeholder="e.g. SN-998822" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" />
+              <input 
+                type="text" 
+                placeholder="e.g. AST-1001" 
+                value={assetId}
+                onChange={e => setAssetId(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" 
+              />
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Category</label>
-              <select className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 appearance-none">
-                <option>Workshop Equipment</option>
-                <option>Forklifts</option>
-                <option>IT & Devices</option>
+              <select 
+                value={category}
+                onChange={e => setCategory(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100"
+              >
+                <option value="Workshop Equipment">Workshop Equipment</option>
+                <option value="Forklifts">Forklifts</option>
+                <option value="Containers">Containers</option>
+                <option value="Material Handling">Material Handling</option>
+                <option value="Power Equipment">Power Equipment</option>
+                <option value="IT & Devices">IT & Devices</option>
+                <option value="Equipment">General Equipment</option>
+                <option value="PPE">PPE</option>
               </select>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Make / Model</label>
-              <input type="text" placeholder="e.g. Makita XFD131" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" />
+              <input 
+                type="text" 
+                placeholder="e.g. Makita XFD131" 
+                value={model}
+                onChange={e => setModel(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" 
+              />
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Year of Manufacture</label>
-              <input type="text" placeholder="e.g. 2022" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" />
+              <input 
+                type="number" 
+                placeholder="e.g. 2024" 
+                value={year}
+                onChange={e => setYear(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" 
+              />
             </div>
           </div>
         </div>
@@ -100,18 +222,39 @@ export default function CreateAsset() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Home Branch</label>
-              <select className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 appearance-none">
-                <option>Sydney Head Office</option>
-                <option>Melbourne Depot</option>
+              <select 
+                value={branchId}
+                onChange={e => setBranchId(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100"
+              >
+                {branches.length === 0 ? (
+                  <option value="">Sydney Head Office (Default)</option>
+                ) : (
+                  branches.map(b => (
+                    <option key={b.id} value={b.id}>{b.name || b.location}</option>
+                  ))
+                )}
               </select>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Specific Location</label>
-              <input type="text" placeholder="e.g. Workshop Bay 3" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" />
+              <input 
+                type="text" 
+                placeholder="e.g. Workshop Bay 3" 
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" 
+              />
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Assigned To</label>
-              <input type="text" placeholder="e.g. Maintenance Team" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" />
+              <input 
+                type="text" 
+                placeholder="e.g. Maintenance Team" 
+                value={assignedTo}
+                onChange={e => setAssignedTo(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" 
+              />
             </div>
           </div>
         </div>
@@ -133,18 +276,21 @@ export default function CreateAsset() {
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Operational Status</label>
               <div className="flex items-center gap-3">
                 <button 
+                  type="button"
                   onClick={() => setActiveStatus('Active')}
                   className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-colors ${activeStatus === 'Active' ? 'bg-orange-500 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                 >
                   Active
                 </button>
                 <button 
+                  type="button"
                   onClick={() => setActiveStatus('Maintenance')}
                   className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-colors ${activeStatus === 'Maintenance' ? 'bg-orange-500 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                 >
                   Maintenance
                 </button>
                 <button 
+                  type="button"
                   onClick={() => setActiveStatus('Out of Service')}
                   className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-colors ${activeStatus === 'Out of Service' ? 'bg-orange-500 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                 >
@@ -154,11 +300,15 @@ export default function CreateAsset() {
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Physical Condition</label>
-              <select className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 appearance-none">
-                <option>New</option>
-                <option>Good</option>
-                <option>Fair</option>
-                <option>Poor</option>
+              <select 
+                value={condition}
+                onChange={e => setCondition(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100"
+              >
+                <option value="Excellent">Excellent</option>
+                <option value="Good">Good</option>
+                <option value="Fair">Fair</option>
+                <option value="Poor">Poor</option>
               </select>
             </div>
           </div>
@@ -178,61 +328,23 @@ export default function CreateAsset() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Last Service Date</label>
-              <div className="relative">
-                <input type="text" placeholder="mm/dd/yyyy" className="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" />
-                <Calendar size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              </div>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Supplier</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Sydney Tools Repairs" 
+                value={supplier}
+                onChange={e => setSupplier(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" 
+              />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Next Service Due</label>
-              <div className="relative">
-                <input type="text" placeholder="mm/dd/yyyy" className="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" />
-                <Calendar size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Service Provider</label>
-              <input type="text" placeholder="e.g. Sydney Tools Repairs" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" />
-            </div>
-          </div>
-        </div>
-
-        {/* 5. ASSET DOCUMENTATION */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-              <FileText size={16} />
-            </div>
-            <div>
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">5. Asset Documentation</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Manuals and Certificates</p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="border border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 hover:border-purple-300 transition-colors cursor-pointer group">
-              <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 group-hover:text-purple-600 group-hover:bg-purple-50 transition-colors">
-                <File size={20} />
-              </div>
-              <span className="text-xs font-bold text-slate-700">User Manual</span>
-              <span className="text-[9px] font-semibold text-slate-400">PDF up to 5MB</span>
-            </div>
-            
-            <div className="border border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 hover:border-purple-300 transition-colors cursor-pointer group">
-              <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 group-hover:text-purple-600 group-hover:bg-purple-50 transition-colors">
-                <CheckCircle2 size={20} />
-              </div>
-              <span className="text-xs font-bold text-slate-700">Warranty Doc</span>
-              <span className="text-[9px] font-semibold text-slate-400">PDF up to 5MB</span>
-            </div>
-            
-            <div className="border border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 hover:border-purple-300 transition-colors cursor-pointer group">
-              <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 group-hover:text-purple-600 group-hover:bg-purple-50 transition-colors">
-                <CheckCircle2 size={20} />
-              </div>
-              <span className="text-xs font-bold text-slate-700">Compliance Cert</span>
-              <span className="text-[9px] font-semibold text-slate-400">PDF up to 5MB</span>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Warranty Expiry</label>
+              <input 
+                type="date" 
+                value={warrantyExpiry}
+                onChange={e => setWarrantyExpiry(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100" 
+              />
             </div>
           </div>
         </div>
@@ -249,28 +361,25 @@ export default function CreateAsset() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Purchase Date</label>
-              <div className="relative">
-                <input type="text" placeholder="mm/dd/yyyy" className="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" />
-                <Calendar size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              </div>
+              <input 
+                type="date" 
+                value={purchaseDate}
+                onChange={e => setPurchaseDate(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100" 
+              />
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Purchase Price ($)</label>
-              <input type="text" placeholder="0.00" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Lifespan (YRS)</label>
-              <input type="text" placeholder="5" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Depreciation</label>
-              <select className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 appearance-none">
-                <option>Straight Line</option>
-                <option>Declining Balance</option>
-              </select>
+              <input 
+                type="number" 
+                placeholder="0.00" 
+                value={purchasePrice}
+                onChange={e => setPurchasePrice(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" 
+              />
             </div>
           </div>
         </div>
@@ -289,6 +398,8 @@ export default function CreateAsset() {
           
           <textarea 
             placeholder="Any specific instructions, history, or observations..."
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
             className="w-full h-32 p-4 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300 resize-none custom-scrollbar"
           ></textarea>
         </div>
@@ -303,8 +414,13 @@ export default function CreateAsset() {
         >
           Cancel
         </button>
-        <button onClick={() => navigate('/company-admin/assets')} className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition-colors flex items-center gap-2 shadow-sm">
-          Save Asset <ArrowLeft size={16} className="rotate-180" />
+        <button 
+          onClick={handleSave} 
+          disabled={submitting}
+          className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
+        >
+          {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+          {submitting ? 'Saving Asset...' : 'Save Asset'}
         </button>
       </div>
 

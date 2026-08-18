@@ -12,6 +12,11 @@ import {
   FiTrendingUp,
 } from 'react-icons/fi';
 
+<<<<<<< HEAD
+=======
+const ALL_JOBS = [];
+
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 const STATUS_META = {
   UPCOMING:    { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },
   IN_PROGRESS: { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
@@ -23,8 +28,33 @@ const PAGE_SIZE = 5;
 
 export default function Jobs() {
   const navigate = useNavigate();
+<<<<<<< HEAD
   const [jobs, setJobs]                 = useState([]);
   const [loading, setLoading]           = useState(true);
+=======
+  
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/jobs');
+      if (res.data?.success) {
+        setJobs(res.data.data?.jobs || []);
+      }
+    } catch (err) {
+      console.error('Error fetching jobs', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
   const [activeTab, setActiveTab]       = useState('ALL');
   const [searchQuery, setSearchQuery]   = useState('');
   const [page, setPage]                 = useState(1);
@@ -41,6 +71,7 @@ export default function Jobs() {
     loadType: 'Car Carrier (4 Level)', stops: '1 Stop', notes: '',
   });
 
+<<<<<<< HEAD
   const fetchJobs = async () => {
     try {
       setLoading(true);
@@ -60,6 +91,8 @@ export default function Jobs() {
     fetchJobs();
   }, []);
 
+=======
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
   useEffect(() => {
     const handler = e => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -91,7 +124,7 @@ export default function Jobs() {
     return tabOk && searchOk;
   });
 
-  const totalPages = Math.ceil(filtered.length / perPage) || 1;
+  const totalPages = Math.ceil(filtered.length / perPage);
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   const handleTabChange = t => { setActiveTab(t); setPage(1); };

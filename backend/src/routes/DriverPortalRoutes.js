@@ -8,6 +8,7 @@ router.use(verifyToken, resolveTenant);
 
 router.get('/dashboard', DriverPortalController.getDashboard);
 router.post('/status', DriverPortalController.updateStatus);
+<<<<<<< HEAD
 
 router.get('/notifications', DriverPortalController.getNotifications);
 router.patch('/notifications/read-all', DriverPortalController.markAllNotificationsRead);
@@ -58,5 +59,8 @@ router.post('/offline-sync/sync-all', DriverPortalController.syncAllQueue);
 router.post('/offline-sync/retry-failed', DriverPortalController.retryFailedSync);
 router.post('/offline-sync/settings', DriverPortalController.updateSyncSettings);
 router.post('/offline-sync/clear-cache', DriverPortalController.clearStorageCache);
+=======
+router.post('/messages', DriverPortalController.sendQuickMessage);
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 
 module.exports = router;

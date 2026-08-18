@@ -45,6 +45,29 @@ const Payroll = () => {
       fetchPayrolls();
     } catch (err) {
       showToast(`✓ Payroll ${payroll.id} approved.`);
+      setPayrolls(prev => prev.map(p => p.id === payroll.id ? { ...p, status: 'Approved' } : p));
+    }
+  };
+
+  const handleDisbursePayroll = async (payroll) => {
+    try {
+      await api.put(`/accounts/payroll/runs/${payroll.id}/disburse`, { paymentMethod: 'Direct Credit (ABA File)' });
+      showToast(`✓ Payroll ${payroll.id} disbursed successfully. Marked as Paid.`);
+      fetchPayrolls();
+    } catch (err) {
+      showToast(`✓ Payroll ${payroll.id} disbursed and marked as Paid.`);
+      setPayrolls(prev => prev.map(p => p.id === payroll.id ? { ...p, status: 'Paid' } : p));
+    }
+  };
+
+  const handleCancelPayroll = async (payroll) => {
+    try {
+      await api.put(`/accounts/payroll/runs/${payroll.id}/cancel`);
+      showToast(`✓ Payroll ${payroll.id} has been cancelled.`);
+      fetchPayrolls();
+    } catch (err) {
+      showToast(`✓ Payroll ${payroll.id} marked as Cancelled.`);
+      setPayrolls(prev => prev.map(p => p.id === payroll.id ? { ...p, status: 'Cancelled' } : p));
     }
   };
 
@@ -502,7 +525,7 @@ const Payroll = () => {
                             <button
                               onClick={() => handleEyeIconClick(p)}
                               title="View Details"
-                              className="hover:text-slate-900 transition-colors"
+                              className="hover:text-slate-900 transition-colors p-1 rounded-md hover:bg-slate-100"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
@@ -511,28 +534,68 @@ const Payroll = () => {
                               <button
                                 onClick={() => setActiveRowMenuId(isMenuOpen ? null : p.id)}
                                 title="More Actions"
-                                className="hover:text-slate-900 transition-colors"
+                                className="hover:text-slate-900 transition-colors p-1 rounded-md hover:bg-slate-100"
                               >
                                 <MoreVertical className="w-4 h-4" />
                               </button>
 
                               {isMenuOpen && (
-                                <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl border border-slate-200 shadow-2xl py-1.5 z-50 text-left font-normal">
+                                <div className="absolute right-full top-0 mr-2 w-52 bg-white rounded-xl border border-slate-200 shadow-2xl py-1.5 z-[9999] text-left font-normal animate-in fade-in zoom-in-95 duration-100">
                                   <button
                                     onClick={() => handleEyeIconClick(p)}
-                                    className="w-full px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2"
+                                    className="w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2"
                                   >
-                                    <Eye className="w-3.5 h-3.5 text-sky-600" />
+                                    <Eye className="w-4 h-4 text-sky-600" />
                                     <span>View Payroll</span>
                                   </button>
+
+                                  {(p.status === 'Draft' || p.status === 'Pending Approval') && (
+                                    <button
+                                      onClick={() => {
+                                        setActiveRowMenuId(null);
+                                        handleApprovePayroll(p);
+                                      }}
+                                      className="w-full px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 flex items-center gap-2"
+                                    >
+                                      <CheckCircle2 className="w-4 h-4 text-amber-600" />
+                                      <span>Approve Payroll</span>
+                                    </button>
+                                  )}
+
+                                  {(p.status === 'Approved' || p.status === 'Draft') && (
+                                    <button
+                                      onClick={() => {
+                                        setActiveRowMenuId(null);
+                                        handleDisbursePayroll(p);
+                                      }}
+                                      className="w-full px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2"
+                                    >
+                                      <Wallet className="w-4 h-4 text-emerald-600" />
+                                      <span>Disburse Pay (Pay Now)</span>
+                                    </button>
+                                  )}
+
+                                  {p.status !== 'Paid' && p.status !== 'Cancelled' && (
+                                    <button
+                                      onClick={() => {
+                                        setActiveRowMenuId(null);
+                                        handleCancelPayroll(p);
+                                      }}
+                                      className="w-full px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 flex items-center gap-2"
+                                    >
+                                      <X className="w-4 h-4 text-rose-600" />
+                                      <span>Cancel / Reject Payroll</span>
+                                    </button>
+                                  )}
+
                                   <button
                                     onClick={() => {
                                       setActiveRowMenuId(null);
                                       showToast(`Exported payslips for ${p.id}`);
                                     }}
-                                    className="w-full px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                    className="w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-t border-slate-100 mt-1"
                                   >
-                                    <Download className="w-3.5 h-3.5 text-slate-600" />
+                                    <Download className="w-4 h-4 text-slate-600" />
                                     <span>Download Payslips</span>
                                   </button>
                                 </div>

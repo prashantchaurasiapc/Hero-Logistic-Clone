@@ -1,4 +1,5 @@
 const prisma = require('../utils/prismaClient');
+const syncMissingVehicleColumns = require('../utils/syncDbColumns');
 const { sendSuccess, sendList, sendError } = require('../utils/apiResponse');
 const { buildPrismaQuery, buildPaginationMeta } = require('../utils/queryBuilder');
 const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
@@ -6,6 +7,7 @@ const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 // Get all Customers with pagination, sorting and filtering
 exports.getAll = async (req, res, next) => {
   try {
+    await syncMissingVehicleColumns();
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
     if (req.tenantId) where.companyId = req.tenantId;

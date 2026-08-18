@@ -10,6 +10,107 @@ import {
   FiFileText, FiPrinter, FiEye, FiPlus, FiCheck
 } from 'react-icons/fi';
 
+<<<<<<< HEAD
+=======
+/* ── Shared job data ─────────────────────────────────── */
+const INITIAL_JOBS_DB = {
+  'LD-3987': {
+    id: 'LD-3987', subTitle: 'Car Carrier (4 Level)',
+    status: 'UPCOMING', statusText: 'Upcoming', statusCountdown: 'Starts in 5h 45m',
+    origin: 'Melbourne VIC', destination: 'Sydney NSW',
+    date: '29 May 2025', startTime: '08:00 AM', endTime: '02:30 PM',
+    loadType: 'Car Carrier (4 Level)', stops: '1 Stop', reference: 'PO-65432', priority: 'Normal',
+    trailer: 'TRL-205 (Car Carrier 4 Level)',
+    specialInstructions: 'Handle with care. Check all vehicles for existing damage. Report any issues immediately.',
+    pickup: { name: 'ABC Car Yard', address: '123 Sunshine Rd', suburb: 'Melbourne VIC 3000', contact: 'John Smith', phone: '0412 345 678', time: '08:00 AM', date: '29 May 2025', status: 'UPCOMING' },
+    delivery: { name: 'Auto World Sydney', address: '45 Parramatta Rd', suburb: 'Sydney NSW 2150', contact: 'Mark Wilson', phone: '0411 987 654', time: '02:30 PM', date: '29 May 2025', status: 'UPCOMING' },
+    items: { total: 6, damaged: 0, photosRequired: 0, photosTaken: 6 },
+    totalVehicles: 8,
+    documents: [
+      { id: 1, name: 'Consignment Note – LD-3987.pdf', type: 'PDF', date: '29 May 2025', size: '1.2 MB' },
+      { id: 2, name: 'Pickup Receipt – ABC Car Yard.pdf', type: 'PDF', date: '29 May 2025', size: '850 KB' }
+    ],
+    photos: [
+      { id: 1, title: 'Front Loading View', date: '29 May 2025, 08:15 AM', tag: 'Pickup' },
+      { id: 2, title: 'Rear Vehicle Straps', date: '29 May 2025, 08:20 AM', tag: 'Inspection' },
+      { id: 3, title: 'Left Side Clearance', date: '29 May 2025, 08:22 AM', tag: 'Safety' },
+      { id: 4, title: 'Vehicle VIN Verification', date: '29 May 2025, 08:25 AM', tag: 'Check' },
+      { id: 5, title: 'Upper Deck Alignment', date: '29 May 2025, 08:30 AM', tag: 'Loading' },
+      { id: 6, title: 'Final Ramp Lock', date: '29 May 2025, 08:35 AM', tag: 'Departure' }
+    ],
+    activities: [
+      { time: '08:12 AM', action: 'Job accepted by driver', user: 'Driver' },
+      { time: '08:00 AM', action: 'Job assigned by dispatcher', user: 'Dispatch HQ' },
+      { time: '07:45 AM', action: 'Pre-start checklist completed', user: 'Driver' },
+      { time: '07:30 AM', action: 'Job created in system', user: 'System' }
+    ]
+  },
+  'LD-3988': {
+    id: 'LD-3988', subTitle: 'Car Carrier (4 Level)',
+    status: 'UPCOMING', statusText: 'Upcoming', statusCountdown: 'Starts tomorrow 07:30 AM',
+    origin: 'Brisbane QLD', destination: 'Perth WA',
+    date: '30 May 2025', startTime: '07:30 AM', endTime: '06:00 PM',
+    loadType: 'Car Carrier (4 Level)', stops: '2 Stops', reference: 'PO-65456', priority: 'High',
+    trailer: 'TRL-208 (Car Carrier 4 Level)',
+    specialInstructions: 'Long haul interstate. Check tyre pressure before departure.',
+    pickup: { name: 'Brisbane Port Terminal', address: 'Port Dr', suburb: 'Brisbane QLD 4178', contact: 'Sarah Lee', phone: '0413 222 333', time: '07:30 AM', date: '30 May 2025', status: 'UPCOMING' },
+    delivery: { name: 'Perth Freight Hub', address: '12 Freight Ave', suburb: 'Perth WA 6100', contact: 'David Park', phone: '0414 555 666', time: '06:00 PM', date: '31 May 2025', status: 'UPCOMING' },
+    items: { total: 10, damaged: 0, photosRequired: 2, photosTaken: 0 },
+    totalVehicles: 10,
+    documents: [
+      { id: 1, name: 'Bill of Lading – LD-3988.pdf', type: 'PDF', date: '30 May 2025', size: '2.1 MB' }
+    ],
+    photos: [],
+    activities: [
+      { time: '07:30 AM', action: 'Job created in system', user: 'System' }
+    ]
+  },
+  'LD-3986': {
+    id: 'LD-3986', subTitle: 'Car Carrier (4 Level)',
+    status: 'IN_PROGRESS', statusText: 'In Progress', statusCountdown: 'In Transit',
+    origin: 'Melbourne VIC', destination: 'Adelaide SA',
+    date: '29 May 2025', startTime: '06:00 AM', endTime: 'In Transit',
+    loadType: 'Car Carrier (4 Level)', stops: '1 Stop', reference: 'PO-65421', priority: 'Normal',
+    trailer: 'TRL-201 (Car Carrier 4 Level)',
+    specialInstructions: 'Vehicles are high-value. Secure straps every 150km.',
+    pickup: { name: 'Melbourne Vehicle Hub', address: '88 Western Hwy', suburb: 'Deer Park VIC 3023', contact: 'Alex Turner', phone: '0415 111 222', time: '06:00 AM', date: '29 May 2025', status: 'COMPLETED' },
+    delivery: { name: 'Adelaide Vehicle Hub', address: '55 Chief St', suburb: 'Wingfield SA 5013', contact: 'Lisa Chen', phone: '0416 333 444', time: 'In Transit', date: '29 May 2025', status: 'UPCOMING' },
+    items: { total: 6, damaged: 0, photosRequired: 0, photosTaken: 4 },
+    totalVehicles: 6,
+    documents: [
+      { id: 1, name: 'Consignment Note – LD-3986.pdf', type: 'PDF', date: '29 May 2025', size: '1.5 MB' }
+    ],
+    photos: [
+      { id: 1, title: 'Melbourne Loading Deck', date: '29 May 2025, 06:15 AM', tag: 'Pickup' },
+      { id: 2, title: 'Tie Down Inspection', date: '29 May 2025, 06:30 AM', tag: 'Inspection' }
+    ],
+    activities: [
+      { time: '06:00 AM', action: 'Departed pickup location', user: 'Driver' }
+    ]
+  },
+  'LD-3981': {
+    id: 'LD-3981', subTitle: 'Car Carrier (4 Level)',
+    status: 'CANCELLED', statusText: 'Cancelled', statusCountdown: 'Cancelled',
+    origin: 'Adelaide SA', destination: 'Darwin NT',
+    date: '22 May 2025', startTime: 'N/A', endTime: 'N/A',
+    loadType: 'Car Carrier (4 Level)', stops: '1 Stop', reference: 'PO-65340', priority: 'Normal',
+    trailer: 'N/A',
+    specialInstructions: 'Load cancelled by customer. Do not proceed.',
+    pickup: { name: 'Adelaide South Yard', address: '3 Regency Rd', suburb: 'Kilburn SA 5084', contact: 'Ian Foster', phone: '0425 555 666', time: 'N/A', date: '22 May 2025', status: 'CANCELLED' },
+    delivery: { name: 'Darwin Freight Terminal', address: '10 Frances Bay Dr', suburb: 'Darwin NT 0800', contact: 'Cathy Liu', phone: '0426 777 888', time: 'N/A', date: 'N/A', status: 'CANCELLED' },
+    items: { total: 0, damaged: 0, photosRequired: 0, photosTaken: 0 },
+    totalVehicles: 0,
+    documents: [
+      { id: 1, name: 'Cancellation Notice – LD-3981.pdf', type: 'PDF', date: '22 May 2025', size: '420 KB' }
+    ],
+    photos: [],
+    activities: [
+      { time: '09:00 AM', action: 'Job cancelled by dispatch', user: 'Dispatch HQ' }
+    ]
+  }
+};
+
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 const STATUS_META = {
   UPCOMING:    { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd', btnBg: '#7c3aed', btnText: 'Start Job' },
   IN_PROGRESS: { bg: '#fef3c7', text: '#92400e', border: '#fcd34d', btnBg: '#d97706', btnText: 'Complete Job' },
@@ -174,7 +275,7 @@ export default function JobDetails() {
         statusText: 'In Progress',
         statusCountdown: 'In Transit',
         activities: [
-          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job started by driver', user: 'Noah Williams' },
+          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job started by driver', user: 'Driver' },
           ...job.activities
         ]
       };
@@ -189,7 +290,7 @@ export default function JobDetails() {
         pickup: { ...job.pickup, status: 'COMPLETED' },
         delivery: { ...job.delivery, status: 'COMPLETED' },
         activities: [
-          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job marked completed by driver', user: 'Noah Williams' },
+          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job marked completed by driver', user: 'Driver' },
           ...job.activities
         ]
       };
@@ -216,7 +317,7 @@ export default function JobDetails() {
       ...prev,
       documents: [newDoc, ...prev.documents],
       activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Uploaded document: ${newDoc.name}`, user: 'Noah Williams' },
+        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Uploaded document: ${newDoc.name}`, user: 'Driver' },
         ...prev.activities
       ]
     }));
@@ -243,7 +344,7 @@ export default function JobDetails() {
       photos: [newPhoto, ...prev.photos],
       items: { ...prev.items, photosTaken: prev.items.photosTaken + 1 },
       activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Added photo: ${newPhoto.title}`, user: 'Noah Williams' },
+        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Added photo: ${newPhoto.title}`, user: 'Driver' },
         ...prev.activities
       ]
     }));
@@ -268,7 +369,7 @@ export default function JobDetails() {
       statusText: meta.text,
       statusCountdown: meta.cd,
       activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Status updated to ${meta.text}${statusNote ? `: ${statusNote}` : ''}`, user: 'Noah Williams' },
+        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Status updated to ${meta.text}${statusNote ? `: ${statusNote}` : ''}`, user: 'Driver' },
         ...prev.activities
       ]
     }));

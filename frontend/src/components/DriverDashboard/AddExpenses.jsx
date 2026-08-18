@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Compass, FileText, AlertTriangle, X, Phone, MessageSquare, Mic, Wifi, WifiOff, Upload, Settings, CheckCircle2, Shield, CircleEqual, Truck, Heart } from 'lucide-react';
+import { Compass, FileText, AlertTriangle, X, Phone, MessageSquare, Mic, Wifi, WifiOff, Upload, Settings, CheckCircle2, Shield, CircleEqual } from 'lucide-react';
 
 export default function AddExpenses() {
   const [sosModalOpen, setSosModalOpen] = useState(false);

@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  getTodayTimesheet, createTimesheet, clockIn, clockOut,
-  toggleBreak, addTimesheetNote, submitTimesheet
-} from '../../services/driverApi';
+import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
   FiFilter, FiFileText, FiDollarSign, FiChevronRight,
@@ -19,11 +16,9 @@ export default function Timesheets() {
   // Tab & Search States
   const [activeTab, setActiveTab] = useState('Today'); // 'Today', 'This Week', 'This Month', 'All Timesheets'
   const [toastMsg, setToastMsg] = useState('');
-  const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-  const [loading, setLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Clock In / Break / Out States
+<<<<<<< HEAD
   const [clockStatus, setClockStatus] = useState('Clocked Out'); // 'Clocked In', 'On Break', 'Clocked Out'
   const [secondsToday, setSecondsToday] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -59,6 +54,11 @@ export default function Timesheets() {
   const [allTimesheets, setAllTimesheets] = useState([]);
   const [recentTimesheets, setRecentTimesheets] = useState([]);
   const [activeLoadData, setActiveLoadData] = useState(null);
+=======
+  const [clockStatus, setClockStatus] = useState('Clocked In'); // 'Clocked In', 'On Break', 'Clocked Out'
+  const [secondsToday, setSecondsToday] = useState(13515); // 3h 45m 15s
+  const [timerRunning, setTimerRunning] = useState(true);
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 
   // Note State
   const [noteInput, setNoteInput] = useState('');
@@ -72,6 +72,7 @@ export default function Timesheets() {
   const [timesheetSubmitted, setTimesheetSubmitted] = useState(false);
 
   // Timeline Data
+<<<<<<< HEAD
   const [timelineEvents, setTimelineEvents] = useState([]);
 
   useEffect(() => {
@@ -105,6 +106,15 @@ export default function Timesheets() {
       setLoading(false);
     }
   };
+=======
+  const [timelineEvents, setTimelineEvents] = useState([
+    { id: 1, type: 'Clocked In', time: '07:45 AM', location: 'Yard - Melbourne VIC (-37.8136, 144.9631)', badge: 'Auto Location', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+    { id: 2, type: 'Break Started', time: '12:00 PM', location: 'Yass NSW (-34.8020, 148.9097)', badge: '45 min', color: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
+    { id: 3, type: 'Break Ended', time: '12:45 PM', location: 'Yass NSW (-34.8020, 148.9097)', badge: null, color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+    { id: 4, type: 'Note Added', time: '01:05 PM', location: 'Lunch break completed. Continuing journey.', badge: null, color: 'bg-slate-100 text-slate-700 border-slate-200', dot: 'bg-slate-400' },
+    { id: 5, type: 'Still Working', time: '11:00 AM – Now', location: 'Yass NSW (-34.8020, 148.9097)', badge: 'On Site', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
+  ]);
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 
   // Live Timer Effect
   useEffect(() => {
@@ -130,6 +140,7 @@ export default function Timesheets() {
   };
 
   const handleStartBreak = () => {
+<<<<<<< HEAD
     if (isSubmitting) return;
     setIsSubmitting(true);
     const isEndingBreak = clockStatus === 'On Break';
@@ -172,16 +183,28 @@ export default function Timesheets() {
     try {
       await api.post('/driver-portal/timesheets/clock-out', {});
       setClockStatus('Clocked Out');
+=======
+    if (clockStatus === 'On Break') {
+      setClockStatus('Clocked In');
+      setTimerRunning(true);
+      triggerToast('Break ended! Work timer resumed.');
+      setTimelineEvents([
+        ...timelineEvents,
+        { id: Date.now(), type: 'Break Ended', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: 'Yass NSW (-34.8020, 148.9097)', badge: null, color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
+      ]);
+    } else {
+      setClockStatus('On Break');
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
       setTimerRunning(false);
-      triggerToast('Clocked Out successfully! Shift ended.');
-      fetchTimesheets();
-    } catch (err) {
-      setClockStatus('Clocked Out');
-      setTimerRunning(false);
-      triggerToast('Clocked Out successfully! Shift ended.');
+      triggerToast('Break started! Timer paused.');
+      setTimelineEvents([
+        ...timelineEvents,
+        { id: Date.now(), type: 'Break Started', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: 'Yass NSW (-34.8020, 148.9097)', badge: '30 min', color: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' }
+      ]);
     }
   };
 
+<<<<<<< HEAD
   const handleClockIn = async () => {
     try {
       await api.post('/driver-portal/timesheets/clock-in', {});
@@ -194,39 +217,44 @@ export default function Timesheets() {
       setTimerRunning(true);
       triggerToast('Clocked In successfully! Work timer active.');
     }
+=======
+  const handleClockOut = () => {
+    setClockStatus('Clocked Out');
+    setTimerRunning(false);
+    triggerToast('Clocked Out successfully! Shift ended.');
+    setTimelineEvents([
+      ...timelineEvents,
+      { id: Date.now(), type: 'Clocked Out', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: 'Yard - Sydney NSW (-33.8688, 151.2093)', badge: 'End Shift', color: 'bg-rose-50 text-rose-700 border-rose-200', dot: 'bg-rose-500' }
+    ]);
+  };
+
+  const handleClockIn = () => {
+    setClockStatus('Clocked In');
+    setTimerRunning(true);
+    triggerToast('Clocked In successfully! Work timer active.');
+    setTimelineEvents([
+      ...timelineEvents,
+      { id: Date.now(), type: 'Clocked In', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: 'Yard - Melbourne VIC (-37.8136, 144.9631)', badge: 'Auto Location', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' }
+    ]);
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
   };
 
   const handleAddNote = (e) => {
     e.preventDefault();
     if (!noteInput.trim()) return;
-    const noteText = noteInput.trim();
 
-    addTimesheetNote({ note: noteText })
-      .catch(() => {})
-      .finally(() => {
-        setTimelineEvents(prev => [
-          ...prev,
-          { id: Date.now(), type: 'Note Added', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: noteText, badge: null, color: 'bg-slate-100 text-slate-700 border-slate-200', dot: 'bg-slate-400' }
-        ]);
-        triggerToast(`Note saved: "${noteText}"`);
-        setNoteInput('');
-      });
+    setTimelineEvents([
+      ...timelineEvents,
+      { id: Date.now(), type: 'Note Added', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), location: noteInput, badge: null, color: 'bg-slate-100 text-slate-700 border-slate-200', dot: 'bg-slate-400' }
+    ]);
+
+    triggerToast(`Note saved: "${noteInput}"`);
+    setNoteInput('');
   };
 
   const handleSubmitTimesheet = () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
-    submitTimesheet()
-      .then(() => {
-        setTimesheetSubmitted(true);
-        triggerToast('Timesheet submitted to Accounts for approval!');
-      })
-      .catch(err => {
-        setTimesheetSubmitted(true);
-        triggerToast('Timesheet submitted to Accounts for approval!');
-      })
-      .finally(() => setIsSubmitting(false));
+    setTimesheetSubmitted(true);
+    triggerToast('Timesheet for 29 May 2025 submitted to Accounts for approval!');
   };
 
   const openHelpModal = (title) => {
@@ -248,7 +276,7 @@ export default function Timesheets() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Timesheets / Clock In-Out</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Timesheets / Clock In-Out</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">Clock in/out, track your work hours, breaks and submit your timesheet for approval</p>
         </div>
 
@@ -282,7 +310,7 @@ export default function Timesheets() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">Timesheets</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">15.11 Timesheets</span>
               <span className="bg-purple-100 text-purple-800 border border-purple-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Shift Tracking
               </span>

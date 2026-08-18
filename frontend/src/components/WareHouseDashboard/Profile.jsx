@@ -17,48 +17,16 @@ export default function Profile() {
   };
 
   // Profile Main States
-
-  const [name, setName] = useState('Staff');
-  const [role, setRole] = useState('Warehouse Staff');
-  const [status, setStatus] = useState('Available');
-  const [employeeId, setEmployeeId] = useState('-');
-  const [email, setEmail] = useState('-');
-  const [phone, setPhone] = useState('-');
-  const [department, setDepartment] = useState('Warehouse Operations');
-  const [depot, setDepot] = useState('-');
-  const [reportsTo, setReportsTo] = useState('-');
-  const [joinedOn, setJoinedOn] = useState('-');
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await api.get('/warehouse-portal/profile');
-        if (res.data && res.data.success && res.data.data?.profile) {
-          const p = res.data.data.profile;
-          if (p.name) setName(p.name);
-          if (p.role) setRole(p.role);
-          if (p.status) setStatus(p.status);
-          if (p.driverCode || p.userId) setEmployeeId(p.driverCode || `ID-${p.userId?.slice(0, 6)}`);
-          if (p.email) {
-            setEmail(p.email);
-            setWorkEmail(p.email);
-          }
-          if (p.phone) {
-            setPhone(p.phone);
-            setMobilePhone(p.phone);
-          }
-          if (p.warehouse?.name) setDepot(p.warehouse.name);
-          else if (p.branch?.name) setDepot(p.branch.name);
-          if (p.joiningDate) setJoinedOn(new Date(p.joiningDate).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }));
-          if (p.address) setAddress(`${p.address}${p.city ? ', ' + p.city : ''}${p.state ? ' ' + p.state : ''}`);
-        }
-      } catch (err) {
-        console.error('Error fetching warehouse staff profile:', err);
-      }
-    };
-    fetchProfile();
-  }, []);
-
+  const [name, setName] = useState('');
+  const [role, setRole] = useState('');
+  const [status, setStatus] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [department, setDepartment] = useState('');
+  const [depot, setDepot] = useState('');
+  const [reportsTo, setReportsTo] = useState('');
+  const [joinedOn, setJoinedOn] = useState('');
 
   // Contact & Address
   const [address, setAddress] = useState('');

@@ -188,7 +188,7 @@ export default function OfflineSyncQueue() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Offline Sync Queue</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Offline Sync Queue</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">View and manage data captured offline. Items will sync automatically when you're back online.</p>
         </div>
 
@@ -220,7 +220,7 @@ export default function OfflineSyncQueue() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">Offline Sync</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">15.14 Offline Sync</span>
               <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Auto Sync
               </span>
@@ -310,7 +310,11 @@ export default function OfflineSyncQueue() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
+<<<<<<< HEAD
               <div className="text-[11px] text-slate-500">Last sync: {lastSyncTime}</div>
+=======
+              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
@@ -354,7 +358,11 @@ export default function OfflineSyncQueue() {
             <div className="flex justify-between items-center">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">QUEUE SUMMARY</div>
               <div className="flex items-center gap-1 text-[11px] text-slate-400 font-bold">
+<<<<<<< HEAD
                 <span>Last updated: {lastSyncTime}</span>
+=======
+                <span>Last updated: 29 May 2025, 10:15 AM</span>
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 <FiRefreshCw className="text-indigo-600 cursor-pointer hover:rotate-180 transition-transform" onClick={handleSyncNow} />
               </div>
             </div>

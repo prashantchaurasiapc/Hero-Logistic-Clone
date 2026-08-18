@@ -123,17 +123,6 @@ export default function Documents() {
     return d.status && d.status.toUpperCase().replace(/\s+/g, '_') === filterCategory.toUpperCase().replace(/\s+/g, '_');
   });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-          <p className="text-slate-500 font-bold text-sm">Loading documents...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24 text-left">
       
@@ -157,7 +146,7 @@ export default function Documents() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Documents & Compliance</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Documents & Compliance</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">Manage your documents, licenses and ensure you stay compliant on the road</p>
         </div>
 
@@ -181,7 +170,7 @@ export default function Documents() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">Documents</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">15.10 Documents</span>
               <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Compliant
               </span>
@@ -243,6 +232,7 @@ export default function Documents() {
             <div className="space-y-2.5 font-semibold text-slate-700">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Truck</div>
+<<<<<<< HEAD
                 <div className="font-black text-slate-900 text-xs">{vehicleData?.truck || 'Unassigned'}</div>
                 <div className="text-[11px] text-slate-500">{vehicleData?.truckModel || ''}</div>
               </div>
@@ -255,6 +245,20 @@ export default function Documents() {
                 <div className="text-[10px] text-indigo-500 uppercase font-extrabold">Active Load</div>
                 <div className="font-black text-indigo-900 text-xs">{activeLoadData?.id || 'N/A'}</div>
                 <div className="text-[11px] text-indigo-700">{activeLoadData?.loadType || ''}</div>
+=======
+                <div className="font-black text-slate-900 text-xs">TRK-101</div>
+                <div className="text-[11px] text-slate-500">MAN TGX 26.580</div>
+              </div>
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+                <div className="text-[10px] text-slate-400 uppercase font-extrabold">Trailer</div>
+                <div className="font-black text-slate-900 text-xs">TRL-305</div>
+                <div className="text-[11px] text-slate-500">Car Carrier (4 Level)</div>
+              </div>
+              <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1">
+                <div className="text-[10px] text-indigo-500 uppercase font-extrabold">Active Load</div>
+                <div className="font-black text-indigo-900 text-xs">LD-3987</div>
+                <div className="text-[11px] text-indigo-700">Car Carrier (4 Level)</div>
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
               </div>
             </div>
           </div>
@@ -315,33 +319,57 @@ export default function Documents() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
+<<<<<<< HEAD
                 <div className="text-2xl font-black text-indigo-700 tracking-tight">{activeLoadData?.id || 'N/A'}</div>
                 <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
                   <span>{activeLoadData?.origin || '—'}</span>
                   <span className="text-slate-400">➔</span>
                   <span>{activeLoadData?.destination || '—'}</span>
+=======
+                <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
+                <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
+                  <span>Melbourne VIC</span>
+                  <span className="text-slate-400">➔</span>
+                  <span>Sydney NSW</span>
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Start Date</span>
+<<<<<<< HEAD
                   <span className="font-mono text-slate-900">{activeLoadData?.startDate || '—'}</span>
+=======
+                  <span className="font-mono text-slate-900">29 May 2025</span>
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
+<<<<<<< HEAD
                   <span className="font-mono text-slate-900">{activeLoadData?.estFinish || '—'}</span>
+=======
+                  <span className="font-mono text-slate-900">29 May 2025</span>
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Status</span>
+<<<<<<< HEAD
                   <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">{activeLoadData?.status || '—'}</span>
+=======
+                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">En Route</span>
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Load ID</span>
+<<<<<<< HEAD
                   <span className="font-mono text-indigo-700">{activeLoadData?.poNumber || '—'}</span>
+=======
+                  <span className="font-mono text-indigo-700">PO-65432</span>
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
                 </div>
               </div>
             </div>
@@ -537,7 +565,11 @@ export default function Documents() {
           {/* VEHICLE DOCUMENTS TAB */}
           {activeTab === 'Vehicle Documents' && (
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
+<<<<<<< HEAD
               <h3 className="text-base font-black text-slate-900">Vehicle Documents & Permits ({vehicleData?.truck || 'Unassigned'} / {vehicleData?.trailer || 'N/A'})</h3>
+=======
+              <h3 className="text-base font-black text-slate-900">Vehicle Documents & Permits (TRK-101 / TRL-305)</h3>
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
               <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
                 {vehicleDocs.map((doc) => (
                   <div key={doc.id} className="p-4 flex items-center justify-between gap-3">

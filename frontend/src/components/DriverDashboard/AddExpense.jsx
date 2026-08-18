@@ -1,6 +1,11 @@
+<<<<<<< HEAD
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMyExpenses, createExpense } from '../../services/driverApi';
+=======
+import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
 import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
@@ -20,7 +25,6 @@ export default function AddExpense() {
   const [toastMsg, setToastMsg] = useState('');
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [tipDismissed, setTipDismissed] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState(null);
@@ -48,7 +52,7 @@ export default function AddExpense() {
   const [loading, setLoading] = useState(true);
 
   // Odometer State
-  const [odometerVal, setOdometerVal] = useState('0');
+  const [odometerVal, setOdometerVal] = useState('450,789');
 
   // Expense Items Data
   const [expenses, setExpenses] = useState([]);
@@ -56,6 +60,7 @@ export default function AddExpense() {
   // Receipts Thumbnails Data
   const [receipts, setReceipts] = useState([]);
 
+<<<<<<< HEAD
   useEffect(() => {
     fetchData();
   }, []);
@@ -119,6 +124,8 @@ export default function AddExpense() {
     }
   };
 
+=======
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
@@ -146,6 +153,7 @@ export default function AddExpense() {
     e.preventDefault();
     if (!formVendor || !formAmount) return;
 
+<<<<<<< HEAD
     try {
       const numAmount = parseFloat(formAmount) || 0;
       await api.post('/driver-portal/expenses', {
@@ -171,6 +179,44 @@ export default function AddExpense() {
     } catch (err) {
       triggerToast('Failed to add expense.');
     }
+=======
+    const numAmount = parseFloat(formAmount) || 0;
+    const categoryColors = { Fuel: 'purple', Maintenance: 'emerald', Tyres: 'amber', Tolls: 'blue', Other: 'slate' };
+    const categoryIcons = { Fuel: '⛽', Maintenance: '🔧', Tyres: '🛞', Tolls: '🛣️', Other: '🧽' };
+
+    const newExpense = {
+      id: Date.now(),
+      category: formCategory,
+      categoryColor: categoryColors[formCategory] || 'slate',
+      icon: categoryIcons[formCategory] || '📄',
+      vendor: formVendor,
+      details: formCategory === 'Fuel' && formLitres ? `${formOdometer} km • ${formLitres} L @ $2.05/L` : formNotes || 'Receipt Logged',
+      date: '29 May 2025 02:45 PM',
+      amount: numAmount,
+      status: 'Approved'
+    };
+
+    setExpenses([newExpense, ...expenses]);
+
+    // Also add to receipts if receipt uploaded
+    if (formReceiptAdded) {
+      setReceipts([{
+        id: Date.now(),
+        date: '29 May 2025',
+        time: '02:45 PM',
+        vendor: formVendor,
+        amount: `$${numAmount.toFixed(2)}`
+      }, ...receipts]);
+    }
+
+    setAddExpenseModalOpen(false);
+    setFormVendor('');
+    setFormAmount('');
+    setFormLitres('');
+    setFormNotes('');
+    setFormReceiptAdded(false);
+    triggerToast(`Added ${formCategory} expense of $${numAmount.toFixed(2)} for ${formVendor}!`);
+>>>>>>> 91967a4cc51d995fe329d743868334a7005e77e5
   };
 
   // Calculations
@@ -204,7 +250,7 @@ export default function AddExpense() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Fuel & Expenses</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Fuel & Expenses</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">Record fuel and operating expenses, upload receipts & track load costs</p>
         </div>
 
@@ -228,7 +274,7 @@ export default function AddExpense() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">Fuel & Expenses</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">15.8 Fuel & Expenses</span>
               <span className="bg-purple-100 text-purple-800 border border-purple-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Active Load
               </span>
