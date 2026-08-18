@@ -2596,7 +2596,6 @@ exports.getInboundFormOptions = async (req, res, next) => {
   }
 };
 
-<<<<<<< HEAD
 exports.getInboundReceipts = async (req, res, next) => {
   try {
     const tenantId = req.tenantId;
@@ -2857,8 +2856,6 @@ exports.getLoadLanes = async (req, res, next) => {
   }
 };
 
-=======
->>>>>>> 9e06227a94ff04434ad6c988e7baf9d6d514c510
 exports.createLoadLane = async (req, res, next) => {
   try {
     const { name, area } = req.body;
@@ -2953,7 +2950,6 @@ exports.assignDriverToLane = async (req, res, next) => {
   }
 };
 
-<<<<<<< HEAD
 exports.stageItemsToLane = async (req, res, next) => {
   try {
     const { laneId } = req.params;
@@ -4272,8 +4268,6 @@ exports.clockOut = async (req, res, next) => {
   }
 };
 
-=======
->>>>>>> 9e06227a94ff04434ad6c988e7baf9d6d514c510
 exports.moveLaneItems = async (req, res, next) => {
   try {
     const { sourceLaneId, targetLaneId } = req.body;

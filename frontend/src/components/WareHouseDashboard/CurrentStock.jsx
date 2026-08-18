@@ -91,10 +91,7 @@ export default function CurrentStock() {
           };
         });
         setStockItems(formatted);
-<<<<<<< HEAD
-        if (formatted.length > 0) {
-          setSelectedItem(formatted[0]);
-        }
+        setSelectedItem(formatted[0] || null);
       } else {
         setStockItems([]);
         setSelectedItem(null);
@@ -103,21 +100,6 @@ export default function CurrentStock() {
       console.error('Error fetching stock items:', err);
       setStockItems([]);
       setSelectedItem(null);
-=======
-        setSelectedItem(formatted[0] || null);
-      } else {
-        setFetchError('Unable to load stock data. Please try again.');
-        setStockItems([]);
-      }
-    } catch (err) {
-      console.error('Error fetching stock items:', err);
-      setFetchError(
-        err?.response?.data?.error?.message ||
-        err?.response?.data?.message ||
-        'Failed to load stock data. Check your connection and try again.'
-      );
-      setStockItems([]);
->>>>>>> 9e06227a94ff04434ad6c988e7baf9d6d514c510
     } finally {
       setLoading(false);
     }

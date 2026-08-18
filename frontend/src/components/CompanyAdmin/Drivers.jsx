@@ -15,59 +15,6 @@ import {
 
 import api from '../../services/api';
 
-const getInitials = (name) => {
-  if (!name) return 'D';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-};
-
-const DriverAvatar = ({ driver, name, src, className = "w-8 h-8", sizeText = "text-[11px]" }) => {
-  const [imgError, setImgError] = useState(false);
-  const avatarSrc = src !== undefined ? src : (driver?.avatar || driver?.avatarUrl);
-  const displayName = name || driver?.name || 'Driver';
-  const initials = getInitials(displayName);
-
-  useEffect(() => {
-    setImgError(false);
-  }, [avatarSrc]);
-
-  let resolvedSrc = avatarSrc;
-  if (resolvedSrc && typeof resolvedSrc === 'string' && resolvedSrc.startsWith('/uploads/')) {
-    const rawBase = api.defaults?.baseURL || 'http://localhost:5000';
-    const baseUrl = rawBase.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '').replace(/\/+$/, '');
-    resolvedSrc = `${baseUrl}${resolvedSrc}`;
-  }
-
-  const isInvalidUrl = !resolvedSrc || 
-    typeof resolvedSrc !== 'string' || 
-    resolvedSrc.includes('...') || 
-    resolvedSrc.endsWith('..') || 
-    resolvedSrc === 'https://pravatar.cc/150?u...';
-
-  if (isInvalidUrl || imgError) {
-    return (
-      <div 
-        className={`${className} rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-extrabold flex items-center justify-center shrink-0 shadow-2xs border border-purple-200/50 ${sizeText}`}
-        title={displayName}
-      >
-        {initials}
-      </div>
-    );
-  }
-
-  return (
-    <img 
-      src={resolvedSrc} 
-      alt={displayName} 
-      onError={() => setImgError(true)} 
-      className={`${className} rounded-full border border-slate-200 shrink-0 object-cover`} 
-    />
-  );
-};
-
 export default function Drivers() {
   const [driverList, setDriverList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,17 +25,8 @@ export default function Drivers() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Data = reader.result;
-        setPhotoPreview(base64Data);
-        try {
-          const res = await api.post('/upload', { image: base64Data, filename: file.name });
-          if (res.data && res.data.success && res.data.data?.url) {
-            setPhotoPreview(res.data.data.url);
-          }
-        } catch (err) {
-          console.error('Error uploading photo to server:', err);
-        }
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -100,11 +38,8 @@ export default function Drivers() {
       const res = await api.get('/drivers');
       if (res.data && res.data.success) {
         const mapped = res.data.data.map(d => {
-          const rawAv = d.avatarUrl || d.avatar;
-          const cleanAv = (rawAv && typeof rawAv === 'string' && !rawAv.includes('...')) ? rawAv : null;
           return {
             id: d.id,
-            driverCode: d.driverCode || d.id,
             name: d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || 'Unknown Driver',
             age: d.dob ? new Date().getFullYear() - new Date(d.dob).getFullYear() : 35,
             dob: d.dob ? new Date(d.dob).toISOString().split('T')[0] : '1990-06-15',
@@ -121,7 +56,7 @@ export default function Drivers() {
             assignmentType: 'Not assigned',
             complianceStatus: 'Compliant',
             complianceScore: '90%',
-            avatar: cleanAv
+            avatar: d.avatarUrl || 'https://i.pravatar.cc/150?u=' + d.id
           };
         });
         setDriverList(mapped);
@@ -1140,9 +1075,7 @@ export default function Drivers() {
                   showToast(`Driver profile updated successfully`);
                 } catch (err) {
                   console.error('Error updating driver:', err);
-                  const errMsg = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to update driver in database.';
-                  showToast(errMsg, 'error');
-                  alert(`Error updating driver: ${errMsg}`);
+                  alert('Failed to update driver in database.');
                 }
               }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
             </div>
@@ -2876,19 +2809,17 @@ export default function Drivers() {
     // Default values if editing Daniel White
     const defaultData = isEditMode && selectedDriver ? {
       firstName: selectedDriver.name.split(' ')[0],
-      lastName: selectedDriver.name.split(' ').slice(1).join(' ') || '',
-      empId: selectedDriver.driverCode || selectedDriver.id,
-      dob: selectedDriver.dob || "1998-11-22",
+      lastName: selectedDriver.name.split(' ')[1] || '',
+      empId: selectedDriver.id,
+      dob: "1998-11-22",
       gender: "Male",
       nationality: "Australian",
-      phone: selectedDriver.phone !== 'N/A' ? selectedDriver.phone : '',
-      email: selectedDriver.email !== 'N/A' ? selectedDriver.email : '',
+      phone: selectedDriver.phone,
+      email: selectedDriver.email || '',
       licenceType: selectedDriver.licence,
-      licenceNo: selectedDriver.licenceNo !== 'VIC 11223344' ? selectedDriver.licenceNo : '',
+      licenceNo: selectedDriver.licenceNo,
       branch: selectedDriver.branch
-    } : {
-      empId: `DRV-${Math.floor(1000 + Math.random() * 9000)}`
-    };
+    } : {};
 
     return (
       <div className="flex-grow bg-[#F8FAFC] w-full text-left font-sans custom-scrollbar overflow-y-auto">
@@ -2912,28 +2843,14 @@ export default function Drivers() {
           const fd = new FormData(e.target);
           const firstName = fd.get('FirstName') || fd.get('firstName') || '';
           const lastName = fd.get('LastName') || fd.get('lastName') || '';
-          const driverCode = fd.get('EmployeeIDManualEditOption') || fd.get('driverCode') || (`DRV-${Math.floor(1000 + Math.random() * 9000)}`);
+          const driverCode = fd.get('EmployeeIDManualEditOption') || fd.get('driverCode') || ('DRV00' + Math.floor(Math.random() * 100));
           const phone = fd.get('PhoneNumber') || fd.get('phone') || '';
           const email = fd.get('EmailAddress') || fd.get('email') || '';
-          const rawAvInput = fd.get('avatarUrl');
-          const cleanInputUrl = (rawAvInput && typeof rawAvInput === 'string' && !rawAvInput.includes('...')) ? rawAvInput : '';
-          const avatarUrl = photoPreview !== null ? photoPreview : (cleanInputUrl || (isEditMode && selectedDriver ? selectedDriver.avatar : ''));
+          const avatarUrl = photoPreview || fd.get('avatarUrl') || (isEditMode && selectedDriver ? selectedDriver.avatar : '');
           const licenceType = fd.get('LicenceType') || 'HR (Heavy Rigid)';
           const licenceNumber = fd.get('LicenceNumber') || '';
           const status = fd.get('DriverStatus') || 'Available';
           const dob = fd.get('DateofBirth') ? new Date(fd.get('DateofBirth')).toISOString() : null;
-
-          let finalAvatarUrl = avatarUrl;
-          if (finalAvatarUrl && typeof finalAvatarUrl === 'string' && finalAvatarUrl.startsWith('data:image/')) {
-            try {
-              const upRes = await api.post('/upload', { image: finalAvatarUrl });
-              if (upRes.data && upRes.data.success && upRes.data.data?.url) {
-                finalAvatarUrl = upRes.data.data.url;
-              }
-            } catch (upErr) {
-              console.error('Pre-upload base64 image error:', upErr);
-            }
-          }
 
           try {
             if (isEditMode && selectedDriver) {
@@ -2943,7 +2860,7 @@ export default function Drivers() {
                 driverCode,
                 phone,
                 email,
-                avatarUrl: finalAvatarUrl,
+                avatarUrl,
                 licenceType,
                 licenceNumber,
                 status,
@@ -2955,7 +2872,7 @@ export default function Drivers() {
                 name: updatedName,
                 phone: phone || prev.phone,
                 email: email || prev.email,
-                avatar: finalAvatarUrl || prev.avatar,
+                avatar: avatarUrl || prev.avatar,
                 licence: licenceType || prev.licence,
                 licenceNo: licenceNumber || prev.licenceNo,
                 status: status || prev.status
@@ -2967,7 +2884,7 @@ export default function Drivers() {
                 driverCode,
                 phone,
                 email,
-                avatarUrl: finalAvatarUrl,
+                avatarUrl,
                 licenceType,
                 licenceNumber,
                 status,
@@ -2977,13 +2894,10 @@ export default function Drivers() {
             fetchDrivers();
             setShowAddDriver(false);
             setIsEditingDriver(false);
-            setPhotoPreview(null);
             showToast(isEditMode ? "Driver Profile Updated successfully!" : "New Driver Added successfully!");
           } catch (err) {
             console.error('Error saving driver:', err);
-            const errMsg = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to save driver to database.';
-            showToast(errMsg, 'error');
-            alert(`Error saving driver: ${errMsg}`);
+            alert('Failed to save driver to database.');
           }
         }}>
           <div className="flex items-center justify-between mb-8">
@@ -2992,7 +2906,7 @@ export default function Drivers() {
               <p className="text-[11px] text-slate-500 font-medium mt-1">{formDesc}</p>
             </div>
             <div className="flex items-center gap-3">
-              <button type="button" onClick={() => { setShowAddDriver(false); setIsEditingDriver(false); setPhotoPreview(null); }} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Cancel</button>
+              <button type="button" onClick={() => { setShowAddDriver(false); setIsEditingDriver(false); }} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Cancel</button>
               <button type="button" className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Save as Draft</button>
               <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"><Settings size={14} /> Save Driver</button>
             </div>
@@ -3007,11 +2921,10 @@ export default function Drivers() {
                 <div className="col-span-1 flex flex-col items-center gap-3">
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest self-start">Profile Photo</label>
                   <div className="relative group cursor-pointer" onClick={() => driverFileInputRef.current?.click()}>
-                    <DriverAvatar 
-                      src={photoPreview !== null ? photoPreview : (isEditMode ? selectedDriver?.avatar : '')} 
-                      name={defaultData.firstName ? `${defaultData.firstName} ${defaultData.lastName}` : 'New Driver'}
-                      className="w-24 h-24 border-4 border-slate-100 shadow-sm transition-transform group-hover:scale-105"
-                      sizeText="text-2xl"
+                    <img 
+                      src={photoPreview || (isEditMode ? selectedDriver?.avatar : "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80")} 
+                      alt="Avatar Preview" 
+                      className="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-sm transition-transform group-hover:scale-105" 
                     />
                     <div className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
                       <Upload size={16} />
@@ -3039,16 +2952,16 @@ export default function Drivers() {
                   <input 
                     type="text" 
                     name="avatarUrl"
-                    value={photoPreview !== null ? photoPreview : (isEditMode ? (selectedDriver?.avatar || '') : '')} 
+                    value={photoPreview || (isEditMode ? (selectedDriver?.avatar || '') : "https://pravatar.cc/150?u...")} 
                     onChange={(e) => setPhotoPreview(e.target.value)}
                     placeholder="Or paste image URL"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-600 text-center focus:outline-none focus:border-purple-500 overflow-hidden text-ellipsis whitespace-nowrap" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-600 text-center focus:outline-none focus:border-purple-500" 
                   />
                 </div>
                 <div className="col-span-1 md:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
                   <InputField label="First Name" defaultValue={defaultData.firstName} />
                   <InputField label="Last Name" defaultValue={defaultData.lastName} />
-                  <InputField label="Employee ID * (Manual Edit Option)" defaultValue={defaultData.empId || `DRV-${Math.floor(1000 + Math.random() * 9000)}`} />
+                  <InputField label="Employee ID * (Manual Edit Option)" defaultValue={defaultData.empId || "DRV009"} />
                   <InputField label="Date of Birth" type="date" defaultValue={defaultData.dob} />
                   <InputField label="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} defaultValue={defaultData.gender || 'Male'} />
                   <InputField label="Nationality" defaultValue={defaultData.nationality} />
@@ -3084,7 +2997,7 @@ export default function Drivers() {
               <h2 className="text-sm font-black text-slate-900 mb-6">3. Licence Information</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 mb-6">
                 <InputField label="Licence Type" type="select" options={['HR (Heavy Rigid)', 'MR (Medium Rigid)', 'LR (Light Rigid)', 'HC (Heavy Combination)', 'MC (Multi Combination)']} defaultValue={defaultData.licenceType || "MR (Medium Rigid)"} />
-                <InputField label="Licence Number" defaultValue={defaultData.licenceNo || ''} placeholder="e.g. VIC 11223344" />
+                <InputField label="Licence Number" defaultValue={defaultData.licenceNo || "VIC 11223344"} />
                 <InputField label="Licence State" type="select" options={['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT']} defaultValue="NSW" />
                 <InputField label="Issue Date" type="date" />
                 <InputField label="Expiry Date" type="date" />
@@ -3273,7 +3186,7 @@ export default function Drivers() {
               <div className="flex-1 min-w-0 pr-0 md:pr-6 border-b md:border-b-0 md:border-r border-slate-100 pb-6 md:pb-0">
                 <div className="flex items-start gap-4 mb-5">
                   <div className="relative shrink-0">
-                    <DriverAvatar driver={selectedDriver} className="w-14 h-14 sm:w-16 sm:h-16 shadow-2xs" sizeText="text-xl" />
+                    <img src={selectedDriver.avatar} alt={selectedDriver.name} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-slate-200 object-cover shadow-2xs" />
                     <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
                   </div>
                   <div className="flex-grow min-w-0">
@@ -5829,7 +5742,7 @@ export default function Drivers() {
                       <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="rounded border-slate-300 cursor-pointer" /></td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2.5">
-                          <DriverAvatar driver={driver} className="w-8 h-8" sizeText="text-[11px]" />
+                          <img src={driver.avatar} alt={driver.name} className="w-8 h-8 rounded-full border border-slate-200 shrink-0" />
                           <div>
                             <p className="text-xs font-black text-slate-800">{driver.name}</p>
                             <p className="text-[10px] text-slate-500 font-medium">Age {driver.age}</p>
