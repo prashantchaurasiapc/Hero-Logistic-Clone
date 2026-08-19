@@ -769,13 +769,22 @@ export default function WarehouseInbound() {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          gap: 8px;
           font-size: 10.5px;
-          padding: 4px 0;
+          padding: 6px 0;
           border-bottom: 1px solid #F1F5F9;
         }
 
-        .summary-label { color: #64748B; font-weight: 600; }
-        .summary-val { font-weight: 800; color: #0F172A; }
+        .summary-label { color: #64748B; font-weight: 600; flex-shrink: 0; }
+        .summary-val {
+          font-weight: 800;
+          color: #0F172A;
+          text-align: right;
+          max-width: 140px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
 
         .summary-badge-receiving {
           padding: 2px 6px;
@@ -1456,12 +1465,16 @@ export default function WarehouseInbound() {
             
             <div className="summary-row">
               <span className="summary-label">Inbound No.</span>
-              <span className="summary-val">{inboundNo}</span>
+              <span className="summary-val" title={inboundNo}>
+                {inboundNo ? (inboundNo.length > 20 ? `INB-${inboundNo.slice(0, 8).toUpperCase()}` : inboundNo) : 'INB-84092'}
+              </span>
             </div>
 
             <div className="summary-row">
               <span className="summary-label">Supplier</span>
-              <span className="summary-val">{supplier}</span>
+              <span className="summary-val" title={dbSuppliers.find(s => s.id === supplier)?.name || supplier}>
+                {dbSuppliers.find(s => s.id === supplier)?.name || supplier || 'Demo (vgbjhk)'}
+              </span>
             </div>
 
             <div className="summary-row">

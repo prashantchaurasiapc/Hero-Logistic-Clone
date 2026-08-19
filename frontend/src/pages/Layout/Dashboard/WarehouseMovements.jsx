@@ -1348,6 +1348,8 @@ export default function WarehouseMovements() {
         .mvt-movement-item:last-child { border-bottom: none; }
         .mvt-movement-date { font-size: 9.5px; font-weight: 700; color: #64748B; margin-bottom: 1px; }
         .mvt-movement-label { font-size: 11px; font-weight: 800; color: #0F172A; }
+        .mvt-help-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 14px; font-size: 11px; font-weight: 600; color: #334155; line-height: 1.45; }
+        .mvt-help-dot { width: 6px; height: 6px; border-radius: 50%; background: #3B82F6; margin-top: 5px; flex-shrink: 0; }
         .mvt-movement-detail { font-size: 10px; color: #64748B; font-weight: 500; }
         .mvt-table th { padding: 8px 10px; font-size: 8.5px; font-weight: 800; color: #64748B; text-transform: uppercase; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; text-align: left; letter-spacing: 0.3px; white-space: nowrap; }
         .mvt-table td { padding: 8px 10px; border-bottom: 1px solid #F1F5F9; vertical-align: middle; white-space: nowrap; }

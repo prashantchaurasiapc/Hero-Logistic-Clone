@@ -5,7 +5,7 @@ import {
   Search, Filter, Plus, ArrowRight, MoreVertical,
   CheckCircle2, Clock, AlertTriangle, Box, Truck,
   MapPin, Printer, RefreshCw, X, ChevronLeft, ChevronRight,
-  Download, Send, FileText, User, ChevronDown
+  Download, Send, FileText, User, ChevronDown, Eye, Trash2
 } from 'lucide-react';
 
 const initialLoads = [];
@@ -56,6 +56,8 @@ export default function WarehouseOutbound() {
   const [createLoadModalOpen, setCreateLoadModalOpen] = useState(false);
   const [markDispatchedModalOpen, setMarkDispatchedModalOpen] = useState(false);
   const [selectedLoadToDispatch, setSelectedLoadToDispatch] = useState(null);
+  const [openActionMenuId, setOpenActionMenuId] = useState(null);
+  const [selectedViewLoad, setSelectedViewLoad] = useState(null);
   const [toast, setToast] = useState(null);
 
   const showToast = (msg, type = 'success') => {
@@ -938,14 +940,55 @@ export default function WarehouseOutbound() {
                             {item.status}
                           </span>
                         </td>
-                        <td style={{ textAlign: 'right' }}>
+                        <td style={{ textAlign: 'right', position: 'relative' }}>
                           <div className="flex items-center justify-end gap-1">
-                            <button className="btn-view-load" onClick={() => alert(`Viewing load manifest for ${item.loadRef}`)}>
+                            <button className="btn-view-load" onClick={() => setSelectedViewLoad(item)}>
                               View
                             </button>
-                            <button className="btn-more-dp" onClick={() => alert(`Options for ${item.loadRef}`)}>
+                            <button 
+                              className="btn-more-dp cursor-pointer" 
+                              onClick={() => setOpenActionMenuId(openActionMenuId === item.loadRef ? null : item.loadRef)}
+                            >
                               <MoreVertical size={14} />
                             </button>
+
+                            {openActionMenuId === item.loadRef && (
+                              <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 text-left">
+                                <button
+                                  onClick={() => {
+                                    setSelectedViewLoad(item);
+                                    setOpenActionMenuId(null);
+                                  }}
+                                  className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-blue-600" />
+                                  <span>View Manifest</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedLoadToDispatch(item);
+                                    setMarkDispatchedModalOpen(true);
+                                    setOpenActionMenuId(null);
+                                  }}
+                                  className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Truck className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>Mark Dispatched</span>
+                                </button>
+                                <div className="my-1 border-t border-slate-100" />
+                                <button
+                                  onClick={() => {
+                                    setLoads(prev => prev.filter(l => l.loadRef !== item.loadRef));
+                                    showToast(`Load ${item.loadRef} removed from Dispatch Ready list.`);
+                                    setOpenActionMenuId(null);
+                                  }}
+                                  className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 text-xs font-semibold flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                  <span>Remove From Staging</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1154,6 +1197,74 @@ export default function WarehouseOutbound() {
                 <button type="submit" className="px-4 py-1.5 bg-green-500 text-white rounded text-xs font-extrabold">Confirm & Dispatch</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW LOAD MANIFEST MODAL */}
+      {selectedViewLoad && (
+        <div className="wh-modal-overlay" onClick={() => setSelectedViewLoad(null)}>
+          <div className="wh-modal-box max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="wh-modal-header flex justify-between items-center pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900">Load Manifest: {selectedViewLoad.loadRef}</h3>
+                <p className="text-xs text-slate-500 font-medium">Staged & Ready for Dispatch Departure</p>
+              </div>
+              <button onClick={() => setSelectedViewLoad(null)} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="wh-modal-body py-4 space-y-3 text-left">
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Carrier / Vehicle</span>
+                  <span className="text-xs font-extrabold text-slate-800">{selectedViewLoad.vehicle || 'Tata Punch (1234)'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Driver</span>
+                  <span className="text-xs font-extrabold text-slate-800">{selectedViewLoad.driver || 'Driver VIC 11223'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Load Lane / Staging</span>
+                  <span className="text-xs font-extrabold text-blue-600">{selectedViewLoad.lane || 'Main Yard'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Staged Since</span>
+                  <span className="text-xs font-extrabold text-emerald-600">{selectedViewLoad.readySince || 'Today'}</span>
+                </div>
+              </div>
+
+              <div className="border border-slate-200 rounded-xl p-3 bg-white space-y-2">
+                <span className="text-[10.5px] font-bold text-slate-700 block border-b border-slate-100 pb-1">Items Staged on Load (2)</span>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-semibold text-slate-700">• Palletized Vehicle Freight #1</span>
+                  <span className="font-bold text-slate-500">Staged</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-semibold text-slate-700">• Commercial Fleet Unit #2</span>
+                  <span className="font-bold text-slate-500">Staged</span>
+                </div>
+              </div>
+            </div>
+            <div className="wh-modal-footer pt-3 border-t border-slate-100 flex justify-end gap-2">
+              <button 
+                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                onClick={() => setSelectedViewLoad(null)}
+              >
+                Close
+              </button>
+              <button 
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-xs font-bold text-white shadow-sm flex items-center gap-1.5 cursor-pointer"
+                onClick={() => {
+                  setSelectedLoadToDispatch(selectedViewLoad);
+                  setSelectedViewLoad(null);
+                  setMarkDispatchedModalOpen(true);
+                }}
+              >
+                <Truck size={14} />
+                <span>Proceed to Departure</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

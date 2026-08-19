@@ -924,36 +924,113 @@ export default function Drivers() {
     );
   };
 
-  const HeaderIcons = () => (
-    <div className="flex items-center gap-4">
-      <button onClick={() => alert('Help Center is currently being built. Stay tuned!')} className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer">
-        <HelpCircle size={14} /> <span>Need help?</span>
-      </button>
-      <div className="flex items-center gap-2">
-        <div className="relative cursor-pointer">
-          <div onClick={() => setIsAlertOpen(!isAlertOpen)}>
-            <AlertCircle size={16} className="text-slate-400 hover:text-purple-600 transition-colors" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full text-[7px] text-white flex items-center justify-center font-bold">3</span>
-          </div>
-          {isAlertOpen && (
-            <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-lg p-3 z-50">
-              <h4 className="text-xs font-black text-slate-800 mb-2">Notifications (3)</h4>
-              <div className="text-[10px] text-slate-500 p-2 hover:bg-slate-50 rounded-lg border-b border-slate-50">Ahmed Khan is unavailable.</div>
-              <div className="text-[10px] text-slate-500 p-2 hover:bg-slate-50 rounded-lg border-b border-slate-50">2 Drivers have documents expiring soon.</div>
-              <div className="text-[10px] text-slate-500 p-2 hover:bg-slate-50 rounded-lg">New load assigned.</div>
+  const HeaderIcons = () => {
+    const alertsList = React.useMemo(() => {
+      const list = [];
+      const drvArray = (typeof driversList !== 'undefined' ? driversList : (typeof drivers !== 'undefined' ? drivers : [])) || [];
+      const unavail = drvArray.filter(d => (d.status && d.status.toString().toLowerCase().includes('unavail')) || d.status === 'OFF_DUTY');
+      if (unavail.length > 0) {
+        const dName = unavail[0].firstName || unavail[0].name || unavail[0].driverCode || 'Driver';
+        list.push(`${dName} is currently ${unavail[0].status || 'unavailable'}.`);
+      }
+      const expCount = drvArray.filter(d => d.complianceStatus === 'ACTION_REQUIRED' || d.complianceStatus === 'EXPIRED').length;
+      if (expCount > 0) {
+        list.push(`${expCount} driver(s) have compliance documents requiring review.`);
+      } else {
+        list.push('All driver compliance documents are up to date.');
+      }
+      const totalCount = drvArray.length;
+      if (totalCount > 0) {
+        list.push(`${totalCount} active driver(s) registered in fleet.`);
+      } else {
+        list.push('Fleet operation active & compliant.');
+      }
+      return list;
+    }, []);
+
+    return (
+      <div className="flex items-center gap-4">
+        <button onClick={() => alert('Help Center is currently being built. Stay tuned!')} className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer">
+          <HelpCircle size={14} /> <span>Need help?</span>
+        </button>
+        <div className="flex items-center gap-2">
+          <div className="relative cursor-pointer">
+            <div onClick={() => setIsAlertOpen(!isAlertOpen)}>
+              <AlertCircle size={16} className="text-slate-400 hover:text-purple-600 transition-colors" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full text-[7px] text-white flex items-center justify-center font-bold">{alertsList.length}</span>
             </div>
-          )}
-        </div>
+            {isAlertOpen && (
+              <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-lg p-3 z-50">
+                <h4 className="text-xs font-black text-slate-800 mb-2">Notifications ({alertsList.length})</h4>
+                {alertsList.map((item, idx) => (
+                  <div key={idx} className="text-[10px] text-slate-600 p-2 hover:bg-slate-50 rounded-lg border-b border-slate-100 last:border-0">{item}</div>
+                ))}
+              </div>
+            )}
+          </div>
         <div className="relative cursor-pointer">
           <div onClick={() => setIsMoreOpen(!isMoreOpen)}>
             <MoreVertical size={16} className="text-slate-400 hover:text-purple-600 transition-colors" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full text-[7px] text-white flex items-center justify-center font-bold">12</span>
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full text-[7px] text-white flex items-center justify-center font-bold">
+              {alertsList.length}
+            </span>
           </div>
           {isMoreOpen && (
-            <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-2 z-50">
-              <button className="w-full text-left text-xs font-semibold text-slate-700 p-2 hover:bg-purple-50 hover:text-purple-700 rounded-lg transition-colors">Action Items (12)</button>
-              <button className="w-full text-left text-xs font-semibold text-slate-700 p-2 hover:bg-purple-50 hover:text-purple-700 rounded-lg transition-colors">Manage Columns</button>
-              <button className="w-full text-left text-xs font-semibold text-slate-700 p-2 hover:bg-purple-50 hover:text-purple-700 rounded-lg transition-colors">Import/Export Data</button>
+            <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-2 z-50 animate-in fade-in zoom-in-95">
+              <button
+                onClick={() => {
+                  setIsMoreOpen(false);
+                  if (typeof setComplianceFilter === 'function') setComplianceFilter('ACTION_REQUIRED');
+                  alert(`Action Items: Displaying ${alertsList.length} pending fleet item(s).`);
+                }}
+                className="w-full text-left text-xs font-semibold text-slate-700 p-2 hover:bg-purple-50 hover:text-purple-700 rounded-lg transition-colors cursor-pointer flex items-center justify-between"
+              >
+                <span>Action Items</span>
+                <span className="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-[10px] rounded-full font-bold">{alertsList.length}</span>
+              </button>
+              <button
+                onClick={() => {
+                  setIsMoreOpen(false);
+                  alert('Manage Columns: Displaying all standard columns (Driver, ID, Phone, Licence, Compliance, Status, Branch).');
+                }}
+                className="w-full text-left text-xs font-semibold text-slate-700 p-2 hover:bg-purple-50 hover:text-purple-700 rounded-lg transition-colors cursor-pointer"
+              >
+                Manage Columns
+              </button>
+              <button
+                onClick={() => {
+                  setIsMoreOpen(false);
+                  // Trigger CSV file export
+                  const list = (typeof driversList !== 'undefined' ? driversList : (typeof drivers !== 'undefined' ? drivers : [])) || [];
+                  if (list.length === 0) {
+                    alert('No driver data available to export.');
+                    return;
+                  }
+                  const headers = ['Driver ID', 'Name', 'Phone', 'Email', 'Licence Class', 'Licence No', 'Compliance Status', 'Status', 'Branch'];
+                  const rows = list.map(d => [
+                    `"${d.id || d.driverCode || ''}"`,
+                    `"${d.name || ((d.firstName || '') + ' ' + (d.lastName || ''))}"`,
+                    `"${d.phone || ''}"`,
+                    `"${d.email || ''}"`,
+                    `"${d.licence || d.licenceType || 'Heavy Rigid'}"`,
+                    `"${d.licenceNo || ''}"`,
+                    `"${d.complianceStatus || 'Compliant'}"`,
+                    `"${d.status || 'Active'}"`,
+                    `"${d.branch || 'Sydney'}"`
+                  ]);
+                  const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+                  const encodedUri = encodeURI(csvContent);
+                  const link = document.createElement('a');
+                  link.setAttribute('href', encodedUri);
+                  link.setAttribute('download', `Drivers_Fleet_Export_${new Date().toISOString().slice(0, 10)}.csv`);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="w-full text-left text-xs font-semibold text-slate-700 p-2 hover:bg-purple-50 hover:text-purple-700 rounded-lg transition-colors cursor-pointer"
+              >
+                Import/Export Data
+              </button>
             </div>
           )}
         </div>
@@ -973,6 +1050,7 @@ export default function Drivers() {
       </div>
     </div>
   );
+};
 
   const SectionHeading = ({ title }) => (
     <h3 className="text-[13px] font-black text-slate-900 mb-4">{title}</h3>

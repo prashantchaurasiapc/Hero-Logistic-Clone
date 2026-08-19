@@ -6,12 +6,12 @@ import {
   FileText, AlertTriangle, CheckCircle, BarChart3, PieChart, Shield, ArrowUpRight,
   MoreVertical, Box, ArrowDownRight, RefreshCw, Eye, History, FileSpreadsheet,
   AlertCircle, DollarSign, Activity, HardHat, CheckSquare, Zap, Cpu, MapPin,
-  Thermometer, CheckCircle2, XCircle
+  Thermometer, CheckCircle2, XCircle, X
 } from 'lucide-react';
 
 export default function WarehouseReports() {
   const [activeTab, setActiveTab] = useState('Overview');
-  const [dateRange] = useState(() => {
+  const [dateRange, setDateRange] = useState(() => {
     const now = new Date();
     const day = now.getDay();
     const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
@@ -19,12 +19,16 @@ export default function WarehouseReports() {
     const fmt = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     return `This Week (${fmt(mon)} – ${fmt(sun)})`;
   });
+  const [dateMenuOpen, setDateMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWarehouse, setSelectedWarehouse] = useState('All Warehouses');
   const [selectedZone, setSelectedZone] = useState('All Zones');
   const [selectedLane, setSelectedLane] = useState('All Load Lanes');
   const [selectedItemType, setSelectedItemType] = useState('All Item Types');
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
+  const [filterCondition, setFilterCondition] = useState('All Conditions');
+  const [filterCustomer, setFilterCustomer] = useState('All Customers');
   const [toast, setToast] = useState(null);
 
   const [dbKpis, setDbKpis] = useState(null);
@@ -634,10 +638,59 @@ export default function WarehouseReports() {
         </div>
 
         <div className="wh-rep-header-actions">
-          <div className="wh-rep-date-picker">
-            <Calendar size={14} className="text-slate-500" />
-            <span>{dateRange}</span>
-            <ChevronDown size={14} className="text-slate-400" />
+          <div className="relative">
+            <div 
+              className="wh-rep-date-picker cursor-pointer"
+              onClick={() => setDateMenuOpen(!dateMenuOpen)}
+            >
+              <Calendar size={14} className="text-slate-500" />
+              <span>{dateRange}</span>
+              <ChevronDown size={14} className="text-slate-400" />
+            </div>
+
+            {dateMenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 'calc(100% + 6px)',
+                  background: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '10px',
+                  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                  padding: '6px',
+                  zIndex: 1000,
+                  minWidth: '240px',
+                  textAlign: 'left'
+                }}
+              >
+                {['Today', 'This Week', 'Last Week', 'This Month', 'Last Month'].map((preset) => (
+                  <div
+                    key={preset}
+                    className="wh-dropdown-item hover:bg-slate-50"
+                    style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', borderRadius: '6px', color: '#0F172A' }}
+                    onClick={() => {
+                      const now = new Date();
+                      if (preset === 'Today') {
+                        setDateRange(`Today (${now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})`);
+                      } else if (preset === 'This Week') {
+                        setDateRange('This Week (17 Aug 2026 – 23 Aug 2026)');
+                      } else if (preset === 'Last Week') {
+                        setDateRange('Last Week (10 Aug 2026 – 16 Aug 2026)');
+                      } else if (preset === 'This Month') {
+                        setDateRange('This Month (August 2026)');
+                      } else if (preset === 'Last Month') {
+                        setDateRange('Last Month (July 2026)');
+                      }
+                      setDateMenuOpen(false);
+                      showToast(`Date filter updated to ${preset}`);
+                    }}
+                  >
+                    <span>{preset}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="relative">
@@ -765,7 +818,7 @@ export default function WarehouseReports() {
           <option>Loose Cargo</option>
         </select>
 
-        <button className="wh-rep-filter-btn" onClick={() => showToast('Opening Advanced Filters')}>
+        <button className="wh-rep-filter-btn cursor-pointer" onClick={() => setIsAdvancedFilterOpen(!isAdvancedFilterOpen)}>
           <Filter size={12} />
           <span>Filters</span>
           <ChevronDown size={11} />
@@ -1151,6 +1204,111 @@ export default function WarehouseReports() {
         </div>
 
       </div>
+
+      {/* ADVANCED FILTERS MODAL */}
+      {isAdvancedFilterOpen && (
+        <div className="wh-modal-overlay" onClick={() => setIsAdvancedFilterOpen(false)}>
+          <div className="wh-modal-box max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="wh-modal-header flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Filter size={16} className="text-amber-500" />
+                <h3 className="font-extrabold text-base text-slate-900">Advanced Analytics Filters</h3>
+              </div>
+              <button onClick={() => setIsAdvancedFilterOpen(false)} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="wh-modal-body py-4 space-y-4 text-left">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Warehouse / Depot</label>
+                <select 
+                  value={selectedWarehouse} 
+                  onChange={e => setSelectedWarehouse(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 bg-slate-50"
+                >
+                  <option>All Warehouses</option>
+                  <option>Main Yard Depot</option>
+                  <option>Secondary Storage</option>
+                  <option>South Hub Yard</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Stock Condition</label>
+                <select 
+                  value={filterCondition} 
+                  onChange={e => setFilterCondition(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 bg-slate-50"
+                >
+                  <option>All Conditions</option>
+                  <option>Good / Normal</option>
+                  <option>Damaged / Exception</option>
+                  <option>Staged for Dispatch</option>
+                  <option>Dispatched</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Customer Account</label>
+                <select 
+                  value={filterCustomer} 
+                  onChange={e => setFilterCustomer(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 bg-slate-50"
+                >
+                  <option>All Customers</option>
+                  <option>Direct Customer</option>
+                  <option>Hero Logistics Client</option>
+                  <option>Commercial Fleet Client</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Start Date</label>
+                  <input type="date" className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-700" defaultValue="2026-08-17" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">End Date</label>
+                  <input type="date" className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-700" defaultValue="2026-08-23" />
+                </div>
+              </div>
+            </div>
+
+            <div className="wh-modal-footer pt-3 border-t border-slate-100 flex justify-between items-center">
+              <button 
+                onClick={() => {
+                  setSelectedWarehouse('All Warehouses');
+                  setFilterCondition('All Conditions');
+                  setFilterCustomer('All Customers');
+                  showToast('Filters reset to default.');
+                }}
+                className="text-xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+              >
+                Reset All
+              </button>
+
+              <div className="flex gap-2">
+                <button 
+                  className="px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  onClick={() => setIsAdvancedFilterOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="px-4 py-2 bg-[#FFCC00] hover:bg-[#FACC15] rounded-xl text-xs font-bold text-black shadow-sm cursor-pointer"
+                  onClick={() => {
+                    setIsAdvancedFilterOpen(false);
+                    showToast('Advanced analytics filters applied successfully!');
+                  }}
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TOAST NOTIFICATION */}
       {toast && (

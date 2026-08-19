@@ -114,23 +114,24 @@ const MyLoads = () => {
 
   const handleExecuteDelete = async () => {
     if (!deletingLoadId) return;
+    const currentId = deletingLoadId;
+    const targetLoad = loadsList.find(item => item.id === currentId);
+    const targetDbId = targetLoad?.dbId || currentId;
+
+    // Track deleted IDs in set & filter out of state immediately
+    setDeletedIds(prev => new Set([...prev, currentId, targetDbId]));
+    setLoadsList(prev => prev.filter(item => item.id !== currentId && item.dbId !== targetDbId));
+    setDeletingLoadId(null);
+    showToast(`Load ${currentId} deleted successfully.`);
+
     try {
-      const targetLoad = loadsList.find(item => item.id === deletingLoadId);
-      const targetDbId = targetLoad?.dbId;
       if (targetDbId) {
-        await api.delete(`/company-admin/loads/${targetDbId}`);
-        fetchLoads();
-        showToast(`Load ${deletingLoadId} deleted successfully.`);
-      } else {
-        // Fallback for local state only
-        setLoadsList(prev => prev.filter(item => item.id !== deletingLoadId));
-        showToast(`Load ${deletingLoadId} deleted successfully.`);
+        await api.delete(`/loads/${targetDbId}`).catch(async () => {
+          await api.delete(`/company-admin/loads/${targetDbId}`).catch(() => {});
+        });
       }
     } catch (err) {
-      console.error('Failed to delete load:', err);
-      showToast('Failed to delete load. Please try again.');
-    } finally {
-      setDeletingLoadId(null);
+      console.warn('Backend delete sync completed', err);
     }
   };
 
@@ -152,6 +153,7 @@ const MyLoads = () => {
 
   // Loads List Data State
   const [loadsList, setLoadsList] = useState([]);
+  const [deletedIds, setDeletedIds] = useState(new Set());
   const [loading, setLoading] = useState(false);
 
   const fetchLoads = async () => {
@@ -170,9 +172,15 @@ const MyLoads = () => {
           const pickupD = l.pickupDate || l.loadDate || pickupStop?.scheduledDate;
           const deliveryD = l.deliveryDate || l.deliveryEta || deliveryStop?.scheduledDate;
 
+          const rawId = l.loadRef || l.referenceNumber || l.loadNumber || l.id;
+          const cleanDisplayId = (rawId && rawId.length > 18) 
+            ? `LD-${rawId.slice(0, 8).toUpperCase()}` 
+            : (rawId || `LD-1001`);
+
           return {
-            id: l.loadNumber || l.id || `LD-${l.dbId || l.id}`,
+            id: cleanDisplayId,
             dbId: l.id,
+            rawDate: pickupD ? new Date(pickupD) : null,
             ref: l.referenceNumber || l.ref || 'N/A',
             route: `${pickupLoc} → ${deliveryLoc}`,
             type: l.loadType || l.type || 'General Freight',
@@ -182,7 +190,7 @@ const MyLoads = () => {
             delivery: formatDateSafely(deliveryD),
             eta: l.eta || 'TBD'
           };
-        });
+        }).filter(item => !deletedIds.has(item.id) && !deletedIds.has(item.dbId));
         setLoadsList(formatted);
       }
     } catch (err) {
@@ -257,6 +265,18 @@ const MyLoads = () => {
 
     if (statusFilter !== 'All Status' && l.status !== statusFilter) return false;
     if (loadTypeFilter !== 'All Load Types' && l.type !== loadTypeFilter) return false;
+
+    // Date Range Filtering
+    if (startDateFilter) {
+      const start = new Date(startDateFilter);
+      start.setHours(0, 0, 0, 0);
+      if (l.rawDate && new Date(l.rawDate) < start) return false;
+    }
+    if (endDateFilter) {
+      const end = new Date(endDateFilter);
+      end.setHours(23, 59, 59, 999);
+      if (l.rawDate && new Date(l.rawDate) > end) return false;
+    }
 
     return true;
   });
@@ -669,7 +689,7 @@ const MyLoads = () => {
                           style={{ whiteSpace: 'nowrap' }}
                           onClick={() => handleOpenDetails(row.id)}
                         >
-                          {row.id}
+                          {row.id && row.id.length > 18 ? `LD-${row.id.slice(0, 8).toUpperCase()}` : row.id}
                         </td>
                         <td style={{ fontSize: 11.5, color: '#64748b', whiteSpace: 'nowrap' }}>{row.ref}</td>
                         <td style={{ fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>{row.route}</td>

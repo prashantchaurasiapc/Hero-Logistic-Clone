@@ -27,6 +27,7 @@ const WarehouseLabels = () => {
   // Action Button Focus Outline Highlight States
   const [isPrintAllActive, setIsPrintAllActive] = useState(false);
   const [activeAction, setActiveAction] = useState({ rowId: null, type: null }); // type: 'Print', 'Reprint', 'Preview', 'PDF', 'Details', 'History'
+  const [printModalLabel, setPrintModalLabel] = useState(null);
 
   // History Drawer state
   const [historyDrawer, setHistoryDrawer] = useState({
@@ -133,27 +134,8 @@ const WarehouseLabels = () => {
         ]
       });
     } else {
-      if (type === 'Details') {
-        showToast(`Viewing details for ${row.id}`);
-      } else if (type === 'PDF') {
-        showToast(`Downloading PDF for ${row.id}`);
-      } else if (type === 'Print' || type === 'Reprint') {
-        try {
-          const res = await api.post('/warehouse-portal/labels/print', {
-            labelType: row.assetType === 'Vehicle' ? 'VIN Label' : 'Pallet Label',
-            itemId: row.itemId,
-            printerTarget: 'Zebra GK420d',
-            copies: 1
-          });
-          showToast(`✓ Label ${row.id} spooled successfully (Job: ${res.data?.data?.jobId || '#PJ-100'})`);
-          // Update status
-          setLabelsData(prev => prev.map(r => r.id === row.id ? { ...r, status: type === 'Print' ? 'Printed' : 'Reprinted' } : r));
-        } catch (err) {
-          console.error('Failed to print:', err);
-          showToast(`Error printing label: ${err.message}`);
-        }
-      } else if (type === 'Preview') {
-        showToast(`Opening preview for Label ${row.id}...`);
+      if (type === 'Print' || type === 'Reprint' || type === 'Preview' || type === 'PDF' || type === 'Details') {
+        setPrintModalLabel(row);
       }
       
       setTimeout(() => {
@@ -630,6 +612,82 @@ const WarehouseLabels = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PRINT BARCODE LABEL PREVIEW MODAL */}
+      {printModalLabel && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyCenter: 'center', padding: '16px' }} onClick={() => setPrintModalLabel(null)}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '20px', maxWidth: '440px', width: '100%', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', border: '1px solid #e2e8f0', margin: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid #f1f5f9', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Print Asset Barcode Tag: {printModalLabel.id}</h3>
+                <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0 0 0', fontWeight: '500' }}>Zebra Thermal Barcode Spooler Target</p>
+              </div>
+              <button onClick={() => setPrintModalLabel(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            {/* PRINTABLE BARCODE TAG PREVIEW */}
+            <div style={{ border: '2px dashed #cbd5e1', borderRadius: '16px', padding: '20px', backgroundColor: '#fffbeb', textAlign: 'center', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #fde68a', paddingBottom: '8px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '10px', fontWeight: '900', color: '#b45309', letterSpacing: '0.6px' }}>HERO LOGISTICS DEPO TAG</span>
+                <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '12px' }}>{printModalLabel.assetType || 'Vehicle'}</span>
+              </div>
+
+              <div style={{ margin: '8px 0' }}>
+                <div style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', fontFamily: 'monospace', letterSpacing: '1px' }}>{printModalLabel.stock || 'STK-4401'}</div>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: '#475569', marginTop: '2px' }}>VIN / ITEM: {printModalLabel.vin || 'VIN-9011280'}</div>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>{printModalLabel.customer || 'Hero Logistics Client'}</div>
+              </div>
+
+              {/* VISUAL BARCODE SVG GRAPHIC */}
+              <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', height: '45px', width: '100%', justifyContent: 'center', opacity: 0.85 }}>
+                  <div style={{ width: '3px', height: '100%', background: '#0f172a' }}></div>
+                  <div style={{ width: '6px', height: '100%', background: '#0f172a' }}></div>
+                  <div style={{ width: '2px', height: '100%', background: '#0f172a' }}></div>
+                  <div style={{ width: '8px', height: '100%', background: '#0f172a' }}></div>
+                  <div style={{ width: '4px', height: '100%', background: '#0f172a' }}></div>
+                  <div style={{ width: '2px', height: '100%', background: '#0f172a' }}></div>
+                  <div style={{ width: '7px', height: '100%', background: '#0f172a' }}></div>
+                  <div style={{ width: '3px', height: '100%', background: '#0f172a' }}></div>
+                  <div style={{ width: '9px', height: '100%', background: '#0f172a' }}></div>
+                  <div style={{ width: '2px', height: '100%', background: '#0f172a' }}></div>
+                  <div style={{ width: '5px', height: '100%', background: '#0f172a' }}></div>
+                  <div style={{ width: '3px', height: '100%', background: '#0f172a' }}></div>
+                </div>
+                <span style={{ fontSize: '10.5px', fontWeight: '700', fontFamily: 'monospace', color: '#334155', marginTop: '6px' }}>{printModalLabel.barcode || printModalLabel.id}</span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', fontSize: '10px', fontWeight: '700', color: '#64748b' }}>
+                <span>LOCATION: <strong style={{ color: '#0f172a' }}>{printModalLabel.location || 'Yard'}</strong></span>
+                <span>STATUS: <strong style={{ color: '#15803d' }}>PRINTABLE</strong></span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
+              <button 
+                onClick={() => setPrintModalLabel(null)}
+                style={{ padding: '8px 16px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', fontSize: '12px', fontWeight: '700', color: '#475569', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  window.print();
+                  setLabelsData(prev => prev.map(r => r.id === printModalLabel.id ? { ...r, status: 'Printed' } : r));
+                  showToast(`✓ Label ${printModalLabel.id} sent to printer spooler.`);
+                  setPrintModalLabel(null);
+                }}
+                style={{ padding: '8px 16px', borderRadius: '10px', border: 'none', backgroundColor: '#ffcc00', fontSize: '12px', fontWeight: '800', color: '#000000', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Printer size={14} />
+                <span>Print Label (Printer / PDF)</span>
+              </button>
             </div>
           </div>
         </div>

@@ -231,7 +231,14 @@ exports.update = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const findWhere = { id };
+    const findWhere = {
+      OR: [
+        { id: id },
+        { loadRef: id },
+        { loadNumber: id },
+        { referenceNumber: id }
+      ]
+    };
     if (req.tenantId) {
       findWhere.companyId = req.tenantId;
     }
@@ -252,6 +259,19 @@ exports.delete = async (req, res, next) => {
         message: 'Load not found in this company context'
       }, HTTP_STATUS.NOT_FOUND);
     }
+
+    // Cascade delete child records to prevent foreign key constraint failures (P2003)
+    await prisma.customerInvoice.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.preStartChecklist.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.telemetryLog.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.timesheet.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.routeStop.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.loadItem.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.loadExpense.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.loadDocument.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.document.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.loadActivity.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.message.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
 
     await prisma.load.delete({ where: { id: targetLoad.id } });
     

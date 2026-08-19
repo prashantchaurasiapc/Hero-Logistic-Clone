@@ -6,7 +6,7 @@ import {
   CheckCircle2, Clock, AlertTriangle, Box, Truck,
   MapPin, Printer, RefreshCw, X, ChevronLeft, ChevronRight,
   Layers, SlidersHorizontal, ArrowUpDown, Eye, Tag, UserCheck,
-  ShieldAlert, FileText, Trash2, ArrowUpRight, Check, User
+  ShieldAlert, FileText, Trash2, ArrowUpRight, Check, User, LogOut
 } from 'lucide-react';
 
 

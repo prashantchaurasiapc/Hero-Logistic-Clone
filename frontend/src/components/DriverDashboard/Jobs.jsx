@@ -50,12 +50,19 @@ export default function Jobs() {
         apiJobs = res.data.data?.jobs || (Array.isArray(res.data.data) ? res.data.data : []);
       }
       
-      // Also check localStorage assigned loads for driver fallback
+      // Check localStorage assigned loads strictly for the logged-in driver
       const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+      const userStr = localStorage.getItem('user');
+      const userObj = userStr ? JSON.parse(userStr) : {};
+      const currentDriverName = userObj.name || userObj.firstName || 'Driver 1 demo';
+      const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
+
+      const driverList = savedMap[currentDriverName] || savedMap['Driver 1 demo'] || savedMap['driver1'] || [];
       const localJobs = [];
-      Object.values(savedMap).forEach(list => {
-        if (Array.isArray(list)) {
-          list.forEach(item => {
+
+      if (Array.isArray(driverList)) {
+        driverList.forEach(item => {
+          if (!deletedIds.includes(item.id) && !deletedIds.includes(item.dbId)) {
             localJobs.push({
               id: item.id || `LD-${Math.floor(1000 + Math.random() * 9000)}`,
               dbId: item.id,
@@ -64,25 +71,29 @@ export default function Jobs() {
               date: new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }),
               time: '08:00 AM',
               timeColor: '#7c3aed',
-              origin: item.route ? item.route.split('➔')[0]?.trim() || item.route.split('->')[0]?.trim() || 'Melbourne VIC' : 'Melbourne VIC',
-              destination: item.route ? item.route.split('➔')[1]?.trim() || item.route.split('->')[1]?.trim() || 'Sydney NSW' : 'Sydney NSW',
+              origin: item.route ? (item.route.split(/\s*[\u2192\u2794\->]|\sto\s/i)[0]?.trim() || 'Indore') : 'Indore',
+              destination: item.route ? (item.route.split(/\s*[\u2192\u2794\->]|\sto\s/i)[1]?.trim() || 'Bhopal') : 'Bhopal',
               pickupName: item.customer || 'Direct Customer',
-              pickupAddress: item.route || 'Melbourne VIC',
+              pickupAddress: item.route ? (item.route.split(/\s*[\u2192\u2794\->]|\sto\s/i)[0]?.trim() || 'Indore') : 'Indore',
               deliveryName: item.customer || 'Direct Customer',
-              deliveryAddress: item.route || 'Sydney NSW',
+              deliveryAddress: item.route ? (item.route.split(/\s*[\u2192\u2794\->]|\sto\s/i)[1]?.trim() || 'Bhopal') : 'Bhopal',
               loadType: item.loadType || 'General Freight',
               reference: item.id || 'PO-170618',
               stops: '2 Stops',
               distance: '870 km'
             });
-          });
-        }
-      });
+          }
+        });
+      }
 
-      const combined = [...apiJobs];
-      localJobs.forEach(lj => {
-        if (!combined.some(cj => cj.id === lj.id || cj.reference === lj.reference)) {
-          combined.push(lj);
+      // Filter out deleted loads from API jobs as well
+      const filteredApiJobs = apiJobs.filter(cj => !deletedIds.includes(cj.id) && !deletedIds.includes(cj.reference));
+
+      // Prioritize local assigned jobs for current driver first
+      const combined = [...localJobs];
+      filteredApiJobs.forEach(cj => {
+        if (!combined.some(lj => lj.id === cj.id || lj.reference === cj.reference)) {
+          combined.push(cj);
         }
       });
 
