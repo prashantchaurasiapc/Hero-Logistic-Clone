@@ -155,8 +155,40 @@ function AutoFillModal({ onClose, onConfirm }) {
   );
 }
 
+/* ---------- HELPER TO GET DYNAMIC WEEK DAYS ---------- */
+const getWeekDays = (selectedDateObj) => {
+  const curr = new Date(selectedDateObj || '2026-08-19');
+  const validDate = isNaN(curr.getTime()) ? new Date('2026-08-19') : curr;
+  const dayOfWeek = validDate.getDay();
+  const distanceToMon = (dayOfWeek + 6) % 7;
+  
+  const monday = new Date(validDate);
+  monday.setDate(validDate.getDate() - distanceToMon);
+
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const label = d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
+    days.push({
+      dateObj: d,
+      isoDate: d.toISOString().split('T')[0],
+      label,
+      dayName: d.toLocaleDateString('en-GB', { weekday: 'short' }),
+      dayNum: d.getDate(),
+      monthName: d.toLocaleDateString('en-GB', { month: 'short' })
+    });
+  }
+  return days;
+};
+
 /* ---------- MAIN COMPONENT ---------- */
 export default function RosterControl() {
+  const [selectedDate, setSelectedDate] = useState(new Date('2026-08-19'));
+  const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
+  const [activeSelectedDayLabel, setActiveSelectedDayLabel] = useState(null);
+  const currentSelectedDayLabel = activeSelectedDayLabel || (weekDays.length > 2 ? weekDays[2].label : (weekDays[0]?.label || ''));
+
   const [workers, setWorkers] = useState([]);
   const [selectedWorker, setSelectedWorker] = useState(null);
 
@@ -165,27 +197,28 @@ export default function RosterControl() {
       try {
         const res = await api.get('/drivers');
         const dbDrivers = res.data?.data || [];
-        const formatted = dbDrivers.map(d => ({
-          id: d.id,
-          name: (d.firstName || d.lastName) ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : (d.driverCode || d.name || 'Unknown Worker'),
-          role: 'Car Carrier Driver',
-          category: 'Drivers',
-          skills: [d.licenseType || 'Standard'],
-          phone: d.contactNumber || d.phone || 'N/A',
-          email: d.email || 'N/A',
-          certifications: [
-            { name: 'Driver License', status: 'valid', detail: 'Active' }
-          ],
-          schedule: {
-            'Mon 18 May': { status: 'Available' },
-            'Tue 19 May': { status: 'Available' },
-            'Wed 20 May': { status: 'Available' },
-            'Thu 21 May': { status: 'Available' },
-            'Fri 22 May': { status: 'Available' },
-            'Sat 23 May': { status: 'Available' },
-            'Sun 24 May': { status: 'Available' }
-          }
-        }));
+        const formatted = dbDrivers.map(d => {
+          const defaultSchedule = {};
+          weekDays.forEach((wd, i) => {
+            defaultSchedule[wd.label] = {
+              status: i % 5 === 0 ? 'On Shift' : i === 6 ? 'Leave' : 'Available',
+              time: '06:00 - 14:00'
+            };
+          });
+          return {
+            id: d.id,
+            name: (d.firstName || d.lastName) ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : (d.driverCode || d.name || 'Unknown Worker'),
+            role: 'Car Carrier Driver',
+            category: 'Drivers',
+            skills: [d.licenseType || 'Standard'],
+            phone: d.contactNumber || d.phone || 'N/A',
+            email: d.email || 'N/A',
+            certifications: [
+              { name: 'Driver License', status: 'valid', detail: 'Active' }
+            ],
+            schedule: defaultSchedule
+          };
+        });
         setWorkers(formatted);
         if (formatted.length > 0) setSelectedWorker(formatted[0]);
       } catch (error) {
@@ -193,11 +226,13 @@ export default function RosterControl() {
       }
     };
     fetchDrivers();
-  }, []);
+  }, [weekDays]);
+
   const [activeTab, setActiveTab] = useState('Schedule View');
   const [sidebarTab, setSidebarTab] = useState('Overview');
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showAutoFillModal, setShowAutoFillModal] = useState(false);
+  const [showMoreFiltersPanel, setShowMoreFiltersPanel] = useState(false);
   const [assignForWorker, setAssignForWorker] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -205,7 +240,8 @@ export default function RosterControl() {
 
   const [filters, setFilters] = useState({
     branch: 'All Branches', date: todayDateStr, view: 'Week',
-    type: 'All Types', role: 'All Roles', status: 'All Statuses', search: ''
+    type: 'All Types', role: 'All Roles', status: 'All Statuses', search: '',
+    skill: 'All Skills', compliance: 'All Compliance'
   });
 
   const showToast = (msg, type = 'success') => {
@@ -217,6 +253,22 @@ export default function RosterControl() {
     setFilters(prev => ({ ...prev, [field]: e.target.value }));
   };
 
+  const handleResetFilters = () => {
+    setFilters({
+      branch: 'All Branches', date: todayDateStr, view: 'Week',
+      type: 'All Types', role: 'All Roles', status: 'All Statuses', search: '',
+      skill: 'All Skills', compliance: 'All Compliance'
+    });
+    showToast('All filters reset to defaults');
+  };
+
+  const activeExtraFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.skill !== 'All Skills') count++;
+    if (filters.compliance !== 'All Compliance') count++;
+    return count;
+  }, [filters]);
+
   const filteredWorkers = useMemo(() => {
     const s = String(filters.search || '').toLowerCase().trim();
     return workers.filter(worker => {
@@ -225,9 +277,12 @@ export default function RosterControl() {
       const searchMatch = !s || wName.includes(s) || wRole.includes(s);
       const roleMatch = filters.role === 'All Roles' || worker.role === filters.role;
       const typeMatch = filters.type === 'All Types' || String(worker.category || '').toLowerCase().includes(String(filters.type || '').toLowerCase());
-      return searchMatch && roleMatch && typeMatch;
+      const statusMatch = filters.status === 'All Statuses' || worker.schedule?.[currentSelectedDayLabel]?.status === filters.status;
+      const skillMatch = filters.skill === 'All Skills' || (worker.skills && worker.skills.includes(filters.skill));
+
+      return searchMatch && roleMatch && typeMatch && statusMatch && skillMatch;
     });
-  }, [workers, filters]);
+  }, [workers, filters, currentSelectedDayLabel]);
 
   const stats = useMemo(() => {
     if (filteredWorkers.length === 0) {
@@ -236,7 +291,7 @@ export default function RosterControl() {
     const total = filteredWorkers.length;
     let available = 0, onShift = 0, onLeave = 0, absent = 0;
     filteredWorkers.forEach(w => {
-      const today = w.schedule['Fri 22 May'];
+      const today = w.schedule[currentSelectedDayLabel];
       if (today) {
         if (today.status === 'Available') available++;
         if (today.status === 'On Shift') onShift++;
@@ -251,18 +306,18 @@ export default function RosterControl() {
       onLeave, onLeavePercentage: Math.round((onLeave / total) * 100) || 0,
       absent, absentPercentage: Math.round((absent / total) * 100) || 0
     };
-  }, [filteredWorkers]);
+  }, [filteredWorkers, currentSelectedDayLabel]);
 
   const handleExport = () => {
-    const rows = [['Name', 'Role', 'Mon 18 May', 'Tue 19 May', 'Wed 20 May', 'Thu 21 May', 'Fri 22 May', 'Sat 23 May', 'Sun 24 May']];
-    const days = ['Mon 18 May', 'Tue 19 May', 'Wed 20 May', 'Thu 21 May', 'Fri 22 May', 'Sat 23 May', 'Sun 24 May'];
+    const days = weekDays.map(w => w.label);
+    const rows = [['Name', 'Role', ...days]];
     filteredWorkers.forEach(w => {
       rows.push([w.name, w.role, ...days.map(d => w.schedule[d]?.status || '-')]);
     });
     const csv = rows.map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'workforce_schedule.csv'; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = `workforce_schedule_${selectedDate.toISOString().split('T')[0]}.csv`; a.click();
     showToast('Workforce schedule exported successfully!');
   };
 
@@ -346,21 +401,128 @@ export default function RosterControl() {
             ))}
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-semibold text-slate-500">Date</span>
-              <div className="flex items-center border border-slate-200 bg-white rounded-lg px-2 py-1.5 text-sm">
-                <Calendar size={14} className="text-slate-400 mr-2" />
-                <span>{filters.date}</span>
-                <div className="flex items-center ml-4 gap-1">
-                  <ChevronLeft size={16} className="text-slate-400 cursor-pointer hover:text-slate-600" />
-                  <ChevronRight size={16} className="text-slate-400 cursor-pointer hover:text-slate-600" />
+              <div className="flex items-center border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 text-xs font-bold shadow-xs">
+                <Calendar size={14} className="text-slate-400 mr-2 shrink-0" />
+                <input 
+                  type="date" 
+                  value={selectedDate.toISOString().split('T')[0]} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const newD = new Date(e.target.value);
+                      setSelectedDate(newD);
+                      setActiveSelectedDayLabel(null);
+                    }
+                  }}
+                  className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer text-xs" 
+                />
+                <div className="flex items-center ml-2 gap-1">
+                  <button 
+                    type="button"
+                    title="Previous Week"
+                    onClick={() => {
+                      const prev = new Date(selectedDate);
+                      prev.setDate(prev.getDate() - 7);
+                      setSelectedDate(prev);
+                      setActiveSelectedDayLabel(null);
+                    }}
+                    className="p-1 hover:bg-slate-100 rounded text-slate-500 cursor-pointer"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button 
+                    type="button"
+                    title="Next Week"
+                    onClick={() => {
+                      const next = new Date(selectedDate);
+                      next.setDate(next.getDate() + 7);
+                      setSelectedDate(next);
+                      setActiveSelectedDayLabel(null);
+                    }}
+                    className="p-1 hover:bg-slate-100 rounded text-slate-500 cursor-pointer"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
                 </div>
               </div>
             </div>
             <div className="flex flex-col gap-1 mt-4">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                <Filter size={14} /> More Filters
+              <button 
+                type="button"
+                onClick={() => setShowMoreFiltersPanel(!showMoreFiltersPanel)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all cursor-pointer ${
+                  showMoreFiltersPanel || activeExtraFilterCount > 0 
+                    ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-xs' 
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <Filter size={14} className={showMoreFiltersPanel ? 'text-blue-600' : 'text-slate-400'} />
+                <span>More Filters</span>
+                {activeExtraFilterCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">
+                    {activeExtraFilterCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>
+
+          {/* Expandable Advanced Filters Panel */}
+          {showMoreFiltersPanel && (
+            <div className="bg-white border border-blue-200 rounded-xl p-4 shadow-md space-y-3 transition-all animate-fadeIn">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Filter size={13} className="text-blue-600" /> Advanced Filters
+                </span>
+                <button 
+                  onClick={handleResetFilters}
+                  className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline cursor-pointer"
+                >
+                  Reset All Filters
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-slate-600">Skills / License</label>
+                  <select 
+                    value={filters.skill} 
+                    onChange={(e) => handleFilterChange(e, 'skill')}
+                    className="border border-slate-200 bg-slate-50 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-blue-500 font-medium"
+                  >
+                    <option value="All Skills">All Skills</option>
+                    <option value="Standard">Standard</option>
+                    <option value="MR (Medium Rigid)">MR (Medium Rigid)</option>
+                    <option value="HR (Heavy Rigid)">HR (Heavy Rigid)</option>
+                    <option value="MC (Multi Combination)">MC (Multi Combination)</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-slate-600">Compliance Status</label>
+                  <select 
+                    value={filters.compliance} 
+                    onChange={(e) => handleFilterChange(e, 'compliance')}
+                    className="border border-slate-200 bg-slate-50 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-blue-500 font-medium"
+                  >
+                    <option value="All Compliance">All Compliance</option>
+                    <option value="Valid License">Valid License</option>
+                    <option value="Expiring Soon">Expiring Soon</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1 sm:col-span-2">
+                  <label className="text-xs font-bold text-slate-600">Quick Skill Search</label>
+                  <input 
+                    type="text" 
+                    placeholder="Type skill name e.g. Dangerous Goods..." 
+                    value={filters.search}
+                    onChange={(e) => handleFilterChange(e, 'search')}
+                    className="border border-slate-200 bg-slate-50 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-blue-500 font-medium"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -425,12 +587,21 @@ export default function RosterControl() {
                             className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs outline-none" />
                         </div>
                       </th>
-                      {['Mon 18 May', 'Tue 19 May', 'Wed 20 May', 'Thu 21 May', 'Fri 22 May', 'Sat 23 May', 'Sun 24 May'].map((day, i) => (
-                        <th key={i}
-                          className={`px-3 py-3 border-b border-slate-200 font-medium text-center text-xs ${day === 'Fri 22 May' ? 'font-bold text-white bg-blue-600' : 'text-slate-500'}`}>
-                          {day}
-                        </th>
-                      ))}
+                      {weekDays.map((dayObj) => {
+                        const isSelected = dayObj.label === currentSelectedDayLabel;
+                        return (
+                          <th 
+                            key={dayObj.label}
+                            onClick={() => setActiveSelectedDayLabel(dayObj.label)}
+                            className={`px-3 py-3 border-b border-slate-200 font-bold text-center text-xs cursor-pointer transition-all ${
+                              isSelected ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-600'
+                            }`}
+                            title={`Click to select ${dayObj.label}`}
+                          >
+                            {dayObj.label}
+                          </th>
+                        );
+                      })}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -458,25 +629,36 @@ export default function RosterControl() {
                             </div>
                           </div>
                         </td>
-                        {['Mon 18 May', 'Tue 19 May', 'Wed 20 May', 'Thu 21 May', 'Fri 22 May', 'Sat 23 May', 'Sun 24 May'].map((day, idx) => {
-                          const shift = worker.schedule[day];
+                        {weekDays.map((dayObj) => {
+                          const day = dayObj.label;
+                          const shift = worker.schedule?.[day] || { status: 'Available' };
+                          const isDaySelected = day === currentSelectedDayLabel;
                           let statusClass = "text-slate-400";
                           if (shift?.status === 'On Shift') statusClass = "text-emerald-600";
                           if (shift?.status === 'Available') statusClass = "text-emerald-500";
                           if (shift?.status === 'Leave') statusClass = "text-orange-500";
                           if (shift?.status === 'Unavailable') statusClass = "text-rose-500";
                           return (
-                            <td key={idx} className={`px-2 py-3 text-center ${shift?.selected ? 'bg-slate-50' : ''}`}>
-                              {shift ? (
-                                <div className={`flex flex-col items-center justify-center ${shift.selected ? 'border border-emerald-500 rounded p-1 bg-white' : ''}`}>
-                                  <span className={`${statusClass} font-semibold text-[10px]`}>{shift.status}</span>
-                                  {(shift.time || shift.detail) && (
-                                    <span className="text-slate-400 text-[9px]">{shift.time || shift.detail}</span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-slate-300 text-[10px]">-</span>
-                              )}
+                            <td 
+                              key={day} 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedWorker(worker);
+                                setActiveSelectedDayLabel(day);
+                              }}
+                              className={`px-2 py-3 text-center cursor-pointer transition-colors ${
+                                isDaySelected ? 'bg-blue-50/70 font-bold border-x border-blue-200' : 'hover:bg-slate-50'
+                              }`}
+                              title={`Click to inspect shift on ${day}`}
+                            >
+                              <div className={`flex flex-col items-center justify-center p-1 rounded transition-transform active:scale-95 ${
+                                isDaySelected ? 'bg-white shadow-xs border border-blue-300' : ''
+                              }`}>
+                                <span className={`${statusClass} font-bold text-[10px]`}>{shift.status}</span>
+                                {(shift.time || shift.detail) && (
+                                  <span className="text-slate-400 text-[9px]">{shift.time || shift.detail}</span>
+                                )}
+                              </div>
                             </td>
                           );
                         })}
@@ -553,7 +735,7 @@ export default function RosterControl() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="text-base font-bold text-slate-900">{selectedWorker.name}</h3>
-                      {selectedWorker.schedule['Fri 22 May']?.status === 'On Shift' && (
+                      {selectedWorker.schedule?.[currentSelectedDayLabel]?.status === 'On Shift' && (
                         <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 text-[9px] font-bold rounded">On Shift</span>
                       )}
                     </div>
@@ -586,28 +768,44 @@ export default function RosterControl() {
 
                 {sidebarTab === 'Overview' && (
                   <div className="mt-5 space-y-6">
-                    {selectedWorker.schedule['Fri 22 May'] && (
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900 mb-3">Today - {todayDateStr}</h4>
-                        <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 relative">
-                          <span className="text-emerald-700 font-bold text-xs">{selectedWorker.schedule['Fri 22 May'].status}</span>
-                          <span className="absolute top-3 right-3 text-[10px] text-blue-600 font-semibold cursor-pointer hover:underline">Load</span>
-                          <p className="text-xs text-slate-600 mt-1">{selectedWorker.schedule['Fri 22 May'].time || 'N/A'}</p>
-                          <p className="text-xs text-slate-500 mt-1">{selectedWorker.schedule['Fri 22 May'].detail || 'No details'}</p>
-                        </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 mb-3">Selected Date - {currentSelectedDayLabel}</h4>
+                      <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 relative">
+                        <span className="text-emerald-700 font-bold text-xs">
+                          {selectedWorker.schedule?.[currentSelectedDayLabel]?.status || 'Available'}
+                        </span>
+                        <span className="absolute top-3 right-3 text-[10px] text-blue-600 font-semibold cursor-pointer hover:underline">Load</span>
+                        <p className="text-xs text-slate-600 mt-1">
+                          {selectedWorker.schedule?.[currentSelectedDayLabel]?.time || '06:00 - 14:00'}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {selectedWorker.schedule?.[currentSelectedDayLabel]?.detail || 'Regular Roster Shift'}
+                        </p>
                       </div>
-                    )}
+                    </div>
                     <div>
                       <h4 className="text-xs font-bold text-slate-900 mb-3">Availability</h4>
                       <div className="space-y-2">
-                        {[{ day: 'Sat 23 May', label: 'Tomorrow (23 May)' }, { day: 'Sun 24 May', label: 'Sun (24 May)' }].map(({ day, label }) => (
-                          <div key={day} className="flex items-center justify-between">
+                        {weekDays.map(({ label }) => (
+                          <div 
+                            key={label} 
+                            onClick={() => setActiveSelectedDayLabel(label)}
+                            className={`flex items-center justify-between p-1.5 rounded cursor-pointer transition-colors ${
+                              label === currentSelectedDayLabel ? 'bg-blue-50 font-bold' : 'hover:bg-slate-50'
+                            }`}
+                          >
                             <div className="flex items-center gap-2">
-                              <div className={`w-1.5 h-1.5 rounded-full ${selectedWorker.schedule[day]?.status === 'Available' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
-                              <span className="text-xs text-slate-600">{label}</span>
+                              <div className={`w-2 h-2 rounded-full ${
+                                selectedWorker.schedule?.[label]?.status === 'Available' ? 'bg-emerald-500' : 
+                                selectedWorker.schedule?.[label]?.status === 'On Shift' ? 'bg-blue-500' : 'bg-rose-500'
+                              }`}></div>
+                              <span className="text-xs text-slate-700">{label}</span>
                             </div>
-                            <span className={`${selectedWorker.schedule[day]?.status === 'Available' ? 'text-emerald-500' : 'text-rose-500'} text-xs font-semibold`}>
-                              {selectedWorker.schedule[day]?.status || 'Unknown'}
+                            <span className={`${
+                              selectedWorker.schedule?.[label]?.status === 'Available' ? 'text-emerald-600 font-bold' : 
+                              selectedWorker.schedule?.[label]?.status === 'On Shift' ? 'text-blue-600 font-bold' : 'text-slate-500'
+                            } text-xs`}>
+                              {selectedWorker.schedule?.[label]?.status || 'Available'}
                             </span>
                           </div>
                         ))}

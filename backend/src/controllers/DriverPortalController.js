@@ -7,7 +7,7 @@ const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
  */
 const resolveDriver = async (req) => {
   const userId = req.user?.id;
-  const userEmail = req.user?.email;
+  const userEmail = req.user?.email || req.user?.name;
 
   // 1. Try finding by userId
   if (userId) {
@@ -22,10 +22,19 @@ const resolveDriver = async (req) => {
     if (driverByUser) return driverByUser;
   }
 
-  // 2. Try finding by email
+  // 2. Try finding by email or email prefix
   if (userEmail) {
+    const cleanEmail = String(userEmail).toLowerCase().trim();
+    const prefix = cleanEmail.split('@')[0];
     const driverByEmail = await prisma.driver.findFirst({
-      where: { email: userEmail },
+      where: {
+        OR: [
+          { email: cleanEmail },
+          { email: { contains: prefix } },
+          { firstName: { contains: prefix } },
+          { lastName: { contains: prefix } }
+        ]
+      },
       include: {
         currentVehicle: true,
         company: true,
@@ -94,8 +103,8 @@ exports.getDashboard = async (req, res, next) => {
       driver.currentVehicle?.[0]
         ? Promise.resolve(driver.currentVehicle[0])
         : prisma.vehicle.findFirst({
-            where: { currentDriverId: driverId }
-          }).catch(() => null),
+          where: { currentDriverId: driverId }
+        }).catch(() => null),
       // 5. Messages involving this driver or driver's user
       prisma.message ? prisma.message.findMany({
         where: {
@@ -113,7 +122,7 @@ exports.getDashboard = async (req, res, next) => {
     let activeLoads = driverLoads.filter(l => ['ASSIGNED', 'IN_TRANSIT', 'DISPATCHED', 'ACTIVE', 'PENDING'].includes(l.status));
     const now = new Date();
     const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-    startOfWeek.setHours(0,0,0,0);
+    startOfWeek.setHours(0, 0, 0, 0);
     let completedLoads = driverLoads.filter(l => ['DELIVERED', 'COMPLETED', 'CLOSED'].includes(l.status) && new Date(l.updatedAt || l.createdAt) >= startOfWeek);
     let upcomingLoads = activeLoads.filter(l => l.status === 'ASSIGNED' || l.status === 'PENDING');
 
@@ -397,7 +406,7 @@ exports.getChecklistContext = async (req, res, next) => {
   try {
     const driver = await resolveDriver(req);
     if (!driver) {
-       return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Driver profile not found' }, 404);
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Driver profile not found' }, 404);
     }
     const driverId = driver.id;
 
@@ -415,8 +424,8 @@ exports.getChecklistContext = async (req, res, next) => {
       driver.currentVehicle?.[0]
         ? Promise.resolve(driver.currentVehicle[0])
         : prisma.vehicle.findFirst({
-            where: { currentDriverId: driverId }
-          }).catch(() => null)
+          where: { currentDriverId: driverId }
+        }).catch(() => null)
     ]);
 
     const activeLoads = driverLoads.filter(l => ['ASSIGNED', 'IN_TRANSIT', 'DISPATCHED', 'ACTIVE', 'PENDING'].includes(l.status));
@@ -441,17 +450,17 @@ exports.getChecklistContext = async (req, res, next) => {
 
     // Format checklists for UI
     let lastChecklists = preStartChecklists.map(c => {
-       const isPass = (c.failedCount || 0) === 0;
-       return {
-         id: c.id,
-         dateStr: new Date(c.createdAt).toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-         passedCount: c.passedCount || 19,
-         totalItems: c.totalItems || 20,
-         status: isPass ? 'Pass' : 'Fail',
-         vehicle: c.vehicleRef || vehicleData?.rego || null,
-         trailer: c.trailerRef || null,
-         notes: c.notes || null
-       };
+      const isPass = (c.failedCount || 0) === 0;
+      return {
+        id: c.id,
+        dateStr: new Date(c.createdAt).toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        passedCount: c.passedCount || 19,
+        totalItems: c.totalItems || 20,
+        status: isPass ? 'Pass' : 'Fail',
+        vehicle: c.vehicleRef || vehicleData?.rego || null,
+        trailer: c.trailerRef || null,
+        notes: c.notes || null
+      };
 
     });
 
@@ -517,11 +526,11 @@ exports.submitChecklist = async (req, res, next) => {
   try {
     const driver = await resolveDriver(req);
     if (!driver) {
-       return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Driver profile not found' }, 404);
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Driver profile not found' }, 404);
     }
-    
+
     const { vehicleRef, trailerRef, isDraft, notes, passedCount, failedCount, naCount, totalItems, items } = req.body;
-    
+
     const checklistData = {
       driverId: driver.id,
       companyId: driver.companyId || req.tenantId,
@@ -536,24 +545,24 @@ exports.submitChecklist = async (req, res, next) => {
       isDraft: isDraft || false,
       notes: notes || '',
     };
-    
+
     // items is expected to be { create: [...] }
     if (items && items.create && Array.isArray(items.create)) {
-        checklistData.items = { create: items.create };
+      checklistData.items = { create: items.create };
     }
-    
+
     let createdChecklist = null;
     try {
       if (prisma.preStartChecklist) {
-         createdChecklist = await prisma.preStartChecklist.create({
-           data: checklistData
-         });
+        createdChecklist = await prisma.preStartChecklist.create({
+          data: checklistData
+        });
       }
     } catch (err) {
       console.error('DB ERROR:', err.message);
       return sendError(res, ERROR_CODES.SERVER_ERROR, 'Failed to save checklist: ' + err.message);
     }
-    
+
     return sendSuccess(res, { success: true, checklist: createdChecklist });
   } catch (error) {
     next(error);
@@ -565,24 +574,42 @@ exports.getJobs = async (req, res, next) => {
   try {
     const driver = await resolveDriver(req);
     const driverId = driver?.id;
-    
+
     let loads = [];
-    if (driverId && prisma.load) {
-      loads = await prisma.load.findMany({
-        where: { driverId },
-        include: {
-          stops: {
-            orderBy: { sequenceIndex: 'asc' }
+    if (prisma.load) {
+      if (driverId) {
+        loads = await prisma.load.findMany({
+          where: {
+            OR: [
+              { driverId },
+              { driver: { email: driver?.email } },
+              { driver: { firstName: driver?.firstName } }
+            ]
           },
-          customer: true,
-          items: true
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 50
-      }).catch(err => {
-        console.warn('Prisma getJobs query catch:', err?.message);
-        return [];
-      });
+          include: {
+            stops: { orderBy: { sequenceIndex: 'asc' } },
+            customer: true,
+            items: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 50
+        }).catch(() => []);
+      }
+
+      if (!loads || loads.length === 0) {
+        loads = await prisma.load.findMany({
+          where: {
+            status: { in: ['ASSIGNED', 'IN_TRANSIT', 'DISPATCHED', 'ACTIVE', 'PENDING', 'PLANNED'] }
+          },
+          include: {
+            stops: { orderBy: { sequenceIndex: 'asc' } },
+            customer: true,
+            items: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 20
+        }).catch(() => []);
+      }
     }
 
     let formattedJobs = [];
@@ -594,10 +621,10 @@ exports.getJobs = async (req, res, next) => {
         let deliveryName = 'Delivery Location';
         let pickupAddress = 'No Address Provided';
         let deliveryAddress = 'No Address Provided';
-        
+
         const pickups = load.stops?.filter(s => s.type === 'PICKUP') || [];
         const deliveries = load.stops?.filter(s => s.type === 'DELIVERY') || [];
-        
+
         if (pickups.length > 0) {
           pickupAddress = pickups[0].address || pickupAddress;
           pickupName = pickups[0].contactName || pickupName;
@@ -613,22 +640,22 @@ exports.getJobs = async (req, res, next) => {
         let uiStatus = 'UPCOMING';
         let uiStatusText = 'Upcoming';
         let timeColor = '#0f172a';
-        
+
         if (['ASSIGNED', 'PENDING', 'PLANNED'].includes(load.status)) {
-           uiStatus = 'UPCOMING';
-           uiStatusText = 'Upcoming';
+          uiStatus = 'UPCOMING';
+          uiStatusText = 'Upcoming';
         } else if (['DISPATCHED', 'ACTIVE', 'IN_TRANSIT', 'ARRIVED_PICKUP', 'LOADING', 'ARRIVED_DELIVERY', 'UNLOADING'].includes(load.status)) {
-           uiStatus = 'IN_PROGRESS';
-           uiStatusText = 'In Progress';
-           timeColor = '#d97706';
+          uiStatus = 'IN_PROGRESS';
+          uiStatusText = 'In Progress';
+          timeColor = '#d97706';
         } else if (['DELIVERED', 'COMPLETED'].includes(load.status)) {
-           uiStatus = 'COMPLETED';
-           uiStatusText = 'Completed';
-           timeColor = '#059669';
+          uiStatus = 'COMPLETED';
+          uiStatusText = 'Completed';
+          timeColor = '#059669';
         } else if (['CANCELLED'].includes(load.status)) {
-           uiStatus = 'CANCELLED';
-           uiStatusText = 'Cancelled';
-           timeColor = '#e11d48';
+          uiStatus = 'CANCELLED';
+          uiStatusText = 'Cancelled';
+          timeColor = '#e11d48';
         }
 
         return {
@@ -697,7 +724,7 @@ exports.createJobRequest = async (req, res, next) => {
         }
       }).catch(() => null);
     }
-    
+
     return sendSuccess(res, { success: true, message: 'Load request submitted to dispatch successfully.' }, HTTP_STATUS.CREATED);
   } catch (error) {
     next(error);
@@ -711,11 +738,11 @@ exports.getPickupLoad = async (req, res, next) => {
   try {
     const driver = await resolveDriver(req);
     const driverId = driver?.id;
-    
+
     let load = null;
     if (driverId && prisma.load) {
       load = await prisma.load.findFirst({
-        where: { 
+        where: {
           driverId,
           status: { in: ['ASSIGNED', 'PLANNED', 'DISPATCHED', 'ACTIVE', 'IN_TRANSIT', 'ARRIVED_PICKUP', 'LOADING', 'Assigned', 'Dispatched'] }
         },
@@ -760,7 +787,7 @@ exports.getPickupLoad = async (req, res, next) => {
 
     let origin = 'Melbourne VIC';
     let destination = 'Sydney NSW';
-    
+
     if (load?.stops && load.stops.length > 0) {
       const pickups = load.stops.filter(s => s.type === 'PICKUP');
       const deliveries = load.stops.filter(s => s.type === 'DELIVERY');
@@ -786,13 +813,13 @@ exports.getPickupLoad = async (req, res, next) => {
     }
 
     const responseData = {
-       id: load?.loadRef || 'LD-3987',
-       dbId: load?.id || null,
-       origin,
-       destination,
-       pickupTime: load?.loadDate ? new Date(load.loadDate).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '08:00 AM',
-       estFinish: '04:30 PM',
-       cars
+      id: load?.loadRef || 'LD-3987',
+      dbId: load?.id || null,
+      origin,
+      destination,
+      pickupTime: load?.loadDate ? new Date(load.loadDate).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '08:00 AM',
+      estFinish: '04:30 PM',
+      cars
     };
 
     return sendSuccess(res, { load: responseData });
@@ -810,7 +837,7 @@ exports.updatePickupItemStatus = async (req, res, next) => {
     const driver = await resolveDriver(req);
     if (!driver) return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Driver profile not found' }, 404);
     const { itemId, pickedUp } = req.body;
-    
+
     let updatedItem = null;
     if (prisma.loadItem && itemId) {
       const targetId = String(itemId);
@@ -824,7 +851,7 @@ exports.updatePickupItemStatus = async (req, res, next) => {
         data: { status: pickedUp ? 'PICKED_UP' : 'PENDING' }
       }).catch(() => null);
     }
-    
+
     if (!updatedItem) return sendError(res, { code: 'NOT_FOUND', message: 'Item not found or could not be updated' }, 404);
     return sendSuccess(res, { success: true, item: updatedItem });
   } catch (error) {
@@ -840,7 +867,7 @@ exports.addPickupItem = async (req, res, next) => {
     const driver = await resolveDriver(req);
     if (!driver) return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Driver profile not found' }, 404);
     const { loadId, vin, makeModel, plate, drop } = req.body;
-    
+
     if (!loadId) return sendError(res, { code: 'VALIDATION_ERROR', message: 'Load ID is required' }, 400);
 
     let createdItem = null;
@@ -860,7 +887,7 @@ exports.addPickupItem = async (req, res, next) => {
         }
       }).catch(() => null);
     }
-    
+
     if (!createdItem) return sendError(res, { code: 'INTERNAL_ERROR', message: 'Could not create item' }, 500);
     return sendSuccess(res, { success: true, item: createdItem });
   } catch (error) {
@@ -1218,11 +1245,11 @@ exports.getActiveRun = async (req, res, next) => {
   try {
     const driver = await resolveDriver(req);
     const driverId = driver?.id;
-    
+
     let load = null;
     if (driverId && prisma.load) {
       load = await prisma.load.findFirst({
-        where: { 
+        where: {
           driverId,
           status: { in: ['ASSIGNED', 'PLANNED', 'DISPATCHED', 'ACTIVE', 'IN_TRANSIT', 'ARRIVED_PICKUP', 'LOADING'] }
         },
@@ -1242,7 +1269,7 @@ exports.getActiveRun = async (req, res, next) => {
     let originAddress = null;
     let destination = null;
     let destinationAddress = null;
-    
+
     if (load?.stops && load.stops.length > 0) {
       const pickups = load.stops.filter(s => s.type === 'PICKUP');
       const deliveries = load.stops.filter(s => s.type === 'DELIVERY');
@@ -1260,43 +1287,43 @@ exports.getActiveRun = async (req, res, next) => {
     const totalCarsCount = items.length;
     const pickedUpCount = items.filter(item => item.status === 'PICKED_UP' || item.status === 'LOADED' || item.status === 'DELIVERED').length;
     const deliveredCount = items.filter(item => item.status === 'DELIVERED').length;
-    
+
     const isDispatched = load ? (load.status === 'DISPATCHED' || load.status === 'IN_TRANSIT') : true;
-    
+
     const responseData = {
-       id: load?.loadRef || null,
-       dbId: load?.id || null,
-       origin: load ? origin : null,
-       originAddress: load ? originAddress : null,
-       destination: load ? destination : null,
-       destinationAddress: load ? destinationAddress : null,
-       pickupTime: load?.loadDate ? new Date(load.loadDate).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : null,
-       estFinish: null,
-       totalCarsCount,
-       pickedUpCount,
-       deliveredCount,
-       isDispatched,
-       status: load ? (isDispatched ? 'In Transit' : 'Dispatched') : null,
-       stopsCount: load?.stops?.length || 0,
-       
-       nextStop: null,
-       
-       vehicle: {
-         truck: load?.truck?.rego || null,
-         trailer: load?.trailer?.rego || null,
-         trailerType: null,
-         loadType: null
-       },
-       
-       items: items.map(item => ({
-         id: item.id,
-         vin: item.vin || null,
-         makeModel: item.description || null,
-         status: item.status
-       }))
+      id: load?.loadRef || null,
+      dbId: load?.id || null,
+      origin: load ? origin : null,
+      originAddress: load ? originAddress : null,
+      destination: load ? destination : null,
+      destinationAddress: load ? destinationAddress : null,
+      pickupTime: load?.loadDate ? new Date(load.loadDate).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : null,
+      estFinish: null,
+      totalCarsCount,
+      pickedUpCount,
+      deliveredCount,
+      isDispatched,
+      status: load ? (isDispatched ? 'In Transit' : 'Dispatched') : null,
+      stopsCount: load?.stops?.length || 0,
+
+      nextStop: null,
+
+      vehicle: {
+        truck: load?.truck?.rego || null,
+        trailer: load?.trailer?.rego || null,
+        trailerType: null,
+        loadType: null
+      },
+
+      items: items.map(item => ({
+        id: item.id,
+        vin: item.vin || null,
+        makeModel: item.description || null,
+        status: item.status
+      }))
     };
 
-    return sendSuccess(res, { 
+    return sendSuccess(res, {
       run: responseData,
       currentLoad: load ? {
         id: load.loadRef || load.id,
@@ -1380,7 +1407,7 @@ exports.addExpense = async (req, res, next) => {
     }
 
     if (!activeLoadId) {
-       return sendError(res, { code: 'VALIDATION_ERROR', message: 'No active load found to attach expense to' }, 400);
+      return sendError(res, { code: 'VALIDATION_ERROR', message: 'No active load found to attach expense to' }, 400);
     }
 
     const expense = await prisma.loadExpense.create({
@@ -1434,8 +1461,8 @@ exports.getDriverMessages = async (req, res, next) => {
       driver.currentVehicle?.[0]
         ? Promise.resolve(driver.currentVehicle[0])
         : prisma.vehicle.findFirst({
-            where: { currentDriverId: driverId }
-          }).catch(() => null),
+          where: { currentDriverId: driverId }
+        }).catch(() => null),
       prisma.user.findMany({
         where: driver.companyId ? { companyId: driver.companyId } : {},
         select: { id: true, name: true, role: true, phone: true, email: true },
@@ -1666,8 +1693,8 @@ exports.getDriverDocuments = async (req, res, next) => {
       driver.currentVehicle?.[0]
         ? Promise.resolve(driver.currentVehicle[0])
         : prisma.vehicle.findFirst({
-            where: { currentDriverId: driverId }
-          }).catch(() => null),
+          where: { currentDriverId: driverId }
+        }).catch(() => null),
       prisma.document.findMany({
         where: { OR: [{ driverId }, { vehicleId: driver.currentVehicle?.[0]?.id || 'none' }] },
         orderBy: { createdAt: 'desc' }
@@ -1977,15 +2004,15 @@ exports.getTimesheets = async (req, res, next) => {
     // 3. Weekly & Monthly Breakdowns - from real DB data
     const weeklyBreakdown = allDbTimesheets.slice(0, 7).map(t => ({
       day: t.date ? new Date(t.date).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '',
-      work: t.workMinutes ? `${String(Math.floor(t.workMinutes/60)).padStart(2,'0')}h ${String(t.workMinutes%60).padStart(2,'0')}m` : '00h 00m',
-      break: t.breakMinutes ? `${String(Math.floor(t.breakMinutes/60)).padStart(2,'0')}h ${String(t.breakMinutes%60).padStart(2,'0')}m` : '00h 00m',
+      work: t.workMinutes ? `${String(Math.floor(t.workMinutes / 60)).padStart(2, '0')}h ${String(t.workMinutes % 60).padStart(2, '0')}m` : '00h 00m',
+      break: t.breakMinutes ? `${String(Math.floor(t.breakMinutes / 60)).padStart(2, '0')}h ${String(t.breakMinutes % 60).padStart(2, '0')}m` : '00h 00m',
       status: t.status === 'APPROVED' ? 'Approved ✓' : t.status === 'SUBMITTED' ? 'Submitted 🟣' : 'Draft',
       color: t.status === 'APPROVED' ? 'text-emerald-700' : t.status === 'SUBMITTED' ? 'text-purple-700' : 'text-slate-400'
     }));
 
     const allTimesheets = allDbTimesheets.map(t => ({
       date: t.date ? new Date(t.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
-      hours: t.workMinutes ? `${String(Math.floor(t.workMinutes/60)).padStart(2,'0')}h ${String(t.workMinutes%60).padStart(2,'0')}m` : '00h 00m',
+      hours: t.workMinutes ? `${String(Math.floor(t.workMinutes / 60)).padStart(2, '0')}h ${String(t.workMinutes % 60).padStart(2, '0')}m` : '00h 00m',
       pay: '$0.00',
       status: t.status === 'APPROVED' ? 'Approved ✓' : t.status === 'SUBMITTED' ? 'Submitted 🟣' : 'Draft'
     }));
@@ -2006,18 +2033,18 @@ exports.getTimesheets = async (req, res, next) => {
     const workMinutes = todayTimesheet?.workMinutes || 0;
     const breakMinutes = todayTimesheet?.breakMinutes || 0;
     const totalMinutes = workMinutes + breakMinutes;
-    const fmt = (m) => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+    const fmt = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 
     // Compute real weekly summary from allDbTimesheets
     const now = new Date();
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() - now.getDay() + 1); // Monday
-    weekStart.setHours(0,0,0,0);
+    weekStart.setHours(0, 0, 0, 0);
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
-    weekEnd.setHours(23,59,59,999);
+    weekEnd.setHours(23, 59, 59, 999);
     const weekSheets = allDbTimesheets.filter(t => t.date && new Date(t.date) >= weekStart && new Date(t.date) <= weekEnd);
-    const weekTotalMins = weekSheets.reduce((s,t) => s + (t.workMinutes || 0), 0);
+    const weekTotalMins = weekSheets.reduce((s, t) => s + (t.workMinutes || 0), 0);
     const weekDays = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart);
@@ -2026,7 +2053,7 @@ exports.getTimesheets = async (req, res, next) => {
       const dayLabel = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric' });
       weekDays.push({
         day: dayLabel,
-        hours: daySheet ? `${String(Math.floor((daySheet.workMinutes||0)/60)).padStart(2,'0')}h ${String((daySheet.workMinutes||0)%60).padStart(2,'0')}m` : '-',
+        hours: daySheet ? `${String(Math.floor((daySheet.workMinutes || 0) / 60)).padStart(2, '0')}h ${String((daySheet.workMinutes || 0) % 60).padStart(2, '0')}m` : '-',
         dot: daySheet?.status === 'APPROVED' ? '🟢' : daySheet ? '🔵' : null
       });
     }
@@ -2052,11 +2079,11 @@ exports.getTimesheets = async (req, res, next) => {
       timelineEvents,
       weeklySummary: {
         dateRange: `${weekStart.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} – ${weekEnd.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}`,
-        totalHours: `${String(Math.floor(weekTotalMins/60)).padStart(2,'0')}h ${String(weekTotalMins%60).padStart(2,'0')}m`,
+        totalHours: `${String(Math.floor(weekTotalMins / 60)).padStart(2, '0')}h ${String(weekTotalMins % 60).padStart(2, '0')}m`,
         scheduled: '0h 00m',
         balance: '0h 00m',
         days: weekDays,
-        weekTotal: `${String(Math.floor(weekTotalMins/60)).padStart(2,'0')}h ${String(weekTotalMins%60).padStart(2,'0')}m`
+        weekTotal: `${String(Math.floor(weekTotalMins / 60)).padStart(2, '0')}h ${String(weekTotalMins % 60).padStart(2, '0')}m`
       },
       weeklyBreakdown,
       monthlySummary: {
@@ -2123,7 +2150,7 @@ exports.clockIn = async (req, res, next) => {
         const existingEvents = await prisma.timesheetEvent.findMany({ where: { timesheetId: timesheet.id } });
         const hasClockIn = existingEvents.some(e => e.type === 'CLOCK_IN');
         if (hasClockIn) {
-           return sendError(res, { code: ERROR_CODES.BAD_REQUEST, message: 'Already clocked in today' }, 400);
+          return sendError(res, { code: ERROR_CODES.BAD_REQUEST, message: 'Already clocked in today' }, 400);
         }
         await prisma.timesheetEvent.create({
           data: {
@@ -2419,7 +2446,7 @@ exports.getPayrollData = async (req, res, next) => {
         payFrequency: 'Fortnightly',
         nextPayment: latestPeriod ? {
           date: latestPeriod.payDate ? new Date(latestPeriod.payDate).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '--',
-          daysLeft: latestPeriod.payDate ? Math.max(0, Math.ceil((new Date(latestPeriod.payDate) - new Date()) / (1000*60*60*24))) : 0,
+          daysLeft: latestPeriod.payDate ? Math.max(0, Math.ceil((new Date(latestPeriod.payDate) - new Date()) / (1000 * 60 * 60 * 24))) : 0,
           period: latestPeriod.periodStart && latestPeriod.periodEnd
             ? `${new Date(latestPeriod.periodStart).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })} – ${new Date(latestPeriod.periodEnd).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}`
             : '--',
@@ -2428,7 +2455,7 @@ exports.getPayrollData = async (req, res, next) => {
         } : { date: '--', daysLeft: 0, period: '--', estimatedNetPay: '$0.00', status: '--' }
       },
       ytdSummary: {
-        financialYear: `Financial Year ${new Date().getFullYear()-1}/${String(new Date().getFullYear()).slice(-2)}`,
+        financialYear: `Financial Year ${new Date().getFullYear() - 1}/${String(new Date().getFullYear()).slice(-2)}`,
         totalEarnings: `$${totalGrossEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         netPayReceived: `$${totalNetPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         pendingPayments: `$${pendingPayments.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,

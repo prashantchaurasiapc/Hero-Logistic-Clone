@@ -45,9 +45,68 @@ export default function Jobs() {
     try {
       setLoading(true);
       const res = await api.get('/driver-portal/jobs');
+      let apiJobs = [];
       if (res.data?.success) {
-        setJobs(res.data.data.jobs || []);
+        apiJobs = res.data.data?.jobs || (Array.isArray(res.data.data) ? res.data.data : []);
       }
+      
+      // Also check localStorage assigned loads for driver fallback
+      const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+      const localJobs = [];
+      Object.values(savedMap).forEach(list => {
+        if (Array.isArray(list)) {
+          list.forEach(item => {
+            localJobs.push({
+              id: item.id || `LD-${Math.floor(1000 + Math.random() * 9000)}`,
+              dbId: item.id,
+              status: 'UPCOMING',
+              statusText: 'Upcoming',
+              date: new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }),
+              time: '08:00 AM',
+              timeColor: '#7c3aed',
+              origin: item.route ? item.route.split('➔')[0]?.trim() || item.route.split('->')[0]?.trim() || 'Melbourne VIC' : 'Melbourne VIC',
+              destination: item.route ? item.route.split('➔')[1]?.trim() || item.route.split('->')[1]?.trim() || 'Sydney NSW' : 'Sydney NSW',
+              pickupName: item.customer || 'Direct Customer',
+              pickupAddress: item.route || 'Melbourne VIC',
+              deliveryName: item.customer || 'Direct Customer',
+              deliveryAddress: item.route || 'Sydney NSW',
+              loadType: item.loadType || 'General Freight',
+              reference: item.id || 'PO-170618',
+              stops: '2 Stops',
+              distance: '870 km'
+            });
+          });
+        }
+      });
+
+      const combined = [...apiJobs];
+      localJobs.forEach(lj => {
+        if (!combined.some(cj => cj.id === lj.id || cj.reference === lj.reference)) {
+          combined.push(lj);
+        }
+      });
+
+      setJobs(combined.length > 0 ? combined : [
+        {
+          id: 'PO-170618',
+          dbId: 'ld_demo_1',
+          status: 'UPCOMING',
+          statusText: 'Upcoming',
+          date: new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }),
+          time: '08:00 AM',
+          timeColor: '#7c3aed',
+          origin: 'Goa',
+          destination: 'Mumbai',
+          pickupName: 'Direct Customer',
+          pickupAddress: 'Goa Depot',
+          deliveryName: 'Direct Customer',
+          deliveryAddress: 'Mumbai Hub',
+          loadType: 'General Freight',
+          reference: 'PO-170618',
+          stops: '2 Stops',
+          distance: '590 km'
+        }
+      ]);
     } catch (error) {
       console.error('Failed to load jobs', error);
       showToast('❌ Failed to load jobs.');
