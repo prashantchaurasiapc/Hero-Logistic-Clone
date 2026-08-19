@@ -43,6 +43,46 @@ export default function DeliveryPOD() {
   const fetchDeliveryPOD = async () => {
     try {
       setLoading(true);
+
+      // Check if Planning Board assigned an active load to current driver in local memory
+      const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+      const userStr = localStorage.getItem('user');
+      const userObj = userStr ? JSON.parse(userStr) : {};
+      const currentDriverName = userObj.name || userObj.firstName || 'Driver 1 demo';
+      const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
+      const assignedList = (savedMap[currentDriverName] || savedMap['Driver 1 demo'] || savedMap['driver1'] || []).filter(item => !deletedIds.includes(item.id));
+      
+      const activeAssignedLoad = assignedList[0];
+
+      if (activeAssignedLoad) {
+        const routeParts = activeAssignedLoad.route ? activeAssignedLoad.route.split(/\s*[\u2192\u2794\->]|\sto\s/i) : ['Indore', 'Bhopal'];
+        const originStr = routeParts[0]?.trim() || 'Indore';
+        const destStr = routeParts[1]?.trim() || routeParts[0]?.trim() || 'Bhopal';
+
+        const dynamicCars = [
+          { id: 'c1', dbId: 'c1', drop: 'DROP 1', dropLoc: `${destStr} Hub`, vin: '1HGCR2E33AA004352', makeModel: 'Toyota Camry 2024', color: 'White', plate: '4DCL23', delivered: false },
+          { id: 'c2', dbId: 'c2', drop: 'DROP 1', dropLoc: `${destStr} Hub`, vin: 'JM1BL1H2F01121234', makeModel: 'Mazda 3 Hatchback', color: 'Black', plate: 'C00467', delivered: false }
+        ];
+
+        setLoadInfo({
+          id: activeAssignedLoad.id || 'PO-596060',
+          dbId: activeAssignedLoad.id,
+          origin: originStr,
+          destination: destStr,
+          deliveryLocation: `${destStr} Receiving Hub`,
+          address: `${destStr} Depot, MP`,
+          stopIndex: 2,
+          totalStops: 2,
+          eta: '02:30 PM',
+          totalCars: 2,
+          deliveredCars: 0,
+          remainingCars: 2,
+          cars: dynamicCars
+        });
+        setCars(dynamicCars);
+        return;
+      }
+
       const res = await api.get('/driver-portal/delivery-pod');
       if (res.data?.success && res.data.data?.load) {
         setLoadInfo(res.data.data.load);

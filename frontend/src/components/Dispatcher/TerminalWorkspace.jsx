@@ -1027,13 +1027,16 @@ export default function TerminalWorkspace() {
                           trailer: 'TRL-101'
                         };
 
-                        // Save to localStorage for all driver key variants
+                        // Save to localStorage strictly for the selected target driver
                         const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
-                        const keysToUpdate = [targetDriverName, targetDriverName.toLowerCase(), 'DRIVER Demo', 'driver1', 'Michel Jonshon', 'Stiv Smith'];
-                        keysToUpdate.forEach(k => {
-                          const driverList = savedMap[k] || [];
-                          if (!driverList.some(item => item.id === load.id)) {
-                            savedMap[k] = [...driverList, newLoadObj];
+                        const driverList = savedMap[targetDriverName] || [];
+                        if (!driverList.some(item => item.id === load.id)) {
+                          savedMap[targetDriverName] = [...driverList, newLoadObj];
+                        }
+                        // Clear any duplicate load entries from other driver keys
+                        Object.keys(savedMap).forEach(k => {
+                          if (k !== targetDriverName) {
+                            savedMap[k] = (savedMap[k] || []).filter(item => item.id !== load.id);
                           }
                         });
                         localStorage.setItem('hero_assigned_driver_loads', JSON.stringify(savedMap));
@@ -1048,9 +1051,9 @@ export default function TerminalWorkspace() {
                           // ignore API error
                         }
 
-                        // Assign load to target driver timeline
+                        // Assign load to single target driver timeline
                         setDrivers(prev => prev.map(d => {
-                          if (d.name === targetDriverName || true) {
+                          if (d.name === targetDriverName) {
                             const newStartTime = 8 + (d.loads.length * 4);
                             const newEndTime = newStartTime + 4;
                             return {
@@ -1059,7 +1062,7 @@ export default function TerminalWorkspace() {
                               statusColor: 'emerald',
                               loadsCount: `${d.loads.length + 1} Loads`,
                               loads: [
-                                ...d.loads,
+                                ...d.loads.filter(item => item.id !== load.id),
                                 {
                                   ...newLoadObj,
                                   startTime: newStartTime,
@@ -1069,7 +1072,11 @@ export default function TerminalWorkspace() {
                               ]
                             };
                           }
-                          return d;
+                          // Remove load from any non-target driver timeline
+                          return {
+                            ...d,
+                            loads: d.loads.filter(item => item.id !== load.id)
+                          };
                         }));
 
                         setUnassignedLoadsList(prev => prev.filter(l => l.id !== load.id));
