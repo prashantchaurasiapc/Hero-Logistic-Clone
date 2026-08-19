@@ -62,7 +62,7 @@ export default function Reports() {
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedType, setSelectedType] = useState('All Report Types');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
-  const [dateRange, setDateRange] = useState('01 May 2025 - 31 May 2025');
+  const [dateRange, setDateRange] = useState('Year to Date 2026');
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Dropdown Open States
@@ -3059,7 +3059,7 @@ export default function Reports() {
               <div className="absolute top-full right-0 mt-1 w-60 bg-white border border-slate-200 rounded-xl shadow-xl z-20 p-2.5 text-xs">
                 <div className="font-bold text-slate-900 mb-1.5">Select Date Range</div>
                 <div className="space-y-1">
-                  {['01 May 2025 - 31 May 2025', '01 Apr 2025 - 30 Apr 2025', 'Q1 2025 (Jan - Mar)', 'Year to Date 2025'].map(range => (
+                  {['01 Aug 2026 - 31 Aug 2026', '01 Jul 2026 - 31 Jul 2026', 'Q3 2026 (Jul - Sep)', 'Year to Date 2026'].map(range => (
                     <button
                       key={range}
                       onClick={() => { setDateRange(range); setShowDatePicker(false); showToast(`Date updated: ${range}`); }}
@@ -3900,7 +3900,7 @@ export default function Reports() {
             <div className="absolute top-full right-0 mt-1 w-60 bg-white border border-slate-200 rounded-xl shadow-xl z-20 p-2.5 text-xs">
               <div className="font-bold text-slate-900 mb-1.5">Select Date Range</div>
               <div className="space-y-1">
-                {['01 May 2025 - 31 May 2025', '01 Apr 2025 - 30 Apr 2025', 'Q1 2025 (Jan - Mar)', 'Year to Date 2025'].map(range => (
+                {['01 Aug 2026 - 31 Aug 2026', '01 Jul 2026 - 31 Jul 2026', 'Q3 2026 (Jul - Sep)', 'Year to Date 2026'].map(range => (
                   <button
                     key={range}
                     onClick={() => { setDateRange(range); setShowDatePicker(false); showToast(`Date updated: ${range}`); }}

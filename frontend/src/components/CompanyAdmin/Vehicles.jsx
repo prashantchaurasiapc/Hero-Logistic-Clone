@@ -276,7 +276,7 @@ const Vehicles = () => {
           driver: v.driver ? `${v.driver.firstName || ''} ${v.driver.lastName || ''}`.trim() || v.driver.driverCode : '—',
           driverId: v.driver?.driverCode || '',
           driverImg: v.driver?.avatarUrl || '',
-          type: v.category || v.type || 'Vehicle',
+          type: v.regType || v.category || v.type || 'Vehicle',
           make: v.make ? `${v.make} ${v.model || ''}`.trim() : v.model || 'Unknown',
           year: v.year ? String(v.year) : '—',
           status: v.status || 'ACTIVE',
@@ -284,8 +284,8 @@ const Vehicles = () => {
           compliance: v.compliance || 'Compliant',
           nextServiceDate: v.maintenanceDueKm ? `${v.maintenanceDueKm.toLocaleString()} km` : '—',
           nextServiceDays: '',
-          img: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || (((v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.category && v.category.toLowerCase().includes('car'))) ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60"),
-          photoUrl: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || (((v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.category && v.category.toLowerCase().includes('car'))) ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60"),
+          img: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || (((v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.regType && v.regType.toLowerCase().includes('car')) || (v.category && v.category.toLowerCase().includes('car'))) ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60"),
+          photoUrl: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || (((v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.regType && v.regType.toLowerCase().includes('car')) || (v.category && v.category.toLowerCase().includes('car'))) ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60"),
           color: v.color || '',
           vin: v.vin || '',
           engineNumber: v.engineNumber || '',
@@ -546,6 +546,9 @@ const Vehicles = () => {
         make: editVehicleForm.make,
         model: editVehicleForm.model,
         year: editVehicleForm.year ? parseInt(editVehicleForm.year) : undefined,
+        type: editVehicleForm.type,
+        regType: editVehicleForm.type,
+        category: editVehicleForm.type,
         engineNumber: editVehicleForm.engine,
         vin: editVehicleForm.vin,
         branch: editVehicleForm.branch,
@@ -3644,6 +3647,8 @@ const Vehicles = () => {
                     model: editVehicleModal.model,
                     year: editVehicleModal.year ? parseInt(editVehicleModal.year) : undefined,
                     status: editVehicleModal.status,
+                    type: editVehicleModal.type,
+                    regType: editVehicleModal.type,
                     category: editVehicleModal.type,
                     odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
                     photoUrl: photoStr,
@@ -4345,7 +4350,7 @@ const Vehicles = () => {
                                       alt="Vehicle" 
                                       onError={(e) => {
                                          e.target.onerror = null; 
-                                         const isCar = (v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.category && v.category.toLowerCase().includes('car'));
+                                         const isCar = (v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.regType && v.regType.toLowerCase().includes('car')) || (v.type && v.type.toLowerCase().includes('car')) || (v.category && v.category.toLowerCase().includes('car'));
                                          e.target.src = isCar ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
                                       }}
                                       className="w-10 h-8 rounded object-cover border border-gray-200 shadow-sm" 
@@ -4615,7 +4620,11 @@ const Vehicles = () => {
                     make: editVehicleModal.make,
                     model: editVehicleModal.model,
                     year: editVehicleModal.year ? parseInt(editVehicleModal.year) : undefined,
+                    type: editVehicleModal.type,
+                    regType: editVehicleModal.type,
+                    category: editVehicleModal.type,
                     status: editVehicleModal.status,
+                    photoUrl: editVehicleModal.img || editVehicleModal.photoUrl || undefined,
                     odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
                     notes: editVehicleModal.notes
                   });

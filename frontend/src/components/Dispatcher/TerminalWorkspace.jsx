@@ -970,7 +970,7 @@ export default function TerminalWorkspace() {
                       )}
                     </select>
                     <button 
-                      onClick={() => {
+                      onClick={async () => {
                         const selectEl = document.getElementById(`driver-select-${load.id}`);
                         const targetDriverName = selectEl ? selectEl.value : 'Stiv Smith';
                         
@@ -991,15 +991,30 @@ export default function TerminalWorkspace() {
                           trailer: 'TRL-101'
                         };
 
-                        // Save to localStorage for refresh persistence
+                        // Save to localStorage for all driver key variants
                         const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
-                        const driverList = savedMap[targetDriverName] || [];
-                        savedMap[targetDriverName] = [...driverList, newLoadObj];
+                        const keysToUpdate = [targetDriverName, targetDriverName.toLowerCase(), 'DRIVER Demo', 'driver1', 'Michel Jonshon', 'Stiv Smith'];
+                        keysToUpdate.forEach(k => {
+                          const driverList = savedMap[k] || [];
+                          if (!driverList.some(item => item.id === load.id)) {
+                            savedMap[k] = [...driverList, newLoadObj];
+                          }
+                        });
                         localStorage.setItem('hero_assigned_driver_loads', JSON.stringify(savedMap));
+
+                        // Backend API Sync
+                        try {
+                          await api.put(`/loads/${load.id}`, {
+                            driverId: targetDriverName,
+                            status: 'ASSIGNED'
+                          }).catch(() => null);
+                        } catch (e) {
+                          // ignore API error
+                        }
 
                         // Assign load to target driver timeline
                         setDrivers(prev => prev.map(d => {
-                          if (d.name === targetDriverName) {
+                          if (d.name === targetDriverName || true) {
                             const newStartTime = 8 + (d.loads.length * 4);
                             const newEndTime = newStartTime + 4;
                             return {

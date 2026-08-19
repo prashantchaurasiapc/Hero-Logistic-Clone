@@ -140,12 +140,16 @@ const sanitizePayload = (rawPayload) => {
     }
   }
 
-  if (rawPayload.category) {
-    const c = String(rawPayload.category).toUpperCase();
+  if (rawPayload.category || rawPayload.type || rawPayload.vehicleType || rawPayload.regType) {
+    const customType = String(rawPayload.regType || rawPayload.type || rawPayload.category || rawPayload.vehicleType || '').trim();
+    const c = customType.toUpperCase();
     if (['TRUCK', 'TRAILER'].includes(c)) {
       clean.category = c;
     } else {
       clean.category = 'TRUCK';
+    }
+    if (customType) {
+      clean.regType = customType;
     }
   }
 

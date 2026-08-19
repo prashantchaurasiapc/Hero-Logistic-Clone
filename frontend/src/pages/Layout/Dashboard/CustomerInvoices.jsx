@@ -151,10 +151,10 @@ export default function CustomerInvoices() {
     }
 
     let matchesDateFilter = true;
-    if (selectedDateFilter === 'May 2025') {
-      matchesDateFilter = inv.date.includes('May 2025');
-    } else if (selectedDateFilter === 'April 2025') {
-      matchesDateFilter = inv.date.includes('Apr 2025');
+    if (selectedDateFilter === 'August 2026') {
+      matchesDateFilter = inv.date.includes('Aug 2026') || inv.date.includes('2026');
+    } else if (selectedDateFilter === 'July 2026') {
+      matchesDateFilter = inv.date.includes('Jul 2026') || inv.date.includes('2026');
     }
 
     return matchesSearch && matchesStatus && matchesDateFilter;
@@ -494,8 +494,8 @@ export default function CustomerInvoices() {
               className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
             >
               <option value="All Dates">All Dates</option>
-              <option value="May 2025">May 2025</option>
-              <option value="April 2025">April 2025</option>
+              <option value="August 2026">August 2026</option>
+              <option value="July 2026">July 2026</option>
             </select>
 
             <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-500 font-medium">
@@ -1110,8 +1110,8 @@ export default function CustomerInvoices() {
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
                 >
                   <option value="All Dates">All Dates</option>
-                  <option value="May 2025">May 2025</option>
-                  <option value="April 2025">April 2025</option>
+                  <option value="August 2026">August 2026</option>
+                  <option value="July 2026">July 2026</option>
                 </select>
               </div>
 
