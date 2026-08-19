@@ -70,7 +70,7 @@ const sanitizeLoadStatus = (status) => {
   const upper = status.toUpperCase().trim();
   if (upper === 'ACTIVE' || upper === 'IN_PROGRESS' || upper === 'ON_THE_ROAD') return 'IN_TRANSIT';
   if (upper === 'COMPLETED') return 'DELIVERED';
-  if (['DRAFT', 'PLANNED', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(upper)) {
+  if (['DRAFT', 'REQUESTED', 'PLANNED', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(upper)) {
     return upper;
   }
   return 'DRAFT';

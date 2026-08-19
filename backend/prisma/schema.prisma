@@ -177,6 +177,7 @@ enum IntegrationType {
 
 enum LoadStatus {
   DRAFT
+  REQUESTED
   PLANNED
   ASSIGNED
   IN_TRANSIT

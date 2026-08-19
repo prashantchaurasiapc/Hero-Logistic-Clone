@@ -122,7 +122,7 @@ exports.create = async (req, res, next) => {
       else if (payload.status === 'At Pickup') payload.status = 'ASSIGNED';
       else if (payload.status === 'Planned') payload.status = 'PLANNED';
       else if (payload.status === 'On Hold') payload.status = 'ASSIGNED';
-      else if (!['DRAFT', 'PLANNED', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(payload.status)) {
+      else if (!['DRAFT', 'REQUESTED', 'PLANNED', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(payload.status)) {
         payload.status = 'PLANNED';
       }
     }
@@ -179,7 +179,7 @@ exports.update = async (req, res, next) => {
       else if (updateData.status === 'At Pickup') updateData.status = 'ASSIGNED';
       else if (updateData.status === 'Planned') updateData.status = 'PLANNED';
       else if (updateData.status === 'On Hold') updateData.status = 'ASSIGNED';
-      else if (!['DRAFT', 'PLANNED', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(updateData.status)) {
+      else if (!['DRAFT', 'REQUESTED', 'PLANNED', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(updateData.status)) {
         updateData.status = 'PLANNED';
       }
     }

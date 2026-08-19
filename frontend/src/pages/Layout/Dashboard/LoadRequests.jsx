@@ -148,7 +148,7 @@ export default function LoadRequests() {
     try {
       const payload = {
         type: items[0]?.type || 'General Freight',
-        status: 'PLANNED',
+        status: 'REQUESTED',
         priority: 'NORMAL',
         notes: pickupForm.specialInstructions || deliveryForm.specialInstructions || '',
         loadDate: pickupForm.date ? new Date(`${pickupForm.date}T${pickupForm.time || '00:00'}:00`).toISOString() : new Date().toISOString(),
