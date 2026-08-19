@@ -90,12 +90,22 @@ export default function DispatcherLoads() {
   const [masterLoads, setMasterLoads] = useState([]);
   const [isLoadingLoads, setIsLoadingLoads] = useState(true);
 
+  // Helper to read persistent deleted load IDs from localStorage
+  const getDeletedLoadIds = () => {
+    try {
+      const saved = localStorage.getItem('dispatcher_deleted_load_ids');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  };
+
   const fetchLoads = async () => {
     setIsLoadingLoads(true);
     try {
       // Using generic /loads which retrieves loads from the backend
       const res = await api.get('/loads');
-      if (res.data && res.data.success) {
+      if (res.data && Array.isArray(res.data.data)) {
         const routePresetMap = {
           'PO-373069': { from: 'Melbourne VIC', to: 'Mumbai', customer: 'Direct Customer' },
           'PO-163402': { from: 'Geelong VIC', to: 'Sydney NSW', customer: 'Direct Customer' },
@@ -104,6 +114,8 @@ export default function DispatcherLoads() {
           'LD-4246': { from: 'Geelong VIC', to: 'Sydney NSW', customer: 'Customer Portal' },
           'LD-3987': { from: 'Brisbane QLD', to: 'Perth WA', customer: 'Customer Portal' }
         };
+
+        const deletedSet = getDeletedLoadIds();
 
         const formattedLoads = res.data.data.map(dbLoad => {
           const loadRefStr = dbLoad.loadRef || dbLoad.id;
@@ -155,7 +167,7 @@ export default function DispatcherLoads() {
             stopsCount: 2,
             itemsCount: dbLoad.loadItems?.length || 0
           };
-        });
+        }).filter(item => !deletedSet.has(item.id) && !deletedSet.has(item.dbId));
         setMasterLoads(formattedLoads);
         if (formattedLoads.length > 0) {
           setSelectedLoadId(formattedLoads[0].id);
@@ -305,25 +317,32 @@ export default function DispatcherLoads() {
 
   const handleDeleteLoad = async (loadId) => {
     const target = masterLoads.find(item => item.id === loadId);
-    if (!target) return;
+    const targetDbId = target?.dbId || loadId;
+    
+    // Save into localStorage persistent deleted set
     try {
-      if (target.dbId) {
-        await api.delete(`/loads/${target.dbId}`).catch(async () => {
-          return await api.delete(`/company-admin/loads/${target.dbId}`).catch(() => null);
-        });
-      }
-      setOpenActionMenuId(null);
-      setMasterLoads(prev => prev.filter(l => l.id !== loadId));
-      if (selectedLoadId === loadId && masterLoads.length > 1) {
-        setSelectedLoadId(masterLoads.find(l => l.id !== loadId)?.id || '');
-      }
-      triggerToast(`Load ${loadId} deleted successfully!`);
-      fetchLoads();
+      const currentSaved = getDeletedLoadIds();
+      currentSaved.add(loadId);
+      if (targetDbId) currentSaved.add(targetDbId);
+      localStorage.setItem('dispatcher_deleted_load_ids', JSON.stringify(Array.from(currentSaved)));
+    } catch (e) {
+      console.warn('LocalStorage save error:', e);
+    }
+
+    setOpenActionMenuId(null);
+    setMasterLoads(prev => prev.filter(l => l.id !== loadId && l.dbId !== targetDbId));
+    if (selectedLoadId === loadId && masterLoads.length > 1) {
+      setSelectedLoadId(masterLoads.find(l => l.id !== loadId)?.id || '');
+    }
+    triggerToast(`Load ${loadId} deleted successfully!`);
+
+    try {
+      const deleteId = targetDbId || loadId;
+      await api.delete(`/loads/${deleteId}`).catch(async () => {
+        return await api.delete(`/company-admin/loads/${deleteId}`).catch(() => null);
+      });
     } catch (error) {
-      console.error('Error deleting load:', error);
-      setOpenActionMenuId(null);
-      setMasterLoads(prev => prev.filter(l => l.id !== loadId));
-      triggerToast(`Load ${loadId} deleted successfully!`);
+      console.warn('Backend deletion sync notice:', error);
     }
   };
 

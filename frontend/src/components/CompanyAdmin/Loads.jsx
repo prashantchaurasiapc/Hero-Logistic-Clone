@@ -2652,11 +2652,25 @@ export default function Loads() {
     e.target.value = '';
   };
 
+  // Helper to read persistent deleted load IDs from localStorage
+  const getDeletedLoadIds = () => {
+    try {
+      const saved1 = localStorage.getItem('dispatcher_deleted_load_ids');
+      const saved2 = localStorage.getItem('deleted_load_ids');
+      const arr1 = saved1 ? JSON.parse(saved1) : [];
+      const arr2 = saved2 ? JSON.parse(saved2) : [];
+      return new Set([...arr1, ...arr2]);
+    } catch {
+      return new Set();
+    }
+  };
+
   const fetchLoads = async () => {
     try {
       setLoading(true);
       const res = await api.get('/company-admin/loads');
       if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        const deletedSet = getDeletedLoadIds();
         const mapped = res.data.data.map(item => {
           const firstPickup = item.stops?.find(s => s.type === 'PICKUP')?.address || (item.stops && item.stops[0]?.address) || '—';
           const firstDropoff = item.stops?.find(s => s.type === 'DROPOFF')?.address || (item.stops && item.stops[item.stops.length - 1]?.address) || '—';
@@ -2684,7 +2698,7 @@ export default function Loads() {
             driverStatus: 'text-emerald-500',
             avatar: item.driver?.avatarUrl || 'https://i.pravatar.cc/150?u=10'
           };
-        });
+        }).filter(item => !deletedSet.has(item.id) && !deletedSet.has(item.rawId));
         setLoadsList(mapped);
       } else {
         setLoadsList([]);

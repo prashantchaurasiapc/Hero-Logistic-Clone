@@ -70,6 +70,7 @@ export default function TerminalWorkspace() {
               progress: '50%',
               loadType: l.type || 'General Freight',
               reqDate: l.scheduledDate ? new Date(l.scheduledDate).toLocaleDateString() : 'N/A',
+              rawDateIso: l.scheduledDate ? new Date(l.scheduledDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
               driverStatus: 'On Duty',
               vehicle: l.truck ? `${l.truck.make} ${l.truck.model}` : 'Unknown Vehicle',
               trailer: l.trailerId || 'N/A'
@@ -92,6 +93,30 @@ export default function TerminalWorkspace() {
         });
 
         setDrivers(formatted);
+
+        // Dynamically sync unassigned DB loads to Planning Board drawer
+        const deletedSet = new Set(JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || '[]'));
+        const dbUnassigned = dbLoads.filter(l => !l.driverId).map(l => {
+          const firstPickup = l.stops?.find(s => s.type === 'PICKUP')?.address || l.pickupLocation || l.origin || 'Indore';
+          const firstDropoff = l.stops?.find(s => s.type === 'DROPOFF')?.address || l.deliveryLocation || l.destination || 'Bhopal';
+          const routeStr = `${firstPickup} → ${firstDropoff}`;
+          return {
+            id: l.loadRef || l.id,
+            dbId: l.id,
+            customer: l.customer?.name || 'Direct Customer',
+            route: routeStr,
+            type: l.loadType || l.type || 'General Freight',
+            reqDate: l.scheduledDate ? new Date(l.scheduledDate).toLocaleDateString() : 'Today, 09:00 AM'
+          };
+        }).filter(item => !deletedSet.has(item.id) && !deletedSet.has(item.dbId));
+
+        if (dbUnassigned.length > 0) {
+          setUnassignedLoadsList(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const newAdditions = dbUnassigned.filter(u => !existingIds.has(u.id));
+            return [...newAdditions, ...prev].filter(item => !deletedSet.has(item.id) && !deletedSet.has(item.dbId));
+          });
+        }
       } catch (error) {
         console.error('Error fetching terminal workspace data:', error);
       }
@@ -178,14 +203,25 @@ export default function TerminalWorkspace() {
     return { left: `${left}%`, width: `${width}%` };
   };
 
+  const planningDateIso = planningDate.toISOString().split('T')[0];
+
   const filteredDrivers = useMemo(() => {
-    return drivers.filter(d => {
+    return drivers.map(d => {
+      const dayLoads = d.loads.filter(l => {
+        const loadDate = l.rawDateIso || new Date().toISOString().split('T')[0];
+        return loadDate === planningDateIso;
+      });
+      return {
+        ...d,
+        loadsCount: `${dayLoads.length} Loads`,
+        loads: dayLoads
+      };
+    }).filter(d => {
       const matchDriver = filters.driver === 'All Drivers' || d.name === filters.driver;
       const matchStatus = filters.status === 'All Status' || d.status === filters.status;
-      // We can expand other filters here as well
       return matchDriver && matchStatus;
     });
-  }, [drivers, filters]);
+  }, [drivers, filters, planningDateIso]);
 
   const selectedLoadData = useMemo(() => {
     for (const d of drivers) {

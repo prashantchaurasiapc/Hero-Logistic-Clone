@@ -231,7 +231,14 @@ exports.update = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const findWhere = { id };
+    const findWhere = {
+      OR: [
+        { id: id },
+        { loadRef: id },
+        { loadNumber: id },
+        { referenceNumber: id }
+      ]
+    };
     if (req.tenantId) {
       findWhere.companyId = req.tenantId;
     }

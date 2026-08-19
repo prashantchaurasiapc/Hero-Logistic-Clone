@@ -187,9 +187,9 @@ exports.deleteLoad = async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    // Find target load by ID or loadRef
+    // Find target load by ID, loadRef, loadNumber, or referenceNumber
     const targetLoad = await prisma.load.findFirst({
-      where: { OR: [{ id }, { loadRef: id }] }
+      where: { OR: [{ id }, { loadRef: id }, { loadNumber: id }, { referenceNumber: id }] }
     }).catch(() => null);
 
     const targetId = targetLoad ? targetLoad.id : id;
