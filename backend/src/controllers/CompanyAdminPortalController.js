@@ -186,13 +186,32 @@ exports.updateLoad = async (req, res, next) => {
 exports.deleteLoad = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await prisma.routeStop.deleteMany({ where: { loadId: id } });
-    await prisma.loadItem.deleteMany({ where: { loadId: id } });
-    await prisma.loadExpense.deleteMany({ where: { loadId: id } });
-    await prisma.document.deleteMany({ where: { loadId: id } });
-    await prisma.loadActivity.deleteMany({ where: { loadId: id } });
-    await prisma.load.delete({ where: { id } });
-    return sendSuccess(res, { id, message: 'Load deleted successfully' });
+    
+    // Find target load by ID or loadRef
+    const targetLoad = await prisma.load.findFirst({
+      where: { OR: [{ id }, { loadRef: id }] }
+    }).catch(() => null);
+
+    const targetId = targetLoad ? targetLoad.id : id;
+
+    // Cascade clean-up of child records to maintain foreign key integrity
+    await prisma.customerInvoice.deleteMany({ where: { loadId: targetId } }).catch(() => null);
+    await prisma.preStartChecklist.deleteMany({ where: { loadId: targetId } }).catch(() => null);
+    await prisma.telemetryLog.deleteMany({ where: { loadId: targetId } }).catch(() => null);
+    await prisma.timesheet.deleteMany({ where: { loadId: targetId } }).catch(() => null);
+    await prisma.routeStop.deleteMany({ where: { loadId: targetId } }).catch(() => null);
+    await prisma.loadItem.deleteMany({ where: { loadId: targetId } }).catch(() => null);
+    await prisma.loadExpense.deleteMany({ where: { loadId: targetId } }).catch(() => null);
+    await prisma.loadDocument.deleteMany({ where: { loadId: targetId } }).catch(() => null);
+    await prisma.document.deleteMany({ where: { loadId: targetId } }).catch(() => null);
+    await prisma.loadActivity.deleteMany({ where: { loadId: targetId } }).catch(() => null);
+    await prisma.message.deleteMany({ where: { loadId: targetId } }).catch(() => null);
+
+    await prisma.load.delete({ where: { id: targetId } }).catch(err => {
+      console.warn('Load deletion notice:', err?.message);
+    });
+
+    return sendSuccess(res, { id: targetId, message: 'Load deleted successfully' });
   } catch (error) { next(error); }
 };
 

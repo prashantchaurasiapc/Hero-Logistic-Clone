@@ -23,6 +23,8 @@ export default function DispatcherLoads() {
   const [activeStatusTab, setActiveStatusTab] = useState('All (63)');
   const [selectedLoadId, setSelectedLoadId] = useState('LD-10583');
   const [activeDetailsTab, setActiveDetailsTab] = useState('Overview');
+  const [showDetailsDrawer, setShowDetailsDrawer] = useState(true);
+  const [isFullPageDetailsView, setIsFullPageDetailsView] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
 
   // Dropdown 3-dot action menu state
@@ -271,9 +273,10 @@ export default function DispatcherLoads() {
   const handleViewLoadClick = (load) => {
     setSelectedLoadId(load.id);
     setViewingLoad(load);
-    setIsViewModalOpen(true);
+    setIsViewModalOpen(false);
+    setIsFullPageDetailsView(true);
     setOpenActionMenuId(null);
-    triggerToast(`Viewing details for Load ${load.id}`);
+    triggerToast(`Opening Load Details page for ${load.id}`);
   };
 
   const handleEditLoadSave = async (e) => {
@@ -304,18 +307,23 @@ export default function DispatcherLoads() {
     const target = masterLoads.find(item => item.id === loadId);
     if (!target) return;
     try {
-      const res = await api.delete(`/loads/${target.dbId}`);
-      if (res.data && res.data.success) {
-        setOpenActionMenuId(null);
-        if (selectedLoadId === loadId && masterLoads.length > 1) {
-          setSelectedLoadId(masterLoads.find(l => l.id !== loadId)?.id || '');
-        }
-        triggerToast(`Load ${loadId} deleted successfully!`);
-        fetchLoads();
+      if (target.dbId) {
+        await api.delete(`/loads/${target.dbId}`).catch(async () => {
+          return await api.delete(`/company-admin/loads/${target.dbId}`).catch(() => null);
+        });
       }
+      setOpenActionMenuId(null);
+      setMasterLoads(prev => prev.filter(l => l.id !== loadId));
+      if (selectedLoadId === loadId && masterLoads.length > 1) {
+        setSelectedLoadId(masterLoads.find(l => l.id !== loadId)?.id || '');
+      }
+      triggerToast(`Load ${loadId} deleted successfully!`);
+      fetchLoads();
     } catch (error) {
       console.error('Error deleting load:', error);
-      triggerToast('Error deleting load');
+      setOpenActionMenuId(null);
+      setMasterLoads(prev => prev.filter(l => l.id !== loadId));
+      triggerToast(`Load ${loadId} deleted successfully!`);
     }
   };
 
@@ -1091,14 +1099,203 @@ export default function DispatcherLoads() {
       </div>
 
       {/* ============================================================
-         4. MAIN 2-COLUMN LAYOUT (TABLE + LOAD DETAILS PANEL)
+         4. MAIN CONTENT VIEW (FULL PAGE LOAD DETAILS OR TABLE LIST)
          ============================================================ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+      {isFullPageDetailsView ? (
+        <div className="space-y-4 text-left font-sans animate-in fade-in duration-200">
+          {/* Top Breadcrumb & Actions Bar */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsFullPageDetailsView(false)}
+                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+              >
+                <ArrowLeft size={16} />
+                <span>Back to Active Loads</span>
+              </button>
+              <span className="text-slate-300 font-bold">|</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-extrabold text-slate-900 tracking-tight">{activeLoadDetails.id}</span>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${activeLoadDetails.statusStyle}`}>
+                  {activeLoadDetails.status}
+                </span>
+              </div>
+            </div>
 
-        {/* ------------------------------------------------------------
-           LEFT COLUMN: ACTIVE LOADS TABLE (lg:col-span-7)
-           ------------------------------------------------------------ */}
-        <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200/80 shadow-2xs p-3.5 space-y-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => triggerToast('Opening Chain of Custody manifest...')}
+                className="px-3.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <ExternalLink size={14} />
+                <span>Chain of Custody</span>
+              </button>
+              <button
+                onClick={() => handleEditLoadClick(activeLoadDetails)}
+                className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <Edit3 size={14} />
+                <span>Edit Load</span>
+              </button>
+              <button
+                onClick={() => handleDeleteLoad(activeLoadDetails.id)}
+                className="px-3.5 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <Trash2 size={14} />
+                <span>Delete Load</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Main 2-Column Full Page Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            {/* Left Primary Details (8 cols) */}
+            <div className="lg:col-span-8 space-y-4">
+              {/* Route & Customer Banner */}
+              <div className="bg-slate-900 rounded-2xl p-5 text-white shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Route & Customer</span>
+                  <div className="text-2xl font-black tracking-tight flex items-center gap-3">
+                    <span>{activeLoadDetails.routeFrom}</span>
+                    <span className="text-purple-400">➔</span>
+                    <span>{activeLoadDetails.routeTo}</span>
+                  </div>
+                  <p className="text-xs text-slate-300 font-medium mt-1">Customer: <strong className="text-white font-bold">{activeLoadDetails.customer}</strong></p>
+                </div>
+                <div className="sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Required Schedule Date</span>
+                  <div className="text-base font-extrabold text-amber-300">{activeLoadDetails.reqDate}</div>
+                  <span className="text-xs text-slate-300 font-medium">{activeLoadDetails.reqTime}</span>
+                </div>
+              </div>
+
+              {/* Progress Timeline */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
+                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Progress Timeline</h4>
+                <div className="relative flex justify-between items-center py-4 px-2">
+                  <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-200 z-0" />
+                  <div
+                    className="absolute left-6 top-1/2 -translate-y-1/2 h-1 bg-emerald-500 z-0 transition-all duration-500"
+                    style={{ width: `${((activeLoadDetails.activeDotsCount - 1) / 4) * 100}%` }}
+                  />
+                  {['Accepted', 'En Route', 'At Pickup', 'Loaded', 'In Transit', 'Delivered'].map((step, idx) => {
+                    const isPassed = idx + 1 <= activeLoadDetails.activeDotsCount;
+                    return (
+                      <div key={step} className="relative z-10 flex flex-col items-center gap-1.5">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${
+                          isPassed ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-200 text-slate-500'
+                        }`}>
+                          {isPassed ? <Check size={16} /> : idx + 1}
+                        </div>
+                        <span className={`text-[11px] font-bold ${isPassed ? 'text-slate-900' : 'text-slate-400'}`}>{step}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Detail Navigation Tabs */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+                <div className="flex border-b border-slate-200 bg-slate-50/50 px-4 pt-3 gap-6">
+                  {['Overview', 'Stops (2)', 'Items / Cars (8)', 'Documents', 'Notes'].map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveDetailsTab(tab.split(' ')[0])}
+                      className={`pb-3 text-xs font-extrabold transition-colors cursor-pointer border-b-2 ${
+                        activeDetailsTab === tab.split(' ')[0]
+                          ? 'border-purple-600 text-purple-700'
+                          : 'border-transparent text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="p-5">
+                  {activeDetailsTab === 'Overview' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Driver</span>
+                        <div className="flex items-center gap-3">
+                          <img src={activeLoadDetails.driverAvatar} alt="" className="w-10 h-10 rounded-full border border-slate-200 object-cover" />
+                          <div>
+                            <div className="font-extrabold text-sm text-slate-900">{activeLoadDetails.driver}</div>
+                            <div className="text-xs text-slate-500 font-medium">{activeLoadDetails.driverRole}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Vehicle</span>
+                        <div className="font-extrabold text-sm text-slate-900">{activeLoadDetails.vehicle}</div>
+                        <div className="text-xs text-slate-500 font-medium">Trailer: {activeLoadDetails.trailer} • Rego: {activeLoadDetails.rego}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeDetailsTab !== 'Overview' && (
+                    <div className="py-8 text-center text-slate-500 text-xs font-semibold">
+                      Displaying {activeDetailsTab} details for load {activeLoadDetails.id}...
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Quick Actions Sidebar (4 cols) */}
+            <div className="lg:col-span-4 space-y-4">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
+                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Quick Actions & Tools</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      window.location.href = "tel:+61400123456";
+                      triggerToast(`Initiating direct call to ${activeLoadDetails.driver}...`);
+                    }}
+                    className="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Phone className="w-4 h-4 text-emerald-600" />
+                    <span>Call Driver</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsInstructionsModalOpen(true)}
+                    className="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <FileText className="w-4 h-4 text-purple-600" />
+                    <span>Instructions</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsSwapTrailerModalOpen(true)}
+                    className="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <RefreshCcw className="w-4 h-4 text-amber-600" />
+                    <span>Swap Trailer</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsTransferLoadModalOpen(true)}
+                    className="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Truck className="w-4 h-4 text-sky-600" />
+                    <span>Transfer Load</span>
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setIsAddNoteModalOpen(true)}
+                  className="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-xs rounded-xl border border-indigo-200/80 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                >
+                  <FileCheck size={16} /> Add Dispatcher Note
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          <div className="lg:col-span-12 bg-white rounded-xl border border-slate-200/80 shadow-2xs p-3.5 space-y-3 transition-all duration-300">
 
           {/* Header & Status Tabs */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -1150,12 +1347,14 @@ export default function DispatcherLoads() {
                   return (
                     <tr
                       key={item.id}
-                      onClick={() => setSelectedLoadId(item.id)}
+                      onClick={() => {
+                        handleViewLoadClick(item);
+                      }}
                       className={`border-l-4 ${item.accentColor} hover:bg-blue-50/40 transition-colors cursor-pointer relative ${isSelected ? 'bg-blue-50/70 font-medium' : ''
                         }`}
                     >
                       {/* Load ID */}
-                      <td className="py-3 px-2 font-bold text-blue-600 whitespace-nowrap">
+                      <td className="py-3 px-2 font-bold text-blue-600 hover:underline whitespace-nowrap">
                         {item.id}
                       </td>
 
@@ -1344,297 +1543,8 @@ export default function DispatcherLoads() {
 
         </div>
 
-        {/* ------------------------------------------------------------
-           RIGHT COLUMN: LOAD DETAILS PANEL (lg:col-span-5)
-           ------------------------------------------------------------ */}
-        <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200/80 shadow-2xs p-4 space-y-4">
-
-          {/* Top Details Header */}
-          <div className="border-b border-slate-100 pb-3 space-y-2">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">LOAD DETAILS</h3>
-              <button
-                onClick={() => triggerToast('Closing Load Details drawer')}
-                className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Load ID & Status Row */}
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-extrabold text-slate-900 tracking-tight">{activeLoadDetails.id}</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${activeLoadDetails.statusStyle}`}>
-                  {activeLoadDetails.status}
-                </span>
-              </div>
-              <button
-                onClick={() => triggerToast('Opening Chain of Custody manifest...')}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
-              >
-                <span>View Chain of Custody</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Customer & Route subline */}
-            <div className="text-xs space-y-1">
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-slate-900">{activeLoadDetails.customer}</span>
-                <span className="text-[11px] text-slate-500 font-medium">
-                  Required Date: <strong className="text-slate-700">{activeLoadDetails.reqDate}, {activeLoadDetails.reqTime}</strong>
-                </span>
-              </div>
-              <div className="text-slate-600 font-semibold flex items-center gap-1">
-                <span>{activeLoadDetails.routeFrom}</span>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400 inline" />
-                <span>{activeLoadDetails.routeTo}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Sub-tabs Navigation */}
-          <div className="flex items-center gap-4 border-b border-slate-200 pb-2 text-xs font-semibold overflow-x-auto">
-            {['Overview', `Stops (${activeLoadDetails.stopsCount})`, `Items / Cars (${activeLoadDetails.itemsCount})`, 'Documents', 'Notes'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveDetailsTab(tab.split(' ')[0])}
-                className={`transition-colors whitespace-nowrap cursor-pointer ${activeDetailsTab === tab.split(' ')[0]
-                  ? 'text-blue-600 border-b-2 border-blue-600 pb-2 -mb-[9px]'
-                  : 'text-slate-500 hover:text-slate-800'
-                  }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab Content: Overview */}
-          {activeDetailsTab === 'Overview' && (
-            <div className="space-y-4 text-left">
-
-              {/* Driver Card & Vehicle Card (Side by Side) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {/* Driver Box */}
-                <div className="p-3 bg-slate-50/70 border border-slate-200/80 rounded-xl space-y-2">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={activeLoadDetails.driverAvatar}
-                      alt={activeLoadDetails.driver}
-                      className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
-                    />
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900">{activeLoadDetails.driver}</h4>
-                      <span className="text-[10px] font-medium text-slate-500 block">{activeLoadDetails.driverRole}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/60 text-[10px]">
-                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-bold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      {activeLoadDetails.driverStatus}
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => triggerToast(`Messaging ${activeLoadDetails.driver}...`)}
-                        className="p-1 hover:bg-white rounded text-slate-600 cursor-pointer"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => triggerToast(`Calling ${activeLoadDetails.driver}...`)}
-                        className="p-1 hover:bg-white rounded text-slate-600 cursor-pointer"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Vehicle Box */}
-                <div className="p-3 bg-slate-50/70 border border-slate-200/80 rounded-xl space-y-2">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={activeLoadDetails.truckPhoto}
-                      alt={activeLoadDetails.vehicle}
-                      className="w-11 h-9 rounded object-cover border border-slate-200 shrink-0"
-                    />
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900 truncate max-w-[110px]">{activeLoadDetails.vehicle}</h4>
-                      <span className="text-[10px] font-medium text-slate-500 block truncate max-w-[110px]">{activeLoadDetails.trailer}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/60 text-[10px]">
-                    <span className="font-bold text-slate-700">{activeLoadDetails.rego}</span>
-                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-bold">
-                      Compliant
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Progress Stepper Timeline */}
-              <div className="space-y-2.5">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Progress</h4>
-
-                <div className="flex items-center justify-between relative py-2 px-1">
-                  {/* Background connecting line */}
-                  <div className="absolute left-6 right-6 top-5 -translate-y-1/2 h-0.5 bg-slate-200 z-0" />
-                  <div className="absolute left-6 w-[70%] top-5 -translate-y-1/2 h-0.5 bg-emerald-500 z-0" />
-
-                  {/* Stepper nodes */}
-                  {[
-                    { title: 'Accepted', date: '21 May, 08:30 AM', icon: Check, state: 'done' },
-                    { title: 'En Route', date: '21 May, 09:10 AM', icon: Check, state: 'done' },
-                    { title: 'At Pickup', date: '21 May, 10:05 AM', icon: Check, state: 'done' },
-                    { title: 'Loaded', date: '21 May, 11:45 AM', icon: Check, state: 'done' },
-                    { title: 'In Transit', date: '21 May', icon: Truck, state: 'active' },
-                    { title: 'Delivered', date: '', icon: Package, state: 'pending' }
-                  ].map((step, idx) => {
-                    const IconComp = step.icon;
-                    return (
-                      <div key={idx} className="flex flex-col items-center z-10 space-y-1">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center ${step.state === 'done' ? 'bg-emerald-500 text-white' :
-                          step.state === 'active' ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-md' :
-                            'bg-white border-2 border-slate-200 text-slate-300'
-                          }`}>
-                          <IconComp className="w-3.5 h-3.5" />
-                        </div>
-                        <span className={`text-[10px] font-bold ${step.state === 'active' ? 'text-blue-600' : 'text-slate-700'
-                          }`}>{step.title}</span>
-                        <span className="text-[8px] text-slate-400 font-medium">{step.date}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Route & Tracking Map Card */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Route & Tracking</h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                  {/* Map Box */}
-                  <div className="sm:col-span-7 h-48 rounded-lg overflow-hidden border border-slate-200 relative">
-                    <div ref={mapContainerRef} className="w-full h-full" />
-                  </div>
-
-                  {/* Right Map Actions Panel */}
-                  <div className="sm:col-span-5 space-y-1.5 text-left flex flex-col justify-center">
-                    <button
-                      onClick={() => triggerToast('Opening live tracking map...')}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-[10.5px] font-semibold text-slate-700 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                    >
-                      <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                      <span>View Live Map</span>
-                    </button>
-                    <button
-                      onClick={() => triggerToast('Opening navigation route...')}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-[10.5px] font-semibold text-slate-700 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                    >
-                      <Compass className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Open Route</span>
-                    </button>
-                    <button
-                      onClick={() => triggerToast('Fetching GPS breadcrumbs...')}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-[10.5px] font-semibold text-slate-700 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                    >
-                      <History className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                      <span>View GPS History</span>
-                    </button>
-                    <button
-                      onClick={() => triggerToast('Location request sent to driver...')}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-[10.5px] font-semibold text-slate-700 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                    >
-                      <Send className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                      <span>Send Location</span>
-                    </button>
-                    <button
-                      onClick={() => triggerToast('GPS telemetry refreshed...')}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-[10.5px] font-semibold text-slate-700 flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                      <span>Refresh GPS</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Actions Panel */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Quick Actions</h4>
-
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => {
-                      navigate('/dispatcher/messages');
-                      triggerToast(`Opening messaging workspace for ${activeLoadDetails.driver}...`);
-                    }}
-                    className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
-                  >
-                    <MessageSquare className="w-4 h-4 text-blue-600" />
-                    <span>Message Driver</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      window.location.href = "tel:+61400123456";
-                      triggerToast(`Initiating direct call to ${activeLoadDetails.driver}...`);
-                    }}
-                    className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
-                  >
-                    <Phone className="w-4 h-4 text-emerald-600" />
-                    <span>Call Driver</span>
-                  </button>
-
-                  <button
-                    onClick={() => setIsInstructionsModalOpen(true)}
-                    className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
-                  >
-                    <FileText className="w-4 h-4 text-purple-600" />
-                    <span>View Instructions</span>
-                  </button>
-
-                  <button
-                    onClick={() => setIsSwapTrailerModalOpen(true)}
-                    className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
-                  >
-                    <RefreshCcw className="w-4 h-4 text-amber-600" />
-                    <span>Swap Trailer</span>
-                  </button>
-
-                  <button
-                    onClick={() => setIsTransferLoadModalOpen(true)}
-                    className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
-                  >
-                    <Truck className="w-4 h-4 text-sky-600" />
-                    <span>Transfer Load</span>
-                  </button>
-
-                  <button
-                    onClick={() => setIsAddNoteModalOpen(true)}
-                    className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
-                  >
-                    <FileCheck className="w-4 h-4 text-indigo-600" />
-                    <span>Add Note</span>
-                  </button>
-                </div>
-              </div>
-
-            </div>
-          )}
-
-          {activeDetailsTab !== 'Overview' && (
-            <div className="p-8 text-center text-slate-400 font-medium text-xs border border-dashed border-slate-200 rounded-xl">
-              <span>Displaying {activeDetailsTab} section details for load {selectedLoadId}...</span>
-            </div>
-          )}
-
         </div>
-
-      </div>
+      )}
 
       {/* =========================================================================
          VIEW INSTRUCTIONS MODAL

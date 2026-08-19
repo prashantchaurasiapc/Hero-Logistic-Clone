@@ -170,9 +170,15 @@ const MyLoads = () => {
           const pickupD = l.pickupDate || l.loadDate || pickupStop?.scheduledDate;
           const deliveryD = l.deliveryDate || l.deliveryEta || deliveryStop?.scheduledDate;
 
+          const rawId = l.loadRef || l.referenceNumber || l.loadNumber || l.id;
+          const cleanDisplayId = (rawId && rawId.length > 18) 
+            ? `LD-${rawId.slice(0, 8).toUpperCase()}` 
+            : (rawId || `LD-1001`);
+
           return {
-            id: l.loadNumber || l.id || `LD-${l.dbId || l.id}`,
+            id: cleanDisplayId,
             dbId: l.id,
+            rawDate: pickupD ? new Date(pickupD) : null,
             ref: l.referenceNumber || l.ref || 'N/A',
             route: `${pickupLoc} → ${deliveryLoc}`,
             type: l.loadType || l.type || 'General Freight',
@@ -257,6 +263,18 @@ const MyLoads = () => {
 
     if (statusFilter !== 'All Status' && l.status !== statusFilter) return false;
     if (loadTypeFilter !== 'All Load Types' && l.type !== loadTypeFilter) return false;
+
+    // Date Range Filtering
+    if (startDateFilter) {
+      const start = new Date(startDateFilter);
+      start.setHours(0, 0, 0, 0);
+      if (l.rawDate && new Date(l.rawDate) < start) return false;
+    }
+    if (endDateFilter) {
+      const end = new Date(endDateFilter);
+      end.setHours(23, 59, 59, 999);
+      if (l.rawDate && new Date(l.rawDate) > end) return false;
+    }
 
     return true;
   });
@@ -669,7 +687,7 @@ const MyLoads = () => {
                           style={{ whiteSpace: 'nowrap' }}
                           onClick={() => handleOpenDetails(row.id)}
                         >
-                          {row.id}
+                          {row.id && row.id.length > 18 ? `LD-${row.id.slice(0, 8).toUpperCase()}` : row.id}
                         </td>
                         <td style={{ fontSize: 11.5, color: '#64748b', whiteSpace: 'nowrap' }}>{row.ref}</td>
                         <td style={{ fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>{row.route}</td>
