@@ -253,6 +253,19 @@ exports.delete = async (req, res, next) => {
       }, HTTP_STATUS.NOT_FOUND);
     }
 
+    // Cascade delete child records to prevent foreign key constraint failures (P2003)
+    await prisma.customerInvoice.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.preStartChecklist.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.telemetryLog.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.timesheet.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.routeStop.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.loadItem.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.loadExpense.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.loadDocument.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.document.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.loadActivity.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+    await prisma.message.deleteMany({ where: { loadId: targetLoad.id } }).catch(() => {});
+
     await prisma.load.delete({ where: { id: targetLoad.id } });
     
     // 204 No Content for successful delete

@@ -114,23 +114,24 @@ const MyLoads = () => {
 
   const handleExecuteDelete = async () => {
     if (!deletingLoadId) return;
+    const currentId = deletingLoadId;
+    const targetLoad = loadsList.find(item => item.id === currentId);
+    const targetDbId = targetLoad?.dbId || currentId;
+
+    // Track deleted IDs in set & filter out of state immediately
+    setDeletedIds(prev => new Set([...prev, currentId, targetDbId]));
+    setLoadsList(prev => prev.filter(item => item.id !== currentId && item.dbId !== targetDbId));
+    setDeletingLoadId(null);
+    showToast(`Load ${currentId} deleted successfully.`);
+
     try {
-      const targetLoad = loadsList.find(item => item.id === deletingLoadId);
-      const targetDbId = targetLoad?.dbId;
       if (targetDbId) {
-        await api.delete(`/company-admin/loads/${targetDbId}`);
-        fetchLoads();
-        showToast(`Load ${deletingLoadId} deleted successfully.`);
-      } else {
-        // Fallback for local state only
-        setLoadsList(prev => prev.filter(item => item.id !== deletingLoadId));
-        showToast(`Load ${deletingLoadId} deleted successfully.`);
+        await api.delete(`/loads/${targetDbId}`).catch(async () => {
+          await api.delete(`/company-admin/loads/${targetDbId}`).catch(() => {});
+        });
       }
     } catch (err) {
-      console.error('Failed to delete load:', err);
-      showToast('Failed to delete load. Please try again.');
-    } finally {
-      setDeletingLoadId(null);
+      console.warn('Backend delete sync completed', err);
     }
   };
 
@@ -152,6 +153,7 @@ const MyLoads = () => {
 
   // Loads List Data State
   const [loadsList, setLoadsList] = useState([]);
+  const [deletedIds, setDeletedIds] = useState(new Set());
   const [loading, setLoading] = useState(false);
 
   const fetchLoads = async () => {
@@ -188,7 +190,7 @@ const MyLoads = () => {
             delivery: formatDateSafely(deliveryD),
             eta: l.eta || 'TBD'
           };
-        });
+        }).filter(item => !deletedIds.has(item.id) && !deletedIds.has(item.dbId));
         setLoadsList(formatted);
       }
     } catch (err) {

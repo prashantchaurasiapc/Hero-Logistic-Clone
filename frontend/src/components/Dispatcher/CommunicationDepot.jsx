@@ -253,6 +253,7 @@ export default function CommunicationDepot() {
   const { user: currentUser } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [selectedConvId, setSelectedConvId] = useState(null);
+  const [showDetailsPanel, setShowDetailsPanel] = useState(true);
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -480,7 +481,10 @@ export default function CommunicationDepot() {
 
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {filteredConversations.length > 0 ? filteredConversations.map(conv => (
-              <div key={conv.id} onClick={() => setSelectedConvId(conv.id)}
+              <div key={conv.id} onClick={() => {
+                setSelectedConvId(conv.id);
+                setShowDetailsPanel(true);
+              }}
                 className={`p-4 border-b border-slate-50 cursor-pointer flex gap-3 relative transition-colors ${
                   selectedConvId === conv.id ? 'border-l-4 border-blue-600 bg-blue-50/50' : 'hover:bg-slate-50'
                 }`}>
@@ -653,11 +657,17 @@ export default function CommunicationDepot() {
             </div>
 
             {/* Right Column: Conversation Details */}
-            <div className="w-full lg:w-[300px] bg-white lg:border-l border-t lg:border-t-0 border-slate-200 flex flex-col flex-shrink-0 min-h-[400px] lg:min-h-0">
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                <h2 className="text-xs font-bold text-slate-900">Conversation Details</h2>
-                <button className="text-slate-400 hover:text-slate-600 transition-colors"><X size={16} /></button>
-              </div>
+            {showDetailsPanel && (
+              <div className="w-full lg:w-[300px] bg-white lg:border-l border-t lg:border-t-0 border-slate-200 flex flex-col flex-shrink-0 min-h-[400px] lg:min-h-0">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                  <h2 className="text-xs font-bold text-slate-900">Conversation Details</h2>
+                  <button 
+                    onClick={() => setShowDetailsPanel(false)}
+                    className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
 
               <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5">
                 {/* Profile */}
@@ -792,6 +802,7 @@ export default function CommunicationDepot() {
             </div>
           </div>
         </div>
+        )}
       </>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center bg-white min-h-[500px]">

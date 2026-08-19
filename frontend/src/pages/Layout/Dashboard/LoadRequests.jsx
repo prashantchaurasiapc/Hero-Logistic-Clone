@@ -953,17 +953,23 @@ export default function LoadRequests() {
             </div>
 
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500 font-semibold">Route</span>
-                <span className="font-extrabold text-slate-900">Melbourne VIC → Sydney NSW</span>
+              <div className="flex justify-between gap-2">
+                <span className="text-slate-500 font-semibold shrink-0">Route</span>
+                <span className="font-extrabold text-slate-900 text-right truncate">
+                  {pickupForm.location.trim() ? pickupForm.location : 'Origin'} → {deliveryForm.location.trim() ? deliveryForm.location : 'Destination'}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 font-semibold">Pickup</span>
-                <span className="font-bold text-slate-800">30 May 2025 at 02:30 PM</span>
+              <div className="flex justify-between gap-2">
+                <span className="text-slate-500 font-semibold shrink-0">Pickup</span>
+                <span className="font-bold text-slate-800 text-right truncate">
+                  {pickupForm.date ? `${pickupForm.date}${pickupForm.time ? ' at ' + pickupForm.time : ''}` : 'Pending Selection'}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 font-semibold">Delivery</span>
-                <span className="font-bold text-slate-800">30 May 2025 at 02:30 PM</span>
+              <div className="flex justify-between gap-2">
+                <span className="text-slate-500 font-semibold shrink-0">Delivery</span>
+                <span className="font-bold text-slate-800 text-right truncate">
+                  {deliveryForm.date ? `${deliveryForm.date}${deliveryForm.time ? ' at ' + deliveryForm.time : ''}` : 'Pending Selection'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 font-semibold">Items</span>

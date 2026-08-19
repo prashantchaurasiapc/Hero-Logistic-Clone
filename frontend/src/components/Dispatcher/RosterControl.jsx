@@ -678,17 +678,51 @@ export default function RosterControl() {
                   </tbody>
                 </table>
                 {/* Legend */}
-                <div className="p-4 flex flex-wrap items-center gap-4 border-t border-slate-200 bg-white rounded-b-xl">
+                <div className="p-4 flex flex-wrap items-center gap-3 border-t border-slate-200 bg-slate-50/50 rounded-b-xl">
+                  <span className="text-xs font-bold text-slate-700 mr-1">Status Filter:</span>
                   {[
                     { label: 'On Shift', color: 'emerald' }, { label: 'Available', color: 'emerald' },
                     { label: 'Leave', color: 'orange' }, { label: 'En Route', color: 'blue' },
                     { label: 'Break / Off Duty', color: 'slate' }, { label: 'Unavailable', color: 'rose' }
-                  ].map(({ label, color }) => (
-                    <div key={label} className="flex items-center gap-1.5 whitespace-nowrap">
-                      <span className={`w-3 h-3 rounded-sm border border-${color}-400 bg-white`}></span>
-                      <span className="text-[10px] font-medium text-slate-500">{label}</span>
-                    </div>
-                  ))}
+                  ].map(({ label, color }) => {
+                    const isSelected = filters.status === label;
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => {
+                          const nextStatus = isSelected ? 'All Statuses' : label;
+                          setFilters(prev => ({ ...prev, status: nextStatus }));
+                          showToast(isSelected ? 'Showing all workforce statuses' : `Filtered by status: ${label}`);
+                        }}
+                        className={`flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                          isSelected 
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-xs scale-105' 
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                        }`}
+                      >
+                        <span className={`w-2.5 h-2.5 rounded-full border border-white shrink-0 ${
+                          color === 'emerald' ? 'bg-emerald-500' :
+                          color === 'orange' ? 'bg-amber-500' :
+                          color === 'blue' ? 'bg-blue-500' :
+                          color === 'rose' ? 'bg-rose-500' : 'bg-slate-400'
+                        }`} />
+                        <span>{label}</span>
+                      </button>
+                    );
+                  })}
+                  {filters.status !== 'All Statuses' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilters(prev => ({ ...prev, status: 'All Statuses' }));
+                        showToast('Reset status filter');
+                      }}
+                      className="text-xs font-bold text-rose-600 hover:underline cursor-pointer ml-1"
+                    >
+                      Clear Filter
+                    </button>
+                  )}
                   <span className="text-[10px] font-medium text-slate-500 ml-auto">Numbers show: Assigned / Required</span>
                 </div>
               </div>

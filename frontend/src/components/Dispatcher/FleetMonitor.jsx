@@ -18,6 +18,7 @@ export default function FleetMonitor() {
   const [activeDriverTab, setActiveDriverTab] = useState('All');
   const [selectedDriverId, setSelectedDriverId] = useState('DRV-101');
   const [activeDetailsTab, setActiveDetailsTab] = useState('Route & Stops');
+  const [showDriverPanel, setShowDriverPanel] = useState(true);
   const [mapMode, setMapMode] = useState('Map');
   const [toastMsg, setToastMsg] = useState('');
 
@@ -103,6 +104,7 @@ export default function FleetMonitor() {
   };
 
   const [liveDrivers, setLiveDrivers] = useState([]);
+  const [dbLoadsList, setDbLoadsList] = useState([]);
   const [isLoadingLive, setIsLoadingLive] = useState(true);
 
   const fetchLiveDrivers = async () => {
@@ -116,6 +118,8 @@ export default function FleetMonitor() {
       const dbDrivers = driversRes.data?.data || [];
       const dbLoads = loadsRes.data?.data || [];
       const dbBranches = branchesRes.data?.data || [];
+
+      setDbLoadsList(dbLoads);
 
       if (dbBranches.length > 0) {
         setLocationPresets(dbBranches.map(b => ({
@@ -236,8 +240,8 @@ export default function FleetMonitor() {
     return matchesQuery && matchesBranch && matchesDriver && matchesStatus && matchesLoadStatus && matchesTab;
   });
 
-  // On-Road Summary Loads Table Data
-  const summaryLoads = [
+  // On-Road Summary Loads Table Data (Dynamic API + Fallbacks)
+  const defaultSummaryLoads = [
     {
       loadId: 'LD-10583',
       driver: 'John Doe',
@@ -304,6 +308,37 @@ export default function FleetMonitor() {
       progressStep: '1/4'
     }
   ];
+
+  const summaryLoads = dbLoadsList.length > 0
+    ? dbLoadsList.map((l, index) => {
+        const rawId = l.loadRef || l.referenceNumber || l.loadNumber || l.id;
+        const cleanId = (rawId && rawId.length > 18) ? `LD-${rawId.slice(0, 8).toUpperCase()}` : (rawId || `LD-100${index + 1}`);
+        const drvName = l.driver?.firstName || l.driver?.name || l.driverName || 'DRIVER Demo';
+        const drvAvatar = l.driver?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(drvName)}`;
+        
+        const pickupLoc = l.pickupLocation || l.origin || 'Origin Depot';
+        const deliveryLoc = l.deliveryLocation || l.destination || 'Destination Yard';
+        const routeStr = `${pickupLoc} → ${deliveryLoc}`;
+        
+        const vehStr = l.vehicle?.name || l.vehicleId || 'BS738782 (Scorpio S11)';
+        const statusVal = l.status === 'IN_TRANSIT' ? 'In Transit' : (l.status === 'ASSIGNED' ? 'En Route' : 'Planned');
+        const statusStyleVal = statusVal === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200';
+
+        return {
+          loadId: cleanId,
+          driver: drvName,
+          avatar: drvAvatar,
+          status: statusVal,
+          statusStyle: statusStyleVal,
+          route: routeStr,
+          vehicle: vehStr,
+          lastUpdate: 'Just now',
+          etaNext: '09:30 AM',
+          etaDelivery: '05:00 PM',
+          progressStep: `${(index % 3) + 1}/5`
+        };
+      })
+    : defaultSummaryLoads;
 
   // Leaflet Map Initialization
   useEffect(() => {
@@ -580,7 +615,10 @@ export default function FleetMonitor() {
               return (
                 <div
                   key={drv.id}
-                  onClick={() => setSelectedDriverId(drv.id)}
+                  onClick={() => {
+                    setSelectedDriverId(drv.id);
+                    setShowDriverPanel(true);
+                  }}
                   className={`p-3 rounded-xl border transition-all cursor-pointer text-left space-y-2 ${
                     isSelected 
                       ? 'bg-blue-50/70 border-blue-300 shadow-2xs font-medium' 
@@ -634,10 +672,9 @@ export default function FleetMonitor() {
         </div>
 
         {/* ------------------------------------------------------------
-           CENTER COLUMN: INTERACTIVE MAP & ON-ROAD SUMMARY (lg:col-span-5)
-           Adjusted Height & Spacing as requested!
+           CENTER COLUMN: INTERACTIVE MAP & ON-ROAD SUMMARY (lg:col-span-5 or 9)
            ------------------------------------------------------------ */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className={`${showDriverPanel ? 'lg:col-span-5' : 'lg:col-span-9'} space-y-4 transition-all duration-300`}>
           
           {/* Map Card Container (Height Reduced to 340px for compact clean view) */}
           <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden relative">
@@ -831,15 +868,19 @@ export default function FleetMonitor() {
            RIGHT COLUMN: SELECTED DRIVER DETAIL PANEL (lg:col-span-4)
            Expanded width & Spacing for clean non-squished presentation!
            ------------------------------------------------------------ */}
-        <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200/80 shadow-2xs p-5 space-y-4 text-left">
-          
-          {/* Header Title */}
-          <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">SELECTED DRIVER</h3>
-            <button className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
-              <X className="w-4.5 h-4.5" />
-            </button>
-          </div>
+        {showDriverPanel && (
+          <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200/80 shadow-2xs p-5 space-y-4 text-left">
+            
+            {/* Header Title */}
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">SELECTED DRIVER</h3>
+              <button 
+                onClick={() => setShowDriverPanel(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              >
+                <X className="w-4.5 h-4.5" />
+              </button>
+            </div>
 
           {/* Driver Header Box */}
           <div className="flex items-start justify-between gap-4 pb-2">
@@ -1180,6 +1221,7 @@ export default function FleetMonitor() {
           </div>
 
         </div>
+        )}
 
       </div>
 
