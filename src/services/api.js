@@ -1,13 +1,23 @@
 import axios from 'axios';
 
+const LIVE_API_URL = 'https://hero-logistics-backend-production.up.railway.app/api/v1';
+
+const getBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+  return LIVE_API_URL;
+};
+
 const api = axios.create({
-  // baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1',
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://hero-logistics-backend-production.up.railway.app/api/v1',
+  baseURL: getBaseUrl(),
   withCredentials: true, // Crucial for sending HttpOnly cookies
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
 
 export const getSuperAdminDashboard = () => {
   return api.get('/super-admin/dashboard');
