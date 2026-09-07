@@ -278,12 +278,12 @@ export default function Expenses() {
   }, [expensesData]);
 
   const kpis = [
-    { title: 'Total Expenses (This Period)', value: formatCurrency(totalExpensesSum), sub: `${expensesData.length} expenses`, trend: '0%', isUp: false, trendLabel: 'vs last period', link: 'View summary →', bg: 'bg-blue-50 text-blue-600', icon: <CreditCard size={20} /> },
-    { title: 'Pending Approval', value: formatCurrency(expensesData.filter(e=>e.status==='Pending Approval').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Pending Approval']} expenses`, link: 'View items →', bg: 'bg-emerald-50 text-emerald-600', icon: <Calendar size={20} /> },
-    { title: 'Approved (This Period)', value: formatCurrency(expensesData.filter(e=>e.status==='Approved').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Approved']} expenses`, link: 'View items →', bg: 'bg-amber-50 text-amber-600', icon: <Users size={20} /> },
-    { title: 'Reimbursed (This Period)', value: formatCurrency(expensesData.filter(e=>e.status==='Reimbursed').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Reimbursed']} expenses`, link: 'View payments →', bg: 'bg-purple-50 text-purple-600', icon: <Wallet size={20} /> },
-    { title: 'Overdue Expenses', value: formatCurrency(expensesData.filter(e=>e.status==='Overdue').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Overdue']} expenses`, overdueCount: 0, link: 'View overdue →', bg: 'bg-rose-50 text-rose-600', icon: <AlertCircle size={20} /> },
-    { title: 'This Period vs Last', value: '0%', isUp: false, subLabel: 'vs $0.00', link: 'View report →', bg: 'bg-teal-50 text-teal-600', icon: <Activity size={20} /> },
+    { title: 'TOTAL EXPENSES', value: formatCurrency(totalExpensesSum), sub: `${expensesData.length} expenses`, trend: '0%', trendLabel: 'vs last period', link: 'View summary →', bg: 'bg-blue-50 text-blue-600 border border-blue-100', icon: <CreditCard size={16} /> },
+    { title: 'PENDING APPROVAL', value: formatCurrency(expensesData.filter(e=>e.status==='Pending Approval').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Pending Approval']} expenses`, link: 'View items →', bg: 'bg-emerald-50 text-emerald-600 border border-emerald-100', icon: <Calendar size={16} /> },
+    { title: 'APPROVED', value: formatCurrency(expensesData.filter(e=>e.status==='Approved').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Approved']} expenses`, link: 'View items →', bg: 'bg-amber-50 text-amber-600 border border-amber-100', icon: <Users size={16} /> },
+    { title: 'REIMBURSED', value: formatCurrency(expensesData.filter(e=>e.status==='Reimbursed').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Reimbursed']} expenses`, link: 'View payments →', bg: 'bg-purple-50 text-purple-600 border border-purple-100', icon: <Wallet size={16} /> },
+    { title: 'OVERDUE EXPENSES', value: formatCurrency(expensesData.filter(e=>e.status==='Overdue').reduce((a,c)=>a+c.total,0)), sub: `${tabCounts['Overdue']} expenses`, link: 'View overdue →', bg: 'bg-rose-50 text-rose-600 border border-rose-100', icon: <AlertCircle size={16} /> },
+    { title: 'PERIOD COMPARISON', value: '0%', sub: 'vs $0.00 last period', link: 'View report →', bg: 'bg-teal-50 text-teal-600 border border-teal-100', icon: <Activity size={16} /> },
   ];
 
   // --- CHART DATA ---
@@ -376,36 +376,32 @@ export default function Expenses() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6 py-2 flex-shrink-0">
+      <div className="px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 mb-6 flex-shrink-0">
         {kpis.map((kpi, index) => (
-          <div key={index} className="bg-white rounded-xl p-4 shadow-sm border border-slate-200/60 flex flex-col justify-between w-full">
-            <div className="flex items-start justify-between mb-4">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${kpi.bg}`}>
+          <div key={index} className="bg-white rounded-xl p-3.5 shadow-xs border border-slate-200/80 hover:border-slate-300 transition-all flex flex-col justify-between w-full h-[124px]">
+            <div className="flex items-center justify-between">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${kpi.bg}`}>
                 {kpi.icon}
               </div>
+              <button className="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer shrink-0">
+                {kpi.link}
+              </button>
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 truncate">{kpi.title}</p>
-              <div className="text-xl font-black text-slate-900 mb-2">{kpi.value}</div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[11px] font-medium">
-                  {kpi.trend !== undefined ? (
-                    <>
-                      <span className="flex items-center gap-0.5 text-emerald-600 font-bold">
-                        <TrendingUp size={12} />
-                        {kpi.trend}
-                      </span>
-                      <span className="text-slate-400 text-[10px]">{kpi.trendLabel}</span>
-                    </>
-                  ) : kpi.subLabel ? (
-                    <span className="text-slate-400 text-[10px]">{kpi.subLabel}</span>
-                  ) : (
-                    <span className="text-slate-500 font-semibold text-[11px]">{kpi.sub}</span>
-                  )}
-                </div>
-                <button className="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer">
-                  {kpi.link}
-                </button>
+              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider truncate mb-0.5" title={kpi.title}>
+                {kpi.title}
+              </p>
+              <div className="text-lg font-black text-slate-900 tracking-tight leading-tight mb-1 truncate" title={kpi.value}>
+                {kpi.value}
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 truncate">
+                {kpi.trend !== undefined ? (
+                  <span className="inline-flex items-center gap-0.5 text-emerald-600 font-bold shrink-0">
+                    <TrendingUp size={11} />
+                    {kpi.trend}
+                  </span>
+                ) : null}
+                <span className="text-slate-400 font-medium truncate">{kpi.trendLabel || kpi.sub}</span>
               </div>
             </div>
           </div>
