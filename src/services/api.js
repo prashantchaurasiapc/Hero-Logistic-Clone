@@ -57,6 +57,15 @@ export const submitHandoverToProvisioning = (id) => api.post(`/onboarding-handov
 export const createSalesActivity = (data) => api.post('/sales-activitys', data);
 export const convertLeadToCompany = (id, data) => api.post(`/leads/${id}/convert-to-company`, data);
 
+// Sales Settings APIs
+export const getSalesSettings = () => api.get('/sales-settings');
+export const saveSalesTemplate = (data) => api.post('/sales-settings/templates', data);
+export const deleteSalesTemplate = (name) => api.delete(`/sales-settings/templates/${encodeURIComponent(name)}`);
+export const addSalesStage = (stage) => api.post('/sales-settings/stages', { stage });
+export const deleteSalesStage = (stage) => api.delete(`/sales-settings/stages/${encodeURIComponent(stage)}`);
+export const addSalesSource = (source) => api.post('/sales-settings/sources', { source });
+export const deleteSalesSource = (source) => api.delete(`/sales-settings/sources/${encodeURIComponent(source)}`);
+
 // Dispatcher APIs
 export const getLoads = () => api.get('/loads');
 export const createLoad = (data) => api.post('/loads', data);

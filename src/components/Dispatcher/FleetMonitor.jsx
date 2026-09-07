@@ -84,7 +84,7 @@ export default function FleetMonitor() {
       setSelectedDriverId(targetDriver.id);
       setShowDriverPanel(true);
       if (mapRef.current && targetDriver.lat && targetDriver.lng) {
-        mapRef.current.setView([targetDriver.lat, targetDriver.lng], 9);
+        mapRef.current.flyTo([targetDriver.lat, targetDriver.lng], 9, { animate: true, duration: 1.2 });
       }
     }
     setOpenActionMenuId(null);
@@ -142,12 +142,23 @@ export default function FleetMonitor() {
     }));
   };
 
-  const handleSendLocationSubmit = (e) => {
+  const handleSendLocationSubmit = async (e) => {
     e.preventDefault();
     const targetDriver = driversList.find(d => d.id === locationFormData.driverId) || selectedDriver;
     const destName = locationFormData.presetName || locationFormData.address || 'Selected Waypoint';
     
-    // Append event for driver
+    try {
+      if (targetDriver?.id) {
+        await api.post('/driver-messages', {
+          driverId: targetDriver.id,
+          message: `Location Dispatched: ${destName} (${locationFormData.address})`,
+          channel: locationFormData.channel
+        }).catch(() => {});
+      }
+    } catch (err) {
+      console.warn('Driver message API call:', err);
+    }
+
     const newEvent = {
       id: Date.now(),
       title: `Location Dispatched: ${destName}`,
@@ -171,78 +182,91 @@ export default function FleetMonitor() {
   const fetchLiveDrivers = async () => {
     setIsLoadingLive(true);
     try {
-      const [driversRes, loadsRes, branchesRes] = await Promise.all([
-        api.get('/drivers'),
-        api.get('/loads'), // To check if driver is currently assigned a load
-        api.get('/companies/branches').catch(() => ({ data: { data: [] } }))
+      const [trackingRes, driversRes, loadsRes, branchesRes] = await Promise.all([
+        api.get('/company-admin/live-tracking').catch(() => ({ data: { data: [] } })),
+        api.get('/company-admin/drivers').catch(() => api.get('/drivers')),
+        api.get('/company-admin/loads').catch(() => api.get('/loads')),
+        api.get('/company-admin/branches').catch(() => ({ data: { data: [] } }))
       ]);
-      const dbDrivers = driversRes.data?.data || [];
-      const dbLoads = loadsRes.data?.data || [];
-      const dbBranches = branchesRes.data?.data || [];
+
+      const trackingVehicles = trackingRes.data?.data?.vehicles || trackingRes.data?.vehicles || [];
+      const dbDrivers = driversRes.data?.data || driversRes.data || [];
+      const dbLoads = loadsRes.data?.data || loadsRes.data || [];
+      const dbBranches = branchesRes.data?.data || branchesRes.data || [];
 
       setDbLoadsList(dbLoads);
 
       if (dbBranches.length > 0) {
         setLocationPresets(dbBranches.map(b => ({
           name: b.name,
-          address: b.location || 'Unknown Location',
-          lat: '-33.8845', // Default fallback if no real gps
-          lng: '151.0452'
+          address: b.location || b.address || 'Regional Branch Terminal',
+          lat: b.latitude ? String(b.latitude) : '-33.8845',
+          lng: b.longitude ? String(b.longitude) : '151.0452'
         })));
       }
 
       const eventsMap = {};
 
-      // Fallback preset active loads for drivers if DB loads aren't assigned yet
-      const defaultActiveLoads = [
-        { loadRef: 'PO-163402', customerName: 'Direct Customer', routeFrom: 'Geelong VIC', routeTo: 'Sydney NSW', status: 'IN_TRANSIT', speed: '68 km/h', lat: -38.1499, lng: 144.3617 },
-        { loadRef: 'PO-373069', customerName: 'Direct Customer', routeFrom: 'Melbourne VIC', routeTo: 'Mumbai', status: 'EN_ROUTE', speed: '74 km/h', lat: -33.8688, lng: 151.2093 },
-        { loadRef: 'LD-4736', customerName: 'Customer Portal', routeFrom: 'Brisbane QLD', routeTo: 'Perth WA', status: 'IN_TRANSIT', speed: '62 km/h', lat: -27.4698, lng: 153.0251 }
-      ];
-
+      // Build driver list merged with real vehicles & telemetry
       const formatted = dbDrivers.map((d, index) => {
-        let activeLoad = dbLoads.find(l => l.driverId === d.id && l.status !== 'DELIVERED');
-        const fallbackLoad = defaultActiveLoads[index % defaultActiveLoads.length];
+        // Find assigned load for driver
+        const activeLoad = dbLoads.find(l => l.driverId === d.id && l.status !== 'DELIVERED') || dbLoads[index % Math.max(1, dbLoads.length)];
+        
+        // Find vehicle & telemetry log associated with driver
+        const matchedVehicle = trackingVehicles.find(v => v.currentDriverId === d.id || v.currentDriver?.id === d.id) || trackingVehicles[index % Math.max(1, trackingVehicles.length)];
 
-        const loadId = activeLoad ? (activeLoad.loadRef || activeLoad.id?.substring(0,8)) : fallbackLoad.loadRef;
-        const customerName = activeLoad?.customer?.name || fallbackLoad.customerName;
-        const routeFrom = activeLoad?.notes?.includes(' to ') ? activeLoad.notes.split(' to ')[0] : fallbackLoad.routeFrom;
-        const routeTo = activeLoad?.notes?.includes(' to ') ? activeLoad.notes.split(' to ')[1] : fallbackLoad.routeTo;
-        const statusText = index % 2 === 0 ? 'In Transit' : 'En Route';
-        const speedText = fallbackLoad.speed;
-        const latVal = fallbackLoad.lat;
-        const lngVal = fallbackLoad.lng;
+        const loadId = activeLoad ? (activeLoad.loadRef || (activeLoad.id && activeLoad.id.length > 18 ? `LD-${activeLoad.id.slice(0, 8).toUpperCase()}` : activeLoad.id)) : `LD-100${index + 1}`;
+        const customerName = activeLoad?.customer?.name || (typeof activeLoad?.customer === 'string' ? activeLoad.customer : 'Direct Customer');
+        
+        const pickupLoc = activeLoad?.stops?.find(s => s.type === 'PICKUP')?.address || activeLoad?.pickupLocation || activeLoad?.origin || 'Melbourne VIC';
+        const dropLoc = activeLoad?.stops?.find(s => s.type === 'DROPOFF')?.address || activeLoad?.deliveryLocation || activeLoad?.destination || 'Sydney NSW';
+
+        const statusText = activeLoad?.status === 'IN_TRANSIT' ? 'In Transit' : (activeLoad?.status === 'ASSIGNED' ? 'En Route' : 'In Transit');
+        const speedVal = matchedVehicle?.speedKmh ? `${matchedVehicle.speedKmh} km/h` : `${60 + (index * 7) % 30} km/h`;
+        const headingVal = matchedVehicle?.heading ? `${matchedVehicle.heading}°` : ['NE', 'SW', 'N', 'S', 'E', 'W'][index % 6];
+
+        // GPS coordinates: from vehicle telemetry or fallback
+        const latVal = matchedVehicle?.latitude || (-33.8688 - (index * 0.45));
+        const lngVal = matchedVehicle?.longitude || (151.2093 + (index * 0.35));
 
         eventsMap[d.id] = [
-          { id: 1, title: `Active Load ${loadId}: En Route to ${routeTo}`, time: 'Just now', status: 'active' },
-          { id: 2, title: `Departed Origin: ${routeFrom}`, time: '2 hours ago', status: 'completed' },
+          { id: 1, title: `Active Load ${loadId}: En Route to ${dropLoc}`, time: 'Just now', status: 'active' },
+          { id: 2, title: `Departed Origin: ${pickupLoc}`, time: '2 hours ago', status: 'completed' },
           { id: 3, title: 'Pre-trip Safety & Medical Inspection Cleared', time: 'Today 07:30 AM', status: 'completed' }
         ];
 
+        const fullName = d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : (d.driverCode || `Driver ${index + 1}`);
+
         return {
           id: d.id,
-          name: cleanDriverName(d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : d.driverCode, index),
+          rawDriver: d,
+          activeLoad: activeLoad,
+          name: cleanDriverName(fullName, index),
           status: statusText,
-
           statusStyle: statusText === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200',
           statusDot: statusText === 'In Transit' ? 'bg-emerald-500' : 'bg-blue-500',
           loadId: loadId,
-          speed: speedText,
-          heading: ['NE', 'SW', 'N', 'S', 'E', 'W'][index % 6],
+          speed: speedVal,
+          heading: headingVal,
           lastUpdate: 'Just now',
           toDest: `${120 + (index * 45) % 250} km`,
           customer: customerName,
-          routeFrom: routeFrom,
-          routeTo: routeTo,
+          routeFrom: pickupLoc,
+          routeTo: dropLoc,
+          vehicle: matchedVehicle ? `${matchedVehicle.make || 'Volvo'} ${matchedVehicle.model || 'FH16'}` : 'Scania R580 (TR-01)',
+          phone: d.phone || '0412 345 678',
           lat: latVal,
           lng: lngVal,
           badgeColor: statusText === 'In Transit' ? '#10b981' : '#3b82f6',
-          avatar: d.avatarUrl || `https://ui-avatars.com/api/?name=` + encodeURIComponent(d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : (d.driverCode || 'Driver'))
+          avatar: d.avatarUrl || `https://ui-avatars.com/api/?name=` + encodeURIComponent(fullName)
         };
       });
 
       setDriverEventsMap(eventsMap);
       setLiveDrivers(formatted);
+      if (formatted.length > 0 && !selectedDriverId) {
+        setSelectedDriverId(formatted[0].id);
+      }
     } catch (err) {
       console.error('Error fetching live drivers:', err);
       triggerToast('Error loading live map data');
@@ -253,8 +277,7 @@ export default function FleetMonitor() {
 
   useEffect(() => {
     fetchLiveDrivers();
-    // Optional: could set up a polling interval here to refresh live data
-    const interval = setInterval(fetchLiveDrivers, 30000); // refresh every 30s
+    const interval = setInterval(fetchLiveDrivers, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -371,47 +394,74 @@ export default function FleetMonitor() {
     }
   ];
 
-  const summaryLoads = dbLoadsList.length > 0
-    ? dbLoadsList.map((l, index) => {
-        const rawId = l.loadRef || l.referenceNumber || l.loadNumber || l.id;
-        const cleanId = (rawId && rawId.length > 18) ? `LD-${rawId.slice(0, 8).toUpperCase()}` : (rawId || `LD-100${index + 1}`);
-        const matchedDriver = driversList.find(d => d.id === l.driverId) || driversList[index % driversList.length] || {};
-        const rawDrvName = l.driver?.firstName || l.driver?.name || l.driverName || matchedDriver.name;
-        const drvName = cleanDriverName(rawDrvName, index);
-        const drvAvatar = l.driver?.avatarUrl || matchedDriver.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(drvName)}`;
-        const drvPhone = l.driver?.phone || matchedDriver.phone || '0412 345 678';
+  const summaryLoads = (() => {
+    const rawList = dbLoadsList.length > 0
+      ? dbLoadsList.map((l, index) => {
+          const rawId = l.loadRef || l.referenceNumber || l.loadNumber || l.id;
+          const cleanId = (rawId && rawId.length > 18) ? `LD-${rawId.slice(0, 8).toUpperCase()}` : (rawId || `LD-100${index + 1}`);
+          const matchedDriver = driversList.find(d => d.id === l.driverId) || (l.driver ? { name: `${l.driver.firstName || ''} ${l.driver.lastName || ''}`.trim(), avatar: l.driver.avatarUrl, phone: l.driver.phone } : null) || driversList[index % Math.max(1, driversList.length)] || {};
+          const rawDrvName = l.driver?.firstName || l.driver?.name || l.driverName || matchedDriver.name;
+          const drvName = cleanDriverName(rawDrvName, index);
+          const drvAvatar = l.driver?.avatarUrl || matchedDriver.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(drvName)}`;
+          const drvPhone = l.driver?.phone || matchedDriver.phone || '0412 345 678';
 
-        
-        const pickupLoc = l.pickupLocation || l.origin || 'Melbourne VIC';
-        const deliveryLoc = l.deliveryLocation || l.destination || 'Geelong VIC';
-        const routeStr = `${pickupLoc} → ${deliveryLoc}`;
-        
-        const vehStr = l.vehicle?.name || l.vehicleId || 'MAN TGX 26.580 (TR-01)';
-        const statusVal = l.status === 'IN_TRANSIT' ? 'In Transit' : (l.status === 'ASSIGNED' ? 'En Route' : 'Planned');
-        const statusStyleVal = statusVal === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200';
+          const pickupLoc = l.stops?.find(s => s.type === 'PICKUP')?.address || l.pickupLocation || l.origin || 'Melbourne VIC';
+          const deliveryLoc = l.stops?.find(s => s.type === 'DROPOFF')?.address || l.deliveryLocation || l.destination || 'Geelong VIC';
+          const routeStr = `${pickupLoc} → ${deliveryLoc}`;
+          
+          const vehStr = l.truck ? `${l.truck.make} ${l.truck.model}` : (l.vehicle?.name || l.vehicleId || 'MAN TGX 26.580 (TR-01)');
+          const statusVal = l.status === 'IN_TRANSIT' ? 'In Transit' : (l.status === 'ASSIGNED' ? 'En Route' : l.status === 'PLANNED' ? 'Planned' : 'DRAFT');
+          const statusStyleVal = statusVal === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200';
 
-        return {
-          loadId: cleanId,
-          rawLoad: l,
-          driverId: matchedDriver.id || `DRV-${index + 1}`,
-          driver: drvName,
-          phone: drvPhone,
-          avatar: drvAvatar,
-          status: statusVal,
-          statusStyle: statusStyleVal,
-          route: routeStr,
-          vehicle: vehStr,
-          lastUpdate: 'Just now',
-          etaNext: '09:30 AM',
-          etaDelivery: '05:00 PM',
-          progressStep: `${(index % 3) + 1}/5`
-        };
-      })
-    : defaultSummaryLoads.map((item, idx) => ({
-        ...item,
-        driverId: driversList[idx % driversList.length]?.id || `DRV-${idx + 101}`,
-        phone: '0412 345 678'
-      }));
+          return {
+            loadId: cleanId,
+            rawLoad: l,
+            driverId: matchedDriver.id || `DRV-${index + 1}`,
+            driver: drvName,
+            phone: drvPhone,
+            avatar: drvAvatar,
+            status: statusVal,
+            statusStyle: statusStyleVal,
+            route: routeStr,
+            vehicle: vehStr,
+            lastUpdate: 'Just now',
+            etaNext: '09:30 AM',
+            etaDelivery: '05:00 PM',
+            progressStep: `${(index % 3) + 1}/5`
+          };
+        })
+      : defaultSummaryLoads.map((item, idx) => ({
+          ...item,
+          driverId: driversList[idx % Math.max(1, driversList.length)]?.id || `DRV-${idx + 101}`,
+          phone: '0412 345 678'
+        }));
+
+    // Deduplicate loads by loadId
+    const uniqueMap = new Map();
+    rawList.forEach(item => {
+      if (!uniqueMap.has(item.loadId)) {
+        uniqueMap.set(item.loadId, item);
+      }
+    });
+    const uniqueList = Array.from(uniqueMap.values());
+
+    // Filter by searchQuery & top filters
+    const query = (driverSearchQuery || topSearchQuery).toLowerCase().trim();
+    return uniqueList.filter(item => {
+      const matchesQuery = !query ||
+        item.loadId.toLowerCase().includes(query) ||
+        item.driver.toLowerCase().includes(query) ||
+        item.route.toLowerCase().includes(query) ||
+        item.vehicle.toLowerCase().includes(query);
+
+      const matchesBranch = branchFilter === 'All Branches' || item.route.includes(branchFilter.split(' ')[0]);
+      const matchesDriver = driverFilter === 'All Drivers' || item.driver === driverFilter;
+      const matchesStatus = statusFilter === 'All Statuses' || item.status === statusFilter;
+      const matchesLoadStatus = loadStatusFilter === 'All Loads' || (loadStatusFilter === 'Assigned' ? (item.driverId && item.driverId !== 'N/A') : (!item.driverId || item.driverId === 'N/A'));
+
+      return matchesQuery && matchesBranch && matchesDriver && matchesStatus && matchesLoadStatus;
+    });
+  })();
 
 
   // Leaflet Map Initialization
@@ -690,8 +740,7 @@ export default function FleetMonitor() {
                 <div
                   key={drv.id}
                   onClick={() => {
-                    setSelectedDriverId(drv.id);
-                    setShowDriverPanel(true);
+                    handleFocusDriver(drv);
                   }}
                   className={`p-3 rounded-xl border transition-all cursor-pointer text-left space-y-2 ${
                     isSelected 
@@ -892,7 +941,13 @@ export default function FleetMonitor() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs font-medium">
-                  {summaryLoads.map((row) => (
+                  {summaryLoads.length === 0 ? (
+                    <tr>
+                      <td colSpan="10" className="py-6 text-center text-slate-400 text-xs font-semibold">
+                        No active loads matching selected filters.
+                      </td>
+                    </tr>
+                  ) : summaryLoads.map((row) => (
                     <tr key={row.loadId} className="hover:bg-slate-50 transition-colors">
                       <td className="py-2 px-2 font-bold text-blue-600 whitespace-nowrap">{row.loadId}</td>
                       <td className="py-2 px-2 whitespace-nowrap">

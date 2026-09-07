@@ -615,8 +615,8 @@ export default function PipelineBoard() {
 
       {/* Convert to Company Account Provisioning Modal */}
       {showConvertModal && selectedLead && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col text-left">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 pt-16 sm:pt-20 animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col text-left max-h-[calc(100vh-6rem)] my-auto">
             {/* Modal Header */}
             <div className="px-6 py-5 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white flex justify-between items-center border-b border-slate-800">
               <div className="flex items-center gap-3">
@@ -770,8 +770,8 @@ export default function PipelineBoard() {
 
       {/* Add Lead Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-lg overflow-hidden shadow-2xl text-left flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[999999] p-4 pt-16 sm:pt-20 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-lg overflow-hidden shadow-2xl text-left flex flex-col max-h-[calc(100vh-6rem)] my-auto">
             
             {/* Modal Header */}
             <div className="flex justify-between items-center px-6 py-4.5 border-b border-slate-100 bg-slate-50 shrink-0">
@@ -984,8 +984,8 @@ export default function PipelineBoard() {
       )}
       {/* ZOOM Modal */}
       {showZoomModal && selectedLead && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden animate-slide-in">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 pt-16 sm:pt-20 animate-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden animate-slide-in max-h-[calc(100vh-6rem)] my-auto flex flex-col">
             {/* Header */}
             <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
               <h2 className="text-[18px] font-bold text-slate-900">Schedule ZOOM Product Walkthrough</h2>
@@ -1041,8 +1041,8 @@ export default function PipelineBoard() {
 
       {/* Proposal Modal */}
       {showProposalModal && selectedLead && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden animate-slide-in">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 pt-16 sm:pt-20 animate-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden animate-slide-in max-h-[calc(100vh-6rem)] my-auto flex flex-col">
             {/* Header */}
             <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
               <h2 className="text-[18px] font-bold text-slate-900">Issue Licensing Agreement Proposal</h2>
@@ -1127,8 +1127,8 @@ export default function PipelineBoard() {
 
       {/* Schedule Follow-Up Modal */}
       {showScheduleModal && selectedLead && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden animate-slide-in">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 pt-16 sm:pt-20 animate-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden animate-slide-in max-h-[calc(100vh-6rem)] my-auto flex flex-col">
             {/* Header */}
             <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
               <h2 className="text-[18px] font-bold text-slate-900">Schedule Follow-Up Touchpoint</h2>
@@ -1203,8 +1203,8 @@ export default function PipelineBoard() {
       )}
       {/* Recommend Plan Modal */}
       {showRecommendModal && selectedLead && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-[560px] shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 pt-16 sm:pt-20 animate-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-[560px] shadow-2xl overflow-hidden max-h-[calc(100vh-6rem)] my-auto flex flex-col">
             {/* Header */}
             <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
               <h2 className="text-[18px] font-bold text-slate-900">Interactive License Tier Recommendation</h2>

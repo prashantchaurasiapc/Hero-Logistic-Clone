@@ -8,7 +8,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/uploads': {
-        target: 'http://localhost:5000',
+        // target: 'http://localhost:5000',
+        target: 'https://hero-logistics-backend-production.up.railway.app',
         changeOrigin: true,
         secure: false,
       },

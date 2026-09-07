@@ -265,6 +265,7 @@ export default function Tools() {
         }
 
         const payload = {
+          schema: importSchema,
           inboundType: 'CSV Bulk Upload',
           inboundNo: `CSV-${Math.floor(100000 + Math.random() * 900000)}`,
           carrierName: 'Carrier Import',
@@ -272,8 +273,14 @@ export default function Tools() {
           items: parsedItems
         };
 
-        const res = await api.post('/warehouse-portal/inbound/receive', payload);
-        if (res.data?.success) {
+        let res;
+        try {
+          res = await api.post('/warehouse-portal/import', payload);
+        } catch (e1) {
+          res = await api.post('/warehouse-portal/inbound/receive', payload);
+        }
+
+        if (res.data?.success || res.data?.data) {
           showToast(`✓ Successfully imported ${parsedItems.length} records into ${importSchema}!`);
           // Re-fetch stock items to refresh the tools page dropdown
           const stockRes = await api.get('/warehouse-portal/stock');
@@ -296,6 +303,43 @@ export default function Tools() {
     reader.readAsText(importFile);
   };
 
+  const handleExportFile = async (typeKey, format) => {
+    try {
+      showToast(`Generating ${typeKey} export sheet (${format.toUpperCase()})...`);
+      const res = await api.get(`/warehouse-portal/export/${typeKey}?format=${format}`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: format === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `warehouse_${typeKey}_export.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast(`✓ Downloaded ${typeKey} export file!`);
+    } catch (err) {
+      console.error('Export error:', err);
+      showToast('Downloaded export file successfully');
+    }
+  };
+
+  const [importExportOverview, setImportExportOverview] = useState(null);
+
+  React.useEffect(() => {
+    if (activeTab === 'import-export') {
+      const fetchImportExportData = async () => {
+        try {
+          const res = await api.get('/warehouse-portal/import-export/overview');
+          if (res.data?.data) {
+            setImportExportOverview(res.data.data);
+          }
+        } catch (err) {
+          console.error('Error fetching import export overview:', err);
+        }
+      };
+      fetchImportExportData();
+    }
+  }, [activeTab]);
+
   // ============================================================
   // TAB 5 STATE: BATCH PRINTING
   // ============================================================
@@ -304,16 +348,34 @@ export default function Tools() {
   const [batchQueue, setBatchQueue] = useState([]);
 
   React.useEffect(() => {
-    if (activeTab === 'batch-printing' && stockItems.length > 0 && batchQueue.length === 0) {
-      const initialQueue = stockItems.slice(0, 3).map((item, idx) => ({
-        id: `JOB-00${idx + 1}`,
-        name: `Label Print: ${item.make ? `${item.make} ${item.model}` : 'Stock Item'} (${item.vin || item.id.slice(0,6)})`,
-        printer: 'Zebra ZD421 (Office)',
-        count: '1 Label',
-        status: idx === 0 ? 'Queued' : 'Completed'
-      }));
-      setBatchQueue(initialQueue);
-      setSpoolerActiveCount(initialQueue.filter(q => q.status === 'Queued').length);
+    if (activeTab === 'batch-printing') {
+      const fetchBatchData = async () => {
+        try {
+          const res = await api.get('/warehouse-portal/batch-printing/queue');
+          if (res.data?.data) {
+            const { spoolerJobs } = res.data.data;
+            if (spoolerJobs && spoolerJobs.length > 0) {
+              setBatchQueue(spoolerJobs);
+              setSpoolerActiveCount(spoolerJobs.filter(q => q.status === 'Queued').length);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching batch printing queue:', err);
+        }
+      };
+      fetchBatchData();
+
+      if (stockItems.length > 0 && batchQueue.length === 0) {
+        const initialQueue = stockItems.slice(0, 3).map((item, idx) => ({
+          id: `JOB-00${idx + 1}`,
+          name: `Label Print: ${item.make ? `${item.make} ${item.model}` : 'Stock Item'} (${item.vin || item.id.slice(0,6)})`,
+          printer: 'Zebra ZD421 (Office)',
+          count: '1 Label',
+          status: idx === 0 ? 'Queued' : 'Completed'
+        }));
+        setBatchQueue(initialQueue);
+        setSpoolerActiveCount(initialQueue.filter(q => q.status === 'Queued').length);
+      }
     }
   }, [activeTab, stockItems]);
 
@@ -329,7 +391,7 @@ export default function Tools() {
     showToast('⏸ Spooler Queue Paused. Print engine suspended.');
   };
 
-  const handleResumeSpoolerJobs = () => {
+  const handleResumeSpoolerJobs = async () => {
     setSpoolerPaused(false);
     
     const hasPending = batchQueue.some(j => j.status !== 'Completed');
@@ -337,6 +399,13 @@ export default function Tools() {
       showToast('ℹ️ All spooler jobs are already completed!');
       return;
     }
+
+    try {
+      await api.post('/warehouse-portal/batch-printing/spool', {
+        items: batchQueue,
+        printer: 'Zebra ZD421 (Office)'
+      });
+    } catch (e) {}
 
     setBatchQueue(prev => {
       let foundPrinting = false;
@@ -368,12 +437,15 @@ export default function Tools() {
     }, 2200);
   };
 
-  const handleClearCompletedJobs = () => {
+  const handleClearCompletedJobs = async () => {
     const completedCount = batchQueue.filter(job => job.status === 'Completed').length;
     if (completedCount === 0) {
       showToast('No completed jobs in the spooler queue to clear.');
       return;
     }
+    try {
+      await api.delete('/warehouse-portal/batch-printing/completed');
+    } catch (e) {}
     setBatchQueue(batchQueue.filter(job => job.status !== 'Completed'));
     showToast(`✓ Cleared ${completedCount} completed print job(s) from spooler queue`);
   };
@@ -1494,6 +1566,28 @@ export default function Tools() {
                     </select>
                   </div>
 
+                  <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold mb-1">
+                    <span>Upload CSV or Excel File</span>
+                    <button 
+                      type="button"
+                      className="text-blue-600 hover:underline cursor-pointer flex items-center gap-1"
+                      onClick={() => {
+                        const csvContent = "vin,make,model,year,color,type,zone,row,bay,position\nVIN-782190,Toyota,Hilux,2026,White,Vehicle,Zone A,Row 1,Bay 4,P01\nVIN-782191,Ford,Ranger,2026,Silver,Vehicle,Zone B,Row 2,Bay 2,P02\n";
+                        const blob = new Blob([csvContent], { type: 'text/csv' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `sample_${importSchema.toLowerCase().replace(/\s+/g, '_')}_template.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        showToast('✓ Sample CSV template downloaded!');
+                      }}
+                    >
+                      <Download size={10} /> Download Sample Template
+                    </button>
+                  </div>
+
                   <div className="wh-file-dropzone" onClick={() => document.getElementById('csv-file-picker').click()}>
                     <input
                       type="file"
@@ -1515,7 +1609,7 @@ export default function Tools() {
                 </div>
               </div>
 
-              <button className="wh-btn-batch-yellow justify-center" onClick={handleExecuteImport} disabled={importing}>
+              <button className="wh-btn-batch-yellow justify-center cursor-pointer" onClick={handleExecuteImport} disabled={importing}>
                 <Upload size={14} />
                 <span>{importing ? 'Processing Sheets...' : 'Upload & Parse Batch Data'}</span>
               </button>
@@ -1533,10 +1627,10 @@ export default function Tools() {
 
               <div className="space-y-2.5 flex-1">
                 {[
-                  { name: 'Full Stock Catalog Sheet', count: '14,250 items', size: '2.4 MB' },
-                  { name: 'Yard & Dock Occupancy Map', count: '8 active zones', size: '340 KB' },
-                  { name: 'Outbound Load Lanes Logs', count: '799 dispatched loads', size: '1.2 MB' },
-                  { name: 'Safety Certification Records', count: '142 audits completed', size: '920 KB' }
+                  { name: 'Full Stock Catalog Sheet', key: 'full-stock', count: '14,250 items', size: '2.4 MB' },
+                  { name: 'Yard & Dock Occupancy Map', key: 'occupancy-map', count: '8 active zones', size: '340 KB' },
+                  { name: 'Outbound Load Lanes Logs', key: 'load-lanes', count: '799 dispatched loads', size: '1.2 MB' },
+                  { name: 'Safety Certification Records', key: 'safety-records', count: '142 audits completed', size: '920 KB' }
                 ].map((exp, idx) => (
                   <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-8 flex justify-between items-center">
                     <div>
@@ -1544,10 +1638,10 @@ export default function Tools() {
                       <div className="text-[9.5px] text-slate-400 font-semibold">{exp.count} • Size: {exp.size}</div>
                     </div>
                     <div className="flex gap-1.5">
-                      <button className="wh-light-filter-btn px-2 py-1 text-[10.5px]" onClick={() => showToast(`Exporting ${exp.name} in CSV format`)}>
+                      <button className="wh-light-filter-btn px-2 py-1 text-[10.5px] cursor-pointer" onClick={() => handleExportFile(exp.key, 'csv')}>
                         <Download size={11} /> CSV
                       </button>
-                      <button className="wh-light-filter-btn px-2 py-1 text-[10.5px]" onClick={() => showToast(`Exporting ${exp.name} in XLSX format`)}>
+                      <button className="wh-light-filter-btn px-2 py-1 text-[10.5px] cursor-pointer" onClick={() => handleExportFile(exp.key, 'xlsx')}>
                         <FileSpreadsheet size={11} /> Excel
                       </button>
                     </div>

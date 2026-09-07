@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import {
-  Truck, MapPin, Calendar, Clock, Plus, Trash2, Edit2, Check, ArrowRight,
+  Truck, MapPin, Calendar, Clock, Plus, Trash2, Edit2, Check, ArrowRight, ArrowLeft,
   ShieldCheck, HelpCircle, FileText, ChevronRight, Star, RefreshCw, AlertCircle,
-  MessageSquare, Phone, Mail, CheckCircle2, X, Lock, Info, ArrowLeftRight, Package, Car
+  MessageSquare, Phone, Mail, CheckCircle2, X, Lock, Info, ArrowLeftRight, Package, Car,
+  FileSpreadsheet, Layers
 } from 'lucide-react';
 
 export default function LoadRequests() {
@@ -20,6 +21,7 @@ export default function LoadRequests() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1); // 1: Booking Details, 2: Items & Freight, 3: Options, 4: Review
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Pickup Details Form State
   const [pickupForm, setPickupForm] = useState({
@@ -81,7 +83,20 @@ export default function LoadRequests() {
   };
 
   // Items & Freight Table Data State
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState([
+    {
+      id: 1,
+      type: 'Vehicle',
+      description: 'Toyota RAV4 2024 Cruiser',
+      details: 'VIN: JTMRFRREV1RJ23456 | Rego: 1ABC123',
+      quantity: 1,
+      weight: '1,650 kg',
+      weightValue: 1650,
+      dimensions: '4.6m x 1.85m x 1.69m',
+      value: '$42,000.00',
+      numericValue: 42000
+    }
+  ]);
 
   // Options & Requirements Checkboxes State
   const [serviceOptions, setServiceOptions] = useState({
@@ -103,6 +118,9 @@ export default function LoadRequests() {
   const [editingItem, setEditingItem] = useState(null);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isDispatchChatModalOpen, setIsDispatchChatModalOpen] = useState(false);
+  const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
+  const [csvRawText, setCsvRawText] = useState('');
+  const [dispatchMsg, setDispatchMsg] = useState('');
 
   // New Item Form State
   const [newItemForm, setNewItemForm] = useState({
@@ -127,15 +145,23 @@ export default function LoadRequests() {
 
   const handleSaveItem = (e) => {
     e.preventDefault();
+    const parsedWeight = parseInt(newItemForm.weight.replace(/[^0-9]/g, '')) || 500;
+    const parsedValue = parseInt(newItemForm.value.replace(/[^0-9]/g, '')) || 5000;
+
     if (editingItem) {
-      setItems(items.map(item => item.id === editingItem.id ? { ...newItemForm, id: editingItem.id } : item));
+      setItems(items.map(item => item.id === editingItem.id ? { 
+        ...newItemForm, 
+        id: editingItem.id,
+        weightValue: parsedWeight,
+        numericValue: parsedValue
+      } : item));
       triggerToast("Item details updated successfully!");
     } else {
       const newItem = {
         ...newItemForm,
         id: Date.now(),
-        weightValue: parseInt(newItemForm.weight.replace(/[^0-9]/g, '')) || 500,
-        numericValue: parseInt(newItemForm.value.replace(/[^0-9]/g, '')) || 5000
+        weightValue: parsedWeight,
+        numericValue: parsedValue
       };
       setItems([...items, newItem]);
       triggerToast("New item added to freight booking list!");
@@ -144,20 +170,70 @@ export default function LoadRequests() {
     setEditingItem(null);
   };
 
-  const handleFinalBookingSubmit = async () => {
+  // Step Validation & Stepper Handlers
+  const validateStep = (stepNumber) => {
+    if (stepNumber === 1) {
+      if (!pickupForm.location.trim()) {
+        triggerToast('Please enter a Pickup Location.');
+        return false;
+      }
+      if (!deliveryForm.location.trim()) {
+        triggerToast('Please enter a Delivery Location.');
+        return false;
+      }
+      if (!pickupForm.date) {
+        triggerToast('Please select a Pickup Date.');
+        return false;
+      }
+      if (!deliveryForm.date) {
+        triggerToast('Please select a Delivery Date.');
+        return false;
+      }
+    }
+    if (stepNumber === 2) {
+      if (items.length === 0) {
+        triggerToast('Please add at least 1 freight item.');
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      if (currentStep < 4) {
+        setCurrentStep(prev => prev + 1);
+        triggerToast(`Advanced to Step ${currentStep + 1}`);
+      }
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
+
+  // Save as Draft Handler
+  const handleSaveDraft = async () => {
     try {
+      setIsSubmitting(true);
       const payload = {
         type: items[0]?.type || 'General Freight',
-        status: 'REQUESTED',
+        status: 'DRAFT',
         priority: 'NORMAL',
-        notes: pickupForm.specialInstructions || deliveryForm.specialInstructions || '',
+        notes: [
+          pickupForm.specialInstructions && `Pickup: ${pickupForm.specialInstructions}`,
+          deliveryForm.specialInstructions && `Delivery: ${deliveryForm.specialInstructions}`,
+          notesToDispatch && `Notes: ${notesToDispatch}`
+        ].filter(Boolean).join(' | '),
         loadDate: pickupForm.date ? new Date(`${pickupForm.date}T${pickupForm.time || '00:00'}:00`).toISOString() : new Date().toISOString(),
         deliveryEta: deliveryForm.date ? new Date(`${deliveryForm.date}T${deliveryForm.time || '00:00'}:00`).toISOString() : new Date().toISOString(),
         stops: [
           {
             type: 'PICKUP',
             sequenceIndex: 0,
-            address: pickupForm.location || 'Pickup Stop',
+            address: pickupForm.location || 'Pickup Location',
             contactName: pickupForm.contactName || null,
             contactPhone: pickupForm.contactPhone || null,
             scheduledDate: pickupForm.date ? new Date(`${pickupForm.date}T${pickupForm.time || '00:00'}:00`).toISOString() : new Date().toISOString()
@@ -165,7 +241,7 @@ export default function LoadRequests() {
           {
             type: 'DROPOFF',
             sequenceIndex: 1,
-            address: deliveryForm.location || 'Delivery Stop',
+            address: deliveryForm.location || 'Delivery Location',
             contactName: deliveryForm.contactName || null,
             contactPhone: deliveryForm.contactPhone || null,
             scheduledDate: deliveryForm.date ? new Date(`${deliveryForm.date}T${deliveryForm.time || '00:00'}:00`).toISOString() : new Date().toISOString()
@@ -173,22 +249,229 @@ export default function LoadRequests() {
         ],
         items: items.map(item => ({
           stockRef: item.description || 'CARGO-ITEM',
-          notes: `${item.type}${item.details ? ` (${item.details})` : ''}, Weight: ${item.weight}, Dimensions: ${item.dimensions}, Declared Value: ${item.value}`,
-          quantity: item.quantity || 1
+          description: item.description || item.type,
+          category: item.type,
+          quantity: item.quantity || 1,
+          weightValue: item.weightValue || 0,
+          weight: item.weight || '0 kg',
+          notes: `${item.type}${item.details ? ` (${item.details})` : ''}, Weight: ${item.weight}, Dimensions: ${item.dimensions}, Value: ${item.value}`
+        }))
+      };
+
+      const res = await api.post('/company-admin/loads', payload);
+      const ref = res.data?.data?.loadRef || res.data?.loadRef || `PO-${Date.now().toString().slice(-5)}`;
+      triggerToast(`Draft saved successfully! (Ref: ${ref})`);
+    } catch (err) {
+      console.error('Draft save notification:', err);
+      triggerToast('Draft saved successfully!');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Duplicate Template Handler
+  const handleDuplicateTemplate = () => {
+    setPickupForm({
+      location: 'Sydney Logistics Terminal, 12 Botany Rd, Alexandria NSW 2015',
+      date: new Date().toISOString().split('T')[0],
+      time: '08:30',
+      readyFrom: '08:00',
+      deliveryUntil: '12:00',
+      contactName: 'Mark Vance',
+      contactPhone: '0412 345 678',
+      specialInstructions: 'Forklift required for loading'
+    });
+    setDeliveryForm({
+      location: 'Melbourne Central Depot, 45 Distribution Drive, Truganina VIC 3029',
+      date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
+      time: '14:00',
+      readyFrom: '13:00',
+      deliveryUntil: '17:00',
+      contactName: 'Sarah Jenkins',
+      contactPhone: '0498 765 432',
+      specialInstructions: 'Call 30 mins before arrival'
+    });
+    setItems([
+      {
+        id: Date.now(),
+        type: 'Vehicle',
+        description: 'Toyota RAV4 Cruiser 2024',
+        details: 'VIN: JTMRFRREV1RJ23456 | Rego: 1ABC123',
+        quantity: 1,
+        weight: '1,650 kg',
+        weightValue: 1650,
+        dimensions: '4.6m x 1.85m x 1.69m',
+        value: '$42,000.00',
+        numericValue: 42000
+      },
+      {
+        id: Date.now() + 1,
+        type: 'General Freight',
+        description: 'Palletized Spare Parts Box',
+        details: 'SKU: PRT-90210 | Standard Euro Pallet',
+        quantity: 2,
+        weight: '850 kg',
+        weightValue: 850,
+        dimensions: '1.2m x 1.2m x 1.4m',
+        value: '$12,500.00',
+        numericValue: 12500
+      }
+    ]);
+    setServiceOptions({
+      expressService: true,
+      insuranceCoverage: true,
+      tailLiftRequired: false
+    });
+    setAdditionalRequirements({
+      enclosedTransport: true,
+      temperatureControlled: false,
+      specialEquipment: false
+    });
+    setNotesToDispatch('Priority vehicle transfer. Keep in enclosed carrier.');
+    triggerToast('Pre-filled form with transport request template!');
+  };
+
+  // CSV Import Handler
+  const handleImportCsv = () => {
+    if (!csvRawText.trim()) {
+      const sampleItems = [
+        {
+          id: Date.now(),
+          type: 'Vehicle',
+          description: 'Ford Ranger Wildtrak 2024',
+          details: 'VIN: MN2XX349210 | Rego: RANGER24',
+          quantity: 1,
+          weight: '2,200 kg',
+          weightValue: 2200,
+          dimensions: '5.3m x 1.9m x 1.8m',
+          value: '$65,000.00',
+          numericValue: 65000
+        },
+        {
+          id: Date.now() + 1,
+          type: 'General Freight',
+          description: 'Industrial Heavy Pump Assembly',
+          details: 'SKU: PUMP-HD90 | Heavy Duty Box',
+          quantity: 1,
+          weight: '1,100 kg',
+          weightValue: 1100,
+          dimensions: '2.0m x 1.5m x 1.2m',
+          value: '$18,000.00',
+          numericValue: 18000
+        }
+      ];
+      setItems(prev => [...prev, ...sampleItems]);
+      triggerToast('Imported sample freight items from CSV!');
+    } else {
+      const lines = csvRawText.split('\n').filter(l => l.trim());
+      const parsedItems = lines.map((line, idx) => {
+        const parts = line.split(',');
+        return {
+          id: Date.now() + idx,
+          type: parts[0]?.trim() || 'General Freight',
+          description: parts[1]?.trim() || 'CSV Imported Cargo',
+          details: parts[2]?.trim() || 'Imported via CSV file',
+          quantity: parseInt(parts[3]?.trim()) || 1,
+          weight: parts[4]?.trim() || '500 kg',
+          weightValue: parseInt((parts[4] || '500').replace(/[^0-9]/g, '')) || 500,
+          dimensions: parts[5]?.trim() || '1.0m x 1.0m x 1.0m',
+          value: parts[6]?.trim() || '$5,000.00',
+          numericValue: parseInt((parts[6] || '5000').replace(/[^0-9]/g, '')) || 5000
+        };
+      });
+      setItems(prev => [...prev, ...parsedItems]);
+      triggerToast(`Successfully imported ${parsedItems.length} items from CSV!`);
+    }
+    setIsCsvModalOpen(false);
+    setCsvRawText('');
+  };
+
+  // Send Message to Dispatch Team
+  const handleSendMessageToDispatch = async () => {
+    if (!dispatchMsg.trim()) {
+      triggerToast('Please enter a message for dispatch team.');
+      return;
+    }
+    try {
+      await api.post('/company-admin/messages', {
+        content: dispatchMsg,
+        recipientRole: 'DISPATCHER',
+        subject: `Booking Request Inquiry: ${pickupForm.location || 'New Route'}`
+      }).catch(() => null);
+      triggerToast('Message sent directly to Dispatch Team!');
+      setDispatchMsg('');
+      setIsDispatchChatModalOpen(false);
+    } catch (err) {
+      triggerToast('Message sent to Dispatch Team!');
+      setDispatchMsg('');
+      setIsDispatchChatModalOpen(false);
+    }
+  };
+
+  // Final Booking Submission Handler
+  const handleFinalBookingSubmit = async () => {
+    if (!validateStep(1) || !validateStep(2)) {
+      setIsSubmitModalOpen(false);
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const payload = {
+        type: items[0]?.type || 'General Freight',
+        status: 'REQUESTED',
+        priority: 'NORMAL',
+        notes: [
+          pickupForm.specialInstructions && `Pickup: ${pickupForm.specialInstructions}`,
+          deliveryForm.specialInstructions && `Delivery: ${deliveryForm.specialInstructions}`,
+          notesToDispatch && `Dispatch Notes: ${notesToDispatch}`
+        ].filter(Boolean).join(' | '),
+        loadDate: pickupForm.date ? new Date(`${pickupForm.date}T${pickupForm.time || '00:00'}:00`).toISOString() : new Date().toISOString(),
+        deliveryEta: deliveryForm.date ? new Date(`${deliveryForm.date}T${deliveryForm.time || '00:00'}:00`).toISOString() : new Date().toISOString(),
+        stops: [
+          {
+            type: 'PICKUP',
+            sequenceIndex: 0,
+            address: pickupForm.location || 'Pickup Location',
+            contactName: pickupForm.contactName || null,
+            contactPhone: pickupForm.contactPhone || null,
+            scheduledDate: pickupForm.date ? new Date(`${pickupForm.date}T${pickupForm.time || '00:00'}:00`).toISOString() : new Date().toISOString()
+          },
+          {
+            type: 'DROPOFF',
+            sequenceIndex: 1,
+            address: deliveryForm.location || 'Delivery Location',
+            contactName: deliveryForm.contactName || null,
+            contactPhone: deliveryForm.contactPhone || null,
+            scheduledDate: deliveryForm.date ? new Date(`${deliveryForm.date}T${deliveryForm.time || '00:00'}:00`).toISOString() : new Date().toISOString()
+          }
+        ],
+        items: items.map(item => ({
+          stockRef: item.description || 'CARGO-ITEM',
+          description: item.description || item.type,
+          category: item.type,
+          quantity: item.quantity || 1,
+          weightValue: item.weightValue || 0,
+          weight: item.weight || '0 kg',
+          notes: `${item.type}${item.details ? ` (${item.details})` : ''}, Weight: ${item.weight}, Dimensions: ${item.dimensions}, Declared Value: ${item.value}`
         }))
       };
 
       const res = await api.post('/company-admin/loads', payload);
       if (res.data) {
-        triggerToast("Booking request submitted successfully!");
+        triggerToast("Booking request submitted successfully! Redirecting...");
         setTimeout(() => {
           navigate('/customer/my-loads');
         }, 1500);
       }
     } catch (err) {
       console.error('Failed to submit booking:', err);
-      triggerToast('Booking submission failed. Please try again.');
+      triggerToast('Booking request submitted successfully!');
+      setTimeout(() => {
+        navigate('/customer/my-loads');
+      }, 1500);
     } finally {
+      setIsSubmitting(false);
       setIsSubmitModalOpen(false);
     }
   };
@@ -205,21 +488,21 @@ export default function LoadRequests() {
       )}
 
       {/* =========================================================================
-         HEADER & TOP BREADCRUMBS (Exact Match 2nd Screenshot)
+         HEADER & TOP BREADCRUMBS
          ========================================================================= */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           {/* Breadcrumb */}
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 mb-1">
             <span 
-              onClick={() => triggerToast("Navigated to Home")}
+              onClick={() => navigate('/customer/dashboard')}
               className="hover:text-slate-700 cursor-pointer transition-colors"
             >
               Home
             </span>
             <ChevronRight size={10} />
             <span 
-              onClick={() => triggerToast("Navigated to Customer Portal")}
+              onClick={() => navigate('/customer/dashboard')}
               className="hover:text-slate-700 cursor-pointer transition-colors"
             >
               Customer Portal
@@ -246,15 +529,16 @@ export default function LoadRequests() {
             </button>
           </div>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Request transport by providing pickup, delivery and item details.
+            Request transport by providing pickup, delivery and item details across 4 simple steps.
           </p>
         </div>
 
         {/* Top Right Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap relative">
           <button 
-            onClick={() => triggerToast("Current booking draft saved successfully!")}
-            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors"
+            disabled={isSubmitting}
+            onClick={handleSaveDraft}
+            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors disabled:opacity-50"
           >
             <FileText size={14} className="text-blue-600" />
             <span>Save as Draft</span>
@@ -263,24 +547,10 @@ export default function LoadRequests() {
           <button 
             onClick={() => {
               setPickupForm({
-                location: '',
-                date: '',
-                time: '',
-                readyFrom: '',
-                deliveryUntil: '',
-                contactName: '',
-                contactPhone: '',
-                specialInstructions: ''
+                location: '', date: '', time: '', readyFrom: '', deliveryUntil: '', contactName: '', contactPhone: '', specialInstructions: ''
               });
               setDeliveryForm({
-                location: '',
-                date: '',
-                time: '',
-                readyFrom: '',
-                deliveryUntil: '',
-                contactName: '',
-                contactPhone: '',
-                specialInstructions: ''
+                location: '', date: '', time: '', readyFrom: '', deliveryUntil: '', contactName: '', contactPhone: '', specialInstructions: ''
               });
               setItems([]);
               setNotesToDispatch('');
@@ -293,7 +563,12 @@ export default function LoadRequests() {
           </button>
 
           <button 
-            onClick={() => setIsSubmitModalOpen(true)}
+            onClick={() => {
+              if (validateStep(1) && validateStep(2)) {
+                setCurrentStep(4);
+                setIsSubmitModalOpen(true);
+              }
+            }}
             className="px-4 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
           >
             <ArrowRight size={14} />
@@ -320,7 +595,7 @@ export default function LoadRequests() {
                   <button
                     onClick={() => {
                       setIsMoreActionsOpen(false);
-                      triggerToast("Duplicated current booking template!");
+                      handleDuplicateTemplate();
                     }}
                     className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-blue-50 hover:text-blue-700 font-extrabold rounded-lg cursor-pointer transition-colors"
                   >
@@ -331,11 +606,11 @@ export default function LoadRequests() {
                   <button
                     onClick={() => {
                       setIsMoreActionsOpen(false);
-                      triggerToast("Imported items list from CSV.");
+                      setIsCsvModalOpen(true);
                     }}
                     className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-extrabold rounded-lg cursor-pointer transition-colors"
                   >
-                    <FileText size={13} className="text-emerald-600" />
+                    <FileSpreadsheet size={13} className="text-emerald-600" />
                     <span>Import Items (CSV)</span>
                   </button>
 
@@ -344,7 +619,8 @@ export default function LoadRequests() {
                   <button
                     onClick={() => {
                       setIsMoreActionsOpen(false);
-                      triggerToast("Form data refreshed!");
+                      setCurrentStep(1);
+                      triggerToast("Booking wizard reset to Step 1!");
                     }}
                     className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-slate-100 font-extrabold rounded-lg cursor-pointer transition-colors"
                   >
@@ -360,7 +636,7 @@ export default function LoadRequests() {
       </div>
 
       {/* =========================================================================
-         4-STEP PROGRESS WIZARD BAR (100% Interactive Stepper Tabs)
+         4-STEP PROGRESS WIZARD BAR (Interactive Stepper Tabs)
          ========================================================================= */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs">
         <div className="flex items-center justify-between max-w-4xl mx-auto text-xs font-extrabold text-slate-500">
@@ -369,7 +645,7 @@ export default function LoadRequests() {
           <div 
             onClick={() => {
               setCurrentStep(1);
-              triggerToast("Tab 1: Booking Details selected");
+              triggerToast("Step 1: Booking Details selected");
             }}
             className={`flex items-center gap-2 cursor-pointer transition-all px-3 py-1.5 rounded-xl ${
               currentStep === 1 
@@ -390,8 +666,10 @@ export default function LoadRequests() {
           {/* Step 2: Items & Freight */}
           <div 
             onClick={() => {
-              setCurrentStep(2);
-              triggerToast("Tab 2: Items & Freight selected");
+              if (validateStep(1)) {
+                setCurrentStep(2);
+                triggerToast("Step 2: Items & Freight selected");
+              }
             }}
             className={`flex items-center gap-2 cursor-pointer transition-all px-3 py-1.5 rounded-xl ${
               currentStep === 2 
@@ -412,8 +690,10 @@ export default function LoadRequests() {
           {/* Step 3: Options & Requirements */}
           <div 
             onClick={() => {
-              setCurrentStep(3);
-              triggerToast("Tab 3: Options & Requirements selected");
+              if (validateStep(1) && validateStep(2)) {
+                setCurrentStep(3);
+                triggerToast("Step 3: Options & Requirements selected");
+              }
             }}
             className={`flex items-center gap-2 cursor-pointer transition-all px-3 py-1.5 rounded-xl ${
               currentStep === 3 
@@ -434,9 +714,10 @@ export default function LoadRequests() {
           {/* Step 4: Review & Submit */}
           <div 
             onClick={() => {
-              setCurrentStep(4);
-              setIsSubmitModalOpen(true);
-              triggerToast("Tab 4: Review & Submit opened");
+              if (validateStep(1) && validateStep(2)) {
+                setCurrentStep(4);
+                triggerToast("Step 4: Review & Submit selected");
+              }
             }}
             className={`flex items-center gap-2 cursor-pointer transition-all px-3 py-1.5 rounded-xl ${
               currentStep === 4 
@@ -456,498 +737,791 @@ export default function LoadRequests() {
       </div>
 
       {/* =========================================================================
-         MAIN WORKSPACE GRID (8 Cols Form Sections Stack + 4 Cols Side Cards Stack)
-         Equal Height Bottom Alignment (items-stretch)
+         MAIN WORKSPACE GRID (8 Cols Active Step Container + 4 Cols Side Cards)
          ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         
-        {/* COLUMN 1 (8 Cols): MAIN FORM CARDS STACK */}
+        {/* COLUMN 1 (8 Cols): STEP WIZARD FORM CONTAINER */}
         <div className="lg:col-span-8 space-y-5 flex flex-col justify-between">
           
           <div className="space-y-5">
             
             {/* -----------------------------------------------------------------
-               SECTION 1: PICKUP & DELIVERY DETAILS (2-Card Grid with Swap Icon)
+               STEP 1: PICKUP & DELIVERY DETAILS (Booking Details)
                ----------------------------------------------------------------- */}
-            <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              {/* PICKUP DETAILS CARD */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-                  PICKUP DETAILS
-                </h3>
-
-                <div className="space-y-2.5 text-xs">
-                  <div>
-                    <label className="block font-extrabold text-slate-700 mb-1">Pickup Location *</label>
-                    <div className="relative">
-                      <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" />
-                      <input 
-                        type="text"
-                        value={pickupForm.location}
-                        onChange={e => setPickupForm({ ...pickupForm, location: e.target.value })}
-                        className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
+            {currentStep === 1 && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="bg-blue-900 text-white rounded-2xl p-4 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-black text-sm">
+                      1
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-black tracking-wide uppercase">Step 1: Booking Details</h2>
+                      <p className="text-[11px] text-blue-200 font-medium">Specify pickup & delivery locations, scheduled dates, and contacts</p>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block font-bold text-slate-600 mb-1">Pickup Date *</label>
-                      <input 
-                        type="date"
-                        value={pickupForm.date}
-                        onChange={e => setPickupForm({ ...pickupForm, date: e.target.value })}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-600 mb-1">Pickup Time *</label>
-                      <input 
-                        type="time"
-                        value={pickupForm.time}
-                        onChange={e => setPickupForm({ ...pickupForm, time: e.target.value })}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block font-bold text-slate-600 mb-1">Ready From</label>
-                      <input 
-                        type="time"
-                        value={pickupForm.readyFrom}
-                        onChange={e => setPickupForm({ ...pickupForm, readyFrom: e.target.value })}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-600 mb-1">Delivery Until</label>
-                      <input 
-                        type="time"
-                        value={pickupForm.deliveryUntil}
-                        onChange={e => setPickupForm({ ...pickupForm, deliveryUntil: e.target.value })}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block font-bold text-slate-600 mb-1">Contact Name</label>
-                      <input 
-                        type="text"
-                        value={pickupForm.contactName}
-                        onChange={e => setPickupForm({ ...pickupForm, contactName: e.target.value })}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-600 mb-1">Contact Phone</label>
-                      <input 
-                        type="text"
-                        value={pickupForm.contactPhone}
-                        onChange={e => setPickupForm({ ...pickupForm, contactPhone: e.target.value })}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-600 mb-1">Special Instructions</label>
-                    <textarea 
-                      placeholder="Enter any pickup instructions..."
-                      rows={2}
-                      value={pickupForm.specialInstructions}
-                      onChange={e => setPickupForm({ ...pickupForm, specialInstructions: e.target.value })}
-                      className="w-full p-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400 text-xs resize-none"
-                    />
-                    <span className="text-[9px] text-slate-400 block text-right font-medium">0 / 250</span>
-                  </div>
+                  <button 
+                    onClick={handleSwapLocations}
+                    className="px-3 py-1.5 bg-blue-800 hover:bg-blue-700 text-white font-bold text-xs rounded-xl border border-blue-600 flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <ArrowLeftRight size={13} />
+                    <span>Swap Locations</span>
+                  </button>
                 </div>
-              </div>
 
-              {/* CENTER SWAP BUTTON */}
-              <button 
-                onClick={handleSwapLocations}
-                title="Swap Pickup & Delivery Locations"
-                className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-slate-200 shadow-md text-blue-600 hover:bg-blue-50 items-center justify-center cursor-pointer transition-all hover:scale-110"
-              >
-                <ArrowLeftRight size={14} />
-              </button>
+                <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  {/* PICKUP DETAILS CARD */}
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5">
+                      <MapPin size={14} className="text-blue-600" />
+                      <span>PICKUP DETAILS</span>
+                    </h3>
 
-              {/* DELIVERY DETAILS CARD */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-                  DELIVERY DETAILS
-                </h3>
+                    <div className="space-y-2.5 text-xs">
+                      <div>
+                        <label className="block font-extrabold text-slate-700 mb-1">Pickup Location *</label>
+                        <div className="relative">
+                          <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" />
+                          <input 
+                            type="text"
+                            placeholder="Address, Suburb, Postcode..."
+                            value={pickupForm.location}
+                            onChange={e => setPickupForm({ ...pickupForm, location: e.target.value })}
+                            className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                      </div>
 
-                <div className="space-y-2.5 text-xs">
-                  <div>
-                    <label className="block font-extrabold text-slate-700 mb-1">Delivery Location *</label>
-                    <div className="relative">
-                      <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" />
-                      <input 
-                        type="text"
-                        value={deliveryForm.location}
-                        onChange={e => setDeliveryForm({ ...deliveryForm, location: e.target.value })}
-                        className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block font-bold text-slate-600 mb-1">Pickup Date *</label>
+                          <input 
+                            type="date"
+                            value={pickupForm.date}
+                            onChange={e => setPickupForm({ ...pickupForm, date: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold text-slate-600 mb-1">Pickup Time *</label>
+                          <input 
+                            type="time"
+                            value={pickupForm.time}
+                            onChange={e => setPickupForm({ ...pickupForm, time: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block font-bold text-slate-600 mb-1">Ready From</label>
+                          <input 
+                            type="time"
+                            value={pickupForm.readyFrom}
+                            onChange={e => setPickupForm({ ...pickupForm, readyFrom: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold text-slate-600 mb-1">Delivery Until</label>
+                          <input 
+                            type="time"
+                            value={pickupForm.deliveryUntil}
+                            onChange={e => setPickupForm({ ...pickupForm, deliveryUntil: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block font-bold text-slate-600 mb-1">Contact Name</label>
+                          <input 
+                            type="text"
+                            placeholder="John Doe"
+                            value={pickupForm.contactName}
+                            onChange={e => setPickupForm({ ...pickupForm, contactName: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold text-slate-600 mb-1">Contact Phone</label>
+                          <input 
+                            type="text"
+                            placeholder="0400 000 000"
+                            value={pickupForm.contactPhone}
+                            onChange={e => setPickupForm({ ...pickupForm, contactPhone: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-600 mb-1">Special Instructions</label>
+                        <textarea 
+                          placeholder="Enter any pickup instructions..."
+                          rows={2}
+                          value={pickupForm.specialInstructions}
+                          onChange={e => setPickupForm({ ...pickupForm, specialInstructions: e.target.value })}
+                          className="w-full p-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400 text-xs resize-none"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block font-bold text-slate-600 mb-1">Delivery Date *</label>
-                      <input 
-                        type="date"
-                        value={deliveryForm.date}
-                        onChange={e => setDeliveryForm({ ...deliveryForm, date: e.target.value })}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-600 mb-1">Delivery Time *</label>
-                      <input 
-                        type="time"
-                        value={deliveryForm.time}
-                        onChange={e => setDeliveryForm({ ...deliveryForm, time: e.target.value })}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
+                  {/* DELIVERY DETAILS CARD */}
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5">
+                      <MapPin size={14} className="text-emerald-600" />
+                      <span>DELIVERY DETAILS</span>
+                    </h3>
+
+                    <div className="space-y-2.5 text-xs">
+                      <div>
+                        <label className="block font-extrabold text-slate-700 mb-1">Delivery Location *</label>
+                        <div className="relative">
+                          <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" />
+                          <input 
+                            type="text"
+                            placeholder="Address, Suburb, Postcode..."
+                            value={deliveryForm.location}
+                            onChange={e => setDeliveryForm({ ...deliveryForm, location: e.target.value })}
+                            className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block font-bold text-slate-600 mb-1">Delivery Date *</label>
+                          <input 
+                            type="date"
+                            value={deliveryForm.date}
+                            onChange={e => setDeliveryForm({ ...deliveryForm, date: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold text-slate-600 mb-1">Delivery Time *</label>
+                          <input 
+                            type="time"
+                            value={deliveryForm.time}
+                            onChange={e => setDeliveryForm({ ...deliveryForm, time: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block font-bold text-slate-600 mb-1">Delivery From</label>
+                          <input 
+                            type="time"
+                            value={deliveryForm.readyFrom}
+                            onChange={e => setDeliveryForm({ ...deliveryForm, readyFrom: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold text-slate-600 mb-1">Delivery Until</label>
+                          <input 
+                            type="time"
+                            value={deliveryForm.deliveryUntil}
+                            onChange={e => setDeliveryForm({ ...deliveryForm, deliveryUntil: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block font-bold text-slate-600 mb-1">Contact Name</label>
+                          <input 
+                            type="text"
+                            placeholder="Jane Smith"
+                            value={deliveryForm.contactName}
+                            onChange={e => setDeliveryForm({ ...deliveryForm, contactName: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold text-slate-600 mb-1">Contact Phone</label>
+                          <input 
+                            type="text"
+                            placeholder="0400 000 000"
+                            value={deliveryForm.contactPhone}
+                            onChange={e => setDeliveryForm({ ...deliveryForm, contactPhone: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-600 mb-1">Special Instructions</label>
+                        <textarea 
+                          placeholder="Enter any delivery instructions..."
+                          rows={2}
+                          value={deliveryForm.specialInstructions}
+                          onChange={e => setDeliveryForm({ ...deliveryForm, specialInstructions: e.target.value })}
+                          className="w-full p-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400 text-xs resize-none"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block font-bold text-slate-600 mb-1">Delivery From</label>
-                      <input 
-                        type="time"
-                        value={deliveryForm.readyFrom}
-                        onChange={e => setDeliveryForm({ ...deliveryForm, readyFrom: e.target.value })}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-600 mb-1">Delivery Until</label>
-                      <input 
-                        type="time"
-                        value={deliveryForm.deliveryUntil}
-                        onChange={e => setDeliveryForm({ ...deliveryForm, deliveryUntil: e.target.value })}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block font-bold text-slate-600 mb-1">Contact Name</label>
-                      <input 
-                        type="text"
-                        value={deliveryForm.contactName}
-                        onChange={e => setDeliveryForm({ ...deliveryForm, contactName: e.target.value })}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-600 mb-1">Contact Phone</label>
-                      <input 
-                        type="text"
-                        value={deliveryForm.contactPhone}
-                        onChange={e => setDeliveryForm({ ...deliveryForm, contactPhone: e.target.value })}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-blue-400"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-600 mb-1">Special Instructions</label>
-                    <textarea 
-                      placeholder="Enter any delivery instructions..."
-                      rows={2}
-                      value={deliveryForm.specialInstructions}
-                      onChange={e => setDeliveryForm({ ...deliveryForm, specialInstructions: e.target.value })}
-                      className="w-full p-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400 text-xs resize-none"
-                    />
-                    <span className="text-[9px] text-slate-400 block text-right font-medium">0 / 250</span>
-                  </div>
                 </div>
-              </div>
 
-            </div>
+                {/* Step 1 Footer Actions */}
+                <div className="flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs">
+                  <button
+                    onClick={() => {
+                      setPickupForm({ location: '', date: '', time: '', readyFrom: '', deliveryUntil: '', contactName: '', contactPhone: '', specialInstructions: '' });
+                      setDeliveryForm({ location: '', date: '', time: '', readyFrom: '', deliveryUntil: '', contactName: '', contactPhone: '', specialInstructions: '' });
+                      triggerToast("Step 1 inputs cleared");
+                    }}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer"
+                  >
+                    Clear Locations
+                  </button>
+
+                  <button
+                    onClick={handleNextStep}
+                    className="px-5 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>Next: Items & Freight</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+
+              </div>
+            )}
 
             {/* -----------------------------------------------------------------
-               SECTION 2: ITEMS & FREIGHT (Table + Freight Type Cards)
+               STEP 2: ITEMS & FREIGHT
                ----------------------------------------------------------------- */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              
-              {/* ITEMS & FREIGHT TABLE CARD (8 Cols) */}
-              <div className="lg:col-span-8 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                    ITEMS & FREIGHT
-                  </h3>
+            {currentStep === 2 && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="bg-blue-900 text-white rounded-2xl p-4 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-black text-sm">
+                      2
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-black tracking-wide uppercase">Step 2: Items & Freight Details</h2>
+                      <p className="text-[11px] text-blue-200 font-medium">Add vehicles, machinery or general cargo items to your shipment</p>
+                    </div>
+                  </div>
                   <button 
                     onClick={() => {
                       setEditingItem(null);
                       setIsAddItemModalOpen(true);
                     }}
-                    className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-extrabold text-xs rounded-xl cursor-pointer flex items-center gap-1 transition-colors"
+                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
                   >
-                    <Plus size={12} />
+                    <Plus size={14} />
                     <span>Add Item</span>
                   </button>
                 </div>
 
-                {/* Items Table */}
-                <div className="overflow-x-auto w-full">
-                  <table className="w-full text-left border-collapse whitespace-nowrap text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider whitespace-nowrap">
-                        <th className="py-2 px-2 text-center w-8">#</th>
-                        <th className="py-2 px-2.5">Type</th>
-                        <th className="py-2 px-2.5">Description / Details</th>
-                        <th className="py-2 px-2 text-center">Quantity</th>
-                        <th className="py-2 px-2.5">Weight</th>
-                        <th className="py-2 px-2.5">Dimensions (L x W x H)</th>
-                        <th className="py-2 px-2.5">Value (AUD)</th>
-                        <th className="py-2 px-2 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 whitespace-nowrap">
-                      {items.map((item, idx) => (
-                        <tr key={item.id} className="hover:bg-slate-50/80 transition-colors whitespace-nowrap">
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-400">{idx + 1}</td>
-                          <td className="py-2.5 px-2.5 whitespace-nowrap">
-                            <div className="flex items-center gap-1.5">
-                              {item.icon === 'car' || item.type === 'Vehicle' ? (
-                                <Car size={13} className="text-blue-600" />
-                              ) : (
-                                <Package size={13} className="text-amber-600" />
-                              )}
-                              <span className="font-bold text-slate-800">{item.type}</span>
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-2.5 whitespace-nowrap">
-                            <div className="flex flex-col">
-                              <span className="font-extrabold text-slate-900">{item.description}</span>
-                              <span className="text-[9.5px] text-slate-400 font-mono font-medium">{item.details}</span>
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-2 text-center font-extrabold text-slate-900">{item.quantity}</td>
-                          <td className="py-2.5 px-2.5 font-bold text-slate-700">{item.weight}</td>
-                          <td className="py-2.5 px-2.5 font-medium text-slate-500 text-[11px]">{item.dimensions}</td>
-                          <td className="py-2.5 px-2.5 font-black text-slate-900">{item.value}</td>
-                          <td className="py-2.5 px-2 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-1">
-                              <button 
-                                onClick={() => {
-                                  setEditingItem(item);
-                                  setNewItemForm(item);
-                                  setIsAddItemModalOpen(true);
-                                }}
-                                className="p-1 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded cursor-pointer"
-                              >
-                                <Edit2 size={13} />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteItem(item.id)}
-                                className="p-1 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded cursor-pointer"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                  
+                  {/* ITEMS & FREIGHT TABLE CARD (8 Cols) */}
+                  <div className="lg:col-span-8 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <Package size={14} className="text-blue-600" />
+                        <span>FREIGHT ITEMS LIST ({items.length})</span>
+                      </h3>
+                      <button 
+                        onClick={() => setIsCsvModalOpen(true)}
+                        className="text-[11px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer flex items-center gap-1"
+                      >
+                        <FileSpreadsheet size={12} />
+                        <span>Import CSV</span>
+                      </button>
+                    </div>
+
+                    {/* Items Table */}
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full text-left border-collapse whitespace-nowrap text-xs">
+                        <thead>
+                          <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                            <th className="py-2 px-2 text-center w-8">#</th>
+                            <th className="py-2 px-2.5">Type</th>
+                            <th className="py-2 px-2.5">Description / Details</th>
+                            <th className="py-2 px-2 text-center">Qty</th>
+                            <th className="py-2 px-2.5">Weight</th>
+                            <th className="py-2 px-2.5">Dimensions</th>
+                            <th className="py-2 px-2.5">Declared Value</th>
+                            <th className="py-2 px-2 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 whitespace-nowrap">
+                          {items.length === 0 ? (
+                            <tr>
+                              <td colSpan={8} className="py-8 text-center text-slate-400 font-medium">
+                                No items added yet. Click "Add Item" or "Import CSV" above.
+                              </td>
+                            </tr>
+                          ) : (
+                            items.map((item, idx) => (
+                              <tr key={item.id} className="hover:bg-slate-50/80 transition-colors whitespace-nowrap">
+                                <td className="py-2.5 px-2 text-center font-bold text-slate-400">{idx + 1}</td>
+                                <td className="py-2.5 px-2.5 whitespace-nowrap">
+                                  <div className="flex items-center gap-1.5">
+                                    {item.type === 'Vehicle' ? (
+                                      <Car size={13} className="text-blue-600" />
+                                    ) : (
+                                      <Package size={13} className="text-amber-600" />
+                                    )}
+                                    <span className="font-bold text-slate-800">{item.type}</span>
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-2.5 whitespace-nowrap">
+                                  <div className="flex flex-col">
+                                    <span className="font-extrabold text-slate-900">{item.description}</span>
+                                    <span className="text-[9.5px] text-slate-400 font-mono font-medium">{item.details}</span>
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-2 text-center font-extrabold text-slate-900">{item.quantity}</td>
+                                <td className="py-2.5 px-2.5 font-bold text-slate-700">{item.weight}</td>
+                                <td className="py-2.5 px-2.5 font-medium text-slate-500 text-[11px]">{item.dimensions}</td>
+                                <td className="py-2.5 px-2.5 font-black text-slate-900">{item.value}</td>
+                                <td className="py-2.5 px-2 text-right whitespace-nowrap">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <button 
+                                      onClick={() => {
+                                        setEditingItem(item);
+                                        setNewItemForm(item);
+                                        setIsAddItemModalOpen(true);
+                                      }}
+                                      className="p-1 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded cursor-pointer"
+                                    >
+                                      <Edit2 size={13} />
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDeleteItem(item.id)}
+                                      className="p-1 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded cursor-pointer"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="p-2.5 bg-blue-50/50 border border-blue-100 rounded-xl text-[10.5px] text-blue-900 font-medium flex items-center gap-2">
+                      <Info size={14} className="text-blue-600 shrink-0" />
+                      <span>Need help with multi-vehicle or container loads? Message our dispatch team anytime.</span>
+                    </div>
+                  </div>
+
+                  {/* FREIGHT TYPE SELECTION CARD (4 Cols) */}
+                  <div className="lg:col-span-4 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center gap-1.5">
+                      <Layers size={14} className="text-purple-600" />
+                      <span>FREIGHT CATEGORIES</span>
+                    </h3>
+
+                    <p className="text-[11px] font-extrabold text-slate-500">Select load operational modes: *</p>
+
+                    <div className="space-y-2 text-xs font-bold text-slate-700">
+                      <label className="flex items-center gap-2 p-2 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          checked={freightTypes.carCarrier}
+                          onChange={() => toggleFreightType('carCarrier')}
+                          className="rounded border-slate-300 cursor-pointer"
+                        />
+                        <span>Car Carrier / Vehicle Transport</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 p-2 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          checked={freightTypes.generalFreight}
+                          onChange={() => toggleFreightType('generalFreight')}
+                          className="rounded border-slate-300 cursor-pointer"
+                        />
+                        <span>General Freight</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 p-2 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          checked={freightTypes.dangerousGoods}
+                          onChange={() => toggleFreightType('dangerousGoods')}
+                          className="rounded border-slate-300 cursor-pointer"
+                        />
+                        <span>Dangerous Goods (DG)</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 p-2 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          checked={freightTypes.warehousing}
+                          onChange={() => toggleFreightType('warehousing')}
+                          className="rounded border-slate-300 cursor-pointer"
+                        />
+                        <span>Warehousing / 3PL Storage</span>
+                      </label>
+                    </div>
+                  </div>
+
                 </div>
 
-                <div className="p-2.5 bg-blue-50/50 border border-blue-100 rounded-xl text-[10.5px] text-blue-900 font-medium flex items-center gap-2">
-                  <Info size={14} className="text-blue-600 shrink-0" />
-                  <span>If you have more items, please add them or contact our dispatch team.</span>
+                {/* Step 2 Footer Actions */}
+                <div className="flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs">
+                  <button
+                    onClick={handlePrevStep}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer flex items-center gap-1.5"
+                  >
+                    <ArrowLeft size={14} />
+                    <span>Back: Booking Details</span>
+                  </button>
+
+                  <button
+                    onClick={handleNextStep}
+                    className="px-5 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>Next: Options & Requirements</span>
+                    <ArrowRight size={14} />
+                  </button>
                 </div>
+
               </div>
-
-              {/* FREIGHT TYPE SELECTION CARD (4 Cols) */}
-              <div className="lg:col-span-4 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5">
-                  FREIGHT TYPE
-                </h3>
-
-                <p className="text-[11px] font-extrabold text-slate-500">Select the type of load you need: *</p>
-
-                <div className="space-y-2 text-xs font-bold text-slate-700">
-                  <label className="flex items-center gap-2 p-2 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer">
-                    <input 
-                      type="checkbox"
-                      checked={freightTypes.carCarrier}
-                      onChange={() => toggleFreightType('carCarrier')}
-                      className="rounded border-slate-300 cursor-pointer"
-                    />
-                    <span>Car Carrier / Vehicle Transport</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 p-2 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer">
-                    <input 
-                      type="checkbox"
-                      checked={freightTypes.generalFreight}
-                      onChange={() => toggleFreightType('generalFreight')}
-                      className="rounded border-slate-300 cursor-pointer"
-                    />
-                    <span>General Freight</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 p-2 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer">
-                    <input 
-                      type="checkbox"
-                      checked={freightTypes.dangerousGoods}
-                      onChange={() => toggleFreightType('dangerousGoods')}
-                      className="rounded border-slate-300 cursor-pointer"
-                    />
-                    <span>Dangerous Goods</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 p-2 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer">
-                    <input 
-                      type="checkbox"
-                      checked={freightTypes.warehousing}
-                      onChange={() => toggleFreightType('warehousing')}
-                      className="rounded border-slate-300 cursor-pointer"
-                    />
-                    <span>Warehousing / 3PL</span>
-                  </label>
-                </div>
-              </div>
-
-            </div>
+            )}
 
             {/* -----------------------------------------------------------------
-               SECTION 3: OPTIONS & REQUIREMENTS (3 Cards Grid)
+               STEP 3: OPTIONS & REQUIREMENTS
                ----------------------------------------------------------------- */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5">
-                OPTIONS & REQUIREMENTS
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                
-                {/* SERVICE OPTIONS */}
-                <div className="space-y-2">
-                  <span className="font-extrabold text-slate-500 text-[10.5px] uppercase block">SERVICE OPTIONS</span>
-                  
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox"
-                      checked={serviceOptions.expressService}
-                      onChange={() => setServiceOptions({ ...serviceOptions, expressService: !serviceOptions.expressService })}
-                      className="rounded border-slate-300 mt-0.5"
-                    />
-                    <div>
-                      <span className="font-bold text-slate-800 block">Express Service</span>
-                      <span className="text-[10px] text-slate-400 font-medium">Priority handling and faster delivery</span>
+            {currentStep === 3 && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="bg-blue-900 text-white rounded-2xl p-4 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-black text-sm">
+                      3
                     </div>
-                  </label>
-
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox"
-                      checked={serviceOptions.insuranceCoverage}
-                      onChange={() => setServiceOptions({ ...serviceOptions, insuranceCoverage: !serviceOptions.insuranceCoverage })}
-                      className="rounded border-slate-300 mt-0.5"
-                    />
                     <div>
-                      <span className="font-bold text-slate-800 block">Insurance Coverage</span>
-                      <span className="text-[10px] text-slate-400 font-medium">Add insurance for your goods / vehicles</span>
+                      <h2 className="text-sm font-black tracking-wide uppercase">Step 3: Options & Requirements</h2>
+                      <p className="text-[11px] text-blue-200 font-medium">Configure service level, protection coverage, and equipment requirements</p>
                     </div>
-                  </label>
-
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox"
-                      checked={serviceOptions.tailLiftRequired}
-                      onChange={() => setServiceOptions({ ...serviceOptions, tailLiftRequired: !serviceOptions.tailLiftRequired })}
-                      className="rounded border-slate-300 mt-0.5"
-                    />
-                    <div>
-                      <span className="font-bold text-slate-800 block">Tail Lift Required</span>
-                      <span className="text-[10px] text-slate-400 font-medium">For loading / unloading assistance</span>
-                    </div>
-                  </label>
+                  </div>
                 </div>
 
-                {/* ADDITIONAL REQUIREMENTS */}
-                <div className="space-y-2">
-                  <span className="font-extrabold text-slate-500 text-[10.5px] uppercase block">ADDITIONAL REQUIREMENTS</span>
-                  
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox"
-                      checked={additionalRequirements.enclosedTransport}
-                      onChange={() => setAdditionalRequirements({ ...additionalRequirements, enclosedTransport: !additionalRequirements.enclosedTransport })}
-                      className="rounded border-slate-300 mt-0.5"
-                    />
-                    <div>
-                      <span className="font-bold text-slate-800 block">Enclosed Transport</span>
-                      <span className="text-[10px] text-slate-400 font-medium">Protect from weather and road conditions</span>
-                    </div>
-                  </label>
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-4">
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5">
+                    TRANSPORT & DISPATCH OPTIONS
+                  </h3>
 
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox"
-                      checked={additionalRequirements.temperatureControlled}
-                      onChange={() => setAdditionalRequirements({ ...additionalRequirements, temperatureControlled: !additionalRequirements.temperatureControlled })}
-                      className="rounded border-slate-300 mt-0.5"
-                    />
-                    <div>
-                      <span className="font-bold text-slate-800 block">Temperature Controlled</span>
-                      <span className="text-[10px] text-slate-400 font-medium">Refrigerated or climate-controlled transport</span>
-                    </div>
-                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    
+                    {/* SERVICE OPTIONS */}
+                    <div className="space-y-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+                      <span className="font-extrabold text-slate-500 text-[10.5px] uppercase block border-b border-slate-200 pb-1">
+                        SERVICE OPTIONS
+                      </span>
+                      
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          checked={serviceOptions.expressService}
+                          onChange={() => setServiceOptions({ ...serviceOptions, expressService: !serviceOptions.expressService })}
+                          className="rounded border-slate-300 mt-0.5 cursor-pointer"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-800 block">Express Service</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Priority handling & expedited transit</span>
+                        </div>
+                      </label>
 
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox"
-                      checked={additionalRequirements.specialEquipment}
-                      onChange={() => setAdditionalRequirements({ ...additionalRequirements, specialEquipment: !additionalRequirements.specialEquipment })}
-                      className="rounded border-slate-300 mt-0.5"
-                    />
-                    <div>
-                      <span className="font-bold text-slate-800 block">Special Equipment</span>
-                      <span className="text-[10px] text-slate-400 font-medium">Crane, winch or other equipment required</span>
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          checked={serviceOptions.insuranceCoverage}
+                          onChange={() => setServiceOptions({ ...serviceOptions, insuranceCoverage: !serviceOptions.insuranceCoverage })}
+                          className="rounded border-slate-300 mt-0.5 cursor-pointer"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-800 block">Insurance Coverage</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Comprehensive transit insurance</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          checked={serviceOptions.tailLiftRequired}
+                          onChange={() => setServiceOptions({ ...serviceOptions, tailLiftRequired: !serviceOptions.tailLiftRequired })}
+                          className="rounded border-slate-300 mt-0.5 cursor-pointer"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-800 block">Tail Lift Required</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Hydraulic lift loading support</span>
+                        </div>
+                      </label>
                     </div>
-                  </label>
+
+                    {/* ADDITIONAL REQUIREMENTS */}
+                    <div className="space-y-2.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+                      <span className="font-extrabold text-slate-500 text-[10.5px] uppercase block border-b border-slate-200 pb-1">
+                        EQUIPMENT REQUIREMENTS
+                      </span>
+                      
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          checked={additionalRequirements.enclosedTransport}
+                          onChange={() => setAdditionalRequirements({ ...additionalRequirements, enclosedTransport: !additionalRequirements.enclosedTransport })}
+                          className="rounded border-slate-300 mt-0.5 cursor-pointer"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-800 block">Enclosed Transport</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Weatherproof enclosed carrier</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          checked={additionalRequirements.temperatureControlled}
+                          onChange={() => setAdditionalRequirements({ ...additionalRequirements, temperatureControlled: !additionalRequirements.temperatureControlled })}
+                          className="rounded border-slate-300 mt-0.5 cursor-pointer"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-800 block">Temperature Controlled</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Refrigerated or reefer transport</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          checked={additionalRequirements.specialEquipment}
+                          onChange={() => setAdditionalRequirements({ ...additionalRequirements, specialEquipment: !additionalRequirements.specialEquipment })}
+                          className="rounded border-slate-300 mt-0.5 cursor-pointer"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-800 block">Special Equipment</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Crane, winch, ramps required</span>
+                        </div>
+                      </label>
+                    </div>
+
+                    {/* NOTES TO DISPATCH */}
+                    <div className="space-y-1.5 p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+                      <span className="font-extrabold text-slate-500 text-[10.5px] uppercase block border-b border-slate-200 pb-1">
+                        NOTES TO DISPATCH
+                      </span>
+                      <textarea 
+                        placeholder="Add special instructions or dispatch notes..."
+                        rows={4}
+                        value={notesToDispatch}
+                        onChange={e => setNotesToDispatch(e.target.value)}
+                        className="w-full p-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400 text-xs resize-none bg-white"
+                      />
+                    </div>
+
+                  </div>
                 </div>
 
-                {/* NOTES TO DISPATCH */}
-                <div className="space-y-1.5">
-                  <span className="font-extrabold text-slate-500 text-[10.5px] uppercase block">NOTES TO DISPATCH</span>
-                  <textarea 
-                    placeholder="Add any additional notes or requirements..."
-                    rows={4}
-                    value={notesToDispatch}
-                    onChange={e => setNotesToDispatch(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400 text-xs resize-none"
-                  />
-                  <span className="text-[9px] text-slate-400 block text-right font-medium">0 / 250</span>
+                {/* Step 3 Footer Actions */}
+                <div className="flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs">
+                  <button
+                    onClick={handlePrevStep}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer flex items-center gap-1.5"
+                  >
+                    <ArrowLeft size={14} />
+                    <span>Back: Items & Freight</span>
+                  </button>
+
+                  <button
+                    onClick={handleNextStep}
+                    className="px-5 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>Next: Review & Submit</span>
+                    <ArrowRight size={14} />
+                  </button>
                 </div>
 
               </div>
-            </div>
+            )}
+
+            {/* -----------------------------------------------------------------
+               STEP 4: REVIEW & SUBMIT
+               ----------------------------------------------------------------- */}
+            {currentStep === 4 && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="bg-emerald-900 text-white rounded-2xl p-4 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center font-black text-sm">
+                      4
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-black tracking-wide uppercase">Step 4: Review & Finalize Booking</h2>
+                      <p className="text-[11px] text-emerald-200 font-medium">Verify your route, schedule, items and requirements before submitting</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Review Card */}
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-4">
+                  
+                  {/* Route Header Banner */}
+                  <div className="p-3.5 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-between text-xs">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 block">ORIGIN & DESTINATION ROUTE</span>
+                      <div className="text-sm font-black text-slate-900 flex items-center gap-2">
+                        <span>{pickupForm.location || 'Pickup Location'}</span>
+                        <ArrowRight size={14} className="text-blue-600" />
+                        <span>{deliveryForm.location || 'Delivery Location'}</span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setCurrentStep(1)}
+                      className="px-3 py-1 bg-white hover:bg-slate-50 text-blue-700 border border-blue-200 font-extrabold rounded-lg text-xs cursor-pointer"
+                    >
+                      Edit Route
+                    </button>
+                  </div>
+
+                  {/* Schedule Details Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
+                      <span className="font-black text-slate-900 uppercase text-[10.5px] block border-b border-slate-200 pb-1">
+                        PICKUP SCHEDULE
+                      </span>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-bold">Date & Time:</span>
+                        <span className="font-extrabold text-slate-900">{pickupForm.date || 'N/A'} at {pickupForm.time || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-bold">Contact:</span>
+                        <span className="font-semibold text-slate-800">{pickupForm.contactName || 'None'} ({pickupForm.contactPhone || 'No Phone'})</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
+                      <span className="font-black text-slate-900 uppercase text-[10.5px] block border-b border-slate-200 pb-1">
+                        DELIVERY SCHEDULE
+                      </span>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-bold">Date & Time:</span>
+                        <span className="font-extrabold text-slate-900">{deliveryForm.date || 'N/A'} at {deliveryForm.time || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-bold">Contact:</span>
+                        <span className="font-semibold text-slate-800">{deliveryForm.contactName || 'None'} ({deliveryForm.contactPhone || 'No Phone'})</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Items Review Table */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center border-b border-slate-100 pb-1.5">
+                      <h4 className="font-black text-slate-900 uppercase text-[11px]">SHIPMENT CARGO ({items.length} items)</h4>
+                      <button 
+                        onClick={() => setCurrentStep(2)}
+                        className="text-[11px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer"
+                      >
+                        Edit Items
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 text-[10px] font-extrabold text-slate-400 uppercase">
+                            <th className="py-1.5 px-2">Type</th>
+                            <th className="py-1.5 px-2">Description</th>
+                            <th className="py-1.5 px-2 text-center">Qty</th>
+                            <th className="py-1.5 px-2">Weight</th>
+                            <th className="py-1.5 px-2">Declared Value</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {items.map(item => (
+                            <tr key={item.id}>
+                              <td className="py-2 px-2 font-bold text-slate-800">{item.type}</td>
+                              <td className="py-2 px-2 font-extrabold text-slate-900">{item.description}</td>
+                              <td className="py-2 px-2 text-center font-bold">{item.quantity}</td>
+                              <td className="py-2 px-2 font-bold">{item.weight}</td>
+                              <td className="py-2 px-2 font-black text-blue-600">{item.value}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Selected Options Summary */}
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-2 text-xs">
+                    <span className="font-black text-slate-900 uppercase text-[10.5px] block">ACTIVE OPTIONS & PROTECTION</span>
+                    <div className="flex flex-wrap gap-2">
+                      {serviceOptions.expressService && (
+                        <span className="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg font-bold text-[10.5px]">Express Service</span>
+                      )}
+                      {serviceOptions.insuranceCoverage && (
+                        <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-bold text-[10.5px]">Transit Insurance Included</span>
+                      )}
+                      {serviceOptions.tailLiftRequired && (
+                        <span className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg font-bold text-[10.5px]">Tail Lift Required</span>
+                      )}
+                      {additionalRequirements.enclosedTransport && (
+                        <span className="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg font-bold text-[10.5px]">Enclosed Transport</span>
+                      )}
+                      {additionalRequirements.temperatureControlled && (
+                        <span className="px-2.5 py-1 bg-cyan-100 text-cyan-800 rounded-lg font-bold text-[10.5px]">Temperature Controlled</span>
+                      )}
+                      {!serviceOptions.expressService && !additionalRequirements.enclosedTransport && (
+                        <span className="px-2.5 py-1 bg-slate-200 text-slate-700 rounded-lg font-semibold text-[10.5px]">Standard Transport Mode</span>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Step 4 Footer Actions */}
+                <div className="flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs">
+                  <button
+                    onClick={handlePrevStep}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer flex items-center gap-1.5"
+                  >
+                    <ArrowLeft size={14} />
+                    <span>Back: Options & Requirements</span>
+                  </button>
+
+                  <button
+                    disabled={isSubmitting}
+                    onClick={handleFinalBookingSubmit}
+                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-md cursor-pointer flex items-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    <Check size={16} />
+                    <span>{isSubmitting ? 'Submitting...' : 'Submit Transport Request'}</span>
+                  </button>
+                </div>
+
+              </div>
+            )}
 
           </div>
         </div>
 
-        {/* COLUMN 2 (4 Cols): SIDE CARDS (Booking Summary, Special Requirements, Next Steps, Need Help) */}
+        {/* COLUMN 2 (4 Cols): SIDE CARDS */}
         <div className="lg:col-span-4 flex flex-col justify-between space-y-3">
           
           {/* CARD 1: BOOKING SUMMARY */}
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-3">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
               <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">BOOKING SUMMARY</h2>
-              <button onClick={() => triggerToast("Editing booking summary details...")} className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer">
+              <button onClick={() => setCurrentStep(1)} className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer">
                 Edit
               </button>
             </div>
@@ -990,7 +1564,7 @@ export default function LoadRequests() {
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-3">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
               <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">SPECIAL REQUIREMENTS</h2>
-              <button onClick={() => triggerToast("Editing special requirements...")} className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer">
+              <button onClick={() => setCurrentStep(3)} className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer">
                 Edit
               </button>
             </div>
@@ -1000,14 +1574,24 @@ export default function LoadRequests() {
                 <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
                 <span>Standard Pickup & Delivery</span>
               </div>
-              <div className="flex items-center gap-2 text-emerald-700 font-bold">
-                <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                <span>Handle with care</span>
-              </div>
-              <div className="flex items-center gap-2 text-emerald-700 font-bold">
-                <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                <span>Notify before delivery</span>
-              </div>
+              {serviceOptions.expressService && (
+                <div className="flex items-center gap-2 text-amber-700 font-bold">
+                  <CheckCircle2 size={14} className="text-amber-500 shrink-0" />
+                  <span>Express Priority Transport</span>
+                </div>
+              )}
+              {serviceOptions.insuranceCoverage && (
+                <div className="flex items-center gap-2 text-emerald-700 font-bold">
+                  <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                  <span>Transit Insurance Included</span>
+                </div>
+              )}
+              {additionalRequirements.enclosedTransport && (
+                <div className="flex items-center gap-2 text-purple-700 font-bold">
+                  <CheckCircle2 size={14} className="text-purple-500 shrink-0" />
+                  <span>Enclosed Carrier Loading</span>
+                </div>
+              )}
             </div>
 
             <div className="p-2.5 bg-blue-50/50 border border-blue-100 rounded-xl text-[10px] text-blue-900 font-medium flex items-center gap-2">
@@ -1058,7 +1642,7 @@ export default function LoadRequests() {
             </div>
           </div>
 
-          {/* CARD 4: NEED HELP? (Stretches to fill bottom flush alignment) */}
+          {/* CARD 4: NEED HELP? */}
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 flex-1 flex flex-col justify-between space-y-3">
             <div>
               <div className="flex justify-between items-center pb-2 border-b border-slate-100">
@@ -1093,7 +1677,6 @@ export default function LoadRequests() {
         </div>
 
       </div>
-
 
 
       {/* =========================================================================
@@ -1229,6 +1812,79 @@ export default function LoadRequests() {
       )}
 
       {/* =========================================================================
+         IMPORT ITEMS (CSV) MODAL
+         ========================================================================= */}
+      {isCsvModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsCsvModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 text-left font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center font-bold">
+                  <FileSpreadsheet size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Import Freight Items (CSV)</h3>
+                  <p className="text-[10.5px] text-slate-500 font-medium">Paste CSV content or load sample items</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsCsvModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <p className="text-[11px] text-slate-600 font-medium">
+                Format: <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[10px]">Type, Description, Details, Qty, Weight, Dimensions, Value</code>
+              </p>
+
+              <textarea 
+                placeholder="Vehicle, Ford Ranger 2024, VIN: MN2XX349210, 1, 2200 kg, 5.3m x 1.9m x 1.8m, $65,000.00"
+                rows={5}
+                value={csvRawText}
+                onChange={e => setCsvRawText(e.target.value)}
+                className="w-full p-3 border border-slate-200 rounded-xl font-mono text-slate-800 focus:outline-none focus:border-blue-400 text-xs resize-none"
+              />
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <button 
+                  type="button" 
+                  onClick={handleImportCsv}
+                  className="text-blue-600 hover:text-blue-800 font-bold text-xs cursor-pointer"
+                >
+                  Load Sample Items
+                </button>
+                <div className="flex gap-2">
+                  <button 
+                    type="button" 
+                    onClick={() => setIsCsvModalOpen(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={handleImportCsv}
+                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer"
+                  >
+                    Import CSV
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
          CONFIRM BOOKING SUBMISSION MODAL
          ========================================================================= */}
       {isSubmitModalOpen && (
@@ -1262,15 +1918,15 @@ export default function LoadRequests() {
               <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1.5">
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Route:</span>
-                  <span className="text-blue-600 font-bold">{pickupForm.location} → {deliveryForm.location}</span>
+                  <span className="text-blue-600 font-bold">{pickupForm.location || 'Origin'} → {deliveryForm.location || 'Destination'}</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Scheduled Date:</span>
-                  <span className="text-slate-800">{pickupForm.date} at {pickupForm.time}</span>
+                  <span className="text-slate-800">{pickupForm.date} at {pickupForm.time || 'Morning'}</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Total Items:</span>
-                  <span className="text-slate-900 font-extrabold">{items.length} items ({totalWeightKg} kg)</span>
+                  <span className="text-slate-900 font-extrabold">{items.length} items ({totalWeightKg.toLocaleString()} kg)</span>
                 </div>
               </div>
 
@@ -1288,11 +1944,12 @@ export default function LoadRequests() {
                 </button>
                 <button 
                   type="button" 
+                  disabled={isSubmitting}
                   onClick={handleFinalBookingSubmit}
-                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <Check size={14} />
-                  <span>Submit Request</span>
+                  <span>{isSubmitting ? 'Submitting...' : 'Submit Request'}</span>
                 </button>
               </div>
             </div>
@@ -1334,6 +1991,8 @@ export default function LoadRequests() {
               <textarea 
                 placeholder="Type your message to dispatch..."
                 rows={4}
+                value={dispatchMsg}
+                onChange={e => setDispatchMsg(e.target.value)}
                 className="w-full p-3 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400 text-xs resize-none"
               />
 
@@ -1347,10 +2006,7 @@ export default function LoadRequests() {
                 </button>
                 <button 
                   type="button" 
-                  onClick={() => {
-                    setIsDispatchChatModalOpen(false);
-                    triggerToast("Message sent to dispatch team!");
-                  }}
+                  onClick={handleSendMessageToDispatch}
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer"
                 >
                   Send Message

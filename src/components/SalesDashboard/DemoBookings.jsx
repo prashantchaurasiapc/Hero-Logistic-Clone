@@ -549,7 +549,7 @@ export default function DemoBookings() {
 
       {/* Demo Feedback Modal */}
       {showFeedbackModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 pt-16 sm:pt-20 animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-md overflow-hidden shadow-2xl text-left flex flex-col">
             
             {/* Modal Header */}

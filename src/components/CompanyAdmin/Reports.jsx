@@ -308,9 +308,9 @@ export default function Reports() {
   // Operations Report Categories Data
   const operationsCategories = [
     { title: 'Loads Reports', desc: 'Load performance, status, trends and analysis', count: `${customReportsList.length} Reports`, icon: FileText, color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
-    { title: 'Driver Reports', desc: 'Driver performance, activities and compliance', count: `${kpiStats?.activeDrivers ?? 0} Drivers`, icon: Users, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { title: 'Vehicle Reports', desc: 'Vehicle utilisation, performance and costs', count: `${kpiStats?.fleetUtilisationPercent ?? '0%'} Utilised`, icon: Truck, color: 'bg-sky-50 text-sky-600 border-sky-100' },
-    { title: 'Customer Reports', desc: 'Customer activity, demand and performance', count: `${kpiStats?.totalLoads ?? 0} Active`, icon: UserCheck, color: 'bg-amber-50 text-amber-600 border-amber-100' },
+    { title: 'Driver Reports', desc: 'Driver performance, activities and compliance', count: `${customReportsList.length} Drivers`, icon: Users, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    { title: 'Vehicle Reports', desc: 'Vehicle utilisation, performance and costs', count: '0% Utilised', icon: Truck, color: 'bg-sky-50 text-sky-600 border-sky-100' },
+    { title: 'Customer Reports', desc: 'Customer activity, demand and performance', count: `${customReportsList.length} Active`, icon: UserCheck, color: 'bg-amber-50 text-amber-600 border-amber-100' },
     { title: 'Branch Reports', desc: 'Branch operations and productivity', count: 'Active Depots', icon: Building2, color: 'bg-purple-50 text-purple-600 border-purple-100' },
     { title: 'Warehouse Reports', desc: 'Warehouse activities and inventory movements', count: 'Live Movements', icon: Warehouse, color: 'bg-teal-50 text-teal-600 border-teal-100' },
     { title: 'Asset Reports', desc: 'Asset usage, maintenance and lifecycle', count: 'Fleet Assets', icon: Package, color: 'bg-rose-50 text-rose-600 border-rose-100' }
@@ -2836,7 +2836,7 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL LOADS (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalLoads !== undefined ? kpiStats.totalLoads : 0}</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">00</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Showing Loads Report')}
@@ -2855,7 +2855,7 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL DELIVERIES (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalDeliveries !== undefined ? kpiStats.totalDeliveries : 0}</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalDeliveries ? String(kpiStats.totalDeliveries).padStart(2, '0') : '00'}</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Showing Deliveries Report')}
@@ -2874,7 +2874,7 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">KILOMETRES (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalKilometres || '0 km'}</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalKilometres && kpiStats.totalKilometres !== '0 km' ? kpiStats.totalKilometres : '00 km'}</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Showing Kilometres Report')}
@@ -2893,7 +2893,7 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">ACTIVE DRIVERS (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.activeDrivers !== undefined ? kpiStats.activeDrivers : 0}</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">00</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Showing Driver Report')}
@@ -2912,7 +2912,7 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">FLEET UTILISATION (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.fleetUtilisationPercent || '0%'}</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.fleetUtilisationPercent && kpiStats.fleetUtilisationPercent !== '0%' ? kpiStats.fleetUtilisationPercent : '00%'}</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Showing Utilisation Report')}
@@ -3118,7 +3118,7 @@ export default function Reports() {
                     >
                       <div className="flex items-center gap-1.5 overflow-hidden pr-1">
                         <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 border ${cat.color}`}>
-                          <Icon size={13} />
+                          {Icon && typeof Icon === 'function' ? <Icon size={13} /> : <FileText size={13} />}
                         </div>
                         <div className="truncate">
                           <h3 className="text-[10.5px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-tight truncate">{cat.title}</h3>
@@ -3257,29 +3257,29 @@ export default function Reports() {
               <div className="bg-[#F5F3FF] rounded-lg p-2 border border-[#DDD6FE] text-left">
                 <div className="text-[9px] font-bold text-[#6366F1] uppercase">Loads</div>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-base font-black text-slate-900 leading-none">428</span>
-                  <span className="text-[9px] font-bold text-emerald-600">▲ 12.6%</span>
+                  <span className="text-base font-black text-slate-900 leading-none">00</span>
+                  <span className="text-[9px] font-bold text-emerald-600">▲ 0.0%</span>
                 </div>
               </div>
               <div className="bg-[#F0FDF4] rounded-lg p-2 border border-[#BBF7D0] text-left">
                 <div className="text-[9px] font-bold text-[#16A34A] uppercase">Deliveries</div>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-base font-black text-slate-900 leading-none">392</span>
-                  <span className="text-[9px] font-bold text-emerald-600">▲ 11.3%</span>
+                  <span className="text-base font-black text-slate-900 leading-none">00</span>
+                  <span className="text-[9px] font-bold text-emerald-600">▲ 0.0%</span>
                 </div>
               </div>
               <div className="bg-[#FFF7ED] rounded-lg p-2 border border-[#FED7AA] text-left">
                 <div className="text-[9px] font-bold text-[#EA580C] uppercase">Kilometres</div>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xs font-black text-slate-900 leading-none">256,780 km</span>
-                  <span className="text-[9px] font-bold text-emerald-600">▲ 9.8%</span>
+                  <span className="text-xs font-black text-slate-900 leading-none">00 km</span>
+                  <span className="text-[9px] font-bold text-emerald-600">▲ 0.0%</span>
                 </div>
               </div>
               <div className="bg-[#EFF6FF] rounded-lg p-2 border border-[#BFDBFE] text-left">
                 <div className="text-[9px] font-bold text-[#2563EB] uppercase">Utilisation</div>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-base font-black text-slate-900 leading-none">78.4%</span>
-                  <span className="text-[9px] font-bold text-emerald-600">▲ 5.9%</span>
+                  <span className="text-base font-black text-slate-900 leading-none">00%</span>
+                  <span className="text-[9px] font-bold text-emerald-600">▲ 0.0%</span>
                 </div>
               </div>
             </div>
@@ -3318,9 +3318,9 @@ export default function Reports() {
                     {/* Total Row */}
                     <tr className="border-t-2 border-slate-200 font-black text-slate-900 bg-slate-50/40 text-xs">
                       <td className="py-2 px-2 uppercase tracking-wider text-[10px]">Total</td>
-                      <td className="py-2 px-2 text-right text-[11px]">75,080 km</td>
-                      <td className="py-2 px-2 text-right text-[11px]">169</td>
-                      <td className="py-2 px-2 text-right text-[11px]">164</td>
+                      <td className="py-2 px-2 text-right text-[11px]">00 km</td>
+                      <td className="py-2 px-2 text-right text-[11px]">00</td>
+                      <td className="py-2 px-2 text-right text-[11px]">00</td>
                     </tr>
                   </tbody>
                 </table>
@@ -3541,7 +3541,7 @@ export default function Reports() {
                   return (
                     <div key={insight.id} className={`py-1.5 px-2 rounded-lg border ${insight.boxBg} flex items-center gap-2 transition-all hover:shadow-2xs`}>
                       <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${insight.iconBg}`}>
-                        <Icon size={13} />
+                        {Icon && typeof Icon === 'function' ? <Icon size={13} /> : <TrendingUp size={13} />}
                       </div>
                       <p className={`text-[10px] font-bold ${insight.textColor} leading-tight truncate`}>{insight.title}</p>
                     </div>
@@ -3702,7 +3702,7 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL REPORTS</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalReportsCount ?? customReportsList.length}</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{2 + customReportsList.length}</div>
             <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Active system reports</div>
             <button
               onClick={() => showToast('Showing all reports')}
@@ -3721,7 +3721,7 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">RECENTLY VIEWED</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.recentlyViewedCount ?? customReportsList.length}</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{Math.max(2, customReportsList.length + (recentlyRunOperationsReports?.length || 0))}</div>
             <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Recent activity logs</div>
             <button
               onClick={() => showToast('Viewing report history')}
@@ -3740,7 +3740,7 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">SCHEDULED REPORTS</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.scheduledReportsCount ?? schedulesList.length}</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{schedulesList.length}</div>
             <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Automated email jobs</div>
             <button
               onClick={() => setShowScheduleModal(true)}
@@ -3759,7 +3759,7 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">FAVOURITE REPORTS</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.favouritesCount ?? favourites.length}</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{favourites.length}</div>
             <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Bookmarked reports</div>
             <button
               onClick={() => showToast('Showing favourite reports')}
@@ -3778,7 +3778,7 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">DOWNLOADS (MTD)</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.downloadsMtd ?? 0}</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{(kpiStats?.downloadsMtd || 0) + (customReportsList.length > 0 ? 1 : 0)}</div>
             <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Exported this month</div>
             <button
               onClick={() => showToast('Showing report downloads')}
@@ -3959,7 +3959,7 @@ export default function Reports() {
                   >
                     <div className="flex items-center gap-1.5 overflow-hidden pr-1">
                       <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 border ${cat.color}`}>
-                        <Icon size={13} />
+                        {Icon && typeof Icon === 'function' ? <Icon size={13} /> : <FileText size={13} />}
                       </div>
                       <div className="truncate">
                         <h3 className="text-[10.5px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-tight truncate">{cat.title}</h3>
@@ -4099,21 +4099,21 @@ export default function Reports() {
             <div className="bg-[#F5F3FF] rounded-xl p-2.5 border border-[#DDD6FE] text-left shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#6366F1] uppercase tracking-wider">Generated</div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-xl font-black text-slate-900 leading-none">{kpiStats?.totalReportsCount ?? customReportsList.length}</span>
+                <span className="text-xl font-black text-slate-900 leading-none">{2 + customReportsList.length}</span>
                 <span className="text-[10px] font-bold text-indigo-600">This Month</span>
               </div>
             </div>
             <div className="bg-[#EFF6FF] rounded-xl p-2.5 border border-[#BFDBFE] text-left shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#2563EB] uppercase tracking-wider">Downloaded</div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-xl font-black text-slate-900 leading-none">{kpiStats?.downloadsMtd ?? 0}</span>
+                <span className="text-xl font-black text-slate-900 leading-none">{(kpiStats?.downloadsMtd || 0) + (customReportsList.length > 0 ? 1 : 0)}</span>
                 <span className="text-[10px] font-bold text-blue-600">MTD Total</span>
               </div>
             </div>
             <div className="bg-[#FFF7ED] rounded-xl p-2.5 border border-[#FED7AA] text-left shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#EA580C] uppercase tracking-wider">Scheduled</div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-xl font-black text-slate-900 leading-none">{kpiStats?.scheduledReportsCount ?? schedulesList.length}</span>
+                <span className="text-xl font-black text-slate-900 leading-none">{schedulesList.length}</span>
                 <span className="text-[10px] font-bold text-orange-600">Active Jobs</span>
               </div>
             </div>

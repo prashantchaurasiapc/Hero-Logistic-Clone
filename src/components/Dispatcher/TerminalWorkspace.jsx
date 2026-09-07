@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, ChevronRight, Calendar, Filter, Zap, Plus, Search, 
   MoreVertical, X, Phone, User, Truck, MapPin, Navigation, 
-  MessageSquare, History, FileText, Settings, AlertCircle, CheckCircle, Clock
+  MessageSquare, History, FileText, Settings, AlertCircle, CheckCircle, Clock,
+  Download, Eye, Send, FileCheck, Package, Upload
 } from 'lucide-react';
 
 import { dispatcherRepository } from '../../services/dispatcherRepository';
@@ -14,6 +15,12 @@ export default function TerminalWorkspace() {
   const navigate = useNavigate();
   const [drivers, setDrivers] = useState([]);
   const [selectedLoadId, setSelectedLoadId] = useState('LD-10583');
+  const [activeDetailTab, setActiveDetailTab] = useState('overview'); // 'overview' | 'stops' | 'items' | 'documents' | 'notes'
+  const [customNotes, setCustomNotes] = useState({});
+  const [newNoteText, setNewNoteText] = useState('');
+  const [customStops, setCustomStops] = useState({});
+  const [customItems, setCustomItems] = useState({});
+  const [customDocs, setCustomDocs] = useState({});
   const [planningDate, setPlanningDate] = useState(new Date());
   const [isOptimiseModalOpen, setIsOptimiseModalOpen] = useState(false);
   const [isOptimisingProcess, setIsOptimisingProcess] = useState(false);
@@ -521,226 +528,374 @@ export default function TerminalWorkspace() {
                 </div>
               </div>
 
-              {/* Tabs */}
-              <div className="flex border-b border-slate-200 text-[11px] font-semibold">
-                <button className="px-3 py-2 border-b-2 border-blue-600 text-blue-600 whitespace-nowrap">Overview</button>
-                <button className="px-3 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">Stops ({selectedLoadData.stops})</button>
-                <button className="px-3 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">Items (2)</button>
-                <button className="px-3 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">Documents</button>
-                <button className="px-3 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">Notes</button>
+              {/* Dynamic Interactive Tabs */}
+              <div className="flex border-b border-slate-200 text-[11px] font-semibold overflow-x-auto scrollbar-none">
+                {[
+                  { id: 'overview', label: 'Overview' },
+                  { id: 'stops', label: `Stops (${(customStops[selectedLoadData.id] || [{ type: 'PICKUP', addr: selectedLoadData.route?.split(' to ')[0] || 'Melbourne Depot' }, { type: 'DROPOFF', addr: selectedLoadData.route?.split(' to ')[1] || 'Sydney Terminal' }]).length})` },
+                  { id: 'items', label: `Items (${(customItems[selectedLoadData.id] || [1, 2]).length})` },
+                  { id: 'documents', label: `Documents (${(customDocs[selectedLoadData.id] || [1, 2, 3]).length})` },
+                  { id: 'notes', label: `Notes (${(customNotes[selectedLoadData.id] || []).length + 2})` },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveDetailTab(tab.id)}
+                    className={`px-3 py-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+                      activeDetailTab === tab.id
+                        ? 'border-blue-600 text-blue-600 font-extrabold'
+                        : 'border-transparent text-slate-500 hover:text-slate-700 font-medium'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
 
-              {/* Driver & Assets */}
-              <div className="space-y-4">
-                
-                {/* Driver */}
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-3">Driver</span>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <img src={`https://ui-avatars.com/api/?name=${selectedLoadData.driverInfo.name.replace(' ', '+')}&background=e2e8f0&color=0f172a`} alt={selectedLoadData.driverInfo.name} className="w-10 h-10 rounded-full" />
-                      <div>
-                        <p className="text-[12px] font-bold text-slate-900">{selectedLoadData.driverInfo.name}</p>
-                        <span className={`text-[9px] font-bold text-${selectedLoadData.driverInfo.statusColor}-600 bg-${selectedLoadData.driverInfo.statusColor}-50 px-1.5 py-0.5 rounded`}>{selectedLoadData.driverInfo.status}</span>
+              {/* TAB 1: OVERVIEW */}
+              {activeDetailTab === 'overview' && (
+                <div className="space-y-6">
+                  {/* Driver & Assets */}
+                  <div className="space-y-4">
+                    {/* Driver */}
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-3">Driver</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <img src={`https://ui-avatars.com/api/?name=${selectedLoadData.driverInfo.name.replace(' ', '+')}&background=e2e8f0&color=0f172a`} alt={selectedLoadData.driverInfo.name} className="w-10 h-10 rounded-full" />
+                          <div>
+                            <p className="text-[12px] font-bold text-slate-900">{selectedLoadData.driverInfo.name}</p>
+                            <span className={`text-[9px] font-bold text-${selectedLoadData.driverInfo.statusColor}-600 bg-${selectedLoadData.driverInfo.statusColor}-50 px-1.5 py-0.5 rounded`}>{selectedLoadData.driverInfo.status}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => alert(`Opening chat with ${selectedLoadData?.driverInfo?.name || 'Driver'}...`)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"><MessageSquare size={14}/></button>
+                          <button onClick={() => alert(`Calling ${selectedLoadData?.driverInfo?.name || 'Driver'} (+61 400 123 456)...`)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"><Phone size={14}/></button>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"><MessageSquare size={14}/></button>
-                      <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"><Phone size={14}/></button>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Vehicle */}
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-3 mt-5">Vehicle</span>
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-slate-500">
-                      <Truck size={18} />
-                    </div>
+                    {/* Vehicle */}
                     <div>
-                      <p className="text-[11px] font-bold text-slate-900">{selectedLoadData.vehicle.split(' (')[0]}</p>
-                      <p className="text-[10px] text-slate-500">{selectedLoadData.vehicle.match(/\(([^)]+)\)/)?.[1] || ''}</p>
-                      <span className="text-[9px] font-bold text-emerald-600 inline-block mt-1">Compliant</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-3 mt-5">Vehicle</span>
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-slate-500">
+                          <Truck size={18} />
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-900">{selectedLoadData.vehicle.split(' (')[0]}</p>
+                          <p className="text-[10px] text-slate-500">{selectedLoadData.vehicle.match(/\(([^)]+)\)/)?.[1] || ''}</p>
+                          <span className="text-[9px] font-bold text-emerald-600 inline-block mt-1">Compliant</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Trailer */}
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-3 mt-5">Trailer</span>
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-slate-500">
-                      <div className="text-[10px] font-bold border-2 border-slate-400 rounded-sm px-1 py-0.5">TR</div>
-                    </div>
+                    {/* Trailer */}
                     <div>
-                      <p className="text-[11px] font-bold text-slate-900">{selectedLoadData.trailer}</p>
-                      <p className="text-[10px] text-slate-500">10 Car Carrier</p>
-                      <span className="text-[9px] font-bold text-emerald-600 inline-block mt-1">Compliant</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-3 mt-5">Trailer</span>
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-slate-500">
+                          <div className="text-[10px] font-bold border-2 border-slate-400 rounded-sm px-1 py-0.5">TR</div>
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-900">{selectedLoadData.trailer}</p>
+                          <p className="text-[10px] text-slate-500">10 Car Carrier</p>
+                          <span className="text-[9px] font-bold text-emerald-600 inline-block mt-1">Compliant</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Load Progress */}
+                  <div className="border-t border-slate-100 pt-5">
+                    <span className="text-[11px] font-bold text-slate-800 block mb-4">Load Progress</span>
+                    
+                    <div className="relative">
+                      <div className="absolute top-[9px] left-3 right-3 h-0.5 bg-slate-100 z-0"></div>
+                      <div className="absolute top-[9px] left-3 h-0.5 bg-emerald-500 z-0" style={{width: selectedLoadData.progress}}></div>
+                      
+                      <div className="flex justify-between relative z-10 text-[9px] font-semibold text-slate-400">
+                        <div className="flex flex-col items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center border-2 border-white"><CheckCircle size={10} /></div>
+                          <span className="text-emerald-600">Accepted</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center border-2 border-white"><CheckCircle size={10} /></div>
+                          <span className="text-emerald-600">En Route</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center border-2 border-white"><CheckCircle size={10} /></div>
+                          <span className="text-emerald-600">At Pickup</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center border-2 border-white"><AlertCircle size={10} /></div>
+                          <span className="text-rose-600">Loaded</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center border-2 border-white"><span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span></div>
+                          <span>In Transit</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center border-2 border-white"><span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span></div>
+                          <span>Delivered</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-center mt-4">
+                      <span className="text-[10px] font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-full">ETA: 9:45 PM (On time)</span>
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="border-t border-slate-100 pt-5 pb-4">
+                    <span className="text-[11px] font-bold text-slate-800 block mb-3">Quick Actions</span>
+                    <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-700">
+                      <button 
+                        onClick={() => alert(`Opening chat with ${selectedLoadData?.driverInfo?.name || 'Driver'}...`)}
+                        className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-purple-50 hover:border-purple-200 hover:text-purple-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                      >
+                        <MessageSquare size={12} className="text-purple-600"/> Message Driver
+                      </button>
+                      <button 
+                        onClick={() => alert(`Calling ${selectedLoadData?.driverInfo?.name || 'Driver'} (+61 400 123 456)...`)}
+                        className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                      >
+                        <Phone size={12} className="text-emerald-600"/> Call Driver
+                      </button>
+                      <button 
+                        onClick={() => alert(`Loading 24h GPS Telemetry history trail for load ${selectedLoadData?.id}...`)}
+                        className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                      >
+                        <History size={12} className="text-indigo-600"/> View GPS History
+                      </button>
+                      <button 
+                        onClick={() => navigate('/dispatcher/live-gps-map')}
+                        className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                      >
+                        <Navigation size={12} className="text-blue-600"/> Open Route
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          const tr = prompt('Enter new Trailer ID to swap (e.g. TRL-305):', selectedLoadData?.trailer || 'TRL-201');
+                          if (tr) {
+                            try {
+                              if (selectedLoadData?.dbId) {
+                                await api.put(`/loads/${selectedLoadData.dbId}`, { trailerId: tr });
+                              }
+                              alert(`Trailer swapped to ${tr} for load ${selectedLoadData?.id}`);
+                            } catch (e) {
+                              console.warn("Trailer swap failed:", e);
+                              alert(`Trailer swapped to ${tr} (local display)`);
+                            }
+                          }
+                        }}
+                        className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                      >
+                        <Zap size={12} className="text-amber-600"/> Swap Trailer
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          const dr = prompt('Enter Driver Name to transfer load to:', 'John Don Driver');
+                          if (dr) {
+                            try {
+                              if (selectedLoadData?.dbId) {
+                                await api.post(`/loads/${selectedLoadData.dbId}/assignments`, { driverName: dr });
+                              }
+                              alert(`Load ${selectedLoadData?.id} transferred to ${dr}`);
+                            } catch (e) {
+                              console.warn("Transfer load failed:", e);
+                              alert(`Load ${selectedLoadData?.id} transferred to ${dr} (local display)`);
+                            }
+                          }
+                        }}
+                        className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-sky-50 hover:border-sky-200 hover:text-sky-700 transition-colors bg-white shadow-2xs cursor-pointer"
+                      >
+                        <MapPin size={12} className="text-sky-600"/> Transfer Load
+                      </button>
                     </div>
                   </div>
                 </div>
+              )}
 
-              </div>
+              {/* TAB 2: STOPS */}
+              {activeDetailTab === 'stops' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-800">Route Stops &amp; Waypoints</span>
+                    <button 
+                      onClick={() => {
+                        const newAddr = prompt('Enter new stop address:');
+                        if (newAddr) {
+                          const currentList = customStops[selectedLoadData.id] || [
+                            { type: 'PICKUP', addr: selectedLoadData.route?.split(' to ')[0] || 'Melbourne Depot' },
+                            { type: 'DROPOFF', addr: selectedLoadData.route?.split(' to ')[1] || 'Sydney Terminal' }
+                          ];
+                          setCustomStops({ ...customStops, [selectedLoadData.id]: [...currentList, { type: 'WAYPOINT', addr: newAddr }] });
+                          alert(`Added stop: ${newAddr}`);
+                        }
+                      }}
+                      className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus size={12} /> Add Stop
+                    </button>
+                  </div>
 
-              {/* Load Progress */}
-              <div className="border-t border-slate-100 pt-5">
-                <span className="text-[11px] font-bold text-slate-800 block mb-4">Load Progress</span>
-                
-                <div className="relative">
-                  <div className="absolute top-[9px] left-3 right-3 h-0.5 bg-slate-100 z-0"></div>
-                  <div className="absolute top-[9px] left-3 h-0.5 bg-emerald-500 z-0" style={{width: selectedLoadData.progress}}></div>
+                  <div className="space-y-3">
+                    {(customStops[selectedLoadData.id] || [
+                      { type: 'PICKUP', addr: selectedLoadData.route?.split(' to ')[0] || '100 Flinders St, Melbourne VIC 3000', time: '08:00 AM', status: 'COMPLETED' },
+                      { type: 'DROPOFF', addr: selectedLoadData.route?.split(' to ')[1] || 'Sydney Distribution Depot, NSW 2000', time: '04:00 PM', status: 'EN_ROUTE' }
+                    ]).map((stop, idx) => (
+                      <div key={idx} className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs font-semibold">
+                        <div className="flex justify-between items-center">
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                            stop.type === 'PICKUP' ? 'bg-purple-100 text-purple-700' : stop.type === 'DROPOFF' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            Stop #{idx + 1} &bull; {stop.type}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-bold">{stop.time || 'Scheduled'}</span>
+                        </div>
+                        <p className="text-slate-900 font-extrabold text-[12px]">{stop.addr}</p>
+                        <div className="flex justify-between items-center text-[10px] text-slate-500 pt-1 border-t border-slate-200/60">
+                          <span>Contact: Terminal Logistics Desk</span>
+                          <span className="text-emerald-600 font-bold flex items-center gap-1">
+                            <CheckCircle size={10} /> Verified
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: ITEMS */}
+              {activeDetailTab === 'items' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-800">Manifest Cargo Items</span>
+                    <button 
+                      onClick={() => {
+                        const itemDesc = prompt('Enter vehicle make/model or cargo description:');
+                        if (itemDesc) {
+                          const currentList = customItems[selectedLoadData.id] || [1, 2];
+                          setCustomItems({ ...customItems, [selectedLoadData.id]: [...currentList, { desc: itemDesc }] });
+                          alert(`Added item: ${itemDesc}`);
+                        }
+                      }}
+                      className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus size={12} /> Add Item
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(customItems[selectedLoadData.id] || [
+                      { desc: 'Toyota HiLux 2024 (White)', rego: 'ABC234', vin: 'JMM2EJH77A5B00125', weight: '2,150 kg', status: 'Loaded Deck 1' },
+                      { desc: 'Ford Ranger 2023 (Black)', rego: 'XYZ789', vin: '1HGBH41JXMN109186', weight: '2,240 kg', status: 'Loaded Deck 2' }
+                    ]).map((item, idx) => (
+                      <div key={idx} className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs font-semibold">
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-900 font-black text-[12px]">{item.desc || `Cargo Item #${idx + 1}`}</span>
+                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-bold rounded uppercase">{item.status || 'Active'}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-500 font-mono pt-1">
+                          <div>Rego: <strong className="text-slate-800">{item.rego || 'REGO-EXPRESS'}</strong></div>
+                          <div>VIN: <strong className="text-slate-800">{item.vin || 'VIN-9874102'}</strong></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: DOCUMENTS */}
+              {activeDetailTab === 'documents' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-800">Transport &amp; POD Documents</span>
+                    <button 
+                      onClick={() => alert('Opening Document Scanner/Uploader...')}
+                      className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Upload size={12} /> Upload Doc
+                    </button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {[
+                      { name: 'Electronic Bill of Lading (e-BOL)', file: `BOL-${selectedLoadData.id}.pdf`, status: 'Signed & Validated', color: 'emerald' },
+                      { name: 'Proof of Delivery (POD Photo)', file: `POD-${selectedLoadData.id}.jpg`, status: 'Pending Driver Offload', color: 'amber' },
+                      { name: 'Driver Pre-Start Inspection Checklist', file: 'Safety-Check-Pass.pdf', status: 'Passed Inspection', color: 'blue' }
+                    ].map((doc, idx) => (
+                      <div key={idx} className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between text-xs font-semibold shadow-2xs">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                            <FileCheck size={16} />
+                          </div>
+                          <div>
+                            <p className="text-slate-900 font-extrabold text-[11px] leading-tight">{doc.name}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">{doc.file}</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => alert(`Downloading ${doc.file}...`)}
+                          className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer" 
+                          title="Download Document"
+                        >
+                          <Download size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: NOTES */}
+              {activeDetailTab === 'notes' && (
+                <div className="space-y-4">
+                  <span className="text-[11px] font-bold text-slate-800 block">Dispatch Operations Notes</span>
                   
-                  <div className="flex justify-between relative z-10 text-[9px] font-semibold text-slate-400">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center border-2 border-white"><CheckCircle size={10} /></div>
-                      <span className="text-emerald-600">Accepted</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center border-2 border-white"><CheckCircle size={10} /></div>
-                      <span className="text-emerald-600">En Route</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center border-2 border-white"><CheckCircle size={10} /></div>
-                      <span className="text-emerald-600">At Pickup</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center border-2 border-white"><AlertCircle size={10} /></div>
-                      <span className="text-rose-600">Loaded</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center border-2 border-white"><span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span></div>
-                      <span>In Transit</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center border-2 border-white"><span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span></div>
-                      <span>Delivered</span>
-                    </div>
+                  {/* Notes Timeline */}
+                  <div className="space-y-2.5 max-h-48 overflow-y-auto">
+                    {[
+                      { time: 'Today 08:15 AM', author: 'Driver John', text: 'Checked in at Melbourne Terminal. Vehicles inspected and secured on deck.' },
+                      { time: 'Today 09:30 AM', author: 'Dispatcher', text: 'Customer requested 30-min advance phone call before dropoff arrival.' },
+                      ...(customNotes[selectedLoadData.id] || [])
+                    ].map((note, idx) => (
+                      <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+                        <div className="flex justify-between items-center text-[10px]">
+                          <strong className="text-blue-700 font-bold">{note.author}</strong>
+                          <span className="text-slate-400">{note.time}</span>
+                        </div>
+                        <p className="text-slate-800 font-medium">{note.text}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add New Note Box */}
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <textarea
+                      value={newNoteText}
+                      onChange={e => setNewNoteText(e.target.value)}
+                      placeholder="Type dispatcher internal note..."
+                      rows="2"
+                      className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 resize-none"
+                    />
+                    <button
+                      onClick={() => {
+                        if (newNoteText.trim()) {
+                          const existing = customNotes[selectedLoadData.id] || [];
+                          const newEntry = { time: 'Just now', author: 'Dispatcher', text: newNoteText.trim() };
+                          setCustomNotes({ ...customNotes, [selectedLoadData.id]: [...existing, newEntry] });
+                          setNewNoteText('');
+                          alert('Dispatch note posted successfully!');
+                        }
+                      }}
+                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                    >
+                      <Send size={12} /> Post Dispatch Note
+                    </button>
                   </div>
                 </div>
-                <div className="text-center mt-4">
-                  <span className="text-[10px] font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-full">ETA: 9:45 PM (On time)</span>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="border-t border-slate-100 pt-5 pb-4">
-                <span className="text-[11px] font-bold text-slate-800 block mb-3">Quick Actions</span>
-                <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-700">
-                  <button 
-                    onClick={() => alert(`Opening chat with ${selectedLoadData?.driverInfo?.name || 'Driver'}...`)}
-                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-purple-50 hover:border-purple-200 hover:text-purple-700 transition-colors bg-white shadow-2xs cursor-pointer"
-                  >
-                    <MessageSquare size={12} className="text-purple-600"/> Message Driver
-                  </button>
-                  <button 
-                    onClick={() => alert(`Calling ${selectedLoadData?.driverInfo?.name || 'Driver'} (+61 400 123 456)...`)}
-                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-colors bg-white shadow-2xs cursor-pointer"
-                  >
-                    <Phone size={12} className="text-emerald-600"/> Call Driver
-                  </button>
-                  <button 
-                    onClick={() => alert(`Loading 24h GPS Telemetry history trail for load ${selectedLoadData?.id}...`)}
-                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-colors bg-white shadow-2xs cursor-pointer"
-                  >
-                    <History size={12} className="text-indigo-600"/> View GPS History
-                  </button>
-                  <button 
-                    onClick={() => navigate('/dispatcher/live-gps-map')}
-                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-colors bg-white shadow-2xs cursor-pointer"
-                  >
-                    <Navigation size={12} className="text-blue-600"/> Open Route
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      const tr = prompt('Enter new Trailer ID to swap (e.g. TRL-305):', selectedLoadData?.trailer || 'TRL-201');
-                      if (tr) {
-                        try {
-                          if (selectedLoadData?.dbId) {
-                            await api.put(`/loads/${selectedLoadData.dbId}`, { trailerId: tr });
-                          }
-                          alert(`Trailer swapped to ${tr} for load ${selectedLoadData?.id}`);
-                        } catch (e) {
-                          console.warn("Trailer swap failed:", e);
-                          alert(`Trailer swapped to ${tr} (local display)`);
-                        }
-                      }
-                    }}
-                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-colors bg-white shadow-2xs cursor-pointer"
-                  >
-                    <Zap size={12} className="text-amber-600"/> Swap Trailer
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      const dr = prompt('Enter Driver Name to transfer load to:', 'John Don Driver');
-                      if (dr) {
-                        try {
-                          if (selectedLoadData?.dbId) {
-                            await api.post(`/loads/${selectedLoadData.dbId}/assignments`, { driverName: dr });
-                          }
-                          alert(`Load ${selectedLoadData?.id} transferred to ${dr}`);
-                        } catch (e) {
-                          console.warn("Transfer load failed:", e);
-                          alert(`Load ${selectedLoadData?.id} transferred to ${dr} (local display)`);
-                        }
-                      }
-                    }}
-                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-sky-50 hover:border-sky-200 hover:text-sky-700 transition-colors bg-white shadow-2xs cursor-pointer"
-                  >
-                    <MapPin size={12} className="text-sky-600"/> Transfer Load
-                  </button>
-                  <button 
-                    onClick={() => {
-                      const item = prompt('Enter item/cargo rego to transfer:');
-                      if (item) alert(`Cargo item ${item} transferred from load ${selectedLoadData?.id}`);
-                    }}
-                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-teal-50 hover:border-teal-200 hover:text-teal-700 transition-colors bg-white shadow-2xs cursor-pointer"
-                  >
-                    <Truck size={12} className="text-teal-600"/> Transfer Item
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      const note = prompt('Enter internal dispatch note:');
-                      if (note) {
-                        try {
-                          if (selectedLoadData?.dbId) {
-                            await api.put(`/loads/${selectedLoadData.dbId}`, { dispatchNotes: note });
-                          }
-                          alert(`Note saved for load ${selectedLoadData?.id}: "${note}"`);
-                        } catch (e) {
-                          console.warn("Note save failed:", e);
-                          alert(`Note saved for load ${selectedLoadData?.id}: "${note}" (local display)`);
-                        }
-                      }
-                    }}
-                    className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg hover:bg-rose-50 hover:border-rose-200 hover:text-rose-700 transition-colors bg-white shadow-2xs cursor-pointer"
-                  >
-                    <FileText size={12} className="text-rose-600"/> Add Internal Note
-                  </button>
-                </div>
-                <button 
-                  onClick={async () => {
-                    const mins = prompt('Enter delay duration in minutes (e.g. 30):', '30');
-                    if (mins) {
-                      try {
-                        if (selectedLoadData?.dbId) {
-                          await api.post('/load-activitys', {
-                            loadId: selectedLoadData.dbId,
-                            eventDescription: `Delay of ${mins} mins flagged by Dispatcher`
-                          });
-                        }
-                        alert(`Delay of ${mins} mins flagged for load ${selectedLoadData?.id}`);
-                      } catch (e) {
-                        console.warn("Delay flag failed:", e);
-                        alert(`Delay of ${mins} mins flagged for load ${selectedLoadData?.id} (local display)`);
-                      }
-                    }
-                  }}
-                  className="w-full mt-2 flex items-center justify-center gap-2 p-2 border border-rose-200 hover:bg-rose-50 rounded-lg transition-colors bg-white shadow-2xs text-[10px] font-bold text-rose-700 cursor-pointer"
-                >
-                  <AlertCircle size={12} className="text-rose-600"/> Flag Delay
-                </button>
-              </div>
+              )}
 
             </div>
           </div>

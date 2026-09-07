@@ -193,30 +193,52 @@ class CRMRepository {
 
   getTrials() {
     const leads = this.getLeads();
-    return leads.filter(l => l.stage === 'Trial Started').map(l => ({
-      id: `T-${l.id}`,
-      leadId: l.id,
-      company: l.company,
-      admin: l.name,
-      status: 'Active',
-      daysRemaining: 14,
-      startDate: new Date().toISOString().split('T')[0],
-      mostUsedModule: 'Live GPS Tracking',
-      activeUsers: 3,
-      storage: '0.2 GB'
-    }));
+    return leads.filter(l => l.stage === 'Trial Started' || l.stage === 'TRIAL_STARTED' || l.stage === 'Trial').map(l => {
+      const createdDate = l.createdAt ? new Date(l.createdAt) : new Date();
+      const expiryDateObj = new Date(createdDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+      const daysLeft = Math.max(0, Math.ceil((expiryDateObj - new Date()) / (1000 * 60 * 60 * 24)));
+
+      return {
+        id: `T-${l.id}`,
+        leadId: l.id,
+        company: l.company || 'Trial Sandbox Tenant',
+        admin: l.name || 'Admin User',
+        status: daysLeft <= 0 ? 'Expired' : 'Active',
+        daysRemaining: daysLeft > 0 ? daysLeft : 0,
+        startDate: createdDate.toISOString().split('T')[0],
+        expiryDate: expiryDateObj.toISOString().split('T')[0],
+        mostUsedModule: l.niche ? `${l.niche} Tracking` : 'Live GPS Tracking',
+        activeUsers: Math.min(15, Math.max(2, Math.floor((l.fleetSize || 6) / 2))),
+        storage: `${((l.fleetSize || 5) * 0.15).toFixed(1)} GB`,
+        currentPlan: 'Enterprise Sandbox'
+      };
+    });
   }
 
   getHandovers() {
     const leads = this.getLeads();
-    return leads.filter(l => l.stage === 'Won').map(l => ({
+    return leads.filter(l => l.stage === 'Won' || l.stage === 'WON').map(l => ({
       id: `HO-${l.id}`,
       leadId: l.id,
-      company: l.company,
-      owner: l.rep,
+      company: l.company || l.companyName || 'Carrier Tenant',
+      owner: l.rep || 'Sales Officer',
+      dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       targetDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       progress: 50,
-      status: 'In Progress'
+      status: 'In Progress',
+      checklist: [
+        { name: 'Company Workspace Provisioned', completed: true },
+        { name: 'SaaS Subscription Plan Activated', completed: true },
+        { name: 'Company Admin User Registered', completed: true },
+        { name: 'Role Permission Policies Assigned', completed: false },
+        { name: 'Mock Customer Inbound Data Importer', completed: false },
+        { name: 'Roster & ELD System Training Complete', completed: false },
+        { name: 'Sandbox Production Go-Live Scheduled', completed: false }
+      ],
+      legalDocs: {
+        slaSigned: false,
+        w9TaxFiled: false
+      }
     }));
   }
 

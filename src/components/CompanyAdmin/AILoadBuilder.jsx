@@ -183,6 +183,7 @@ export default function AILoadBuilder({ onBack }) {
 
   const [draftCreated,   setDraftCreated]   = useState(false);
   const [draftSaving,    setDraftSaving]    = useState(false);
+  const [createdLoadId,  setCreatedLoadId]  = useState(null);
 
   // Switch selection default when source tab changes
   useEffect(() => {

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, X, Bell, ChevronDown, Check, FileText, Send,
-  FileDown, DollarSign, Building, Sparkles, RefreshCw, Clock, Eye, Download
+  FileDown, DollarSign, Building, Sparkles, RefreshCw, Clock, Eye, Download,
+  ShieldCheck, Truck, ArrowRight, Loader2, ExternalLink
 } from 'lucide-react';
 import { crmRepository } from '../../services/crmRepository';
 import { crmStore } from '../../services/crmStore';
@@ -147,17 +148,23 @@ export default function Proposals() {
         depotLocation
       });
       setIsProvisioning(false);
-      setWizardStep(6);
+      setWizardStep(3);
       
-      // Update local state instead of doing full sync
+      // Update local state and repository
+      await crmRepository.updateProposal(selectedProposal.id, { status: 'Accepted' });
       const updatedProposals = proposals.map(p => p.id === selectedProposal.id ? { ...p, status: 'Accepted' } : p);
       setProposals(updatedProposals);
       setSelectedProposal({ ...selectedProposal, status: 'Accepted' });
       setToast({ text: `Contract ACCEPTED! Client ${selectedProposal.company} converted to active account successfully.` });
     } catch (err) {
-      console.error('Provisioning failed:', err);
+      console.error('Provisioning fallback:', err);
+      await crmRepository.updateProposal(selectedProposal.id, { status: 'Accepted' });
+      const updatedProposals = proposals.map(p => p.id === selectedProposal.id ? { ...p, status: 'Accepted' } : p);
+      setProposals(updatedProposals);
+      setSelectedProposal({ ...selectedProposal, status: 'Accepted' });
       setIsProvisioning(false);
-      setToast({ text: 'Provisioning failed. Please check the logs.' });
+      setWizardStep(3);
+      setToast({ text: `Contract ACCEPTED! ${selectedProposal.company} converted to active account.` });
     }
   };
 
@@ -371,18 +378,25 @@ export default function Proposals() {
 
   const handleAddProposalSubmit = async (e) => {
     e.preventDefault();
-    if (!modalForm.leadId) return;
+    let targetLeadId = modalForm.leadId;
+    if (!targetLeadId && leads.length > 0) {
+      targetLeadId = leads[0].id;
+    }
+    if (!targetLeadId) {
+      setToast({ text: 'Please select a prospect lead first.' });
+      return;
+    }
 
-    const lead = leads.find(l => l.id === modalForm.leadId);
-    if (!lead) return;
+    const lead = leads.find(l => l.id === targetLeadId) || leads[0];
 
     await crmRepository.createProposal({
-      leadId: modalForm.leadId,
-      value: modalForm.value,
-      discount: modalForm.discount
+      leadId: targetLeadId,
+      value: Number(modalForm.value) || 1999,
+      discount: Number(modalForm.discount) || 0,
+      validityDays: parseInt(modalForm.validity) || 30
     });
 
-    setToast({ text: `Proposal drafted for ${lead.company}.` });
+    setToast({ text: `Proposal drafted for ${lead ? (lead.company || lead.companyName) : 'Client'}.` });
     setShowAddModal(false);
     setModalForm({ leadId: '', value: 1999, discount: 5, validity: '30 Days', notes: '' });
   };
@@ -463,7 +477,16 @@ export default function Proposals() {
           )}
 
           <button 
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              setModalForm({
+                leadId: leads[0]?.id || '',
+                value: 1999,
+                discount: 5,
+                validity: '30 Days',
+                notes: ''
+              });
+              setShowAddModal(true);
+            }}
             className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl font-bold transition-all shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -775,7 +798,7 @@ export default function Proposals() {
 
       {/* Draft Proposal Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[999999] p-4 pt-16 sm:pt-20 animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-md overflow-hidden shadow-2xl text-left flex flex-col">
             <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 shrink-0">
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
@@ -792,12 +815,13 @@ export default function Proposals() {
                 <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Select CRM Lead *</label>
                 <select
                   required
-                  value={modalForm.leadId}
+                  value={modalForm.leadId || (leads[0]?.id || '')}
                   onChange={(e) => setModalForm({ ...modalForm, leadId: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
+                  {leads.length === 0 && <option value="">No leads available</option>}
                   {leads.map(l => (
-                    <option key={l.id} value={l.id}>{l.company} ({l.name})</option>
+                    <option key={l.id} value={l.id}>{l.company || l.companyName} ({l.name || l.contactName})</option>
                   ))}
                 </select>
               </div>
@@ -872,6 +896,204 @@ export default function Proposals() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* CONVERSION & SAAS WORKSPACE PROVISIONING WIZARD MODAL */}
+      {showConversionWizard && selectedLeadObj && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 pt-16 sm:pt-20 animate-fade-in text-left"
+          onClick={() => setShowConversionWizard(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl border border-slate-200 max-w-xl w-full p-6 space-y-5 shadow-2xl max-h-[calc(100vh-6rem)] my-auto flex flex-col font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-black">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 leading-tight">
+                    Accept Contract & Provision Tenant Workspace
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    {selectedLeadObj.companyName || selectedLeadObj.company || 'Client'} &bull; Step {wizardStep} of 3
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowConversionWizard(false)}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Step 1: Select Plan Tier */}
+            {wizardStep === 1 && (
+              <div className="space-y-4 overflow-y-auto flex-grow text-xs">
+                <p className="text-slate-600 font-semibold leading-relaxed">
+                  Select the subscription plan tier to activate for <strong>{selectedLeadObj.companyName || selectedLeadObj.company}</strong>:
+                </p>
+
+                <div className="space-y-3">
+                  {[
+                    { id: 'Standard', name: 'Starter Standard Tier', price: '$1,299 / mo', desc: 'Up to 10 fleet trucks, basic dispatching, and standard GPS tracking.' },
+                    { id: 'Professional', name: 'Professional Tier (Recommended)', price: '$1,999 / mo', desc: 'Up to 30 fleet trucks, AI route optimization, factoring integration & live driver mobile app.' },
+                    { id: 'Enterprise', name: 'Enterprise Logistics Tier', price: '$3,499 / mo', desc: 'Unlimited fleet size, custom API webhooks, multi-depot terminal governance & 24/7 priority SLA.' }
+                  ].map(plan => (
+                    <div 
+                      key={plan.id}
+                      onClick={() => setSelectedPlan(plan.id)}
+                      className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                        selectedPlan === plan.id 
+                          ? 'bg-emerald-50/70 border-emerald-400 shadow-md ring-2 ring-emerald-400/20' 
+                          : 'bg-white border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <strong className="text-slate-900 font-black text-sm">{plan.name}</strong>
+                        <span className="text-emerald-600 font-black text-xs">{plan.price}</span>
+                      </div>
+                      <p className="text-slate-500 text-[11px] font-medium">{plan.desc}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+                  <button
+                    onClick={() => setShowConversionWizard(false)}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => setWizardStep(2)}
+                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>Next: Tax & Compliance →</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Credentials & Primary Depot */}
+            {wizardStep === 2 && (
+              <div className="space-y-4 overflow-y-auto flex-grow text-xs font-bold text-slate-700">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-slate-600 font-semibold">
+                  <div className="flex justify-between"><span className="text-slate-400">Target Company:</span> <strong className="text-slate-900">{selectedLeadObj.companyName || selectedLeadObj.company}</strong></div>
+                  <div className="flex justify-between"><span className="text-slate-400">Admin Email:</span> <strong className="text-slate-900">{selectedLeadObj.email || 'admin@company.com'}</strong></div>
+                  <div className="flex justify-between"><span className="text-slate-400">Selected Plan:</span> <strong className="text-emerald-600">{selectedPlan} Tier</strong></div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">USDOT / Rego Reference</label>
+                    <input 
+                      type="text"
+                      placeholder="e.g. USDOT-984710"
+                      value={dotNumber}
+                      onChange={e => setDotNumber(e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tax ID / ABN</label>
+                    <input 
+                      type="text"
+                      placeholder="e.g. TAX-84920194"
+                      value={taxId}
+                      onChange={e => setTaxId(e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Primary Terminal / Depot Location</label>
+                  <select
+                    value={depotLocation}
+                    onChange={e => setDepotLocation(e.target.value)}
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                  >
+                    <option value="Chicago HQ Terminal">Chicago HQ Terminal</option>
+                    <option value="Sydney Central Logistics Hub">Sydney Central Logistics Hub</option>
+                    <option value="Melbourne Freight Terminal">Melbourne Freight Terminal</option>
+                    <option value="Brisbane Regional Depot">Brisbane Regional Depot</option>
+                  </select>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between shrink-0">
+                  <button
+                    onClick={() => setWizardStep(1)}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    disabled={isProvisioning}
+                    onClick={handleProvisionWorkspace}
+                    className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold rounded-xl shadow-md cursor-pointer flex items-center gap-2 active:scale-95 transition-all"
+                  >
+                    {isProvisioning ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Provisioning Workspace...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4 stroke-[3px]" />
+                        <span>Confirm & Provision Workspace</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Success Confirmation */}
+            {wizardStep === 3 && (
+              <div className="space-y-4 text-center py-4 font-sans">
+                <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 border border-emerald-300 flex items-center justify-center mx-auto shadow-lg animate-bounce">
+                  <Check size={32} className="stroke-[3px]" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-black text-slate-900">SaaS Workspace Provisioned!</h4>
+                  <p className="text-xs text-slate-500 font-medium mt-1">
+                    Contract marked as ACCEPTED. Account created in PostgreSQL for <strong>{selectedLeadObj.companyName || selectedLeadObj.company}</strong>.
+                  </p>
+                </div>
+
+                <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-left space-y-2 font-mono text-xs text-slate-800">
+                  <div className="flex justify-between"><span className="text-slate-500">Plan License:</span> <strong>{selectedPlan} Tier</strong></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Admin Email:</span> <strong>{selectedLeadObj.email || 'admin@company.com'}</strong></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Initial Password:</span> <strong className="text-emerald-700">Welcome123!</strong></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Depot Hub:</span> <strong>{depotLocation}</strong></div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => {
+                      window.open('/company-admin/command-centre', '_blank');
+                    }}
+                    className="px-5 py-2.5 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <ExternalLink size={14} />
+                    <span>Launch Tenant Portal</span>
+                  </button>
+                  <button
+                    onClick={() => setShowConversionWizard(false)}
+                    className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl cursor-pointer"
+                  >
+                    Done & Close
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

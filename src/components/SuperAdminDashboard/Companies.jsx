@@ -42,6 +42,7 @@ export default function Companies() {
 
   // Modal states
   const [showProvisionModal, setShowProvisionModal] = useState(false);
+  const [modalError, setModalError] = useState('');
   const [tenantName, setTenantName] = useState('');
   const [managerEmail, setManagerEmail] = useState('');
   const [managerPassword, setManagerPassword] = useState('');
@@ -165,39 +166,54 @@ export default function Companies() {
     }
   }, [selectedPlan, availablePlans]);
 
+  const resetProvisionForm = () => {
+    setModalError('');
+    setTenantName('');
+    setManagerEmail('');
+    setManagerPassword('');
+    setTenantId('');
+    setStatus('ACTIVE');
+    setAccountManager('');
+    setTrialExpiry('');
+    if (availablePlans.length > 0) {
+      setSelectedPlan(availablePlans[0].name);
+    }
+  };
+
+  const handleOpenProvisionModal = () => {
+    resetProvisionForm();
+    setShowProvisionModal(true);
+  };
+
   const handleProvisionTenant = async (e) => {
     e.preventDefault();
+    setModalError('');
     if (!tenantName || !managerEmail) return;
 
     try {
       setIsLoading(true);
       const res = await api.post('/companys', {
-        name: tenantName,
-        adminEmail: managerEmail,
+        name: tenantName.trim(),
+        adminEmail: managerEmail.trim(),
         adminPassword: managerPassword,
         planTier: selectedPlan,
-        tenantId: tenantId,
+        tenantId: tenantId.trim() || undefined,
         status: status,
-        accountManager: accountManager,
+        accountManager: accountManager.trim() || null,
         trialExpiry: trialExpiry || null
       });
       
       if (res.data?.success) {
         showNotification(`Tenant "${tenantName}" successfully provisioned!`);
         setShowProvisionModal(false);
-        setTenantName('');
-        setManagerEmail('');
-        setManagerPassword('');
-        if (availablePlans.length > 0) setSelectedPlan(availablePlans[0].name);
-        setTenantId('');
-        setStatus('ACTIVE');
-        setAccountManager('');
-        setTrialExpiry('');
+        resetProvisionForm();
         fetchCompaniesAndPlans();
       }
     } catch (err) {
       console.error('Failed to create company:', err);
-      showNotification(err.response?.data?.error?.message || 'Error provisioning tenant.');
+      const serverError = err.response?.data?.error?.message || 'Error provisioning tenant. Please verify inputs.';
+      setModalError(serverError);
+      showNotification(serverError);
     } finally {
       setIsLoading(false);
     }
@@ -317,7 +333,7 @@ export default function Companies() {
           </button>
 
           <button
-            onClick={() => setShowProvisionModal(true)}
+            onClick={handleOpenProvisionModal}
             className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap flex-1 sm:flex-none"
           >
             <Plus className="w-4 h-4" /> Provision Tenant
@@ -995,6 +1011,12 @@ export default function Companies() {
             </div>
 
             <form onSubmit={handleProvisionTenant} className="p-6 space-y-5">
+              {modalError && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3.5 rounded-2xl text-xs font-bold flex items-start gap-2.5 shadow-xs">
+                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <span className="leading-snug">{modalError}</span>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">TENANT COMPANY NAME</label>
                 <input

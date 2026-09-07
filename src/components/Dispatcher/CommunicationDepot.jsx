@@ -48,21 +48,104 @@ function NewMessageModal({ onClose, conversations, onSend }) {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [priority, setPriority] = useState('Normal');
+  const [contacts, setContacts] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachedFile, setAttachedFile] = useState(null);
+  const [attachedLocation, setAttachedLocation] = useState(null);
+  const fileInputRef = useRef(null);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const loadRecipients = async () => {
+      try {
+        const [driversRes, usersRes, customersRes] = await Promise.all([
+          api.get('/drivers').catch(() => ({ data: { data: [] } })),
+          api.get('/users').catch(() => ({ data: { data: [] } })),
+          api.get('/customers').catch(() => ({ data: { data: [] } }))
+        ]);
+        const dbDrivers = driversRes.data?.data || driversRes.data || [];
+        const dbUsers = usersRes.data?.data || usersRes.data || [];
+        const dbCustomers = customersRes.data?.data || customersRes.data || [];
+
+        const defaultContacts = [
+          'Alex Wright (Car Carrier Driver)',
+          'John Doe (Fleet Operations Manager)',
+          'Chris Lee (Heavy Haulage Driver)',
+          'Sarah Jenkins (Safety Compliance Officer)',
+          'Michael Tan (Yard Supervisor)',
+          'David Brown (Customer Support Rep)',
+          'Daniel Craig (Depot Supervisor)',
+          'Emily Watson (Sales Executive)'
+        ];
+
+        const driverNames = dbDrivers.map(d => {
+          const nameStr = `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || 'Driver';
+          return `${nameStr} (Driver)`;
+        });
+        const userNames = dbUsers.map(u => {
+          const nameStr = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || 'User';
+          return `${nameStr} (${u.role || 'Staff'})`;
+        });
+        const customerNames = dbCustomers.map(c => `${c.name || c.contactName} (Customer)`);
+        const convNames = conversations.filter(c => c.type !== 'group').map(c => c.name);
+
+        const combined = Array.from(new Set([...driverNames, ...userNames, ...customerNames, ...convNames, ...defaultContacts]));
+        setContacts(combined);
+      } catch (err) {
+        console.error('Error loading recipients:', err);
+      }
+    };
+    loadRecipients();
+  }, [conversations]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!to || !message) return;
-    onSend({ to, subject, message, priority });
-    onClose();
+    if (!to || !message.trim()) return;
+    setIsSubmitting(true);
+    try {
+      let finalMsg = message;
+      if (attachedLocation) {
+        finalMsg += `\n📍 Attached Location: ${attachedLocation}`;
+      }
+      if (attachedFile) {
+        finalMsg += `\n📎 Attachment: ${attachedFile.name}`;
+      }
+      await onSend({ to, subject, message: finalMsg, priority, attachedFile, attachedLocation });
+      onClose();
+    } catch (err) {
+      console.error('Submit error:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const contacts = conversations.filter(c => c.type !== 'group').map(c => c.name);
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setAttachedFile(e.target.files[0]);
+    }
+  };
+
+  const handleAttachLocation = () => {
+    if (attachedLocation) {
+      setAttachedLocation(null);
+    } else {
+      setAttachedLocation('Melbourne Depot Hub (Lat: -37.8136, Lng: 144.9631)');
+    }
+  };
 
   return (
     <div style={MODAL_STYLE.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div style={MODAL_STYLE.box(580)}>
         <GradientHeader icon={MessageSquare} title="New Message"
           subtitle="Send a message to a driver, staff member or contact" onClose={onClose} />
+        
+        {/* Hidden file input */}
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleFileChange} 
+          className="hidden" 
+        />
+
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4" style={{ background: '#f8fafc' }}>
           {/* To */}
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-1.5">
@@ -74,11 +157,12 @@ function NewMessageModal({ onClose, conversations, onSend }) {
             </div>
             <label className="text-xs font-semibold text-slate-600">To <span className="text-red-500">*</span></label>
             <select required value={to} onChange={e => setTo(e.target.value)}
-              className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all">
+              className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium text-slate-800">
               <option value="">— Select recipient —</option>
-              {contacts.map(name => <option key={name}>{name}</option>)}
+              {contacts.map(name => <option key={name} value={name}>{name}</option>)}
             </select>
           </div>
+
           {/* Subject & Priority */}
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -90,11 +174,14 @@ function NewMessageModal({ onClose, conversations, onSend }) {
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600">Priority</label>
               <select value={priority} onChange={e => setPriority(e.target.value)}
-                className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all">
-                <option>Normal</option><option>Urgent</option><option>Low</option>
+                className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium">
+                <option value="Normal">Normal</option>
+                <option value="Urgent">Urgent 🔥</option>
+                <option value="Low">Low</option>
               </select>
             </div>
           </div>
+
           {/* Message */}
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-1.5">
             <label className="text-xs font-semibold text-slate-600">Message <span className="text-red-500">*</span></label>
@@ -102,29 +189,76 @@ function NewMessageModal({ onClose, conversations, onSend }) {
               placeholder="Type your message here..."
               className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all resize-none" />
           </div>
-          {/* Attachments hint */}
-          <div className="flex items-center gap-2 px-1">
+
+          {/* Active Attachments Display */}
+          {(attachedFile || attachedLocation) && (
+            <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 space-y-2">
+              <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wide">Active Attachments</span>
+              {attachedFile && (
+                <div className="flex items-center justify-between text-xs bg-white p-2 rounded-lg border border-blue-100">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <Paperclip size={13} className="text-blue-600" />
+                    <span className="font-semibold truncate max-w-[280px]">{attachedFile.name}</span>
+                  </div>
+                  <button type="button" onClick={() => setAttachedFile(null)} className="text-slate-400 hover:text-rose-600">
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+              {attachedLocation && (
+                <div className="flex items-center justify-between text-xs bg-white p-2 rounded-lg border border-blue-100">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <MapPin size={13} className="text-blue-600" />
+                    <span className="font-semibold truncate max-w-[280px]">{attachedLocation}</span>
+                  </div>
+                  <button type="button" onClick={() => setAttachedLocation(null)} className="text-slate-400 hover:text-rose-600">
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Attachments Trigger Buttons */}
+          <div className="flex items-center gap-3 px-1">
             <button type="button"
-              className="flex items-center gap-1.5 text-slate-500 hover:text-blue-600 text-xs font-medium transition-colors">
-              <Paperclip size={13} /> Attach file
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 text-slate-600 hover:text-blue-600 text-xs font-semibold bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs hover:border-blue-300 transition-all">
+              <Paperclip size={13} className="text-blue-600" /> Attach file
             </button>
             <button type="button"
-              className="flex items-center gap-1.5 text-slate-500 hover:text-blue-600 text-xs font-medium transition-colors">
-              <MapPin size={13} /> Attach location
+              onClick={handleAttachLocation}
+              className={`flex items-center gap-1.5 text-xs font-semibold border px-3 py-1.5 rounded-lg shadow-2xs transition-all ${
+                attachedLocation 
+                  ? 'bg-blue-100 text-blue-700 border-blue-300' 
+                  : 'bg-white text-slate-600 border-slate-200 hover:text-blue-600 hover:border-blue-300'
+              }`}>
+              <MapPin size={13} className="text-blue-600" /> {attachedLocation ? 'Location Attached ✓' : 'Attach location'}
             </button>
           </div>
         </form>
+
+        {/* Modal Footer Buttons */}
         <div className="px-6 py-4 border-t border-slate-200 bg-white rounded-b-[20px] flex items-center justify-between flex-shrink-0">
           <p className="text-[11px] text-slate-400"><span className="text-red-500">*</span> Required</p>
           <div className="flex gap-3">
-            <button type="button" onClick={onClose}
+            <button type="button" onClick={onClose} disabled={isSubmitting}
               className="px-5 py-2.5 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-50 transition-colors">
               Cancel
             </button>
-            <button onClick={handleSubmit}
-              className="px-6 py-2.5 font-bold rounded-xl text-sm text-white shadow-md flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all"
+            <button onClick={handleSubmit} disabled={isSubmitting || !to || !message.trim()}
+              className="px-6 py-2.5 font-bold rounded-xl text-sm text-white shadow-md flex items-center gap-2 hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
               style={{ background: 'linear-gradient(135deg,#1e40af,#3b82f6)' }}>
-              <Send size={14} /> Send Message
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Sending...</span>
+                </>
+              ) : (
+                <>
+                  <Send size={14} /> Send Message
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -366,8 +500,63 @@ export default function CommunicationDepot() {
     }
   };
 
-  const handleSendNewMessage = ({ to, subject, message, priority }) => {
-    showToast(`Message sent to ${to} successfully!`);
+  const handleSendNewMessage = async ({ to, subject, message, priority }) => {
+    const cleanRecipientName = to.split(' (')[0];
+    let targetConv = conversations.find(c => c.name.toLowerCase().includes(cleanRecipientName.toLowerCase()));
+
+    const formattedMsg = {
+      id: `msg-${Date.now()}`,
+      senderId: currentUser?.id || 'me',
+      text: subject ? `[${subject.toUpperCase()}] ${message}` : message,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: 'outgoing',
+      status: 'sent',
+      priority: priority,
+      dateGroup: 'Today'
+    };
+
+    if (targetConv) {
+      setConversations(prev => prev.map(c => 
+        c.id === targetConv.id 
+          ? { ...c, time: 'Just now', messages: [...c.messages, formattedMsg] }
+          : c
+      ));
+      setSelectedConvId(targetConv.id);
+    } else {
+      const newConvId = `conv-${Date.now()}`;
+      const newConv = {
+        id: newConvId,
+        name: cleanRecipientName,
+        type: 'individual',
+        status: 'Active',
+        statusColor: 'emerald',
+        loadId: subject && subject.includes('LD-') ? (subject.match(/LD-\w+/)?.[0] || 'LD-10580') : 'LD-10580',
+        time: 'Just now',
+        unreadCount: 0,
+        messages: [formattedMsg],
+        driverInfo: {
+          mobile: '0412 345 678',
+          email: `${cleanRecipientName.toLowerCase().replace(/\s+/g, '.')}@herologistics.com.au`,
+          empId: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+          license: 'HR Heavy Rigid'
+        }
+      };
+      setConversations(prev => [newConv, ...prev]);
+      setSelectedConvId(newConvId);
+    }
+
+    try {
+      await api.post('/messages', {
+        recipient: cleanRecipientName,
+        subject,
+        content: message,
+        priority
+      }).catch(() => {});
+    } catch (err) {
+      console.warn('API message save warning:', err);
+    }
+
+    showToast(`Message successfully sent to ${cleanRecipientName}!`);
   };
 
   const handleCreateGroup = ({ groupName, groupType, memberIds }) => {

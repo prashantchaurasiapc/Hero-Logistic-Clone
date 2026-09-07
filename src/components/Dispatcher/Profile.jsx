@@ -4,11 +4,14 @@ import {
   Shield, Check, Monitor, Smartphone, Tablet, Link2, ChevronRight, 
   Lock, Edit3, Grid, CalendarDays, Truck, Map, MessageSquare, History, Bell, Camera, Upload
 } from 'lucide-react';
+import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Profile() {
   const fileInputRef = useRef(null);
   const { user } = useAuth();
+  const [profileData, setProfileData] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const showToast = (msg) => {
     setToast(msg);
@@ -17,6 +20,7 @@ export default function Profile() {
 
   // Editable Profile State Variables
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(() => localStorage.getItem('hero_profile_avatar') || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=256&h=256');
   const [fullName, setFullName] = useState(user?.name || 'Dispatcher User');
   const [mobileNumber, setMobileNumber] = useState(user?.phone || 'N/A');
@@ -24,6 +28,44 @@ export default function Profile() {
   const [dob, setDob] = useState(user?.dob || 'N/A');
   const [address, setAddress] = useState(user?.address || 'N/A');
   const [emergencyContact, setEmergencyContact] = useState(user?.emergencyContact || 'N/A');
+
+  // Password Modal State Variables
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+
+  // Fetch Real Profile Data from Backend
+  const fetchUserProfile = async () => {
+    try {
+      let res;
+      try {
+        res = await api.get('/users/profile');
+      } catch (e1) {
+        try {
+          res = await api.get('/company-admin/profile');
+        } catch (e2) {
+          res = await api.get('/auth/me');
+        }
+      }
+      const uData = res?.data?.data?.user || res?.data?.data || res?.data;
+      if (uData) {
+        setProfileData(uData);
+        if (uData.name) setFullName(uData.name);
+        if (uData.phone) setMobileNumber(uData.phone);
+        if (uData.email) setEmailAddress(uData.email);
+        if (uData.dob) setDob(uData.dob);
+        if (uData.address) setAddress(uData.address);
+        if (uData.emergencyContact) setEmergencyContact(uData.emergencyContact);
+      }
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -64,22 +106,79 @@ export default function Profile() {
     setTempFullName(fullName);
     setTempMobile(mobileNumber);
     setTempEmail(emailAddress);
-    setTempDob(dob);
-    setTempAddress(address);
-    setTempEmergency(emergencyContact);
+    setTempDob(dob === 'N/A' ? '' : dob);
+    setTempAddress(address === 'N/A' ? '' : address);
+    setTempEmergency(emergencyContact === 'N/A' ? '' : emergencyContact);
     setEditModalOpen(true);
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    setFullName(tempFullName);
-    setMobileNumber(tempMobile);
-    setEmailAddress(tempEmail);
-    setDob(tempDob);
-    setAddress(tempAddress);
-    setEmergencyContact(tempEmergency);
-    setEditModalOpen(false);
-    showToast('✓ Profile updated successfully!');
+    try {
+      setSaving(true);
+      const payload = {
+        name: tempFullName,
+        phone: tempMobile,
+        email: tempEmail,
+        dob: tempDob,
+        address: tempAddress,
+        emergencyContact: tempEmergency
+      };
+      let res;
+      try {
+        res = await api.put('/users/profile', payload);
+      } catch (err1) {
+        res = await api.put('/company-admin/profile', payload);
+      }
+      if (res.data && (res.data.success || res.data.data)) {
+        const updated = res.data.data || res.data;
+        setProfileData(updated);
+        setFullName(updated.name || tempFullName);
+        setMobileNumber(updated.phone || tempMobile);
+        setEmailAddress(updated.email || tempEmail);
+        setDob(updated.dob || tempDob || 'N/A');
+        setAddress(updated.address || tempAddress || 'N/A');
+        setEmergencyContact(updated.emergencyContact || tempEmergency || 'N/A');
+        setEditModalOpen(false);
+        showToast('✓ Profile updated successfully in database!');
+      } else {
+        showToast(res.data?.error?.message || 'Failed to update profile');
+      }
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      showToast(err.response?.data?.error?.message || 'Failed to update profile in database');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      showToast('New passwords do not match!');
+      return;
+    }
+    try {
+      setPasswordSaving(true);
+      const res = await api.put('/users/profile', {
+        currentPassword,
+        newPassword
+      });
+      if (res.data && res.data.success) {
+        setPasswordModalOpen(false);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        showToast('✓ Password updated successfully!');
+      } else {
+        showToast(res.data?.error?.message || 'Failed to change password');
+      }
+    } catch (err) {
+      console.error('Error changing password:', err);
+      showToast(err.response?.data?.error?.message || 'Current password is incorrect');
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   return (
@@ -185,7 +284,7 @@ export default function Profile() {
               </div>
               <div className="flex items-center gap-3 text-[11px] text-slate-600">
                 <MapPin size={14} className="text-slate-400" />
-                <span className="font-medium">{address.split(',')[1] || address}</span>
+                <span className="font-medium">{(address || '').split(',')[1] || address || 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -380,7 +479,7 @@ export default function Profile() {
                 <span className="text-slate-500 font-medium">Password</span>
                 <div className="flex items-center gap-3">
                   <span className="text-slate-400 text-[14px]">••••••••</span>
-                  <button className="text-blue-600 font-semibold hover:underline" onClick={() => showToast('Opening Security Panel...')}>Change</button>
+                  <button className="text-blue-600 font-semibold hover:underline cursor-pointer" onClick={() => setPasswordModalOpen(true)}>Change</button>
                 </div>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-slate-50">
@@ -554,15 +653,87 @@ export default function Profile() {
                 <button
                   type="button"
                   onClick={() => setEditModalOpen(false)}
-                  className="px-4 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-700 hover:bg-slate-50"
+                  className="px-4 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-blue-600 rounded text-xs font-bold text-white hover:bg-blue-700 shadow-sm"
+                  disabled={saving}
+                  className="px-4 py-1.5 bg-blue-600 rounded text-xs font-bold text-white hover:bg-blue-700 shadow-sm cursor-pointer disabled:opacity-50"
                 >
-                  Save Changes
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CHANGE PASSWORD MODAL */}
+      {passwordModalOpen && (
+        <div className="wh-modal-overlay" onClick={() => setPasswordModalOpen(false)}>
+          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center">
+              <span className="wh-modal-title flex items-center gap-2">
+                <Lock size={15} className="text-blue-600" /> Change Security Password
+              </span>
+              <button onClick={() => setPasswordModalOpen(false)} className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer">✕</button>
+            </div>
+            
+            <form onSubmit={handleChangePassword} className="p-5 space-y-4">
+              <div>
+                <label className="wh-light-form-lbl">Current Password</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Enter current password"
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
+                  className="wh-light-form-input"
+                />
+              </div>
+
+              <div>
+                <label className="wh-light-form-lbl">New Password</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  placeholder="Enter new password (min 6 chars)"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="wh-light-form-input"
+                />
+              </div>
+
+              <div>
+                <label className="wh-light-form-lbl">Confirm New Password</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  className="wh-light-form-input"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPasswordModalOpen(false)}
+                  className="px-4 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordSaving}
+                  className="px-4 py-1.5 bg-blue-600 rounded text-xs font-bold text-white hover:bg-blue-700 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {passwordSaving ? 'Updating...' : 'Update Password'}
                 </button>
               </div>
             </form>
