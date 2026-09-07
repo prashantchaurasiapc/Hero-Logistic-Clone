@@ -102,9 +102,10 @@ export default function Companies() {
   const [companies, setCompanies] = useState([]);
   const [availablePlans, setAvailablePlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchCompaniesAndPlans = async () => {
-    setIsLoading(true);
+  const fetchCompaniesAndPlans = async (showTableLoading = false) => {
+    if (showTableLoading) setIsLoading(true);
     try {
       const [companiesRes, plansRes] = await Promise.all([
         api.get('/companys'),
@@ -145,12 +146,12 @@ export default function Companies() {
       console.error('Failed to load data:', err);
       showNotification('Failed to load tenants or plans data.');
     } finally {
-      setIsLoading(false);
+      if (showTableLoading) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCompaniesAndPlans();
+    fetchCompaniesAndPlans(true);
   }, []);
 
   useEffect(() => {
@@ -191,7 +192,7 @@ export default function Companies() {
     if (!tenantName || !managerEmail) return;
 
     try {
-      setIsLoading(true);
+      setIsSubmitting(true);
       const res = await api.post('/companys', {
         name: tenantName.trim(),
         adminEmail: managerEmail.trim(),
@@ -207,7 +208,7 @@ export default function Companies() {
         showNotification(`Tenant "${tenantName}" successfully provisioned!`);
         setShowProvisionModal(false);
         resetProvisionForm();
-        fetchCompaniesAndPlans();
+        fetchCompaniesAndPlans(false);
       }
     } catch (err) {
       console.error('Failed to create company:', err);
@@ -215,7 +216,7 @@ export default function Companies() {
       setModalError(serverError);
       showNotification(serverError);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -1119,10 +1120,11 @@ export default function Companies() {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs py-3 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-md transition-colors cursor-pointer"
+                  disabled={isSubmitting}
+                  className="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-black font-extrabold text-xs py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-md transition-colors cursor-pointer"
                 >
-                  <Check className="w-4 h-4 text-black" />
-                  <span>Finalize Setup</span>
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <Check className="w-4 h-4 text-black" />}
+                  <span>{isSubmitting ? 'Finalizing Setup...' : 'Finalize Setup'}</span>
                 </button>
               </div>
             </form>
@@ -1144,19 +1146,19 @@ export default function Companies() {
             <form className="p-6 space-y-5" onSubmit={async (e) => {
               e.preventDefault();
               try {
-                setIsLoading(true);
+                setIsSubmitting(true);
                 const name = e.target.elements.name.value;
                 const adminEmail = e.target.elements.manager.value;
                 const res = await api.put(`/companys/${selectedActionCompany.id}`, { name, adminEmail });
                 if (res.data?.success) {
                   showNotification(`Configurations saved for ${name}`);
                   setShowEditCompanyModal(false);
-                  fetchCompaniesAndPlans();
+                  fetchCompaniesAndPlans(false);
                 }
               } catch (err) {
                 showNotification('Error updating company.');
               } finally {
-                setIsLoading(false);
+                setIsSubmitting(false);
               }
             }}>
               <div className="space-y-1.5">
@@ -1177,10 +1179,11 @@ export default function Companies() {
               </div>
               <button
                 type="submit"
-                className="w-full mt-2 bg-[#FFB020] hover:bg-brand-600 text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm flex flex-col items-center justify-center"
+                disabled={isSubmitting}
+                className="w-full mt-2 bg-[#FFB020] hover:bg-brand-600 disabled:opacity-50 text-black font-extrabold text-[13px] py-3.5 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
               >
-                <Check className="w-4 h-4 mb-1" />
-                Save Configurations
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <Check className="w-4 h-4" />}
+                <span>{isSubmitting ? 'Saving Configurations...' : 'Save Configurations'}</span>
               </button>
             </form>
           </div>
@@ -1208,22 +1211,24 @@ export default function Companies() {
               <button
                 onClick={async () => {
                   try {
-                    setIsLoading(true);
+                    setIsSubmitting(true);
                     const res = await api.put(`/companys/${selectedActionCompany.id}`, { status: 'HOLD' });
                     if (res.data?.success) {
                       showNotification(`Suspended license for ${selectedActionCompany.name}`);
                       setShowSuspendCompanyModal(false);
-                      fetchCompaniesAndPlans();
+                      fetchCompaniesAndPlans(false);
                     }
                   } catch (err) {
                     showNotification('Error suspending company.');
                   } finally {
-                    setIsLoading(false);
+                    setIsSubmitting(false);
                   }
                 }}
-                className="w-full bg-[#E11D48] hover:bg-[#BE123C] text-white font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm"
+                disabled={isSubmitting}
+                className="w-full bg-[#E11D48] hover:bg-[#BE123C] disabled:opacity-50 text-white font-extrabold text-[13px] py-3.5 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
               >
-                Suspend License
+                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin text-white" />}
+                <span>{isSubmitting ? 'Processing...' : 'Suspend License'}</span>
               </button>
             </div>
           </div>
