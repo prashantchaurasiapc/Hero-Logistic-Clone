@@ -197,12 +197,12 @@ export default function GstPayg() {
   const currentPeriod = allObligations[0] || { collected: 0, credits: 0, net: 0 }; 
 
   const kpis = [
-    { title: 'GST Collected (This Period)', value: taxSummary.gstCollected || currentPeriod.collected || 0, trend: 0, trendLabel: 'vs last period', icon: <Building2 className="text-purple-600" size={18}/>, bg: 'bg-purple-50', trendColor: 'text-slate-400', isUp: true },
-    { title: 'GST Credits (This Period)', value: taxSummary.gstCredits || currentPeriod.credits || 0, trend: 0, trendLabel: 'vs last period', icon: <FileText className="text-emerald-600" size={18}/>, bg: 'bg-emerald-50', trendColor: 'text-slate-400', isUp: true },
-    { title: 'Net GST Payable', value: taxSummary.netGstPayable || currentPeriod.net || 0, trend: 0, trendLabel: 'vs last period', icon: <Activity className="text-blue-600" size={18}/>, bg: 'bg-blue-50', trendColor: 'text-slate-400', isUp: true },
-    { title: 'PAYG Withholding (This Period)', value: taxSummary.paygWithholding || 0, trend: 0, trendLabel: 'vs last period', icon: <Users className="text-amber-600" size={18}/>, bg: 'bg-amber-50', trendColor: 'text-slate-400', isUp: true },
-    { title: 'Outstanding Liabilities', value: allObligations.filter(o=>o.status==='Overdue').reduce((s,o)=>s+o.net, 0) || 0, overdueCount: allObligations.filter(o=>o.status==='Overdue').length, icon: <Calendar className="text-rose-600" size={18}/>, bg: 'bg-rose-50' },
-    { title: 'YTD Net GST Payable', value: allObligations.filter(o=>o.status==='Lodged').reduce((s,o)=>s+o.net, 0) || 0, trend: 0, trendLabel: 'vs last period', icon: <PieChartIcon className="text-teal-600" size={18}/>, bg: 'bg-teal-50', trendColor: 'text-slate-400', isUp: true },
+    { title: 'GST COLLECTED', value: taxSummary.gstCollected || currentPeriod.collected || 0, trend: 0, trendLabel: 'vs last period', link: 'Details →', icon: <Building2 className="text-purple-600" size={16}/>, bg: 'bg-purple-50 border border-purple-100' },
+    { title: 'GST CREDITS', value: taxSummary.gstCredits || currentPeriod.credits || 0, trend: 0, trendLabel: 'vs last period', link: 'Details →', icon: <FileText className="text-emerald-600" size={16}/>, bg: 'bg-emerald-50 border border-emerald-100' },
+    { title: 'NET GST PAYABLE', value: taxSummary.netGstPayable || currentPeriod.net || 0, trend: 0, trendLabel: 'vs last period', link: 'Details →', icon: <Activity className="text-blue-600" size={16}/>, bg: 'bg-blue-50 border border-blue-100' },
+    { title: 'PAYG WITHHOLDING', value: taxSummary.paygWithholding || 0, trend: 0, trendLabel: 'vs last period', link: 'Details →', icon: <Users className="text-amber-600" size={16}/>, bg: 'bg-amber-50 border border-amber-100' },
+    { title: 'OUTSTANDING LIABILITIES', value: allObligations.filter(o=>o.status==='Overdue').reduce((s,o)=>s+o.net, 0) || 0, overdueCount: allObligations.filter(o=>o.status==='Overdue').length, link: 'Overdue →', icon: <Calendar className="text-rose-600" size={16}/>, bg: 'bg-rose-50 border border-rose-100' },
+    { title: 'YTD NET GST PAYABLE', value: allObligations.filter(o=>o.status==='Lodged').reduce((s,o)=>s+o.net, 0) || 0, trend: 0, trendLabel: 'vs last period', link: 'View →', icon: <PieChartIcon className="text-teal-600" size={16}/>, bg: 'bg-teal-50 border border-teal-100' },
   ];
 
   const formatCurrency = (val) => `$${(val || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
@@ -244,42 +244,46 @@ export default function GstPayg() {
         <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">Track GST liabilities, PAYG withholding and lodgements.</p>
       </div>
 
-      {/* KPI Cards Grid - Responsive columns */}
-      <div className="px-4 sm:px-8 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mb-6 py-1 flex-shrink-0">
+      {/* KPI Cards Grid */}
+      <div className="px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 mb-6 flex-shrink-0">
         {kpis.map((kpi, index) => (
-          <div key={index} className="bg-white rounded-xl p-3.5 sm:p-4 shadow-sm border border-slate-200/60 flex flex-col justify-between w-full">
-            <div className="flex items-start justify-between mb-3 sm:mb-4">
-              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${kpi.bg}`}>
-                {kpi.icon}
+          <div key={index} className="bg-white rounded-xl p-3.5 shadow-xs border border-slate-200/80 hover:border-slate-300 transition-all flex flex-col justify-between w-full h-[128px]">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${kpi.bg}`}>
+                  {kpi.icon}
+                </div>
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider truncate text-right max-w-[120px]" title={kpi.title}>
+                  {kpi.title}
+                </span>
+              </div>
+              <div className="text-lg font-black text-slate-900 tracking-tight leading-tight truncate" title={formatCurrency(kpi.value)}>
+                {formatCurrency(kpi.value)}
               </div>
             </div>
-            <div>
-              <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 truncate">{kpi.title}</p>
-              <div className="text-base sm:text-xl font-black text-slate-900 mb-1.5 sm:mb-2">{formatCurrency(kpi.value)}</div>
-              <div className="flex items-center justify-between flex-wrap gap-1">
-                <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium">
-                  {kpi.trend !== undefined ? (
-                    <>
-                      <span className={`flex items-center gap-0.5 ${kpi.trendColor}`}>
-                        {kpi.isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                        {kpi.trend}%
-                      </span>
-                      <span className="text-slate-400 hidden xs:inline">{kpi.trendLabel}</span>
-                    </>
-                  ) : (
-                    <span className="text-rose-500 font-bold">{kpi.overdueCount} overdue</span>
-                  )}
-                </div>
-                <button 
-                  onClick={() => {
-                    setToastMessage(`Viewing detailed analytics for ${kpi.title}`);
-                    setTimeout(() => setToastMessage(null), 3000);
-                  }} 
-                  className="text-[9px] sm:text-[10px] text-blue-600 font-semibold hover:underline cursor-pointer"
-                >
-                  {kpi.title === 'Outstanding Liabilities' || kpi.title === 'YTD Net GST Payable' ? (kpi.title.includes('YTD') ? 'View →' : 'Overdue →') : 'Details →'}
-                </button>
+
+            <div className="flex items-center justify-between gap-1 text-[10px] pt-2 border-t border-slate-100/80">
+              <div className="flex items-center gap-1 font-semibold text-slate-500 truncate">
+                {kpi.trend !== undefined ? (
+                  <>
+                    <span className="inline-flex items-center gap-0.5 text-emerald-600 font-bold shrink-0">
+                      <TrendingUp size={11} /> {kpi.trend}%
+                    </span>
+                    <span className="text-slate-400 font-medium truncate">{kpi.trendLabel}</span>
+                  </>
+                ) : (
+                  <span className="text-rose-500 font-extrabold truncate">{kpi.overdueCount} overdue</span>
+                )}
               </div>
+              <button 
+                onClick={() => {
+                  setToastMessage(`Viewing detailed analytics for ${kpi.title}`);
+                  setTimeout(() => setToastMessage(null), 3000);
+                }} 
+                className="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer shrink-0"
+              >
+                {kpi.link}
+              </button>
             </div>
           </div>
         ))}
