@@ -378,23 +378,23 @@ export default function Expenses() {
       {/* KPI Cards Grid */}
       <div className="px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 mb-6 flex-shrink-0">
         {kpis.map((kpi, index) => (
-          <div key={index} className="bg-white rounded-xl p-3.5 shadow-xs border border-slate-200/80 hover:border-slate-300 transition-all flex flex-col justify-between w-full h-[124px]">
-            <div className="flex items-center justify-between">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${kpi.bg}`}>
-                {kpi.icon}
-              </div>
-              <button className="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer shrink-0">
-                {kpi.link}
-              </button>
-            </div>
+          <div key={index} className="bg-white rounded-xl p-3.5 shadow-xs border border-slate-200/80 hover:border-slate-300 transition-all flex flex-col justify-between w-full h-[128px]">
             <div>
-              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider truncate mb-0.5" title={kpi.title}>
-                {kpi.title}
-              </p>
-              <div className="text-lg font-black text-slate-900 tracking-tight leading-tight mb-1 truncate" title={kpi.value}>
+              <div className="flex items-center justify-between mb-2">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${kpi.bg}`}>
+                  {kpi.icon}
+                </div>
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider truncate text-right max-w-[120px]" title={kpi.title}>
+                  {kpi.title}
+                </span>
+              </div>
+              <div className="text-lg font-black text-slate-900 tracking-tight leading-tight truncate" title={kpi.value}>
                 {kpi.value}
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 truncate">
+            </div>
+
+            <div className="flex items-center justify-between gap-1 text-[10px] pt-2 border-t border-slate-100/80">
+              <div className="flex items-center gap-1 font-semibold text-slate-500 truncate">
                 {kpi.trend !== undefined ? (
                   <span className="inline-flex items-center gap-0.5 text-emerald-600 font-bold shrink-0">
                     <TrendingUp size={11} />
@@ -403,6 +403,9 @@ export default function Expenses() {
                 ) : null}
                 <span className="text-slate-400 font-medium truncate">{kpi.trendLabel || kpi.sub}</span>
               </div>
+              <button className="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer shrink-0">
+                {kpi.link}
+              </button>
             </div>
           </div>
         ))}
