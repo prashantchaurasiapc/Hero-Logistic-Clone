@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { jsPDF } from 'jspdf';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { 
   CheckCircle, 
@@ -136,22 +137,96 @@ export default function Billing() {
     }
   };
 
-  // Download Invoice Document
+  // Download Invoice Document as PDF
   const handleDownloadInvoice = (invoice) => {
     const base = (invoice.amount * 0.82).toFixed(2);
     const gst = (invoice.amount * 0.18).toFixed(2);
-    const content = `========================================\nHERO LOGISTICS - OFFICIAL TAX INVOICE\n========================================\nInvoice ID: ${invoice.id}\nCompany: ${invoice.company}\nPlan Tier: ${invoice.plan}\nIssue Date: ${invoice.date}\nStatus: ${invoice.status.toUpperCase()}\n\nFINANCIAL BREAKDOWN:\n- Base Plan Fee: $${base}\n- GST / Tax (18%): $${gst}\n- Total Amount Due/Paid: $${invoice.amount.toFixed(2)}\n\nThank you for choosing Hero Logistics Platform.\n========================================`;
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Invoice_${invoice.id.replace('#','')}_${invoice.company.replace(/ /g, '_')}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    showNotification(`Invoice ${invoice.id} downloaded successfully!`);
+    
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(22);
+    doc.setTextColor(15, 23, 42); // slate-900
+    doc.text("HERO LOGISTICS", 20, 20);
+    doc.setFontSize(12);
+    doc.setTextColor(100, 116, 139); // slate-500
+    doc.text("OFFICIAL TAX INVOICE", 20, 28);
+    
+    // Divider
+    doc.setDrawColor(226, 232, 240); // slate-200
+    doc.line(20, 35, 190, 35);
+    
+    // Details
+    doc.setFontSize(11);
+    doc.setTextColor(51, 65, 85); // slate-700
+    doc.text(`Invoice ID:`, 20, 50);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${invoice.id}`, 60, 50);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Company:`, 20, 60);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${invoice.company}`, 60, 60);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Plan Tier:`, 20, 70);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${invoice.plan}`, 60, 70);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Issue Date:`, 120, 50);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${invoice.date}`, 150, 50);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Status:`, 120, 60);
+    doc.setFont("helvetica", "bold");
+    if (invoice.status.toUpperCase() === 'PAID') {
+      doc.setTextColor(16, 185, 129); // emerald-500
+    } else if (invoice.status.toUpperCase() === 'FAILED' || invoice.status.toUpperCase() === 'UNPAID') {
+      doc.setTextColor(244, 63, 94); // rose-500
+    }
+    doc.text(`${invoice.status.toUpperCase()}`, 150, 60);
+    doc.setTextColor(51, 65, 85); // reset
+    
+    // Divider
+    doc.setDrawColor(226, 232, 240);
+    doc.line(20, 85, 190, 85);
+    
+    // Financial Breakdown
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("FINANCIAL BREAKDOWN", 20, 100);
+    
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text("Base Plan Fee:", 20, 115);
+    doc.text(`$${base}`, 170, 115, { align: "right" });
+    
+    doc.text("GST / Tax (18%):", 20, 125);
+    doc.text(`$${gst}`, 170, 125, { align: "right" });
+    
+    // Divider
+    doc.setDrawColor(226, 232, 240);
+    doc.line(20, 135, 190, 135);
+    
+    // Total
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Amount:", 20, 150);
+    doc.setTextColor(79, 70, 229); // indigo-600
+    doc.text(`$${invoice.amount.toFixed(2)}`, 170, 150, { align: "right" });
+    
+    // Footer
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(148, 163, 184); // slate-400
+    doc.text("Thank you for choosing Hero Logistics Platform.", 105, 270, { align: "center" });
+    
+    const fileName = `Invoice_${invoice.id.replace('#','')}_${invoice.company.replace(/ /g, '_')}.pdf`;
+    doc.save(fileName);
+    
+    showNotification(`Invoice ${invoice.id} downloaded successfully as PDF!`);
   };
 
   // Open Regenerate Modal
@@ -295,7 +370,7 @@ export default function Billing() {
             <LineChart data={revenueTrendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
               <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
-              <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} domain={[0, 60000]} ticks={[0, 15000, 30000, 45000, 60000]} />
+              <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
               <Tooltip cursor={{ stroke: '#E2E8F0', strokeWidth: 1 }} />
               <Line
                 type="monotone"

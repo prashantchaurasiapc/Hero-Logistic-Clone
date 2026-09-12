@@ -58,21 +58,31 @@ const Header = ({ onMenuClick }) => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await api.get('/audit-logs?pageSize=4&sort=-createdAt');
+        const res = await api.get('/audit-logs?pageSize=15&sort=-createdAt');
         if (res.data?.success) {
           const clearedTime = parseInt(localStorage.getItem('clearedNotificationsTime') || '0', 10);
           const mappedNotifications = res.data.data
             .filter(log => new Date(log.createdAt).getTime() > clearedTime)
             .map(log => {
-              const parts = log.action.split('_');
-              const type = parts[0] || 'SYSTEM';
-              // Translate action to user friendly label
-              const readableAction = log.action.toLowerCase().replace(/_/g, ' ');
-              const formattedAction = readableAction.charAt(0).toUpperCase() + readableAction.slice(1);
+              // Parse custom TYPE::Message format, fallback to old underscore format
+              let type = 'SYSTEM';
+              let text = '';
+              
+              if (log.action.includes('::')) {
+                const parts = log.action.split('::');
+                type = parts[0];
+                text = parts[1];
+              } else {
+                const parts = log.action.split('_');
+                type = parts[0] || 'SYSTEM';
+                const readableAction = log.action.toLowerCase().replace(/_/g, ' ');
+                text = `${readableAction.charAt(0).toUpperCase() + readableAction.slice(1)} by ${log.operator || 'System'}`;
+              }
+
               return {
                 id: log.id,
                 type: type,
-                text: `${formattedAction} by ${log.operator || 'System'}`,
+                text: text,
                 time: new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 read: false
               };

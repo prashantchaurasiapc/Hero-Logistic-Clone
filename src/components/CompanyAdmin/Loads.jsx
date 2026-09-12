@@ -3471,7 +3471,7 @@ export default function Loads() {
 
                         {/* DRIVER / TRUCK */}
                         <td className="px-3 py-4 min-w-[180px] whitespace-nowrap">
-                          {load.driver ? (
+                          {load.driver && !['Unassigned', 'Not Assigned'].includes(load.driver) ? (
                             <div className="flex items-center gap-2.5">
                               <img src={load.avatar} alt={load.driver} className="w-8 h-8 rounded-full border border-slate-200 object-cover shrink-0" />
                               <div className="flex flex-col">

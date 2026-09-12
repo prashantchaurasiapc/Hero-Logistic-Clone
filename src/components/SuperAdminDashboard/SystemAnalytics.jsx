@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { jsPDF } from 'jspdf';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { 
   Download, 
@@ -127,15 +128,72 @@ export default function SystemAnalytics() {
         link.click();
         document.body.removeChild(link);
       } else {
-        const pdfContent = `Simulated PDF System Analytics Executive Report - Scope: ${exportScope} (${exportTimeframe})`;
-        const blob = new Blob([pdfContent], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `System_Analytics_${exportTimeframe.replace(/ /g, '_')}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const doc = new jsPDF();
+        
+        doc.setFontSize(22);
+        doc.setTextColor(15, 23, 42);
+        doc.text("HERO LOGISTICS", 20, 20);
+        
+        doc.setFontSize(14);
+        doc.setTextColor(100, 116, 139);
+        doc.text("SYSTEM ANALYTICS REPORT", 20, 30);
+        
+        doc.setDrawColor(226, 232, 240);
+        doc.line(20, 38, 190, 38);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(51, 65, 85);
+        doc.text(`Scope: ${exportScope}`, 20, 50);
+        doc.text(`Timeframe: ${exportTimeframe}`, 20, 60);
+        doc.text(`Generated At: ${new Date().toLocaleString()}`, 20, 70);
+        
+        doc.line(20, 80, 190, 80);
+        
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text("KPI METRICS", 20, 95);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        let yPos = 110;
+        metrics.forEach(m => {
+          doc.text(`${m.name}: ${m.value}`, 20, yPos);
+          doc.text(m.desc, 100, yPos);
+          yPos += 10;
+          if (yPos > 270) {
+            doc.addPage();
+            yPos = 20;
+          }
+        });
+        
+        doc.line(20, yPos + 5, 190, yPos + 5);
+        yPos += 15;
+        
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text("TENANT LOGINS & STORAGE AUDIT", 20, yPos);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        yPos += 15;
+        
+        loginAnalytics.forEach(l => {
+          doc.text(`${l.company}`, 20, yPos);
+          doc.text(`Logins: ${l.monthlyLogins} | Active: ${l.activeUsers} | Score: ${l.score}%`, 90, yPos);
+          yPos += 10;
+          if (yPos > 270) {
+            doc.addPage();
+            yPos = 20;
+          }
+        });
+        
+        const fileName = `System_Analytics_${exportTimeframe.replace(/ /g, '_')}.pdf`;
+        doc.save(fileName);
       }
 
       triggerToast(`System Analytics Report (${exportFormat.toUpperCase()}) downloaded!`);
@@ -201,7 +259,7 @@ export default function SystemAnalytics() {
               <LineChart data={revenueData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                 <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} domain={[0, 60000]} ticks={[0, 15000, 30000, 45000, 60000]} />
+                <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
                 <Tooltip cursor={{ stroke: '#E2E8F0', strokeWidth: 1 }} />
                 <Line
                   type="monotone"
@@ -269,7 +327,7 @@ export default function SystemAnalytics() {
               <LineChart data={apiUsageData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                 <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} domain={[0, 1400]} ticks={[0, 350, 700, 1050, 1400]} />
+                <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
                 <Tooltip cursor={{ stroke: '#E2E8F0', strokeWidth: 1 }} />
                 <Line
                   type="monotone"

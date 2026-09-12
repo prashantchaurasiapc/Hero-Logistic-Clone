@@ -357,6 +357,10 @@ export default function CreateLoad({ onBack }) {
         status: targetStatus,
         priority: (formData.priority || 'NORMAL').toUpperCase(),
         notes: formData.loadNotes || `Created via Load Console`,
+        loadDate: formData.loadDate ? new Date(formData.loadDate).toISOString() : new Date().toISOString(),
+        customerId: formData.customer && formData.customer.length > 5 ? formData.customer : null,
+        driverId: formData.driver && formData.driver.length > 5 ? formData.driver : null,
+        truckId: formData.truck && formData.truck.length > 5 ? formData.truck : null,
         stops: stops.map((s, idx) => ({
           type: s.type.toUpperCase() === 'PICKUP' ? 'PICKUP' : 'DROPOFF',
           sequenceIndex: idx,
@@ -372,22 +376,29 @@ export default function CreateLoad({ onBack }) {
           vin: item.vin || '',
           quantity: 1,
           notes: JSON.stringify(item)
-        }))
+        })),
+        documents: {
+          create: Object.entries(uploadedPhotos).flatMap(([key, photos]) => 
+            photos.map(photoDataUrl => ({
+              type: key.includes('pickup') ? 'PICKUP_PHOTO' : key.includes('loading') ? 'LOADING_PHOTO' : 'DELIVERY_PHOTO',
+              fileUrl: photoDataUrl
+            }))
+          )
+        }
       };
 
       const res = await api.post('/company-admin/loads', payload);
       dispatcherRepository.syncWithBackend();
       if (res.data && res.data.success) {
-        alert(`✓ Load ${formData.loadRef} saved to database as ${targetStatus}!`);
+        alert(`🎉 Load ${formData.loadRef} saved to database as ${targetStatus}!`);
         onBack();
       } else {
-        alert(res.data?.message || 'Error saving load');
+        alert(res.data?.message || res.data?.error?.message || 'Error saving load. Please check inputs and database constraints.');
       }
     } catch (err) {
       console.error('Error creating load:', err);
       dispatcherRepository.syncWithBackend();
-      alert(`✓ Load ${formData.loadRef} saved successfully!`);
-      onBack();
+      alert(`❌ Failed to save Load ${formData.loadRef}. Error: ${err.response?.data?.error?.message || err.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -464,11 +475,11 @@ export default function CreateLoad({ onBack }) {
                 <select
                   value={formData.customer}
                   onChange={e => setFormData({ ...formData, customer: e.target.value })}
-                  className={selectCls}
+                  className={`${selectCls} pl-8 font-normal`}
                 >
                   <option value="">Select Customer...</option>
-                  {dbCustomers.map(c => (
-                    <option key={c.id || c.name} value={c.name || c.contactName || 'Customer'}>{c.name || c.contactName || 'Customer'}</option>
+                  {dbCustomers.map((c, idx) => (
+                    <option key={c.id || idx} value={c.id}>{c.name || `Customer #${idx + 1}`}</option>
                   ))}
                 </select>
               </div>
@@ -1269,7 +1280,7 @@ export default function CreateLoad({ onBack }) {
                   <option value="">Select Truck...</option>
                   {dbTrucks.map((t, idx) => {
                     const val = t.label || (t.rego ? `${t.code || t.rego} | ${t.make || ''} ${t.model || ''}`.trim() : `${t.make || ''} ${t.model || ''}`.trim() || `Truck #${idx + 1}`);
-                    return <option key={t.id || idx} value={val}>{val}</option>;
+                    return <option key={t.id || idx} value={t.id}>{val}</option>;
                   })}
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
@@ -1303,7 +1314,7 @@ export default function CreateLoad({ onBack }) {
                   <option value="">Select Driver...</option>
                   {dbDrivers.map((d, idx) => {
                     const val = d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.userCode || `Driver #${idx + 1}`;
-                    return <option key={d.id || idx} value={val}>{val}</option>;
+                    return <option key={d.id || idx} value={d.id}>{val}</option>;
                   })}
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
