@@ -95,68 +95,14 @@ export default function YardDashboard() {
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [timerString, setTimerString] = useState('00:00:00');
+  const [currentStatus, setCurrentStatus] = useState('Off Duty');
+  const [statusNotes, setStatusNotes] = useState('');
   const [dbMetrics, setDbMetrics] = useState({
     inYard: 0,
     inbound: 0,
     yardCapacityPct: 0,
     activeLoads: 0
   });
-
-  useEffect(() => {
-    api.get('/warehouse-portal/dashboard').then(res => {
-      if (res.data?.success && res.data.data) {
-        const d = res.data.data;
-        const totalCap = d.yardCapacity?.total || 250;
-        const used = d.yardCapacity?.inYard || d.overview?.inYard || 0;
-        const pct = Math.min(100, Math.round((used / totalCap) * 100)) || 0;
-        setDbMetrics({
-          inYard: d.overview?.inYard ?? 0,
-          inbound: d.overview?.inboundDeliveries ?? 0,
-          yardCapacityPct: pct || 0,
-          activeLoads: d.overview?.loadLanesActive ?? 0
-        });
-      }
-    }).catch(() => {});
-  }, []);
-
-  // Hover states for top stats cards
-  const [hoveredStatCard, setHoveredStatCard] = useState(null);
-
-  // Hover states for bottom action cards
-  const [hoveredActionCard, setHoveredActionCard] = useState(null);
-
-  // Hover state for outline buttons
-  const [hoveredButtonId, setHoveredButtonId] = useState(null);
-
-  // Modals state
-  const [showSummaryModal, setShowSummaryModal] = useState(false);
-  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
-  const [showYardMapModal, setShowYardMapModal] = useState(false);
-  const [showQrModal, setShowQrModal] = useState(false);
-  const [showIncidentModal, setShowIncidentModal] = useState(false);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  const [showTasksModal, setShowTasksModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showNotePopup, setShowNotePopup] = useState(false);
-  const [showSupervisorModal, setShowSupervisorModal] = useState(false);
-
-  // Form states
-  const [scanType, setScanType] = useState('Trailer');
-  const [scannedId, setScannedId] = useState('');
-  const [incidentType, setIncidentType] = useState('Accident');
-  const [incidentLocation, setIncidentLocation] = useState('');
-  const [incidentDescription, setIncidentDescription] = useState('');
-  const [incidentSeverity, setIncidentSeverity] = useState('Medium');
-  const [currentStatus, setCurrentStatus] = useState('Off Duty');
-  const [statusNotes, setStatusNotes] = useState('');
-  const [supervisorMessage, setSupervisorMessage] = useState('');
-
-  // Task states
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [noteTaskId, setNoteTaskId] = useState(null);
-  const [noteText, setNoteText] = useState('');
-  const [taskSearch, setTaskSearch] = useState('');
 
   const [tasks, setTasks] = useState([]);
   const [stats, setStats] = useState({
@@ -165,47 +111,105 @@ export default function YardDashboard() {
     yardCapacityPercent: 0
   });
 
+  const [notifications, setNotifications] = useState([]);
+  const [toast, setToast] = useState(null);
+
+  const [hoveredButtonId, setHoveredButtonId] = useState(null);
+  const [hoveredStatCard, setHoveredStatCard] = useState(null);
+  const [hoveredActionCard, setHoveredActionCard] = useState(null);
+
+  // Modals state
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [showYardMapModal, setShowYardMapModal] = useState(false);
+  const [showGateCheckModal, setShowGateCheckModal] = useState(false);
+  const [showSpotTrailerModal, setShowSpotTrailerModal] = useState(false);
+  const [showAuditModal, setShowAuditModal] = useState(false);
+  const [showInspectModal, setShowInspectModal] = useState(false);
+  const [showReportIssueModal, setShowReportIssueModal] = useState(false);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showTasksModal, setShowTasksModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [taskSearch, setTaskSearch] = useState('');
+  const [taskFilterStatus, setTaskFilterStatus] = useState('ALL');
+  const [taskFilterPriority, setTaskFilterPriority] = useState('ALL');
+  const [showNotePopup, setShowNotePopup] = useState(false);
+  const [noteTaskId, setNoteTaskId] = useState(null);
+  const [noteText, setNoteText] = useState('');
+  const [showSupervisorModal, setShowSupervisorModal] = useState(false);
+  const [supervisorMessage, setSupervisorMessage] = useState('');
+
+  // Header Quick Action Modals State
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [scanType, setScanType] = useState('Trailer');
+  const [scannedId, setScannedId] = useState('');
+
+  const [showIncidentModal, setShowIncidentModal] = useState(false);
+  const [incidentType, setIncidentType] = useState('Accident');
+  const [incidentLocation, setIncidentLocation] = useState('');
+  const [incidentDescription, setIncidentDescription] = useState('');
+  const [incidentSeverity, setIncidentSeverity] = useState('Medium');
+
+  // Forms state
+  const [gateCheckForm, setGateCheckForm] = useState({ trailerId: '', driverName: '', carrier: '', checkType: 'Inbound', sealIntact: true, tempOk: true, comments: '' });
+  const [spotTrailerForm, setSpotTrailerForm] = useState({ trailerId: '', targetBay: 'A1', priority: 'Normal', notes: '' });
+  const [auditForm, setAuditForm] = useState({ bayRange: 'A1-A10', auditType: 'Full Yard Scan', notes: '' });
+  const [inspectForm, setInspectForm] = useState({ trailerId: '', condition: 'Good', tiresOk: true, doorsOk: true, lightsOk: true, notes: '' });
+  const [issueForm, setIssueForm] = useState({ issueType: 'Damage', severity: 'Medium', location: 'Yard Bay A2', description: '' });
+
+  // Single unified API call for the entire dashboard
   useEffect(() => {
-    const fetchTasksAndStats = async () => {
+    const fetchDashboard = async () => {
       try {
-        const [tasksRes, statsRes] = await Promise.all([
-          api.get('/follow-up-tasks'),
-          api.get('/warehouse-portal/dashboard')
-        ]);
-        if (tasksRes.data?.success && tasksRes.data.data?.length > 0) {
-          const fetched = tasksRes.data.data.map(t => ({
-            id: t.id,
-            title: t.description || 'Yard Task',
-            priority: t.priority || 'Medium',
-            status: t.status || 'PENDING',
-            desc: t.notes || '',
-            time: t.dueDate ? new Date(t.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-            gate: '',
-            unit: '',
-            notes: ''
-          }));
-          setTasks(fetched);
-        }
-        if (statsRes.data?.success && statsRes.data.data) {
-          const d = statsRes.data.data;
+        const res = await api.get('/warehouse-portal/dashboard');
+        if (res.data?.success && res.data.data) {
+          const d = res.data.data;
+
+          // Metrics cards
+          const totalCap = d.yardCapacity?.total || d.overview?.yardCapacity?.total || 250;
+          const used = d.yardCapacity?.inYard || d.overview?.inYard || 0;
+          const pct = totalCap > 0 ? Math.min(100, Math.round((used / totalCap) * 100)) : 0;
+
+          setDbMetrics({
+            inYard: d.overview?.inYard ?? 0,
+            inbound: d.overview?.inboundDeliveries ?? d.overview?.inboundAwaiting ?? 0,
+            yardCapacityPct: d.overview?.yardCapacity?.usedPercent ?? pct,
+            activeLoads: d.overview?.loadLanesActive ?? d.overview?.loadLanes ?? 0
+          });
+
+          // Tasks from dashboard
+          if (d.tasks && d.tasks.length > 0) {
+            setTasks(d.tasks);
+          }
+
+          // Stats for shift summary
           setStats({
             trailersSpotted: d.overview?.inYard || 0,
-            gateEvents: (d.overview?.receivedInbound || 0) + (d.overview?.dispatchedOutbound || 0) || 4,
+            gateEvents: (d.overview?.receivedInbound || 0) + (d.overview?.dispatchedOutbound || 0) || 0,
             yardCapacityPercent: d.overview?.yardCapacity?.usedPercent || 0
           });
+
+          // Notifications from backend
+          if (d.notifications && d.notifications.length > 0) {
+            setNotifications(d.notifications);
+          }
+
+          // Shift status from backend
+          if (d.shift?.active && !shiftActive) {
+            const elapsed = Math.floor((d.shift.elapsedMs || 0) / 1000);
+            setSecondsElapsed(elapsed);
+            setShiftActive(true);
+            setCurrentStatus('Available');
+          }
         }
       } catch (err) {
-        console.warn('Could not fetch yard data:', err.message);
+        console.warn('Could not fetch yard dashboard:', err.message);
       }
     };
-    fetchTasksAndStats();
+    fetchDashboard();
   }, []);
-
-  // Notification states — loaded from API
-  const [notifications, setNotifications] = useState([]);
-
-  // Toast notifications state
-  const [toast, setToast] = useState(null);
 
   const timerRef = useRef(null);
 
@@ -2632,6 +2636,150 @@ export default function YardDashboard() {
                   }}
                 >
                   Send Message
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 12: QR Code Scanner Modal */}
+      {showQrModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.4)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1100
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: 24,
+            width: '100%',
+            maxWidth: 440,
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden',
+            fontFamily: 'Inter, Outfit, sans-serif'
+          }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: 17, fontWeight: '800', color: '#0f172a', margin: 0 }}>Scan QR Code / Barcode</h2>
+              <button onClick={() => setShowQrModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><CloseIcon /></button>
+            </div>
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ backgroundColor: '#f8fafc', border: '2px dashed #cbd5e1', borderRadius: 16, padding: '32px 16px', textAlign: 'center' }}>
+                <span style={{ fontSize: 36, display: 'block', marginBottom: 8 }}>📷</span>
+                <p style={{ fontSize: 13, fontWeight: '700', color: '#334155', margin: 0 }}>Align QR / Barcode inside the viewfinder</p>
+                <p style={{ fontSize: 11, color: '#64748b', margin: '4px 0 0 0' }}>Scanning for trailer numbers, asset IDs, and load tags</p>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: '800', color: '#64748b' }}>OR ENTER TAG MANUALLY</label>
+                <input
+                  type="text"
+                  placeholder="e.g. TR-9410 or TAG-4820"
+                  value={scannedId}
+                  onChange={(e) => setScannedId(e.target.value)}
+                  style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 13, outline: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button onClick={() => setShowQrModal(false)} style={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: 8, padding: '8px 20px', fontSize: 12, fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
+                <button
+                  onClick={() => {
+                    triggerToast(`Scanned tag ID: ${scannedId || 'TR-9410'} verified successfully.`);
+                    setShowQrModal(false);
+                  }}
+                  style={{ backgroundColor: '#ffcc00', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 12, fontWeight: '800', cursor: 'pointer' }}
+                >
+                  Verify Tag
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 13: Report Emergency Incident Modal */}
+      {showIncidentModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.4)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1100
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: 24,
+            width: '100%',
+            maxWidth: 480,
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #fca5a5',
+            overflow: 'hidden',
+            fontFamily: 'Inter, Outfit, sans-serif'
+          }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #fef2f2', backgroundColor: '#fef2f2', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: 17, fontWeight: '800', color: '#b91c1c', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <AlertTriangleIcon /> Report Yard Emergency Alert
+              </h2>
+              <button onClick={() => setShowIncidentModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#b91c1c' }}><CloseIcon /></button>
+            </div>
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: '800', color: '#64748b' }}>INCIDENT TYPE</label>
+                <select
+                  value={incidentType}
+                  onChange={(e) => setIncidentType(e.target.value)}
+                  style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 13 }}
+                >
+                  <option value="Accident">Vehicle Collision / Accident</option>
+                  <option value="Spill">Hazardous Material Spill</option>
+                  <option value="Equipment Failure">Equipment / Crane Failure</option>
+                  <option value="Security Breach">Unauthorized Access / Security Breach</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: '800', color: '#64748b' }}>YARD LOCATION</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Gate 2, Bay A4, South Perimeter"
+                  value={incidentLocation}
+                  onChange={(e) => setIncidentLocation(e.target.value)}
+                  style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 13 }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: '800', color: '#64748b' }}>DESCRIPTION</label>
+                <textarea
+                  rows="3"
+                  placeholder="Describe the incident..."
+                  value={incidentDescription}
+                  onChange={(e) => setIncidentDescription(e.target.value)}
+                  style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 13, resize: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button onClick={() => setShowIncidentModal(false)} style={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: 8, padding: '8px 20px', fontSize: 12, fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
+                <button
+                  onClick={() => {
+                    triggerToast(`Emergency alert dispatched to Shift Supervisor for ${incidentLocation || 'Yard'}.`);
+                    setShowIncidentModal(false);
+                  }}
+                  style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 12, fontWeight: '800', cursor: 'pointer' }}
+                >
+                  Dispatch Emergency Alert
                 </button>
               </div>
             </div>

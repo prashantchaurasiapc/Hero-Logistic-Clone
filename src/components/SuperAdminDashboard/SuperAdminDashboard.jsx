@@ -109,7 +109,7 @@ export default function SuperAdminDashboard() {
             Super Admin <span className="text-slate-400 text-xl mx-1">•</span> Overview
           </h1>
           <p className="text-[13px] text-slate-500 mt-1 font-medium">
-            Configure global licensing rules, audit tenant margins, and resolve support tickets.
+            Configure global licensing rules, audit company margins, and resolve support tickets.
           </p>
         </div>
         <button className="mt-4 sm:mt-0 text-[13px] font-bold text-[#D97706] border border-amber-200 hover:bg-amber-50 px-6 py-2.5 rounded-xl transition-colors">

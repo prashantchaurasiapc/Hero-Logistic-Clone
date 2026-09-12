@@ -87,16 +87,23 @@ const Login = () => {
       const userRole = res.user?.role || 'SUPER_ADMIN';
       setLoggingInRole(userRole);
 
-      let targetPath = '/admin/dashboard';
-      if (userRole === 'DRIVER') targetPath = '/driver/dashboard';
-      else if (userRole === 'DISPATCHER') targetPath = '/dispatcher/command-center';
-      else if (userRole === 'COMPANY_ADMIN') targetPath = '/company-admin/command-centre';
-      else if (userRole === 'SALES') targetPath = '/sales/dashboard';
-      else if (userRole === 'WAREHOUSE') targetPath = '/warehouse/dashboard';
-      else if (userRole === 'YARD') targetPath = '/yard/dashboard';
-      else if (userRole === 'ACCOUNTS') targetPath = '/accounts/dashboard';
-      else if (userRole === 'CUSTOMER') targetPath = '/customer/dashboard';
-      else if (userRole === 'SUPER_ADMIN') targetPath = '/admin/dashboard';
+      // Determine redirect path based on user role (case-insensitive)
+      const role = (userRole || '').toUpperCase();
+      const roleRedirectMap = {
+        'DRIVER': '/driver/dashboard',
+        'DISPATCHER': '/dispatcher/command-center',
+        'COMPANY_ADMIN': '/company-admin/command-centre',
+        'SALES': '/sales/dashboard',
+        'WAREHOUSE': '/warehouse/dashboard',
+        'YARD': '/yard/dashboard',
+        'ACCOUNTS': '/accounts/dashboard',
+        'CUSTOMER': '/customer/dashboard',
+        'SUPER_ADMIN': '/admin/dashboard',
+        'SUPERADMIN': '/admin/dashboard',
+        'SUPER-ADMIN': '/admin/dashboard',
+        'ADMIN': '/admin/dashboard'
+      };
+      const targetPath = roleRedirectMap[role] || '/admin/dashboard';
 
       setTimeout(() => {
         navigate(targetPath);

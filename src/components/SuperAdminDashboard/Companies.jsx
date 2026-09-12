@@ -5,9 +5,11 @@ import {
   Settings, Download, FileText, Filter, ChevronDown, RefreshCw, AlertCircle, Loader2
 } from 'lucide-react';
 import api from '../../services/api';
+import CreateCompany from './CreateCompany';
 
 export default function Companies() {
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'create'
   const [searchQuery, setSearchQuery] = useState('');
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
   const [toast, setToast] = useState('');
@@ -271,6 +273,22 @@ export default function Companies() {
     showNotification('CSV Export generated successfully.');
   };
 
+  if (viewMode === 'create') {
+    return (
+      <CreateCompany
+        onBack={() => {
+          setViewMode('list');
+          fetchCompaniesAndPlans(false);
+        }}
+        onCreated={(newComp) => {
+          showNotification(`Company "${newComp.name || 'Workspace'}" created successfully!`);
+          setViewMode('list');
+          fetchCompaniesAndPlans(false);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex-grow bg-[#F1F5F9] p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto w-full text-left font-sans relative custom-scrollbar">
 
@@ -318,14 +336,14 @@ export default function Companies() {
             Super Admin <span className="text-slate-400 font-black">•</span> Companies
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-400 font-semibold mt-1">
-            Configure global licensing rules, audit tenant margins, and resolve support tickets.
+            Configure global licensing rules, audit company margins, and resolve support tickets.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto w-full sm:w-auto">
           <button
             onClick={() => {
-              alert(`SaaS Tenant Registry summary:\nTotal registered companies: ${companies.length}`);
+              alert(`SaaS Company Registry summary:\nTotal registered companies: ${companies.length}`);
               showNotification('Report compiled.');
             }}
             className="border border-[#e2e8f0] hover:bg-slate-50 text-amber-500 font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer bg-white whitespace-nowrap flex-1 sm:flex-none"
@@ -334,10 +352,10 @@ export default function Companies() {
           </button>
 
           <button
-            onClick={handleOpenProvisionModal}
+            onClick={() => setViewMode('create')}
             className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap flex-1 sm:flex-none"
           >
-            <Plus className="w-4 h-4" /> Provision Tenant
+            <Plus className="w-4 h-4" /> Create Company
           </button>
         </div>
       </div>
@@ -762,7 +780,7 @@ export default function Companies() {
               ) : filteredCompanies.length === 0 ? (
                 <tr>
                   <td colSpan="17" className="py-12 text-center text-slate-400 font-semibold bg-white w-full">
-                    No active corporate tenants found matching filters.
+                    No active companies found matching filters.
                   </td>
                 </tr>
               ) : (
@@ -974,9 +992,9 @@ export default function Companies() {
                             </button>
                             <button
                               onClick={() => {
-                                if (window.confirm(`Are you sure you want to permanently delete tenant: ${c.name}?`)) {
+                                if (window.confirm(`Are you sure you want to permanently delete company: ${c.name}?`)) {
                                   setCompanies(prev => prev.filter(item => item.id !== c.id));
-                                  showNotification(`Deleted tenant ${c.name}`);
+                                  showNotification(`Deleted company ${c.name}`);
                                 }
                                 setActiveActionsMenu(null);
                               }}
@@ -1002,7 +1020,7 @@ export default function Companies() {
           <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl animate-fade-in text-left">
 
             <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-              <h3 className="text-sm font-black text-slate-800">Provision New SaaS Tenant</h3>
+              <h3 className="text-sm font-black text-slate-800">Create New Company</h3>
               <button
                 onClick={() => setShowProvisionModal(false)}
                 className="text-slate-400 hover:text-slate-600 cursor-pointer"
@@ -1019,7 +1037,7 @@ export default function Companies() {
                 </div>
               )}
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">TENANT COMPANY NAME</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">COMPANY NAME</label>
                 <input
                   type="text"
                   required
@@ -1403,7 +1421,7 @@ export default function Companies() {
           <div className="relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col animate-slide-left">
             {/* Header */}
             <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-white">
-              <h3 className="text-lg font-extrabold text-slate-900">Tenant Workspace Inspector</h3>
+              <h3 className="text-lg font-extrabold text-slate-900">Company Workspace Inspector</h3>
               <button
                 onClick={() => setShowInspector(false)}
                 className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-50 cursor-pointer"

@@ -126,12 +126,10 @@ const MyLoads = () => {
 
     try {
       if (targetDbId) {
-        await api.delete(`/loads/${targetDbId}`).catch(async () => {
-          await api.delete(`/company-admin/loads/${targetDbId}`).catch(() => {});
-        });
+        await api.delete(`/loads/${targetDbId}`);
       }
     } catch (err) {
-      console.warn('Backend delete sync completed', err);
+      console.warn('Backend delete sync notice:', err?.message);
     }
   };
 

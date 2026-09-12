@@ -36,13 +36,8 @@ export default function OnboardingHandover() {
 
   // Subscribe to crmStore
   useEffect(() => {
-    crmRepository.syncWithBackend();
-
-    getSalesReps().then(res => {
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setSalesReps(res.data.data);
-      }
-    }).catch(err => console.error('Error fetching reps in handover:', err));
+    // Single dedicated menu API for Onboarding Handovers
+    crmRepository.syncHandovers();
 
     const syncDb = () => {
       const db = crmRepository.getCrmDatabase();
@@ -169,6 +164,7 @@ export default function OnboardingHandover() {
       stage: 'Won',
       notes: 'Carrier contract signed and ready for onboarding setup.'
     });
+    await crmRepository.syncHandovers(true);
     setToast({ text: 'Created Won Carrier Handover for Apex Freight Logistics!' });
   };
 

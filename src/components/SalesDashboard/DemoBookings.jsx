@@ -51,14 +51,9 @@ export default function DemoBookings() {
 
   // Subscribe to crmStore changes to ensure reactive binding
   useEffect(() => {
-    // Sync with database
-    crmRepository.syncWithBackend();
-
-    getSalesReps().then(res => {
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setSalesReps(res.data.data);
-      }
-    }).catch(err => console.error('Error fetching reps in demos:', err));
+    // Sync demo bookings and sales reps for this menu specifically
+    crmRepository.syncDemos();
+    crmRepository.syncSalesReps();
 
     const syncDb = () => {
       setDemos(crmRepository.getDemos());

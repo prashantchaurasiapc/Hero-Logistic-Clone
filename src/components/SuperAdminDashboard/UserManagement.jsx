@@ -447,10 +447,10 @@ export default function UserManagement() {
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-2">
         <div>
           <h1 className="text-xl sm:text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
-            Super Admin <span className="text-slate-400 font-black">•</span> Tenant User Lookup
+            Super Admin <span className="text-slate-400 font-black">•</span> Company User Lookup
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-400 font-semibold mt-1">
-            Search and inspect active tenant user accounts, check their status, and simulate platform support sessions.
+            Search and inspect active company user accounts, check their status, and simulate platform support sessions.
           </p>
         </div>
 
@@ -466,7 +466,7 @@ export default function UserManagement() {
             onClick={() => setShowAddUserModal(true)}
             className="bg-[#F59E0B] hover:bg-[#D97706] text-slate-900 font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap flex-1 sm:flex-none"
           >
-            <UserPlus className="w-4 h-4 text-slate-900" /> Add Tenant User
+            <UserPlus className="w-4 h-4 text-slate-900" /> Add Company User
           </button>
         </div>
       </div>
@@ -497,7 +497,7 @@ export default function UserManagement() {
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">COMPANY ADMINS</span>
             <span className="text-2xl font-black text-blue-700 block mt-1.5">{companyAdmins}</span>
           </div>
-          <span className="text-[10px] font-semibold text-slate-400 mt-2 block whitespace-nowrap">Tenant Administrators</span>
+          <span className="text-[10px] font-semibold text-slate-400 mt-2 block whitespace-nowrap">Company Administrators</span>
         </div>
 
         {/* Card 4 */}
@@ -735,7 +735,7 @@ export default function UserManagement() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Filter By Company Tenant</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Filter By Company</label>
               <select
                 value={selectedCompanyFilter}
                 onChange={(e) => setSelectedCompanyFilter(e.target.value)}
@@ -765,7 +765,7 @@ export default function UserManagement() {
                 {visibleColumns.user && <th className="py-4 px-4">USER NAME & ID</th>}
                 {visibleColumns.contact && <th className="py-4 px-4">CONTACT INFO</th>}
                 {visibleColumns.role && <th className="py-4 px-4">ASSIGNED ROLE</th>}
-                {visibleColumns.company && <th className="py-4 px-4">COMPANY / TENANT</th>}
+                {visibleColumns.company && <th className="py-4 px-4">COMPANY</th>}
                 {visibleColumns.password && <th className="py-4 px-4">PASSWORD</th>}
                 {visibleColumns.status && <th className="py-4 px-4">STATUS</th>}
                 {visibleColumns.lastLogin && <th className="py-4 px-4">LAST LOGIN</th>}
@@ -1021,7 +1021,7 @@ export default function UserManagement() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">Company / Tenant *</label>
+                  <label className="block text-xs font-extrabold text-slate-700">Company *</label>
                   <select
                     value={formData.companyId}
                     onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
@@ -1157,7 +1157,7 @@ export default function UserManagement() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">Company Tenant</label>
+                  <label className="block text-xs font-extrabold text-slate-700">Company</label>
                   <select
                     value={formData.companyId}
                     onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}

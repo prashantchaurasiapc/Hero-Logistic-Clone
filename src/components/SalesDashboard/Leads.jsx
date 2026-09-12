@@ -46,23 +46,17 @@ export default function Leads() {
 
   // Subscribe to crmStore changes to ensure reactive localStorage binding
   useEffect(() => {
-    // Sync with database
-    crmRepository.syncWithBackend();
+    // Sync leads and sales reps for this menu specifically
+    crmRepository.syncLeads();
+    crmRepository.syncSalesReps();
     
-    // Initial fetch
+    // Initial fetch from cache
     setLeads(crmRepository.getLeads());
-    
-    // Fetch sales reps
-    getSalesReps().then(res => {
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setSalesReps(res.data.data);
-      }
-    }).catch(err => console.error('Error fetching sales reps:', err));
+    setSalesReps(crmRepository.getSalesReps());
     
     // Subscribe to store mutations
     const unsubscribe = crmStore.subscribe(() => {
-      const freshLeads = crmRepository.getLeads();
-      setLeads(freshLeads);
+      setLeads(crmRepository.getLeads());
       const freshReps = crmRepository.getSalesReps();
       if (freshReps?.length) setSalesReps(freshReps);
     });
@@ -109,10 +103,11 @@ export default function Leads() {
   // Delete lead handler
   const handleDeleteLead = async (id, companyName) => {
     if (window.confirm(`Are you sure you want to delete lead for ${companyName}?`)) {
-      await crmRepository.deleteLead(id);
+      setLeads(prev => prev.filter(l => l.id !== id));
       if (selectedLead && selectedLead.id === id) {
         setSelectedLead(null);
       }
+      await crmRepository.deleteLead(id);
       setToast({ type: 'error', text: `${companyName} lead deleted.` });
     }
   };

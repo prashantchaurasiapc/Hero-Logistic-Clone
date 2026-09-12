@@ -7,19 +7,27 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { getSuperAdminDashboard } from '../../services/api';
+import api from '../../services/api';
 
 export default function PlatformDashboard() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
+  const [companies, setCompanies] = useState([]);
+
   useEffect(() => {
     const fetchDashboard = async () => {
       setIsLoading(true);
       try {
-        const res = await getSuperAdminDashboard();
-        if (res.data.success) {
-          setDashboardData(res.data.data);
+        const [dashRes, compRes] = await Promise.all([
+          getSuperAdminDashboard(),
+          api.get('/companys?limit=100').catch(() => ({ data: { data: [] } }))
+        ]);
+        if (dashRes.data.success) {
+          setDashboardData(dashRes.data.data);
         }
+        const compList = compRes.data?.data || compRes.data?.success && compRes.data.data || [];
+        setCompanies(Array.isArray(compList) ? compList : []);
       } catch (err) {
         console.error('Failed to load super admin dashboard:', err);
       } finally {
@@ -30,25 +38,44 @@ export default function PlatformDashboard() {
   }, []);
 
   const kpis = [
-    { title: 'ACTIVE COMPANIES', value: dashboardData?.kpis?.activeCompanies || '0', desc: 'SaaS instances online', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
-    { title: 'TRIAL COMPANIES', value: dashboardData?.kpis?.trialCompanies || '0', desc: 'SaaS trial instances', status: 'Active', statusColor: 'text-emerald-500 bg-emerald-50' },
-    { title: 'PAID COMPANIES', value: dashboardData?.kpis?.paidCompanies || '0', desc: 'Subscribed paying contracts', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
+    { title: 'ACTIVE COMPANIES', value: dashboardData?.kpis?.activeCompanies ?? '0', desc: 'SaaS instances online', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
+    { title: 'TRIAL COMPANIES', value: dashboardData?.kpis?.trialCompanies ?? '0', desc: 'SaaS trial instances', status: 'Active', statusColor: 'text-emerald-500 bg-emerald-50' },
+    { title: 'PAID COMPANIES', value: dashboardData?.kpis?.paidCompanies ?? ((dashboardData?.kpis?.totalCompanies ?? 0) - (dashboardData?.kpis?.trialCompanies ?? 0)), desc: 'Subscribed paying contracts', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
     { title: 'MONTHLY REVENUE', value: `$${(dashboardData?.kpis?.monthlyRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: 'Platform cash stream baseline', status: 'Stable', statusColor: 'text-emerald-500 bg-emerald-50' },
-    { title: 'FAILED PAYMENTS', value: dashboardData?.kpis?.failedPayments || '0', desc: 'Payment gateway errors', status: dashboardData?.kpis?.failedPayments > 0 ? 'Alert' : '0 alerts', statusColor: dashboardData?.kpis?.failedPayments > 0 ? 'text-rose-500 bg-rose-50' : 'text-slate-400 bg-slate-100' },
-    { title: 'SUPPORT TICKETS', value: dashboardData?.kpis?.openTickets || '0', desc: 'Requires administrative response', status: dashboardData?.kpis?.openTickets > 0 ? 'Alert' : 'Clear', statusColor: dashboardData?.kpis?.openTickets > 0 ? 'text-rose-500 bg-rose-50' : 'text-slate-400 bg-slate-100' },
-    { title: 'ACTIVE USERS', value: dashboardData?.kpis?.activeUsers || '0', desc: 'Active platform users pool', status: 'Stable', statusColor: 'text-emerald-500 bg-emerald-50' },
-    { title: 'PLATFORM USAGE', value: dashboardData?.kpis?.platformUsage || '0%', desc: 'AWS node limits', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
+    { title: 'FAILED PAYMENTS', value: dashboardData?.kpis?.failedPayments ?? '0', desc: 'Payment gateway errors', status: (dashboardData?.kpis?.failedPayments ?? 0) > 0 ? 'Alert' : '0 alerts', statusColor: (dashboardData?.kpis?.failedPayments ?? 0) > 0 ? 'text-rose-500 bg-rose-50' : 'text-slate-400 bg-slate-100' },
+    { title: 'SUPPORT TICKETS', value: dashboardData?.kpis?.openTickets ?? '0', desc: 'Requires administrative response', status: (dashboardData?.kpis?.openTickets ?? 0) > 0 ? 'Alert' : 'Clear', statusColor: (dashboardData?.kpis?.openTickets ?? 0) > 0 ? 'text-rose-500 bg-rose-50' : 'text-slate-400 bg-slate-100' },
+    { title: 'ACTIVE USERS', value: dashboardData?.kpis?.activeUsers ?? '0', desc: 'Active platform users pool', status: 'Stable', statusColor: 'text-emerald-500 bg-emerald-50' },
+    { title: 'MRR GROWTH', value: dashboardData?.kpis?.mrrGrowth || '0%', desc: 'Month-over-month growth', status: 'Live', statusColor: 'text-emerald-500 bg-emerald-50' },
   ];
 
-  const chartData = dashboardData?.chartData || [
-    { name: 'Jan', mrr: 0 },
-    { name: 'Feb', mrr: 0 },
-    { name: 'Mar', mrr: 0 },
-    { name: 'Apr', mrr: 0 },
-    { name: 'May', mrr: 0 },
-    { name: 'Jun', mrr: 0 },
-  ];
-  const recentTenants = dashboardData?.recentTenants || [];
+  // Map API chartData { name, value } → { name, mrr } for recharts Line
+  const chartData = (dashboardData?.chartData || []).map(d => ({ name: d.name, mrr: d.value ?? d.mrr ?? 0 }));
+  const chartMax = Math.max(...chartData.map(d => d.mrr), 1000);
+  const chartTicks = [0, Math.round(chartMax * 0.25), Math.round(chartMax * 0.5), Math.round(chartMax * 0.75), chartMax];
+
+  // Build recentTenants from loginAnalytics (real data) or from companies state
+  const recentTenants = companies.length > 0
+    ? companies.map((company, i) => ({
+        id: company.id || i,
+        name: company.name || '—',
+        plan: company.tenantSubscription?.plan?.name || '—',
+        status: company.status || 'ACTIVE',
+        users: company._count?.users ?? '—',
+        mrr: company.tenantSubscription?.plan?.monthlyPrice != null ? `$${company.tenantSubscription.plan.monthlyPrice}` : '$—',
+        trialExpiry: company.trialEndsAt ? new Date(company.trialEndsAt).toLocaleDateString() : '—',
+        lastActive: company.updatedAt ? new Date(company.updatedAt).toLocaleDateString() : '—',
+      }))
+    : (dashboardData?.loginAnalytics || []).map((row, i) => ({
+        id: i,
+        name: row.company,
+        plan: '—',
+        status: 'ACTIVE',
+        users: row.activeUsers ?? 0,
+        mrr: '$—',
+        trialExpiry: '—',
+        lastActive: row.lastLogin || 'N/A',
+      }));
+
 
   // Density and Columns states
   const [density, setDensity] = useState('DEFAULT');
@@ -160,7 +187,7 @@ export default function PlatformDashboard() {
             Super Admin <span className="text-slate-400 text-xl mx-1">•</span> Overview
           </h1>
           <p className="text-[13px] text-slate-500 mt-1 font-medium">
-            Configure global licensing rules, audit tenant margins, and resolve support tickets.
+            Configure global licensing rules, audit company margins, and resolve support tickets.
           </p>
         </div>
         <button onClick={handleExportReport} className="mt-4 sm:mt-0 text-[13px] font-bold text-[#D97706] border border-amber-200 hover:bg-amber-50 px-6 py-2.5 rounded-xl transition-colors cursor-pointer">
@@ -208,7 +235,8 @@ export default function PlatformDashboard() {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }}
-                    ticks={[0, 15000, 30000, 45000, 60000]}
+                    ticks={chartTicks}
+                    tickFormatter={(v) => v >= 1000 ? `$${(v/1000).toFixed(0)}k` : `$${v}`}
                   />
                   <Tooltip
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
@@ -231,7 +259,7 @@ export default function PlatformDashboard() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="text-left">
-                <h3 className="text-[15px] font-extrabold text-slate-900">Tenant Overview</h3>
+                <h3 className="text-[15px] font-extrabold text-slate-900">Companies Overview</h3>
                 <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Live summary of platform subscriber performance.</p>
               </div>
 
@@ -671,7 +699,7 @@ export default function PlatformDashboard() {
             </div>
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">TENANT COMPANY</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">COMPANY</label>
                 <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
@@ -800,7 +828,7 @@ export default function PlatformDashboard() {
             </div>
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT TENANT COMPANY</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY</label>
                 <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
@@ -831,7 +859,7 @@ export default function PlatformDashboard() {
             </div>
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT TENANT COMPANY</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY</label>
                 <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Falcon Logistics LLC (Current: Professional)</option>
                   <option>Swift Cargo Express (Current: Professional)</option>
@@ -840,11 +868,11 @@ export default function PlatformDashboard() {
                 </select>
               </div>
               <div className="space-y-2 text-left">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">UPGRADE TARGET TIER PLAN</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">NEW LICENSE PLAN TIER</label>
                 <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
-                  <option>Enterprise Tier - $1,299/mo</option>
-                  <option>Professional Tier - $499/mo</option>
-                  <option>Premium Tier - $2,499/mo</option>
+                  <option>Enterprise Tier - $28,000/mo</option>
+                  <option>Professional Tier - $4,910/mo</option>
+                  <option>Starter Tier - $499/mo</option>
                 </select>
               </div>
               <button
@@ -1278,7 +1306,7 @@ export default function PlatformDashboard() {
           <div className="relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col animate-slide-left">
             {/* Header */}
             <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-white">
-              <h3 className="text-lg font-extrabold text-slate-900">Tenant Workspace Inspector</h3>
+              <h3 className="text-lg font-extrabold text-slate-900">Company Workspace Inspector</h3>
               <button
                 onClick={() => setShowInspector(false)}
                 className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-50 cursor-pointer"

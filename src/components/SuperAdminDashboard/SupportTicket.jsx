@@ -240,7 +240,7 @@ export default function SupportTickets() {
             Super Admin • Support
           </h1>
           <p className="text-sm font-medium text-slate-500">
-            Configure global licensing rules, audit tenant margins, and resolve support tickets.
+            Configure global licensing rules, audit company margins, and resolve support tickets.
           </p>
         </div>
         <button
@@ -470,7 +470,7 @@ export default function SupportTickets() {
 
             <form onSubmit={handleOpenNewTicket} className="p-6 space-y-4 font-sans">
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">TENANT COMPANY</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">COMPANY</label>
                 <select
                   value={newTicketForm.company}
                   onChange={(e) => setNewTicketForm({ ...newTicketForm, company: e.target.value })}

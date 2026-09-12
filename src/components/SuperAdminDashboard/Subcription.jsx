@@ -177,7 +177,7 @@ export default function Subscriptions() {
             Super Admin <span className="text-slate-400 font-black">•</span> Subscriptions
           </h1>
           <p className="text-xs text-slate-400 font-semibold mt-1">
-            Configure global licensing rules, audit tenant margins, and resolve support tickets.
+            Configure global licensing rules, audit company margins, and resolve support tickets.
           </p>
         </div>
         <button

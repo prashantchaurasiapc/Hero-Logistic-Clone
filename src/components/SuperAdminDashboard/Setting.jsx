@@ -174,7 +174,7 @@ export default function Settings() {
           <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 w-full max-w-4xl space-y-6">
             <div>
               <h2 className="text-lg font-black text-slate-800 flex items-center gap-2"><Globe className="w-5 h-5 text-indigo-500" /> System Defaults Configuration</h2>
-              <p className="text-xs text-slate-400 font-semibold mt-1">Set base parameters applied to new tenants during provisioning.</p>
+              <p className="text-xs text-slate-400 font-semibold mt-1">Set base parameters applied to new companies during setup.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
@@ -269,7 +269,7 @@ export default function Settings() {
                     className="w-4.5 h-4.5 text-brand-500 focus:ring-0 rounded cursor-pointer"
                   />
                   <div>
-                    <span className="text-xs font-black text-slate-800 block">Enforce MFA for Tenant Admins</span>
+                    <span className="text-xs font-black text-slate-800 block">Enforce MFA for Company Admins</span>
                     <span className="text-[10px] text-slate-400 font-bold block mt-0.5">Enforce MFA login challenges for individual company workspace admins.</span>
                   </div>
                 </label>

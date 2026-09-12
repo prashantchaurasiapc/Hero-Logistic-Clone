@@ -279,7 +279,7 @@ export default function DeliveryPOD() {
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <div className="text-[9px] text-slate-400 font-extrabold uppercase">TOTAL CARS</div>
-                <div className="text-lg font-black text-slate-900 mt-0.5">8</div>
+                <div className="text-lg font-black text-slate-900 mt-0.5">{totalCarsCount}</div>
               </div>
               <div className="bg-[#D1FAE5] p-2.5 rounded-xl border border-[#A7F3D0]">
                 <div className="text-[9px] text-[#047857] font-extrabold uppercase">DELIVERED</div>
@@ -287,7 +287,7 @@ export default function DeliveryPOD() {
               </div>
               <div className="bg-[#FEF3C7] p-2.5 rounded-xl border border-[#FDE68A]">
                 <div className="text-[9px] text-[#B45309] font-extrabold uppercase">REMAINING</div>
-                <div className="text-lg font-black text-[#B45309] mt-0.5">{8 - deliveredCount}</div>
+                <div className="text-lg font-black text-[#B45309] mt-0.5">{Math.max(0, totalCarsCount - deliveredCount)}</div>
               </div>
             </div>
           </div>

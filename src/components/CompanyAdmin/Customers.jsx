@@ -14,119 +14,61 @@ export default function Customers() {
   const [customersList, setCustomersList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchCustomersFromApi = async () => {
+  const fetchPortalData = async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/customers').catch(() => api.get('/company-admin/customers'));
-      const dbData = res.data?.data || res.data || [];
-      if (Array.isArray(dbData) && dbData.length > 0) {
-        const mapped = dbData.map((c) => ({
-          id: c.id,
-          name: c.name,
-          abn: c.abn || 'N/A',
-          type: c.type === 'BUSINESS' ? 'Business' : c.type === 'CORPORATE' ? 'Corporate' : (c.type || 'Business'),
-          contactName: c.contactName || 'N/A',
-          contactEmail: c.email || 'N/A',
-          contactPhone: c.phone || 'N/A',
-          transportModules: Array.isArray(c.transportModules) ? c.transportModules : (c.transportModules ? JSON.parse(c.transportModules) : ['truck']),
-          billingTerms: c.billingTerms || '14 Days EOM',
-          billingType: 'EOM',
-          manager: c.accountManager ? `${c.accountManager.firstName || ''} ${c.accountManager.lastName || ''}`.trim() : (c.accountManagerName || 'N/A'),
-          status: c.status === 'INACTIVE' ? 'Inactive' : 'Active'
-        }));
-        setCustomersList(mapped);
-      }
-    } catch (err) {
-      console.error('Error fetching customers from API:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchUsersAndBranches = async () => {
-    try {
-      const [usersRes, branchesRes] = await Promise.all([
-        api.get('/users').catch(() => ({ data: { data: [] } })),
-        api.get('/companies/branches').catch(() => api.get('/branches')).catch(() => ({ data: { data: [] } }))
-      ]);
-      const usersData = usersRes.data?.data || usersRes.data || [];
-      const branchesData = branchesRes.data?.data || branchesRes.data || [];
-      if (Array.isArray(usersData) && usersData.length > 0) {
-        setCompanyUsers(usersData);
-      }
+      const res = await api.get('/customers/portal').catch(() => api.get('/company-admin/customers-portal'));
+      const payload = res.data?.data || res.data || {};
       
-      const defaultBranches = [
-        {
-          id: '1',
-          name: 'Sydney Central Depot',
-          code: 'SYD-CENTRAL',
-          type: 'Primary Depot',
-          status: 'Online',
-          score: 98,
-          address: 'STRATHFIELD, NSW 2135',
-          leadName: 'MICHAEL ADAMS',
-          leadInitials: 'MA',
-          staffCount: 42,
-          vehicles: 18,
-          storageUsage: 92,
-          storageText: 'FULL 92%',
-          storageColor: 'text-red-500 bg-red-500',
-          authority: [
-            { name: 'Michael Adams', role: 'Branch Manager', initials: 'MA' },
-            { name: 'Sarah Mitchell', role: 'Dispatcher', initials: 'SM' }
-          ]
-        },
-        {
-          id: '2',
-          name: 'Melbourne Depot',
-          code: 'MEL-DEPOT',
-          type: 'Primary Depot',
-          status: 'Online',
-          score: 84,
-          address: 'TULLAMARINE, VIC 3043',
-          leadName: 'SARAH MITCHELL',
-          leadInitials: 'SM',
-          staffCount: 14,
-          vehicles: 6,
-          storageUsage: 45,
-          storageText: 'OK 45%',
-          storageColor: 'text-amber-500 bg-amber-500',
-          authority: [
-            { name: 'Sarah Mitchell', role: 'Branch Manager', initials: 'SM' }
-          ]
-        }
-      ];
+      const mapped = (payload.customers || []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        abn: c.abn || 'N/A',
+        type: c.type === 'BUSINESS' ? 'Business' : c.type === 'CORPORATE' ? 'Corporate' : (c.type || 'Business'),
+        contactName: c.contactName || 'N/A',
+        contactEmail: c.contactEmail || c.email || 'N/A',
+        contactPhone: c.contactPhone || c.phone || 'N/A',
+        transportModules: Array.isArray(c.transportModules) ? c.transportModules : (c.transportModules ? JSON.parse(c.transportModules) : ['truck']),
+        billingTerms: c.billingTerms || '14 Days EOM',
+        billingType: 'EOM',
+        manager: c.manager || 'N/A',
+        status: c.status === 'Inactive' || c.status === 'INACTIVE' ? 'Inactive' : 'Active'
+      }));
+      setCustomersList(mapped);
 
-      if (Array.isArray(branchesData) && branchesData.length > 0) {
-        const mappedBranches = branchesData.map(b => ({
+      if (Array.isArray(payload.users) && payload.users.length > 0) {
+        setCompanyUsers(payload.users);
+      }
+
+      if (Array.isArray(payload.branches) && payload.branches.length > 0) {
+        const mappedBranches = payload.branches.map(b => ({
           id: b.id,
           name: b.name || 'Branch Depot',
           code: b.code || 'DEPOT',
           type: b.type || 'Depot',
           status: b.status || 'Online',
           score: b.score || 90,
-          address: b.address || 'N/A',
+          address: b.address || b.location || 'N/A',
           leadName: b.leadName || 'Branch Lead',
           leadInitials: b.leadInitials || 'BL',
-          staffCount: b._count?.drivers || b.staffCount || 10,
-          vehicles: b._count?.assets || b.vehicles || 5,
-          storageUsage: b.storageUsage || 50,
-          storageText: b.storageText || 'OK 50%',
-          storageColor: b.storageColor || 'text-emerald-500 bg-emerald-500',
+          staffCount: b.staffCount || 10,
+          vehicles: b.vehicles || 5,
+          storageUsage: 50,
+          storageText: 'OK 50%',
+          storageColor: 'text-emerald-500 bg-emerald-500',
           authority: b.authority || []
         }));
         setCustomerBranches(mappedBranches);
-      } else {
-        setCustomerBranches(defaultBranches);
       }
     } catch (err) {
-      console.error('Error fetching users/branches:', err);
+      console.error('Error fetching customers portal data:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCustomersFromApi();
-    fetchUsersAndBranches();
+    fetchPortalData();
   }, []);
 
   const [selectedCustomer, setSelectedCustomer] = useState(null);

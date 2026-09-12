@@ -42,8 +42,25 @@ function GradientHeader({ icon: Icon, title, subtitle, onClose, color = '#1e40af
   );
 }
 
+function getInitials(name) {
+  if (!name) return 'CU';
+  const clean = name.replace(/\([^)]*\)/g, '').trim();
+  const parts = clean.split(' ').filter(Boolean);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  return clean.slice(0, 2).toUpperCase();
+}
+
+function UserAvatar({ name, size = "w-10 h-10 text-xs" }) {
+  const initials = getInitials(name);
+  return (
+    <div className={`${size} rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center border border-slate-200 shrink-0 uppercase shadow-2xs`}>
+      {initials}
+    </div>
+  );
+}
+
 /* ───────────── NEW MESSAGE MODAL ───────────── */
-function NewMessageModal({ onClose, conversations, onSend }) {
+function NewMessageModal({ onClose, conversations, recipientData, onSend }) {
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -55,47 +72,32 @@ function NewMessageModal({ onClose, conversations, onSend }) {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    const loadRecipients = async () => {
-      try {
-        const [driversRes, usersRes, customersRes] = await Promise.all([
-          api.get('/drivers').catch(() => ({ data: { data: [] } })),
-          api.get('/users').catch(() => ({ data: { data: [] } })),
-          api.get('/customers').catch(() => ({ data: { data: [] } }))
-        ]);
-        const dbDrivers = driversRes.data?.data || driversRes.data || [];
-        const dbUsers = usersRes.data?.data || usersRes.data || [];
-        const dbCustomers = customersRes.data?.data || customersRes.data || [];
+    const dbDrivers = recipientData?.dbDrivers || [];
+    const dbUsers = recipientData?.dbUsers || [];
+    const dbCustomers = recipientData?.dbCustomers || [];
 
-        const defaultContacts = [
-          'Alex Wright (Car Carrier Driver)',
-          'John Doe (Fleet Operations Manager)',
-          'Chris Lee (Heavy Haulage Driver)',
-          'Sarah Jenkins (Safety Compliance Officer)',
-          'Michael Tan (Yard Supervisor)',
-          'David Brown (Customer Support Rep)',
-          'Daniel Craig (Depot Supervisor)',
-          'Emily Watson (Sales Executive)'
-        ];
+    const defaultContacts = [
+      'Alex Wright (Car Carrier Driver)',
+      'John Doe (Fleet Operations Manager)',
+      'Chris Lee (Heavy Haulage Driver)',
+      'Sarah Jenkins (Safety Compliance Officer)',
+      'Michael Tan (Yard Supervisor)'
+    ];
 
-        const driverNames = dbDrivers.map(d => {
-          const nameStr = `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || 'Driver';
-          return `${nameStr} (Driver)`;
-        });
-        const userNames = dbUsers.map(u => {
-          const nameStr = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || 'User';
-          return `${nameStr} (${u.role || 'Staff'})`;
-        });
-        const customerNames = dbCustomers.map(c => `${c.name || c.contactName} (Customer)`);
-        const convNames = conversations.filter(c => c.type !== 'group').map(c => c.name);
+    const driverNames = dbDrivers.map(d => {
+      const nameStr = `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || 'Driver';
+      return `${nameStr} (Driver)`;
+    });
+    const userNames = dbUsers.map(u => {
+      const nameStr = `${u.firstName || ''} ${u.lastName || u.name || ''}`.trim() || u.email || 'User';
+      return `${nameStr} (${u.role || 'Staff'})`;
+    });
+    const customerNames = dbCustomers.map(c => `${c.name || c.contactName} (Customer)`);
+    const convNames = conversations.filter(c => c.type !== 'group').map(c => c.name);
 
-        const combined = Array.from(new Set([...driverNames, ...userNames, ...customerNames, ...convNames, ...defaultContacts]));
-        setContacts(combined);
-      } catch (err) {
-        console.error('Error loading recipients:', err);
-      }
-    };
-    loadRecipients();
-  }, [conversations]);
+    const combined = Array.from(new Set([...driverNames, ...userNames, ...customerNames, ...convNames, ...defaultContacts]));
+    setContacts(combined);
+  }, [conversations, recipientData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -351,8 +353,7 @@ function NewGroupModal({ onClose, conversations, onCreate }) {
                   }`}>
                     {selected.includes(contact.id) && <Check size={11} className="text-white" />}
                   </div>
-                  <img src={`https://ui-avatars.com/api/?name=${contact.name.replace(' ', '+')}&background=f1f5f9&size=32`}
-                    className="w-7 h-7 rounded-full border border-slate-200" alt="" />
+                  <UserAvatar name={contact.name} size="w-7 h-7 text-[10px]" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-slate-800 truncate">{contact.name}</p>
                     <p className="text-[10px] text-slate-500">{contact.type === 'group' ? 'Group' : 'Driver / Staff'}</p>
@@ -388,50 +389,19 @@ export default function CommunicationDepot() {
   const [conversations, setConversations] = useState([]);
   const [selectedConvId, setSelectedConvId] = useState(null);
   const [showDetailsPanel, setShowDetailsPanel] = useState(true);
+  const [recipientData, setRecipientData] = useState({ dbDrivers: [], dbUsers: [], dbCustomers: [] });
 
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const [convRes, driversRes] = await Promise.all([
-          api.get('/conversations'),
-          api.get('/drivers')
-        ]);
-        const dbConvs = convRes.data?.data || [];
-        const drivers = driversRes.data?.data || [];
+        const res = await api.get('/conversations/depot');
+        const payload = res.data?.data || {};
+        const formattedConvs = payload.conversations || [];
         
-        let formattedConvs = dbConvs.map(conv => {
-          const mainParticipant = conv.participants?.find(p => p.userId !== 'me');
-          const driverId = mainParticipant?.userId;
-          const driver = drivers.find(d => d.id === driverId) || {};
-          
-          return {
-            id: conv.id,
-            name: conv.title || (driver.firstName ? `${driver.firstName} ${driver.lastName}` : 'Unknown Participant'),
-            type: conv.type === 'GROUP' ? 'group' : 'individual',
-            status: 'Active',
-            statusColor: 'emerald',
-            loadId: conv.loadId || 'N/A',
-            time: new Date(conv.updatedAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            unreadCount: 0,
-            messages: conv.messages?.map(m => {
-              const isOutgoing = m.senderId === currentUser?.id || m.senderId === 'me' || m.senderId === 'system_user';
-              return {
-                id: m.id,
-                senderId: m.senderId,
-                text: m.content,
-                time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                type: isOutgoing ? 'outgoing' : 'incoming',
-                dateGroup: new Date(m.createdAt).toLocaleDateString()
-              };
-            }) || [],
-            driverInfo: {
-              mobile: driver.contactNumber || 'N/A',
-              email: driver.email || 'N/A',
-              empId: driver.driverCode || 'N/A',
-              license: driver.licenseType || 'N/A'
-            },
-            currentLoad: null
-          };
+        setRecipientData({
+          dbDrivers: payload.drivers || [],
+          dbUsers: payload.users || [],
+          dbCustomers: payload.customers || []
         });
 
         if (formattedConvs.length > 0) {
@@ -593,7 +563,7 @@ export default function CommunicationDepot() {
       {/* Modals */}
       {showNewMessageModal && (
         <NewMessageModal onClose={() => setShowNewMessageModal(false)}
-          conversations={conversations} onSend={handleSendNewMessage} />
+          conversations={conversations} recipientData={recipientData} onSend={handleSendNewMessage} />
       )}
       {showNewGroupModal && (
         <NewGroupModal onClose={() => setShowNewGroupModal(false)}
@@ -685,13 +655,12 @@ export default function CommunicationDepot() {
                       <Users size={16} />
                     </div>
                   ) : (
-                    <>
-                      <img src={`https://ui-avatars.com/api/?name=${conv.name.replace(' ', '+')}&background=f1f5f9`}
-                        alt="User" className="w-10 h-10 rounded-full border border-slate-200" />
+                    <div className="relative shrink-0">
+                      <UserAvatar name={conv.name} size="w-10 h-10 text-xs" />
                       {selectedConvId === conv.id && (
                         <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -741,8 +710,7 @@ export default function CommunicationDepot() {
                       <Users size={16} />
                     </div>
                   ) : (
-                    <img src={`https://ui-avatars.com/api/?name=${selectedConversation.name.replace(' ', '+')}&background=f1f5f9`}
-                      alt={selectedConversation.name} className="w-10 h-10 rounded-full border border-slate-200" />
+                    <UserAvatar name={selectedConversation.name} size="w-10 h-10 text-xs" />
                   )}
                   <div>
                     <div className="flex items-center gap-2">
@@ -782,8 +750,7 @@ export default function CommunicationDepot() {
                           {selectedConversation.type === 'group' ? (
                             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 border border-slate-200 mt-1"><User size={12} /></div>
                           ) : (
-                            <img src={`https://ui-avatars.com/api/?name=${selectedConversation.name.replace(' ', '+')}&background=f1f5f9`}
-                              alt={selectedConversation.name} className="w-8 h-8 rounded-full border border-slate-200 mt-1" />
+                            <UserAvatar name={selectedConversation.name} size="w-8 h-8 text-[10px]" />
                           )}
                           <div>
                             {selectedConversation.type === 'group' && <span className="text-[10px] font-bold text-slate-500 mb-1 block">{msg.senderId}</span>}

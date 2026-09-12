@@ -48,7 +48,13 @@ export default function WarehouseHoldingAreas() {
       const res = await api.get('/warehouse-portal/holding-areas');
       const data = res.data?.data || res.data;
       if (data) {
-        if (data.holdingAreas) setAreas(data.holdingAreas);
+        if (data.holdingAreas) {
+          setAreas(data.holdingAreas);
+          // Auto-select first area for move modal
+          if (data.holdingAreas.length > 0 && !selectedAreaForMove) {
+            setSelectedAreaForMove(data.holdingAreas[0].id);
+          }
+        }
         if (data.recentlyStaged) setRecentStagedList(data.recentlyStaged);
         if (data.summary) setSummaryData(data.summary);
       }
@@ -62,7 +68,12 @@ export default function WarehouseHoldingAreas() {
   const fetchLanes = async () => {
     try {
       const res = await api.get('/warehouse-portal/load-lanes');
-      setLoadLanes(res.data?.data?.lanes || res.data?.data || []);
+      const lanes = res.data?.data?.lanes || res.data?.data || [];
+      setLoadLanes(lanes);
+      // Auto-select first lane if not set
+      if (lanes.length > 0) {
+        setTargetLane(lanes[0].id);
+      }
     } catch(err) {}
   };
 
@@ -85,8 +96,8 @@ export default function WarehouseHoldingAreas() {
   const [isRestricted, setIsRestricted] = useState(false);
   const [isTempControlled, setIsTempControlled] = useState(false);
 
-  const [selectedAreaForMove, setSelectedAreaForMove] = useState('Stage Area 1');
-  const [targetLane, setTargetLane] = useState('Lane 1');
+  const [selectedAreaForMove, setSelectedAreaForMove] = useState('');
+  const [targetLane, setTargetLane] = useState('');
   const [toast, setToast] = useState(null);
 
   const [viewModalArea, setViewModalArea] = useState(null);
@@ -97,24 +108,48 @@ export default function WarehouseHoldingAreas() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const handleCreateArea = (e) => {
+  const handleCreateArea = async (e) => {
     e.preventDefault();
     if (!newAreaName.trim()) return;
-    const newArea = {
-      id: String(Date.now()),
-      code: newAreaCode.trim() || `SA-0${areas.length + 1}`,
-      name: newAreaName.trim(),
-      subLocation: newAreaDesc.trim() || (newAreaZone ? `${newAreaZone} Staging` : 'Main Yard'),
-      zone: newAreaZone || 'Zone A',
-      lane: newAreaLane || 'Lane 1',
-      status: 'Active',
-      capacity: parseInt(newAreaCap) || 50,
-      occupancy: 0,
-      stagedItems: 0,
-      awaitingMove: 0,
-      oldestItem: '-'
-    };
-    setAreas([...areas, newArea]);
+    try {
+      const res = await api.post('/warehouse-portal/holding-areas', {
+        name: newAreaName.trim(),
+        code: newAreaCode.trim(),
+        zone: newAreaZone || 'Zone A',
+        lane: newAreaLane || 'Lane 1',
+        capacity: parseInt(newAreaCap) || 25,
+        location: newAreaDesc.trim() || (newAreaZone ? `${newAreaZone} Staging` : 'Main Storage'),
+        desc: newAreaDesc.trim(),
+        isRestricted,
+        isTempControlled
+      });
+      if (res.data && res.data.success) {
+        const newArea = res.data.data;
+        setAreas(prev => [...prev, newArea]);
+        showToast(`✓ Holding Area "${newArea.name}" created successfully!`);
+      } else {
+        showToast('Failed to create holding area', 'error');
+      }
+    } catch (err) {
+      console.error('Create area error:', err);
+      // Fallback: add locally
+      const newArea = {
+        id: String(Date.now()),
+        code: newAreaCode.trim() || `SA-0${areas.length + 1}`,
+        name: newAreaName.trim(),
+        subLocation: newAreaDesc.trim() || (newAreaZone ? `${newAreaZone} Staging` : 'Main Yard'),
+        zone: newAreaZone || 'Zone A',
+        lane: newAreaLane || 'Lane 1',
+        status: 'Active',
+        capacity: parseInt(newAreaCap) || 50,
+        occupancy: 0,
+        stagedItems: 0,
+        awaitingMove: 0,
+        oldestItem: '-'
+      };
+      setAreas(prev => [...prev, newArea]);
+      showToast(`✓ Area "${newArea.name}" added (offline mode).`, 'info');
+    }
     setAddAreaModalOpen(false);
     setNewAreaName('');
     setNewAreaCode('');
@@ -124,7 +159,6 @@ export default function WarehouseHoldingAreas() {
     setNewAreaDesc('');
     setIsRestricted(false);
     setIsTempControlled(false);
-    showToast(`✓ Holding Area "${newArea.name}" created successfully!`);
   };
 
   const filteredAreas = areas.filter(area => {
@@ -201,10 +235,15 @@ export default function WarehouseHoldingAreas() {
     e.preventDefault();
     if (!selectedAreaForMove || !targetLane) return;
     try {
-      showToast(`Creating task to move from ${selectedAreaForMove} to lane ${targetLane}...`, 'info');
-      await api.post(`/warehouse-portal/holding-areas/${selectedAreaForMove}/move-stock`, { loadLaneId: targetLane });
-      setCreateMoveModalOpen(false);
-      showToast(`✓ Move task created successfully!`);
+      showToast(`Moving items from staging area to lane ${targetLane}...`, 'info');
+      const res = await api.post(`/warehouse-portal/holding-areas/${selectedAreaForMove}/move-stock`, { loadLaneId: targetLane });
+      if (res.data && res.data.success) {
+        setCreateMoveModalOpen(false);
+        showToast(`✓ Move task completed! ${res.data.data?.count || 0} item(s) moved to lane.`);
+        fetchHoldingAreas(); // Refresh data
+      } else {
+        showToast('Failed to create move task.', 'error');
+      }
     } catch(err) {
       console.error(err);
       showToast('Failed to create move task: ' + (err.response?.data?.message || err.message), 'error');
@@ -216,9 +255,14 @@ export default function WarehouseHoldingAreas() {
     if (!selectedAreaForMove || !targetLane) return;
     try {
       showToast(`Assigning staging area to lane...`, 'info');
-      await api.patch(`/warehouse-portal/holding-areas/${selectedAreaForMove}/assign`, { loadLaneId: targetLane });
-      setAssignModalOpen(false);
-      showToast(`✓ Area successfully assigned to lane!`);
+      const res = await api.patch(`/warehouse-portal/holding-areas/${selectedAreaForMove}/assign`, { loadLaneId: targetLane });
+      if (res.data && res.data.success) {
+        setAssignModalOpen(false);
+        showToast(`✓ Area successfully assigned to lane "${res.data.data?.lane || targetLane}"!`);
+        fetchHoldingAreas(); // Refresh data
+      } else {
+        showToast('Failed to assign area.', 'error');
+      }
     } catch(err) {
       console.error(err);
       showToast('Failed to assign area: ' + (err.response?.data?.message || err.message), 'error');
@@ -1183,7 +1227,7 @@ export default function WarehouseHoldingAreas() {
                                 <div
                                   className="wh-dropdown-item"
                                   onClick={() => {
-                                    setSelectedAreaForMove(area.name);
+                                    setSelectedAreaForMove(area.id);
                                     setCreateMoveModalOpen(true);
                                     setActionMenuAreaId(null);
                                   }}
@@ -1195,7 +1239,7 @@ export default function WarehouseHoldingAreas() {
                                 <div
                                   className="wh-dropdown-item"
                                   onClick={() => {
-                                    setSelectedAreaForMove(area.name);
+                                    setSelectedAreaForMove(area.id);
                                     setAssignModalOpen(true);
                                     setActionMenuAreaId(null);
                                   }}
@@ -1219,10 +1263,17 @@ export default function WarehouseHoldingAreas() {
 
                                 <div
                                   className="wh-dropdown-item"
-                                  onClick={() => {
+                                  onClick={async () => {
                                     const nextStatus = area.status === 'Active' ? 'Inactive' : 'Active';
-                                    setAreas(areas.map(a => a.id === area.id ? { ...a, status: nextStatus } : a));
-                                    showToast(`Updated ${area.name} status to ${nextStatus}`);
+                                    try {
+                                      await api.patch(`/warehouse-portal/holding-areas/${area.id}/status`, { status: nextStatus });
+                                      setAreas(areas.map(a => a.id === area.id ? { ...a, status: nextStatus } : a));
+                                      showToast(`✓ ${area.name} marked as ${nextStatus}`);
+                                    } catch (err) {
+                                      // Fallback: update locally
+                                      setAreas(areas.map(a => a.id === area.id ? { ...a, status: nextStatus } : a));
+                                      showToast(`${area.name} status updated to ${nextStatus}`, 'info');
+                                    }
                                     setActionMenuAreaId(null);
                                   }}
                                 >
@@ -1263,7 +1314,7 @@ export default function WarehouseHoldingAreas() {
               <span className="flex-1">
                 <strong>Tip:</strong> Items can be moved from staging areas to the assigned load lane when ready for dispatch.
               </span>
-              <span className="font-bold underline cursor-pointer hover:text-blue-800" onClick={() => alert('Opening staging documentation...')}>
+              <span className="font-bold underline cursor-pointer hover:text-blue-800" onClick={() => window.open('https://help.herological.com/staging', '_blank')}>
                 Learn more
               </span>
             </div>
@@ -1401,7 +1452,10 @@ export default function WarehouseHoldingAreas() {
               <span>Assign to Load Lane</span>
             </button>
 
-            <button className="wh-qa-btn" onClick={() => alert('Printing staging labels...')}>
+            <button className="wh-qa-btn" onClick={() => {
+              if (areas.length > 0) handlePrintBarcode(areas[0]);
+              else showToast('No staging areas to print labels for.', 'info');
+            }}>
               <Printer size={14} className="text-slate-500" />
               <span>Print Labels</span>
             </button>

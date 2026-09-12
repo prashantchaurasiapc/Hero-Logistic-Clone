@@ -42,27 +42,25 @@ export default function YardMoveItem() {
     setLoading(true);
     setErrorMsg('');
     try {
-      const [stockRes, lanesRes, holdingRes] = await Promise.all([
-        api.get('/warehouse-portal/stock').catch(() => ({ data: { success: false } })),
-        api.get('/warehouse-portal/load-lanes').catch(() => ({ data: { success: false } })),
-        api.get('/warehouse-portal/holding-areas').catch(() => ({ data: { success: false } }))
-      ]);
-
-      if (stockRes.data?.success) {
-        const rawStock = stockRes.data.data?.items || (Array.isArray(stockRes.data.data) ? stockRes.data.data : []);
-        const items = Array.isArray(rawStock) ? rawStock : [];
+      const res = await api.get('/warehouse-portal/movements-init');
+      if (res.data?.success && res.data.data) {
+        const d = res.data.data;
+        const items = Array.isArray(d.stock) ? d.stock : [];
         setStockList(items);
         setFilteredStock(items);
-      }
-      if (lanesRes.data?.success) {
-        const rawLanes = lanesRes.data.data?.lanes || (Array.isArray(lanesRes.data.data) ? lanesRes.data.data : []);
-        setLoadLanes(Array.isArray(rawLanes) ? rawLanes : []);
-      }
-      if (holdingRes.data?.success) {
-        const rawAreas = holdingRes.data.data?.holdingAreas || holdingRes.data.data?.areas || (Array.isArray(holdingRes.data.data) ? holdingRes.data.data : []);
-        setHoldingAreas(Array.isArray(rawAreas) ? rawAreas : []);
+        setLoadLanes(Array.isArray(d.loadLanes) ? d.loadLanes : []);
+        setHoldingAreas(Array.isArray(d.holdingAreas) ? d.holdingAreas : []);
+      } else {
+        // Fallback to stock endpoint if needed
+        const fallbackRes = await api.get('/warehouse-portal/stock');
+        if (fallbackRes.data?.success) {
+          const rawItems = fallbackRes.data.data?.items || (Array.isArray(fallbackRes.data.data) ? fallbackRes.data.data : []);
+          setStockList(rawItems);
+          setFilteredStock(rawItems);
+        }
       }
     } catch (err) {
+      console.warn('Could not fetch relocation portal data:', err.message);
       setErrorMsg('Failed to load yard inventory.');
     } finally {
       setLoading(false);

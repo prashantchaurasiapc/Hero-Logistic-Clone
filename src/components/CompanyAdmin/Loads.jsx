@@ -2510,10 +2510,10 @@ const STATUS_STYLES = {
 
 const computeTabs = (data) => [
   { label: 'All Loads', count: data.length, status: 'ALL' },
-  { label: 'Draft',     count: data.filter(d => d.status === 'DRAFT').length, status: 'DRAFT' },
-  { label: 'Planned',   count: data.filter(d => d.status === 'PLANNED').length, status: 'PLANNED' },
-  { label: 'Active',    count: data.filter(d => d.status === 'ACTIVE').length, status: 'ACTIVE' },
-  { label: 'Completed', count: data.filter(d => d.status === 'COMPLETED').length, status: 'COMPLETED' },
+  { label: 'Draft',     count: data.filter(d => d.status === 'DRAFT' || d.status === 'ASSIGNED').length, status: 'DRAFT' },
+  { label: 'Planned',   count: data.filter(d => d.status === 'PLANNED' || d.status === 'REQUESTED').length, status: 'PLANNED' },
+  { label: 'Active',    count: data.filter(d => d.status === 'ACTIVE' || d.status === 'IN_TRANSIT').length, status: 'ACTIVE' },
+  { label: 'Completed', count: data.filter(d => d.status === 'COMPLETED' || d.status === 'DELIVERED').length, status: 'COMPLETED' },
   { label: 'Cancelled', count: data.filter(d => d.status === 'CANCELLED').length, status: 'CANCELLED' },
 ];
 
@@ -2822,7 +2822,12 @@ export default function Loads() {
       || (l.driver || '').toLowerCase().includes(q) || l.from.toLowerCase().includes(q) || l.to.toLowerCase().includes(q);
 
     const tabStatus = tabs[activeTab].status;
-    const tabMatch = tabStatus === 'ALL' || l.status === tabStatus;
+    const tabMatch = tabStatus === 'ALL'
+      || l.status === tabStatus
+      || (tabStatus === 'DRAFT' && l.status === 'ASSIGNED')
+      || (tabStatus === 'PLANNED' && l.status === 'REQUESTED')
+      || (tabStatus === 'ACTIVE' && l.status === 'IN_TRANSIT')
+      || (tabStatus === 'COMPLETED' && l.status === 'DELIVERED');
 
     const statusMatch = statusFilter === 'All Status' || l.status === statusFilter;
     const typeMatch = typeFilter === 'All Types' || l.type === typeFilter;
@@ -2837,10 +2842,10 @@ export default function Loads() {
   });
 
   const PIE_DATA = [
-    { name: 'Active',    value: filtered.filter(d => d.status === 'ACTIVE').length, color: '#10b981' },
-    { name: 'Planned',   value: filtered.filter(d => d.status === 'PLANNED').length, color: '#3b82f6' },
-    { name: 'Draft',     value: filtered.filter(d => d.status === 'DRAFT').length, color: '#94a3b8' },
-    { name: 'Completed', value: filtered.filter(d => d.status === 'COMPLETED').length, color: '#14b8a6' },
+    { name: 'Active',    value: filtered.filter(d => d.status === 'ACTIVE' || d.status === 'IN_TRANSIT').length, color: '#10b981' },
+    { name: 'Planned',   value: filtered.filter(d => d.status === 'PLANNED' || d.status === 'REQUESTED').length, color: '#3b82f6' },
+    { name: 'Draft',     value: filtered.filter(d => d.status === 'DRAFT' || d.status === 'ASSIGNED').length, color: '#94a3b8' },
+    { name: 'Completed', value: filtered.filter(d => d.status === 'COMPLETED' || d.status === 'DELIVERED').length, color: '#14b8a6' },
     { name: 'Cancelled', value: filtered.filter(d => d.status === 'CANCELLED').length, color: '#ef4444' },
   ];
 

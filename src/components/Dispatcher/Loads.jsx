@@ -103,87 +103,22 @@ export default function DispatcherLoads() {
   const fetchLoads = async () => {
     setIsLoadingLoads(true);
     try {
-      // Using generic /loads which retrieves loads from the backend
-      const res = await api.get('/loads');
-      if (res.data && Array.isArray(res.data.data)) {
-        const routePresetMap = {
-          'PO-373069': { from: 'Melbourne VIC', to: 'Mumbai', customer: 'Direct Customer' },
-          'PO-163402': { from: 'Geelong VIC', to: 'Sydney NSW', customer: 'Direct Customer' },
-          'PO-923974': { from: 'Brisbane QLD', to: 'Perth WA', customer: 'Direct Customer' },
-          'LD-4736': { from: 'Melbourne VIC', to: 'Mumbai', customer: 'Customer Portal' },
-          'LD-4246': { from: 'Geelong VIC', to: 'Sydney NSW', customer: 'Customer Portal' },
-          'LD-3987': { from: 'Brisbane QLD', to: 'Perth WA', customer: 'Customer Portal' }
-        };
+      const res = await api.get('/loads/active');
+      const payload = res.data?.data || res.data || {};
+      const apiLoads = payload.loads || (Array.isArray(payload) ? payload : []);
 
+      if (Array.isArray(apiLoads)) {
         const deletedSet = getDeletedLoadIds();
-
-        const formattedLoads = res.data.data.map(dbLoad => {
-          const loadRefStr = dbLoad.loadRef || dbLoad.id;
-          const preset = routePresetMap[loadRefStr] || { from: 'Melbourne VIC', to: 'Sydney NSW', customer: 'Direct Customer' };
-
-          // Gap Fix 4: Use stops array first (first stop = pickup, last stop = delivery)
-          // then fall back to notes string parsing, then to preset
-          let routeFromStr = preset.from;
-          let routeToStr = preset.to;
-          if (Array.isArray(dbLoad.stops) && dbLoad.stops.length > 0) {
-            const sortedStops = [...dbLoad.stops].sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
-            routeFromStr = sortedStops[0]?.address || sortedStops[0]?.location || preset.from;
-            routeToStr = sortedStops[sortedStops.length - 1]?.address || sortedStops[sortedStops.length - 1]?.location || preset.to;
-          } else if (dbLoad.notes && dbLoad.notes.includes(' to ')) {
-            routeFromStr = dbLoad.notes.split(' to ')[0];
-            routeToStr = dbLoad.notes.split(' to ')[1];
-          }
-          const customerStr = dbLoad.customer ? dbLoad.customer.name : preset.customer;
-
-          let computedDots = 1;
-          if (dbLoad.status === 'ASSIGNED' || dbLoad.status === 'En Route') computedDots = 2;
-          else if (dbLoad.status === 'At Pickup') computedDots = 3;
-          else if (dbLoad.status === 'Loaded') computedDots = 4;
-          else if (dbLoad.status === 'IN_TRANSIT' || dbLoad.status === 'In Transit') computedDots = 5;
-          else if (dbLoad.status === 'DELIVERED' || dbLoad.status === 'Delivered' || dbLoad.status === 'COMPLETED') computedDots = 6;
-          else if (dbLoad.status === 'PLANNED') computedDots = 1;
-
-          return {
-            id: loadRefStr,
-            dbId: dbLoad.id,
-            status: dbLoad.status === 'IN_TRANSIT' ? 'In Transit' : dbLoad.status === 'ASSIGNED' ? 'En Route' : dbLoad.status === 'PLANNED' ? 'Planned' : dbLoad.status || 'In Transit',
-            statusStyle: dbLoad.status === 'IN_TRANSIT' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-              dbLoad.status === 'ASSIGNED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-              dbLoad.status === 'PLANNED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-              'bg-slate-100 text-slate-700 border-slate-200',
-            accentColor: dbLoad.status === 'IN_TRANSIT' ? 'border-l-emerald-500' :
-              dbLoad.status === 'ASSIGNED' ? 'border-l-blue-500' :
-              dbLoad.status === 'PLANNED' ? 'border-l-amber-500' : 'border-l-slate-400',
-            driver: dbLoad.driver ? `${dbLoad.driver.firstName} ${dbLoad.driver.lastName}` : 'Unassigned',
-            driverRole: 'Car Carrier',
-            driverAvatar: 'https://ui-avatars.com/api/?name=' + (dbLoad.driver ? `${dbLoad.driver.firstName}+${dbLoad.driver.lastName}` : 'Unassigned'),
-            driverPhone: dbLoad.driver?.phone || 'N/A',
-            driverStatus: 'On Duty',
-            routeFrom: routeFromStr,
-            routeTo: routeToStr,
-            customer: customerStr,
-            vehicle: dbLoad.truck ? `${dbLoad.truck.make} ${dbLoad.truck.model}` : 'N/A',
-            trailer: dbLoad.trailerId || 'N/A',
-            rego: dbLoad.truck?.rego || 'NEW-999',
-            truckPhoto: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=300',
-            reqDate: dbLoad.scheduledDate ? new Date(dbLoad.scheduledDate).toLocaleDateString() : 'Today',
-            reqTime: '05:00 PM',
-            progressStep: `${computedDots}/6`,
-            activeDotsCount: computedDots,
-            dotColor: 'bg-emerald-500',
-            lineColor: 'bg-emerald-500',
-            stopsCount: 2,
-            itemsCount: dbLoad.loadItems?.length || 0
-          };
-        }).filter(item => !deletedSet.has(item.id) && !deletedSet.has(item.dbId));
-        setMasterLoads(formattedLoads);
-        if (formattedLoads.length > 0) {
-          setSelectedLoadId(formattedLoads[0].id);
+        const filteredLoads = apiLoads.filter(item => !deletedSet.has(item.id) && !deletedSet.has(item.dbId));
+        
+        setMasterLoads(filteredLoads);
+        if (filteredLoads.length > 0) {
+          setSelectedLoadId(filteredLoads[0].id);
         }
       }
     } catch (error) {
-      console.error('Error fetching loads:', error);
-      triggerToast('Error fetching loads');
+      console.error('Error fetching active loads:', error);
+      triggerToast('Error fetching active loads');
     } finally {
       setIsLoadingLoads(false);
     }
@@ -346,11 +281,9 @@ export default function DispatcherLoads() {
 
     try {
       const deleteId = targetDbId || loadId;
-      await api.delete(`/loads/${deleteId}`).catch(async () => {
-        return await api.delete(`/company-admin/loads/${deleteId}`).catch(() => null);
-      });
+      await api.delete(`/loads/${deleteId}`);
     } catch (error) {
-      console.warn('Backend deletion sync notice:', error);
+      console.warn('Backend deletion sync notice:', error?.message);
     }
   };
 

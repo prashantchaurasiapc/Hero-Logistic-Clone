@@ -28,6 +28,7 @@ export default function SystemAnalytics() {
   const [revenueData, setRevenueData] = useState([]);
   const [growthData, setGrowthData] = useState([]);
   const [apiUsageData, setApiUsageData] = useState([]);
+  const [moduleUsageData, setModuleUsageData] = useState([]);
   const [storageData, setStorageData] = useState([]);
   const [loginAnalytics, setLoginAnalytics] = useState([]);
 
@@ -35,25 +36,35 @@ export default function SystemAnalytics() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const dashRes = await api.get('/super-admin/dashboard');
+        let dashRes;
+        try {
+          dashRes = await api.get('/super-admin/system-analytics');
+        } catch (err) {
+          if (err.response && err.response.status === 404) {
+            dashRes = await api.get('/super-admin/dashboard');
+          } else {
+            throw err;
+          }
+        }
 
         if (dashRes.data?.success) {
           const m = dashRes.data.data;
           
           setMetrics([
-            { name: 'PLATFORM REVENUE', value: `$${m.kpis?.monthlyRevenue || '0'}`, desc: 'Monthly recurring revenue', change: '+12%', isPositive: true },
-            { name: 'MRR GROWTH', value: '+8.2%', desc: 'Month-over-month', change: 'Growing', isPositive: true },
-            { name: 'COMPANY GROWTH', value: `${m.kpis?.totalCompanies || m.kpis?.activeCompanies || 0}`, desc: 'Total registered tenants', change: '+2 MTD', isPositive: true },
-            { name: 'ACTIVE USERS', value: `${m.kpis?.activeUsers || 0}`, desc: 'Platform users online', change: '+3 active', isPositive: true },
-            { name: 'API REQUESTS/MIN', value: m.healthCenter?.usageMetrics?.requestsPerMinute || '0 RPM', desc: 'Current throughput rate', change: 'Stable', isPositive: false },
-            { name: 'STORAGE USED', value: m.healthCenter?.usageMetrics?.storageConsumption?.split('/')[0]?.trim() || '0 TB', desc: 'Total of 10 TB capacity', change: 'Normal', isPositive: false },
-            { name: 'OPEN TICKETS', value: `${m.kpis?.openTickets || m.tickets?.open || 0}`, desc: 'Active support tickets', change: 'Needs action', isPositive: false },
-            { name: 'SLA SCORE', value: m.healthCenter?.systemStatus?.apiHealth || '99.9%', desc: 'Monthly uptime performance', change: 'Target Met', isPositive: true }
+            { name: 'PLATFORM REVENUE', value: `$${(m.kpis?.monthlyRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: 'Actual collected revenue', change: 'Live DB', isPositive: true },
+            { name: 'MRR GROWTH', value: m.kpis?.mrrGrowth || 'N/A (No Data)', desc: 'Active subscriptions baseline', change: 'Recurring', isPositive: true },
+            { name: 'COMPANY GROWTH', value: `${m.kpis?.activeCompanies || 0}`, desc: 'Total active tenants', change: `+${m.kpis?.mtdCompanies || 0} MTD`, isPositive: true },
+            { name: 'ACTIVE USERS', value: `${m.kpis?.activeUsers || 0} Online`, desc: 'Concurrent live sessions', change: 'Real-time', isPositive: true },
+            { name: 'API REQUESTS/MIN', value: m.healthCenter?.usageMetrics?.requestsPerMinute || '0 RPM (Idle)', desc: 'Current throughput rate', change: '1-min window', isPositive: false },
+            { name: 'STORAGE USED', value: m.healthCenter?.usageMetrics?.storageConsumption || '0.00 GB / 10 GB', desc: 'Disk & DB consumption', change: 'Audited', isPositive: false },
+            { name: 'OPEN TICKETS', value: `${m.kpis?.openTickets || 0}`, desc: 'Active support tickets', change: 'Live DB', isPositive: false },
+            { name: 'SLA SCORE', value: m.healthCenter?.systemStatus?.apiHealth || 'N/A (No Data)', desc: '30-day uptime ratio', change: 'Monitored', isPositive: m.healthCenter?.systemStatus?.apiHealth !== 'N/A (No Data)' }
           ]);
 
           setRevenueData(m.chartData || []);
           setGrowthData(m.growthData || []);
           setApiUsageData(m.apiUsageData || []);
+          setModuleUsageData(m.moduleUsageData || []);
           setStorageData(m.storageData || []);
           setLoginAnalytics(m.loginAnalytics || []);
         }
@@ -147,8 +158,8 @@ export default function SystemAnalytics() {
           <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
             Super Admin • Analytics
           </h1>
-          <p className="text-sm font-medium text-slate-500">
-            Configure global licensing rules, audit tenant margins, and resolve support tickets.
+          <p className="text-[13px] text-slate-500 mt-1 font-medium">
+            Configure global licensing rules, audit company margins, and resolve support tickets.
           </p>
         </div>
         <button 
@@ -229,24 +240,21 @@ export default function SystemAnalytics() {
         <p className="text-xs font-semibold text-slate-400 mb-6">Most accessed platform modules across all tenants.</p>
 
         <div className="space-y-4">
-          {[
-            { name: 'Dispatch / Load Management', percentage: 94, color: 'bg-brand-500' },
-            { name: 'Live GPS Tracking', percentage: 87, color: 'bg-[#10B981]' },
-            { name: 'Driver Management', percentage: 82, color: 'bg-[#6366F1]' },
-            { name: 'Vehicle / Fleet', percentage: 76, color: 'bg-[#F97316]' },
-            { name: 'Warehouse / Yard', percentage: 68, color: 'bg-[#8B5CF6]' },
-            { name: 'Accounts / Payroll', percentage: 61, color: 'bg-[#06B6D4]' },
-            { name: 'AI Load Parsing', percentage: 54, color: 'bg-[#EC4899]' },
-            { name: 'Customer Portal', percentage: 48, color: 'bg-[#EA580C]' }
-          ].map((row, idx) => (
-            <div key={idx} className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
-              <span className="w-56 text-xs font-bold text-slate-600">{row.name}</span>
-              <div className="flex-grow bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div className={`${row.color} h-full rounded-full`} style={{ width: `${row.percentage}%` }}></div>
-              </div>
-              <span className="w-12 text-right text-xs font-extrabold text-slate-800">{row.percentage}%</span>
+          {moduleUsageData.length === 0 ? (
+            <div className="text-xs text-slate-400 font-semibold py-4">
+              Data collection started — No module telemetry recorded yet.
             </div>
-          ))}
+          ) : (
+            moduleUsageData.map((row, idx) => (
+              <div key={idx} className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                <span className="w-56 text-xs font-bold text-slate-600">{row.name}</span>
+                <div className="flex-grow bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div className={`${row.color || 'bg-brand-500'} h-full rounded-full`} style={{ width: `${row.percentage}%` }}></div>
+                </div>
+                <span className="w-12 text-right text-xs font-extrabold text-slate-800">{row.percentage}%</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

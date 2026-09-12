@@ -10,14 +10,8 @@ import api from '../../services/api';
 /* ─── Role badge colors ─── */
 const ROLE_COLORS = {
   'Super Admin':       'bg-purple-100 text-purple-700 border-purple-200',
-  'Platform Owner':    'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200',
-  'Platform Admin':    'bg-blue-100 text-blue-700 border-blue-200',
   'Sales Rep':         'bg-indigo-100 text-indigo-700 border-indigo-200',
-  'Onboarding':        'bg-orange-100 text-orange-700 border-orange-200',
-  'Support Agent':     'bg-teal-100 text-teal-700 border-teal-200',
-  'Platform Finance':  'bg-emerald-100 text-emerald-700 border-emerald-200',
-  'Technical Support': 'bg-cyan-100 text-cyan-700 border-cyan-200',
-  'Auditor':           'bg-slate-100 text-slate-700 border-slate-200',
+  'Sales':             'bg-indigo-100 text-indigo-700 border-indigo-200',
 };
 
 const STATUS_COLORS = {
@@ -33,14 +27,7 @@ const AVATAR_COLORS = [
 
 const ROLES = [
   'Super Admin',
-  'Platform Owner',
-  'Platform Admin',
-  'Sales Rep',
-  'Onboarding',
-  'Support Agent',
-  'Platform Finance',
-  'Technical Support',
-  'Auditor'
+  'Sales Rep'
 ];
 
 const formatRole = (roleStr) => {
@@ -64,7 +51,7 @@ export default function AdminUsers() {
   const [showDeleteModal, setShowDeleteModal] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(null);
   const [toast, setToast]     = useState('');
-  const [form, setForm]       = useState({ name:'', email:'', phone:'', role:'Platform Admin', company:'', status:'ACTIVE' });
+  const [form, setForm]       = useState({ name:'', email:'', phone:'', role:'Super Admin', company:'', status:'ACTIVE' });
 
   const notify = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
@@ -73,10 +60,7 @@ export default function AdminUsers() {
     try {
       const res = await api.get('/users');
       if (res.data?.success) {
-        const platformStaffRoles = [
-          'Super Admin', 'Platform Owner', 'Platform Admin', 'Sales Rep',
-          'Onboarding', 'Support Agent', 'Platform Finance', 'Technical Support', 'Auditor'
-        ];
+        const platformStaffRoles = ['Super Admin', 'Sales Rep', 'Sales'];
         const allUsers = res.data.data.map(u => ({
           id: u.id,
           name: u.name,
@@ -103,7 +87,7 @@ export default function AdminUsers() {
   }, []);
 
   const openAdd = () => {
-    setForm({ name: '', email: 'sales@hero.com', phone: '', role: 'Sales (Platform CRM & Leads)', company: '', status: 'ACTIVE', password: '' });
+    setForm({ name: '', email: '', phone: '', role: 'Super Admin', company: '', status: 'ACTIVE', password: '' });
     setShowAddModal(true);
   };
 
@@ -243,7 +227,6 @@ export default function AdminUsers() {
           className="border border-slate-200 rounded-xl px-4 py-2.5 bg-white text-sm font-bold text-slate-700 focus:outline-none focus:border-amber-400 cursor-pointer shadow-xs"
         >
           <option value="All Roles">All Roles</option>
-          <option value="Super Admin">Super Admin</option>
           {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
       </div>
@@ -561,8 +544,9 @@ const FormModal = ({ title, onSubmit, onClose, form, setForm }) => {
                 value={form.role} 
                 onChange={e => setForm({ ...form, role: e.target.value })}
               >
-                <option value="Sales (Platform CRM & Leads)">Sales (Platform CRM & Leads)</option>
-                <option value="Super Admin (Platform Owner)">Super Admin (Platform Owner)</option>
+                {ROLES.map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
               </select>
             </div>
 

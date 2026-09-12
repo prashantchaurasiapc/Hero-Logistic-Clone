@@ -163,12 +163,12 @@ export default function VehicleCosts() {
     : [];
 
   const kpiData = [
-    { title: 'Total Vehicle Costs (This Period)', value: `$${totalIncGst.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <DollarSign size={20} className="text-blue-500" />, iconBg: 'bg-blue-50', trendColor: 'text-slate-400' },
-    { title: 'Fuel Costs', value: `$${(totals.fuel * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <Droplets size={20} className="text-emerald-500" />, iconBg: 'bg-emerald-50', trendColor: 'text-slate-400' },
-    { title: 'Maintenance & Repairs', value: `$${(totals.maintenance * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <Wrench size={20} className="text-amber-500" />, iconBg: 'bg-amber-50', trendColor: 'text-slate-400' },
-    { title: 'Tyres', value: `$${(totals.tyres * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <CircleDashed size={20} className="text-blue-500" />, iconBg: 'bg-blue-50', trendColor: 'text-slate-400' },
-    { title: 'Insurance', value: `$${(totals.insurance * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <Shield size={20} className="text-purple-500" />, iconBg: 'bg-purple-50', trendColor: 'text-slate-400' },
-    { title: 'Other Costs', value: `$${(totals.other * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <FileText size={20} className="text-slate-500" />, iconBg: 'bg-slate-100', trendColor: 'text-slate-400' },
+    { title: 'Total Vehicle Costs (This Period)', shortTitle: 'Total Costs', value: `$${totalIncGst.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <DollarSign size={18} className="text-blue-600" />, iconBg: 'bg-blue-50', trendColor: 'text-slate-400' },
+    { title: 'Fuel Costs', shortTitle: 'Fuel Costs', value: `$${(totals.fuel * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <Droplets size={18} className="text-emerald-600" />, iconBg: 'bg-emerald-50', trendColor: 'text-slate-400' },
+    { title: 'Maintenance & Repairs', shortTitle: 'Maintenance', value: `$${(totals.maintenance * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <Wrench size={18} className="text-amber-600" />, iconBg: 'bg-amber-600/10', trendColor: 'text-slate-400' },
+    { title: 'Tyres', shortTitle: 'Tyres', value: `$${(totals.tyres * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <CircleDashed size={18} className="text-blue-600" />, iconBg: 'bg-blue-50', trendColor: 'text-slate-400' },
+    { title: 'Insurance', shortTitle: 'Insurance', value: `$${(totals.insurance * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <Shield size={18} className="text-purple-600" />, iconBg: 'bg-purple-50', trendColor: 'text-slate-400' },
+    { title: 'Other Costs', shortTitle: 'Other Costs', value: `$${(totals.other * 1.1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, trend: 0, trendLabel: 'vs last period', icon: <FileText size={18} className="text-slate-600" />, iconBg: 'bg-slate-100', trendColor: 'text-slate-400' },
   ];
 
   const pieData = [
@@ -259,12 +259,37 @@ export default function VehicleCosts() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="px-4 sm:px-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5 flex-shrink-0">
+      <div className="px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 mb-5 flex-shrink-0">
         {kpiData.map((kpi, index) => (
-          <div key={index} className="bg-white rounded-xl p-3.5 shadow-sm border border-slate-200/60 flex flex-col justify-between hover:border-slate-300 transition-all">
-            <div className="flex items-start justify-between mb-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${kpi.iconBg}`}>
+          <div 
+            key={index} 
+            className="bg-white rounded-xl p-3.5 shadow-xs border border-slate-200/80 hover:border-slate-300 transition-all flex flex-col justify-between w-full h-[128px]"
+          >
+            {/* Top row: Icon on left, Title on right */}
+            <div className="flex items-center justify-between">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${kpi.iconBg}`}>
                 {kpi.icon}
+              </div>
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider truncate max-w-[120px]">
+                {kpi.shortTitle || kpi.title}
+              </span>
+            </div>
+
+            {/* Value in middle */}
+            <div className="my-auto">
+              <div className="text-lg font-black text-slate-900 tracking-tight leading-tight truncate">
+                {kpi.value}
+              </div>
+            </div>
+
+            {/* Bottom row: Trend on left, Details -> on right */}
+            <div className="pt-2 border-t border-slate-100/80 flex items-center justify-between text-[10px]">
+              <div className="flex items-center gap-1 font-semibold">
+                <span className={`flex items-center gap-0.5 font-bold ${kpi.trendColor}`}>
+                  {kpi.trend > 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                  {Math.abs(kpi.trend)}%
+                </span>
+                <span className="text-slate-400 font-medium truncate">{kpi.trendLabel}</span>
               </div>
               <button 
                 onClick={() => {
@@ -275,21 +300,10 @@ export default function VehicleCosts() {
                   else setCategoryFilter('All Categories');
                   triggerToast(`Filtered for ${kpi.title}`);
                 }}
-                className="text-[9px] text-blue-600 font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
+                className="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer shrink-0"
               >
                 Details →
               </button>
-            </div>
-            <div>
-              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 truncate">{kpi.title}</p>
-              <div className="text-lg font-black text-slate-900 mb-1 truncate">{kpi.value}</div>
-              <div className="flex items-center gap-1 text-[10px] font-medium">
-                <span className={`flex items-center gap-0.5 font-bold ${kpi.trendColor}`}>
-                  {kpi.trend > 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                  {Math.abs(kpi.trend)}%
-                </span>
-                <span className="text-slate-400">{kpi.trendLabel}</span>
-              </div>
             </div>
           </div>
         ))}

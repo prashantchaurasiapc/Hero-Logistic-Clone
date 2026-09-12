@@ -86,7 +86,7 @@ export default function Pnl() {
   const compGpMargin = compRev > 0 ? (compGrossProfit / compRev) * 100 : 0;
 
   // Percentage changes
-  const calcChange = (curr, comp) => comp === 0 ? 0 : ((curr - comp) / comp) * 100;
+  const calcChange = (curr, comp) => (comp === 0 || isNaN(comp) ? 0 : ((curr - comp) / comp) * 100);
   
   const npChange = calcChange(currNetProfit, compNetProfit);
   const revChange = calcChange(currRev, compRev);
@@ -103,8 +103,9 @@ export default function Pnl() {
     { title: 'Gross Profit Margin', value: currGpMargin, change: gpMarginChange, isPp: true, icon: <Percent className="text-sky-500" size={16}/>, bg: 'bg-sky-50' },
   ];
 
-  const formatCurrency = (val) => `$${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-  const formatPercent = (val) => `${val.toFixed(1)}%`;
+  const formatCurrency = (val) => `$${(isNaN(val) ? 0 : val).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+  const formatPercent = (val) => `${(isNaN(val) ? 0 : val).toFixed(1)}%`;
+
 
   // CSV Export Handler
   const handleExportCSV = () => {
@@ -539,18 +540,18 @@ export default function Pnl() {
                 <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3">
                   <div className="bg-emerald-50/50 border border-emerald-200/60 rounded-xl p-3.5 flex flex-col">
                     <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">YTD Revenue</span>
-                    <span className="text-lg sm:text-xl font-black text-slate-900 mt-1">$5,148,000.00</span>
-                    <span className="text-xs font-bold text-emerald-600 mt-1">↑ +4.3% vs Target</span>
+                    <span className="text-lg sm:text-xl font-black text-slate-900 mt-1">{formatCurrency(currRev)}</span>
+                    <span className="text-xs font-bold text-emerald-600 mt-1">{revChange >= 0 ? '↑ +' : '↓ '}{Math.abs(revChange).toFixed(1)}% vs Last Period</span>
                   </div>
                   <div className="bg-blue-50/50 border border-blue-200/60 rounded-xl p-3.5 flex flex-col">
                     <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">YTD Gross Profit</span>
-                    <span className="text-lg sm:text-xl font-black text-slate-900 mt-1">$982,000.00</span>
-                    <span className="text-xs font-bold text-blue-600 mt-1">19.1% Gross Margin</span>
+                    <span className="text-lg sm:text-xl font-black text-slate-900 mt-1">{formatCurrency(currGrossProfit)}</span>
+                    <span className="text-xs font-bold text-blue-600 mt-1">{formatPercent(currGpMargin)} Gross Margin</span>
                   </div>
                   <div className="bg-purple-50/50 border border-purple-200/60 rounded-xl p-3.5 flex flex-col xs:col-span-2 sm:col-span-1">
                     <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wider">YTD Net Profit</span>
-                    <span className="text-lg sm:text-xl font-black text-slate-900 mt-1">$578,950.00</span>
-                    <span className="text-xs font-bold text-purple-600 mt-1">11.2% Net Margin</span>
+                    <span className="text-lg sm:text-xl font-black text-slate-900 mt-1">{formatCurrency(currNetProfit)}</span>
+                    <span className="text-xs font-bold text-purple-600 mt-1">{formatPercent(currNpMargin)} Net Margin</span>
                   </div>
                 </div>
 
@@ -665,21 +666,21 @@ export default function Pnl() {
                   <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1 bg-emerald-500"></span>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-slate-700">Cost of Sales</span>
-                    <span className="text-[9px] text-slate-500">{((currCogs/currRev)*100).toFixed(1)}% ({formatCurrency(currCogs)})</span>
+                    <span className="text-[9px] text-slate-500">{currRev > 0 ? ((currCogs/currRev)*100).toFixed(1) : '0.0'}% ({formatCurrency(currCogs)})</span>
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1 bg-blue-500"></span>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-slate-700">Operating Expenses</span>
-                    <span className="text-[9px] text-slate-500">{((currOpex/currRev)*100).toFixed(1)}% ({formatCurrency(currOpex)})</span>
+                    <span className="text-[9px] text-slate-500">{currRev > 0 ? ((currOpex/currRev)*100).toFixed(1) : '0.0'}% ({formatCurrency(currOpex)})</span>
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1 bg-amber-500"></span>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-slate-700">Gross Profit</span>
-                    <span className="text-[9px] text-slate-500">{((currGrossProfit/currRev)*100).toFixed(1)}% ({formatCurrency(currGrossProfit)})</span>
+                    <span className="text-[9px] text-slate-500">{currRev > 0 ? ((currGrossProfit/currRev)*100).toFixed(1) : '0.0'}% ({formatCurrency(currGrossProfit)})</span>
                   </div>
                 </div>
               </div>
@@ -713,9 +714,9 @@ export default function Pnl() {
               <div className="flex justify-between items-center text-[11px]">
                 <span className="font-medium text-slate-700">Expense to Revenue</span>
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <span className="font-bold text-slate-900">{formatPercent((currTotalExpenses/currRev)*100)}</span>
-                  <span className={`w-12 text-right font-bold ${((currTotalExpenses/currRev)*100) - ((compTotalExpenses/compRev)*100) >= 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
-                    {((currTotalExpenses/currRev)*100) - ((compTotalExpenses/compRev)*100) > 0 ? '↑' : '↓'} {Math.abs(((currTotalExpenses/currRev)*100) - ((compTotalExpenses/compRev)*100)).toFixed(1)} pp
+                  <span className="font-bold text-slate-900">{formatPercent(currRev > 0 ? (currTotalExpenses/currRev)*100 : 0)}</span>
+                  <span className={`w-12 text-right font-bold ${(currRev > 0 ? (currTotalExpenses/currRev)*100 : 0) - (compRev > 0 ? (compTotalExpenses/compRev)*100 : 0) >= 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                    {(currRev > 0 ? (currTotalExpenses/currRev)*100 : 0) - (compRev > 0 ? (compTotalExpenses/compRev)*100 : 0) > 0 ? '↑' : '↓'} {Math.abs((currRev > 0 ? (currTotalExpenses/currRev)*100 : 0) - (compRev > 0 ? (compTotalExpenses/compRev)*100 : 0)).toFixed(1)} pp
                   </span>
                 </div>
               </div>

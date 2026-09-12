@@ -23,6 +23,11 @@ export const getSuperAdminDashboard = () => {
   return api.get('/super-admin/dashboard');
 };
 
+export const getSystemAnalytics = () => {
+  return api.get('/super-admin/system-analytics');
+};
+
+
 export const getPlatformSettings = () => api.get('/super-admin/settings');
 export const updatePlatformSettings = (data) => api.put('/super-admin/settings', data);
 

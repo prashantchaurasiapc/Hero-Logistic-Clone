@@ -72,33 +72,21 @@ export default function YardLocations() {
   const [lastRefresh, setLastRefresh] = useState(null);
 
   const fetchAll = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [stockRes, lanesRes, holdingRes] = await Promise.all([
-        api.get('/warehouse-portal/stock').catch(() => ({ data: { success: false } })),
-        api.get('/warehouse-portal/load-lanes').catch(() => ({ data: { success: false } })),
-        api.get('/warehouse-portal/holding-areas').catch(() => ({ data: { success: false } }))
-      ]);
-
-      if (stockRes.data?.success) {
-        const rawStock = stockRes.data.data?.items || (Array.isArray(stockRes.data.data) ? stockRes.data.data : []);
-        setStock(Array.isArray(rawStock) ? rawStock : []);
-      }
-      if (lanesRes.data?.success) {
-        const rawLanes = lanesRes.data.data?.lanes || (Array.isArray(lanesRes.data.data) ? lanesRes.data.data : []);
-        setLoadLanes(Array.isArray(rawLanes) ? rawLanes : []);
-      }
-      if (holdingRes.data?.success) {
-        const rawAreas = holdingRes.data.data?.holdingAreas || holdingRes.data.data?.areas || (Array.isArray(holdingRes.data.data) ? holdingRes.data.data : []);
-        setHoldingAreas(Array.isArray(rawAreas) ? rawAreas : []);
-      }
-      setLastRefresh(new Date());
-    } catch (err) {
-      setError('Failed to load location data.');
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  setError(null);
+  try {
+    const res = await api.get('/warehouse-portal/yard-locations').catch(() => ({ data: { success: false } }));
+    if (res.data?.success) {
+      const { stock = [], loadLanes = [], holdingAreas = [] } = res.data.data || {};
+      setStock(Array.isArray(stock) ? stock : []);
+      setLoadLanes(Array.isArray(loadLanes) ? loadLanes : []);
+      setHoldingAreas(Array.isArray(holdingAreas) ? holdingAreas : []);
     }
+  } catch (err) {
+    setError('Failed to load location data.');
+  } finally {
+    setLoading(false);
+  }
   };
 
   useEffect(() => { fetchAll(); }, []);

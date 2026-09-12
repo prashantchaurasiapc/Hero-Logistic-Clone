@@ -5,12 +5,13 @@ import {
   Image as ImageIcon, Smile, ChevronRight, Star, Plus, MoreHorizontal,
   ExternalLink, FileText, HelpCircle, Shield, RefreshCw, X, ArrowRight,
   AlertCircle, CheckCircle, Info, Phone, MessageCircle, User, Bot, Headphones,
-  Download
+  Download, Loader2
 } from 'lucide-react';
 
 export default function CustomerSupport() {
   // Toast Notification State
   const [toastMsg, setToastMsg] = useState('');
+  const [loading, setLoading] = useState(false);
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
@@ -23,31 +24,28 @@ export default function CustomerSupport() {
 
   const [conversations, setConversations] = useState([]);
   const [supportTickets, setSupportTickets] = useState([]);
-  const [dashboardKpis, setDashboardKpis] = useState({
-    unreadMessages: 0,
-    openTickets: 0,
-    awaitingResponse: 0,
-    resolvedTickets: 0
-  });
+  // KPI state removed for dedicated support view
 
-  const fetchDashboardData = async () => {
+  const fetchSupportData = async () => {
+    setLoading(true);
     try {
-      const res = await api.get('/warehouse-portal/support/dashboard');
+      const res = await api.get('/warehouse-portal/support');
       if (res.data?.data) {
         setConversations(res.data.data.conversations || []);
         setSupportTickets(res.data.data.supportTickets || []);
-        setDashboardKpis(res.data.data.kpi || { unreadMessages: 0, openTickets: 0, awaitingResponse: 0, resolvedTickets: 0 });
         if (res.data.data.conversations?.length > 0 && selectedConvId === 1) {
           setSelectedConvId(res.data.data.conversations[0].id);
         }
       }
     } catch (error) {
-      console.error('Failed to load support dashboard:', error);
+      console.error('Failed to load support data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchSupportData();
   }, []);
 
   // Active Chat Message Input State
@@ -90,7 +88,7 @@ export default function CustomerSupport() {
         conversationId: validConvId,
         text: messageContent
       });
-      fetchDashboardData();
+      fetchSupportData();
       triggerToast('Message sent successfully!');
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -124,7 +122,7 @@ export default function CustomerSupport() {
       });
       setIsCreateTicketModalOpen(false);
       setTicketForm({ subject: '', category: 'Portal Support', priority: 'Normal', description: '' });
-      fetchDashboardData();
+      fetchSupportData();
       triggerToast('Support Ticket created successfully!');
     } catch (error) {
       console.error('Failed to create ticket:', error);
@@ -181,6 +179,13 @@ export default function CustomerSupport() {
         <div className="fixed bottom-6 right-6 z-[999999] bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-2xl animate-fade-in border border-slate-700 flex items-center gap-2">
           <CheckCircle2 size={16} className="text-emerald-400" />
           <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {/* Loading Spinner */}
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm z-[999998]">
+          <Loader2 className="animate-spin text-slate-600" size={48} />
         </div>
       )}
 
@@ -324,112 +329,7 @@ export default function CustomerSupport() {
       {/* =========================================================================
          TOP METRICS CARDS (4 Cards Grid)
          ========================================================================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        {/* Card 1: Unread Messages */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold shrink-0">
-              <MessageSquare size={18} />
-            </div>
-            <div>
-              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">UNREAD MESSAGES</span>
-              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">{dashboardKpis.unreadMessages}</span>
-            </div>
-          </div>
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
-            <button 
-              onClick={() => {
-                setConvCategory('All Categories');
-                setConvSearchTerm('');
-                triggerToast('Displaying all conversations');
-              }} 
-              className="font-extrabold text-purple-600 hover:text-purple-800 flex items-center gap-1 cursor-pointer"
-            >
-              View all messages <ArrowRight size={11} />
-            </button>
-          </div>
-        </div>
-
-        {/* Card 2: Open Tickets */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center font-bold shrink-0">
-              <Ticket size={18} />
-            </div>
-            <div>
-              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">OPEN TICKETS</span>
-              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">{dashboardKpis.openTickets}</span>
-            </div>
-          </div>
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
-            <button 
-              onClick={() => {
-                setTicketStatusFilter('ALL');
-                const el = document.getElementById('my-tickets-card');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-                triggerToast('Showing all support tickets');
-              }} 
-              className="font-extrabold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
-            >
-              View my tickets <ArrowRight size={11} />
-            </button>
-          </div>
-        </div>
-
-        {/* Card 3: Awaiting Response */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center font-bold shrink-0">
-              <Clock size={18} />
-            </div>
-            <div>
-              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">AWAITING RESPONSE</span>
-              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">{dashboardKpis.awaitingResponse}</span>
-            </div>
-          </div>
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
-            <button 
-              onClick={() => {
-                setTicketStatusFilter('WAITING');
-                const el = document.getElementById('my-tickets-card');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-                triggerToast('Filtering tickets requiring your reply');
-              }} 
-              className="font-extrabold text-amber-600 hover:text-amber-800 flex items-center gap-1 cursor-pointer"
-            >
-              Requires your reply <ArrowRight size={11} />
-            </button>
-          </div>
-        </div>
-
-        {/* Card 4: Resolved Tickets */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center font-bold shrink-0">
-              <CheckCircle2 size={18} />
-            </div>
-            <div>
-              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">RESOLVED TICKETS (30 DAYS)</span>
-              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">{dashboardKpis.resolvedTickets}</span>
-            </div>
-          </div>
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
-            <button 
-              onClick={() => {
-                setTicketStatusFilter('RESOLVED');
-                const el = document.getElementById('my-tickets-card');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-                triggerToast('Showing resolved ticket history');
-              }} 
-              className="font-extrabold text-sky-600 hover:text-sky-800 flex items-center gap-1 cursor-pointer"
-            >
-              View history <ArrowRight size={11} />
-            </button>
-          </div>
-        </div>
-
-      </div>
+      
 
       {/* =========================================================================
          MAIN WORKSPACE GRID (Equal Height Columns: 3 cols, 6 cols [WIDER], 3 cols)

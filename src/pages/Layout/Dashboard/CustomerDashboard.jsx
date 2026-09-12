@@ -32,29 +32,19 @@ const CustomerDashboard = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [loadsRes, invoicesRes, docsRes] = await Promise.allSettled([
-        api.get('/company-admin/loads'),
-        api.get('/accounts-portal/invoices'),
-        api.get('/company-admin/documents')
-      ]);
+      const portalRes = await api.get('/customers/portal');
+      const portalData = portalRes?.data || {};
 
-      if (loadsRes.status === 'fulfilled' && loadsRes.value?.data) {
-        const raw = Array.isArray(loadsRes.value.data) ? loadsRes.value.data : (loadsRes.value.data.loads || []);
-        const activeL = raw.filter(l => l.status === 'In Transit' || l.status === 'Dispatched' || l.status === 'On Pickup' || l.status === 'Arrived');
-        const upcL = raw.filter(l => l.status === 'Scheduled' || l.status === 'Dispatched' || l.status === 'In Transit');
+      if (portalData.customers && portalData.customers.length > 0) {
+        const firstCustomer = portalData.customers[0];
+        const raw = firstCustomer.loads || [];
+        const activeL = raw.filter(l => ['In Transit', 'Dispatched', 'On Pickup', 'Arrived'].includes(l.status));
+        const upcL = raw.filter(l => ['Scheduled', 'Dispatched', 'In Transit'].includes(l.status));
         setLoads(activeL);
         setUpcoming(upcL);
       }
 
-      if (invoicesRes.status === 'fulfilled' && invoicesRes.value?.data) {
-        const invRaw = Array.isArray(invoicesRes.value.data) ? invoicesRes.value.data : (invoicesRes.value.data.invoices || []);
-        setInvoices(invRaw);
-      }
 
-      if (docsRes.status === 'fulfilled' && docsRes.value?.data) {
-        const docsRaw = Array.isArray(docsRes.value.data) ? docsRes.value.data : (docsRes.value.data.documents || []);
-        setDocuments(docsRaw);
-      }
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
     } finally {

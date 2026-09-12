@@ -34,6 +34,10 @@ export default function Messages() {
   const [quickContactsModalOpen, setQuickContactsModalOpen] = useState(false);
   const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
 
+  // New Message Form States
+  const [newMessageRecipient, setNewMessageRecipient] = useState('');
+  const [newMessageText, setNewMessageText] = useState('');
+
   // Chat Input State inside Chat Modal
   const [chatInputText, setChatInputText] = useState('');
 

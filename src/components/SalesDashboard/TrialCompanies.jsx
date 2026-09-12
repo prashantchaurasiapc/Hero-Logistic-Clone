@@ -45,13 +45,7 @@ export default function TrialCompanies() {
 
   // Subscribe to crmStore changes to ensure reactive binding
   useEffect(() => {
-    crmRepository.syncWithBackend();
-
-    getSalesReps().then(res => {
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setSalesReps(res.data.data);
-      }
-    }).catch(err => console.error('Error fetching reps in trials:', err));
+    crmRepository.syncTrials();
 
     const syncDb = () => {
       const safeTrials = crmRepository.getTrials();
@@ -119,11 +113,13 @@ export default function TrialCompanies() {
   };
 
   // Handle Extend Trial submit
-  const handleExtendSubmit = (e) => {
+  const handleExtendSubmit = async (e) => {
     e.preventDefault();
     if (!showExtendModal) return;
 
-    setToast({ text: `Trial for ${showExtendModal.company} extended by ${extensionDays} days.` });
+    const targetId = showExtendModal.leadId || showExtendModal.id;
+    await crmRepository.extendTrial(targetId, extensionDays);
+    setToast({ text: `Trial for ${showExtendModal.company} extended by ${extensionDays} days in database!` });
     setShowExtendModal(null);
   };
 

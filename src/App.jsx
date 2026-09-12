@@ -77,6 +77,7 @@ import './App.css';
 
 // Admin components
 import Companies from './components/SuperAdminDashboard/Companies';
+import CreateCompany from './components/SuperAdminDashboard/CreateCompany';
 import UserManagement from './components/SuperAdminDashboard/UserManagement';
 import AdminUsers from './components/SuperAdminDashboard/AdminUsers';
 import RolesPermissions from './components/SuperAdminDashboard/RolesPermissions';
@@ -203,6 +204,7 @@ function App() {
           <Route path="/admin" element={<ProtectedRoute><DashboardLayout role="super-admin" /></ProtectedRoute>}>
             <Route path="dashboard" element={<PlatformDashboard role="super-admin" />} />
             <Route path="companies" element={<Companies />} />
+            <Route path="companies/new" element={<CreateCompany />} />
             <Route path="user-management" element={<UserManagement />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="roles-permissions" element={<RolesPermissions />} />

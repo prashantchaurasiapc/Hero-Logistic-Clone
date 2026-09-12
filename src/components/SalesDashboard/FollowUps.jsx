@@ -35,14 +35,9 @@ export default function FollowUps() {
 
   // Subscribe to crmStore
   useEffect(() => {
-    // Sync with database
-    crmRepository.syncWithBackend();
-
-    getSalesReps().then(res => {
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setSalesReps(res.data.data);
-      }
-    }).catch(err => console.error('Error fetching reps in follow-ups:', err));
+    // Sync followups and sales reps for this menu specifically
+    crmRepository.syncFollowups();
+    crmRepository.syncSalesReps();
 
     const syncDb = () => {
       const db = crmRepository.getCrmDatabase();

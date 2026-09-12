@@ -12,6 +12,27 @@ import {
 /* Stock data initialized empty */
 
 
+const defaultVehicleImg = 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&q=80&w=400';
+const defaultCargoImg = 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=400';
+
+const getItemDisplayImage = (item) => {
+  if (item && item.image && typeof item.image === 'string' && item.image.trim().startsWith('http')) {
+    return item.image;
+  }
+  const title = (item?.title || item?.make || item?.model || '').toLowerCase();
+  const type = (item?.type || item?.typeBadge || '').toLowerCase();
+  if (title.includes('landcruiser') || title.includes('toyota')) {
+    return 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=400';
+  }
+  if (title.includes('ford') || title.includes('ranger')) {
+    return 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=400';
+  }
+  if (type.includes('car') || type.includes('vehicle') || item?.iconType === 'car' || item?.rego || item?.vin) {
+    return defaultVehicleImg;
+  }
+  return defaultCargoImg;
+};
+
 export default function CurrentStock() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,42 +48,35 @@ export default function CurrentStock() {
     setLoading(true);
     setFetchError(null);
     try {
-      const res = await api.get('/warehouse-portal/stock');
+      const res = await api.get('/warehouse-portal/find-stock');
       if (res.data && res.data.success) {
-        const items = res.data.data || [];
+        const payload = res.data.data || {};
+        const items = payload.stock || [];
+        setLoadLanes(payload.loadLanes || []);
+        setHoldingAreas(payload.holdingAreas || []);
+
         if (items.length === 0) {
           setStockItems([]);
           return;
         }
+
         const formatted = items.map((item, idx) => {
-          const hasVehicleInfo = item.make || item.model || item.rego || item.vin || item.vehicleType;
-          const title = (item.make || item.model)
-            ? `${item.make || ''} ${item.model || ''}`.trim()
-            : (item.stockRef || item.identifier || (item.vehicleType ? item.vehicleType : `Stock Item ${idx + 1}`));
-          
-          const itemCode = item.rego || item.stockRef || (item.vin ? `VIN: ${item.vin.slice(0, 10)}...` : `ITM-${item.id?.slice(0, 6)}`);
-          
-          let locMain = item.zone ? `${item.zone}` : (item.warehouse?.name || 'Main Yard');
-          let locSub = (item.row || item.bay || item.position) 
-            ? `${item.zone || 'Yard A'} / ${item.row || 'R1'} / ${item.bay || 'B01'}${item.position ? ' / ' + item.position : ''}`
-            : (item.locationDetail || 'Depot Bay 01');
+          const hasVehicleInfo = item.make || item.model || item.rego || item.vin || item.type === 'Vehicle';
+          const title = (item.title || item.make || item.model)
+            ? (item.title || `${item.make || ''} ${item.model || ''}`.trim())
+            : (item.stockRef || `Stock Item ${idx + 1}`);
 
-          const custName = item.customer?.name || item.load?.customer?.name || 'Unassigned';
-          const loadName = item.load?.loadNumber || (item.loadLane?.name ? item.loadLane.name : (item.loadId ? `LD-${item.loadId.slice(0, 6)}` : 'Unassigned'));
-          const loadSub = item.loadLane?.name || (item.stagingArea?.name || 'Unassigned');
+          const itemCode = item.itemNo || item.rego || item.stockRef || (item.vin ? `VIN: ${item.vin.slice(0, 10)}...` : `ITM-${item.id?.slice(0, 6)}`);
 
-          let statusLabel = 'In Storage';
-          let statusColor = 'green';
-          if (item.stockStatus === 'STAGED') {
-            statusLabel = 'Staged';
-            statusColor = 'purple';
-          } else if (item.stockStatus === 'TO_MOVE') {
-            statusLabel = 'To Move';
-            statusColor = 'orange';
-          } else if (item.stockStatus === 'DISPATCHED') {
-            statusLabel = 'Ready';
-            statusColor = 'green-outline';
-          }
+          let locMain = item.location || 'Main Yard';
+          let locSub = item.locationDetail || item.rowBayPos || 'Zone B / Row 2 / Bay 3 / -';
+
+          const custName = item.customer || 'Unassigned';
+          const loadName = item.loadJob || 'Unassigned';
+          const loadSub = item.loadDetail || 'Unassigned';
+
+          let statusLabel = item.status || 'In Storage';
+          let statusColor = item.statusColor || 'green';
 
           return {
             id: item.id || String(idx),
@@ -70,10 +84,10 @@ export default function CurrentStock() {
             title: title,
             rego: item.rego || '',
             vin: item.vin || '',
-            barcode: item.stockRef || '',
-            type: hasVehicleInfo ? 'Vehicle' : (item.vehicleType || 'General Freight'),
-            typeBadge: hasVehicleInfo ? 'Car Carrying' : 'General',
-            typeColor: hasVehicleInfo ? 'blue' : 'green',
+            barcode: item.barcode || item.stockRef || '',
+            type: item.type || (hasVehicleInfo ? 'Vehicle' : 'General Freight'),
+            typeBadge: item.typeBadge || (hasVehicleInfo ? 'Car Carrying' : 'General'),
+            typeColor: item.typeColor || (hasVehicleInfo ? 'blue' : 'green'),
             location: locMain,
             locationDetail: locSub,
             rowBayPos: locSub,
@@ -82,12 +96,12 @@ export default function CurrentStock() {
             loadJob: loadName,
             loadDetail: loadSub,
             customer: custName,
-            updated: item.receivedDate ? new Date(item.receivedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(item.receivedDate).toLocaleDateString() : 'Today',
-            receivedDate: item.receivedDate ? new Date(item.receivedDate).toLocaleString() : '-',
-            condition: item.damageReportReq ? 'Damage Noted' : 'Good',
+            updated: item.updated || 'Today',
+            receivedDate: item.receivedDate || '-',
+            condition: item.condition || 'Good',
             notes: item.notes || '-',
-            image: item.photos?.[0]?.photoUrl || null,
-            iconType: hasVehicleInfo ? 'car' : 'pallet'
+            image: getItemDisplayImage(item),
+            iconType: item.iconType || (hasVehicleInfo ? 'car' : 'pallet')
           };
         });
         setStockItems(formatted);
@@ -111,23 +125,6 @@ export default function CurrentStock() {
 
   useEffect(() => {
     fetchStock();
-    const fetchLanesAndHolding = async () => {
-      try {
-        const [lanesRes, holdingRes] = await Promise.allSettled([
-          api.get('/warehouse-portal/load-lanes'),
-          api.get('/warehouse-portal/holding-areas')
-        ]);
-        if (lanesRes.status === 'fulfilled' && lanesRes.value.data?.success) {
-          setLoadLanes(lanesRes.value.data.data || []);
-        }
-        if (holdingRes.status === 'fulfilled' && holdingRes.value.data?.success) {
-          setHoldingAreas(holdingRes.value.data.data || []);
-        }
-      } catch (err) {
-        console.warn('Error fetching lanes/holding:', err?.message);
-      }
-    };
-    fetchLanesAndHolding();
   }, []);
 
   // Dynamic Filter Options
@@ -1291,7 +1288,11 @@ export default function CurrentStock() {
                       }}
                     >
                       <div className="wh-card-thumb-wrap">
-                        <img src={item.image} alt={item.title} />
+                        <img 
+                          src={getItemDisplayImage(item)} 
+                          alt={item.title} 
+                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getItemDisplayImage(item); }} 
+                        />
                         <div className="wh-card-badge-top">
                           <span className={`wh-type-badge badge-${item.typeColor}`}>
                             {item.typeBadge}
@@ -1378,7 +1379,12 @@ export default function CurrentStock() {
                             <td>
                               <div className="wh-item-cell">
                                 <div className="wh-item-thumb">
-                                  <img src={item.image} alt={item.title} className="thumb-car-img" />
+                                  <img 
+                                    src={getItemDisplayImage(item)} 
+                                    alt={item.title} 
+                                    className="thumb-car-img" 
+                                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getItemDisplayImage(item); }} 
+                                  />
                                 </div>
                                 <div className="wh-item-text">
                                   <div className="wh-item-title">{item.title}</div>
@@ -1495,7 +1501,11 @@ export default function CurrentStock() {
               {/* Item Hero Section */}
               <div className="wh-drawer-hero">
                 <div className="wh-drawer-img-box">
-                  <img src={selectedItem.image} alt={selectedItem.title} />
+                  <img 
+                    src={getItemDisplayImage(selectedItem)} 
+                    alt={selectedItem.title} 
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getItemDisplayImage(selectedItem); }} 
+                  />
                 </div>
 
                 <div className="wh-drawer-item-heading">
@@ -1815,7 +1825,12 @@ export default function CurrentStock() {
 
             {/* Header Hero Box */}
             <div className="p-4 bg-slate-100/80 border-b border-slate-200 flex items-center gap-4">
-              <img src={viewModalItem.image} alt={viewModalItem.title} className="w-20 h-16 rounded-lg object-cover border border-slate-300 shadow-sm" />
+              <img 
+                src={getItemDisplayImage(viewModalItem)} 
+                alt={viewModalItem.title} 
+                className="w-20 h-16 rounded-lg object-cover border border-slate-300 shadow-sm" 
+                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getItemDisplayImage(viewModalItem); }} 
+              />
               <div>
                 <h4 className="font-extrabold text-base text-slate-900">{viewModalItem.title}</h4>
                 <div className="text-[11px] text-slate-500 font-mono mt-0.5">

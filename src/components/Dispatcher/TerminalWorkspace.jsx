@@ -47,82 +47,37 @@ export default function TerminalWorkspace() {
   useEffect(() => {
     const fetchPlanningData = async () => {
       try {
-        const [driversRes, loadsRes] = await Promise.all([
-          api.get('/drivers'),
-          api.get('/loads')
-        ]);
-        const dbDrivers = driversRes.data?.data || [];
-        const dbLoads = loadsRes.data?.data || [];
+        const res = await api.get('/loads/planning-board');
+        if (res.data && res.data.success && res.data.data) {
+          const { drivers: apiDrivers, unassignedLoads: apiUnassigned, customers: apiCustomers } = res.data.data;
+          
+          if (Array.isArray(apiCustomers)) {
+            setDbCustomers(apiCustomers);
+          }
 
-        const savedAssignments = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+          if (Array.isArray(apiDrivers)) {
+            const savedAssignments = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+            const formatted = apiDrivers.map(d => {
+              const extraAssigned = savedAssignments[d.name] || [];
+              const allDriverLoads = [...(d.loads || []), ...extraAssigned];
+              const isOnDuty = allDriverLoads.length > 0;
 
-        const formatted = dbDrivers.map(d => {
-          const driverName = d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : d.driverCode;
-          const driverLoads = dbLoads.filter(l => l.driverId === d.id);
-          const extraAssigned = savedAssignments[driverName] || [];
+              return {
+                ...d,
+                status: isOnDuty ? 'On Duty' : 'Standby',
+                statusColor: isOnDuty ? 'emerald' : 'blue',
+                loadsCount: `${allDriverLoads.length} Loads`,
+                loads: allDriverLoads
+              };
+            });
+            setDrivers(formatted);
+          }
 
-          const mappedLoads = driverLoads.map((l, lIndex) => {
-            const startTime = 8 + (lIndex * 5);
-            const endTime = startTime + 4;
-            return {
-              id: l.loadRef || l.id.substring(0, 8),
-              dbId: l.id,
-              customer: l.customer?.name || 'Unknown Customer',
-              route: l.notes?.includes(' to ') ? l.notes : 'Route Pending',
-              startTime,
-              endTime,
-              durationText: `${startTime}:00 - ${endTime}:00`,
-              color: l.status === 'IN_TRANSIT' ? 'emerald' : l.status === 'ASSIGNED' ? 'blue' : 'amber',
-              stops: 2,
-              progress: '50%',
-              loadType: l.type || 'General Freight',
-              reqDate: l.scheduledDate ? new Date(l.scheduledDate).toLocaleDateString() : 'N/A',
-              rawDateIso: l.scheduledDate ? new Date(l.scheduledDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-              driverStatus: 'On Duty',
-              vehicle: l.truck ? `${l.truck.make} ${l.truck.model}` : 'Unknown Vehicle',
-              trailer: l.trailerId || 'N/A'
-            };
-          });
-
-          const allDriverLoads = [...mappedLoads, ...extraAssigned];
-          const isOnDuty = allDriverLoads.length > 0;
-
-          return {
-            id: d.id,
-            name: driverName,
-            status: isOnDuty ? 'On Duty' : 'Standby',
-            statusColor: isOnDuty ? 'emerald' : 'blue',
-            vehicleType: 'Volvo FH16 750',
-            trailerType: 'Car Carrier TR-01 (10 Car)',
-            loadsCount: `${allDriverLoads.length} Loads`,
-            loads: allDriverLoads
-          };
-        });
-
-        setDrivers(formatted);
-
-        // Dynamically sync unassigned DB loads to Planning Board drawer
-        const deletedSet = new Set(JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || '[]'));
-        const dbUnassigned = dbLoads.filter(l => !l.driverId).map(l => {
-          const firstPickup = l.stops?.find(s => s.type === 'PICKUP')?.address || l.pickupLocation || l.origin || 'Indore';
-          const firstDropoff = l.stops?.find(s => s.type === 'DROPOFF')?.address || l.deliveryLocation || l.destination || 'Bhopal';
-          const routeStr = `${firstPickup} → ${firstDropoff}`;
-          return {
-            id: l.loadRef || l.id,
-            dbId: l.id,
-            customer: l.customer?.name || 'Direct Customer',
-            route: routeStr,
-            type: l.loadType || l.type || 'General Freight',
-            reqDate: l.scheduledDate ? new Date(l.scheduledDate).toLocaleDateString() : 'Today, 09:00 AM'
-          };
-        }).filter(item => !deletedSet.has(item.id) && !deletedSet.has(item.dbId));
-
-        if (dbUnassigned.length > 0) {
-          setUnassignedLoadsList(prev => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const newAdditions = dbUnassigned.filter(u => !existingIds.has(u.id));
-            return [...newAdditions, ...prev].filter(item => !deletedSet.has(item.id) && !deletedSet.has(item.dbId));
-          });
+          if (Array.isArray(apiUnassigned)) {
+            const deletedSet = new Set(JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || '[]'));
+            const filteredUnassigned = apiUnassigned.filter(item => !deletedSet.has(item.id) && !deletedSet.has(item.dbId));
+            setUnassignedLoadsList(filteredUnassigned);
+          }
         }
       } catch (error) {
         console.error('Error fetching terminal workspace data:', error);
@@ -143,18 +98,6 @@ export default function TerminalWorkspace() {
     driver: '',
     notes: ''
   });
-
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        const res = await api.get('/customers');
-        setDbCustomers(res.data?.data || []);
-      } catch (error) {
-        console.error('Error fetching customers:', error);
-      }
-    };
-    fetchCustomers();
-  }, []);
 
   const handleCreateLoadSubmit = async () => {
     if (!newLoadForm.customer || !newLoadForm.pickupLocation || !newLoadForm.deliveryLocation) {

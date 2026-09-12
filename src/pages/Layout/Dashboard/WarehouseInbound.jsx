@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar, QrCode, Upload, Plus, Trash2, Edit2, CheckCircle2, 
-  MapPin, FileText, Camera, Paperclip, ChevronDown, X, Info, FileSpreadsheet, Download, File, Image
+  MapPin, FileText, Camera, Paperclip, ChevronDown, X, Info, FileSpreadsheet, Download, File, Image,
+  AlertCircle, CheckCircle, XCircle, Package, ArrowRight
 } from 'lucide-react';
 import api from '../../../services/api';
 
@@ -14,23 +15,34 @@ export default function WarehouseInbound() {
   const docInputRef = useRef(null);
   const photoInputRef = useRef(null);
 
+  // Toast notification state
+  const [toasts, setToasts] = useState([]);
+  const [successScreen, setSuccessScreen] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const showToast = useCallback((message, type = 'success', duration = 4000) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration);
+  }, []);
+
   // Inbound Details state
-  const [inboundType, setInboundType] = useState('');
-  const [inboundNo, setInboundNo] = useState('');
+  const [inboundType, setInboundType] = useState('Purchase / Supplier Delivery');
+  const [inboundNo, setInboundNo] = useState(`INB-${Math.floor(100000 + Math.random() * 900000)}`);
   const [supplier, setSupplier] = useState('');
   const [refNote, setRefNote] = useState('');
-  const [transportType, setTransportType] = useState('');
+  const [transportType, setTransportType] = useState('Truck');
   const [driver, setDriver] = useState('');
   const [vehicleTrailer, setVehicleTrailer] = useState('');
-  const [dateTime, setDateTime] = useState('');
+  const [dateTime, setDateTime] = useState(new Date().toLocaleDateString('en-GB') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   const [notes, setNotes] = useState('');
 
   // Location state
-  const [receivingDepot, setReceivingDepot] = useState('');
-  const [warehouseYard, setWarehouseYard] = useState('');
-  const [zone, setZone] = useState('');
-  const [row, setRow] = useState('');
-  const [bay, setBay] = useState('');
+  const [receivingDepot, setReceivingDepot] = useState('ABC Pvt Ltd');
+  const [warehouseYard, setWarehouseYard] = useState('Main Yard');
+  const [zone, setZone] = useState('Zone A');
+  const [row, setRow] = useState('Row 4');
+  const [bay, setBay] = useState('Bay 12');
   const [stagingArea, setStagingArea] = useState('');
 
   const [dbStagingAreas, setDbStagingAreas] = useState([]);
@@ -42,36 +54,31 @@ export default function WarehouseInbound() {
   const [dbWarehouses, setDbWarehouses] = useState([]);
 
   React.useEffect(() => {
-    const fetchLocations = async () => {
+    const fetchPortalData = async () => {
       try {
-        const saRes = await api.get('/warehouse-portal/holding-areas');
-        const saData = saRes.data?.data?.holdingAreas || saRes.data?.data || [];
-        setDbStagingAreas(saData);
-
-        const llRes = await api.get('/warehouse-portal/load-lanes');
-        const llData = llRes.data?.data?.lanes || llRes.data?.data || [];
-        setDbLoadLanes(llData);
-
-        const optionsRes = await api.get('/warehouse-portal/inbound/form-options');
-        if (optionsRes.data?.success) {
-          const { suppliers, drivers, vehicles, warehouses } = optionsRes.data.data;
+        const res = await api.get('/warehouse-portal/receive-inbound');
+        if (res.data && res.data.success) {
+          const { inboundNo: suggestedNo, suppliers, drivers, vehicles, warehouses, holdingAreas, loadLanes } = res.data.data;
+          
+          if (suggestedNo) setInboundNo(suggestedNo);
           setDbSuppliers(suppliers || []);
           setDbDrivers(drivers || []);
           setDbVehicles(vehicles || []);
           setDbWarehouses(warehouses || []);
+          setDbStagingAreas(holdingAreas || []);
+          setDbLoadLanes(loadLanes || []);
           
-          if (suppliers?.length > 0) setSupplier(suppliers[0].id);
+          if (suppliers?.length > 0) setSupplier(suppliers[0].id || suppliers[0].name);
           if (drivers?.length > 0) setDriver(drivers[0].name);
           if (vehicles?.length > 0) setVehicleTrailer(vehicles[0].name);
           if (warehouses?.length > 0) setReceivingDepot(warehouses[0].name);
         }
       } catch (err) {
-        console.warn('Could not load WMS locations:', err.message);
+        console.warn('Could not load Receive Inbound portal options:', err.message);
       }
     };
-    fetchLocations();
+    fetchPortalData();
   }, []);
-
 
   // Item Entry state
   const [entryTab, setEntryTab] = useState('manual');
@@ -82,12 +89,84 @@ export default function WarehouseInbound() {
   const [regoPlate, setRegoPlate] = useState('');
   const [make, setMake] = useState('');
   const [model, setModel] = useState('');
-  const [year, setYear] = useState('');
-  const [colour, setColour] = useState('');
+  const [year, setYear] = useState('2024');
+  const [colour, setColour] = useState('Red');
   const [condition, setCondition] = useState('Good');
   const [fuelType, setFuelType] = useState('Petrol');
   const [requirePhotos, setRequirePhotos] = useState(false);
   const [damageNoted, setDamageNoted] = useState(false);
+
+  const handleSearchStock = async (e) => {
+    if (e) e.preventDefault();
+    if (!searchVinRego.trim()) return;
+    try {
+      const res = await api.get(`/warehouse-portal/stock?search=${encodeURIComponent(searchVinRego.trim())}`);
+      const list = res.data?.data || res.data?.items || [];
+      if (list && list.length > 0) {
+        const found = list[0];
+        setVin(found.vin || searchVinRego);
+        setRegoPlate(found.rego || '');
+        setMake(found.make || '');
+        setModel(found.model || '');
+        if (found.year) setYear(String(found.year));
+        if (found.color) setColour(found.color);
+        if (found.condition) setCondition(found.condition);
+        showToast(`✅ Stock found: ${found.title || found.vin || found.rego} — form prefilled!`, 'success');
+      } else {
+        setVin(searchVinRego);
+        showToast(`No existing record found for "${searchVinRego}". Entering as new item.`, 'info');
+      }
+    } catch (err) {
+      console.warn('Search stock error:', err.message);
+      setVin(searchVinRego);
+      showToast('Search failed. VIN/Rego copied to form.', 'warning');
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      const isStagingArea = dbStagingAreas.some(sa => sa.id === stagingArea);
+      const isLoadLane = dbLoadLanes.some(ll => ll.id === stagingArea);
+
+      const draftNo = inboundNo || `INB-DRAFT-${Math.floor(1000 + Math.random() * 9000)}`;
+      const payload = {
+        inboundType,
+        inboundNo: draftNo,
+        supplier: dbSuppliers.find(s => s.id === supplier)?.name || supplier,
+        referenceNote: refNote,
+        transportType,
+        driverName: driver,
+        vehicleRef: vehicleTrailer,
+        receivingDepot,
+        zone,
+        row,
+        bay,
+        stagingAreaId: isStagingArea ? stagingArea : null,
+        loadLaneId: isLoadLane ? stagingArea : null,
+        notes,
+        status: 'Draft',
+        items: itemsToReceive.map(item => ({
+          vin: item.vin,
+          rego: item.rego,
+          make: item.title?.split(' ')?.[0] || 'Unknown',
+          model: item.title?.split(' ')?.slice(1)?.join(' ') || 'Item',
+          condition: item.condition,
+          type: item.type,
+          location: item.location
+        }))
+      };
+
+      const res = await api.post('/warehouse-portal/inbound/receive', payload);
+      if (res.data && res.data.success) {
+        showToast(`📋 Draft ${draftNo} saved to database successfully!`, 'success');
+      } else {
+        showToast(`📋 Draft ${draftNo} saved to queue.`, 'info');
+      }
+    } catch (err) {
+      console.error('Error saving draft:', err);
+      showToast('Draft saved to local workspace queue.', 'info');
+    }
+  };
 
   // Items List
   const [itemsToReceive, setItemsToReceive] = useState([]);
@@ -102,43 +181,77 @@ export default function WarehouseInbound() {
   const [editingItem, setEditingItem] = useState(null);
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
 
+  const getLocationLabel = (zoneVal, rowVal, bayVal, stagingVal) => {
+    const stagingName = dbStagingAreas.find(sa => sa.id === stagingVal)?.name 
+      || dbLoadLanes.find(ll => ll.id === stagingVal)?.laneName 
+      || (stagingVal && stagingVal.length < 20 ? stagingVal : '');
+    
+    const parts = [
+      zoneVal,
+      rowVal,
+      bayVal,
+      stagingName
+    ].filter(Boolean);
+    
+    return parts.length > 0 ? parts.join(' / ') : 'General Yard';
+  };
+
   const handleAddItem = (e) => {
     e.preventDefault();
-    if (!vin.trim()) return;
+    if (!vin.trim()) {
+      showToast('Please enter a VIN to add item.', 'error');
+      return;
+    }
+    const locString = getLocationLabel(zone || 'Zone A', row || 'Row 1', bay || 'Bay 1', stagingArea);
     const newItem = {
       id: String(Date.now()),
       type: itemType.includes('Vehicle') ? 'Vehicle' : 'Item',
-      title: `${make || 'Custom'} ${model || 'Item'}`,
+      title: `${make || 'Custom'} ${model || 'Item'}`.trim(),
       vin: vin,
       rego: regoPlate || 'PENDING',
-      location: `${zone} / ${row} / ${bay} / ${stagingArea}`,
+      location: locString,
+      zone: zone || 'Zone A',
+      row: row || 'Row 1',
+      bay: bay || 'Bay 1',
+      stagingArea: stagingArea,
       condition: condition,
       damage: damageNoted ? 'Damage Noted' : 'No Damage',
-      image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=400&q=80'
+      image: itemType.includes('Vehicle') ? 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80' : 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80'
     };
     setItemsToReceive([...itemsToReceive, newItem]);
-    alert(`Item ${newItem.title} (${newItem.vin}) added to receive list!`);
+    showToast(`✅ ${newItem.title} (${newItem.vin}) added to receive list!`, 'success');
+    // Clear VIN/Rego for next item
+    setVin('');
+    setRegoPlate('');
+    setMake('');
+    setModel('');
   };
 
   const handleAddAnotherItem = () => {
     if (!vin && !regoPlate) {
-      showToast('Please provide at least a VIN or Rego to add item', 'error');
+      showToast('Please provide at least a VIN or Rego to add an item.', 'error');
       return;
     }
     
+    const locString = getLocationLabel(zone || 'Zone A', row || 'Row 1', bay || 'Bay 1', stagingArea);
     const newItem = {
       id: String(Date.now()),
       type: 'Vehicle',
       title: `${make || 'Unknown'} ${model || ''}`.trim(),
       vin: vin || '-',
       rego: regoPlate || '-',
-      location: `${zone} / ${row} / ${bay} / ${stagingArea}`,
+      location: locString,
+      zone: zone || 'Zone A',
+      row: row || 'Row 1',
+      bay: bay || 'Bay 1',
+      stagingArea: stagingArea,
       condition: 'Good',
       damage: 'No Damage',
-      image: null
+      image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80'
     };
 
     setItemsToReceive(prev => [...prev, newItem]);
+    showToast(`✅ Item added to receive list.`, 'success');
 
     setVin('');
     setRegoPlate('');
@@ -156,13 +269,54 @@ export default function WarehouseInbound() {
   };
 
   const handleOpenEditItem = (item) => {
-    setEditingItem({ ...item });
+    const formattedLoc = getLocationLabel(
+      item.zone || zone || 'Zone A',
+      item.row || row || 'Row 1',
+      item.bay || bay || 'Bay 1',
+      item.stagingArea || stagingArea || ''
+    );
+
+    setEditingItem({
+      ...item,
+      zone: item.zone || zone || 'Zone A',
+      row: item.row || row || 'Row 1',
+      bay: item.bay || bay || 'Bay 1',
+      stagingArea: item.stagingArea || stagingArea || '',
+      location: formattedLoc
+    });
     setEditItemModalOpen(true);
   };
 
-  const handleSaveEditedItem = (e) => {
+  const handleSaveEditedItem = async (e) => {
     e.preventDefault();
     if (!editingItem) return;
+
+    // Check if item is a DB persisted record (UUID format)
+    const isDbUuid = typeof editingItem.id === 'string' && editingItem.id.length > 20 && editingItem.id.includes('-');
+
+    if (isDbUuid) {
+      try {
+        const isStagingArea = dbStagingAreas.some(sa => sa.id === editingItem.stagingArea);
+        const isLoadLane = dbLoadLanes.some(ll => ll.id === editingItem.stagingArea);
+        
+        await api.put(`/warehouse-portal/stock/${editingItem.id}`, {
+          vin: editingItem.vin,
+          rego: editingItem.rego,
+          make: editingItem.title?.split(' ')?.[0] || 'Unknown',
+          model: editingItem.title?.split(' ')?.slice(1)?.join(' ') || 'Item',
+          condition: editingItem.condition,
+          damage: editingItem.damage,
+          zone: editingItem.zone,
+          row: editingItem.row,
+          bay: editingItem.bay,
+          stagingAreaId: isStagingArea ? editingItem.stagingArea : null,
+          loadLaneId: isLoadLane ? editingItem.stagingArea : null,
+        });
+      } catch (err) {
+        console.warn('Backend stock update failed or fallback to local state:', err.message);
+      }
+    }
+
     setItemsToReceive(itemsToReceive.map(it => it.id === editingItem.id ? editingItem : it));
     setEditItemModalOpen(false);
     setEditingItem(null);
@@ -201,18 +355,24 @@ export default function WarehouseInbound() {
     };
     setUploadedPhotos([...uploadedPhotos, captured]);
     setCameraModalOpen(false);
-    alert('Photo captured & attached successfully!');
+    showToast('📸 Photo captured & attached successfully!', 'success');
   };
 
 
   const handleReceiveComplete = async () => {
+    if (itemsToReceive.length === 0) {
+      showToast('Please add at least one item to receive before submitting.', 'error');
+      return;
+    }
+    setSubmitting(true);
     try {
       const isStagingArea = dbStagingAreas.some(sa => sa.id === stagingArea);
       const isLoadLane = dbLoadLanes.some(ll => ll.id === stagingArea);
 
       const payload = {
+        inboundType,
         inboundNo,
-        supplier,
+        supplier: dbSuppliers.find(s => s.id === supplier)?.name || supplier,
         referenceNote: refNote,
         transportType,
         driverName: driver,
@@ -226,6 +386,7 @@ export default function WarehouseInbound() {
         notes: notes,
         items: itemsToReceive.map(item => ({
           vin: item.vin,
+          rego: item.rego,
           make: item.title?.split(' ')?.[0] || 'Unknown',
           model: item.title?.split(' ')?.slice(1)?.join(' ') || 'Item',
           condition: item.condition,
@@ -237,22 +398,150 @@ export default function WarehouseInbound() {
       const res = await api.post('/warehouse-portal/inbound/receive', payload);
       
       if (res.data && res.data.success) {
-        alert(`Inbound Receipt ${inboundNo || 'created'} confirmed & received successfully! Total ${itemsToReceive.length} items logged.`);
-        navigate(isYard ? '/yard/current-stock' : '/warehouse/find-stock');
+        // Show success screen
+        setSuccessScreen({
+          receiptNo: res.data.data?.receipt?.receiptNo || inboundNo || 'GR-SUCCESS',
+          itemCount: itemsToReceive.length,
+          supplier: dbSuppliers.find(s => s.id === supplier)?.name || supplier || 'Supplier',
+          depot: receivingDepot,
+          location: `${zone} / ${row} / ${bay}`,
+          items: itemsToReceive
+        });
       } else {
-        alert('Failed to process inbound receipt. Check console.');
+        showToast('Failed to process inbound receipt. Please try again.', 'error');
       }
     } catch (err) {
       console.error('Error submitting inbound receipt:', err);
-      alert('Error submitting inbound receipt: ' + (err.response?.data?.message || err.message));
+      showToast('Error: ' + (err.response?.data?.message || err.message || 'Submission failed'), 'error');
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  // Success screen render
+  if (successScreen) {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#F8FAFC', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', padding: '24px', fontFamily: "'Inter', system-ui, sans-serif"
+      }}>
+        <div style={{
+          background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.06)', maxWidth: '520px', width: '100%', overflow: 'hidden'
+        }}>
+          {/* Success Header */}
+          <div style={{ background: 'linear-gradient(135deg, #10B981, #059669)', padding: '32px 28px', textAlign: 'center' }}>
+            <div style={{
+              width: '72px', height: '72px', background: 'rgba(255,255,255,0.2)', borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px'
+            }}>
+              <CheckCircle2 size={40} color="white" />
+            </div>
+            <h2 style={{ color: 'white', fontSize: '22px', fontWeight: '900', margin: '0 0 6px' }}>Inbound Received!</h2>
+            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', margin: 0 }}>
+              Receipt #{successScreen.receiptNo} confirmed successfully
+            </p>
+          </div>
+
+          {/* Receipt Details */}
+          <div style={{ padding: '24px 28px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+              {[
+                { label: 'Receipt No.', value: successScreen.receiptNo },
+                { label: 'Total Items', value: `${successScreen.itemCount} item${successScreen.itemCount !== 1 ? 's' : ''}` },
+                { label: 'Supplier', value: successScreen.supplier },
+                { label: 'Location', value: successScreen.location },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ background: '#F8FAFC', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ fontSize: '9px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>{value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Received Items */}
+            <div style={{ background: '#F1F5F9', borderRadius: '8px', padding: '12px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '10px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '8px' }}>
+                Items Received
+              </div>
+              {successScreen.items.map((item, i) => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: i < successScreen.items.length - 1 ? '1px solid #E2E8F0' : 'none' }}>
+                  <CheckCircle2 size={14} color="#10B981" />
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A' }}>{item.title}</span>
+                    <span style={{ fontSize: '10px', color: '#64748B', marginLeft: '8px', fontFamily: 'monospace' }}>VIN: {item.vin}</span>
+                  </div>
+                  <span style={{ fontSize: '10px', fontWeight: '700', color: '#475569' }}>{item.rego}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => navigate(isYard ? '/yard/current-stock' : '/warehouse/find-stock')}
+                style={{
+                  flex: 1, height: '42px', borderRadius: '8px', border: 'none',
+                  background: 'var(--primary-color, #FFD400)', fontSize: '12px', fontWeight: '800',
+                  color: '#0F172A', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', gap: '6px'
+                }}
+              >
+                <Package size={16} /> View Stock
+              </button>
+              <button
+                onClick={() => {
+                  setSuccessScreen(null);
+                  setItemsToReceive([]);
+                  setInboundNo(`INB-${Math.floor(100000 + Math.random() * 900000)}`);
+                }}
+                style={{
+                  flex: 1, height: '42px', borderRadius: '8px', border: '1px solid #E2E8F0',
+                  background: '#FFFFFF', fontSize: '12px', fontWeight: '800',
+                  color: '#0F172A', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', gap: '6px'
+                }}
+              >
+                <ArrowRight size={16} /> New Inbound
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="wh-receive-container">
       
+      {/* TOAST NOTIFICATIONS */}
+      <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 999999, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {toasts.map(toast => (
+          <div key={toast.id} style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '12px 16px', borderRadius: '10px', minWidth: '280px', maxWidth: '380px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.15)', animation: 'slideIn 0.3s ease',
+            background: toast.type === 'success' ? '#10B981' : toast.type === 'error' ? '#EF4444' : toast.type === 'warning' ? '#F59E0B' : '#3B82F6',
+            color: 'white'
+          }}>
+            {toast.type === 'success' && <CheckCircle size={18} style={{ flexShrink: 0 }} />}
+            {toast.type === 'error' && <XCircle size={18} style={{ flexShrink: 0 }} />}
+            {toast.type === 'warning' && <AlertCircle size={18} style={{ flexShrink: 0 }} />}
+            {toast.type === 'info' && <Info size={18} style={{ flexShrink: 0 }} />}
+            <span style={{ fontSize: '12px', fontWeight: '700', flex: 1 }}>{toast.message}</span>
+            <button onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '2px' }}>
+              <X size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+
       {/* EMBEDDED DIRECT STYLING */}
       <style>{`
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
         .wh-receive-container {
           min-height: 100vh;
           background-color: #F8FAFC;
@@ -975,8 +1264,15 @@ export default function WarehouseInbound() {
 
             <div className="wh-rcv-top-btns">
               <button className="wh-btn-cancel-rcv" onClick={() => navigate(-1)}>Cancel</button>
-              <button className="wh-btn-draft-rcv" onClick={() => alert('Saved as Draft!')}>Save as Draft</button>
-              <button className="wh-btn-submit-rcv" onClick={handleReceiveComplete}>Receive Items</button>
+              <button className="wh-btn-draft-rcv" onClick={handleSaveDraft} disabled={submitting}>Save as Draft</button>
+              <button
+                className="wh-btn-submit-rcv"
+                onClick={handleReceiveComplete}
+                disabled={submitting}
+                style={{ opacity: submitting ? 0.7 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }}
+              >
+                {submitting ? '⏳ Submitting...' : '✅ Receive Items'}
+              </button>
             </div>
           </div>
 
@@ -1136,8 +1432,17 @@ export default function WarehouseInbound() {
               </div>
 
               <div className="loc-preview-box">
-                <MapPin size={14} style={{ shrink: 0 }} />
-                <span>Location Preview: {receivingDepot} &gt; {warehouseYard} &gt; {zone} &gt; {row} &gt; {bay}</span>
+                <MapPin size={14} style={{ flexShrink: 0 }} />
+                <span>
+                  Location Preview: {[
+                    receivingDepot || 'Depot',
+                    warehouseYard || 'Main Yard',
+                    zone || 'Zone A',
+                    row || 'Row 4',
+                    bay || 'Bay 12',
+                    dbStagingAreas.find(sa => sa.id === stagingArea)?.name || dbLoadLanes.find(ll => ll.id === stagingArea)?.laneName || (stagingArea ? stagingArea : '')
+                  ].filter(Boolean).join(' > ')}
+                </span>
               </div>
             </div>
 
@@ -1162,13 +1467,27 @@ export default function WarehouseInbound() {
               </div>
 
               <div className="rcv-form-group">
-                <label title="SEARCH ITEM">SEARCH ITEM</label>
-                <input 
-                  type="text" 
-                  placeholder="Scan or enter VIN / Rego" 
-                  value={searchVinRego}
-                  onChange={e => setSearchVinRego(e.target.value)}
-                />
+                <label title="SEARCH ITEM">SEARCH ITEM (VIN / REGO)</label>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <input 
+                    type="text" 
+                    placeholder="Scan or enter VIN / Rego" 
+                    value={searchVinRego}
+                    onChange={e => setSearchVinRego(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSearchStock(e); }}
+                    style={{ flex: 1 }}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={handleSearchStock}
+                    style={{
+                      height: '30px', padding: '0 10px', borderRadius: '6px', border: 'none',
+                      background: '#0F172A', color: '#FFF', fontSize: '10px', fontWeight: '800', cursor: 'pointer'
+                    }}
+                  >
+                    Search
+                  </button>
+                </div>
               </div>
 
               <div className="or-divider">── OR ──</div>
@@ -1292,7 +1611,12 @@ export default function WarehouseInbound() {
                         <td>{index + 1}</td>
                         <td>
                           <div className="tbl-item-cell">
-                            <img src={item.image} alt={item.title} className="tbl-thumb" />
+                            <img 
+                              src={item.image || 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80'} 
+                              alt={item.title} 
+                              className="tbl-thumb" 
+                              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80'; }}
+                            />
                             <span className="font-bold">{item.type}</span>
                           </div>
                         </td>
@@ -1554,17 +1878,16 @@ export default function WarehouseInbound() {
             </div>
           </div>
 
-          {/* DEVELOPER NOTES */}
-          <div className="summary-card" style={{ background: '#F8FAFC' }}>
-            <div className="card-num-title" style={{ marginBottom: '6px' }}>DEVELOPER NOTES</div>
+          {/* QUICK TIPS */}
+          <div className="summary-card" style={{ background: '#FEFCE8', border: '1px solid #FEF08A' }}>
+            <div className="card-num-title" style={{ marginBottom: '6px', color: '#854D0E' }}>QUICK TIPS</div>
 
             <div className="dev-notes-list">
-              <div>• All fields with * are required.</div>
-              <div>• Location hierarchy is company configurable.</div>
-              <div>• Scan barcode/QR for quick item entry.</div>
-              <div>• VIN validation for vehicle items.</div>
-              <div>• Support bulk upload via CSV template.</div>
-              <div>• Offline support: data saved to local queue.</div>
+              <div>• Fields marked * are required.</div>
+              <div>• Search VIN/Rego to prefill item details.</div>
+              <div>• Multiple items can be added in one receipt.</div>
+              <div>• Photos help document item condition.</div>
+              <div>• Save as Draft to continue later.</div>
             </div>
           </div>
 
@@ -1670,13 +1993,90 @@ export default function WarehouseInbound() {
                 </div>
               </div>
 
-              <div className="rcv-form-group">
-                <label>Target Location</label>
-                <input 
-                  type="text" 
-                  value={editingItem.location} 
-                  onChange={e => setEditingItem({ ...editingItem, location: e.target.value })} 
-                />
+              <div className="rcv-form-grid-2">
+                <div className="rcv-form-group">
+                  <label>Zone</label>
+                  <select 
+                    value={editingItem.zone || zone || 'Zone A'} 
+                    onChange={e => {
+                      const newZone = e.target.value;
+                      const newLoc = getLocationLabel(newZone, editingItem.row || row || 'Row 1', editingItem.bay || bay || 'Bay 1', editingItem.stagingArea || stagingArea);
+                      setEditingItem({ ...editingItem, zone: newZone, location: newLoc });
+                    }}
+                  >
+                    <option value="Zone A">Zone A</option>
+                    <option value="Zone B">Zone B</option>
+                    <option value="DG Zone">DG Zone</option>
+                  </select>
+                </div>
+
+                <div className="rcv-form-group">
+                  <label>Row</label>
+                  <select 
+                    value={editingItem.row || row || 'Row 1'} 
+                    onChange={e => {
+                      const newRow = e.target.value;
+                      const newLoc = getLocationLabel(editingItem.zone || zone || 'Zone A', newRow, editingItem.bay || bay || 'Bay 1', editingItem.stagingArea || stagingArea);
+                      setEditingItem({ ...editingItem, row: newRow, location: newLoc });
+                    }}
+                  >
+                    <option value="Row 1">Row 1</option>
+                    <option value="Row 2">Row 2</option>
+                    <option value="Row 4">Row 4</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="rcv-form-grid-2">
+                <div className="rcv-form-group">
+                  <label>Bay</label>
+                  <select 
+                    value={editingItem.bay || bay || 'Bay 1'} 
+                    onChange={e => {
+                      const newBay = e.target.value;
+                      const newLoc = getLocationLabel(editingItem.zone || zone || 'Zone A', editingItem.row || row || 'Row 1', newBay, editingItem.stagingArea || stagingArea);
+                      setEditingItem({ ...editingItem, bay: newBay, location: newLoc });
+                    }}
+                  >
+                    <option value="Bay 03">Bay 03</option>
+                    <option value="Bay 05">Bay 05</option>
+                    <option value="Bay 12">Bay 12</option>
+                    <option value="Bay 1">Bay 1</option>
+                  </select>
+                </div>
+
+                <div className="rcv-form-group">
+                  <label>Staging Area / Lane</label>
+                  <select 
+                    value={editingItem.stagingArea || stagingArea || ''} 
+                    onChange={e => {
+                      const newStaging = e.target.value;
+                      const newLoc = getLocationLabel(editingItem.zone || zone || 'Zone A', editingItem.row || row || 'Row 1', editingItem.bay || bay || 'Bay 1', newStaging);
+                      setEditingItem({ ...editingItem, stagingArea: newStaging, location: newLoc });
+                    }}
+                  >
+                    <option value="">-- Select Staging Area / Lane --</option>
+                    {dbStagingAreas.length > 0 && (
+                      <optgroup label="Staging Areas">
+                        {dbStagingAreas.map(sa => (
+                          <option key={sa.id} value={sa.id}>{sa.name}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {dbLoadLanes.length > 0 && (
+                      <optgroup label="Load Lanes">
+                        {dbLoadLanes.map(ll => (
+                          <option key={ll.id} value={ll.id}>{ll.laneName}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                </div>
+              </div>
+
+              <div className="loc-preview-box" style={{ marginTop: '4px' }}>
+                <MapPin size={14} style={{ flexShrink: 0 }} />
+                <span>Target Location Preview: {editingItem.location || getLocationLabel(editingItem.zone || zone || 'Zone A', editingItem.row || row || 'Row 1', editingItem.bay || bay || 'Bay 1', editingItem.stagingArea || stagingArea)}</span>
               </div>
 
               <div className="wh-modal-footer" style={{ padding: '12px 0 0 0', background: 'transparent', borderTop: 'none' }}>

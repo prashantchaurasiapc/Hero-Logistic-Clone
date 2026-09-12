@@ -23,14 +23,8 @@ export default function SalesReports() {
 
   // Subscribe to crmStore
   useEffect(() => {
-    // Sync with database
-    crmRepository.syncWithBackend();
-
-    getSalesReps().then(res => {
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setSalesReps(res.data.data);
-      }
-    }).catch(err => console.error('Error fetching reps in reports:', err));
+    // Single dedicated menu API for Sales Reports & Analytics
+    crmRepository.syncReports();
 
     const syncDb = () => {
       const freshLeads = crmRepository.getLeads();

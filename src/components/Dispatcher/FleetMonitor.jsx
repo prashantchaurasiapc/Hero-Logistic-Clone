@@ -182,17 +182,13 @@ export default function FleetMonitor() {
   const fetchLiveDrivers = async () => {
     setIsLoadingLive(true);
     try {
-      const [trackingRes, driversRes, loadsRes, branchesRes] = await Promise.all([
-        api.get('/company-admin/live-tracking').catch(() => ({ data: { data: [] } })),
-        api.get('/company-admin/drivers').catch(() => api.get('/drivers')),
-        api.get('/company-admin/loads').catch(() => api.get('/loads')),
-        api.get('/company-admin/branches').catch(() => ({ data: { data: [] } }))
-      ]);
+      const res = await api.get('/company-admin/live-tracking');
+      const payload = res.data?.data || res.data || {};
 
-      const trackingVehicles = trackingRes.data?.data?.vehicles || trackingRes.data?.vehicles || [];
-      const dbDrivers = driversRes.data?.data || driversRes.data || [];
-      const dbLoads = loadsRes.data?.data || loadsRes.data || [];
-      const dbBranches = branchesRes.data?.data || branchesRes.data || [];
+      const trackingVehicles = payload.vehicles || [];
+      const dbDrivers = payload.drivers || [];
+      const dbLoads = payload.loads || [];
+      const dbBranches = payload.branches || [];
 
       setDbLoadsList(dbLoads);
 

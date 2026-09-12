@@ -47,7 +47,7 @@ function mapLoadToFrontend(l) {
 
 class DispatcherRepository {
   constructor() {
-    this.syncWithBackend();
+    // Lazy sync on explicit demand only
   }
 
   async syncWithBackend() {

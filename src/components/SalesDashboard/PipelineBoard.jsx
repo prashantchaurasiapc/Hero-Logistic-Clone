@@ -55,27 +55,109 @@ export default function PipelineBoard() {
     notes: ''
   });
   
-  // Toast feedback state
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    // Sync with database
-    crmRepository.syncWithBackend();
+  const [zoomForm, setZoomForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    time: '11:00 AM EST',
+    agenda: 'Walkthrough showcasing fleet telematics and factoring automation.'
+  });
 
-    // Initial fetch
+  const [proposalModalForm, setProposalModalForm] = useState({
+    title: '',
+    value: 2500,
+    discount: 0,
+    validityDays: 30,
+    notes: 'Official SaaS License Agreement Proposal'
+  });
+
+  const [followUpModalForm, setFollowUpModalForm] = useState({
+    type: 'Phone Call',
+    priority: 'Medium',
+    date: new Date().toISOString().split('T')[0],
+    time: '10:00 AM',
+    notes: 'Follow-up touchpoint check-in.'
+  });
+
+  const handleConfirmZoom = async () => {
+    if (!selectedLead) return;
+    await crmRepository.scheduleDemo(selectedLead.id, {
+      date: zoomForm.date,
+      time: zoomForm.time,
+      notes: zoomForm.agenda
+    });
+    setShowZoomModal(false);
+    setToast({ type: 'success', text: selectedLead.company, actionText: 'Zoom Demo scheduled in Database!' });
+  };
+
+  const handleConfirmProposal = async () => {
+    if (!selectedLead) return;
+    await crmRepository.createProposal({
+      leadId: selectedLead.id,
+      value: Number(proposalModalForm.value) || selectedLead.revenue || 2500,
+      discount: Number(proposalModalForm.discount) || 0,
+      validityDays: parseInt(proposalModalForm.validityDays) || 30,
+      notes: proposalModalForm.notes || 'Dispatched Proposal'
+    });
+    setShowProposalModal(false);
+    setToast({ type: 'success', text: selectedLead.company, actionText: 'Proposal created and saved to DB!' });
+  };
+
+  const handleConfirmFollowUp = async () => {
+    if (!selectedLead) return;
+    await crmRepository.createFollowUpTask({
+      leadId: selectedLead.id,
+      type: followUpModalForm.type.includes('Email') ? 'EMAIL' : followUpModalForm.type.includes('Meeting') ? 'MEETING' : 'CALL',
+      notes: followUpModalForm.notes,
+      dueDate: followUpModalForm.date
+    });
+    setShowScheduleModal(false);
+    setToast({ type: 'success', text: selectedLead.company, actionText: 'Follow-up task created in DB!' });
+  };
+
+  const handleApplyPlan = async (planTier) => {
+    if (!selectedLead) return;
+    await crmRepository.updateLead(selectedLead.id, {
+      notes: `Applied License Plan: ${planTier}`
+    });
+    setShowRecommendModal(false);
+    setToast({ type: 'success', text: selectedLead.company, actionText: `applied ${planTier} plan!` });
+  };
+
+  const handleCompleteConversion = async () => {
+    if (!selectedLead) return;
+    try {
+      await convertLeadToCompany(selectedLead.id, {
+        selectedPlan: convertForm.planTier?.split(' ')[0] || 'Professional',
+        companyName: convertForm.companyName || selectedLead.company,
+        adminName: convertForm.adminName || selectedLead.name,
+        adminEmail: convertForm.adminEmail || selectedLead.email
+      });
+    } catch (err) {
+      console.error('Error converting lead to company:', err);
+    }
+    crmWorkflowEngine.handleStageChange(selectedLead.id, 'Won', 'Converted to Company Tenant');
+    setShowConvertModal(false);
+    setSelectedLead(null);
+    setToast({
+      type: 'success',
+      text: convertForm.companyName || selectedLead.company,
+      actionText: 'successfully converted to active Company Tenant in Database!'
+    });
+    navigate('/company-admin/command-centre');
+  };
+
+  useEffect(() => {
+    // Sync dedicated pipeline board API
+    crmRepository.syncPipeline();
+
+    // Initial fetch from cache
     setLeads(crmRepository.getLeads());
-    
-    // Fetch sales reps
-    getSalesReps().then(res => {
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setSalesReps(res.data.data);
-      }
-    }).catch(err => console.error('Error fetching sales reps:', err));
+    setSalesReps(crmRepository.getSalesReps());
     
     // Subscribe to store mutations
     const unsubscribe = crmStore.subscribe(() => {
-      const freshLeads = crmRepository.getLeads();
-      setLeads(freshLeads);
+      setLeads(crmRepository.getLeads());
       const freshReps = crmRepository.getSalesReps();
       if (freshReps?.length) setSalesReps(freshReps);
     });
@@ -746,18 +828,7 @@ export default function PipelineBoard() {
                 </button>
               ) : (
                 <button 
-                  onClick={() => {
-                    
-                    crmWorkflowEngine.handleStageChange(selectedLead.id, 'Won', 'Converted to Company Tenant');
-                    setShowConvertModal(false);
-                    setSelectedLead(null);
-                    setToast({
-                      type: 'success',
-                      text: convertForm.companyName,
-                      actionText: 'successfully converted to active Company Tenant!'
-                    });
-                    navigate('/company-admin/command-centre');
-                  }}
+                  onClick={handleCompleteConversion}
                   className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-md active:scale-95 flex items-center gap-2"
                 >
                   <Check className="w-4 h-4 stroke-[3px]" /> Complete Conversion & Provision Account
@@ -1002,17 +1073,22 @@ export default function PipelineBoard() {
                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">SELECT DATE</label>
                 <input
                   type="date"
-                  defaultValue="2026-07-17"
+                  value={zoomForm.date}
+                  onChange={(e) => setZoomForm({ ...zoomForm, date: e.target.value })}
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">SELECT TIME BLOCK</label>
-                <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
-                  <option>11:00 AM EST</option>
-                  <option>01:00 PM EST</option>
-                  <option>03:00 PM EST</option>
+                <select 
+                  value={zoomForm.time}
+                  onChange={(e) => setZoomForm({ ...zoomForm, time: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto"
+                >
+                  <option value="11:00 AM EST">11:00 AM EST</option>
+                  <option value="01:00 PM EST">01:00 PM EST</option>
+                  <option value="03:00 PM EST">03:00 PM EST</option>
                 </select>
               </div>
 
@@ -1020,17 +1096,15 @@ export default function PipelineBoard() {
                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">MEETING AGENDA / HOST NOTES</label>
                 <input
                   type="text"
-                  defaultValue="Walkthrough showcasing fleet telematics and factoring automation."
+                  value={zoomForm.agenda}
+                  onChange={(e) => setZoomForm({ ...zoomForm, agenda: e.target.value })}
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
                 />
               </div>
 
               <button
-                onClick={() => {
-                  setShowZoomModal(false);
-                  setToast({ type: 'success', text: selectedLead.company, actionText: 'Zoom scheduled!' });
-                }}
-                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+                onClick={handleConfirmZoom}
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2 cursor-pointer"
               >
                 Confirm Zoom Schedule
               </button>
@@ -1095,28 +1169,41 @@ export default function PipelineBoard() {
 
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div className="space-y-2">
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CORPORATE DISCOUNT (%)</label>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">ESTIMATED VALUE ($/mo)</label>
                   <input
                     type="number"
-                    defaultValue="0"
+                    value={proposalModalForm.value}
+                    onChange={(e) => setProposalModalForm({ ...proposalModalForm, value: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">PROPOSAL VALIDITY TERM</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
-                    <option>30 Days validity</option>
-                    <option>60 Days validity</option>
-                  </select>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CORPORATE DISCOUNT (%)</label>
+                  <input
+                    type="number"
+                    value={proposalModalForm.discount}
+                    onChange={(e) => setProposalModalForm({ ...proposalModalForm, discount: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  />
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">PROPOSAL VALIDITY TERM</label>
+                <select 
+                  value={proposalModalForm.validityDays}
+                  onChange={(e) => setProposalModalForm({ ...proposalModalForm, validityDays: parseInt(e.target.value) || 30 })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto"
+                >
+                  <option value={30}>30 Days validity</option>
+                  <option value={60}>60 Days validity</option>
+                  <option value={90}>90 Days validity</option>
+                </select>
+              </div>
+
               <button
-                onClick={() => {
-                  setShowProposalModal(false);
-                  setToast({ type: 'success', text: selectedLead.company, actionText: 'Proposal dispatched!' });
-                }}
-                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+                onClick={handleConfirmProposal}
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2 cursor-pointer"
               >
                 Dispatched Proposal Email
               </button>
@@ -1144,18 +1231,26 @@ export default function PipelineBoard() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">FOLLOW-UP ACTION TYPE</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
-                    <option>📞 Phone Call</option>
-                    <option>✉️ Email</option>
-                    <option>📅 Meeting</option>
+                  <select 
+                    value={followUpModalForm.type}
+                    onChange={(e) => setFollowUpModalForm({ ...followUpModalForm, type: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto"
+                  >
+                    <option value="Phone Call">📞 Phone Call</option>
+                    <option value="Email">✉️ Email</option>
+                    <option value="Meeting">📅 Meeting</option>
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">PRIORITY TIER</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
-                    <option selected>🟡 Medium</option>
-                    <option>🔴 High</option>
-                    <option>🟢 Low</option>
+                  <select 
+                    value={followUpModalForm.priority}
+                    onChange={(e) => setFollowUpModalForm({ ...followUpModalForm, priority: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto"
+                  >
+                    <option value="Medium">🟡 Medium</option>
+                    <option value="High">🔴 High</option>
+                    <option value="Low">🟢 Low</option>
                   </select>
                 </div>
               </div>
@@ -1165,7 +1260,8 @@ export default function PipelineBoard() {
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">TARGET DATE</label>
                   <input
                     type="date"
-                    defaultValue="2026-07-17"
+                    value={followUpModalForm.date}
+                    onChange={(e) => setFollowUpModalForm({ ...followUpModalForm, date: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
                   />
                 </div>
@@ -1173,7 +1269,8 @@ export default function PipelineBoard() {
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">TIME SLOT</label>
                   <input
                     type="text"
-                    defaultValue="10:00 AM"
+                    value={followUpModalForm.time}
+                    onChange={(e) => setFollowUpModalForm({ ...followUpModalForm, time: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
                   />
                 </div>
@@ -1183,17 +1280,15 @@ export default function PipelineBoard() {
                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">FOLLOW-UP MEMO / ACTION NOTES</label>
                 <input
                   type="text"
-                  defaultValue="Follow-up touchpoint check-in."
+                  value={followUpModalForm.notes}
+                  onChange={(e) => setFollowUpModalForm({ ...followUpModalForm, notes: e.target.value })}
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
                 />
               </div>
 
               <button
-                onClick={() => {
-                  setShowScheduleModal(false);
-                  setToast({ type: 'success', text: selectedLead.company, actionText: 'follow-up scheduled!' });
-                }}
-                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+                onClick={handleConfirmFollowUp}
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2 cursor-pointer"
               >
                 Schedule Follow-Up Task
               </button>
@@ -1246,8 +1341,8 @@ export default function PipelineBoard() {
                       ))}
                     </ul>
                     <button
-                      onClick={() => { setShowRecommendModal(false); setToast({ type: 'success', text: selectedLead.company, actionText: 'Starter plan applied!' }); }}
-                      className="w-full border border-slate-200 text-slate-700 text-[10px] font-black py-2.5 rounded-xl hover:bg-slate-50 transition-colors tracking-wider uppercase"
+                      onClick={() => handleApplyPlan('Starter')}
+                      className="w-full border border-slate-200 text-slate-700 text-[10px] font-black py-2.5 rounded-xl hover:bg-slate-50 transition-colors tracking-wider uppercase cursor-pointer"
                     >
                       Apply Starter Plan
                     </button>
@@ -1268,8 +1363,8 @@ export default function PipelineBoard() {
                       ))}
                     </ul>
                     <button
-                      onClick={() => { setShowRecommendModal(false); setToast({ type: 'success', text: selectedLead.company, actionText: 'Professional plan applied!' }); }}
-                      className="w-full border border-slate-200 text-slate-700 text-[10px] font-black py-2.5 rounded-xl hover:bg-slate-50 transition-colors tracking-wider uppercase"
+                      onClick={() => handleApplyPlan('Professional')}
+                      className="w-full border border-slate-200 text-slate-700 text-[10px] font-black py-2.5 rounded-xl hover:bg-slate-50 transition-colors tracking-wider uppercase cursor-pointer"
                     >
                       Apply Professional Plan
                     </button>
@@ -1291,8 +1386,8 @@ export default function PipelineBoard() {
                       ))}
                     </ul>
                     <button
-                      onClick={() => { setShowRecommendModal(false); setToast({ type: 'success', text: selectedLead.company, actionText: 'Enterprise plan applied!' }); }}
-                      className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 text-[10px] font-black py-2.5 rounded-xl shadow-[0_4px_12px_rgba(255,176,32,0.4)] transition-all tracking-wider uppercase"
+                      onClick={() => handleApplyPlan('Enterprise')}
+                      className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 text-[10px] font-black py-2.5 rounded-xl shadow-[0_4px_12px_rgba(255,176,32,0.4)] transition-all tracking-wider uppercase cursor-pointer"
                     >
                       Apply Enterprise Plan
                     </button>

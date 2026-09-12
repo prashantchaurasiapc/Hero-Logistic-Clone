@@ -4,6 +4,15 @@ import { getCustomRoles, updateCustomRole } from '../../services/api';
 
 /* ─── MASTER MENU & PERMISSIONS SCHEMA FOR ALL PLATFORM ROLES ─── */
 const ROLE_MODULES_MAP = {
+  'Super Admin': [
+    { menu: 'Platform Dashboard', actions: ['Show', 'View', 'Export', 'Manage'] },
+    { menu: 'Companies Management', actions: ['Show', 'View', 'Create', 'Edit', 'Delete', 'Manage'] },
+    { menu: 'Platform Users', actions: ['Show', 'View', 'Create', 'Edit', 'Delete', 'Manage'] },
+    { menu: 'Roles & Permissions', actions: ['Show', 'View', 'Create', 'Edit', 'Delete', 'Manage'] },
+    { menu: 'Subscriptions & Billing', actions: ['Show', 'View', 'Create', 'Edit', 'Manage'] },
+    { menu: 'System Analytics', actions: ['Show', 'View', 'Export'] },
+    { menu: 'System Settings', actions: ['Show', 'View', 'Edit', 'Manage'] },
+  ],
   'Company Admin': [
     { menu: 'Command Centre', actions: ['Show', 'View', 'Export'] },
     { menu: 'All Loads', actions: ['Show', 'View', 'Create', 'Edit', 'Delete', 'Manage'] },
@@ -94,6 +103,7 @@ const BADGE_COLOR_PALETTE = [
 
 /* Default initial master roles fallback */
 const DEFAULT_MASTER_ROLES = [
+  { id: 'role-super-admin', name: 'Super Admin', roleKey: 'SUPER_ADMIN' },
   { id: 'role-company-admin', name: 'Company Admin', roleKey: 'COMPANY_ADMIN' },
   { id: 'role-sales', name: 'Sales', roleKey: 'SALES' },
   { id: 'role-dispatcher', name: 'Dispatcher', roleKey: 'DISPATCHER' },
@@ -101,7 +111,7 @@ const DEFAULT_MASTER_ROLES = [
   { id: 'role-warehouse', name: 'Warehouse Manager', roleKey: 'WAREHOUSE_MANAGER' },
   { id: 'role-yard', name: 'Yard Attendant', roleKey: 'YARD_ATTENDANT' },
   { id: 'role-accounts', name: 'Accounts', roleKey: 'ACCOUNTS' },
-  { id: 'role-customer', name: 'Customer', roleKey: 'CUSTOMER' },
+  { id: 'role-customer', name: 'Customer', roleKey: 'CUSTOMER' }
 ];
 
 /* Build merged permission state for a role.
@@ -332,7 +342,7 @@ export default function RolesPermissions() {
 
         <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 text-purple-700 font-extrabold text-xs px-3.5 py-1.5 rounded-full whitespace-nowrap shadow-2xs">
           <Shield className="w-3.5 h-3.5" />
-          <span>{isCompanyAdmin ? '7 Company Roles (Child)' : '8 Fixed Platform Roles (Master)'}</span>
+          <span>{isCompanyAdmin ? '8 Company Roles (Child)' : '9 Fixed Platform Roles (Master)'}</span>
         </div>
       </div>
 

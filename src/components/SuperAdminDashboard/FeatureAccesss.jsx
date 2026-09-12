@@ -350,8 +350,8 @@ export default function FeatureAccess() {
           <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
             Super Admin <span className="text-slate-300">•</span> Feature Access
           </h1>
-          <p className="text-xs text-slate-400 font-semibold mt-1">
-            Configure global licensing rules, audit tenant margins, and resolve support tickets.
+          <p className="text-[13px] text-slate-500 mt-1 font-medium">
+            Configure global licensing rules, audit company margins, and resolve support tickets.
           </p>
         </div>
         <button

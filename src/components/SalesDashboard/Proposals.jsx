@@ -57,29 +57,8 @@ export default function Proposals() {
 
   // Subscribe to crmStore
   useEffect(() => {
-    // Sync with database
-    crmRepository.syncWithBackend();
-
-    getSalesReps().then(res => {
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setSalesReps(res.data.data);
-      }
-    }).catch(err => console.error('Error fetching reps in proposals:', err));
-
-    api.get('/subscription-plans').then(res => {
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setSubscriptionPlans(res.data.data);
-      }
-    }).catch(err => console.error('Error fetching subscription plans:', err));
-
-    api.get('/terminals').then(res => {
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setTerminals(res.data.data);
-        if (res.data.data.length > 0) {
-          setDepotLocation(res.data.data[0].name);
-        }
-      }
-    }).catch(err => console.error('Error fetching regional terminals:', err));
+    // Single dedicated menu API call for proposals menu
+    crmRepository.syncProposals();
 
     const syncDb = () => {
       const db = crmRepository.getCrmDatabase();
@@ -88,6 +67,15 @@ export default function Proposals() {
       setLeads(crmRepository.getLeads());
       const reps = crmRepository.getSalesReps();
       if (reps?.length) setSalesReps(reps);
+
+      const cachedPlans = JSON.parse(localStorage.getItem('SUBSCRIPTION_PLANS_KEY')) || [];
+      if (cachedPlans.length > 0) setSubscriptionPlans(cachedPlans);
+
+      const cachedTerminals = JSON.parse(localStorage.getItem('TERMINALS_KEY')) || [];
+      if (cachedTerminals.length > 0) {
+        setTerminals(cachedTerminals);
+        setDepotLocation(cachedTerminals[0].name);
+      }
     };
     syncDb();
     const unsubscribe = crmStore.subscribe(syncDb);
@@ -376,6 +364,8 @@ export default function Proposals() {
     setToast({ text: 'Proposal dispatched to client inbox successfully.' });
   };
 
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+
   const handleAddProposalSubmit = async (e) => {
     e.preventDefault();
     let targetLeadId = modalForm.leadId;
@@ -388,17 +378,61 @@ export default function Proposals() {
     }
 
     const lead = leads.find(l => l.id === targetLeadId) || leads[0];
+    setIsSavingDraft(true);
 
-    await crmRepository.createProposal({
-      leadId: targetLeadId,
-      value: Number(modalForm.value) || 1999,
-      discount: Number(modalForm.discount) || 0,
-      validityDays: parseInt(modalForm.validity) || 30
-    });
+    try {
+      const created = await crmRepository.createProposal({
+        leadId: targetLeadId,
+        value: Number(modalForm.value) || 1999,
+        discount: Number(modalForm.discount) || 0,
+        validityDays: parseInt(modalForm.validity) || 30,
+        notes: modalForm.notes || ''
+      });
 
-    setToast({ text: `Proposal drafted for ${lead ? (lead.company || lead.companyName) : 'Client'}.` });
-    setShowAddModal(false);
-    setModalForm({ leadId: '', value: 1999, discount: 5, validity: '30 Days', notes: '' });
+      setToast({ text: `Proposal drafted for ${lead ? (lead.company || lead.companyName) : 'Client'}.` });
+      setShowAddModal(false);
+      setModalForm({ leadId: '', value: 1999, discount: 5, validity: '30 Days', notes: '' });
+
+      if (created) {
+        let createdNotes = created.notes || modalForm.notes || '';
+        let createdFeatures = ['Real-Time GPS Telematics', 'AI Route Optimizer', 'Driver Mobile App', 'Dispatch Board Pro', 'Factoring & Billing API', 'Live Customer Portal'];
+        if (created.includedModules) {
+          try {
+            const parsed = typeof created.includedModules === 'string' ? JSON.parse(created.includedModules) : created.includedModules;
+            if (Array.isArray(parsed)) createdFeatures = parsed;
+            else if (parsed && typeof parsed === 'object') {
+              if (Array.isArray(parsed.modules)) createdFeatures = parsed.modules;
+              if (parsed.notes) createdNotes = parsed.notes;
+            }
+          } catch (e) {}
+        }
+
+        const mappedCreated = {
+          id: created.id,
+          leadId: created.leadId,
+          proposalRef: created.proposalRef,
+          title: `Proposal - ${created.lead?.companyName || lead.company || 'Client'}`,
+          company: created.lead?.companyName || lead.company || 'Client',
+          value: created.baseValue,
+          discount: created.discountAmount,
+          tax: 10,
+          total: created.finalValue,
+          validity: `${created.validityDays} Days`,
+          validityDays: created.validityDays,
+          notes: createdNotes,
+          features: createdFeatures,
+          status: created.status === 'SENT' ? 'Sent' : 'Draft',
+          version: created.version || 'V1',
+          createdDate: created.createdAt ? created.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]
+        };
+        setSelectedProposal(mappedCreated);
+      }
+    } catch (err) {
+      console.error('Error saving proposal draft:', err);
+      setToast({ text: 'Failed to save draft proposal. Please try again.' });
+    } finally {
+      setIsSavingDraft(false);
+    }
   };
 
   const filteredProposals = proposals.filter(p => {
@@ -524,7 +558,7 @@ export default function Proposals() {
                     {p.company}
                   </div>
                   <div className={`text-[10px] font-bold ${selectedProposal?.id === p.id ? 'text-slate-600' : 'text-slate-500'}`}>
-                    Value: ${Number(p.total).toLocaleString()}/mo Ã¢â‚¬Â¢ Validity: {p.validity}
+                    Value: ${Number(p.total).toLocaleString()}/mo • Validity: {p.validity}
                   </div>
                 </div>
                 <span className={`px-2.5 py-1 rounded-md text-[9px] font-extrabold tracking-widest uppercase leading-none shrink-0 ${
@@ -581,7 +615,7 @@ export default function Proposals() {
                     {selectedProposal.title || `SaaS License Core Agreement - ${selectedProposal.company}`}
                   </h3>
                   <div className="text-[11px] text-slate-800 font-bold mt-1.5">
-                    Proposal ID: {selectedProposal.id} Ã¢â‚¬Â¢ Issued: {selectedProposal.createdDate} Ã¢â‚¬Â¢ Version: {selectedProposal.version || 'V1'}
+                    Proposal ID: {selectedProposal.id} • Issued: {selectedProposal.createdDate} • Version: {selectedProposal.version || 'V1'}
                   </div>
                 </div>
               </div>
@@ -621,6 +655,16 @@ export default function Proposals() {
                     ))}
                   </div>
                 </div>
+
+                {/* Proposal Notes */}
+                {selectedProposal.notes && (
+                  <div>
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3.5">Proposal & Negotiation Notes</div>
+                    <div className="border border-amber-200 bg-amber-50/50 rounded-xl p-4 text-xs font-semibold text-slate-800 leading-relaxed shadow-xs">
+                      {selectedProposal.notes}
+                    </div>
+                  </div>
+                )}
 
                 {/* Proposal Revision History */}
                 <div>
@@ -718,6 +762,13 @@ export default function Proposals() {
                   ))}
                 </div>
               </div>
+
+              {selectedProposal.notes && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 font-sans space-y-1">
+                  <h4 className="text-amber-900 font-black text-xs uppercase tracking-wider">Negotiation Notes & Custom Terms</h4>
+                  <p className="text-slate-700 text-xs font-medium leading-relaxed">{selectedProposal.notes}</p>
+                </div>
+              )}
 
               <div className="border-t border-slate-200 pt-6 font-sans flex justify-between items-center text-[10px] font-bold text-slate-400">
                 <span>Authorized Signatory: {user?.name || 'Authorized'} ({user?.role?.replace('_', ' ') || 'Sales'})</span>
@@ -890,9 +941,17 @@ export default function Proposals() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs"
+                  disabled={isSavingDraft}
+                  className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs py-3 rounded-xl transition-all cursor-pointer text-center shadow-xs disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Save Draft Proposal
+                  {isSavingDraft ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving Draft...</span>
+                    </>
+                  ) : (
+                    <span>Save Draft Proposal</span>
+                  )}
                 </button>
               </div>
             </form>

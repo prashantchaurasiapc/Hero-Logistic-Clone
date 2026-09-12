@@ -190,13 +190,13 @@ const EmployeePay = () => {
     }
     try {
       for (const runId of selectedRowIds) {
-        await api.post('/accounts/employee-pay/disburse', { payRunId: runId });
+        await api.put(`/accounts/payroll/runs/${runId}/disburse`);
       }
       showToast(`Bulk marked ${selectedRowIds.length} pay run(s) as Paid.`);
       setSelectedRowIds([]);
       fetchPayRuns();
     } catch (err) {
-      showToast(`Bulk payment completed.`);
+      showToast('Bulk payment failed.');
     }
   };
 
