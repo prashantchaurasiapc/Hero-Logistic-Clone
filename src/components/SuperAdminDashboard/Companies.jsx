@@ -110,7 +110,7 @@ export default function Companies() {
     if (showTableLoading) setIsLoading(true);
     try {
       const [companiesRes, plansRes] = await Promise.all([
-        api.get('/companys'),
+        api.get('/companys?pageSize=1000&sort=-createdAt'),
         api.get('/subscription-plans')
       ]);
 
@@ -118,7 +118,8 @@ export default function Companies() {
         const mappedData = companiesRes.data.data.map(company => {
           const activeSub = company.tenantSubscription;
           return {
-            id: company.tenantId || company.id, // Or tenantId if populated
+            dbId: company.id,
+            id: company.tenantId || company.id, // Display ID
             name: company.name,
             plan: activeSub?.plan?.name || 'No Plan',
             status: company.status,
@@ -991,10 +992,16 @@ export default function Companies() {
                               Send Notification
                             </button>
                             <button
-                              onClick={() => {
+                              onClick={async () => {
                                 if (window.confirm(`Are you sure you want to permanently delete company: ${c.name}?`)) {
-                                  setCompanies(prev => prev.filter(item => item.id !== c.id));
-                                  showNotification(`Deleted company ${c.name}`);
+                                  try {
+                                    await api.delete(`/companys/${c.dbId || c.id}`);
+                                    showNotification(`Deleted company ${c.name}`);
+                                    fetchCompaniesAndPlans(false);
+                                  } catch (err) {
+                                    console.error('Failed to delete company:', err);
+                                    showNotification('Failed to delete company.');
+                                  }
                                 }
                                 setActiveActionsMenu(null);
                               }}

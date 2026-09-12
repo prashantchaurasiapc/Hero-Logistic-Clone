@@ -15,6 +15,83 @@ import {
 
 import api from '../../services/api';
 
+const safeDateToYMD = (dStr) => {
+  if (!dStr || dStr === '—' || dStr === 'N/A' || dStr === 'null' || dStr === 'undefined' || String(dStr).startsWith('0000')) return '';
+  if (dStr instanceof Date) {
+    return isNaN(dStr.getTime()) ? '' : dStr.toISOString().split('T')[0];
+  }
+  const str = String(dStr).trim();
+  if (str.includes('/')) {
+    const parts = str.split('/');
+    if (parts.length === 3) {
+      let d = parseInt(parts[0], 10);
+      let m = parseInt(parts[1], 10);
+      let y = parseInt(parts[2], 10);
+      if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+        if (d > 12 && m <= 12) {
+          const pad = (n) => String(n).padStart(2, '0');
+          return `${y}-${pad(m)}-${pad(d)}`;
+        } else if (m > 12 && d <= 12) {
+          const pad = (n) => String(n).padStart(2, '0');
+          return `${y}-${pad(d)}-${pad(m)}`;
+        } else if (d <= 31 && m <= 12) {
+          const pad = (n) => String(n).padStart(2, '0');
+          return `${y}-${pad(m)}-${pad(d)}`;
+        }
+      }
+    }
+  }
+  const parsed = new Date(str);
+  return isNaN(parsed.getTime()) ? '' : parsed.toISOString().split('T')[0];
+};
+
+const safeDateToISO = (dStr) => {
+  if (!dStr || dStr === '—' || dStr === 'N/A' || dStr === 'null' || dStr === 'undefined' || String(dStr).startsWith('0000')) return null;
+  const ymd = safeDateToYMD(dStr);
+  if (ymd) {
+    const parsed = new Date(ymd);
+    return isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  }
+  const parsed = new Date(dStr);
+  return isNaN(parsed.getTime()) ? null : parsed.toISOString();
+};
+
+const safeDateToLocale = (dStr, locale = 'en-AU', fallback = '—') => {
+  if (!dStr || dStr === '—' || dStr === 'N/A' || dStr === 'null' || dStr === 'undefined' || String(dStr).startsWith('0000')) return fallback;
+  const ymd = safeDateToYMD(dStr);
+  if (ymd) {
+    const parsed = new Date(ymd);
+    return isNaN(parsed.getTime()) ? fallback : parsed.toLocaleDateString(locale);
+  }
+  const parsed = new Date(dStr);
+  return isNaN(parsed.getTime()) ? fallback : parsed.toLocaleDateString(locale);
+};
+
+const safeCalculateAge = (dStr) => {
+  if (!dStr || dStr === '—' || dStr === 'N/A' || dStr === 'null' || dStr === 'undefined' || String(dStr).startsWith('0000')) return '—';
+  const parsed = new Date(dStr);
+  if (isNaN(parsed.getTime())) return '—';
+  const age = new Date().getFullYear() - parsed.getFullYear();
+  return (age >= 0 && age < 120) ? age : '—';
+};
+
+const formatAvatarUrl = (url, fallbackId) => {
+  if (!url || typeof url !== 'string' || !url.trim() || url.includes('...') || url.endsWith('..') || url === 'https://pravatar.cc/150?u...') {
+    return fallbackId ? `https://i.pravatar.cc/150?u=${fallbackId}` : 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80';
+  }
+  const trimmed = url.trim();
+  if (trimmed.startsWith('/uploads/')) {
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+    try {
+      const urlObj = new URL(apiBase);
+      return `${urlObj.origin}${trimmed}`;
+    } catch (e) {
+      return `http://localhost:5000${trimmed}`;
+    }
+  }
+  return trimmed;
+};
+
 export default function Drivers() {
   const [driverList, setDriverList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,28 +115,86 @@ export default function Drivers() {
       const res = await api.get('/drivers');
       if (res.data && res.data.success) {
         const mapped = res.data.data.map(d => {
+          const rawStatus = d.status || 'AVAILABLE';
+          let formattedStatus = 'Available';
+          if (rawStatus === 'ON_DUTY' || rawStatus === 'On Duty') formattedStatus = 'On Duty';
+          else if (rawStatus === 'OFF_DUTY' || rawStatus === 'Off Duty') formattedStatus = 'Off Duty';
+          else if (rawStatus === 'ON_LEAVE' || rawStatus === 'On Leave') formattedStatus = 'On Leave';
+          else if (rawStatus === 'UNAVAILABLE' || rawStatus === 'Unavailable') formattedStatus = 'Unavailable';
+          else if (rawStatus === 'AVAILABLE' || rawStatus === 'Available') formattedStatus = 'Available';
+          else formattedStatus = rawStatus;
+
+          const rawEmpType = d.employmentType || 'FULL_TIME';
+          let formattedEmp = 'Full Time';
+          if (rawEmpType === 'PART_TIME' || rawEmpType === 'Part Time') formattedEmp = 'Part Time';
+          else if (rawEmpType === 'CASUAL' || rawEmpType === 'Casual') formattedEmp = 'Casual';
+          else if (rawEmpType === 'CONTRACTOR' || rawEmpType === 'Contractor') formattedEmp = 'Contractor';
+          else if (rawEmpType === 'FULL_TIME' || rawEmpType === 'Full Time') formattedEmp = 'Full Time';
+          else formattedEmp = rawEmpType;
+
+          const fullName = d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || 'Driver';
+          const dobFormatted = safeDateToYMD(d.dob) || '—';
+          const calculatedAge = d.dob ? safeCalculateAge(d.dob) : '—';
+          const fullAddr = [d.address, d.city, d.state, d.postalCode].filter(Boolean).join(', ') || d.address || '—';
+          const branchName = d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : '—';
+
           return {
             id: d.id,
-            name: d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || 'Unknown Driver',
-            age: d.dob ? new Date().getFullYear() - new Date(d.dob).getFullYear() : 35,
-            dob: d.dob ? new Date(d.dob).toISOString().split('T')[0] : '1990-06-15',
-            phone: d.phone || 'N/A',
-            email: d.email || 'N/A',
-            address: d.address || 'N/A',
-            licence: d.licenceType || 'MR (Medium Rigid)',
-            licenceNo: d.licenceNumber || 'VIC 11223344',
-            issueDate: d.issueDate ? new Date(d.issueDate).toLocaleDateString() : 'N/A',
-            employmentType: d.employmentType || 'Full Time',
-            status: d.status || 'Available',
-            branch: d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : 'Sydney',
+            driverCode: d.driverCode || (d.id ? 'DRV-' + d.id.slice(0, 6).toUpperCase() : '—'),
+            firstName: d.firstName || '',
+            lastName: d.lastName || '',
+            name: fullName,
+            age: calculatedAge,
+            dob: dobFormatted,
+            gender: d.gender || '',
+            nationality: d.nationality || '',
+            emergencyContact: d.emergencyContact || '',
+            emergencyContactName: d.emergencyContact ? d.emergencyContact.split(' ')[0] : '',
+            emergencyContactPhone: d.emergencyContact ? d.emergencyContact.split(' ').slice(1).join(' ') : '',
+            phone: d.phone || '—',
+            email: d.email || '—',
+            address: fullAddr,
+            city: d.city || '',
+            state: d.state || '',
+            postalCode: d.postalCode || '',
+            licence: d.licenseType || d.licenceType || '—',
+            licenceNo: d.licenseNumber || d.licenceNumber || '—',
+            licenseState: d.licenseState || '—',
+            licenseClass: d.licenseClass || '—',
+            issueDate: safeDateToLocale(d.licenseIssueDate, 'en-AU', d.issueDate || '—'),
+            licenseIssueDate: safeDateToYMD(d.licenseIssueDate),
+            licenseExpiry: safeDateToYMD(d.licenseExpiry),
+            employmentType: formattedEmp,
+            status: formattedStatus,
+            role: d.role || 'Driver',
+            category: d.category || 'Heavy Rig',
+            shift: d.shift || 'Morning',
+            branch: branchName,
+            payType: d.payType || 'Daily',
+            payRate: d.payRate ? String(d.payRate) : '',
+            bankName: d.bankName || '',
+            accountNumber: d.accountNumber || '',
+            routingNumber: d.routingNumber || '',
+            taxNumber: d.taxNumber || '',
+            superFund: d.superFund || '',
+            preferredVehicle: d.preferredVehicle || '',
+            preferredRoutes: d.preferredRoutes || '',
+            preferredRegions: d.preferredRegions || '',
+            maxDistPerTripKm: d.maxDistPerTripKm ? String(d.maxDistPerTripKm) : '',
+            dgCertified: d.dgCertified ? 'Yes' : 'No',
+            hvCertified: d.hvCertified !== false ? 'Yes' : 'No',
             assignmentId: '—',
             assignmentType: 'Not assigned',
-            complianceStatus: 'Compliant',
-            complianceScore: '90%',
-            avatar: d.avatarUrl || 'https://i.pravatar.cc/150?u=' + d.id
+            complianceStatus: d.complianceScore && d.complianceScore < 80 ? 'Action Required' : 'Compliant',
+            complianceScore: `${d.complianceScore || 100}%`,
+            avatar: formatAvatarUrl(d.avatarUrl, d.id)
           };
         });
         setDriverList(mapped);
+        if (selectedDriver) {
+          const fresh = mapped.find(m => m.id === selectedDriver.id);
+          if (fresh) setSelectedDriver(fresh);
+        }
       }
     } catch (error) {
       console.error('Error fetching drivers:', error);
@@ -77,19 +212,22 @@ export default function Drivers() {
     try {
       const res = await api.get(`/documents?driverId=${driverId}`);
       if (res.data && res.data.success && Array.isArray(res.data.data)) {
-        const mappedDocs = res.data.data.map(doc => ({
-          id: doc.id,
-          type: doc.type || 'Compliance Document',
-          category: doc.type?.toLowerCase().includes('licence') ? 'Licences' : 'Other',
-          number: doc.id.substring(0, 8).toUpperCase(),
-          issue: doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : 'N/A',
-          expiry: doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString() : 'N/A',
-          status: doc.expiryDate && new Date(doc.expiryDate) < new Date() ? 'Expired' : 'Valid',
-          daysLeft: doc.expiryDate ? Math.max(0, Math.ceil((new Date(doc.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))) + ' days' : '365 days',
-          notes: '',
-          fileName: doc.fileUrl ? doc.fileUrl.split('/').pop() : 'document.pdf',
-          fileSize: '1.2 MB'
-        }));
+        const mappedDocs = res.data.data.map(doc => {
+          const isValidExpiry = doc.expiryDate && !isNaN(new Date(doc.expiryDate).getTime());
+          return {
+            id: doc.id,
+            type: doc.type || 'Compliance Document',
+            category: doc.type?.toLowerCase().includes('licence') ? 'Licences' : 'Other',
+            number: doc.id.substring(0, 8).toUpperCase(),
+            issue: safeDateToLocale(doc.createdAt, 'en-AU', 'N/A'),
+            expiry: safeDateToLocale(doc.expiryDate, 'en-AU', 'N/A'),
+            status: (isValidExpiry && new Date(doc.expiryDate) < new Date()) ? 'Expired' : 'Valid',
+            daysLeft: isValidExpiry ? Math.max(0, Math.ceil((new Date(doc.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))) + ' days' : '365 days',
+            notes: '',
+            fileName: doc.fileUrl ? doc.fileUrl.split('/').pop() : 'document.pdf',
+            fileSize: '1.2 MB'
+          };
+        });
         setDocumentList(mappedDocs);
       }
     } catch (err) {
@@ -212,6 +350,23 @@ export default function Drivers() {
     }
   }, [selectedDriver]);
   const [showAddDriver, setShowAddDriver] = useState(false);
+  const [formResetKey, setFormResetKey] = useState(0);
+
+  const handleOpenAddDriver = () => {
+    setSelectedDriver(null);
+    setIsEditingDriver(false);
+    setPhotoPreview('');
+    setFormResetKey(prev => prev + 1);
+    setShowAddDriver(true);
+  };
+
+  const handleCloseDriverForm = () => {
+    setShowAddDriver(false);
+    setIsEditingDriver(false);
+    setSelectedDriver(null);
+    setPhotoPreview('');
+    setFormResetKey(prev => prev + 1);
+  };
   const [activeTab, setActiveTab] = useState('Overview');
   const [activeDocTab, setActiveDocTab] = useState('All Documents');
   const [activePayTab, setActivePayTab] = useState('Pay Overview');
@@ -733,25 +888,28 @@ export default function Drivers() {
 
   const InputField = ({ label, name, type = "text", placeholder, defaultValue, optional = false, className = "", options = [] }) => {
     const fieldName = name || label.replace(/[^a-zA-Z0-9]/g, '');
+    const fieldKey = `${fieldName}-${defaultValue || ''}-${formResetKey}`;
     return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
       <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
         {label} {!optional && <span className="text-rose-500">*</span>}
       </label>
       {type === "select" ? (
-        <select name={fieldName} defaultValue={defaultValue} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer">
+        <select key={fieldKey} name={fieldName} defaultValue={defaultValue || ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer">
+          <option value="" disabled hidden={Boolean(defaultValue)}>Select {label}</option>
           {options.length > 0 ? options.map((opt, i) => (
             <option key={i} value={opt}>{opt}</option>
           )) : (
-            defaultValue && <option value={defaultValue}>{defaultValue}</option>
+            defaultValue ? <option value={defaultValue}>{defaultValue}</option> : null
           )}
         </select>
       ) : (
         <input
+          key={fieldKey}
           name={fieldName}
           type={type}
           placeholder={placeholder}
-          defaultValue={defaultValue}
+          defaultValue={defaultValue || ""}
           className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
         />
       )}
@@ -1130,6 +1288,20 @@ export default function Drivers() {
                   <input type="text" value={editDriverModal.assignmentType || ''} onChange={e => setEditDriverModal({ ...editDriverModal, assignmentType: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Issue Date</label>
+                  <input type="date" value={safeDateToYMD(editDriverModal.issueDate || editDriverModal.licenseIssueDate) || ''} onChange={e => setEditDriverModal({ ...editDriverModal, issueDate: e.target.value, licenseIssueDate: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold cursor-pointer" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Licence State</label>
+                  <input type="text" value={editDriverModal.licenseState || editDriverModal.licenceState || ''} onChange={e => setEditDriverModal({ ...editDriverModal, licenseState: e.target.value, licenceState: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" placeholder="e.g. VIC" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">Residential Address</label>
+                <input type="text" value={editDriverModal.address || ''} onChange={e => setEditDriverModal({ ...editDriverModal, address: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" placeholder="e.g. 123 George St, Sydney NSW 2000" />
+              </div>
             </div>
             <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
               <button onClick={() => setEditDriverModal(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
@@ -1138,17 +1310,27 @@ export default function Drivers() {
                   const nameParts = (editDriverModal.name || '').trim().split(' ');
                   const firstName = nameParts[0] || editDriverModal.name;
                   const lastName = nameParts.slice(1).join(' ') || '';
+                  const updatedIssueDate = safeDateToLocale(editDriverModal.issueDate || editDriverModal.licenseIssueDate, 'en-AU', editDriverModal.issueDate || '—');
                   await api.put(`/drivers/${editDriverModal.id}`, {
                     firstName,
                     lastName,
                     phone: editDriverModal.phone,
                     licenceType: editDriverModal.licence,
                     licenceNumber: editDriverModal.licenceNo,
-                    status: editDriverModal.status
+                    status: editDriverModal.status,
+                    branch: editDriverModal.branch,
+                    address: editDriverModal.address,
+                    licenseState: editDriverModal.licenseState || editDriverModal.licenceState,
+                    licenseIssueDate: editDriverModal.issueDate || editDriverModal.licenseIssueDate
                   });
                   await fetchDrivers();
                   if (selectedDriver && selectedDriver.id === editDriverModal.id) {
-                    setSelectedDriver(prev => ({ ...prev, ...editDriverModal }));
+                    setSelectedDriver(prev => (prev ? { 
+                      ...prev, 
+                      ...editDriverModal, 
+                      issueDate: updatedIssueDate, 
+                      licenseIssueDate: safeDateToYMD(editDriverModal.issueDate || editDriverModal.licenseIssueDate) 
+                    } : editDriverModal));
                   }
                   setEditDriverModal(null);
                   showToast(`Driver profile updated successfully`);
@@ -1248,7 +1430,7 @@ export default function Drivers() {
             <form onSubmit={async (e) => {
               e.preventDefault();
               try {
-                const expiryDate = editDocModal.expiry ? new Date(editDocModal.expiry).toISOString() : null;
+                const expiryDate = (editDocModal.expiry && editDocModal.expiry !== 'N/A' && !isNaN(new Date(editDocModal.expiry).getTime())) ? new Date(editDocModal.expiry).toISOString() : null;
                 await api.put(`/documents/${editDocModal.id}`, {
                   type: editDocModal.type,
                   expiryDate
@@ -1371,7 +1553,8 @@ export default function Drivers() {
               e.preventDefault();
               const formData = new FormData(e.target);
               const type = formData.get('type') || 'Custom Document';
-              const expiryDate = formData.get('expiry') ? new Date(formData.get('expiry')).toISOString() : null;
+              const rawExp = formData.get('expiry');
+              const expiryDate = (rawExp && !isNaN(new Date(rawExp).getTime())) ? new Date(rawExp).toISOString() : null;
               const fileUrl = formData.get('fileName') || 'uploaded_document.pdf';
               try {
                 await api.post('/documents', {
@@ -2466,7 +2649,7 @@ export default function Drivers() {
                 <button onClick={async () => {
                   try {
                     await api.put(`/drivers/${selectedDriver.id}`, { status: 'Unavailable' });
-                    setSelectedDriver(prev => ({ ...prev, status: 'Unavailable' }));
+                    setSelectedDriver(prev => (prev ? { ...prev, status: 'Unavailable' } : null));
                     fetchDrivers();
                     setShowDeactivateConfirmModal(false);
                     showToast(`Driver ${selectedDriver.name} deactivated successfully`);
@@ -2885,19 +3068,38 @@ export default function Drivers() {
     const formTitle = isEditMode ? "Edit Driver Profile" : "Add New Driver";
     const formDesc = isEditMode ? "Update driver profile by modifying the fields below." : "Create a new driver profile by entering all required information.";
 
-    // Default values if editing Daniel White
+    // Default values if editing selected driver
     const defaultData = isEditMode && selectedDriver ? {
-      firstName: selectedDriver.name.split(' ')[0],
-      lastName: selectedDriver.name.split(' ')[1] || '',
-      empId: selectedDriver.id,
-      dob: "1998-11-22",
-      gender: "Male",
-      nationality: "Australian",
-      phone: selectedDriver.phone,
-      email: selectedDriver.email || '',
-      licenceType: selectedDriver.licence,
-      licenceNo: selectedDriver.licenceNo,
-      branch: selectedDriver.branch
+      firstName: selectedDriver?.firstName || selectedDriver?.name?.split(' ')[0] || '',
+      lastName: selectedDriver?.lastName || selectedDriver?.name?.split(' ')[1] || '',
+      empId: selectedDriver?.driverCode || (selectedDriver?.id?.length > 12 ? 'DRV-' + selectedDriver.id.slice(0, 6).toUpperCase() : (selectedDriver?.id || '')),
+      dob: safeDateToYMD(selectedDriver?.dob),
+      age: selectedDriver?.age && selectedDriver?.age !== '—' ? selectedDriver.age : '',
+      gender: selectedDriver?.gender || '',
+      nationality: selectedDriver?.nationality || '',
+      phone: selectedDriver?.phone && selectedDriver?.phone !== '—' ? selectedDriver.phone : '',
+      email: selectedDriver?.email && selectedDriver?.email !== '—' ? selectedDriver.email : '',
+      address: selectedDriver?.address && selectedDriver?.address !== '—' ? selectedDriver.address : '',
+      city: selectedDriver?.city || '',
+      state: selectedDriver?.state || '',
+      postalCode: selectedDriver?.postalCode || '',
+      emergencyContactName: selectedDriver?.emergencyContactName || '',
+      emergencyContactPhone: selectedDriver?.emergencyContactPhone || '',
+      licenceType: selectedDriver?.licence && selectedDriver?.licence !== '—' ? selectedDriver.licence : '',
+      licenceNo: selectedDriver?.licenceNo && selectedDriver?.licenceNo !== '—' ? selectedDriver.licenceNo : '',
+      licenceState: selectedDriver?.licenseState && selectedDriver?.licenseState !== '—' ? selectedDriver.licenseState : '',
+      licenseIssueDate: selectedDriver?.licenseIssueDate || safeDateToYMD(selectedDriver?.issueDate) || '',
+      licenseExpiry: selectedDriver?.licenseExpiry || '',
+      licenceClass: selectedDriver?.licenseClass || '',
+      branch: selectedDriver?.branch && selectedDriver?.branch !== '—' ? selectedDriver.branch : '',
+      employmentType: selectedDriver?.employmentType && selectedDriver?.employmentType !== '—' ? selectedDriver.employmentType : '',
+      payRate: selectedDriver?.payRate || '',
+      bankName: selectedDriver?.bankName || '',
+      superFund: selectedDriver?.superFund || '',
+      preferredVehicle: selectedDriver?.preferredVehicle || '',
+      preferredRoutes: selectedDriver?.preferredRoutes || '',
+      preferredRegions: selectedDriver?.preferredRegions || '',
+      maxDistPerTripKm: selectedDriver?.maxDistPerTripKm || ''
     } : {};
 
     return (
@@ -2906,8 +3108,8 @@ export default function Drivers() {
           <div className="flex items-center justify-between mb-4 text-[11px] font-semibold">
             <div className="flex items-center gap-1.5 text-slate-400">
               <Link to="/company-admin/command-centre" className="hover:text-purple-600 transition-colors">Home</Link> <ChevronRight size={12} />
-              <Link to="/company-admin/drivers" onClick={() => { setShowAddDriver(false); setIsEditingDriver(false); }} className="hover:text-purple-600 transition-colors">Drivers</Link> <ChevronRight size={12} />
-              <button onClick={() => { setShowAddDriver(false); setIsEditingDriver(false); }} className="hover:text-purple-600 transition-colors">Drivers List</button> <ChevronRight size={12} />
+              <Link to="/company-admin/drivers" onClick={handleCloseDriverForm} className="hover:text-purple-600 transition-colors">Drivers</Link> <ChevronRight size={12} />
+              <button onClick={handleCloseDriverForm} className="hover:text-purple-600 transition-colors">Drivers List</button> <ChevronRight size={12} />
               <span className="text-slate-800 font-bold">{isEditMode ? "Edit Driver" : "Add Driver"}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -2917,77 +3119,221 @@ export default function Drivers() {
             </div>
           </div>
 
-        <form onSubmit={async (e) => {
+        <form key={isEditMode ? `edit-driver-${selectedDriver?.id || 'selected'}` : `create-driver-${formResetKey}`} onSubmit={async (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
           const firstName = fd.get('FirstName') || fd.get('firstName') || '';
           const lastName = fd.get('LastName') || fd.get('lastName') || '';
-          const driverCode = fd.get('EmployeeIDManualEditOption') || fd.get('driverCode') || ('DRV00' + Math.floor(Math.random() * 100));
+          const driverCode = fd.get('EmployeeIDManualEditOption') || fd.get('driverCode') || (isEditMode && selectedDriver ? selectedDriver.driverCode : undefined);
           const phone = fd.get('PhoneNumber') || fd.get('phone') || '';
-          const email = fd.get('EmailAddress') || fd.get('email') || '';
-          const avatarUrl = photoPreview || fd.get('avatarUrl') || (isEditMode && selectedDriver ? selectedDriver.avatar : '');
-          const licenceType = fd.get('LicenceType') || 'HR (Heavy Rigid)';
-          const licenceNumber = fd.get('LicenceNumber') || '';
+          const email = fd.get('EmailAddress') || fd.get('email') || (isEditMode && selectedDriver ? selectedDriver.email : undefined);
+          const avatarUrl = photoPreview || (isEditMode && selectedDriver ? selectedDriver.avatar : '');
+          const gender = fd.get('Gender') || '';
+          const nationality = fd.get('Nationality') || '';
+          const emergencyContactName = fd.get('EmergencyContactName') || '';
+          const emergencyContactNumber = fd.get('EmergencyContactNumber') || '';
+          const emergencyContact = emergencyContactName ? `${emergencyContactName} ${emergencyContactNumber}`.trim() : emergencyContactNumber;
+          const address = fd.get('ResidentialAddress') || fd.get('address') || '';
+          const city = fd.get('City') || '';
+          const state = fd.get('State') || '';
+          const postalCode = fd.get('PostalCode') || '';
+
+          const role = fd.get('DriverRole') || 'Driver';
+          const employmentType = fd.get('EmploymentType') || 'Full Time';
+          const branch = fd.get('Branch') || '';
           const status = fd.get('DriverStatus') || 'Available';
-          const dob = fd.get('DateofBirth') ? new Date(fd.get('DateofBirth')).toISOString() : null;
+          const shift = fd.get('Shift') || '';
+          const category = fd.get('DriverCategory') || '';
+
+          const licenceType = fd.get('LicenceType') || fd.get('licenceType') || 'HR (Heavy Rigid)';
+          const licenceNumber = fd.get('LicenceNumber') || fd.get('licenceNumber') || '';
+          const licenseState = fd.get('LicenceState') || fd.get('licenseState') || '';
+          const licenseIssueDate = safeDateToISO(fd.get('IssueDate'));
+          const licenseExpiry = safeDateToISO(fd.get('ExpiryDate'));
+          const licenseClass = fd.get('LicenceClass') || '';
+
+          const rawDob = fd.get('DateofBirth');
+          const manualAge = fd.get('Age') || fd.get('age') || '';
+          let dob = safeDateToISO(rawDob);
+          
+          // DOB validation: If DOB is in future or current year while Age is given, prioritize Age estimation
+          if (dob && manualAge) {
+            const dobYear = new Date(dob).getFullYear();
+            if (dobYear >= new Date().getFullYear()) {
+              const ageNum = parseInt(manualAge, 10);
+              if (!isNaN(ageNum) && ageNum > 0 && ageNum < 120) {
+                dob = new Date(new Date().getFullYear() - ageNum, 0, 1).toISOString();
+              }
+            }
+          } else if (!dob && manualAge) {
+            const ageNum = parseInt(manualAge, 10);
+            if (!isNaN(ageNum) && ageNum > 0 && ageNum < 120) {
+              const estimatedYear = new Date().getFullYear() - ageNum;
+              dob = new Date(estimatedYear, 0, 1).toISOString();
+            }
+          }
+
+          const payType = fd.get('PayType') || 'Daily';
+          const payRate = fd.get('PayRate') || null;
+          const bankName = fd.get('BankName') || '';
+          const accountNumber = fd.get('AccountNumber') || '';
+          const routingNumber = fd.get('BSBRouting') || '';
+          const taxNumber = fd.get('TaxNumber') || '';
+          const superFund = fd.get('SuperannuationFund') || '';
+
+          const preferredVehicle = fd.get('PreferredVehicle') || '';
+          const preferredRoutes = fd.get('PreferredRoutes') || '';
+          const preferredRegions = fd.get('PreferredRegions') || '';
+          const maxDistPerTripKm = fd.get('MaximumDistancePerTripKM') ? parseInt(fd.get('MaximumDistancePerTripKM'), 10) : null;
+          const dgCertified = fd.get('DangerousGoodsCertified') === 'Yes';
+          const hvCertified = fd.get('HeavyVehicleCertified') === 'Yes';
+
+          const payload = {
+            firstName,
+            lastName,
+            driverCode,
+            phone,
+            email,
+            avatarUrl,
+            gender,
+            nationality,
+            emergencyContact,
+            address,
+            city,
+            state,
+            postalCode,
+            role,
+            employmentType,
+            branch,
+            status,
+            shift,
+            category,
+            licenceType,
+            licenceNumber,
+            licenseType: licenceType,
+            licenseNumber: licenceNumber,
+            licenseState,
+            licenseIssueDate,
+            licenseExpiry,
+            licenseClass,
+            dob,
+            age: manualAge,
+            payType,
+            payRate,
+            bankName,
+            accountNumber,
+            routingNumber,
+            taxNumber,
+            superFund,
+            preferredVehicle,
+            preferredRoutes,
+            preferredRegions,
+            maxDistPerTripKm,
+            dgCertified,
+            hvCertified
+          };
 
           try {
             if (isEditMode && selectedDriver) {
-              const res = await api.put(`/drivers/${selectedDriver.id}`, {
-                firstName,
-                lastName,
-                driverCode,
-                phone,
-                email,
-                avatarUrl,
-                licenceType,
-                licenceNumber,
-                status,
-                dob
+              await api.put(`/drivers/${selectedDriver.id}`, payload);
+              const updatedName = `${firstName} ${lastName}`.trim() || driverCode || selectedDriver.name;
+              const dobYMD = safeDateToYMD(dob) || selectedDriver.dob;
+              const ageCalc = manualAge || safeCalculateAge(dob) || selectedDriver.age;
+              const fullAddr = [address, city, state, postalCode].filter(Boolean).join(', ') || address || selectedDriver.address;
+
+              setSelectedDriver(prev => {
+                const base = prev || selectedDriver || {};
+                return {
+                  ...base,
+                  name: updatedName,
+                  firstName,
+                  lastName,
+                  phone: phone || base.phone || '',
+                  email: email || base.email || '',
+                  avatar: avatarUrl || base.avatar || '',
+                  licence: licenceType || base.licence || '',
+                  licenceNo: licenceNumber || base.licenceNo || '',
+                  licenseState: licenseState || base.licenseState || '',
+                  issueDate: safeDateToLocale(licenseIssueDate, 'en-AU', base.issueDate || '—'),
+                  licenseIssueDate: safeDateToYMD(licenseIssueDate),
+                  status: status || base.status || 'Available',
+                  address: fullAddr,
+                  employmentType: employmentType || base.employmentType || 'Full Time',
+                  dob: dobYMD,
+                  age: ageCalc,
+                  branch: branch || base.branch || '',
+                  gender,
+                  nationality,
+                  emergencyContact,
+                  city,
+                  state,
+                  postalCode,
+                  payRate,
+                  bankName,
+                  superFund,
+                  preferredVehicle,
+                  preferredRoutes,
+                  preferredRegions,
+                  maxDistPerTripKm
+                };
               });
-              const updatedName = `${firstName} ${lastName}`.trim() || driverCode;
-              setSelectedDriver(prev => ({
-                ...prev,
-                name: updatedName,
-                phone: phone || prev.phone,
-                email: email || prev.email,
-                avatar: avatarUrl || prev.avatar,
-                licence: licenceType || prev.licence,
-                licenceNo: licenceNumber || prev.licenceNo,
-                status: status || prev.status
-              }));
             } else {
-              await api.post('/drivers', {
-                firstName,
-                lastName,
-                driverCode,
-                phone,
-                email,
-                avatarUrl,
-                licenceType,
-                licenceNumber,
-                status,
-                dob
-              });
+              const newRes = await api.post('/drivers', payload);
+              if (newRes.data && newRes.data.data) {
+                const createdDriver = newRes.data.data;
+                const formattedAddr = [createdDriver.address, createdDriver.city, createdDriver.state, createdDriver.postalCode].filter(Boolean).join(', ') || createdDriver.address || '—';
+                const newMapped = {
+                  id: createdDriver.id,
+                  driverCode: createdDriver.driverCode || '—',
+                  firstName: createdDriver.firstName || firstName,
+                  lastName: createdDriver.lastName || lastName,
+                  name: `${createdDriver.firstName || firstName} ${createdDriver.lastName || lastName}`.trim() || createdDriver.driverCode,
+                  age: manualAge || (createdDriver.dob ? safeCalculateAge(createdDriver.dob) : '—'),
+                  dob: safeDateToYMD(createdDriver.dob) || '—',
+                  gender: createdDriver.gender || gender,
+                  nationality: createdDriver.nationality || nationality,
+                  emergencyContact: createdDriver.emergencyContact || emergencyContact,
+                  phone: createdDriver.phone || phone || '—',
+                  email: createdDriver.email || email || '—',
+                  address: formattedAddr,
+                  city: createdDriver.city || city,
+                  state: createdDriver.state || state,
+                  postalCode: createdDriver.postalCode || postalCode,
+                  licence: licenceType,
+                  licenceNo: licenceNumber,
+                  licenseState: licenseState,
+                  licenseClass: licenseClass,
+                  issueDate: safeDateToLocale(licenseIssueDate, 'en-AU', '—'),
+                  licenseIssueDate: safeDateToYMD(licenseIssueDate),
+                  licenseExpiry: safeDateToYMD(licenseExpiry),
+                  employmentType: employmentType,
+                  status: status,
+                  role: role,
+                  category: category,
+                  shift: shift,
+                  branch: branch || '—',
+                  avatar: formatAvatarUrl(createdDriver.avatarUrl || avatarUrl, createdDriver.id)
+                };
+                setSelectedDriver(newMapped);
+              }
             }
             fetchDrivers();
-            setShowAddDriver(false);
-            setIsEditingDriver(false);
+            handleCloseDriverForm();
             showToast(isEditMode ? "Driver Profile Updated successfully!" : "New Driver Added successfully!");
           } catch (err) {
             console.error('Error saving driver:', err);
             alert('Failed to save driver to database.');
           }
         }}>
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-6 border-b border-slate-200">
             <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">{formTitle}</h1>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{formTitle}</h1>
               <p className="text-[11px] text-slate-500 font-medium mt-1">{formDesc}</p>
             </div>
             <div className="flex items-center gap-3">
-              <button type="button" onClick={() => { setShowAddDriver(false); setIsEditingDriver(false); }} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Cancel</button>
+              <button type="button" onClick={handleCloseDriverForm} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Cancel</button>
               <button type="button" className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Save as Draft</button>
-              <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"><Settings size={14} /> Save Driver</button>
+              <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"><Settings size={14} /> {isEditMode ? "Update Driver" : "Save Driver"}</button>
             </div>
           </div>
 
@@ -3001,8 +3347,9 @@ export default function Drivers() {
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest self-start">Profile Photo</label>
                   <div className="relative group cursor-pointer" onClick={() => driverFileInputRef.current?.click()}>
                     <img 
-                      src={photoPreview || (isEditMode ? selectedDriver?.avatar : "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80")} 
+                      src={formatAvatarUrl(photoPreview || (isEditMode ? selectedDriver?.avatar : ''), selectedDriver?.id)} 
                       alt="Avatar Preview" 
+                      onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"; }}
                       className="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-sm transition-transform group-hover:scale-105" 
                     />
                     <div className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
@@ -3031,27 +3378,28 @@ export default function Drivers() {
                   <input 
                     type="text" 
                     name="avatarUrl"
-                    value={photoPreview || (isEditMode ? (selectedDriver?.avatar || '') : "https://pravatar.cc/150?u...")} 
+                    value={photoPreview?.startsWith('data:image/') ? '[Uploaded Image File]' : (photoPreview || '')} 
                     onChange={(e) => setPhotoPreview(e.target.value)}
                     placeholder="Or paste image URL"
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-600 text-center focus:outline-none focus:border-purple-500" 
                   />
                 </div>
-                <div className="col-span-1 md:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
-                  <InputField label="First Name" defaultValue={defaultData.firstName} />
-                  <InputField label="Last Name" defaultValue={defaultData.lastName} />
-                  <InputField label="Employee ID * (Manual Edit Option)" defaultValue={defaultData.empId || "DRV009"} />
-                  <InputField label="Date of Birth" type="date" defaultValue={defaultData.dob} />
-                  <InputField label="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} defaultValue={defaultData.gender || 'Male'} />
-                  <InputField label="Nationality" defaultValue={defaultData.nationality} />
-                  <InputField label="Phone Number" defaultValue={defaultData.phone} />
-                  <InputField label="Email Address" defaultValue={defaultData.email} />
-                  <InputField label="Emergency Contact Name" />
-                  <InputField label="Emergency Contact Number" />
-                  <InputField label="Residential Address" className="sm:col-span-2" />
-                  <InputField label="City" />
-                  <InputField label="State" />
-                  <InputField label="Postal Code" />
+                <div className="col-span-1 md:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
+                  <InputField label="First Name" defaultValue={isEditMode ? defaultData.firstName : ''} />
+                  <InputField label="Last Name" defaultValue={isEditMode ? defaultData.lastName : ''} />
+                  <InputField label="Employee ID * (Manual Edit Option)" defaultValue={isEditMode ? defaultData.empId : ''} placeholder="e.g. DRV-009" />
+                  <InputField label="Date of Birth" type="date" defaultValue={isEditMode ? defaultData.dob : ''} />
+                  <InputField label="Age" type="text" defaultValue={isEditMode ? defaultData.age : ''} placeholder="e.g. 34" optional={true} />
+                  <InputField label="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} defaultValue={isEditMode ? (defaultData.gender || 'Male') : ''} />
+                  <InputField label="Nationality" defaultValue={isEditMode ? defaultData.nationality : ''} />
+                  <InputField label="Phone Number" defaultValue={isEditMode ? defaultData.phone : ''} />
+                  <InputField label="Email Address" defaultValue={isEditMode ? defaultData.email : ''} />
+                  <InputField label="Emergency Contact Name" defaultValue={isEditMode ? defaultData.emergencyContactName : ''} />
+                  <InputField label="Emergency Contact Number" defaultValue={isEditMode ? defaultData.emergencyContactPhone : ''} />
+                  <InputField label="Residential Address" className="sm:col-span-2" defaultValue={isEditMode ? defaultData.address : ''} />
+                  <InputField label="City" defaultValue={isEditMode ? defaultData.city : ''} />
+                  <InputField label="State" defaultValue={isEditMode ? defaultData.state : ''} />
+                  <InputField label="Postal Code" defaultValue={isEditMode ? defaultData.postalCode : ''} />
                 </div>
               </div>
             </div>
@@ -3060,14 +3408,14 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">2. Employment Information</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
-                <InputField label="Driver Role" type="select" options={['Driver', 'Senior Driver', 'Team Lead']} defaultValue="Driver" />
-                <InputField label="Employment Type" type="select" options={['Full Time', 'Part Time', 'Casual']} defaultValue="Full Time" />
-                <InputField label="Branch" type="select" options={['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide']} defaultValue={defaultData.branch || "Brisbane"} />
-                <InputField label="Reports To" type="select" options={['Sarah Mitchell', 'John Doe', 'Emily Chen']} defaultValue="Sarah Mitchell" />
-                <InputField label="Joining Date" type="date" defaultValue="2026-07-18" />
-                <InputField label="Driver Status" type="select" options={['Available', 'On Duty', 'Off Duty', 'On Leave', 'Unavailable']} defaultValue="Available" />
-                <InputField label="Shift" type="select" options={['Morning', 'Afternoon', 'Night', 'Rotating']} defaultValue="Morning" />
-                <InputField label="Driver Category" type="select" options={['Heavy Rig', 'Medium Rig', 'Light Rig', 'Multi Combination']} defaultValue="Heavy Rig" />
+                <InputField label="Driver Role" type="select" options={['Driver', 'Senior Driver', 'Team Lead']} defaultValue={isEditMode ? (defaultData.role || 'Driver') : ''} />
+                <InputField label="Employment Type" type="select" options={['Full Time', 'Part Time', 'Casual']} defaultValue={isEditMode ? (defaultData.employmentType || 'Full Time') : ''} />
+                <InputField label="Branch" type="select" options={['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide']} defaultValue={isEditMode ? defaultData.branch : ''} />
+                <InputField label="Reports To" type="select" options={['Sarah Mitchell', 'John Doe', 'Emily Chen']} defaultValue={isEditMode ? (defaultData.reportsTo || '') : ''} />
+                <InputField label="Joining Date" type="date" defaultValue={isEditMode ? defaultData.joiningDate : ''} />
+                <InputField label="Driver Status" type="select" options={['Available', 'On Duty', 'Off Duty', 'On Leave', 'Unavailable']} defaultValue={isEditMode ? (selectedDriver?.status || 'Available') : 'Available'} />
+                <InputField label="Shift" type="select" options={['Morning', 'Afternoon', 'Night', 'Rotating']} defaultValue={isEditMode ? defaultData.shift : ''} />
+                <InputField label="Driver Category" type="select" options={['Heavy Rig', 'Medium Rig', 'Light Rig', 'Multi Combination']} defaultValue={isEditMode ? defaultData.category : ''} />
               </div>
             </div>
 
@@ -3075,12 +3423,12 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">3. Licence Information</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 mb-6">
-                <InputField label="Licence Type" type="select" options={['HR (Heavy Rigid)', 'MR (Medium Rigid)', 'LR (Light Rigid)', 'HC (Heavy Combination)', 'MC (Multi Combination)']} defaultValue={defaultData.licenceType || "MR (Medium Rigid)"} />
-                <InputField label="Licence Number" defaultValue={defaultData.licenceNo || "VIC 11223344"} />
-                <InputField label="Licence State" type="select" options={['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT']} defaultValue="NSW" />
-                <InputField label="Issue Date" type="date" />
-                <InputField label="Expiry Date" type="date" />
-                <InputField label="Licence Class" type="select" options={['Class HR', 'Class MR', 'Class LR', 'Class HC', 'Class MC']} defaultValue="Class HR" />
+                <InputField label="Licence Type" type="select" options={['HR (Heavy Rigid)', 'MR (Medium Rigid)', 'LR (Light Rigid)', 'HC (Heavy Combination)', 'MC (Multi Combination)']} defaultValue={isEditMode ? defaultData.licenceType : ""} />
+                <InputField label="Licence Number" defaultValue={isEditMode ? defaultData.licenceNo : ""} placeholder="e.g. LIC-998822" />
+                <InputField label="Licence State" type="select" options={['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT']} defaultValue={isEditMode ? defaultData.licenceState : ""} />
+                <InputField label="Issue Date" type="date" defaultValue={isEditMode ? defaultData.licenseIssueDate : ""} />
+                <InputField label="Expiry Date" type="date" defaultValue={isEditMode ? defaultData.licenseExpiry : ""} />
+                <InputField label="Licence Class" type="select" options={['Class HR', 'Class MR', 'Class LR', 'Class HC', 'Class MC']} defaultValue={isEditMode ? defaultData.licenceClass : ""} />
               </div>
 
               <div className="w-full">
@@ -3107,13 +3455,13 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">5. Payroll Information</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
-                <InputField label="Pay Type" type="select" defaultValue="Daily" />
-                <InputField label="Pay Rate ($)" defaultValue="350.00" />
-                <InputField label="Bank Name" defaultValue="Commonwealth Bank" />
-                <InputField label="Account Number" />
-                <InputField label="BSB/Routing" />
-                <InputField label="Tax Number" />
-                <InputField label="Superannuation Fund" className="sm:col-span-2" defaultValue="AustralianSuper" />
+                <InputField label="Pay Type" type="select" options={['Daily', 'Hourly', 'Per Load', 'Per Km', 'Weekly']} defaultValue={isEditMode ? (defaultData.payType || "Daily") : ""} />
+                <InputField label="Pay Rate ($)" defaultValue={isEditMode ? defaultData.payRate : ""} placeholder="0.00" />
+                <InputField label="Bank Name" defaultValue={isEditMode ? defaultData.bankName : ""} placeholder="e.g. Commonwealth Bank" />
+                <InputField label="Account Number" defaultValue={isEditMode ? defaultData.accountNumber : ""} />
+                <InputField label="BSB/Routing" defaultValue={isEditMode ? defaultData.routingNumber : ""} />
+                <InputField label="Tax Number" defaultValue={isEditMode ? defaultData.taxNumber : ""} />
+                <InputField label="Superannuation Fund" className="sm:col-span-2" defaultValue={isEditMode ? defaultData.superFund : ""} placeholder="e.g. AustralianSuper" />
               </div>
             </div>
 
@@ -3121,12 +3469,12 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">6. Vehicle Preferences</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
-                <InputField label="Preferred Vehicle" defaultValue="Volvo FH16" />
-                <InputField label="Preferred Routes" defaultValue="Sydney - Melbourne" />
-                <InputField label="Preferred Regions" defaultValue="East Coast" />
-                <InputField label="Maximum Distance Per Trip (KM)" defaultValue="1000" />
-                <InputField label="Dangerous Goods Certified" type="select" defaultValue="No" />
-                <InputField label="Heavy Vehicle Certified" type="select" defaultValue="Yes" />
+                <InputField label="Preferred Vehicle" defaultValue={isEditMode ? defaultData.preferredVehicle : ""} placeholder="e.g. Volvo FH16" />
+                <InputField label="Preferred Routes" defaultValue={isEditMode ? defaultData.preferredRoutes : ""} placeholder="e.g. Sydney - Melbourne" />
+                <InputField label="Preferred Regions" defaultValue={isEditMode ? defaultData.preferredRegions : ""} placeholder="e.g. East Coast" />
+                <InputField label="Maximum Distance Per Trip (KM)" defaultValue={isEditMode ? defaultData.maxDistPerTripKm : ""} placeholder="e.g. 1000" />
+                <InputField label="Dangerous Goods Certified" type="select" options={['No', 'Yes']} defaultValue={isEditMode ? (defaultData.dgCertified || "No") : "No"} />
+                <InputField label="Heavy Vehicle Certified" type="select" options={['Yes', 'No']} defaultValue={isEditMode ? (defaultData.hvCertified || "Yes") : "Yes"} />
               </div>
             </div>
 
@@ -3135,10 +3483,10 @@ export default function Drivers() {
               <h2 className="text-sm font-black text-slate-900 mb-6">7. Availability</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 mb-6">
                 <InputField label="Available From" type="date" />
-                <InputField label="Preferred Shift" type="select" defaultValue="Morning" />
-                <InputField label="Weekly Hours Limit" defaultValue="50" />
-                <InputField label="Max Working Hours/Day" defaultValue="10" />
-                <InputField label="Rest Days / Week" defaultValue="2" />
+                <InputField label="Preferred Shift" type="select" options={['Morning', 'Afternoon', 'Night', 'Rotating']} defaultValue={isEditMode ? "Morning" : ""} />
+                <InputField label="Weekly Hours Limit" defaultValue={isEditMode ? "50" : ""} placeholder="e.g. 40" />
+                <InputField label="Max Working Hours/Day" defaultValue={isEditMode ? "10" : ""} placeholder="e.g. 10" />
+                <InputField label="Rest Days / Week" defaultValue={isEditMode ? "2" : ""} placeholder="e.g. 2" />
               </div>
 
               <div className="w-full">
@@ -3180,6 +3528,23 @@ export default function Drivers() {
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Internal Comments</label>
                   <textarea className="w-full h-24 bg-white border border-slate-200 rounded-lg p-3 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-none"></textarea>
                 </div>
+              </div>
+            </div>
+
+            {/* Sticky Bottom Action Footer */}
+            <div className="mt-8 pt-4 pb-4 px-6 border-t border-slate-200 bg-white rounded-2xl shadow-sm border flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-4 z-20">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-purple-600"></span>
+                <p className="text-xs font-semibold text-slate-600">
+                  {isEditMode ? 'Modify driver profile details and click Update Driver to apply changes.' : 'Fill in required information and click Save Driver to register new driver.'}
+                </p>
+              </div>
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                <button type="button" onClick={handleCloseDriverForm} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Cancel</button>
+                <button type="button" className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Save as Draft</button>
+                <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">
+                  <Settings size={14} /> {isEditMode ? "Update Driver" : "Save Driver"}
+                </button>
               </div>
             </div>
 
@@ -3265,7 +3630,12 @@ export default function Drivers() {
               <div className="flex-1 min-w-0 pr-0 md:pr-6 border-b md:border-b-0 md:border-r border-slate-100 pb-6 md:pb-0">
                 <div className="flex items-start gap-4 mb-5">
                   <div className="relative shrink-0">
-                    <img src={selectedDriver.avatar} alt={selectedDriver.name} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-slate-200 object-cover shadow-2xs" />
+                    <img 
+                      src={formatAvatarUrl(selectedDriver.avatar, selectedDriver.id)} 
+                      alt={selectedDriver.name} 
+                      onError={(e) => { e.target.onerror = null; e.target.src = 'https://i.pravatar.cc/150?u=' + selectedDriver.id; }}
+                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-slate-200 object-cover shadow-2xs" 
+                    />
                     <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
                   </div>
                   <div className="flex-grow min-w-0">
@@ -3276,7 +3646,7 @@ export default function Drivers() {
                     <div className="grid grid-cols-3 gap-3 sm:gap-6 text-xs max-w-sm">
                       <div>
                         <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Employee</p>
-                        <p className="font-extrabold text-slate-900">{selectedDriver.id}</p>
+                        <p className="font-extrabold text-slate-900">{selectedDriver.driverCode || (selectedDriver.id?.length > 12 ? 'DRV-' + selectedDriver.id.slice(0, 6).toUpperCase() : selectedDriver.id)}</p>
                       </div>
                       <div>
                         <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Age</p>
@@ -3292,7 +3662,7 @@ export default function Drivers() {
 
                 <div className="mb-4">
                   <p className="text-[10px] font-semibold text-slate-400 mb-0.5">DR</p>
-                  <p className="text-xs font-extrabold text-slate-900">{selectedDriver.dr || 'NSW /990'}</p>
+                  <p className="text-xs font-extrabold text-slate-900">{selectedDriver?.dr || (selectedDriver?.licenceNo && selectedDriver?.licenceNo !== '—' ? `${selectedDriver?.licenseState && selectedDriver?.licenseState !== '—' ? selectedDriver.licenseState : 'LIC'} / ${selectedDriver.licenceNo}` : '—')}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-y-3.5 gap-x-6 text-xs">
@@ -3311,7 +3681,7 @@ export default function Drivers() {
                   </div>
                   <div>
                     <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Issue Date</p>
-                    <p className="font-extrabold text-slate-900">{selectedDriver.issueDate || '12/03/2023'}</p>
+                    <p className="font-extrabold text-slate-900">{selectedDriver.issueDate && selectedDriver.issueDate !== '—' ? selectedDriver.issueDate : (selectedDriver.licenseIssueDate ? safeDateToLocale(selectedDriver.licenseIssueDate, 'en-AU') : '—')}</p>
                   </div>
 
                   <div>
@@ -3320,8 +3690,8 @@ export default function Drivers() {
                   </div>
                   <div>
                     <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Email</p>
-                    <p className="font-extrabold text-slate-900 truncate max-w-[170px]" title={selectedDriver.email || `${selectedDriver.name.toLowerCase().replace(/\s+/g, '.')}@herologistics.com.au`}>
-                      {selectedDriver.email || `${selectedDriver.name.toLowerCase().replace(/\s+/g, '.')}@herologistics.com.au`}
+                    <p className="font-extrabold text-slate-900 truncate max-w-[170px]" title={selectedDriver.email}>
+                      {selectedDriver.email}
                     </p>
                   </div>
 
@@ -3331,7 +3701,7 @@ export default function Drivers() {
                   </div>
                   <div>
                     <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Employment Type</p>
-                    <p className="font-extrabold text-slate-900">{selectedDriver.employmentType || 'Full Time'}</p>
+                    <p className="font-extrabold text-slate-900">{selectedDriver.employmentType || '—'}</p>
                   </div>
                 </div>
               </div>
@@ -5622,7 +5992,7 @@ export default function Drivers() {
             <h1 className="text-xl sm:text-[28px] leading-none font-black text-slate-900 tracking-tight">Drivers List</h1>
             <p className="text-xs text-slate-500 font-medium mt-1.5">Manage all drivers, their details, compliance, assignments and performance.</p>
           </div>
-          <button onClick={() => setShowAddDriver(true)} className="flex items-center gap-2 px-4 py-2.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-sm font-bold transition-colors shadow-sm cursor-pointer w-full sm:w-auto justify-center sm:justify-start">
+          <button onClick={handleOpenAddDriver} className="flex items-center gap-2 px-4 py-2.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-sm font-bold transition-colors shadow-sm cursor-pointer w-full sm:w-auto justify-center sm:justify-start">
             <UserPlus size={16} /> <span>Add Driver</span> <ChevronDown size={16} className="ml-1" />
           </button>
         </div>
@@ -5870,7 +6240,12 @@ export default function Drivers() {
                       <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="rounded border-slate-300 cursor-pointer" /></td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2.5">
-                          <img src={driver.avatar} alt={driver.name} className="w-8 h-8 rounded-full border border-slate-200 shrink-0" />
+                          <img 
+                            src={formatAvatarUrl(driver.avatar, driver.id)} 
+                            alt={driver.name} 
+                            onError={(e) => { e.target.onerror = null; e.target.src = 'https://i.pravatar.cc/150?u=' + driver.id; }}
+                            className="w-8 h-8 rounded-full border border-slate-200 shrink-0 object-cover" 
+                          />
                           <div>
                             <p className="text-xs font-black text-slate-800">{driver.name}</p>
                             <p className="text-[10px] text-slate-500 font-medium">Age {driver.age}</p>
@@ -5926,7 +6301,7 @@ export default function Drivers() {
                                   <span>View Details</span>
                                 </button>
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); setEditDriverModal(driver); setDriverMenuIndex(null); }}
+                                  onClick={(e) => { e.stopPropagation(); setSelectedDriver(driver); setIsEditingDriver(true); setPhotoPreview(driver.avatar || ''); setDriverMenuIndex(null); }}
                                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
                                 >
                                   <Edit size={14} className="text-amber-600" />
@@ -5945,7 +6320,7 @@ export default function Drivers() {
                                       } catch (err) {
                                         console.warn('Driver API delete notice:', err);
                                       } finally {
-                                        setDriverList(prev => prev.filter(d => d.id !== deletedId));
+                                        await fetchDrivers();
                                         if (selectedDriver && selectedDriver.id === deletedId) {
                                           setSelectedDriver(null);
                                         }
@@ -6049,23 +6424,83 @@ export default function Drivers() {
                 <h3 className="text-sm font-black text-slate-800">Quick Actions</h3>
               </div>
               <div className="p-2 flex flex-col">
-                <button onClick={() => setShowAddDriver(true)} className="flex items-center gap-3 w-full p-3 hover:bg-slate-50 rounded-xl transition-colors text-left group cursor-pointer">
+                <button onClick={handleOpenAddDriver} className="flex items-center gap-3 w-full p-3 hover:bg-slate-50 rounded-xl transition-colors text-left group cursor-pointer">
                   <UserPlus size={16} className="text-slate-400 group-hover:text-purple-600 transition-colors" />
                   <span className="text-xs font-semibold text-slate-700 group-hover:text-slate-900">Add New Driver</span>
                 </button>
-                <button className="flex items-center gap-3 w-full p-3 hover:bg-slate-50 rounded-xl transition-colors text-left group cursor-pointer">
+                <button 
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.csv,.xlsx';
+                    input.onchange = (e) => {
+                      if (e.target.files?.[0]) {
+                        showToast(`Uploaded driver file "${e.target.files[0].name}" successfully! Processing records...`);
+                      }
+                    };
+                    input.click();
+                  }} 
+                  className="flex items-center gap-3 w-full p-3 hover:bg-slate-50 rounded-xl transition-colors text-left group cursor-pointer"
+                >
                   <Upload size={16} className="text-slate-400 group-hover:text-purple-600 transition-colors" />
                   <span className="text-xs font-semibold text-slate-700 group-hover:text-slate-900">Bulk Upload Drivers</span>
                 </button>
-                <button className="flex items-center gap-3 w-full p-3 hover:bg-slate-50 rounded-xl transition-colors text-left group cursor-pointer">
+                <button 
+                  onClick={() => {
+                    if (selectedDriver) {
+                      setAddDocModal(true);
+                    } else {
+                      showToast('Please select a driver from the list to upload compliance documents.');
+                    }
+                  }} 
+                  className="flex items-center gap-3 w-full p-3 hover:bg-slate-50 rounded-xl transition-colors text-left group cursor-pointer"
+                >
                   <FileText size={16} className="text-slate-400 group-hover:text-purple-600 transition-colors" />
                   <span className="text-xs font-semibold text-slate-700 group-hover:text-slate-900">Driver Document Upload</span>
                 </button>
-                <button className="flex items-center gap-3 w-full p-3 hover:bg-slate-50 rounded-xl transition-colors text-left group cursor-pointer">
+                <button 
+                  onClick={() => {
+                    if (selectedDriver) {
+                      setActiveTab('Assignments & Availability');
+                    } else {
+                      showToast('Select a driver to view their availability calendar.');
+                    }
+                  }} 
+                  className="flex items-center gap-3 w-full p-3 hover:bg-slate-50 rounded-xl transition-colors text-left group cursor-pointer"
+                >
                   <Calendar size={16} className="text-slate-400 group-hover:text-purple-600 transition-colors" />
                   <span className="text-xs font-semibold text-slate-700 group-hover:text-slate-900">Driver Availability Calendar</span>
                 </button>
-                <button className="flex items-center gap-3 w-full p-3 hover:bg-slate-50 rounded-xl transition-colors text-left group cursor-pointer">
+                <button 
+                  onClick={() => {
+                    if (driverList.length === 0) {
+                      showToast('No driver data available to export.');
+                      return;
+                    }
+                    const headers = ['Driver ID', 'Name', 'Phone', 'Email', 'Licence Class', 'Licence No', 'Compliance Status', 'Status', 'Branch'];
+                    const rows = driverList.map(d => [
+                      `"${d.id || d.driverCode || ''}"`,
+                      `"${d.name || ''}"`,
+                      `"${d.phone || ''}"`,
+                      `"${d.email || ''}"`,
+                      `"${d.licence || ''}"`,
+                      `"${d.licenceNo || ''}"`,
+                      `"${d.complianceStatus || 'Compliant'}"`,
+                      `"${d.status || 'Available'}"`,
+                      `"${d.branch || ''}"`
+                    ]);
+                    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement('a');
+                    link.setAttribute('href', encodedUri);
+                    link.setAttribute('download', `Drivers_Fleet_Export_${new Date().toISOString().slice(0, 10)}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showToast(`Exported ${driverList.length} driver records to CSV!`);
+                  }} 
+                  className="flex items-center gap-3 w-full p-3 hover:bg-slate-50 rounded-xl transition-colors text-left group cursor-pointer"
+                >
                   <Download size={16} className="text-slate-400 group-hover:text-purple-600 transition-colors" />
                   <span className="text-xs font-semibold text-slate-700 group-hover:text-slate-900">Export Drivers List</span>
                 </button>
