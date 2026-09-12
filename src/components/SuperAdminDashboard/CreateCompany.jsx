@@ -22,6 +22,7 @@ export default function CreateCompany({ onBack, onCreated }) {
     tenantId: '',
     status: 'ACTIVE',
     accountManager: '',
+    country: '',
     trialExpiry: ''
   });
 
@@ -84,6 +85,7 @@ export default function CreateCompany({ onBack, onCreated }) {
         tenantId: formData.tenantId.trim() || undefined,
         status: formData.status,
         accountManager: formData.accountManager.trim() || null,
+        country: formData.country.trim() || null,
         trialExpiry: formData.status === 'TRIAL' && formData.trialExpiry ? formData.trialExpiry : null
       };
 
@@ -217,6 +219,22 @@ export default function CreateCompany({ onBack, onCreated }) {
                   onChange={e => handleChange('tenantId', e.target.value)}
                   placeholder="e.g. #TEN-001"
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                />
+              </div>
+
+              {/* Region / Country */}
+              <div className="space-y-1.5 md:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Region / Country
+                </label>
+                <input
+                  type="text"
+                  name="tenant_country_field"
+                  autoComplete="off"
+                  value={formData.country}
+                  onChange={e => handleChange('country', e.target.value)}
+                  placeholder="e.g. USA, UK, India"
+                  className="w-full md:w-1/2 px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                 />
               </div>
             </div>

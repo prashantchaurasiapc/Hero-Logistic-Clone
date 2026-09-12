@@ -129,9 +129,10 @@ export default function Companies() {
             loads: company._count?.loads || 0,
             mrr: activeSub?.plan?.monthlyPrice || 0,
             lastLogin: company.lastLogin ? new Date(company.lastLogin).toLocaleString() : 'N/A',
-            expiry: company.trialExpiry ? new Date(company.trialExpiry).toLocaleDateString() : 'N/A',
+            expiry: company.trialExpiry ? new Date(company.trialExpiry).toLocaleDateString() : (activeSub?.nextRenewal ? new Date(activeSub.nextRenewal).toLocaleDateString() : 'N/A'),
             created: new Date(company.createdAt).toLocaleDateString(),
-            manager: company.accountManager || 'N/A'
+            manager: company.accountManager || 'N/A',
+            country: company.country || 'N/A'
           };
         });
         setCompanies(mappedData);
@@ -1473,11 +1474,11 @@ export default function Companies() {
                     <div className="grid grid-cols-2 gap-y-3 gap-x-4">
                       <div>
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Account Manager</p>
-                        <p className="text-slate-800 font-bold text-[12px]">Alex W.</p>
+                        <p className="text-slate-800 font-bold text-[12px]">{selectedTenant?.manager || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Region/Country</p>
-                        <p className="text-slate-800 font-bold text-[12px]">USA</p>
+                        <p className="text-slate-800 font-bold text-[12px]">{selectedTenant?.country || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Joined Date</p>
@@ -1618,10 +1619,42 @@ export default function Companies() {
             {/* Footer Buttons */}
             <div className="p-6 border-t border-slate-100 bg-white">
               <div className="flex gap-3 mb-3">
-                <button className="flex-1 bg-[#E11D48] text-white px-4 py-3 rounded-xl text-[11px] font-bold hover:bg-[#BE123C] shadow-md shadow-rose-500/20 transition-all text-center cursor-pointer">
+                <button
+                  onClick={async () => {
+                    if (window.confirm(`Are you sure you want to suspend license for ${selectedTenant?.name}?`)) {
+                      try {
+                        const res = await api.put(`/companys/${selectedTenant?.id}`, { status: 'HOLD' });
+                        if (res.data?.success) {
+                          showNotification(`Suspended license for ${selectedTenant?.name}`);
+                          fetchCompaniesAndPlans(false);
+                          setShowInspector(false);
+                        }
+                      } catch (err) {
+                        showNotification('Error suspending company.');
+                      }
+                    }
+                  }}
+                  className="flex-1 bg-[#E11D48] text-white px-4 py-3 rounded-xl text-[11px] font-bold hover:bg-[#BE123C] shadow-md shadow-rose-500/20 transition-all text-center cursor-pointer"
+                >
                   Suspend Workspace License
                 </button>
-                <button className="flex-1 bg-[#E11D48] text-white px-4 py-3 rounded-xl text-[11px] font-bold hover:bg-[#BE123C] shadow-md shadow-rose-500/20 transition-all text-center cursor-pointer">
+                <button
+                  onClick={async () => {
+                    if (window.confirm(`Are you sure you want to permanently delete company: ${selectedTenant?.name}?`)) {
+                      try {
+                        const res = await api.delete(`/companys/${selectedTenant?.id}`);
+                        if (res.status === 204 || res.data?.success) {
+                          showNotification(`Deleted company ${selectedTenant?.name}`);
+                          setCompanies(prev => prev.filter(item => item.id !== selectedTenant?.id));
+                          setShowInspector(false);
+                        }
+                      } catch (err) {
+                        showNotification('Error deleting company.');
+                      }
+                    }
+                  }}
+                  className="flex-1 bg-[#E11D48] text-white px-4 py-3 rounded-xl text-[11px] font-bold hover:bg-[#BE123C] shadow-md shadow-rose-500/20 transition-all text-center cursor-pointer"
+                >
                   Permanently Delete Company
                 </button>
               </div>
