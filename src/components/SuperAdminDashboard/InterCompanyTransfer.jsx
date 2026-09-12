@@ -30,20 +30,28 @@ export default function InterCompanyTransfers() {
 
   const [transfers, setTransfers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [matrixData, setMatrixData] = useState([]);
 
   const fetchTransfers = async () => {
     setIsLoading(true);
     try {
       const res = await api.get('/asset-transfers');
       if (res.data?.success) {
-        setTransfers(res.data.data.map(t => ({
-          id: t.id,
-          status: t.status,
-          title: t.asset?.name || t.assetId || 'Unknown Asset',
-          details: `${t.fromCompany?.name || 'Source'} ➔ ${t.toCompany?.name || 'Destination'}`,
-          date: new Date(t.createdAt).toLocaleDateString(),
-          logs: t.logs || [`${new Date(t.createdAt).toLocaleString()} - Transfer created`]
-        })));
+        setTransfers(res.data.data.map(t => {
+          let uiStatus = 'Pending';
+          if (t.status === 'COMPLETED') uiStatus = 'Completed';
+          else if (t.status === 'IN_TRANSIT') uiStatus = 'Transit';
+          else if (t.status === 'REJECTED') uiStatus = 'Rejected';
+          
+          return {
+            id: t.transferNumber || t.id,
+            status: uiStatus,
+            title: t.payloadName || 'Unknown Asset',
+            details: `${t.senderCompany?.name || 'Source'} ➔ ${t.receiverCompany?.name || 'Destination'}`,
+            date: new Date(t.createdAt).toLocaleDateString(),
+            logs: t.auditTrails && t.auditTrails.length > 0 ? t.auditTrails.map(l => `${new Date(l.timestamp).toLocaleString()} - ${l.eventDescription}`) : [`${new Date(t.createdAt).toLocaleString()} - Transfer created`]
+          };
+        }));
       }
     } catch (err) {
       console.error('Failed to load transfers:', err);
@@ -52,8 +60,25 @@ export default function InterCompanyTransfers() {
     }
   };
 
+  const fetchMatrixData = async () => {
+    try {
+      const res = await api.get('/companys?take=100'); // Fetch up to 100 companies for matrix
+      if (res.data?.success) {
+        setMatrixData(res.data.data.map(c => ({
+          name: c.name,
+          canSend: c.canSendTransfers ?? true,
+          canReceive: c.canReceiveTransfers ?? true,
+          autoApprove: c.autoApproveTransfers ? 'Enabled' : 'Disabled'
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to load permissions matrix:', err);
+    }
+  };
+
   useEffect(() => {
     fetchTransfers();
+    fetchMatrixData();
   }, []);
 
   const triggerToast = (msg) => {
@@ -92,14 +117,6 @@ export default function InterCompanyTransfers() {
     const matchesStatus = statusFilter === 'All' || tr.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
-
-  const matrixData = [
-    { name: 'Falcon Logistics LLC', canSend: false, canReceive: true, autoApprove: 'Enabled' },
-    { name: 'Swift Cargo Express', canSend: true, canReceive: true, autoApprove: 'Disabled' },
-    { name: 'Global Shipping Solutions', canSend: true, canReceive: true, autoApprove: 'Enabled' },
-    { name: 'Texas Hotshot Carriers', canSend: false, canReceive: true, autoApprove: 'Disabled' },
-    { name: 'Apex Logistics LLC', canSend: true, canReceive: true, autoApprove: 'Enabled' }
-  ];
 
   const handleRunExport = () => {
     setIsExporting(true);
@@ -285,7 +302,12 @@ export default function InterCompanyTransfers() {
 
         {/* Transfer Cards List */}
         <div className="space-y-4">
-          {filteredTransfers.map((tr) => (
+          {filteredTransfers.length === 0 ? (
+            <div className="text-center py-10 bg-slate-50 border border-slate-100 border-dashed rounded-2xl">
+              <p className="text-slate-400 font-bold text-xs">No asset transfers found matching your criteria.</p>
+            </div>
+          ) : (
+            filteredTransfers.map((tr) => (
             <div key={tr.id} className="border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white hover:shadow-xs transition-shadow">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
@@ -332,7 +354,8 @@ export default function InterCompanyTransfers() {
                 )}
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -351,7 +374,14 @@ export default function InterCompanyTransfers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700">
-                {matrixData.map((row, idx) => (
+                {matrixData.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="p-8 text-center text-slate-400 text-xs font-bold bg-slate-50 border border-slate-100 border-dashed rounded-xl">
+                      No companies found.
+                    </td>
+                  </tr>
+                ) : (
+                  matrixData.map((row, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/20">
                     <td className="p-4 pl-0 font-extrabold text-slate-800">{row.name}</td>
                     <td className="p-4 text-center">
@@ -374,7 +404,8 @@ export default function InterCompanyTransfers() {
                       </span>
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
               </tbody>
             </table>
           </div>
