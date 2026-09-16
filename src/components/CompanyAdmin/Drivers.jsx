@@ -75,9 +75,9 @@ const safeCalculateAge = (dStr) => {
   return (age >= 0 && age < 120) ? age : '—';
 };
 
-const formatAvatarUrl = (url, fallbackId) => {
-  if (!url || typeof url !== 'string' || !url.trim() || url.includes('...') || url.endsWith('..') || url === 'https://pravatar.cc/150?u...') {
-    return fallbackId ? `https://i.pravatar.cc/150?u=${fallbackId}` : 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80';
+const formatAvatarUrl = (url) => {
+  if (!url || typeof url !== 'string' || !url.trim() || url.includes('...') || url.endsWith('..') || url.includes('pravatar') || url.includes('unsplash')) {
+    return null;
   }
   const trimmed = url.trim();
   if (trimmed.startsWith('/uploads/')) {
@@ -103,7 +103,36 @@ export default function Drivers() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoPreview(reader.result);
+        const rawResult = reader.result;
+        if (typeof rawResult === 'string' && rawResult.startsWith('data:image/')) {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxDim = 300;
+            let width = img.width;
+            let height = img.height;
+            if (width > height) {
+              if (width > maxDim) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              }
+            } else {
+              if (height > maxDim) {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            canvas.width = width || 150;
+            canvas.height = height || 150;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            setPhotoPreview(canvas.toDataURL('image/jpeg', 0.8));
+          };
+          img.onerror = () => setPhotoPreview(rawResult);
+          img.src = rawResult;
+        } else {
+          setPhotoPreview(rawResult);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -124,15 +153,18 @@ export default function Drivers() {
           else if (rawStatus === 'AVAILABLE' || rawStatus === 'Available') formattedStatus = 'Available';
           else formattedStatus = rawStatus;
 
-          const rawEmpType = d.employmentType || 'FULL_TIME';
-          let formattedEmp = 'Full Time';
-          if (rawEmpType === 'PART_TIME' || rawEmpType === 'Part Time') formattedEmp = 'Part Time';
+          const rawEmpType = d.employmentType;
+          let formattedEmp = '';
+          if (!rawEmpType) formattedEmp = '';
+          else if (rawEmpType === 'PART_TIME' || rawEmpType === 'Part Time') formattedEmp = 'Part Time';
           else if (rawEmpType === 'CASUAL' || rawEmpType === 'Casual') formattedEmp = 'Casual';
           else if (rawEmpType === 'CONTRACTOR' || rawEmpType === 'Contractor') formattedEmp = 'Contractor';
           else if (rawEmpType === 'FULL_TIME' || rawEmpType === 'Full Time') formattedEmp = 'Full Time';
           else formattedEmp = rawEmpType;
 
-          const fullName = d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || 'Driver';
+          const nameFromFirstLast = `${d.firstName || ''} ${d.lastName || ''}`.trim();
+          const rawName = nameFromFirstLast || (d.name && !d.name.startsWith('DRV-') ? d.name : '');
+          const fullName = rawName || 'Unnamed Driver';
           const dobFormatted = safeDateToYMD(d.dob) || '—';
           const calculatedAge = d.dob ? safeCalculateAge(d.dob) : '—';
           const fullAddr = [d.address, d.city, d.state, d.postalCode].filter(Boolean).join(', ') || d.address || '—';
@@ -140,7 +172,7 @@ export default function Drivers() {
 
           return {
             id: d.id,
-            driverCode: d.driverCode || (d.id ? 'DRV-' + d.id.slice(0, 6).toUpperCase() : '—'),
+            driverCode: d.driverCode || '—',
             firstName: d.firstName || '',
             lastName: d.lastName || '',
             name: fullName,
@@ -157,20 +189,20 @@ export default function Drivers() {
             city: d.city || '',
             state: d.state || '',
             postalCode: d.postalCode || '',
-            licence: d.licenseType || d.licenceType || '—',
-            licenceNo: d.licenseNumber || d.licenceNumber || '—',
-            licenseState: d.licenseState || '—',
-            licenseClass: d.licenseClass || '—',
-            issueDate: safeDateToLocale(d.licenseIssueDate, 'en-AU', d.issueDate || '—'),
+            licence: d.licenseType || d.licenceType || '',
+            licenceNo: d.licenseNumber || d.licenceNumber || '',
+            licenseState: d.licenseState || '',
+            licenseClass: d.licenseClass || '',
+            issueDate: safeDateToLocale(d.licenseIssueDate, 'en-AU', d.issueDate || ''),
             licenseIssueDate: safeDateToYMD(d.licenseIssueDate),
             licenseExpiry: safeDateToYMD(d.licenseExpiry),
             employmentType: formattedEmp,
             status: formattedStatus,
             role: d.role || 'Driver',
-            category: d.category || 'Heavy Rig',
-            shift: d.shift || 'Morning',
+            category: d.category || '',
+            shift: d.shift || '',
             branch: branchName,
-            payType: d.payType || 'Daily',
+            payType: d.payType || '',
             payRate: d.payRate ? String(d.payRate) : '',
             bankName: d.bankName || '',
             accountNumber: d.accountNumber || '',
@@ -181,13 +213,25 @@ export default function Drivers() {
             preferredRoutes: d.preferredRoutes || '',
             preferredRegions: d.preferredRegions || '',
             maxDistPerTripKm: d.maxDistPerTripKm ? String(d.maxDistPerTripKm) : '',
-            dgCertified: d.dgCertified ? 'Yes' : 'No',
-            hvCertified: d.hvCertified !== false ? 'Yes' : 'No',
+            dgCertified: d.dgCertified === true,
+            hvCertified: d.hvCertified === true,
             assignmentId: '—',
             assignmentType: 'Not assigned',
             complianceStatus: d.complianceScore && d.complianceScore < 80 ? 'Action Required' : 'Compliant',
             complianceScore: `${d.complianceScore || 100}%`,
-            avatar: formatAvatarUrl(d.avatarUrl, d.id)
+            avatar: formatAvatarUrl(d.avatarUrl, d.id),
+            notes: d.notes || '',
+            medicalExpiry: d.medicalExpiry || '',
+            medicalResult: d.medicalResult || '',
+            medicalRestrictions: d.medicalRestrictions || '',
+            fatigueCertExpiry: d.fatigueCertExpiry || '',
+            totalLoads: d.totalLoads || 0,
+            totalDistanceKm: d.totalDistanceKm || 0,
+            onTimeRate: d.onTimeRate || null,
+            incidents: d.incidents || 0,
+            accidents: d.accidents || 0,
+            currentVehicle: d.currentVehicle || null,
+            language: d.language || '',
           };
         });
         setDriverList(mapped);
@@ -402,7 +446,7 @@ export default function Drivers() {
         </div>
         <div class="info-box" style="text-align: right;">
           <p class="lbl">Employment Details</p>
-          <p class="val">${selectedDriver.employmentType || 'Full Time'}</p>
+          <p class="val">${selectedDriver.employmentType || '—'}</p>
           <p class="sub">Branch: ${selectedDriver.branch || 'Sydney'}</p>
         </div>
       </div>
@@ -675,7 +719,7 @@ export default function Drivers() {
         <div class="info-box" style="text-align: right;">
           <p class="lbl">Pay Period</p>
           <p class="val">${slip.period}</p>
-          <p class="sub">Employment: Full Time (${licence})</p>
+          <p class="sub">${selectedDriver?.employmentType ? `Employment: ${selectedDriver.employmentType}` : ''} ${licence ? `(${licence})` : ''}</p>
         </div>
       </div>
 
@@ -767,8 +811,8 @@ export default function Drivers() {
         </div>
         <div class="info-box" style="text-align: right;">
           <p class="lbl">Driver ID / Licence</p>
-          <p class="val" style="color: #7c3aed;">${driverId}</p>
-          <p class="sub">Employment: <b>Full Time</b></p>
+          <p class="val" style="color: #7c3aed;">${selectedDriver?.driverCode || driverId}</p>
+          ${selectedDriver?.employmentType ? `<p class="sub">Employment: <b>${selectedDriver.employmentType}</b></p>` : ''}
         </div>
       </div>
 
@@ -896,7 +940,7 @@ export default function Drivers() {
       </label>
       {type === "select" ? (
         <select key={fieldKey} name={fieldName} defaultValue={defaultValue || ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer">
-          <option value="" disabled hidden={Boolean(defaultValue)}>Select {label}</option>
+          <option value="">Select {label}</option>
           {options.length > 0 ? options.map((opt, i) => (
             <option key={i} value={opt}>{opt}</option>
           )) : (
@@ -2000,15 +2044,15 @@ export default function Drivers() {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Driver ID / Code</p>
-                  <p className="font-extrabold text-purple-700 font-mono">{selectedDriver ? selectedDriver.id : 'DRV-101'}</p>
+                  <p className="font-extrabold text-purple-700 font-mono">{selectedDriver?.driverCode || selectedDriver?.id || '—'}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Assigned Branch</p>
-                  <p className="font-extrabold text-slate-900">{selectedDriver ? selectedDriver.branch : 'Melbourne'}</p>
+                  <p className="font-extrabold text-slate-900">{selectedDriver?.branch || '—'}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Employment Type</p>
-                  <p className="font-extrabold text-slate-900">{selectedDriver ? selectedDriver.type : 'Full Time'}</p>
+                  <p className="font-extrabold text-slate-900">{selectedDriver?.employmentType || selectedDriver?.type || '—'}</p>
                 </div>
               </div>
 
@@ -2040,15 +2084,15 @@ export default function Drivers() {
               <div className="grid grid-cols-4 gap-3 text-xs border border-slate-200 rounded-xl p-4 bg-white">
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase">Total Loads</p>
-                  <p className="text-base font-extrabold text-slate-900">124</p>
+                  <p className="text-base font-extrabold text-slate-900">{selectedDriver.loads?.length ?? selectedDriver.totalLoads ?? 0}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase">Distance (YTD)</p>
-                  <p className="text-base font-extrabold text-slate-900">78,420 km</p>
+                  <p className="text-base font-extrabold text-slate-900">{selectedDriver.totalDistanceKm ? `${Number(selectedDriver.totalDistanceKm).toLocaleString()} km` : '—'}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Customer Rating</p>
-                  <p className="text-base font-extrabold text-slate-900">4.92 / 5.0</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">On-Time Rate</p>
+                  <p className="text-base font-extrabold text-slate-900">{selectedDriver.onTimeRate ? `${selectedDriver.onTimeRate}%` : '—'}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase">Compliance</p>
@@ -2743,7 +2787,7 @@ export default function Drivers() {
                 <div className="text-right">
                   <p className="text-[10px] text-slate-400 font-bold uppercase">Pay Period</p>
                   <p className="font-extrabold text-slate-900">{selectedPayslip.period}</p>
-                  <p className="text-slate-500">Employment: Full Time ({selectedDriver?.licence || 'HR Grade 5'})</p>
+                  <p className="text-slate-500">Employment: {selectedDriver?.employmentType || '—'} ({selectedDriver?.licence || selectedDriver?.licenseType || '—'})</p>
                 </div>
               </div>
 
@@ -2761,7 +2805,7 @@ export default function Drivers() {
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     <tr>
-                      <td className="p-2 border-r border-slate-200 font-bold">Daily Base Rate ({selectedDriver?.licence || 'Heavy Rigid'})</td>
+                      <td className="p-2 border-r border-slate-200 font-bold">Daily Base Rate ({selectedDriver?.licence || selectedDriver?.licenseType || selectedDriver?.licenceType || 'Standard'})</td>
                       <td className="p-2 border-r border-slate-200 text-right">$550.00 / day</td>
                       <td className="p-2 border-r border-slate-200 text-right">{selectedPayslip.units || '6 days'}</td>
                       <td className="p-2 text-right font-bold text-slate-900">{selectedPayslip.baseAmount || selectedPayslip.gross}</td>
@@ -3069,10 +3113,12 @@ export default function Drivers() {
     const formDesc = isEditMode ? "Update driver profile by modifying the fields below." : "Create a new driver profile by entering all required information.";
 
     // Default values if editing selected driver
+    const rawFName = selectedDriver?.firstName || (selectedDriver?.name && !selectedDriver.name.startsWith('DRV-') ? selectedDriver.name.split(' ')[0] : '');
+    const rawLName = selectedDriver?.lastName || (selectedDriver?.name && !selectedDriver.name.startsWith('DRV-') ? selectedDriver.name.split(' ').slice(1).join(' ') : '');
     const defaultData = isEditMode && selectedDriver ? {
-      firstName: selectedDriver?.firstName || selectedDriver?.name?.split(' ')[0] || '',
-      lastName: selectedDriver?.lastName || selectedDriver?.name?.split(' ')[1] || '',
-      empId: selectedDriver?.driverCode || (selectedDriver?.id?.length > 12 ? 'DRV-' + selectedDriver.id.slice(0, 6).toUpperCase() : (selectedDriver?.id || '')),
+      firstName: rawFName && !rawFName.startsWith('DRV-') ? rawFName : '',
+      lastName: rawLName && !rawLName.startsWith('DRV-') ? rawLName : '',
+      empId: selectedDriver?.driverCode && selectedDriver?.driverCode !== '—' ? selectedDriver.driverCode : '',
       dob: safeDateToYMD(selectedDriver?.dob),
       age: selectedDriver?.age && selectedDriver?.age !== '—' ? selectedDriver.age : '',
       gender: selectedDriver?.gender || '',
@@ -3139,13 +3185,13 @@ export default function Drivers() {
           const postalCode = fd.get('PostalCode') || '';
 
           const role = fd.get('DriverRole') || 'Driver';
-          const employmentType = fd.get('EmploymentType') || 'Full Time';
+          const employmentType = fd.get('EmploymentType') || '';
           const branch = fd.get('Branch') || '';
           const status = fd.get('DriverStatus') || 'Available';
           const shift = fd.get('Shift') || '';
           const category = fd.get('DriverCategory') || '';
 
-          const licenceType = fd.get('LicenceType') || fd.get('licenceType') || 'HR (Heavy Rigid)';
+          const licenceType = fd.get('LicenceType') || fd.get('licenceType') || '';
           const licenceNumber = fd.get('LicenceNumber') || fd.get('licenceNumber') || '';
           const licenseState = fd.get('LicenceState') || fd.get('licenseState') || '';
           const licenseIssueDate = safeDateToISO(fd.get('IssueDate'));
@@ -3258,7 +3304,7 @@ export default function Drivers() {
                   licenseIssueDate: safeDateToYMD(licenseIssueDate),
                   status: status || base.status || 'Available',
                   address: fullAddr,
-                  employmentType: employmentType || base.employmentType || 'Full Time',
+                  employmentType: employmentType || base.employmentType || '',
                   dob: dobYMD,
                   age: ageCalc,
                   branch: branch || base.branch || '',
@@ -3346,12 +3392,18 @@ export default function Drivers() {
                 <div className="col-span-1 flex flex-col items-center gap-3">
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest self-start">Profile Photo</label>
                   <div className="relative group cursor-pointer" onClick={() => driverFileInputRef.current?.click()}>
-                    <img 
-                      src={formatAvatarUrl(photoPreview || (isEditMode ? selectedDriver?.avatar : ''), selectedDriver?.id)} 
-                      alt="Avatar Preview" 
-                      onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"; }}
-                      className="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-sm transition-transform group-hover:scale-105" 
-                    />
+                    {formatAvatarUrl(photoPreview || (isEditMode ? selectedDriver?.avatar : '')) ? (
+                      <img 
+                        src={formatAvatarUrl(photoPreview || (isEditMode ? selectedDriver?.avatar : ''))} 
+                        alt="Avatar Preview" 
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                        className="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-sm transition-transform group-hover:scale-105" 
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full bg-slate-100 border-4 border-slate-200 flex items-center justify-center text-slate-400 shadow-sm transition-transform group-hover:scale-105">
+                        <User size={36} />
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
                       <Upload size={16} />
                       <span className="text-[9px] font-bold mt-1">Upload</span>
@@ -3390,7 +3442,7 @@ export default function Drivers() {
                   <InputField label="Employee ID * (Manual Edit Option)" defaultValue={isEditMode ? defaultData.empId : ''} placeholder="e.g. DRV-009" />
                   <InputField label="Date of Birth" type="date" defaultValue={isEditMode ? defaultData.dob : ''} />
                   <InputField label="Age" type="text" defaultValue={isEditMode ? defaultData.age : ''} placeholder="e.g. 34" optional={true} />
-                  <InputField label="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} defaultValue={isEditMode ? (defaultData.gender || 'Male') : ''} />
+                  <InputField label="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} defaultValue={isEditMode ? (defaultData.gender || '') : ''} />
                   <InputField label="Nationality" defaultValue={isEditMode ? defaultData.nationality : ''} />
                   <InputField label="Phone Number" defaultValue={isEditMode ? defaultData.phone : ''} />
                   <InputField label="Email Address" defaultValue={isEditMode ? defaultData.email : ''} />
@@ -3408,12 +3460,12 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">2. Employment Information</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
-                <InputField label="Driver Role" type="select" options={['Driver', 'Senior Driver', 'Team Lead']} defaultValue={isEditMode ? (defaultData.role || 'Driver') : ''} />
-                <InputField label="Employment Type" type="select" options={['Full Time', 'Part Time', 'Casual']} defaultValue={isEditMode ? (defaultData.employmentType || 'Full Time') : ''} />
+                <InputField label="Driver Role" type="select" options={['Driver', 'Senior Driver', 'Team Lead']} defaultValue={isEditMode ? (defaultData.role || '') : ''} />
+                <InputField label="Employment Type" type="select" options={['Full Time', 'Part Time', 'Casual']} defaultValue={isEditMode ? (defaultData.employmentType || '') : ''} />
                 <InputField label="Branch" type="select" options={['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide']} defaultValue={isEditMode ? defaultData.branch : ''} />
                 <InputField label="Reports To" type="select" options={['Sarah Mitchell', 'John Doe', 'Emily Chen']} defaultValue={isEditMode ? (defaultData.reportsTo || '') : ''} />
                 <InputField label="Joining Date" type="date" defaultValue={isEditMode ? defaultData.joiningDate : ''} />
-                <InputField label="Driver Status" type="select" options={['Available', 'On Duty', 'Off Duty', 'On Leave', 'Unavailable']} defaultValue={isEditMode ? (selectedDriver?.status || 'Available') : 'Available'} />
+                <InputField label="Driver Status" type="select" options={['Available', 'On Duty', 'Off Duty', 'On Leave', 'Unavailable']} defaultValue={isEditMode ? (selectedDriver?.status || '') : ''} />
                 <InputField label="Shift" type="select" options={['Morning', 'Afternoon', 'Night', 'Rotating']} defaultValue={isEditMode ? defaultData.shift : ''} />
                 <InputField label="Driver Category" type="select" options={['Heavy Rig', 'Medium Rig', 'Light Rig', 'Multi Combination']} defaultValue={isEditMode ? defaultData.category : ''} />
               </div>
@@ -3630,12 +3682,18 @@ export default function Drivers() {
               <div className="flex-1 min-w-0 pr-0 md:pr-6 border-b md:border-b-0 md:border-r border-slate-100 pb-6 md:pb-0">
                 <div className="flex items-start gap-4 mb-5">
                   <div className="relative shrink-0">
-                    <img 
-                      src={formatAvatarUrl(selectedDriver.avatar, selectedDriver.id)} 
-                      alt={selectedDriver.name} 
-                      onError={(e) => { e.target.onerror = null; e.target.src = 'https://i.pravatar.cc/150?u=' + selectedDriver.id; }}
-                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-slate-200 object-cover shadow-2xs" 
-                    />
+                    {formatAvatarUrl(selectedDriver.avatar) ? (
+                      <img 
+                        src={formatAvatarUrl(selectedDriver.avatar)} 
+                        alt={selectedDriver.name} 
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-slate-200 object-cover shadow-2xs" 
+                      />
+                    ) : (
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 font-bold">
+                        <User size={28} />
+                      </div>
+                    )}
                     <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
                   </div>
                   <div className="flex-grow min-w-0">
@@ -3646,7 +3704,7 @@ export default function Drivers() {
                     <div className="grid grid-cols-3 gap-3 sm:gap-6 text-xs max-w-sm">
                       <div>
                         <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Employee</p>
-                        <p className="font-extrabold text-slate-900">{selectedDriver.driverCode || (selectedDriver.id?.length > 12 ? 'DRV-' + selectedDriver.id.slice(0, 6).toUpperCase() : selectedDriver.id)}</p>
+                        <p className="font-extrabold text-slate-900">{selectedDriver.driverCode || '—'}</p>
                       </div>
                       <div>
                         <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Age</p>
@@ -3668,7 +3726,7 @@ export default function Drivers() {
                 <div className="grid grid-cols-2 gap-y-3.5 gap-x-6 text-xs">
                   <div>
                     <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Licence Type</p>
-                    <p className="font-extrabold text-slate-900 leading-snug">{selectedDriver.licence}</p>
+                    <p className="font-extrabold text-slate-900 leading-snug">{selectedDriver.licence || '—'}</p>
                   </div>
                   <div>
                     <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Address</p>
@@ -3677,7 +3735,7 @@ export default function Drivers() {
 
                   <div>
                     <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Licence No.</p>
-                    <p className="font-extrabold text-slate-900">{selectedDriver.licenceNo}</p>
+                    <p className="font-extrabold text-slate-900">{selectedDriver.licenceNo || '—'}</p>
                   </div>
                   <div>
                     <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Issue Date</p>
@@ -3774,31 +3832,31 @@ export default function Drivers() {
                     <div className="flex items-center gap-3 text-slate-500">
                       <Truck size={14} /> <span className="text-xs font-semibold">Total Loads Completed</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-900">124</span>
+                    <span className="text-sm font-bold text-slate-900">{selectedDriver.loads?.length ?? selectedDriver.totalLoads ?? 0}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3 text-slate-500">
                       <Clock size={14} /> <span className="text-xs font-semibold">On Time Delivery</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-900">97%</span>
+                    <span className="text-sm font-bold text-slate-900">{selectedDriver.onTimeRate ? `${selectedDriver.onTimeRate}%` : '—'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3 text-slate-500">
                       <MapPin size={14} /> <span className="text-xs font-semibold">Total Distance (YTD)</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-900">78,420 km</span>
+                    <span className="text-sm font-bold text-slate-900">{selectedDriver.totalDistanceKm ? `${Number(selectedDriver.totalDistanceKm).toLocaleString()} km` : '—'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3 text-slate-500">
                       <AlertTriangle size={14} /> <span className="text-xs font-semibold">Incidents</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-900">0</span>
+                    <span className="text-sm font-bold text-slate-900">{selectedDriver.incidents ?? 0}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3 text-slate-500">
                       <Activity size={14} /> <span className="text-xs font-semibold">Accidents</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-900">0</span>
+                    <span className="text-sm font-bold text-slate-900">{selectedDriver.accidents ?? 0}</span>
                   </div>
                 </div>
               </div>
@@ -3835,15 +3893,17 @@ export default function Drivers() {
                     <button className="flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded text-[9px] font-bold text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"><Plus size={10} /> Edit</button>
                   </div>
                   <div className="space-y-1">
-                    <DataRow label="Emergency Contact" value="Jane Thompson (Wife)" />
-                    <DataRow label="Emergency Phone" value="0411 987 654" />
-                    <DataRow label="Nationality" value="Australian" />
-                    <DataRow label="Language" value="English" />
-                    <DataRow label="Driver Reference No." value="NSW11234567" />
-                    <div className="py-2 flex flex-col gap-1">
-                      <span className="text-[11px] font-medium text-slate-500">Note:</span>
-                      <span className="text-[11px] font-bold text-slate-800">Excellent driver. Very reliable and takes great care of the vehicles.</span>
-                    </div>
+                    <DataRow label="Emergency Contact" value={selectedDriver.emergencyContact || '—'} />
+                    <DataRow label="Emergency Phone" value={selectedDriver.emergencyPhone || selectedDriver.emergencyContactPhone || '—'} />
+                    <DataRow label="Nationality" value={selectedDriver.nationality || '—'} />
+                    <DataRow label="Language" value={selectedDriver.language || '—'} />
+                    <DataRow label="Driver Reference No." value={selectedDriver.licenceNo || selectedDriver.licenseNumber || '—'} />
+                    {selectedDriver.notes && (
+                      <div className="py-2 flex flex-col gap-1">
+                        <span className="text-[11px] font-medium text-slate-500">Note:</span>
+                        <span className="text-[11px] font-bold text-slate-800">{selectedDriver.notes}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -3853,46 +3913,33 @@ export default function Drivers() {
                     <SectionHeading title="Skills & Endorsements" />
                     <button className="flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded text-[9px] font-bold text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"><Plus size={10} /> Add / Edit</button>
                   </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 size={14} className="text-emerald-500" />
-                        <span className="text-[11px] font-bold text-slate-700">Load Restraint</span>
-                      </div>
-                      <span className="text-[11px] font-black text-slate-800">Yes</span>
+                  {selectedDriver.dgCertified !== undefined || selectedDriver.hvCertified !== undefined || selectedDriver.skills ? (
+                    <div className="space-y-3">
+                      {selectedDriver.dgCertified !== undefined && (
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            {selectedDriver.dgCertified ? <CheckCircle2 size={14} className="text-emerald-500" /> : <XCircle size={14} className="text-slate-300" />}
+                            <span className={`text-[11px] font-bold ${selectedDriver.dgCertified ? 'text-slate-700' : 'text-slate-500'}`}>Dangerous Goods (DG)</span>
+                          </div>
+                          <span className="text-[11px] font-black text-slate-800">{selectedDriver.dgCertified ? 'Yes' : 'No'}</span>
+                        </div>
+                      )}
+                      {selectedDriver.hvCertified !== undefined && (
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            {selectedDriver.hvCertified ? <CheckCircle2 size={14} className="text-emerald-500" /> : <XCircle size={14} className="text-slate-300" />}
+                            <span className={`text-[11px] font-bold ${selectedDriver.hvCertified ? 'text-slate-700' : 'text-slate-500'}`}>Heavy Vehicle Certified</span>
+                          </div>
+                          <span className="text-[11px] font-black text-slate-800">{selectedDriver.hvCertified ? 'Yes' : 'No'}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 size={14} className="text-emerald-500" />
-                        <span className="text-[11px] font-bold text-slate-700">Forklift Licence</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-black text-slate-800">LF123456</span>
-                        <span className="text-[9px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-black">Valid</span>
-                      </div>
+                  ) : (
+                    <div className="text-center py-6 text-slate-400">
+                      <XCircle size={24} className="mx-auto mb-2 opacity-30" />
+                      <p className="text-[11px] font-semibold">No skills or endorsements recorded</p>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <XCircle size={14} className="text-slate-300" />
-                        <span className="text-[11px] font-bold text-slate-500">Dangerous Goods (DG)</span>
-                      </div>
-                      <span className="text-[11px] font-black text-slate-800">No</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 size={14} className="text-emerald-500" />
-                        <span className="text-[11px] font-bold text-slate-700">First Aid</span>
-                      </div>
-                      <span className="text-[11px] font-black text-slate-800">Yes</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 size={14} className="text-emerald-500" />
-                        <span className="text-[11px] font-bold text-slate-700">Advanced Fatigue Management</span>
-                      </div>
-                      <span className="text-[11px] font-black text-slate-800">Yes</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Current Assignment */}
@@ -3901,48 +3948,26 @@ export default function Drivers() {
                     <SectionHeading title="Current Assignment" />
                     <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors">View Assignments &rarr;</button>
                   </div>
-
-                  <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100 mb-3">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center gap-2 text-indigo-700">
-                        <Truck size={14} /> <span className="text-xs font-black">TRK-101 | Volvo FH 540</span>
-                      </div>
-                      <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[9px] font-black uppercase tracking-widest">Assigned</span>
-                    </div>
-
-                    <div className="bg-white rounded-lg p-3 border border-indigo-50 mb-3">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Load</p>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center"><Target size={10} className="text-slate-500" /></div>
-                          <span className="text-[11px] font-bold text-slate-800">PO-12546 | ABC Motors - Car Transport</span>
+                  {selectedDriver.currentVehicle ? (
+                    <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-2 text-indigo-700">
+                          <Truck size={14} /> <span className="text-xs font-black">{selectedDriver.currentVehicle.rego || selectedDriver.currentVehicle.id} | {[selectedDriver.currentVehicle.make, selectedDriver.currentVehicle.model].filter(Boolean).join(' ') || 'Vehicle'}</span>
                         </div>
-                        <button className="text-[9px] font-bold text-purple-600 hover:text-purple-700 transition-colors">View Load &rarr;</button>
+                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[9px] font-black uppercase tracking-widest">Assigned</span>
+                      </div>
+                      <div className="space-y-1">
+                        <DataRow label="Vehicle Type" value={selectedDriver.currentVehicle.category || '—'} />
+                        <DataRow label="Status" value={selectedDriver.currentVehicle.status || '—'} />
                       </div>
                     </div>
-
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">From</p>
-                        <p className="text-xs font-bold text-slate-800 mb-0.5">Sydney NSW</p>
-                        <p className="text-[9px] font-medium text-slate-500">15/07/2025 08:00 AM</p>
-                      </div>
-                      <div className="flex-grow px-4 flex flex-col items-center">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">To</p>
-                        <div className="w-full h-px bg-indigo-200 relative my-1.5">
-                          <ArrowRight size={10} className="absolute -top-1 right-0 text-indigo-300" />
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Status</p>
-                        <p className="text-xs font-bold text-slate-800 mb-0.5">Brisbane QLD</p>
-                        <p className="text-[9px] font-medium text-slate-500">16/07/2025 09:00 AM</p>
-                      </div>
-                      <div className="ml-2">
-                        <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[9px] font-black border border-emerald-200">In Progress</span>
-                      </div>
+                  ) : (
+                    <div className="text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                      <Truck size={24} className="mx-auto mb-2 text-slate-300" />
+                      <p className="text-[11px] font-bold text-slate-700">No Vehicle Currently Assigned</p>
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">This driver has no active assignment.</p>
                     </div>
-                  </div>
+                  )}
                 </div>
 
               </div>
@@ -3975,29 +4000,23 @@ export default function Drivers() {
                     <button className="flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded text-[9px] font-bold text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"><Plus size={10} /> Edit</button>
                   </div>
                   <div className="space-y-1">
-                    <div className="flex justify-between items-center py-2 border-b border-slate-50">
-                      <span className="text-[11px] font-medium text-slate-500">Medical Expiry Date</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold text-slate-800">10/08/2025</span>
-                        <span className="text-[9px] text-orange-600 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded font-black">In 28 days</span>
-                      </div>
-                    </div>
-                    <DataRow label="Last Medical Result" value="Fit to Drive" />
-                    <DataRow label="Restrictions" value="Corrective lenses when driving" />
+                    <DataRow label="Medical Expiry Date" value={selectedDriver.medicalExpiry ? safeDateToLocale(selectedDriver.medicalExpiry, 'en-AU') : '—'} />
+                    <DataRow label="Last Medical Result" value={selectedDriver.medicalResult || '—'} />
+                    <DataRow label="Restrictions" value={selectedDriver.medicalRestrictions || '—'} />
                   </div>
                 </div>
 
                 {/* Availability */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                   <div className="flex justify-between items-center mb-4">
-                    <SectionHeading title="- Availability" />
+                    <SectionHeading title="Availability" />
                     <button className="flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded text-[9px] font-bold text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"><Plus size={10} /> Edit</button>
                   </div>
                   <div className="space-y-1">
-                    <DataRow label="Next Available From" value="21/07/2025 08:00 AM" />
-                    <DataRow label="Available For (Days)" value="3 days" />
-                    <DataRow label="Preferred Regions" value="NSW, QLD, VIC" />
-                    <DataRow label="Unavailability" value="—" />
+                    <DataRow label="Preferred Shift" value={selectedDriver.shift || '—'} />
+                    <DataRow label="Preferred Regions" value={selectedDriver.preferredRegions || '—'} />
+                    <DataRow label="Preferred Routes" value={selectedDriver.preferredRoutes || '—'} />
+                    <DataRow label="Max Distance / Trip" value={selectedDriver.maxDistPerTripKm ? `${selectedDriver.maxDistPerTripKm} km` : '—'} />
                   </div>
                 </div>
 
@@ -4013,62 +4032,42 @@ export default function Drivers() {
                     <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors">View All &rarr;</button>
                   </div>
                   <div className="space-y-3">
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100"><AlertTriangle size={12} /></div>
-                        <span className="text-[11px] font-bold text-slate-800">Licence Expiry (HR)</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold text-slate-500">20/09/2026</span>
-                        <span className="text-[9px] text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded font-black w-14 text-center">In 63 days</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-orange-50 flex items-center justify-center text-orange-600 border border-orange-100"><Target size={12} /></div>
-                        <span className="text-[11px] font-bold text-slate-800">Medical Expiry</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold text-slate-500">10/08/2025</span>
-                        <span className="text-[9px] text-orange-600 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded font-black w-14 text-center">In 28 days</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-orange-50 flex items-center justify-center text-orange-600 border border-orange-100"><FileText size={12} /></div>
-                        <span className="text-[11px] font-bold text-slate-800">Driver Card Expiry</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold text-slate-500">12/10/2025</span>
-                        <span className="text-[9px] text-orange-600 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded font-black w-14 text-center">In 91 days</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100"><CheckCircle2 size={12} /></div>
-                        <span className="text-[11px] font-bold text-slate-800">First Aid Expiry</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold text-slate-500">05/12/2025</span>
-                        <span className="text-[9px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-black w-14 text-center">In 135 days</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100"><CheckCircle2 size={12} /></div>
-                        <span className="text-[11px] font-bold text-slate-800">Fatigue Certificate</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold text-slate-500">15/02/2026</span>
-                        <span className="text-[9px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-black w-14 text-center">In 207 days</span>
-                      </div>
-                    </div>
-
+                    {(() => {
+                      const alerts = [];
+                      const now = new Date();
+                      const addAlert = (label, dateStr, icon) => {
+                        if (!dateStr || dateStr === '—') return;
+                        const d = new Date(dateStr);
+                        if (isNaN(d.getTime())) return;
+                        const diffDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
+                        const isExpired = diffDays < 0;
+                        const isUrgent = diffDays >= 0 && diffDays <= 30;
+                        const color = isExpired ? 'rose' : isUrgent ? 'orange' : 'emerald';
+                        const label2 = isExpired ? `Expired ${Math.abs(diffDays)} days ago` : `In ${diffDays} days`;
+                        alerts.push({ label, date: d.toLocaleDateString('en-AU'), label2, color, icon });
+                      };
+                      addAlert('Licence Expiry', selectedDriver.licenseExpiry || selectedDriver.licenceExpiry, <FileText size={12} />);
+                      addAlert('Medical Expiry', selectedDriver.medicalExpiry, <Target size={12} />);
+                      addAlert('Fatigue Certificate', selectedDriver.fatigueCertExpiry, <AlertTriangle size={12} />);
+                      if (alerts.length === 0) return (
+                        <div className="text-center py-6 text-slate-400">
+                          <CheckCircle2 size={24} className="mx-auto mb-2 opacity-30" />
+                          <p className="text-[11px] font-semibold">No expiry alerts — all documents clear</p>
+                        </div>
+                      );
+                      return alerts.map((a, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-6 h-6 rounded bg-${a.color}-50 flex items-center justify-center text-${a.color}-600 border border-${a.color}-100`}>{a.icon}</div>
+                            <span className="text-[11px] font-bold text-slate-800">{a.label}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-semibold text-slate-500">{a.date}</span>
+                            <span className={`text-[9px] text-${a.color}-600 bg-${a.color}-50 border border-${a.color}-200 px-1.5 py-0.5 rounded font-black w-20 text-center`}>{a.label2}</span>
+                          </div>
+                        </div>
+                      ));
+                    })()}
                   </div>
                 </div>
 
@@ -4087,7 +4086,7 @@ export default function Drivers() {
                       </div>
                       <div>
                         <h4 className="text-[11px] font-bold text-slate-800">Performance Insight</h4>
-                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5">Mike has 97% on-time delivery. Keep up the excellent work!</p>
+                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{selectedDriver.name} has {selectedDriver.onTimeRate ? `${selectedDriver.onTimeRate}% on-time delivery.` : 'no performance data recorded yet.'} {selectedDriver.onTimeRate >= 90 ? 'Keep up the excellent work!' : ''}</p>
                       </div>
                     </div>
 
@@ -4097,7 +4096,7 @@ export default function Drivers() {
                       </div>
                       <div>
                         <h4 className="text-[11px] font-bold text-slate-800">Suggested Next Loads</h4>
-                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5 mb-1.5">AI suggests 2 loads suitable for Mike based on location and availability.</p>
+                        <p className="text-[10px] text-slate-500 leading-tight mt-0.5 mb-1.5">AI can suggest loads based on {selectedDriver.name}'s location and availability.</p>
                         <button className="text-[9px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors cursor-pointer">View Suggestions &rarr;</button>
                       </div>
                     </div>
@@ -4121,25 +4120,18 @@ export default function Drivers() {
                     <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors"><Plus size={10} /> Add Note</button>
                   </div>
 
-                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 text-[8px] font-black border border-slate-300">
-                          SM
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-800">Sarah Mitchell</span>
-                          <span className="ml-2 px-1.5 py-0.5 bg-slate-200 text-slate-600 rounded text-[7px] font-black uppercase tracking-widest">Internal</span>
-                        </div>
-                      </div>
-                      <span className="text-[9px] text-slate-400 font-medium">10/07/2026 09:15 AM</span>
+                  {selectedDriver.notes ? (
+                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-4">
+                      <p className="text-[11px] text-slate-700 font-medium leading-relaxed">
+                        {selectedDriver.notes}
+                      </p>
                     </div>
-                    <p className="text-[11px] text-slate-700 font-medium leading-relaxed">
-                      Excellent driver. Very reliable and takes great care of the vehicles.
-                    </p>
-                  </div>
-
-                  <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors">View All Notes &rarr;</button>
+                  ) : (
+                    <div className="text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                      <p className="text-[11px] font-semibold text-slate-500">No notes recorded for this driver.</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Click "Add Note" to add your first note.</p>
+                    </div>
+                  )}
                 </div>
 
               </div>
@@ -6240,12 +6232,18 @@ export default function Drivers() {
                       <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="rounded border-slate-300 cursor-pointer" /></td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2.5">
-                          <img 
-                            src={formatAvatarUrl(driver.avatar, driver.id)} 
-                            alt={driver.name} 
-                            onError={(e) => { e.target.onerror = null; e.target.src = 'https://i.pravatar.cc/150?u=' + driver.id; }}
-                            className="w-8 h-8 rounded-full border border-slate-200 shrink-0 object-cover" 
-                          />
+                          {formatAvatarUrl(driver.avatar) ? (
+                            <img 
+                              src={formatAvatarUrl(driver.avatar)} 
+                              alt={driver.name} 
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                              className="w-8 h-8 rounded-full border border-slate-200 shrink-0 object-cover" 
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-slate-400 font-bold">
+                              <User size={14} />
+                            </div>
+                          )}
                           <div>
                             <p className="text-xs font-black text-slate-800">{driver.name}</p>
                             <p className="text-[10px] text-slate-500 font-medium">Age {driver.age}</p>
