@@ -115,7 +115,7 @@ function LoadDetail({ load, onBack }) {
     phone: load?.driver?.phone || '—',
     license: load?.driver?.licenseClass || load?.driver?.licenseType || 'Standard License',
     diary: '08:00 / 17:00',
-    avatar: load?.driver?.avatarUrl || load?.avatar || 'https://i.pravatar.cc/150?u=10'
+    avatar: load?.driver?.avatarUrl || load?.avatar || null
   });
 
   const [activeTruck, setActiveTruck] = useState({
@@ -269,7 +269,7 @@ function LoadDetail({ load, onBack }) {
                 phone: lData.driver.phone || '—',
                 license: lData.driver.licenseClass || lData.driver.licenseType || 'Standard License',
                 diary: '08:00 / 17:00',
-                avatar: lData.driver.avatarUrl || 'https://i.pravatar.cc/150?u=10'
+                avatar: lData.driver.avatarUrl || null
               });
             } else {
               setActiveDriver({
@@ -278,7 +278,7 @@ function LoadDetail({ load, onBack }) {
                 phone: '—',
                 license: '—',
                 diary: '—',
-                avatar: 'https://i.pravatar.cc/150?u=10'
+                avatar: null
               });
             }
 
@@ -2210,7 +2210,7 @@ function LoadDetail({ load, onBack }) {
                 phone: selectedD.phone || '—',
                 license: 'MC License',
                 diary: '08:00 / 17:00',
-                avatar: selectedD.avatarUrl || 'https://i.pravatar.cc/150?u=10'
+                avatar: selectedD.avatarUrl || null
               });
 
               setActiveTruck({
@@ -2348,157 +2348,7 @@ function LoadDetail({ load, onBack }) {
 }
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
-const LOADS = [
-  {
-    id: 'PO-12546', date: '2025-07-15', starred: true, status: 'ACTIVE', statusSub: 'En Route',
-    type: 'Car Carrying', typeIcon: <Truck className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'ABC Motors Pty Ltd',
-    from: 'Melbourne', to: 'Brisbane', stops: 4,
-    driver: 'Mike Thompson', truck: 'TRK-1401 | Scania T500', driverBadge: 'On The Road', driverStatus: 'text-emerald-500',
-    avatar: 'https://i.pravatar.cc/150?u=10'
-  },
-  {
-    id: 'PO-12545', date: '2025-07-15', starred: false, status: 'PLANNED', statusSub: 'Ready',
-    type: 'General Freight', typeIcon: <Package className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'Global Retail Group',
-    from: 'Sydney', to: 'Adelaide', stops: 3,
-    driver: 'John Smith', truck: 'TRK-205 | Kenworth T88', driverBadge: 'Ready', driverStatus: 'text-blue-500',
-    avatar: 'https://i.pravatar.cc/150?u=11'
-  },
-  {
-    id: 'PO-12544', date: '2025-07-15', starred: false, status: 'DRAFT', statusSub: 'Not Ready',
-    type: 'Car Carrying', typeIcon: <Truck className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'Luxury Auto Imports',
-    from: 'Perth', to: 'Melbourne', stops: 2,
-    driver: null, truck: null, driverBadge: null, driverStatus: null,
-    avatar: null
-  },
-  {
-    id: 'PO-12543', date: '2025-07-16', starred: false, status: 'ACTIVE', statusSub: 'At Stop 2',
-    type: 'Car Carrying', typeIcon: <Truck className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'Cars R Us',
-    from: 'Melbourne', to: 'Sydney', stops: 5,
-    driver: 'David Wilson', truck: 'TRK-310 | Scania T500', driverBadge: 'On The Road', driverStatus: 'text-emerald-500',
-    avatar: 'https://i.pravatar.cc/150?u=12'
-  },
-  {
-    id: 'PO-12542', date: '2025-07-16', starred: false, status: 'COMPLETED', statusSub: 'Delivered',
-    type: 'General Freight', typeIcon: <Package className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'BuildCo Supplies',
-    from: 'Brisbane', to: 'Gold Coast', stops: 2,
-    driver: 'Mark Davis', truck: 'TRK-150 | Scania T500', driverBadge: 'Completed', driverStatus: 'text-slate-500',
-    avatar: 'https://i.pravatar.cc/150?u=13'
-  },
-  {
-    id: 'PO-12541', date: '2025-07-16', starred: false, status: 'CANCELLED', statusSub: 'Cancelled',
-    type: 'Dangerous Goods', typeIcon: <AlertCircle className="w-3.5 h-3.5 text-rose-500" />,
-    customer: 'ChemSafe Solutions',
-    from: 'Sydney', to: 'Newcastle', stops: 4,
-    driver: null, truck: null, driverBadge: null, driverStatus: null,
-    avatar: null
-  },
-  {
-    id: 'PO-12540', date: '2025-07-17', starred: false, status: 'PLANNED', statusSub: 'Ready',
-    type: 'Car Carrying', typeIcon: <Truck className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'Premium Motors',
-    from: 'Adelaide', to: 'Melbourne', stops: 3,
-    driver: 'Sarah Mitchell', truck: 'TRK-220 | Scania T500', driverBadge: 'Ready', driverStatus: 'text-blue-500',
-    avatar: 'https://i.pravatar.cc/150?u=14'
-  },
-  {
-    id: 'PO-12539', date: '2025-07-17', starred: false, status: 'ACTIVE', statusSub: 'En Route',
-    type: 'General Freight', typeIcon: <Package className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'National Foods',
-    from: 'Melbourne', to: 'Sydney', stops: 4,
-    driver: 'Chris Lee', truck: 'TRK-330 | Scania T540', driverBadge: 'On The Road', driverStatus: 'text-emerald-500',
-    avatar: 'https://i.pravatar.cc/150?u=15'
-  },
-  {
-    id: 'PO-12538', date: '2025-07-17', starred: false, status: 'DRAFT', statusSub: 'Not Ready',
-    type: 'Car Carrying', typeIcon: <Truck className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'ABC Motors Pty Ltd',
-    from: 'Melbourne', to: 'Brisbane', stops: 4,
-    driver: null, truck: null, driverBadge: null, driverStatus: null, avatar: null
-  },
-  {
-    id: 'PO-12537', date: '2025-07-18', starred: false, status: 'DRAFT', statusSub: 'Not Ready',
-    type: 'General Freight', typeIcon: <Package className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'Global Retail Group',
-    from: 'Sydney', to: 'Adelaide', stops: 3,
-    driver: null, truck: null, driverBadge: null, driverStatus: null, avatar: null
-  },
-  {
-    id: 'PO-12536', date: '2025-07-18', starred: false, status: 'DRAFT', statusSub: 'Not Ready',
-    type: 'Dangerous Goods', typeIcon: <AlertCircle className="w-3.5 h-3.5 text-rose-500" />,
-    customer: 'Luxury Auto Imports',
-    from: 'Perth', to: 'Melbourne', stops: 2,
-    driver: null, truck: null, driverBadge: null, driverStatus: null, avatar: null
-  },
-  {
-    id: 'PO-12535', date: '2025-07-18', starred: false, status: 'DRAFT', statusSub: 'Not Ready',
-    type: 'Car Carrying', typeIcon: <Truck className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'Cars R Us',
-    from: 'Melbourne', to: 'Sydney', stops: 5,
-    driver: null, truck: null, driverBadge: null, driverStatus: null, avatar: null
-  },
-  {
-    id: 'PO-12534', date: '2025-07-19', starred: false, status: 'DRAFT', statusSub: 'Not Ready',
-    type: 'General Freight', typeIcon: <Package className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'BuildCo Supplies',
-    from: 'Brisbane', to: 'Gold Coast', stops: 2,
-    driver: null, truck: null, driverBadge: null, driverStatus: null, avatar: null
-  },
-  {
-    id: 'PO-12533', date: '2025-07-19', starred: false, status: 'DRAFT', statusSub: 'Not Ready',
-    type: 'Dangerous Goods', typeIcon: <AlertCircle className="w-3.5 h-3.5 text-rose-500" />,
-    customer: 'ChemSafe Solutions',
-    from: 'Sydney', to: 'Newcastle', stops: 4,
-    driver: null, truck: null, driverBadge: null, driverStatus: null, avatar: null
-  },
-  {
-    id: 'PO-12532', date: '2025-07-19', starred: false, status: 'DRAFT', statusSub: 'Not Ready',
-    type: 'Car Carrying', typeIcon: <Truck className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'Premium Motors',
-    from: 'Adelaide', to: 'Melbourne', stops: 3,
-    driver: null, truck: null, driverBadge: null, driverStatus: null, avatar: null
-  },
-  {
-    id: 'PO-12531', date: '2025-07-20', starred: false, status: 'DRAFT', statusSub: 'Not Ready',
-    type: 'General Freight', typeIcon: <Package className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'National Foods',
-    from: 'Melbourne', to: 'Brisbane', stops: 4,
-    driver: null, truck: null, driverBadge: null, driverStatus: null, avatar: null
-  },
-  {
-    id: 'PO-12530', date: '2025-07-20', starred: false, status: 'DRAFT', statusSub: 'Not Ready',
-    type: 'Dangerous Goods', typeIcon: <AlertCircle className="w-3.5 h-3.5 text-rose-500" />,
-    customer: 'Pioneer Logistics',
-    from: 'Sydney', to: 'Adelaide', stops: 3,
-    driver: null, truck: null, driverBadge: null, driverStatus: null, avatar: null
-  },
-  {
-    id: 'PO-12529', date: '2025-07-20', starred: false, status: 'DRAFT', statusSub: 'Not Ready',
-    type: 'Car Carrying', typeIcon: <Truck className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'Apex Warehousing',
-    from: 'Perth', to: 'Melbourne', stops: 2,
-    driver: null, truck: null, driverBadge: null, driverStatus: null, avatar: null
-  },
-  {
-    id: 'PO-12528', date: '2025-07-21', starred: false, status: 'DRAFT', statusSub: 'Not Ready',
-    type: 'General Freight', typeIcon: <Package className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'ABC Motors Pty Ltd',
-    from: 'Melbourne', to: 'Sydney', stops: 4,
-    driver: null, truck: null, driverBadge: null, driverStatus: null, avatar: null
-  },
-  {
-    id: 'PO-12527', date: '2025-07-21', starred: false, status: 'PLANNED', statusSub: 'Ready',
-    type: 'Car Carrying', typeIcon: <Truck className="w-3.5 h-3.5 text-blue-500" />,
-    customer: 'ABC Motors Pty Ltd',
-    from: 'Melbourne', to: 'Brisbane', stops: 4,
-    driver: 'Mike Thompson', truck: 'TRK-1401 | Scania T500', driverBadge: 'Ready', driverStatus: 'text-blue-500',
-    avatar: 'https://i.pravatar.cc/150?u=10'
-  },
-];
+const LOADS = [];
 
 const STATUS_STYLES = {
   'ACTIVE':    { badge: 'bg-emerald-100 text-emerald-700', sub: 'text-emerald-600' },
@@ -2782,7 +2632,7 @@ export default function Loads() {
             truck: item.truck ? `${item.truck.rego || item.truck.code || ''} | ${item.truck.model || ''}` : null,
             driverBadge: item.driver ? 'On The Road' : null,
             driverStatus: 'text-emerald-500',
-            avatar: item.driver?.avatarUrl || 'https://i.pravatar.cc/150?u=10'
+            avatar: item.driver?.avatarUrl || null
           };
         }).filter(item => !deletedSet.has(item.id) && !deletedSet.has(item.rawId));
         setLoadsList(mapped);

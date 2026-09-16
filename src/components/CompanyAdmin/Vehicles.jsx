@@ -284,8 +284,8 @@ const Vehicles = () => {
           compliance: v.compliance || 'Compliant',
           nextServiceDate: v.maintenanceDueKm ? `${v.maintenanceDueKm.toLocaleString()} km` : '—',
           nextServiceDays: '',
-          img: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || (((v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.regType && v.regType.toLowerCase().includes('car')) || (v.category && v.category.toLowerCase().includes('car'))) ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60"),
-          photoUrl: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || (((v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.regType && v.regType.toLowerCase().includes('car')) || (v.category && v.category.toLowerCase().includes('car'))) ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60"),
+          img: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || null,
+          photoUrl: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || null,
           color: v.color || '',
           vin: v.vin || '',
           engineNumber: v.engineNumber || '',
@@ -944,7 +944,7 @@ const Vehicles = () => {
               <div className="flex-grow flex flex-col min-w-0">
                  <div className="flex items-center gap-3 mb-6">
                     <h2 className="text-2xl font-black text-gray-900 tracking-tight truncate">
-                       {(managingVehicle.reg || managingVehicle.rego || (managingVehicle.id && managingVehicle.id.length > 15 ? 'VEHICLE PROFILE' : managingVehicle.id))} – {managingVehicle.make?.toUpperCase() || 'VOLVO FH540'}
+                       {(managingVehicle.reg || managingVehicle.rego || (managingVehicle.id && managingVehicle.id.length > 15 ? 'VEHICLE PROFILE' : managingVehicle.id))} – {managingVehicle.make?.toUpperCase() || '—'}
                     </h2>
                     <span className="px-2.5 py-0.5 bg-green-50 text-green-600 border border-green-200 rounded-md text-[11px] font-bold uppercase tracking-wider shrink-0">Active</span>
                  </div>
@@ -952,36 +952,36 @@ const Vehicles = () => {
                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-6 gap-x-4 pr-4">
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">Type</p>
-                       <p className="text-sm font-bold text-gray-900">{managingVehicle.type || 'Prime Mover (Truck)'}</p>
+                       <p className="text-sm font-bold text-gray-900">{managingVehicle.type || managingVehicle.category || '—'}</p>
                     </div>
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">Make / Model</p>
-                       <p className="text-sm font-bold text-gray-900">{managingVehicle.make || 'Volvo FH540'}</p>
+                       <p className="text-sm font-bold text-gray-900">{managingVehicle.make || '—'}</p>
                     </div>
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">Year</p>
-                       <p className="text-sm font-bold text-gray-900">{managingVehicle.year || '2021'}</p>
+                       <p className="text-sm font-bold text-gray-900">{managingVehicle.year || '—'}</p>
                     </div>
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">VIN / Chassis No.</p>
-                       <p className="text-sm font-bold text-gray-900 break-all">{managingVehicle.vin || 'YV2RT60A1MA123456'}</p>
+                       <p className="text-sm font-bold text-gray-900 break-all">{managingVehicle.vin || '—'}</p>
                     </div>
                     
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">Registration</p>
-                       <p className="text-sm font-bold text-gray-900 uppercase">{managingVehicle.reg || 'ABC123'}</p>
+                       <p className="text-sm font-bold text-gray-900 uppercase">{managingVehicle.reg || '—'}</p>
                     </div>
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">Odometer</p>
-                       <p className="text-sm font-bold text-gray-900">{managingVehicle.odometer || '256,789 km'}</p>
+                       <p className="text-sm font-bold text-gray-900">{managingVehicle.odometer || (managingVehicle.odometerKm ? `${Number(managingVehicle.odometerKm).toLocaleString()} km` : '—')}</p>
                     </div>
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">Engine No.</p>
-                       <p className="text-sm font-bold text-gray-900">D13K123456</p>
+                       <p className="text-sm font-bold text-gray-900">{managingVehicle.engineNumber || '—'}</p>
                     </div>
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">Depot / Base</p>
-                       <p className="text-sm font-bold text-gray-900">{managingVehicle.branch || 'Sydney Depot'}</p>
+                       <p className="text-sm font-bold text-gray-900">{managingVehicle.branch || managingVehicle.depot || '—'}</p>
                      </div>
                   </div>
                </div>
@@ -1224,47 +1224,47 @@ const Vehicles = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 text-[12px]">
                <div className="flex items-center justify-between border-b border-gray-50 pb-2">
                   <div className="flex items-center gap-2 text-gray-600 font-medium"><Box size={14} className="shrink-0" /> Configuration</div>
-                  <span className="font-bold text-gray-900 text-right">6x4</span>
+                  <span className="font-bold text-gray-900 text-right">{managingVehicle.configuration || '—'}</span>
                </div>
                <div className="flex items-center justify-between border-b border-gray-50 pb-2">
                   <div className="flex items-center gap-2 text-gray-600 font-medium"><Settings size={14} className="shrink-0" /> Transmission</div>
-                  <span className="font-bold text-gray-900 text-right">Automatic</span>
+                  <span className="font-bold text-gray-900 text-right">{managingVehicle.transmission || '—'}</span>
                </div>
                
                <div className="flex items-center justify-between border-b border-gray-50 pb-2">
                   <div className="flex items-center gap-2 text-gray-600 font-medium"><Weight size={14} className="shrink-0" /> GVM</div>
-                  <span className="font-bold text-gray-900 text-right">26,500 kg</span>
+                  <span className="font-bold text-gray-900 text-right">{managingVehicle.gvm ? `${managingVehicle.gvm} kg` : '—'}</span>
                </div>
                <div className="flex items-center justify-between border-b border-gray-50 pb-2">
                   <div className="flex items-center gap-2 text-gray-600 font-medium"><Zap size={14} className="shrink-0" /> Engine</div>
-                  <span className="font-bold text-gray-900 text-right">D13 540HP</span>
+                  <span className="font-bold text-gray-900 text-right">{managingVehicle.engine || managingVehicle.engineType || '—'}</span>
                </div>
                
                <div className="flex items-center justify-between border-b border-gray-50 pb-2">
                   <div className="flex items-center gap-2 text-gray-600 font-medium"><Scale size={14} className="shrink-0" /> Tare Weight</div>
-                  <span className="font-bold text-gray-900 text-right">8,750 kg</span>
+                  <span className="font-bold text-gray-900 text-right">{managingVehicle.tareWeight ? `${managingVehicle.tareWeight} kg` : '—'}</span>
                </div>
                <div className="flex items-center justify-between border-b border-gray-50 pb-2">
                   <div className="flex items-center gap-2 text-gray-600 font-medium"><Droplet size={14} className="shrink-0" /> Fuel Tank Cap</div>
-                  <span className="font-bold text-gray-900 text-right">800 L</span>
+                  <span className="font-bold text-gray-900 text-right">{managingVehicle.fuelTankCapacity ? `${managingVehicle.fuelTankCapacity} L` : '—'}</span>
                </div>
                
                <div className="flex items-center justify-between border-b border-gray-50 pb-2">
                   <div className="flex items-center gap-2 text-gray-600 font-medium"><Package size={14} className="shrink-0" /> Payload Cap</div>
-                  <span className="font-bold text-gray-900 text-right">17,750 kg</span>
+                  <span className="font-bold text-gray-900 text-right">{managingVehicle.payloadCapacity ? `${managingVehicle.payloadCapacity} kg` : '—'}</span>
                </div>
                <div className="flex items-center justify-between border-b border-gray-50 pb-2">
                   <div className="flex items-center gap-2 text-gray-600 font-medium"><Palette size={14} className="shrink-0" /> Color</div>
-                  <span className="font-bold text-gray-900 text-right">White</span>
+                  <span className="font-bold text-gray-900 text-right">{managingVehicle.color || '—'}</span>
                </div>
                
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-600 font-medium"><Gauge size={14} className="shrink-0" /> Fuel Type</div>
-                  <span className="font-bold text-gray-900 text-right">Diesel</span>
+                  <span className="font-bold text-gray-900 text-right">{managingVehicle.fuelType || '—'}</span>
                </div>
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-600 font-medium"><Briefcase size={14} className="shrink-0" /> Primary Use</div>
-                  <span className="font-bold text-gray-900 text-right truncate pl-2">Car Transport</span>
+                  <span className="font-bold text-gray-900 text-right truncate pl-2">{managingVehicle.primaryUse || managingVehicle.regType || '—'}</span>
                </div>
             </div>
           </div>
