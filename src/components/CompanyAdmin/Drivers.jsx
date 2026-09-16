@@ -3170,7 +3170,8 @@ export default function Drivers() {
           const fd = new FormData(e.target);
           const firstName = fd.get('FirstName') || fd.get('firstName') || '';
           const lastName = fd.get('LastName') || fd.get('lastName') || '';
-          const driverCode = fd.get('EmployeeIDManualEditOption') || fd.get('driverCode') || (isEditMode && selectedDriver ? selectedDriver.driverCode : undefined);
+          const rawDriverCode = fd.has('EmployeeIDManualEditOption') ? fd.get('EmployeeIDManualEditOption') : fd.get('driverCode');
+          const driverCode = rawDriverCode !== null ? rawDriverCode.trim() : (isEditMode && selectedDriver ? (selectedDriver.driverCode === '—' ? '' : selectedDriver.driverCode) : '');
           const phone = fd.get('PhoneNumber') || fd.get('phone') || '';
           const email = fd.get('EmailAddress') || fd.get('email') || (isEditMode && selectedDriver ? selectedDriver.email : undefined);
           const avatarUrl = photoPreview || (isEditMode && selectedDriver ? selectedDriver.avatar : '');
@@ -3292,22 +3293,23 @@ export default function Drivers() {
                 return {
                   ...base,
                   name: updatedName,
+                  driverCode: driverCode || '—',
                   firstName,
                   lastName,
-                  phone: phone || base.phone || '',
-                  email: email || base.email || '',
-                  avatar: avatarUrl || base.avatar || '',
-                  licence: licenceType || base.licence || '',
-                  licenceNo: licenceNumber || base.licenceNo || '',
-                  licenseState: licenseState || base.licenseState || '',
-                  issueDate: safeDateToLocale(licenseIssueDate, 'en-AU', base.issueDate || '—'),
+                  phone,
+                  email,
+                  avatar: avatarUrl,
+                  licence: licenceType,
+                  licenceNo: licenceNumber,
+                  licenseState,
+                  issueDate: safeDateToLocale(licenseIssueDate, 'en-AU', '—'),
                   licenseIssueDate: safeDateToYMD(licenseIssueDate),
-                  status: status || base.status || 'Available',
+                  status: status || 'Available',
                   address: fullAddr,
-                  employmentType: employmentType || base.employmentType || '',
+                  employmentType,
                   dob: dobYMD,
                   age: ageCalc,
-                  branch: branch || base.branch || '',
+                  branch,
                   gender,
                   nationality,
                   emergencyContact,
