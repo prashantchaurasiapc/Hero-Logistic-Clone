@@ -53,16 +53,16 @@ export default function CreateLoad({ onBack }) {
       try {
         const res = await api.get('/company-admin/customers');
         const list = res.data?.data || res.data;
-        if (Array.isArray(list) && list.length > 0) setDbCustomers(list);
-        else throw new Error("empty");
-      } catch (err) {
+        if (Array.isArray(list)) setDbCustomers(list);
+        else setDbCustomers([]);
+      } catch {
         try {
           const res2 = await api.get('/customers');
           const list2 = res2.data?.data || res2.data;
-          if (Array.isArray(list2) && list2.length > 0) setDbCustomers(list2);
-          else setDbCustomers([{ id: 'c1', name: 'User' }, { id: 'c2', name: 'ABC Motors Pty Ltd' }, { id: 'c3', name: 'Direct Customer' }]);
+          if (Array.isArray(list2)) setDbCustomers(list2);
+          else setDbCustomers([]);
         } catch {
-          setDbCustomers([{ id: 'c1', name: 'User' }, { id: 'c2', name: 'ABC Motors Pty Ltd' }, { id: 'c3', name: 'Direct Customer' }]);
+          setDbCustomers([]);
         }
       }
 
@@ -70,16 +70,16 @@ export default function CreateLoad({ onBack }) {
       try {
         const res = await api.get('/company-admin/drivers');
         const list = res.data?.data || res.data;
-        if (Array.isArray(list) && list.length > 0) setDbDrivers(list);
-        else throw new Error("empty");
-      } catch (err) {
+        if (Array.isArray(list)) setDbDrivers(list);
+        else setDbDrivers([]);
+      } catch {
         try {
           const res2 = await api.get('/drivers');
           const list2 = res2.data?.data || res2.data;
-          if (Array.isArray(list2) && list2.length > 0) setDbDrivers(list2);
-          else setDbDrivers([{ id: 'd1', name: 'Mike Thompson (DRV001 - MC License)' }, { id: 'd2', name: 'Sarah Mitchell (DRV002 - HC License)' }, { id: 'd3', name: 'David Miller (DRV003 - MR License)' }]);
+          if (Array.isArray(list2)) setDbDrivers(list2);
+          else setDbDrivers([]);
         } catch {
-          setDbDrivers([{ id: 'd1', name: 'Mike Thompson (DRV001 - MC License)' }, { id: 'd2', name: 'Sarah Mitchell (DRV002 - HC License)' }, { id: 'd3', name: 'David Miller (DRV003 - MR License)' }]);
+          setDbDrivers([]);
         }
       }
 
@@ -87,32 +87,21 @@ export default function CreateLoad({ onBack }) {
       try {
         const res = await api.get('/company-admin/vehicles');
         const list = res.data?.data || res.data;
-        if (Array.isArray(list) && list.length > 0) setDbTrucks(list);
-        else throw new Error("empty");
-      } catch (err) {
+        if (Array.isArray(list)) setDbTrucks(list);
+        else setDbTrucks([]);
+      } catch {
         try {
           const res2 = await api.get('/vehicles');
           const list2 = res2.data?.data || res2.data;
-          if (Array.isArray(list2) && list2.length > 0) setDbTrucks(list2);
-          else setDbTrucks([{ id: 'v1', label: 'TRK-101 | Volvo FH 540 (REG-101)' }, { id: 'v2', label: 'TRK-102 | Scania R500 (REG-102)' }, { id: 'v3', label: 'TRK-103 | Kenworth K200 (REG-103)' }]);
+          if (Array.isArray(list2)) setDbTrucks(list2);
+          else setDbTrucks([]);
         } catch {
-          setDbTrucks([{ id: 'v1', label: 'TRK-101 | Volvo FH 540 (REG-101)' }, { id: 'v2', label: 'TRK-102 | Scania R500 (REG-102)' }, { id: 'v3', label: 'TRK-103 | Kenworth K200 (REG-103)' }]);
+          setDbTrucks([]);
         }
       }
     };
 
     loadMasterData();
-
-    dispatcherRepository.syncWithBackend();
-    const syncDb = () => {
-      const db = dispatcherRepository.getDispatcherDatabase();
-      if (db.drivers && db.drivers.length > 0) setDbDrivers(prev => prev.length > 0 ? prev : db.drivers);
-      if (db.vehicles && db.vehicles.length > 0) setDbTrucks(prev => prev.length > 0 ? prev : db.vehicles);
-      if (db.customers && db.customers.length > 0) setDbCustomers(prev => prev.length > 0 ? prev : db.customers);
-    };
-    syncDb();
-    const unsubscribe = dispatcherStore.subscribe(syncDb);
-    return () => unsubscribe();
   }, []);
 
   const [stops, setStops] = useState([]);
