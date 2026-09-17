@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 
 // === ICONS ===
@@ -78,6 +78,16 @@ const CodeIcon = () => (
 );
 
 export default function WarehouseInventoryStock({ wh, onBack }) {
+  if (!wh) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center', background: '#F8FAFC', minHeight: '100vh' }}>
+        <h2 style={{ fontSize: 18, color: '#0F172A', marginBottom: 12 }}>No Warehouse Selected</h2>
+        <p style={{ fontSize: 14, color: '#64748B', marginBottom: 24 }}>Please select a warehouse first to view its inventory and stock.</p>
+        <button onClick={onBack} style={{ padding: '10px 20px', borderRadius: 8, background: '#4F46E5', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>&lt; Back to Dashboard</button>
+      </div>
+    );
+  }
+
   const [stockItems, setStockItems] = useState([]);
   const [activeTab, setActiveTab] = useState('Stock List');
   const [showAddStockModal, setShowAddStockModal] = useState(false);
