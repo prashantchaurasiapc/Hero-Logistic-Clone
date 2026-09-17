@@ -42,6 +42,199 @@ function FieldLabel({ children, required }) {
 const inputCls = "w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs sm:text-[13px] font-bold text-slate-800 placeholder-slate-400 transition-colors shadow-xs";
 const selectCls = "w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs sm:text-[13px] font-bold text-slate-800 cursor-pointer transition-colors appearance-none shadow-xs";
 
+function AddressAutocomplete({ value, onChange, placeholder, className, autoFocus = false }) {
+  const [inputValue, setInputValue] = useState(value || '');
+  const [suggestions, setSuggestions] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [searchedQuery, setSearchedQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const wrapperRef = useRef(null);
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    setInputValue(value || '');
+  }, [value]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleInputChange = (e) => {
+    const query = e.target.value;
+    setInputValue(query);
+    onChange(query, null);
+    setSelectedIndex(-1);
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    if (!query || query.trim().length < 2) {
+      setSuggestions([]);
+      setIsOpen(false);
+      setLoading(false);
+      setSearchedQuery('');
+      return;
+    }
+
+    setLoading(true);
+    setIsOpen(true);
+    setSearchedQuery(query);
+
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=au&addressdetails=1&limit=6`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const apiMatches = data.map(item => {
+            const addr = item.address || {};
+            const houseNum = addr.house_number || '';
+            const road = addr.road || addr.pedestrian || addr.street || '';
+            const street = `${houseNum} ${road}`.trim();
+            const suburb = addr.suburb || addr.town || addr.city || addr.village || addr.hamlet || '';
+            const rawState = addr.state || '';
+            const state = rawState
+              .replace('New South Wales', 'NSW')
+              .replace('Victoria', 'VIC')
+              .replace('Queensland', 'QLD')
+              .replace('Western Australia', 'WA')
+              .replace('South Australia', 'SA')
+              .replace('Tasmania', 'TAS')
+              .replace('Australian Capital Territory', 'ACT')
+              .replace('Northern Territory', 'NT');
+            const postcode = addr.postcode || '';
+            const country = addr.country || 'Australia';
+
+            let display = item.display_name;
+            if (street && suburb) {
+              display = `${street}, ${suburb} ${state} ${postcode}`.trim();
+            } else if (suburb) {
+              display = `${suburb} ${state} ${postcode}`.trim();
+            }
+
+            return {
+              display,
+              full: item.display_name,
+              details: {
+                street: street || (addr.suburb ? '' : item.name || ''),
+                suburb,
+                state,
+                postcode,
+                country
+              }
+            };
+          });
+
+          setSuggestions(apiMatches);
+        } else {
+          setSuggestions([]);
+        }
+      } catch (err) {
+        console.warn('Address API error:', err);
+        setSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 400);
+  };
+
+  const handleSelect = (item) => {
+    const selectedText = item.display;
+    setInputValue(selectedText);
+    onChange(selectedText, item.details);
+    setIsOpen(false);
+    setSuggestions([]);
+  };
+
+  const handleKeyDown = (e) => {
+    if (!isOpen) return;
+
+    if (e.key === 'ArrowDown' && suggestions.length > 0) {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp' && suggestions.length > 0) {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : suggestions.length - 1));
+    } else if (e.key === 'Enter' && selectedIndex >= 0 && suggestions[selectedIndex]) {
+      e.preventDefault();
+      handleSelect(suggestions[selectedIndex]);
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative w-full">
+      <div className="relative flex items-center">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={() => {
+            if (inputValue.trim().length >= 2 && (suggestions.length > 0 || loading)) setIsOpen(true);
+          }}
+          onKeyDown={handleKeyDown}
+          className={className}
+          placeholder={placeholder}
+          autoFocus={autoFocus}
+        />
+        {loading && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[10px] text-indigo-600 font-bold bg-white/90 px-1.5 py-0.5 rounded-full shadow-2xs">
+            <span className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></span>
+            <span>Searching...</span>
+          </div>
+        )}
+      </div>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-[9999] overflow-hidden max-h-64 overflow-y-auto">
+          {loading ? (
+            <div className="p-4 text-center text-xs font-medium text-slate-400 flex items-center justify-center gap-2">
+              <span className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></span>
+              Finding matching Australian addresses...
+            </div>
+          ) : suggestions.length > 0 ? (
+            suggestions.map((item, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
+                onMouseEnter={() => setSelectedIndex(idx)}
+                className={`w-full text-left px-3.5 py-2.5 text-xs transition-colors flex items-start gap-2.5 border-b border-slate-50 last:border-0 ${
+                  idx === selectedIndex ? 'bg-indigo-50 text-indigo-950 font-bold' : 'hover:bg-slate-50 text-slate-700 font-medium'
+                }`}
+              >
+                <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${idx === selectedIndex ? 'text-indigo-600' : 'text-slate-400'}`} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate leading-tight font-bold">{item.display}</p>
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    {item.details.street && <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[9.5px] font-semibold text-slate-600">Street: {item.details.street}</span>}
+                    {item.details.suburb && <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[9.5px] font-bold">Suburb: {item.details.suburb}</span>}
+                    {item.details.state && <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded text-[9.5px] font-bold">{item.details.state}</span>}
+                    {item.details.postcode && <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded text-[9.5px] font-bold">{item.details.postcode}</span>}
+                  </div>
+                </div>
+              </button>
+            ))
+          ) : searchedQuery.trim().length >= 2 ? (
+            <div className="p-4 text-center text-xs font-medium text-slate-400">
+              <p className="font-bold text-slate-600">No results found</p>
+              <p className="text-[11px] mt-0.5 text-slate-400">No matching addresses found for "{searchedQuery}"</p>
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CreateLoad({ onBack }) {
   const [dbDrivers, setDbDrivers] = useState([]);
   const [dbTrucks, setDbTrucks] = useState([]);
@@ -207,11 +400,11 @@ export default function CreateLoad({ onBack }) {
 
   const [showAddStopModal, setShowAddStopModal] = useState(false);
   const [newStopForm, setNewStopForm] = useState({
-    type: 'Pickup', address: '', contactName: '', contactPhone: '', date: '', time: '', instructions: ''
+    type: 'Pickup', address: '', addressDetails: null, contactName: '', contactPhone: '', date: '', time: '', instructions: ''
   });
 
   const openAddStopModal = () => {
-    setNewStopForm({ type: 'Pickup', address: '', contactName: '', contactPhone: '', date: '', time: '', instructions: '' });
+    setNewStopForm({ type: 'Pickup', address: '', addressDetails: null, contactName: '', contactPhone: '', date: '', time: '', instructions: '' });
     setShowAddStopModal(true);
   };
 
@@ -610,10 +803,12 @@ export default function CreateLoad({ onBack }) {
 
                 <div>
                   <FieldLabel>Address / Suburb</FieldLabel>
-                  <input
-                    type="text"
+                  <AddressAutocomplete
                     value={stop.address}
-                    onChange={e => updateStop(stop.id, 'address', e.target.value)}
+                    onChange={(val, details) => {
+                      updateStop(stop.id, 'address', val);
+                      if (details) updateStop(stop.id, 'addressDetails', details);
+                    }}
                     className={`${inputCls} text-xs py-2`}
                     placeholder="Address or suburb..."
                   />
@@ -743,10 +938,12 @@ export default function CreateLoad({ onBack }) {
 
                     {/* Address */}
                     <div className="flex-1 min-w-[160px]">
-                      <input
-                        type="text"
+                      <AddressAutocomplete
                         value={stop.address}
-                        onChange={e => updateStop(stop.id, 'address', e.target.value)}
+                        onChange={(val, details) => {
+                          updateStop(stop.id, 'address', val);
+                          if (details) updateStop(stop.id, 'addressDetails', details);
+                        }}
                         className={`${inputCls} text-[11px] py-2`}
                         placeholder="Address or suburb..."
                       />
@@ -1675,10 +1872,9 @@ export default function CreateLoad({ onBack }) {
               {/* Address */}
               <div>
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Address / Suburb <span className="text-rose-500">*</span></label>
-                <input
-                  type="text"
+                <AddressAutocomplete
                   value={newStopForm.address}
-                  onChange={e => setNewStopForm(f => ({ ...f, address: e.target.value }))}
+                  onChange={(val, details) => setNewStopForm(f => ({ ...f, address: val, addressDetails: details }))}
                   className={inputCls}
                   placeholder="e.g. 123 Smith St, Melbourne VIC 3000"
                   autoFocus
@@ -1751,15 +1947,52 @@ export default function CreateLoad({ onBack }) {
 
               {/* Preview badge */}
               {newStopForm.address && (
-                <div className={`flex items-center gap-3 p-3 rounded-xl border ${
-                  newStopForm.type === 'Pickup' ? 'bg-purple-50 border-purple-100' : 'bg-blue-50 border-blue-100'
+                <div className={`p-3.5 rounded-xl border space-y-2.5 transition-all ${
+                  newStopForm.type === 'Pickup' ? 'bg-purple-50/70 border-purple-200' : 'bg-blue-50/70 border-blue-200'
                 }`}>
-                  <MapPin className={`w-4 h-4 shrink-0 ${newStopForm.type === 'Pickup' ? 'text-purple-600' : 'text-blue-600'}`} />
-                  <div>
-                    <p className={`text-[10px] font-black uppercase tracking-widest ${newStopForm.type === 'Pickup' ? 'text-purple-700' : 'text-blue-700'}`}>{newStopForm.type}</p>
-                    <p className="text-xs font-bold text-slate-700 mt-0.5">{newStopForm.address}</p>
-                    {newStopForm.contactName && <p className="text-[10px] text-slate-500">{newStopForm.contactName} • {newStopForm.contactPhone}</p>}
+                  <div className="flex items-center gap-2">
+                    <MapPin className={`w-4 h-4 shrink-0 ${newStopForm.type === 'Pickup' ? 'text-purple-600' : 'text-blue-600'}`} />
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${newStopForm.type === 'Pickup' ? 'text-purple-700' : 'text-blue-700'}`}>
+                      {newStopForm.type} Location Details
+                    </span>
                   </div>
+                  <p className="text-xs font-black text-slate-800 leading-snug">{newStopForm.address}</p>
+
+                  {newStopForm.addressDetails && (
+                    <div className="flex flex-wrap gap-1.5 pt-1.5 border-t border-slate-200/60">
+                      {newStopForm.addressDetails.street && (
+                        <span className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[10px] font-bold text-slate-700 shadow-2xs">
+                          Street: {newStopForm.addressDetails.street}
+                        </span>
+                      )}
+                      {newStopForm.addressDetails.suburb && (
+                        <span className="px-2 py-0.5 bg-indigo-100/80 text-indigo-800 rounded-md text-[10px] font-bold shadow-2xs">
+                          Suburb/City: {newStopForm.addressDetails.suburb}
+                        </span>
+                      )}
+                      {newStopForm.addressDetails.state && (
+                        <span className="px-2 py-0.5 bg-purple-100/80 text-purple-800 rounded-md text-[10px] font-bold shadow-2xs">
+                          State: {newStopForm.addressDetails.state}
+                        </span>
+                      )}
+                      {newStopForm.addressDetails.postcode && (
+                        <span className="px-2 py-0.5 bg-amber-100/80 text-amber-800 rounded-md text-[10px] font-bold shadow-2xs">
+                          Postcode: {newStopForm.addressDetails.postcode}
+                        </span>
+                      )}
+                      {newStopForm.addressDetails.country && (
+                        <span className="px-2 py-0.5 bg-emerald-100/80 text-emerald-800 rounded-md text-[10px] font-bold shadow-2xs">
+                          Country: {newStopForm.addressDetails.country}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {newStopForm.contactName && (
+                    <p className="text-[10.5px] font-medium text-slate-600 pt-0.5">
+                      Contact: {newStopForm.contactName} {newStopForm.contactPhone ? `• ${newStopForm.contactPhone}` : ''}
+                    </p>
+                  )}
                 </div>
               )}
             </div>

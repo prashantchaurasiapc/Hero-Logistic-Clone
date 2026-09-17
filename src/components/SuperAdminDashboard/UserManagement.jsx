@@ -128,7 +128,8 @@ export default function UserManagement() {
     role: 'Company Admin',
     company: '',
     companyId: '',
-    password: '123',
+    password: '',
+    passwordSetupType: 'MANUAL', // 'MANUAL' or 'EMAIL_LINK'
     status: 'ACTIVE'
   });
 
@@ -212,13 +213,14 @@ export default function UserManagement() {
         phone: formData.phone || null,
         role: mapTenantRoleToApi(formData.role),
         companyId: formData.companyId || null,
-        password: formData.password || '123',
+        password: formData.passwordSetupType === 'MANUAL' ? (formData.password || undefined) : undefined,
+        passwordSetupType: formData.passwordSetupType,
         status: formData.status
       });
       if (res.data?.success) {
         showNotification(`User "${formData.name}" added successfully!`);
         setShowAddUserModal(false);
-        setFormData({ name: '', email: '', phone: '', role: 'Company Admin', company: '', companyId: '', password: '123', status: 'ACTIVE' });
+        setFormData({ name: '', email: '', phone: '', role: 'Company Admin', company: '', companyId: '', password: '', passwordSetupType: 'MANUAL', status: 'ACTIVE' });
         fetchUsers();
       }
     } catch (err) {
@@ -408,6 +410,14 @@ export default function UserManagement() {
     <div className="flex-grow bg-[#F1F5F9] p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto w-full text-left font-sans relative custom-scrollbar">
 
       <style>{`
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+          -webkit-text-fill-color: #1e293b !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
         .custom-scrollbar::-webkit-scrollbar {
           height: 6px;
           width: 6px;
@@ -945,74 +955,284 @@ export default function UserManagement() {
       </div>
 
       {/* ============================================================
-         ADD PLATFORM USER MODAL
+         ADD & EDIT PLATFORM USER VIEW (Screenshot 1 Inline View Pattern)
          ============================================================ */}
-      {showAddUserModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[99999] overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6 text-left relative animate-in fade-in zoom-in-95 my-auto">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-brand-500 text-black flex items-center justify-center font-black">
-                  <UserPlus className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-900 text-base">Add New Platform User</h3>
-                  <p className="text-slate-400 text-xs font-medium">Provision user credentials and set password</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowAddUserModal(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {(showAddUserModal || showEditUserModal) && (
+        <div className="space-y-6 text-left animate-fade-in py-2">
+          {/* TOP BREADCRUMB & HEADER BAR */}
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div>
+              <nav className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold mb-2">
+                <Users className="w-3.5 h-3.5 text-slate-400" />
+                <button onClick={() => { setShowAddUserModal(false); setShowEditUserModal(false); }} className="hover:text-slate-900 transition-colors cursor-pointer">
+                  User Management
+                </button>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-slate-800 font-bold">
+                  {showAddUserModal ? 'Add New System User Account' : 'Edit System User Account'}
+                </span>
+              </nav>
+
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                {showAddUserModal ? 'Add New System User Account' : 'Edit System User Account'}
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                Configure credentials, login password, security role permissions, and branch scope.
+              </p>
             </div>
 
-            <form onSubmit={handleAddUserSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-extrabold text-slate-700">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. John Doe"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
-                />
+            <button
+              type="button"
+              onClick={() => { setShowAddUserModal(false); setShowEditUserModal(false); }}
+              className="self-start md:self-auto bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4 text-slate-600" />
+              <span>Back to Users</span>
+            </button>
+          </div>
+
+          <form onSubmit={showAddUserModal ? handleAddUserSubmit : handleEditUserSubmit} autoComplete="off" className="space-y-6">
+
+            {/* Dummy hidden inputs to hijack browser autofill */}
+            <input type="text" name="fakeusernameremembered" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+            <input type="password" name="fakepasswordremembered" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+
+            {/* SECTION 1: USER PROFILE INFORMATION */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 font-bold">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-slate-900 uppercase tracking-wider">USER PROFILE INFORMATION</h2>
+                  <p className="text-xs text-slate-400 font-medium">Basic user identity details and contact information.</p>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">Email Address *</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Full Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    name="new_user_fullname_no_autofill"
+                    autoComplete="off"
+                    readOnly
+                    onFocus={(e) => e.target.removeAttribute('readonly')}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder=""
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Email Address <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="email"
                     required
-                    placeholder="john@company.com"
+                    name="new_user_email_address_no_autofill"
+                    autoComplete="new-email"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                    readOnly
+                    onFocus={(e) => e.target.removeAttribute('readonly')}
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
+                    placeholder=""
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">Phone Number</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Phone Number
+                  </label>
                   <input
                     type="text"
-                    placeholder="+1 555-0000"
+                    name="new_user_phone_no_autofill"
+                    autoComplete="off"
+                    readOnly
+                    onFocus={(e) => e.target.removeAttribute('readonly')}
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
+                    placeholder=""
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                   />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Account Status
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition-all"
+                  >
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="SUSPENDED">SUSPENDED</option>
+                    <option value="PENDING">PENDING APPROVAL</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 2: ACCOUNT SECURITY & PASSWORD SETUP */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 font-bold">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-slate-900 uppercase tracking-wider">ACCOUNT SECURITY & PASSWORD SETUP</h2>
+                  <p className="text-xs text-slate-400 font-medium">User authentication credentials and password security setup method.</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Password Setup Option Selector */}
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Password Setup Method <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label
+                    onClick={() => setFormData(prev => ({ ...prev, passwordSetupType: 'MANUAL' }))}
+                    className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                      (formData.passwordSetupType || 'MANUAL') === 'MANUAL'
+                        ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-100'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="userPasswordSetupType"
+                      checked={(formData.passwordSetupType || 'MANUAL') === 'MANUAL'}
+                      onChange={() => setFormData(prev => ({ ...prev, passwordSetupType: 'MANUAL' }))}
+                      className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <div className="flex items-center gap-1.5 font-bold text-xs">
+                        <Key className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Set Password Manually</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                        Set password now or generate a temporary password.
+                      </p>
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setFormData(prev => ({ ...prev, passwordSetupType: 'EMAIL_LINK' }))}
+                    className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                      formData.passwordSetupType === 'EMAIL_LINK'
+                        ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-100'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="userPasswordSetupType"
+                      checked={formData.passwordSetupType === 'EMAIL_LINK'}
+                      onChange={() => setFormData(prev => ({ ...prev, passwordSetupType: 'EMAIL_LINK' }))}
+                      className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <div className="flex items-center gap-1.5 font-bold text-xs">
+                        <Mail className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Send Password Setup Link</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                        Send email invitation link to user to set up password.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {(formData.passwordSetupType || 'MANUAL') === 'MANUAL' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Account Password {showAddUserModal && <span className="text-rose-500">*</span>}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+                          let pwd = '';
+                          for (let i = 0; i < 10; i++) pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+                          setFormData(prev => ({ ...prev, password: pwd }));
+                          showNotification('Strong password auto-generated!');
+                        }}
+                        className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Key className="w-3 h-3 text-blue-600" />
+                        <span>Auto-Generate</span>
+                      </button>
+                    </div>
+                    <input
+                      type="password"
+                      required={showAddUserModal}
+                      name="new_user_password_no_autofill"
+                      autoComplete="new-password"
+                      readOnly
+                      onFocus={(e) => e.target.removeAttribute('readonly')}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder=""
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                    />
+                    <p className="text-[11px] text-slate-400 font-medium mt-1">User will use this password to log in to the system.</p>
+                  </div>
+
+                  <div className="p-4 bg-blue-50/60 border border-blue-100 rounded-2xl flex items-start gap-3">
+                    <Shield className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-xs font-bold text-blue-900">Security Standards</h4>
+                      <p className="text-[11px] text-blue-700 font-medium mt-0.5 leading-relaxed">
+                        Passwords are stored safely using standard bcrypt hashing. Admin can reset password anytime.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-600 font-medium flex items-center gap-3">
+                  <Mail className="w-5 h-5 text-blue-600 shrink-0" />
+                  <span>
+                    An invitation link with password creation instructions will be sent automatically to <strong className="text-slate-900 font-bold">{formData.email || 'the user email address'}</strong>.
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* SECTION 3: PERMISSION ROLE ASSIGNMENT */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 font-bold">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-slate-900 uppercase tracking-wider">PERMISSION ROLE ASSIGNMENT</h2>
+                  <p className="text-xs text-slate-400 font-medium">Assign system security role and portal permissions.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">System Role *</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    System Security Role <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition-all"
                   >
                     {ROLE_OPTIONS.map(r => (
                       <option key={r.id} value={r.id}>{r.label}</option>
@@ -1021,11 +1241,13 @@ export default function UserManagement() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">Company *</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Company Tenant <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={formData.companyId}
                     onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition-all"
                   >
                     <option value="">Select Company...</option>
                     {companiesList.map(c => (
@@ -1034,185 +1256,28 @@ export default function UserManagement() {
                   </select>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">User Password *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 123"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">Account Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
-                  >
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="SUSPENDED">SUSPENDED</option>
-                    <option value="PENDING">PENDING APPROVAL</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowAddUserModal(false)}
-                  className="px-5 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-[#F59E0B] hover:bg-[#D97706] text-slate-900 font-extrabold text-xs rounded-xl shadow-xs cursor-pointer"
-                >
-                  Save User
-                </button>
-
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================
-         EDIT PLATFORM USER MODAL
-         ============================================================ */}
-      {showEditUserModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[99999] overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6 text-left relative animate-in fade-in zoom-in-95 my-auto">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-black">
-                  <Edit3 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-900 text-base">Edit User Details</h3>
-                  <p className="text-slate-400 text-xs font-medium">Update account properties & password for {selectedUser?.id}</p>
-                </div>
-              </div>
+            {/* BOTTOM FORM ACTION BUTTONS */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200/80 pb-12">
               <button
-                onClick={() => setShowEditUserModal(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+                type="button"
+                onClick={() => { setShowAddUserModal(false); setShowEditUserModal(false); }}
+                className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-6 py-3 rounded-xl transition-all shadow-xs cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-8 py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Check className="w-4 h-4 text-white" />
+                <span>{showAddUserModal ? 'Finalize Setup' : 'Save Changes'}</span>
               </button>
             </div>
 
-            <form onSubmit={handleEditUserSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-extrabold text-slate-700">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">Phone Number</label>
-                  <input
-                    type="text"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">Assigned System Role</label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
-                  >
-                    {ROLE_OPTIONS.map(r => (
-                      <option key={r.id} value={r.id}>{r.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">Company</label>
-                  <select
-                    value={formData.companyId}
-                    onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
-                  >
-                    <option value="">Select Company...</option>
-                    {companiesList.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">Password</label>
-                  <input
-                    type="text"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700">Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
-                  >
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="SUSPENDED">SUSPENDED</option>
-                    <option value="PENDING">PENDING APPROVAL</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowEditUserModal(false)}
-                  className="px-5 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-black font-black text-xs rounded-xl shadow-xs cursor-pointer"
-                >
-                  Update User
-                </button>
-              </div>
-            </form>
-          </div>
+          </form>
         </div>
       )}
 

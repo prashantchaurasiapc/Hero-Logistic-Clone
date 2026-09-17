@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Building2, UserCheck, ShieldCheck, ArrowLeft, Check, AlertCircle, Loader2, Home, ChevronRight
+  Building2, UserCheck, ShieldCheck, ArrowLeft, Check, AlertCircle, Loader2, Home, ChevronRight,
+  Key, Mail, RefreshCw, Eye, EyeOff
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -12,12 +13,14 @@ export default function CreateCompany({ onBack, onCreated }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [availablePlans, setAvailablePlans] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Form State containing ONLY the required fields, empty by default
   const [formData, setFormData] = useState({
     tenantName: '',
     adminEmail: '',
     adminPassword: '',
+    passwordSetupType: 'MANUAL', // 'MANUAL' or 'EMAIL_LINK'
     planTier: '',
     tenantId: '',
     status: 'ACTIVE',
@@ -48,6 +51,16 @@ export default function CreateCompany({ onBack, onCreated }) {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleGeneratePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let generated = '';
+    for (let i = 0; i < 12; i++) {
+      generated += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setFormData(prev => ({ ...prev, adminPassword: generated }));
+    setShowPassword(true);
+  };
+
   const handleBack = () => {
     if (onBack) {
       onBack();
@@ -69,8 +82,8 @@ export default function CreateCompany({ onBack, onCreated }) {
       setErrorMessage('Workspace Manager Email is required.');
       return;
     }
-    if (!formData.adminPassword) {
-      setErrorMessage('Workspace Manager Password is required.');
+    if (formData.passwordSetupType === 'MANUAL' && !formData.adminPassword) {
+      setErrorMessage('Workspace Manager Password is required when manual setup is selected.');
       return;
     }
 
@@ -80,7 +93,8 @@ export default function CreateCompany({ onBack, onCreated }) {
       const payload = {
         name: formData.tenantName.trim(),
         adminEmail: formData.adminEmail.trim(),
-        adminPassword: formData.adminPassword,
+        adminPassword: formData.passwordSetupType === 'MANUAL' ? formData.adminPassword : undefined,
+        passwordSetupType: formData.passwordSetupType,
         planTier: formData.planTier || undefined,
         tenantId: formData.tenantId.trim() || undefined,
         status: formData.status,
@@ -252,9 +266,9 @@ export default function CreateCompany({ onBack, onCreated }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+            <div className="space-y-6">
               {/* Workspace Manager Email */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 max-w-md">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Workspace Manager Email <span className="text-rose-500">*</span>
                 </label>
@@ -266,29 +280,121 @@ export default function CreateCompany({ onBack, onCreated }) {
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck="false"
+                  readOnly
+                  onFocus={(e) => e.target.removeAttribute('readonly')}
                   value={formData.adminEmail}
                   onChange={e => handleChange('adminEmail', e.target.value)}
-                  placeholder="e.g. admin@titan.com"
+                  placeholder=""
                   className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                 />
               </div>
 
-              {/* Workspace Manager Password */}
-              <div className="space-y-1.5">
+              {/* Password Setup Method Selection */}
+              <div className="space-y-3">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Workspace Manager Password <span className="text-rose-500">*</span>
+                  Password Setup Method <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="password"
-                  required
-                  name="new_workspace_manager_password_no_autofill"
-                  autoComplete="new-password"
-                  value={formData.adminPassword}
-                  onChange={e => handleChange('adminPassword', e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label
+                    onClick={() => handleChange('passwordSetupType', 'MANUAL')}
+                    className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                      formData.passwordSetupType === 'MANUAL'
+                        ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-100'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="passwordSetupType"
+                      checked={formData.passwordSetupType === 'MANUAL'}
+                      onChange={() => handleChange('passwordSetupType', 'MANUAL')}
+                      className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <div className="flex items-center gap-1.5 font-bold text-xs">
+                        <Key className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Set Password Manually</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                        Set password now or generate a temporary password.
+                      </p>
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => handleChange('passwordSetupType', 'EMAIL_LINK')}
+                    className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                      formData.passwordSetupType === 'EMAIL_LINK'
+                        ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-100'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="passwordSetupType"
+                      checked={formData.passwordSetupType === 'EMAIL_LINK'}
+                      onChange={() => handleChange('passwordSetupType', 'EMAIL_LINK')}
+                      className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <div className="flex items-center gap-1.5 font-bold text-xs">
+                        <Mail className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Send Password Setup Link</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                        Send email invitation link to setup password upon first login.
+                      </p>
+                    </div>
+                  </label>
+                </div>
               </div>
+
+              {/* Password Input / Info Banner based on option */}
+              {formData.passwordSetupType === 'MANUAL' ? (
+                <div className="space-y-1.5 max-w-md">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Workspace Manager Password <span className="text-rose-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleGeneratePassword}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>Auto-Generate</span>
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      name="new_workspace_manager_password_no_autofill"
+                      autoComplete="new-password"
+                      readOnly
+                      onFocus={(e) => e.target.removeAttribute('readonly')}
+                      value={formData.adminPassword}
+                      onChange={e => handleChange('adminPassword', e.target.value)}
+                      placeholder=""
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-600 font-medium flex items-center gap-3">
+                  <Mail className="w-5 h-5 text-blue-600 shrink-0" />
+                  <span>
+                    An invitation link with password creation instructions will be sent automatically to <strong className="text-slate-900 font-bold">{formData.adminEmail || 'the admin email address'}</strong> upon provisioning.
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

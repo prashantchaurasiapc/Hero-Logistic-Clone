@@ -469,7 +469,12 @@ const FormModal = ({ title, onSubmit, onClose, form, setForm }) => {
         </div>
 
         {/* MODAL FORM */}
-        <form onSubmit={onSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={onSubmit} autoComplete="off" className="px-6 py-5 space-y-4">
+
+          {/* Dummy hidden inputs to hijack browser autofill */}
+          <input type="text" name="fakeusernameremembered" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+          <input type="password" name="fakepasswordremembered" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+
           <div className="grid grid-cols-1 gap-4">
             
             {/* FULL NAME */}
@@ -477,8 +482,12 @@ const FormModal = ({ title, onSubmit, onClose, form, setForm }) => {
               <label className={labelCls}>FULL NAME *</label>
               <input 
                 required 
+                name="admin_staff_fullname_no_autofill"
+                autoComplete="off"
+                readOnly
+                onFocus={(e) => e.target.removeAttribute('readonly')}
                 className={inputCls} 
-                placeholder="e.g. Sales Manager" 
+                placeholder="" 
                 value={form.name} 
                 onChange={e => setForm({ ...form, name: e.target.value })} 
               />
@@ -490,8 +499,15 @@ const FormModal = ({ title, onSubmit, onClose, form, setForm }) => {
               <input 
                 required 
                 type="email" 
+                name="admin_staff_email_no_autofill"
+                autoComplete="new-email"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                readOnly
+                onFocus={(e) => e.target.removeAttribute('readonly')}
                 className={inputCls} 
-                placeholder="sales@hero.com" 
+                placeholder="" 
                 value={form.email} 
                 onChange={e => setForm({ ...form, email: e.target.value })} 
               />
@@ -503,8 +519,12 @@ const FormModal = ({ title, onSubmit, onClose, form, setForm }) => {
               <input 
                 required={title.includes('Add')}
                 type="password" 
+                name="admin_staff_password_no_autofill"
+                autoComplete="new-password"
+                readOnly
+                onFocus={(e) => e.target.removeAttribute('readonly')}
                 className={inputCls} 
-                placeholder="••••••••••••" 
+                placeholder="" 
                 value={form.password || ''} 
                 onChange={e => setForm({ ...form, password: e.target.value })} 
               />

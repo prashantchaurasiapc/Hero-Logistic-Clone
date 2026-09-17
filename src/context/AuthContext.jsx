@@ -58,8 +58,24 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   };
 
+  const clearCompanyCache = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('hero_session');
+    localStorage.removeItem('hero_company_id');
+    localStorage.removeItem('selectedCompanyId');
+    localStorage.removeItem('activeCompany');
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('cache_') || key.startsWith('hero_cache_') || key.startsWith('hero_portal_')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {}
+  };
+
   const login = async (email, password) => {
     try {
+      clearCompanyCache();
       const res = await api.post('/auth/login', { email, password });
       if (res.data && res.data.success) {
         if (res.data.data.accessToken) {
@@ -71,6 +87,7 @@ export const AuthProvider = ({ children }) => {
           name: loggedInUser.name,
           role: loggedInUser.role,
           company: loggedInUser.company?.name || 'Hero Logistics',
+          companyId: loggedInUser.companyId || loggedInUser.company?.id || null,
           email: loggedInUser.email,
           permissions: loggedInUser.permissions || {}
         }));
@@ -93,8 +110,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout failed on backend:', error);
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('hero_session');
+      clearCompanyCache();
       setUser(null);
       setIsAuthenticated(false);
     }

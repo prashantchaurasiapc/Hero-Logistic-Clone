@@ -367,6 +367,7 @@ export default function Customers() {
       }
       setShowDeleteModal(false);
       triggerToast(`Customer "${deletedName || 'record'}" deleted successfully!`);
+      fetchPortalData();
     }
   };
 

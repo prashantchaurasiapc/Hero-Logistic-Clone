@@ -813,6 +813,7 @@ export default function CompanySettings() {
     name: '',
     email: '',
     password: '',
+    passwordSetupType: 'MANUAL',
     role: 'Admin',
     branch: 'Sydney',
     status: 'Active',
@@ -824,6 +825,7 @@ export default function CompanySettings() {
     name: '',
     email: '',
     password: '',
+    passwordSetupType: 'MANUAL',
     role: 'Admin',
     branch: 'Sydney',
     status: 'Active',
@@ -853,6 +855,53 @@ export default function CompanySettings() {
     setEditUserForm(prev => ({ ...prev, password: pwd }));
     setShowEditPassword(true);
     triggerToast('Strong password auto-generated!');
+  };
+
+  const handleAddUserSubmit = async (e) => {
+    e.preventDefault();
+    if (!newUserForm.name || !newUserForm.email) return;
+    try {
+      const res = await api.post('/users', {
+        name: newUserForm.name,
+        email: newUserForm.email,
+        phone: newUserForm.phone || null,
+        role: newUserForm.role,
+        password: newUserForm.passwordSetupType === 'MANUAL' ? (newUserForm.password || undefined) : undefined,
+        passwordSetupType: newUserForm.passwordSetupType || 'MANUAL',
+        status: newUserForm.status
+      });
+      if (res.data?.success) {
+        triggerToast(`User "${newUserForm.name}" created successfully!`);
+        setIsAddModalOpen(false);
+        setNewUserForm({ name: '', email: '', password: '', passwordSetupType: 'MANUAL', role: 'Admin', branch: 'Sydney', status: 'Active', phone: '' });
+        fetchCompanySettings();
+      }
+    } catch (err) {
+      triggerToast(err.response?.data?.error?.message || err.response?.data?.message || 'Error creating user.');
+    }
+  };
+
+  const handleEditUserSubmit = async (e) => {
+    e.preventDefault();
+    if (!editUserForm.id || !editUserForm.name) return;
+    try {
+      const res = await api.put(`/users/${editUserForm.id}`, {
+        name: editUserForm.name,
+        email: editUserForm.email,
+        phone: editUserForm.phone || null,
+        role: editUserForm.role,
+        password: editUserForm.passwordSetupType === 'MANUAL' && editUserForm.password ? editUserForm.password : undefined,
+        passwordSetupType: editUserForm.passwordSetupType || 'MANUAL',
+        status: editUserForm.status
+      });
+      if (res.data?.success) {
+        triggerToast(`User "${editUserForm.name}" updated successfully!`);
+        setIsEditModalOpen(false);
+        fetchCompanySettings();
+      }
+    } catch (err) {
+      triggerToast(err.response?.data?.error?.message || err.response?.data?.message || 'Error updating user.');
+    }
   };
 
   // Roles Management State
@@ -1632,53 +1681,6 @@ export default function CompanySettings() {
     }
   };
 
-  const handleAddUserSubmit = async (e) => {
-    e.preventDefault();
-    if (!newUserForm.name || !newUserForm.email || !newUserForm.password) {
-      triggerToast('Please fill in required fields (Name, Email & Password)');
-      return;
-    }
-
-    try {
-      const res = await api.post('/users', {
-        name: newUserForm.name,
-        email: newUserForm.email,
-        password: newUserForm.password,
-        role: newUserForm.role,
-        branch: newUserForm.branch,
-        phone: newUserForm.phone,
-        status: newUserForm.status
-      });
-
-      const createdData = res.data?.data || res.data;
-      const initials = (createdData.name || newUserForm.name).split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'US';
-      const newEntry = {
-        id: createdData.id || Date.now(),
-        name: createdData.name || newUserForm.name,
-        email: createdData.email || newUserForm.email,
-        role: newUserForm.role,
-        roleColor: getRoleBadgeColor(newUserForm.role),
-        branch: newUserForm.branch || 'Sydney',
-        status: newUserForm.status || 'Active',
-        lastLogin: 'Never',
-        joined: 'Just Now',
-        phone: createdData.phone || newUserForm.phone || '+61 400 000 000',
-        avatar: initials,
-        avatarBg: 'bg-[#2563EB]'
-      };
-
-      setUsersList(prev => [newEntry, ...prev]);
-      setSelectedUser(newEntry);
-      setIsAddModalOpen(false);
-      setNewUserForm({ name: '', email: '', password: '', role: 'Admin', branch: 'Sydney', status: 'Active', phone: '' });
-      triggerToast(`User "${newEntry.name}" created successfully!`);
-    } catch (err) {
-      console.error('Error creating user:', err);
-      const errMsg = err.response?.data?.message || err.response?.data?.error?.message || 'Failed to create user. Please try again.';
-      triggerToast(errMsg);
-    }
-  };
-
   const handleOpenEditModal = (userObj) => {
     setEditUserForm({
       id: userObj.id,
@@ -1692,57 +1694,6 @@ export default function CompanySettings() {
     });
     setIsEditModalOpen(true);
     setActiveRowMenuId(null);
-  };
-
-  const handleEditUserSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const payload = {
-        name: editUserForm.name,
-        email: editUserForm.email,
-        role: editUserForm.role,
-        branch: editUserForm.branch,
-        phone: editUserForm.phone,
-        status: editUserForm.status
-      };
-      if (editUserForm.password && editUserForm.password.trim().length > 0) {
-        payload.password = editUserForm.password.trim();
-      }
-
-      const res = await api.put(`/users/${editUserForm.id}`, payload);
-
-      const initials = editUserForm.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'US';
-
-      const updatedList = usersList.map(u => {
-        if (u.id === editUserForm.id) {
-          const updated = {
-            ...u,
-            name: editUserForm.name,
-            email: editUserForm.email,
-            role: editUserForm.role,
-            roleColor: getRoleBadgeColor(editUserForm.role),
-            branch: editUserForm.branch,
-            status: editUserForm.status,
-            phone: editUserForm.phone,
-            avatar: initials
-          };
-          if (selectedUser?.id === u.id) {
-            setSelectedUser(updated);
-          }
-          return updated;
-        }
-        return u;
-      });
-
-      setUsersList(updatedList);
-      setIsEditModalOpen(false);
-      setEditUserForm({ id: null, name: '', email: '', password: '', role: 'Admin', branch: 'Sydney', status: 'Active', phone: '' });
-      triggerToast('User details updated successfully!');
-    } catch (err) {
-      console.error('Error updating user:', err);
-      const errMsg = err.response?.data?.message || err.response?.data?.error?.message || 'Failed to update user.';
-      triggerToast(errMsg);
-    }
   };
 
   const handleDeleteUser = async (userObj) => {
@@ -1817,6 +1768,17 @@ export default function CompanySettings() {
 
   return (
     <div className="p-3 sm:p-5 max-w-[1750px] mx-auto bg-[#F8FAFC] min-h-screen text-left font-sans flex flex-col space-y-4">
+
+      <style>{`
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+          -webkit-text-fill-color: #1e293b !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
+      `}</style>
 
       {/* Hidden File Input for Logo Upload */}
       <input
@@ -3513,463 +3475,699 @@ export default function CompanySettings() {
 
           {/* TAB 1: USERS */}
           {usersTab === 'Users' && (
-            <>
-              {/* 1. TOP METRIC CARDS (ROW OF 6 CARDS) */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            (isAddModalOpen || isEditModalOpen) ? (
+              <div className="space-y-6 text-left animate-fade-in py-2">
+                {/* TOP BREADCRUMB & HEADER BAR */}
+                <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                  <div>
+                    {/* Breadcrumb Navigation */}
+                    <nav className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold mb-2">
+                      <Users className="w-3.5 h-3.5 text-slate-400" />
+                      <button onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }} className="hover:text-slate-900 transition-colors cursor-pointer">
+                        Users & Permissions
+                      </button>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="text-slate-800 font-bold">
+                        {isAddModalOpen ? 'Add New System User Account' : 'Edit System User Account'}
+                      </span>
+                    </nav>
 
-                {/* Card 1: Total Users */}
-                <div className="bg-white rounded-xl border border-slate-200/80 px-3.5 py-2.5 shadow-2xs flex flex-col justify-between hover:border-blue-200 transition-all min-h-[92px]">
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#DBEAFE] text-[#2563EB] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
-                      <Users size={15} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">TOTAL USERS</span>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-black text-slate-900">{usersList.length}</span>
-                      </div>
-                      <p className="text-[8.5px] font-extrabold text-emerald-600 leading-none mt-0.5">↑ 12.5% <span className="font-semibold text-slate-400">vs Last Month</span></p>
-                    </div>
+                    {/* Page Title */}
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                      {isAddModalOpen ? 'Add New System User Account' : 'Edit System User Account'}
+                    </h1>
+                    <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                      Configure credentials, login password, security role permissions, and branch scope.
+                    </p>
                   </div>
-                  <div className="pt-1.5 border-t border-slate-50 flex justify-end">
-                    <button onClick={() => triggerToast('Showing all users...')} className="text-[8.5px] font-bold text-[#2563EB] hover:underline flex items-center gap-0.5 cursor-pointer leading-none">
-                      View all users →
-                    </button>
-                  </div>
-                </div>
 
-                {/* Card 2: Active Users */}
-                <div className="bg-white rounded-xl border border-slate-200/80 px-3.5 py-2.5 shadow-2xs flex flex-col justify-between hover:border-emerald-200 transition-all min-h-[92px]">
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#DCFCE7] text-[#16A34A] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
-                      <UserCheck size={15} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">ACTIVE USERS</span>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-black text-slate-900">{usersList.filter(u => u.status === "Active" || u.status === "ACTIVE").length}</span>
-                      </div>
-                      <p className="text-[8.5px] font-extrabold text-emerald-600 leading-none mt-0.5">↑ 10.0% <span className="font-semibold text-slate-400">vs Last Month</span></p>
-                    </div>
-                  </div>
-                  <div className="pt-1.5 border-t border-slate-50 flex justify-end">
-                    <button onClick={() => setSelectedStatus('Active')} className="text-[8.5px] font-bold text-[#2563EB] hover:underline flex items-center gap-0.5 cursor-pointer leading-none">
-                      View active users →
-                    </button>
-                  </div>
-                </div>
-
-                {/* Card 3: Inactive Users */}
-                <div className="bg-white rounded-xl border border-slate-200/80 px-3.5 py-2.5 shadow-2xs flex flex-col justify-between hover:border-rose-200 transition-all min-h-[92px]">
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
-                      <UserX size={15} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">INACTIVE USERS</span>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-black text-slate-900">{usersList.filter(u => u.status === "Inactive" || u.status === "INACTIVE").length}</span>
-                      </div>
-                      <p className="text-[8.5px] font-extrabold text-rose-600 leading-none mt-0.5">↓ 20.0% <span className="font-semibold text-slate-400">vs Last Month</span></p>
-                    </div>
-                  </div>
-                  <div className="pt-1.5 border-t border-slate-50 flex justify-end">
-                    <button onClick={() => setSelectedStatus('Inactive')} className="text-[8.5px] font-bold text-[#2563EB] hover:underline flex items-center gap-0.5 cursor-pointer leading-none">
-                      View inactive users →
-                    </button>
-                  </div>
-                </div>
-
-                {/* Card 4: Pending Invites */}
-                <div className="bg-white rounded-xl border border-slate-200/80 px-3.5 py-2.5 shadow-2xs flex flex-col justify-between hover:border-purple-200 transition-all min-h-[92px]">
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#F3E8FF] text-[#9333EA] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
-                      <Mail size={15} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">PENDING INVITES</span>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-black text-slate-900">{usersList.filter(u => u.status === "Pending" || u.status === "PENDING").length}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="pt-1.5 border-t border-slate-50 flex justify-end">
-                    <button onClick={() => triggerToast('Showing pending user invitations...')} className="text-[8.5px] font-bold text-[#2563EB] hover:underline flex items-center gap-0.5 cursor-pointer leading-none">
-                      View pending invites →
-                    </button>
-                  </div>
-                </div>
-
-                {/* Card 5: Roles */}
-                <div className="bg-white rounded-xl border border-slate-200/80 px-3.5 py-2.5 shadow-2xs flex flex-col justify-between hover:border-blue-200 transition-all min-h-[92px]">
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
-                      <Shield size={15} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">ROLES</span>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-black text-slate-900">{rolesList.length}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="pt-1.5 border-t border-slate-50 flex justify-end">
-                    <button onClick={() => setUsersTab('Roles')} className="text-[8.5px] font-bold text-[#2563EB] hover:underline flex items-center gap-0.5 cursor-pointer leading-none">
-                      View all roles →
-                    </button>
-                  </div>
-                </div>
-
-                {/* Card 6: Permission Sets */}
-                <div className="bg-white rounded-xl border border-slate-200/80 px-3.5 py-2.5 shadow-2xs flex flex-col justify-between hover:border-purple-200 transition-all min-h-[92px]">
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#F3E8FF] text-[#9333EA] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
-                      <Key size={15} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">PERMISSION SETS</span>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-black text-slate-900">{rolesList.length * 3}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="pt-1.5 border-t border-slate-50 flex justify-end">
-                    <button onClick={() => setUsersTab('Permissions')} className="text-[8.5px] font-bold text-[#2563EB] hover:underline flex items-center gap-0.5 cursor-pointer leading-none">
-                      View all permissions →
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* 2. FILTERS & SEARCH BAR */}
-              <div className="bg-white rounded-xl border border-slate-200/80 p-2.5 shadow-2xs flex flex-wrap items-center justify-between gap-2.5">
-
-                {/* Search Input Box */}
-                <div className="relative flex-1 min-w-[240px]">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search by name, email, role or branch..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400"
-                  />
-                </div>
-
-                {/* Dropdown Filters */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <select
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value)}
-                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer focus:outline-none"
-                  >
-                    <option value="All Roles">All Roles</option>
-                    <option value="Super Admin">Super Admin</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Dispatch Manager">Dispatch Manager</option>
-                    <option value="Dispatcher">Dispatcher</option>
-                    <option value="Accounts">Accounts</option>
-                    <option value="Warehouse Manager">Warehouse Manager</option>
-                    <option value="Driver">Driver</option>
-                  </select>
-
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer focus:outline-none"
-                  >
-                    <option value="All Status">All Status</option>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-
-                  <select
-                    value={selectedBranch}
-                    onChange={(e) => setSelectedBranch(e.target.value)}
-                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer focus:outline-none"
-                  >
-                    <option value="All Branches">All Branches</option>
-                    <option value="Sydney">Sydney</option>
-                    <option value="Melbourne">Melbourne</option>
-                  </select>
-
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50">
-                    <Calendar size={13} className="text-slate-400" />
-                    <span>Joined: All Time</span>
-                    <ChevronDown size={12} className="text-slate-400" />
-                  </button>
-
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50">
-                    <Filter size={13} className="text-slate-500" />
-                    <span>Filters</span>
-                  </button>
-
+                  {/* Top Right Action Button */}
                   <button
-                    onClick={() => {
-                      setSearchQuery('');
-                      setSelectedRole('All Roles');
-                      setSelectedStatus('All Status');
-                      setSelectedBranch('All Branches');
-                      triggerToast('Filters reset successfully');
-                    }}
-                    className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 cursor-pointer"
-                    title="Reset Filters"
+                    type="button"
+                    onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}
+                    className="self-start md:self-auto bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer"
                   >
-                    <RefreshCw size={13} />
+                    <ArrowLeft className="w-4 h-4 text-slate-600" />
+                    <span>Back to Users</span>
                   </button>
                 </div>
 
-              </div>
+                <form onSubmit={isAddModalOpen ? handleAddUserSubmit : handleEditUserSubmit} autoComplete="off" className="space-y-6">
 
-              {/* 3. MAIN SPLIT GRID */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                  {/* Dummy hidden inputs to hijack browser autofill */}
+                  <input type="text" name="fakeusernameremembered" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+                  <input type="password" name="fakepasswordremembered" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
 
-                {/* LEFT COLUMN: USERS LIST TABLE */}
-                <div className="lg:col-span-8 bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3">
+                  {/* SECTION 1: USER PROFILE INFORMATION */}
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 font-bold">
+                        <User className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-base font-black text-slate-900 uppercase tracking-wider">USER PROFILE INFORMATION</h2>
+                        <p className="text-xs text-slate-400 font-medium">Basic user identity details and contact information.</p>
+                      </div>
+                    </div>
 
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">USERS LIST</h3>
-                    <button onClick={() => triggerToast(`Showing all ${usersList.length} users...`)} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
-                      View all users →
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                      {/* Full Name */}
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          Full Name <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          name="company_user_fullname_no_autofill"
+                          autoComplete="off"
+                          readOnly
+                          onFocus={(e) => e.target.removeAttribute('readonly')}
+                          value={isAddModalOpen ? newUserForm.name : editUserForm.name}
+                          onChange={e => isAddModalOpen ? setNewUserForm({ ...newUserForm, name: e.target.value }) : setEditUserForm({ ...editUserForm, name: e.target.value })}
+                          placeholder=""
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                        />
+                      </div>
+
+                      {/* Email Address */}
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          Email Address <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          name="company_user_email_address_no_autofill"
+                          autoComplete="new-email"
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                          spellCheck="false"
+                          readOnly
+                          onFocus={(e) => e.target.removeAttribute('readonly')}
+                          value={isAddModalOpen ? newUserForm.email : editUserForm.email}
+                          onChange={e => isAddModalOpen ? setNewUserForm({ ...newUserForm, email: e.target.value }) : setEditUserForm({ ...editUserForm, email: e.target.value })}
+                          placeholder=""
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                        />
+                      </div>
+
+                      {/* Phone Number */}
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          Phone Number
+                        </label>
+                        <input
+                          type="text"
+                          name="company_user_phone_no_autofill"
+                          autoComplete="off"
+                          readOnly
+                          onFocus={(e) => e.target.removeAttribute('readonly')}
+                          value={isAddModalOpen ? newUserForm.phone : editUserForm.phone}
+                          onChange={e => isAddModalOpen ? setNewUserForm({ ...newUserForm, phone: e.target.value }) : setEditUserForm({ ...editUserForm, phone: e.target.value })}
+                          placeholder=""
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                        />
+                      </div>
+
+                      {/* Account Status */}
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          Account Status
+                        </label>
+                        <select
+                          value={isAddModalOpen ? newUserForm.status : editUserForm.status}
+                          onChange={e => isAddModalOpen ? setNewUserForm({ ...newUserForm, status: e.target.value }) : setEditUserForm({ ...editUserForm, status: e.target.value })}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition-all"
+                        >
+                          <option value="Active">Active</option>
+                          <option value="Inactive">Inactive</option>
+                          <option value="Pending">Pending</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 2: ACCOUNT SECURITY & PASSWORD SETUP */}
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 font-bold">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-base font-black text-slate-900 uppercase tracking-wider">ACCOUNT SECURITY & PASSWORD SETUP</h2>
+                        <p className="text-xs text-slate-400 font-medium">User authentication credentials and password security setup method.</p>
+                      </div>
+                    </div>
+
+                    {/* Password Setup Method Selection */}
+                    <div className="space-y-3">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Password Setup Method <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label
+                          onClick={() => isAddModalOpen
+                            ? setNewUserForm(prev => ({ ...prev, passwordSetupType: 'MANUAL' }))
+                            : setEditUserForm(prev => ({ ...prev, passwordSetupType: 'MANUAL' }))}
+                          className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                            ((isAddModalOpen ? newUserForm?.passwordSetupType : editUserForm?.passwordSetupType) || 'MANUAL') === 'MANUAL'
+                              ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-100'
+                              : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="companyUserPasswordSetupType"
+                            checked={((isAddModalOpen ? newUserForm?.passwordSetupType : editUserForm?.passwordSetupType) || 'MANUAL') === 'MANUAL'}
+                            onChange={() => isAddModalOpen
+                              ? setNewUserForm(prev => ({ ...prev, passwordSetupType: 'MANUAL' }))
+                              : setEditUserForm(prev => ({ ...prev, passwordSetupType: 'MANUAL' }))}
+                            className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div>
+                            <div className="flex items-center gap-1.5 font-bold text-xs">
+                              <Key className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Set Password Manually</span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                              Set password now or generate a temporary password.
+                            </p>
+                          </div>
+                        </label>
+
+                        <label
+                          onClick={() => isAddModalOpen
+                            ? setNewUserForm(prev => ({ ...prev, passwordSetupType: 'EMAIL_LINK' }))
+                            : setEditUserForm(prev => ({ ...prev, passwordSetupType: 'EMAIL_LINK' }))}
+                          className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                            (isAddModalOpen ? newUserForm?.passwordSetupType : editUserForm?.passwordSetupType) === 'EMAIL_LINK'
+                              ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-100'
+                              : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="companyUserPasswordSetupType"
+                            checked={(isAddModalOpen ? newUserForm?.passwordSetupType : editUserForm?.passwordSetupType) === 'EMAIL_LINK'}
+                            onChange={() => isAddModalOpen
+                              ? setNewUserForm(prev => ({ ...prev, passwordSetupType: 'EMAIL_LINK' }))
+                              : setEditUserForm(prev => ({ ...prev, passwordSetupType: 'EMAIL_LINK' }))}
+                            className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div>
+                            <div className="flex items-center gap-1.5 font-bold text-xs">
+                              <Mail className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Send Password Setup Link</span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                              Send email invitation link to user to set up password.
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {((isAddModalOpen ? newUserForm?.passwordSetupType : editUserForm?.passwordSetupType) || 'MANUAL') === 'MANUAL' ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                        {/* Account Password */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                              Account Password {isAddModalOpen && <span className="text-rose-500">*</span>}
+                            </label>
+                            <button
+                              type="button"
+                              onClick={isAddModalOpen ? handleGeneratePassword : handleGenerateEditPassword}
+                              className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                            >
+                              <Zap className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Auto-Generate</span>
+                            </button>
+                          </div>
+                          <div className="relative">
+                            <input
+                              type={(isAddModalOpen ? showPassword : showEditPassword) ? 'text' : 'password'}
+                              required={isAddModalOpen}
+                              name="company_user_password_no_autofill"
+                              autoComplete="new-password"
+                              readOnly
+                              onFocus={(e) => e.target.removeAttribute('readonly')}
+                              value={isAddModalOpen ? newUserForm?.password : editUserForm?.password}
+                              onChange={e => isAddModalOpen ? setNewUserForm({ ...newUserForm, password: e.target.value }) : setEditUserForm({ ...editUserForm, password: e.target.value })}
+                              placeholder=""
+                              className="w-full pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => isAddModalOpen ? setShowPassword(!showPassword) : setShowEditPassword(!showEditPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                              {(isAddModalOpen ? showPassword : showEditPassword) ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                          </div>
+                          <p className="text-[11px] text-slate-400 font-medium mt-1">User will use this password to log in to the system.</p>
+                        </div>
+
+                        {/* Security Standards Box */}
+                        <div className="p-4 bg-blue-50/60 border border-blue-100 rounded-2xl flex items-start gap-3">
+                          <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="text-xs font-bold text-blue-900">Security Standards</h4>
+                            <p className="text-[11px] text-blue-700 font-medium mt-0.5 leading-relaxed">
+                              Passwords are stored safely using standard bcrypt hashing. Admin can reset password anytime.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-600 font-medium flex items-center gap-3">
+                        <Mail className="w-5 h-5 text-blue-600 shrink-0" />
+                        <span>
+                          An invitation link with password creation instructions will be sent automatically to <strong className="text-slate-900 font-bold">{(isAddModalOpen ? newUserForm?.email : editUserForm?.email) || 'the user email address'}</strong>.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SECTION 3: PERMISSION ROLE ASSIGNMENT */}
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                      <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 font-bold">
+                        <Shield className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-base font-black text-slate-900 uppercase tracking-wider">PERMISSION ROLE ASSIGNMENT</h2>
+                        <p className="text-xs text-slate-400 font-medium">Assign system security role and portal permissions.</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          System Security Role <span className="text-rose-500">*</span>
+                        </label>
+                        <select
+                          value={isAddModalOpen ? newUserForm.role : editUserForm.role}
+                          onChange={e => isAddModalOpen ? setNewUserForm({ ...newUserForm, role: e.target.value }) : setEditUserForm({ ...editUserForm, role: e.target.value })}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition-all"
+                        >
+                          <option value="Admin">Admin (Company Administration)</option>
+                          <option value="Super Admin">Super Admin</option>
+                          <option value="Dispatch Manager">Dispatch Manager</option>
+                          <option value="Dispatcher">Dispatcher</option>
+                          <option value="Accounts">Accounts</option>
+                          <option value="Warehouse Manager">Warehouse Manager</option>
+                          <option value="Driver">Driver</option>
+                          <option value="Customer">Customer User</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 4: REGIONAL BRANCH ACCESS SCOPE */}
+                  <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                      <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 font-bold">
+                        <MapPin className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-base font-black text-slate-900 uppercase tracking-wider">REGIONAL BRANCH ACCESS SCOPE</h2>
+                        <p className="text-xs text-slate-400 font-medium">Assign primary branch scope for user operations.</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          Branch Access Level
+                        </label>
+                        <select
+                          value={isAddModalOpen ? newUserForm.branch : editUserForm.branch}
+                          onChange={e => isAddModalOpen ? setNewUserForm({ ...newUserForm, branch: e.target.value }) : setEditUserForm({ ...editUserForm, branch: e.target.value })}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition-all"
+                        >
+                          <option value="Sydney">Sydney Central Depot</option>
+                          <option value="Melbourne">Melbourne Yard</option>
+                          <option value="Brisbane">Brisbane Hub</option>
+                          <option value="Perth">Perth Depot</option>
+                          <option value="All Branches">All Branches (Global)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* BOTTOM FORM ACTION BUTTONS */}
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200/80 pb-12">
+                    <button
+                      type="button"
+                      onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}
+                      className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-6 py-3 rounded-xl transition-all shadow-xs cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-8 py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Check className="w-4 h-4 text-white" />
+                      <span>{isAddModalOpen ? 'Finalize Setup' : 'Save User Changes'}</span>
                     </button>
                   </div>
 
-                  {/* Table Container */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-slate-200/80 text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                          <th className="py-2.5 px-3 whitespace-nowrap">User</th>
-                          <th className="py-2.5 px-2 whitespace-nowrap">Role</th>
-                          <th className="py-2.5 px-2 whitespace-nowrap">Branch Access</th>
-                          <th className="py-2.5 px-2 whitespace-nowrap">Status</th>
-                          <th className="py-2.5 px-2 whitespace-nowrap">Last Login</th>
-                          <th className="py-2.5 px-2 whitespace-nowrap">Joined Date</th>
-                          <th className="py-2.5 px-2 text-right whitespace-nowrap">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {filteredUsers.length === 0 ? (
-                          <tr>
-                            <td colSpan="7" className="py-12 text-center text-xs font-semibold text-slate-400 bg-slate-50/30">
-                              <div className="flex flex-col items-center justify-center gap-2">
-                                <Users size={28} className="text-slate-300" />
-                                <span>No users found in database matching criteria.</span>
-                              </div>
-                            </td>
+                </form>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-white rounded-xl border border-slate-200/80 p-2.5 shadow-2xs flex flex-wrap items-center justify-between gap-2.5">
+
+                  {/* Search Input Box */}
+                  <div className="relative flex-1 min-w-[240px]">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search by name, email, role or branch..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-3 py-1.5 bg-slate-50/70 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400"
+                    />
+                  </div>
+
+                  {/* Dropdown Filters */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value)}
+                      className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer focus:outline-none"
+                    >
+                      <option value="All Roles">All Roles</option>
+                      <option value="Super Admin">Super Admin</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Dispatch Manager">Dispatch Manager</option>
+                      <option value="Dispatcher">Dispatcher</option>
+                      <option value="Accounts">Accounts</option>
+                      <option value="Warehouse Manager">Warehouse Manager</option>
+                      <option value="Driver">Driver</option>
+                    </select>
+
+                    <select
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                      className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer focus:outline-none"
+                    >
+                      <option value="All Status">All Status</option>
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+
+                    <select
+                      value={selectedBranch}
+                      onChange={(e) => setSelectedBranch(e.target.value)}
+                      className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer focus:outline-none"
+                    >
+                      <option value="All Branches">All Branches</option>
+                      <option value="Sydney">Sydney</option>
+                      <option value="Melbourne">Melbourne</option>
+                    </select>
+
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50">
+                      <Calendar size={13} className="text-slate-400" />
+                      <span>Joined: All Time</span>
+                      <ChevronDown size={12} className="text-slate-400" />
+                    </button>
+
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50">
+                      <Filter size={13} className="text-slate-500" />
+                      <span>Filters</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSelectedRole('All Roles');
+                        setSelectedStatus('All Status');
+                        setSelectedBranch('All Branches');
+                        triggerToast('Filters reset successfully');
+                      }}
+                      className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 cursor-pointer"
+                      title="Reset Filters"
+                    >
+                      <RefreshCw size={13} />
+                    </button>
+                  </div>
+
+                </div>
+
+                {/* 3. MAIN SPLIT GRID */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+                  {/* LEFT COLUMN: USERS LIST TABLE */}
+                  <div className="lg:col-span-8 bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3">
+
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">USERS LIST</h3>
+                      <button onClick={() => triggerToast(`Showing all ${usersList.length} users...`)} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                        View all users →
+                      </button>
+                    </div>
+
+                    {/* Table Container */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b border-slate-200/80 text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                            <th className="py-2.5 px-3 whitespace-nowrap">User</th>
+                            <th className="py-2.5 px-2 whitespace-nowrap">Role</th>
+                            <th className="py-2.5 px-2 whitespace-nowrap">Branch Access</th>
+                            <th className="py-2.5 px-2 whitespace-nowrap">Status</th>
+                            <th className="py-2.5 px-2 whitespace-nowrap">Last Login</th>
+                            <th className="py-2.5 px-2 whitespace-nowrap">Joined Date</th>
+                            <th className="py-2.5 px-2 text-right whitespace-nowrap">Actions</th>
                           </tr>
-                        ) : (
-                          filteredUsers.map((user) => (
-                            <tr
-                              key={user.id}
-                              onClick={() => setSelectedUser(user)}
-                              className={`hover:bg-blue-50/40 transition-colors cursor-pointer ${selectedUser?.id === user.id ? 'bg-blue-50/60' : ''}`}
-                            >
-                              <td className="py-2.5 px-3 whitespace-nowrap">
-                                <div className="flex items-center gap-2.5">
-                                  <div className={`w-7 h-7 rounded-full ${user.avatarBg} text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-2xs`}>
-                                    {user.avatar}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <h4 className="font-bold text-slate-900 leading-tight text-xs whitespace-nowrap">{user.name}</h4>
-                                    <p className="text-[10px] text-slate-400 font-medium leading-tight whitespace-nowrap">{user.email}</p>
-                                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {filteredUsers.length === 0 ? (
+                            <tr>
+                              <td colSpan="7" className="py-12 text-center text-xs font-semibold text-slate-400 bg-slate-50/30">
+                                <div className="flex flex-col items-center justify-center gap-2">
+                                  <Users size={28} className="text-slate-300" />
+                                  <span>No users found in database matching criteria.</span>
                                 </div>
                               </td>
-
-                              <td className="py-2.5 px-2 whitespace-nowrap">
-                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap inline-block ${user.roleColor}`}>
-                                  {user.role}
-                                </span>
-                              </td>
-
-                              <td className="py-2.5 px-2 text-slate-700 font-semibold text-[11px] whitespace-nowrap">
-                                {user.branch}
-                              </td>
-
-                              <td className="py-2.5 px-2 whitespace-nowrap">
-                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${user.status === 'Active' ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-rose-100 text-rose-700'}`}>
-                                  {user.status}
-                                </span>
-                              </td>
-
-                              <td className="py-2.5 px-2 text-slate-600 font-medium text-[10.5px] whitespace-nowrap">
-                                {user.lastLogin}
-                              </td>
-
-                              <td className="py-2.5 px-2 text-slate-500 font-medium text-[10.5px] whitespace-nowrap">
-                                {user.joined}
-                              </td>
-
-                              <td className="py-2.5 px-2 text-right relative">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveRowMenuId(activeRowMenuId === user.id ? null : user.id);
-                                  }}
-                                  className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer"
-                                >
-                                  <MoreHorizontal size={14} />
-                                </button>
-
-                                {activeRowMenuId === user.id && (
-                                  <div
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="absolute right-2 top-8 z-50 bg-white border border-slate-200 rounded-xl shadow-xl py-1 w-44 text-left font-semibold text-xs space-y-0.5 animate-fade-in"
-                                  >
-                                    <button onClick={() => handleOpenEditModal(user)} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
-                                      <Edit size={13} className="text-slate-400" /> Edit User Details
-                                    </button>
-                                    <button onClick={() => { setActiveRowMenuId(null); triggerToast(`Password reset link sent to ${user.email}`); }} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
-                                      <Key size={13} className="text-slate-400" /> Reset Password
-                                    </button>
-                                    <button onClick={() => handleToggleUserStatus(user)} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
-                                      {user.status === 'Active' ? <UserX size={13} className="text-rose-500" /> : <UserCheck size={13} className="text-emerald-500" />}
-                                      <span>{user.status === 'Active' ? 'Deactivate User' : 'Activate User'}</span>
-                                    </button>
-                                    <div className="border-t border-slate-100 my-1"></div>
-                                    <button onClick={() => handleDeleteUser(user)} className="w-full px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer">
-                                      <Trash2 size={13} /> Delete User
-                                    </button>
-                                  </div>
-                                )}
-                              </td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                          ) : (
+                            filteredUsers.map((user) => (
+                              <tr
+                                key={user.id}
+                                onClick={() => setSelectedUser(user)}
+                                className={`hover:bg-blue-50/40 transition-colors cursor-pointer ${selectedUser?.id === user.id ? 'bg-blue-50/60' : ''}`}
+                              >
+                                <td className="py-2.5 px-3 whitespace-nowrap">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className={`w-7 h-7 rounded-full ${user.avatarBg} text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-2xs`}>
+                                      {user.avatar}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <h4 className="font-bold text-slate-900 leading-tight text-xs whitespace-nowrap">{user.name}</h4>
+                                      <p className="text-[10px] text-slate-400 font-medium leading-tight whitespace-nowrap">{user.email}</p>
+                                    </div>
+                                  </div>
+                                </td>
 
-                  {/* Pagination Footer */}
-                  <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-3 border-t border-slate-100 text-xs font-semibold text-slate-500">
-                    <span>Showing 1 to {filteredUsers.length} of {usersList.length} users</span>
+                                <td className="py-2.5 px-2 whitespace-nowrap">
+                                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap inline-block ${user.roleColor}`}>
+                                    {user.role}
+                                  </span>
+                                </td>
 
-                    <div className="flex items-center gap-1">
-                      <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400">|‹</button>
-                      <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400">‹</button>
-                      <button className="px-2.5 py-1 bg-[#2563EB] text-white font-bold rounded-md">1</button>
-                      <button className="px-2.5 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700">2</button>
-                      <button className="px-2.5 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700">3</button>
-                      <button className="px-2.5 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700">4</button>
-                      <button className="px-2.5 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700">5</button>
-                      <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700">›</button>
-                      <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700">›|</button>
+                                <td className="py-2.5 px-2 text-slate-700 font-semibold text-[11px] whitespace-nowrap">
+                                  {user.branch}
+                                </td>
+
+                                <td className="py-2.5 px-2 whitespace-nowrap">
+                                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${user.status === 'Active' ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-rose-100 text-rose-700'}`}>
+                                    {user.status}
+                                  </span>
+                                </td>
+
+                                <td className="py-2.5 px-2 text-slate-600 font-medium text-[10.5px] whitespace-nowrap">
+                                  {user.lastLogin}
+                                </td>
+
+                                <td className="py-2.5 px-2 text-slate-500 font-medium text-[10.5px] whitespace-nowrap">
+                                  {user.joined}
+                                </td>
+
+                                <td className="py-2.5 px-2 text-right relative">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveRowMenuId(activeRowMenuId === user.id ? null : user.id);
+                                    }}
+                                    className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer"
+                                  >
+                                    <MoreHorizontal size={14} />
+                                  </button>
+
+                                  {activeRowMenuId === user.id && (
+                                    <div
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="absolute right-2 top-8 z-50 bg-white border border-slate-200 rounded-xl shadow-xl py-1 w-44 text-left font-semibold text-xs space-y-0.5 animate-fade-in"
+                                    >
+                                      <button onClick={() => handleOpenEditModal(user)} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
+                                        <Edit size={13} className="text-slate-400" /> Edit User Details
+                                      </button>
+                                      <button onClick={() => { setActiveRowMenuId(null); triggerToast(`Password reset link sent to ${user.email}`); }} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
+                                        <Key size={13} className="text-slate-400" /> Reset Password
+                                      </button>
+                                      <button onClick={() => handleToggleUserStatus(user)} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
+                                        {user.status === 'Active' ? <UserX size={13} className="text-rose-500" /> : <UserCheck size={13} className="text-emerald-500" />}
+                                        <span>{user.status === 'Active' ? 'Deactivate User' : 'Activate User'}</span>
+                                      </button>
+                                      <div className="border-t border-slate-100 my-1"></div>
+                                      <button onClick={() => handleDeleteUser(user)} className="w-full px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer">
+                                        <Trash2 size={13} /> Delete User
+                                      </button>
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
                     </div>
+
+                    {/* Pagination Footer */}
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-3 border-t border-slate-100 text-xs font-semibold text-slate-500">
+                      <span>Showing 1 to {filteredUsers.length} of {usersList.length} users</span>
+
+                      <div className="flex items-center gap-1">
+                        <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400">|‹</button>
+                        <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400">‹</button>
+                        <button className="px-2.5 py-1 bg-[#2563EB] text-white font-bold rounded-md">1</button>
+                        <button className="px-2.5 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700">2</button>
+                        <button className="px-2.5 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700">3</button>
+                        <button className="px-2.5 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700">4</button>
+                        <button className="px-2.5 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700">5</button>
+                        <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700">›</button>
+                        <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700">›|</button>
+                      </div>
+                    </div>
+
                   </div>
 
-                </div>
-
-                {/* RIGHT COLUMN: USER DETAILS & ROLE SUMMARY CARDS */}
-                <div className="lg:col-span-4 space-y-4">
-                  {selectedUser ? (
-                    <>
-                      {/* CARD 1: USER DETAILS */}
-                      <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3.5 text-left">
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                          <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">USER DETAILS</h3>
-                          <button onClick={() => handleOpenEditModal(selectedUser)} className="flex items-center gap-1 text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
-                            <Edit size={11} /> Edit User
-                          </button>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <div className={`w-12 h-12 rounded-full ${selectedUser.avatarBg || 'bg-purple-600'} text-white font-black text-base flex items-center justify-center shrink-0 shadow-xs`}>
-                            {selectedUser.avatar}
+                  {/* RIGHT COLUMN: USER DETAILS & ROLE SUMMARY CARDS */}
+                  <div className="lg:col-span-4 space-y-4">
+                    {selectedUser ? (
+                      <>
+                        {/* CARD 1: USER DETAILS */}
+                        <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3.5 text-left">
+                          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">USER DETAILS</h3>
+                            <button onClick={() => handleOpenEditModal(selectedUser)} className="flex items-center gap-1 text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                              <Edit size={11} /> Edit User
+                            </button>
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-sm font-black text-slate-900 leading-tight">{selectedUser.name}</h3>
-                              <span className="px-2 py-0.2 rounded-md text-[9px] font-extrabold bg-[#DCFCE7] text-[#166534]">
-                                {selectedUser.status}
-                              </span>
+
+                          <div className="flex items-center gap-3">
+                            <div className={`w-12 h-12 rounded-full ${selectedUser.avatarBg || 'bg-purple-600'} text-white font-black text-base flex items-center justify-center shrink-0 shadow-xs`}>
+                              {selectedUser.avatar}
                             </div>
-                            <p className="text-[11px] text-blue-600 font-medium leading-tight mt-0.5">{selectedUser.email}</p>
-                            <p className="text-[10px] text-purple-700 font-bold leading-tight mt-0.5">{selectedUser.role}</p>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-black text-slate-900 leading-tight">{selectedUser.name}</h3>
+                                <span className="px-2 py-0.2 rounded-md text-[9px] font-extrabold bg-[#DCFCE7] text-[#166534]">
+                                  {selectedUser.status}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-blue-600 font-medium leading-tight mt-0.5">{selectedUser.email}</p>
+                              <p className="text-[10px] text-purple-700 font-bold leading-tight mt-0.5">{selectedUser.role}</p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 text-xs pt-1 border-t border-slate-100">
+                            <div className="flex justify-between items-center text-[11px]">
+                              <span className="font-bold text-slate-500">Phone:</span>
+                              <span className="font-bold text-slate-900">{selectedUser.phone}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-[11px]">
+                              <span className="font-bold text-slate-500">Branch Access:</span>
+                              <span className="font-bold text-slate-900">{selectedUser.branch}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-[11px]">
+                              <span className="font-bold text-slate-500">Joined Date:</span>
+                              <span className="font-bold text-slate-900">{selectedUser.joined}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-[11px]">
+                              <span className="font-bold text-slate-500">Last Login:</span>
+                              <span className="font-bold text-slate-900">{selectedUser.lastLogin}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-[11px]">
+                              <span className="font-bold text-slate-500">Status:</span>
+                              <span className="font-bold text-emerald-600">{selectedUser.status}</span>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="space-y-2 text-xs pt-1 border-t border-slate-100">
-                          <div className="flex justify-between items-center text-[11px]">
-                            <span className="font-bold text-slate-500">Phone:</span>
-                            <span className="font-bold text-slate-900">{selectedUser.phone}</span>
+                        {/* CARD 2: ROLE & PERMISSIONS SUMMARY */}
+                        <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3 text-left">
+                          <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
+                            ROLE & PERMISSIONS SUMMARY
+                          </h3>
+
+                          <div className="space-y-1.5 text-xs">
+                            <div className="flex justify-between items-center text-[11px]">
+                              <span className="font-bold text-slate-500">Role:</span>
+                              <span className="font-bold text-slate-900">{selectedUser.role}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-[11px]">
+                              <span className="font-bold text-slate-500">Permission Set:</span>
+                              <span className="font-bold text-slate-900">Full Access</span>
+                            </div>
                           </div>
-                          <div className="flex justify-between items-center text-[11px]">
-                            <span className="font-bold text-slate-500">Branch Access:</span>
-                            <span className="font-bold text-slate-900">{selectedUser.branch}</span>
+
+                          <div className="pt-2 border-t border-slate-100 space-y-1.5 text-[11px]">
+                            <span className="font-bold text-slate-700 block mb-1">Key Permissions:</span>
+                            <ul className="space-y-1 font-semibold text-slate-700">
+                              <li className="flex items-center gap-1.5 text-emerald-700">
+                                <Check size={13} className="text-emerald-600 shrink-0" /> Full system access
+                              </li>
+                              <li className="flex items-center gap-1.5 text-emerald-700">
+                                <Check size={13} className="text-emerald-600 shrink-0" /> Manage settings & configuration
+                              </li>
+                              <li className="flex items-center gap-1.5 text-emerald-700">
+                                <Check size={13} className="text-emerald-600 shrink-0" /> Manage users, roles & permissions
+                              </li>
+                              <li className="flex items-center gap-1.5 text-emerald-700">
+                                <Check size={13} className="text-emerald-600 shrink-0" /> Access all reports and data
+                              </li>
+                              <li className="flex items-center gap-1.5 text-emerald-700">
+                                <Check size={13} className="text-emerald-600 shrink-0" /> Financial and invoicing access
+                              </li>
+                            </ul>
                           </div>
-                          <div className="flex justify-between items-center text-[11px]">
-                            <span className="font-bold text-slate-500">Joined Date:</span>
-                            <span className="font-bold text-slate-900">{selectedUser.joined}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-[11px]">
-                            <span className="font-bold text-slate-500">Last Login:</span>
-                            <span className="font-bold text-slate-900">{selectedUser.lastLogin}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-[11px]">
-                            <span className="font-bold text-slate-500">Status:</span>
-                            <span className="font-bold text-emerald-600">{selectedUser.status}</span>
+
+                          <div className="pt-2.5 border-t border-slate-100">
+                            <button onClick={() => triggerToast('Viewing full permission matrix...')} className="text-[10.5px] font-extrabold text-[#2563EB] hover:underline flex items-center gap-1 cursor-pointer">
+                              View full permission set →
+                            </button>
                           </div>
                         </div>
+                      </>
+                    ) : (
+                      <div className="bg-white rounded-xl border border-slate-200/80 p-8 shadow-2xs text-center space-y-2">
+                        <Users className="mx-auto text-slate-300 animate-pulse" size={32} />
+                        <p className="text-slate-500 font-black text-xs">Loading User Details...</p>
+                        <p className="text-slate-400 font-bold text-[10px]">Select a user from the list or wait for data synchronization.</p>
                       </div>
+                    )}
+                  </div>
 
-                      {/* CARD 2: ROLE & PERMISSIONS SUMMARY */}
-                      <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3 text-left">
-                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-                          ROLE & PERMISSIONS SUMMARY
-                        </h3>
-
-                        <div className="space-y-1.5 text-xs">
-                          <div className="flex justify-between items-center text-[11px]">
-                            <span className="font-bold text-slate-500">Role:</span>
-                            <span className="font-bold text-slate-900">{selectedUser.role}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-[11px]">
-                            <span className="font-bold text-slate-500">Permission Set:</span>
-                            <span className="font-bold text-slate-900">Full Access</span>
-                          </div>
-                        </div>
-
-                        <div className="pt-2 border-t border-slate-100 space-y-1.5 text-[11px]">
-                          <span className="font-bold text-slate-700 block mb-1">Key Permissions:</span>
-                          <ul className="space-y-1 font-semibold text-slate-700">
-                            <li className="flex items-center gap-1.5 text-emerald-700">
-                              <Check size={13} className="text-emerald-600 shrink-0" /> Full system access
-                            </li>
-                            <li className="flex items-center gap-1.5 text-emerald-700">
-                              <Check size={13} className="text-emerald-600 shrink-0" /> Manage settings & configuration
-                            </li>
-                            <li className="flex items-center gap-1.5 text-emerald-700">
-                              <Check size={13} className="text-emerald-600 shrink-0" /> Manage users, roles & permissions
-                            </li>
-                            <li className="flex items-center gap-1.5 text-emerald-700">
-                              <Check size={13} className="text-emerald-600 shrink-0" /> Access all reports and data
-                            </li>
-                            <li className="flex items-center gap-1.5 text-emerald-700">
-                              <Check size={13} className="text-emerald-600 shrink-0" /> Financial and invoicing access
-                            </li>
-                          </ul>
-                        </div>
-
-                        <div className="pt-2.5 border-t border-slate-100">
-                          <button onClick={() => triggerToast('Viewing full permission matrix...')} className="text-[10.5px] font-extrabold text-[#2563EB] hover:underline flex items-center gap-1 cursor-pointer">
-                            View full permission set →
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="bg-white rounded-xl border border-slate-200/80 p-8 shadow-2xs text-center space-y-2">
-                      <Users className="mx-auto text-slate-300 animate-pulse" size={32} />
-                      <p className="text-slate-500 font-black text-xs">Loading User Details...</p>
-                      <p className="text-slate-400 font-bold text-[10px]">Select a user from the list or wait for data synchronization.</p>
-                    </div>
-                  )}
                 </div>
-
               </div>
-            </>
+            )
           )}
 
           {/* TAB 2: ROLES */}
@@ -8131,425 +8329,7 @@ export default function CompanySettings() {
       {/* =========================================================================
          ADD USER MODAL OVERLAY
          ========================================================================= */}
-      {/* =========================================================================
-         FULL DEDICATED SCREEN: ADD NEW SYSTEM USER
-         ========================================================================= */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full my-auto overflow-hidden animate-fade-in text-left">
-            {/* Dedicated Page Header */}
-            <div className="bg-slate-900 text-white px-6 py-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold"
-                >
-                  <ArrowLeft size={16} /> Back to Users
-                </button>
-                <div>
-                  <h2 className="text-lg font-black text-white flex items-center gap-2">
-                    <UserPlus className="text-blue-400" size={20} /> Add New System User Account
-                  </h2>
-                  <p className="text-xs text-slate-400 font-medium">Configure credentials, login password, security role permissions, and branch scope.</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-white font-black text-lg p-1.5 cursor-pointer rounded-lg hover:bg-slate-800"
-              >
-                ✕
-              </button>
-            </div>
 
-            <form onSubmit={handleAddUserSubmit} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                {/* Section 1: Personal & Contact Information */}
-                <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 space-y-4">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2.5">
-                    <User size={15} className="text-blue-600" /> User Profile Information
-                  </h3>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Full Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. David Miller"
-                      value={newUserForm.name}
-                      onChange={e => setNewUserForm({ ...newUserForm, name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Email Address *</label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="david.m@herologistics.com.au"
-                      value={newUserForm.email}
-                      onChange={e => setNewUserForm({ ...newUserForm, email: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold text-slate-700 block mb-1">Phone Number</label>
-                      <input
-                        type="text"
-                        placeholder="+61 400 123 456"
-                        value={newUserForm.phone}
-                        onChange={e => setNewUserForm({ ...newUserForm, phone: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-slate-700 block mb-1">Account Status</label>
-                      <select
-                        value={newUserForm.status}
-                        onChange={e => setNewUserForm({ ...newUserForm, status: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
-                      >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 2: Account Password & Security Credentials */}
-                <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 space-y-4">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2.5">
-                    <Lock size={15} className="text-blue-600" /> Account Security & Password Setup
-                  </h3>
-
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="text-xs font-bold text-slate-700">Account Password *</label>
-                      <button
-                        type="button"
-                        onClick={handleGeneratePassword}
-                        className="text-[11px] font-bold text-[#2563EB] hover:underline cursor-pointer flex items-center gap-1"
-                      >
-                        <Zap size={12} /> Auto-Generate Password
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        required
-                        placeholder="Enter secure login password"
-                        value={newUserForm.password}
-                        onChange={e => setNewUserForm({ ...newUserForm, password: e.target.value })}
-                        className="w-full pl-3.5 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
-                      >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                    <p className="text-[10.5px] text-slate-500 font-medium mt-1">
-                      User will use this password to log in to the system.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl space-y-1 text-xs">
-                    <div className="flex items-center gap-1.5 text-blue-900 font-bold">
-                      <ShieldCheck size={14} className="text-blue-600" /> Security Standards
-                    </div>
-                    <p className="text-[11px] text-blue-800 font-medium leading-relaxed">
-                      Passwords are stored safely using standard bcrypt hashing. Admin can reset password anytime.
-                    </p>
-                  </div>
-                </div>
-
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                {/* Section 3: System Role Assignment */}
-                <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 space-y-4">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2.5">
-                    <Shield size={15} className="text-blue-600" /> Permission Role Assignment
-                  </h3>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">System Security Role *</label>
-                    <select
-                      value={newUserForm.role}
-                      onChange={e => setNewUserForm({ ...newUserForm, role: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
-                    >
-                      <option value="Super Admin">Super Admin (Full System Control)</option>
-                      <option value="Admin">Admin (Company Administration)</option>
-                      <option value="Dispatch Manager">Dispatch Manager (Fleet & Jobs)</option>
-                      <option value="Dispatcher">Dispatcher (Scheduling & Operations)</option>
-                      <option value="Accounts">Accounts (Invoicing & Financials)</option>
-                      <option value="Warehouse Manager">Warehouse Manager (Inventory & Depot)</option>
-                      <option value="Driver">Driver (Driver App Access)</option>
-                      <option value="Customer User">Customer User (Client Portal Access)</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Section 4: Regional Branch Access */}
-                <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 space-y-4">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2.5">
-                    <MapPin size={15} className="text-blue-600" /> Regional Branch Access Scope
-                  </h3>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Branch Access Level</label>
-                    <select
-                      value={newUserForm.branch}
-                      onChange={e => setNewUserForm({ ...newUserForm, branch: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
-                    >
-                      <option value="All Branches">All Branches (Global Access)</option>
-                      <option value="Sydney">Sydney Central Depot</option>
-                      <option value="Melbourne">Melbourne Depot</option>
-                      <option value="Brisbane">Brisbane Depot</option>
-                      <option value="Perth">Perth Depot</option>
-                    </select>
-                  </div>
-                </div>
-
-              </div>
-
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-md cursor-pointer flex items-center gap-2"
-                >
-                  <UserPlus size={16} /> Create User Account
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-         FULL DEDICATED SCREEN: EDIT SYSTEM USER
-         ========================================================================= */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full my-auto overflow-hidden animate-fade-in text-left">
-            {/* Dedicated Page Header */}
-            <div className="bg-slate-900 text-white px-6 py-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold"
-                >
-                  <ArrowLeft size={16} /> Back to Users
-                </button>
-                <div>
-                  <h2 className="text-lg font-black text-white flex items-center gap-2">
-                    <Edit className="text-purple-400" size={20} /> Edit User Account: {editUserForm.name}
-                  </h2>
-                  <p className="text-xs text-slate-400 font-medium">Update profile details, password, role security permissions, and branch access.</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-slate-400 hover:text-white font-black text-lg p-1.5 cursor-pointer rounded-lg hover:bg-slate-800"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleEditUserSubmit} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                {/* Section 1: Profile Information */}
-                <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 space-y-4">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2.5">
-                    <User size={15} className="text-purple-600" /> Profile & Contact Info
-                  </h3>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Full Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={editUserForm.name}
-                      onChange={e => setEditUserForm({ ...editUserForm, name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Email Address *</label>
-                    <input
-                      type="email"
-                      required
-                      value={editUserForm.email}
-                      onChange={e => setEditUserForm({ ...editUserForm, email: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold text-slate-700 block mb-1">Phone Number</label>
-                      <input
-                        type="text"
-                        value={editUserForm.phone}
-                        onChange={e => setEditUserForm({ ...editUserForm, phone: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-slate-700 block mb-1">Account Status</label>
-                      <select
-                        value={editUserForm.status}
-                        onChange={e => setEditUserForm({ ...editUserForm, status: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
-                      >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 2: Change Password */}
-                <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 space-y-4">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2.5">
-                    <Lock size={15} className="text-purple-600" /> Change Account Password (Optional)
-                  </h3>
-
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="text-xs font-bold text-slate-700">New Password</label>
-                      <button
-                        type="button"
-                        onClick={handleGenerateEditPassword}
-                        className="text-[11px] font-bold text-[#2563EB] hover:underline cursor-pointer flex items-center gap-1"
-                      >
-                        <Zap size={12} /> Auto-Generate Password
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type={showEditPassword ? "text" : "password"}
-                        placeholder="Leave empty to keep existing password"
-                        value={editUserForm.password || ''}
-                        onChange={e => setEditUserForm({ ...editUserForm, password: e.target.value })}
-                        className="w-full pl-3.5 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowEditPassword(!showEditPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
-                      >
-                        {showEditPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                    <p className="text-[10.5px] text-slate-500 font-medium mt-1">
-                      Only enter a value if you wish to reset or change this user's login password.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 bg-purple-50/80 border border-purple-200 rounded-xl space-y-1 text-xs">
-                    <div className="flex items-center gap-1.5 text-purple-900 font-bold">
-                      <ShieldCheck size={14} className="text-purple-600" /> Admin Security Override
-                    </div>
-                    <p className="text-[11px] text-purple-800 font-medium leading-relaxed">
-                      Saving a new password will instantly overwrite the user's password in the system database.
-                    </p>
-                  </div>
-                </div>
-
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                {/* Section 3: Role Assignment */}
-                <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 space-y-4">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2.5">
-                    <Shield size={15} className="text-purple-600" /> Security Role Assignment
-                  </h3>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">System Role *</label>
-                    <select
-                      value={editUserForm.role}
-                      onChange={e => setEditUserForm({ ...editUserForm, role: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
-                    >
-                      <option value="Super Admin">Super Admin</option>
-                      <option value="Admin">Admin</option>
-                      <option value="Dispatch Manager">Dispatch Manager</option>
-                      <option value="Dispatcher">Dispatcher</option>
-                      <option value="Accounts">Accounts</option>
-                      <option value="Warehouse Manager">Warehouse Manager</option>
-                      <option value="Driver">Driver</option>
-                      <option value="Customer User">Customer User</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Section 4: Branch Access */}
-                <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 space-y-4">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2.5">
-                    <MapPin size={15} className="text-purple-600" /> Regional Branch Access Scope
-                  </h3>
-
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Branch Access</label>
-                    <select
-                      value={editUserForm.branch}
-                      onChange={e => setEditUserForm({ ...editUserForm, branch: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
-                    >
-                      <option value="All Branches">All Branches</option>
-                      <option value="Sydney">Sydney</option>
-                      <option value="Melbourne">Melbourne</option>
-                      <option value="Brisbane">Brisbane</option>
-                      <option value="Perth">Perth</option>
-                    </select>
-                  </div>
-                </div>
-
-              </div>
-
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-md cursor-pointer flex items-center gap-2"
-                >
-                  <Save size={16} /> Save User Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* =========================================================================
          CREATE ROLE MODAL OVERLAY
