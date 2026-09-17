@@ -847,7 +847,7 @@ export default function Warehouse() {
                 <div style={{ width: 40, height: 40, borderRadius: 10, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BuildingIcon /></div>
                 <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>1. BASIC INFORMATION</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Facility Identity and Status</div></div>
               </div>
-              <div className="wh-form-grid-2">
+              <div className="wh-form-grid-3" style={{ marginBottom: 18 }}>
                 <div>
                   <label className="wh-label">Warehouse Name *</label>
                   <div className="wh-input-icon">
@@ -877,14 +877,39 @@ export default function Warehouse() {
                 </div>
                 <div>
                   <label className="wh-label">Branch / Region</label>
-                  <input
+                  <select
                     name="branch"
                     value={addForm.branch}
                     onChange={e => setAddForm({ ...addForm, branch: e.target.value })}
                     className="wh-input"
-                    placeholder="Sydney Main"
-                  />
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <option value="" disabled>Select Branch...</option>
+                    <option value="Sydney Main">Sydney Main</option>
+                    <option value="Melbourne Depot">Melbourne Depot</option>
+                    <option value="Brisbane Hub">Brisbane Hub</option>
+                    <option value="Perth Logistics">Perth Logistics</option>
+                    <option value="Adelaide Center">Adelaide Center</option>
+                  </select>
                 </div>
+              </div>
+              
+              <div className="wh-form-grid-2">
+                <div>
+                  <label className="wh-label">Warehouse Type</label>
+                  <select
+                    value={addForm.type}
+                    onChange={e => setAddForm({ ...addForm, type: e.target.value })}
+                    className="wh-input"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <option value="General">General</option>
+                    <option value="Cold Storage">Cold Storage</option>
+                    <option value="Distribution Centre">Distribution Centre</option>
+                    <option value="Bonded">Bonded</option>
+                  </select>
+                </div>
+
                 <div>
                   <label className="wh-label">Status</label>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -1033,12 +1058,22 @@ export default function Warehouse() {
                   </div>
                   <div>
                     <label className="wh-label">State</label>
-                    <input
+                    <select
                       value={addForm.state}
                       onChange={e => setAddForm({ ...addForm, state: e.target.value })}
                       className="wh-input"
-                      placeholder="e.g. NSW"
-                    />
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <option value="" disabled>Select State...</option>
+                      <option value="NSW">NSW</option>
+                      <option value="VIC">VIC</option>
+                      <option value="QLD">QLD</option>
+                      <option value="WA">WA</option>
+                      <option value="SA">SA</option>
+                      <option value="TAS">TAS</option>
+                      <option value="ACT">ACT</option>
+                      <option value="NT">NT</option>
+                    </select>
                   </div>
                   <div>
                     <label className="wh-label">Postal Code</label>
