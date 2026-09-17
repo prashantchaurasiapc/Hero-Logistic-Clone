@@ -801,30 +801,6 @@ export default function Timesheets() {
             </button>
           </div>
 
-          {/* BREAK RULES */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">BREAK RULES</div>
-            <div className="space-y-2 font-bold text-slate-700 border-b border-slate-100 pb-3">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500 font-normal">Min Break (after 5.5h)</span>
-                <span className="font-mono text-slate-900">30 min</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500 font-normal">Max Work (daily)</span>
-                <span className="font-mono text-slate-900">12 h</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500 font-normal">Max Work (weekly)</span>
-                <span className="font-mono text-slate-900">72 h</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-emerald-700 font-black">
-              <FiCheckCircle />
-              <span>Compliant 🟢</span>
-            </div>
-          </div>
-
           {/* RECENT TIMESHEETS CARD */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">RECENT TIMESHEETS</div>
