@@ -504,7 +504,8 @@ export default function Warehouse() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Status</label>
-                <select value={editModal.status || 'Active'} onChange={e => setEditModal({ ...editModal, status: e.target.value })} className="wh-input">
+                <select value={editModal.status || ''} onChange={e => setEditModal({ ...editModal, status: e.target.value })} className="wh-input">
+                  <option value="">Select Status...</option>
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
                   <option value="Maintenance">Maintenance</option>
@@ -518,7 +519,8 @@ export default function Warehouse() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Warehouse Type</label>
-                <select value={editModal.type || 'General'} onChange={e => setEditModal({ ...editModal, type: e.target.value })} className="wh-input">
+                <select value={editModal.type || ''} onChange={e => setEditModal({ ...editModal, type: e.target.value })} className="wh-input">
+                  <option value="">Select Type...</option>
                   <option value="General">General</option>
                   <option value="Cold Storage">Cold Storage</option>
                   <option value="Distribution Centre">Distribution Centre</option>
@@ -904,7 +906,7 @@ export default function Warehouse() {
                     className="wh-input"
                     style={{ cursor: 'pointer' }}
                   >
-                    <option value="" disabled>Select Type...</option>
+                    <option value="">Select Type...</option>
                     <option value="General">General</option>
                     <option value="Cold Storage">Cold Storage</option>
                     <option value="Distribution Centre">Distribution Centre</option>
@@ -920,7 +922,7 @@ export default function Warehouse() {
                     className="wh-input"
                     style={{ cursor: 'pointer' }}
                   >
-                    <option value="" disabled>Select Status...</option>
+                    <option value="">Select Status...</option>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                     <option value="Maintenance">Maintenance</option>
