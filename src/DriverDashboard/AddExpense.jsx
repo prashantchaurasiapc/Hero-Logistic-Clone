@@ -132,9 +132,15 @@ export default function AddExpense() {
   };
 
   const handleUploadSubmit = () => {
-    const fileName = selectedFile ? selectedFile.name : 'Receipt_Scan.jpg';
+    const now = new Date();
     setReceipts([
-      { id: Date.now(), date: '29 May 2025', time: '02:50 PM', vendor: selectedFile ? fileName : 'Uploaded Receipt', amount: '$45.00' },
+      { 
+        id: Date.now(), 
+        date: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }), 
+        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
+        vendor: selectedFile ? fileName : 'Uploaded Receipt', 
+        amount: '$0.00' 
+      },
       ...receipts
     ]);
     setSelectedFile(null);
@@ -332,7 +338,7 @@ export default function AddExpense() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">STATUS</div>
             <div className="space-y-1.5 font-bold text-slate-700">
-              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
+              <div className="text-[11px] text-slate-500">Last sync: Just now</div>
               <div className="flex items-center gap-2 text-emerald-700 font-black">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
@@ -392,7 +398,7 @@ export default function AddExpense() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1 border-t border-slate-100">
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Vehicle</span>
-                <span className="font-bold text-slate-900">{runData?.vehicle?.truck || 'TRK-101'}</span>
+                <span className="font-bold text-slate-900">{runData?.vehicle?.truck || 'Unassigned'}</span>
               </div>
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Odometer</span>
