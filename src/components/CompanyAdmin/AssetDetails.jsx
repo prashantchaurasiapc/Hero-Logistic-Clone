@@ -117,9 +117,9 @@ export default function AssetDetails({ assetData, onBack }) {
   const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
 
   const getBranchName = (val) => {
-    if (!val) return 'Sydney Head Office';
+    if (!val) return '—';
     if (typeof val === 'string') return val;
-    if (typeof val === 'object') return val.name || val.location || 'Sydney Head Office';
+    if (typeof val === 'object') return val.name || val.location || '—';
     return String(val);
   };
 
@@ -130,42 +130,81 @@ export default function AssetDetails({ assetData, onBack }) {
     return String(val);
   };
 
-  // Asset defaults without hardcoded dummy strings
+  // Helper to filter out legacy dummy strings
+  const cleanStr = (val, dummyVals = []) => {
+    if (!val) return '—';
+    if (dummyVals.includes(val)) return '—';
+    return val;
+  };
+
   const defaultAsset = {
-    id: id || assetData?.id || assetData?.assetId || 'AST-0001',
-    name: assetData?.name || 'Asset',
-    fullName: assetData?.fullName || assetData?.name || 'Asset',
-    category: assetData?.category || 'Equipment',
-    categoryBadge: assetData?.category || 'Equipment',
-    type: assetData?.type || 'General',
-    makeModel: assetData?.makeModel || assetData?.name || '-',
-    year: assetData?.year ? String(assetData.year) : '-',
-    serialNo: assetData?.serialNo || assetData?.serialNumber || '-',
-    serialNumberFull: assetData?.serialNumberFull || assetData?.serialNumber || '-',
-    assetTag: assetData?.assetTag || assetData?.id || 'AST-0001',
+    id: id || assetData?.id || assetData?.assetId || '—',
+    name: assetData?.name || '—',
+    fullName: assetData?.fullName || assetData?.name || '—',
+    category: cleanStr(assetData?.category, ['Equipment']),
+    categoryBadge: cleanStr(assetData?.category, ['Equipment']),
+    type: cleanStr(assetData?.type, ['General']),
+    makeModel: cleanStr(assetData?.makeModel || assetData?.name, ['Asset', 'as']),
+    year: assetData?.year && String(assetData.year) !== '2024' ? String(assetData.year) : '—',
+    serialNo: assetData?.serialNo || assetData?.serialNumber || '—',
+    serialNumberFull: assetData?.serialNumberFull || assetData?.serialNumber || '—',
+    assetTag: assetData?.assetTag || assetData?.id || '—',
     branch: getBranchName(assetData?.branch),
-    location: getSafeStr(assetData?.location, 'Sydney Head Office'),
-    currentLocation: getSafeStr(assetData?.currentLocation, 'Yard'),
-    assignedTo: getSafeStr(assetData?.assignedTo, 'Unassigned'),
-    status: assetData?.status || 'Active',
-    condition: assetData?.condition || 'Good',
-    purchaseDate: assetData?.purchaseDate || '-',
-    purchasePrice: assetData?.purchasePrice || '-',
-    bookValue: assetData?.bookValue || '-',
-    supplier: assetData?.supplier || '-',
-    warrantyExpiry: assetData?.warrantyExpiry || '-',
+    location: cleanStr(getSafeStr(assetData?.location, '—'), ['Yard - Sydney HO', 'Yard']),
+    currentLocation: cleanStr(getSafeStr(assetData?.currentLocation, '—'), ['Yard - Sydney HO', 'Yard']),
+    assignedTo: cleanStr(getSafeStr(assetData?.assignedTo, '—'), ['Unassigned']),
+    status: cleanStr(assetData?.status, ['Active', 'ACTIVE']),
+    condition: cleanStr(assetData?.condition, ['Good', 'GOOD']),
+    purchaseDate: cleanStr(assetData?.purchaseDate),
+    purchasePrice: cleanStr(assetData?.purchasePrice),
+    bookValue: cleanStr(assetData?.bookValue),
+    supplier: cleanStr(assetData?.supplier),
+    warrantyExpiry: cleanStr(assetData?.warrantyExpiry),
     warrantyDaysLeft: '',
-    usageType: 'Operational',
-    operatingHours: assetData?.operatingHours || '0 Hrs',
-    odometer: assetData?.odometer || '0 Hrs',
-    nextService: assetData?.nextService || '-',
+    usageType: cleanStr(assetData?.usageType, ['Operational']),
+    operatingHours: cleanStr(assetData?.operatingHours, ['0 Hrs', '0']),
+    odometer: cleanStr(assetData?.odometer, ['0 Hrs', '0']),
+    nextService: cleanStr(assetData?.nextService),
     nextServiceDays: '',
-    description: assetData?.description || 'No description provided.',
-    notes: assetData?.notes || 'No special notes recorded.',
+    description: cleanStr(assetData?.description, ['No description provided.']),
+    notes: cleanStr(assetData?.notes, ['No special operational notes recorded.', 'No special notes recorded.']),
     image: (assetData?.image && !assetData.image.includes('unsplash')) ? assetData.image : (assetData?.photoUrl && !assetData.photoUrl.includes('unsplash')) ? assetData.photoUrl : null
   };
 
-  const initialAsset = { ...defaultAsset, ...(assetData || {}) };
+  const cleanAssetData = (raw) => {
+    if (!raw) return {};
+    return {
+      ...raw,
+      category: cleanStr(raw.category, ['Equipment']),
+      categoryBadge: cleanStr(raw.category, ['Equipment']),
+      type: cleanStr(raw.type, ['General']),
+      makeModel: cleanStr(raw.makeModel !== raw.name ? raw.makeModel : '—', ['Asset', 'as', 'aasddd']),
+      year: raw.year && String(raw.year) !== '2024' ? String(raw.year) : '—',
+      serialNo: raw.serialNo || raw.serialNumber || '—',
+      serialNumberFull: raw.serialNumberFull || raw.serialNumber || '—',
+      assetTag: raw.assetTag || '—',
+      branch: cleanStr(getBranchName(raw.branch), ['Sydney Head Office', 'asd']),
+      location: cleanStr(getSafeStr(raw.location, '—'), ['Yard - Sydney HO', 'Yard', 'Sydney Head Office']),
+      currentLocation: cleanStr(getSafeStr(raw.currentLocation, '—'), ['Yard - Sydney HO', 'Yard', 'Sydney Head Office']),
+      assignedTo: cleanStr(getSafeStr(raw.assignedTo, '—'), ['Unassigned']),
+      status: cleanStr(raw.status, ['Active', 'ACTIVE']),
+      condition: cleanStr(raw.condition, ['Good', 'GOOD']),
+      purchaseDate: cleanStr(raw.purchaseDate),
+      purchasePrice: cleanStr(raw.purchasePrice),
+      bookValue: cleanStr(raw.bookValue),
+      supplier: cleanStr(raw.supplier),
+      warrantyExpiry: cleanStr(raw.warrantyExpiry),
+      usageType: cleanStr(raw.usageType, ['Operational']),
+      operatingHours: cleanStr(raw.operatingHours, ['0 Hrs', '0']),
+      odometer: cleanStr(raw.odometer, ['0 Hrs', '0']),
+      nextService: cleanStr(raw.nextService),
+      description: cleanStr(raw.description, ['No description provided.']),
+      notes: cleanStr(raw.notes, ['No special operational notes recorded.', 'No special notes recorded.']),
+      image: (raw.image && !raw.image.includes('unsplash')) ? raw.image : (raw.photoUrl && !raw.photoUrl.includes('unsplash')) ? raw.photoUrl : null
+    };
+  };
+
+  const initialAsset = { ...cleanAssetData(assetData || {}), ...defaultAsset };
 
   // Main Live State for Asset
   const [asset, setAsset] = useState(initialAsset);
@@ -206,7 +245,7 @@ export default function AssetDetails({ assetData, onBack }) {
     try {
       const res = await api.get(`/company-admin/assets/${assetTargetId}`);
       if (res.data && res.data.data) {
-        const liveData = res.data.data;
+        const liveData = cleanAssetData(res.data.data);
         setAsset(prev => ({ ...prev, ...liveData }));
         if (liveData.assignments && Array.isArray(liveData.assignments)) {
           setAssignmentsList(liveData.assignments);
@@ -225,8 +264,9 @@ export default function AssetDetails({ assetData, onBack }) {
 
   useEffect(() => {
     if (assetData) {
-      setAsset(prev => ({ ...prev, ...assetData }));
-      setEditFormData(prev => ({ ...prev, ...assetData }));
+      const cleaned = cleanAssetData(assetData);
+      setAsset(prev => ({ ...prev, ...cleaned }));
+      setEditFormData(prev => ({ ...prev, ...cleaned }));
     }
     fetchAssetDetail();
   }, [id, assetData?.id, assetData?.realId, assetData?.name, assetData?.status]);
@@ -535,8 +575,8 @@ export default function AssetDetails({ assetData, onBack }) {
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Branch / Location</span>
-                  <span className="text-xs font-bold text-slate-900 block">{typeof asset.branch === 'object' ? (asset.branch?.name || asset.branch?.location || 'Sydney Head Office') : (asset.branch || 'Sydney Head Office')}</span>
-                  <span className="text-[10px] text-slate-500 font-semibold block">{typeof asset.location === 'object' ? (asset.location?.name || asset.location?.location || 'Yard') : (asset.location || 'Yard')}</span>
+                  <span className="text-xs font-bold text-slate-900 block">{typeof asset.branch === 'object' ? (asset.branch?.name || asset.branch?.location || '—') : (asset.branch || '—')}</span>
+                  <span className="text-[10px] text-slate-500 font-semibold block">{typeof asset.location === 'object' ? (asset.location?.name || asset.location?.location || '—') : (asset.location || '—')}</span>
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Serial / Number</span>
@@ -628,16 +668,16 @@ export default function AssetDetails({ assetData, onBack }) {
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Branch / Location</span>
-                    <span className="text-xs font-bold text-slate-800">{typeof asset.branch === 'object' ? (asset.branch?.name || asset.branch?.location || 'Sydney Head Office') : (asset.branch || 'Sydney Head Office')}</span>
-                    <span className="text-[10px] text-slate-500 font-semibold block">{typeof asset.location === 'object' ? (asset.location?.name || asset.location?.location || 'Yard') : (asset.location || 'Yard')}</span>
+                    <span className="text-xs font-bold text-slate-800">{typeof asset.branch === 'object' ? (asset.branch?.name || asset.branch?.location || '—') : (asset.branch || '—')}</span>
+                    <span className="text-[10px] text-slate-500 font-semibold block">{typeof asset.location === 'object' ? (asset.location?.name || asset.location?.location || '—') : (asset.location || '—')}</span>
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Current Location</span>
-                    <span className="text-xs font-bold text-slate-800">{typeof asset.currentLocation === 'object' ? (asset.currentLocation?.name || asset.currentLocation?.location || 'Warehouse 1') : (asset.currentLocation || 'Warehouse 1')}</span>
+                    <span className="text-xs font-bold text-slate-800">{typeof asset.currentLocation === 'object' ? (asset.currentLocation?.name || asset.currentLocation?.location || '—') : (asset.currentLocation || '—')}</span>
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Assigned To</span>
-                    <span className="text-xs font-bold text-slate-800">{typeof asset.assignedTo === 'object' ? (asset.assignedTo?.name || 'Warehouse 1') : (asset.assignedTo || 'Warehouse 1')}</span>
+                    <span className="text-xs font-bold text-slate-800">{typeof asset.assignedTo === 'object' ? (asset.assignedTo?.name || '—') : (asset.assignedTo || '—')}</span>
                   </div>
                 </div>
 
@@ -3231,6 +3271,7 @@ export default function AssetDetails({ assetData, onBack }) {
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Category</label>
                     <select value={editFormData.category} onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 cursor-pointer">
+                      <option value="">Select Category...</option>
                       <option value="Forklifts">Forklifts</option>
                       <option value="Containers">Containers</option>
                       <option value="Material Handling">Material Handling</option>
@@ -3321,6 +3362,7 @@ export default function AssetDetails({ assetData, onBack }) {
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Branch</label>
                     <select value={editFormData.branch} onChange={(e) => setEditFormData({ ...editFormData, branch: e.target.value })} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 cursor-pointer">
+                      <option value="">Select Branch...</option>
                       <option value="Sydney Head Office">Sydney Head Office</option>
                       <option value="Yard - Sydney HO">Yard - Sydney HO</option>
                       <option value="Melbourne Depot">Melbourne Depot</option>
@@ -3338,6 +3380,7 @@ export default function AssetDetails({ assetData, onBack }) {
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Status</label>
                     <select value={editFormData.status} onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 cursor-pointer">
+                      <option value="">Select Status...</option>
                       <option value="Active">Active</option>
                       <option value="Maintenance">Maintenance</option>
                       <option value="Out of Service">Out of Service</option>
@@ -3346,6 +3389,7 @@ export default function AssetDetails({ assetData, onBack }) {
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Condition</label>
                     <select value={editFormData.condition} onChange={(e) => setEditFormData({ ...editFormData, condition: e.target.value })} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 cursor-pointer">
+                      <option value="">Select Condition...</option>
                       <option value="Good">Good</option>
                       <option value="Fair">Fair</option>
                       <option value="Poor">Poor</option>
