@@ -2553,7 +2553,6 @@ const Vehicles = () => {
                     className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer"
                   >
                     <option value="TRL105">TRL105 â€“ Flatbed Heavy Trailer (Available)</option>
-                    <option value="TRL302">TRL302 â€“ Refrigerated Box Trailer (Available)</option>
                     <option value="TRL409">TRL409 â€“ Low Loader Heavy Duty (Available)</option>
                     <option value="TRL512">TRL512 â€“ Curtainsider 45ft Trailer (Available)</option>
                     <option value="TRL608">TRL608 â€“ Liquid Tanker Trailer (Available)</option>
@@ -2584,7 +2583,6 @@ const Vehicles = () => {
                   onClick={() => {
                     const trailerList = {
                       'TRL105': { id: 'TRL105', name: 'TRL105 â€“ Flatbed Heavy Trailer', type: 'Flatbed Trailer', reg: 'TRL105', vin: '6T9T25A21NOTR1105', axles: '3', depot: 'Sydney Depot', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60' },
-                      'TRL302': { id: 'TRL302', name: 'TRL302 â€“ Refrigerated Box Trailer', type: 'Refrigerated Box', reg: 'TRL302', vin: '6T9T25A21NOTR1302', axles: '2', depot: 'Melbourne Base', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60' },
                       'TRL409': { id: 'TRL409', name: 'TRL409 â€“ Low Loader Heavy Duty', type: 'Low Loader', reg: 'TRL409', vin: '6T9T25A21NOTR1409', axles: '4', depot: 'Brisbane Hub', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=600&auto=format&fit=crop&q=60' },
                       'TRL512': { id: 'TRL512', name: 'TRL512 â€“ Curtainsider 45ft Trailer', type: 'Curtainsider', reg: 'TRL512', vin: '6T9T25A21NOTR1512', axles: '3', depot: 'Sydney Depot', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60' },
                       'TRL608': { id: 'TRL608', name: 'TRL608 â€“ Liquid Tanker Trailer', type: 'Tanker', reg: 'TRL608', vin: '6T9T25A21NOTR1608', axles: '3', depot: 'Adelaide Depot', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60' }
@@ -3540,7 +3538,6 @@ const Vehicles = () => {
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer"
                 >
                   <option value="TRL105">TRL105 â€“ Flatbed Heavy Trailer (Available)</option>
-                  <option value="TRL302">TRL302 â€“ Refrigerated Box Trailer (Available)</option>
                   <option value="TRL409">TRL409 â€“ Low Loader Heavy Duty (Available)</option>
                   <option value="TRL512">TRL512 â€“ Curtainsider 45ft Trailer (Available)</option>
                   <option value="TRL608">TRL608 â€“ Liquid Tanker Trailer (Available)</option>
@@ -3571,7 +3568,6 @@ const Vehicles = () => {
                 onClick={() => {
                   const trailerList = {
                     'TRL105': { id: 'TRL105', name: 'TRL105 â€“ Flatbed Heavy Trailer', type: 'Flatbed Trailer', reg: 'TRL105', vin: '6T9T25A21NOTR1105', axles: '3', depot: 'Sydney Depot', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60' },
-                    'TRL302': { id: 'TRL302', name: 'TRL302 â€“ Refrigerated Box Trailer', type: 'Refrigerated Box', reg: 'TRL302', vin: '6T9T25A21NOTR1302', axles: '2', depot: 'Melbourne Base', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=600&auto=format&fit=crop&q=60' },
                     'TRL409': { id: 'TRL409', name: 'TRL409 â€“ Low Loader Heavy Duty', type: 'Low Loader', reg: 'TRL409', vin: '6T9T25A21NOTR1409', axles: '4', depot: 'Brisbane Hub', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60' },
                     'TRL512': { id: 'TRL512', name: 'TRL512 â€“ Curtainsider 45ft Trailer', type: 'Curtainsider', reg: 'TRL512', vin: '6T9T25A21NOTR1512', axles: '3', depot: 'Sydney Depot', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60' },
                     'TRL608': { id: 'TRL608', name: 'TRL608 â€“ Liquid Tanker Trailer', type: 'Tanker', reg: 'TRL608', vin: '6T9T25A21NOTR1608', axles: '3', depot: 'Adelaide Depot', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60' }

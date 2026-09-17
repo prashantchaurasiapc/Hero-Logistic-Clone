@@ -909,7 +909,6 @@ export default function TerminalWorkspace() {
                     >
                       <option style={{ color: '#0f172a' }}>Car Carrying</option>
                       <option style={{ color: '#0f172a' }}>General Freight</option>
-                      <option style={{ color: '#0f172a' }}>Refrigerated</option>
                       <option style={{ color: '#0f172a' }}>Oversized Load</option>
                       <option style={{ color: '#0f172a' }}>Hazardous Goods</option>
                     </select>

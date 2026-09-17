@@ -1291,19 +1291,6 @@ export default function LoadRequests() {
                       <label className="flex items-start gap-2 cursor-pointer">
                         <input 
                           type="checkbox"
-                          checked={additionalRequirements.temperatureControlled}
-                          onChange={() => setAdditionalRequirements({ ...additionalRequirements, temperatureControlled: !additionalRequirements.temperatureControlled })}
-                          className="rounded border-slate-300 mt-0.5 cursor-pointer"
-                        />
-                        <div>
-                          <span className="font-bold text-slate-800 block">Temperature Controlled</span>
-                          <span className="text-[10px] text-slate-400 font-medium">Refrigerated or reefer transport</span>
-                        </div>
-                      </label>
-
-                      <label className="flex items-start gap-2 cursor-pointer">
-                        <input 
-                          type="checkbox"
                           checked={additionalRequirements.specialEquipment}
                           onChange={() => setAdditionalRequirements({ ...additionalRequirements, specialEquipment: !additionalRequirements.specialEquipment })}
                           className="rounded border-slate-300 mt-0.5 cursor-pointer"

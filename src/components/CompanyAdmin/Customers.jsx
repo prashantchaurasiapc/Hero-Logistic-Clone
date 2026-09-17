@@ -2866,7 +2866,6 @@ export default function Customers() {
                       <option value="General Freight">General Freight</option>
                       <option value="Container Transport">Container Transport</option>
                       <option value="Heavy Haulage / Oversize">Heavy Haulage / Oversize</option>
-                      <option value="Refrigerated Logistics">Refrigerated Logistics</option>
                     </select>
                     <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>

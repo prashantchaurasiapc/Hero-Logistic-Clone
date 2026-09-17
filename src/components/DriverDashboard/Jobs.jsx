@@ -556,7 +556,7 @@ export default function Jobs() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div><label style={labelStyle}>Load Type</label>
                   <select value={editJob.loadType} onChange={e => setEditJob({ ...editJob, loadType: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
-                    <option>Car Carrier</option><option>Flatbed 48ft</option><option>Refrigerated</option><option>Dry Van</option><option>Tanker</option>
+                    <option>Car Carrier</option><option>Flatbed 48ft</option><option>Dry Van</option><option>Tanker</option>
                   </select>
                 </div>
                 <div><label style={labelStyle}>Stops</label>
@@ -639,7 +639,7 @@ export default function Jobs() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div><label style={labelStyle}>Load Type</label>
                   <select value={newLoad.loadType} onChange={e => setNewLoad({ ...newLoad, loadType: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
-                    <option>Car Carrier (4 Level)</option><option>Flatbed 48ft</option><option>Refrigerated</option><option>Dry Van</option><option>Tanker</option>
+                    <option>Car Carrier (4 Level)</option><option>Flatbed 48ft</option><option>Dry Van</option><option>Tanker</option>
                   </select>
                 </div>
                 <div><label style={labelStyle}>Number of Stops</label>

@@ -2108,7 +2108,6 @@ function LoadDetail({ load, onBack }) {
                     <option>Car Carrying</option>
                     <option>General Freight</option>
                     <option>Dangerous Goods</option>
-                    <option>Refrigerated</option>
                   </select>
                 </div>
 
@@ -2773,7 +2772,6 @@ export default function Loads() {
                   >
                     <option>General Freight</option>
                     <option>Car Carrying</option>
-                    <option>Refrigerated</option>
                     <option>Oversized</option>
                     <option>Hazardous</option>
                     <option>Express Courier</option>

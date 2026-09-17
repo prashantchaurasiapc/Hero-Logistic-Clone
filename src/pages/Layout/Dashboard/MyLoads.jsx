@@ -1816,7 +1816,6 @@ const MyLoads = () => {
                         <option value="General Freight">General Freight</option>
                         <option value="Dangerous Goods">Dangerous Goods (Hazmat)</option>
                         <option value="Warehousing / 3PL">Warehousing / 3PL</option>
-                        <option value="Refrigerated Freight">Refrigerated / Cold Chain</option>
                       </select>
                     </div>
 
