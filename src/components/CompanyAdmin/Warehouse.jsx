@@ -296,9 +296,9 @@ export default function Warehouse() {
     code: '',
     photoUrl: '',
     image: '',
-    branch: 'Sydney Main',
-    status: 'Active',
-    type: 'General',
+    branch: '',
+    status: '',
+    type: '',
     totalAreaSqm: '',
     palletCapacity: '',
     loadingDocks: '',
@@ -418,7 +418,7 @@ export default function Warehouse() {
         }
         showToast(`Warehouse "${addForm.name}" created & saved to database!`);
         setAddForm({
-          name: '', code: '', branch: 'Sydney Main', status: 'Active', type: 'General',
+          name: '', code: '', branch: '', status: '', type: '',
           totalAreaSqm: '', palletCapacity: '', loadingDocks: '',
           street: '', suburb: '', state: '', postalCode: '',
           managerName: '', managerPhone: '', managerEmail: '', emergencyContact: '',
@@ -903,6 +903,7 @@ export default function Warehouse() {
                     className="wh-input"
                     style={{ cursor: 'pointer' }}
                   >
+                    <option value="" disabled>Select Type...</option>
                     <option value="General">General</option>
                     <option value="Cold Storage">Cold Storage</option>
                     <option value="Distribution Centre">Distribution Centre</option>
@@ -918,6 +919,7 @@ export default function Warehouse() {
                     className="wh-input"
                     style={{ cursor: 'pointer' }}
                   >
+                    <option value="" disabled>Select Status...</option>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                     <option value="Maintenance">Maintenance</option>
