@@ -692,8 +692,8 @@ export default function Warehouse() {
                     { label: 'Warehouse Code', val: wh.code },
                     { label: 'Type', val: wh.type },
                     { label: 'Branch', val: wh.branch },
-                    { label: 'Phone', val: wh.phone || '+61 2 9756 4321' },
-                    { label: 'Email', val: wh.email || 'warehouse@hero.com.au' },
+                    { label: 'Phone', val: wh.phone || wh.managerPhone || '—' },
+                    { label: 'Email', val: wh.email || wh.managerEmail || '—' },
                     { label: 'Address', val: wh.addr },
                   ].map((f, i) => (
                     <div key={i}>
@@ -729,8 +729,8 @@ export default function Warehouse() {
                   <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>WAREHOUSE INFORMATION</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 10px' }}>
                     {[
-                      { l: 'Warehouse Code', v: wh.code }, { l: 'Total Area', v: `${wh.totalAreaSqm || 5000} m²` },
-                      { l: 'Type', v: wh.type }, { l: 'Pallet Capacity', v: (wh.palletCapacity || 15000).toLocaleString() },
+                      { l: 'Warehouse Code', v: wh.code || '—' }, { l: 'Total Area', v: wh.totalAreaSqm ? `${wh.totalAreaSqm} m²` : '—' },
+                      { l: 'Type', v: wh.type || '—' }, { l: 'Pallet Capacity', v: wh.palletCapacity ? Number(wh.palletCapacity).toLocaleString() : '—' },
                       { l: 'Branch', v: wh.branch }, { l: 'Status', v: wh.status },
                     ].map((f, i) => (
                       <div key={i}>
@@ -744,8 +744,8 @@ export default function Warehouse() {
                   <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>CONTACT & SETTINGS</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 10px' }}>
                     {[
-                      { l: 'Phone', v: wh.phone || '+61 2 9756 4321' }, { l: 'Email', v: wh.email || 'warehouse@hero.com' },
-                      { l: 'Timezone', v: 'AEST' }, { l: 'Auto Tasks', v: 'Enabled' },
+                      { l: 'Phone', v: wh.phone || wh.managerPhone || '—' }, { l: 'Email', v: wh.email || wh.managerEmail || '—' },
+                      { l: 'Timezone', v: wh.timezone || '—' }, { l: 'Auto Tasks', v: wh.autoTasks || '—' },
                     ].map((f, i) => (
                       <div key={i}>
                         <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>{f.l}</div>
@@ -759,19 +759,19 @@ export default function Warehouse() {
               <div>
                 <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>SERVICES & CAPABILITIES</h3>
                 <div className="wh-services">
-                  {[
-                    { name: 'Receiving', on: true }, { name: 'Storage', on: true }, { name: 'Picking', on: true },
-                    { name: 'Packing', on: true }, { name: 'Dispatch', on: true }, { name: 'Returns', on: true },
-                    { name: 'Cross Docking', on: true }
-                  ].map((item, idx) => (
-                    <div key={idx} className="wh-service-item">
-                      <div style={{ width: 32, height: 32, borderRadius: 8, background: item.on ? '#EEF2FF' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
-                        {item.on ? '📦' : '—'}
+                  {wh.capabilities && wh.capabilities.length > 0 ? (
+                    wh.capabilities.map((cap, idx) => (
+                      <div key={idx} className="wh-service-item">
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                          📦
+                        </div>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: '#334155', textAlign: 'center', lineHeight: 1.2 }}>{cap}</div>
+                        <div style={{ fontSize: 9, fontWeight: 800, color: '#10B981' }}>Yes</div>
                       </div>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: '#334155', textAlign: 'center', lineHeight: 1.2 }}>{item.name}</div>
-                      <div style={{ fontSize: 9, fontWeight: 800, color: item.on ? '#10B981' : '#EF4444' }}>{item.on ? 'Yes' : 'No'}</div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div style={{ fontSize: 11, color: '#94A3B8', fontStyle: 'italic', padding: '10px 0' }}>No capabilities listed</div>
+                  )}
                 </div>
               </div>
             </div>
