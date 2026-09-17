@@ -86,7 +86,7 @@ export default function MaintenanceRequest() {
     }
   };
 
-  const mockData = maintenanceHistory;
+  const historyData = maintenanceHistory;
 
   const toggleRow = (id) => {
     setSelectedRows(prev =>
@@ -320,7 +320,7 @@ export default function MaintenanceRequest() {
 
           {/* Mobile Card Layout (Visible only on mobile/small screens) */}
           <div className="block sm:hidden space-y-4">
-            {mockData.map((row, index) => {
+            {historyData.map((row, index) => {
               const isSelected = selectedRows.includes(row.id);
               
               let cardPadding = 'p-4';
@@ -338,73 +338,71 @@ export default function MaintenanceRequest() {
               } else if (viewMode === 'RELAXED') {
                 cardPadding = 'p-6';
                 spaceBetween = 'space-y-4';
-                textSize = 'text-base';
+                textSize = 'text-lg';
                 labelSize = 'text-[10px]';
-                headerText = 'text-base';
+                headerText = 'text-lg';
               }
 
               return (
                 <div 
-                  key={index} 
-                  className={`bg-white border rounded-2xl shadow-sm transition-all duration-200 ${cardPadding} ${spaceBetween} ${
-                    isSelected ? 'bg-[#FFFDF4] border-brand-500 ring-1 ring-brand-500' : 'border-gray-150'
+                  key={row.id}
+                  className={`bg-white border rounded-2xl ${cardPadding} ${spaceBetween} transition-all shadow-sm ${
+                    isSelected ? 'border-[#D97706] bg-[#FFFBEB]/30' : 'border-gray-200'
                   }`}
                 >
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="flex items-center gap-3">
-                      <button 
-                        onClick={() => toggleRow(row.id)}
-                        className="cursor-pointer shrink-0"
-                      >
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                          isSelected ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'
-                        }`}>
-                           {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
-                        </div>
-                      </button>
-                      
+                  <div className="flex items-start justify-between gap-3">
+                    <button 
+                      onClick={() => toggleRow(row.id)}
+                      className="cursor-pointer pt-1"
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        isSelected ? 'border-[#D97706] text-[#D97706]' : 'border-[#94A3B8]'
+                      }`}>
+                        {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
+                      </div>
+                    </button>
+                    <div className="flex-1 min-w-0">
                       {visibleColumns.reportedIssue && (
-                        <div>
-                          <span className={`${labelSize} font-black text-gray-400 uppercase tracking-widest block`}>Reported Issue</span>
-                          <span className={`font-black text-[#0F172A] leading-tight ${headerText}`}>
-                            {row.reportedIssue}
-                          </span>
-                        </div>
+                        <h4 className={`font-black text-[#0F172A] break-words ${headerText}`}>
+                          {row.reportedIssue}
+                        </h4>
                       )}
                     </div>
-
-                    {visibleColumns.status && (
-                      <span className={`px-2.5 py-1 rounded-full text-[9px] font-black tracking-wider uppercase shrink-0 ${row.statusColor}`}>
-                        {row.status}
-                      </span>
-                    )}
                   </div>
-                  
-                  {visibleColumns.severity && (
-                    <div className="pt-3 border-t border-gray-100">
-                      <span className={`${labelSize} font-black text-gray-400 uppercase tracking-widest block mb-0.5`}>Severity</span>
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${row.severityColor}`}>
-                        {row.severity}
-                      </span>
+
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                    <div>
+                      {visibleColumns.severity && (
+                        <span className={`px-2.5 py-1 rounded-full ${labelSize} font-black tracking-wider ${row.severityColor}`}>
+                          {row.severity}
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <div>
+                      {visibleColumns.status && (
+                        <span className={`px-2.5 py-1 rounded-full ${labelSize} font-black tracking-wider uppercase ${row.statusColor}`}>
+                          {row.status}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Desktop Table Layout (Visible on tablet/desktop) */}
-          <div className="hidden sm:block border border-gray-150 rounded-2xl overflow-hidden shadow-sm mt-2">
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto bg-white border border-gray-200 rounded-2xl shadow-sm">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 bg-white">
                   <th className="p-4 w-12 text-center">
                     <button
-                      onClick={() => setSelectedRows(selectedRows.length === mockData.length ? [] : mockData.map(d => d.id))}
+                      onClick={() => setSelectedRows(selectedRows.length === historyData.length ? [] : historyData.map(d => d.id))}
                       className="cursor-pointer"
                     >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === mockData.length ? 'border-[#D97706] bg-white text-[#D97706]' : 'border-[#94A3B8]'}`}>
-                        {selectedRows.length === mockData.length && <Check className="w-3 h-3" strokeWidth={4} />}
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === historyData.length ? 'border-[#D97706] bg-white text-[#D97706]' : 'border-[#94A3B8]'}`}>
+                        {selectedRows.length === historyData.length && <Check className="w-3 h-3" strokeWidth={4} />}
                       </div>
                     </button>
                   </th>
@@ -414,20 +412,27 @@ export default function MaintenanceRequest() {
                 </tr>
               </thead>
               <tbody>
-                {mockData.map((row) => {
-                  const isSelected = selectedRows.includes(row.id);
-                  return (
-                    <tr key={row.id} className={`border-b border-gray-50 hover:bg-[#FFFBEB]/50 transition-colors ${
-                      viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-lg' : 'text-sm'
-                    } ${isSelected ? 'bg-[#FFFBEB]' : ''}`}>
-                      <td className={`p-4 text-center align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                        <button
-                          onClick={() => toggleRow(row.id)}
-                          className="cursor-pointer"
-                        >
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#D97706] text-[#D97706]' : 'border-[#94A3B8]'}`}>
-                            {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
-                          </div>
+                {historyData.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-slate-400 font-bold text-xs">
+                      No maintenance requests submitted yet.
+                    </td>
+                  </tr>
+                ) : (
+                  historyData.map((row) => {
+                    const isSelected = selectedRows.includes(row.id);
+                    return (
+                      <tr key={row.id} className={`border-b border-gray-50 hover:bg-[#FFFBEB]/50 transition-colors ${
+                        viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-lg' : 'text-sm'
+                      } ${isSelected ? 'bg-[#FFFBEB]' : ''}`}>
+                        <td className={`p-4 text-center align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                          <button
+                            onClick={() => toggleRow(row.id)}
+                            className="cursor-pointer"
+                          >
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#D97706] text-[#D97706]' : 'border-[#94A3B8]'}`}>
+                              {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
+                            </div>
                         </button>
                       </td>
                       {visibleColumns.reportedIssue && (
@@ -451,8 +456,9 @@ export default function MaintenanceRequest() {
                       )}
                     </tr>
                   );
-                })}
-              </tbody>
+                })
+              )}
+            </tbody>
             </table>
           </div>
         </div>

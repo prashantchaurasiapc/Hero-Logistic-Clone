@@ -56,32 +56,27 @@ export default function PickupLoading() {
       const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
       const userStr = localStorage.getItem('user');
       const userObj = userStr ? JSON.parse(userStr) : {};
-      const currentDriverName = userObj.name || userObj.firstName || 'Driver 1 demo';
+      const currentDriverName = userObj.name || userObj.firstName || '';
       const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
-      const assignedList = (savedMap[currentDriverName] || savedMap['Driver 1 demo'] || savedMap['driver1'] || []).filter(item => !deletedIds.includes(item.id));
+      const assignedList = currentDriverName ? (savedMap[currentDriverName] || []).filter(item => !deletedIds.includes(item.id)) : [];
       
       const activeAssignedLoad = assignedList[0];
 
       if (activeAssignedLoad) {
-        const routeParts = activeAssignedLoad.route ? activeAssignedLoad.route.split(/\s*[\u2192\u2794\->]|\sto\s/i) : ['Indore', 'Bhopal'];
-        const originStr = routeParts[0]?.trim() || 'Indore';
-        const destStr = routeParts[1]?.trim() || routeParts[0]?.trim() || 'Bhopal';
-
-        const dynamicCars = [
-          { id: 'c1', dbId: 'c1', drop: 'DROP 1', dropLoc: destStr, vin: '1HGCR2E33AA004352', makeModel: 'Toyota Camry 2024', color: 'White', plate: '4DCL23', pickedUp: false },
-          { id: 'c2', dbId: 'c2', drop: 'DROP 1', dropLoc: destStr, vin: 'JM1BL1H2F01121234', makeModel: 'Mazda 3 Hatchback', color: 'Black', plate: 'C00467', pickedUp: false }
-        ];
+        const routeParts = activeAssignedLoad.route ? activeAssignedLoad.route.split(/\s*[\u2192\u2794\->]|\sto\s/i) : ['—', '—'];
+        const originStr = routeParts[0]?.trim() || activeAssignedLoad.origin || '—';
+        const destStr = routeParts[1]?.trim() || activeAssignedLoad.destination || '—';
 
         setLoadInfo({
-          id: activeAssignedLoad.id || 'PO-596060',
+          id: activeAssignedLoad.id || activeAssignedLoad.loadNumber || '—',
           dbId: activeAssignedLoad.id,
           origin: originStr,
           destination: destStr,
-          pickupTime: '08:00 AM',
-          estFinish: '04:30 PM',
-          cars: dynamicCars
+          pickupTime: activeAssignedLoad.pickupTime || '08:00 AM',
+          estFinish: activeAssignedLoad.deliveryTime || '04:30 PM',
+          cars: activeAssignedLoad.items || []
         });
-        setCars(dynamicCars);
+        setCars(activeAssignedLoad.items || []);
         return;
       }
 
@@ -417,11 +412,45 @@ export default function PickupLoading() {
     );
   }
 
+  if (!loadInfo) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-5 pb-24 text-left" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/driver/jobs')}
+            className="p-2 bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs transition-all"
+            title="Back to Assigned Jobs"
+          >
+            <FiArrowLeft className="text-base" />
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Pickup & Loading</h1>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">No active pickup load assigned to you at the moment.</p>
+          </div>
+        </div>
 
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center max-w-lg mx-auto shadow-2xs space-y-4 my-12">
+          <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl mx-auto">
+            📦
+          </div>
+          <h3 className="text-lg font-black text-slate-900">No Pickup Load Assigned</h3>
+          <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+            Dispatch has not assigned an active pickup load to your profile yet. Once a load is scheduled or assigned, it will appear here ready for vehicle scanning and inspection.
+          </p>
+          <button
+            onClick={() => navigate('/driver/jobs')}
+            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm"
+          >
+            View My Assigned Jobs
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const pickedUpCount = cars.filter(c => c.pickedUp).length;
   const totalCarsCount = cars.length;
-  const progressPercent = Math.round((pickedUpCount / totalCarsCount) * 100);
+  const progressPercent = totalCarsCount > 0 ? Math.round((pickedUpCount / totalCarsCount) * 100) : 0;
 
   // Group by Drop
   const drops = ['DROP 1', 'DROP 2', 'DROP 3', 'DROP 4'];
@@ -452,7 +481,7 @@ export default function PickupLoading() {
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               Pickup & Loading
             </h1>
-            <p className="text-xs font-semibold text-slate-400 mt-0.5">Scan or select cars assigned to load {loadInfo?.id || loadInfo?.loadRef || 'LD-3987'}</p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Scan or select cars assigned to load {loadInfo?.id || loadInfo?.loadRef || '—'}</p>
           </div>
         </div>
 
@@ -475,22 +504,22 @@ export default function PickupLoading() {
         </div>
       </div>
 
-      {/* THREE-COLUMN MASTER WEB DASHBOARD GRID MATCHING SCREENSHOT 2 */}
+      {/* THREE-COLUMN MASTER WEB DASHBOARD GRID MATCHING SCREENSHOT 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
         {/* ================= LEFT COLUMN: MODULE META & INSTRUCTIONS (3 COLS) ================= */}
         <div className="lg:col-span-3 space-y-4">
           
-          {/* Card 1: 15.6 Pickup */}
+          {/* Card 1: 15.6 Pickup & Loading */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-base font-black text-slate-900 tracking-tight">15.6 Pickup</span>
-              <span className="bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] text-[9.5px] font-black px-2.5 py-0.5 rounded-full uppercase">
-                OWNER-DRIVER
+              <span className="text-base font-black text-slate-900 tracking-tight">15.6 Pickup & Loading</span>
+              <span className="bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE] text-[9.5px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                {driverMode.includes('Flexible') ? 'FLEXIBLE' : 'ASSIGNED'}
               </span>
             </div>
             <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-              Scan or select the cars you have picked up at this location. All assigned cars must be picked up before you can DISPATCH.
+              Scan VIN barcodes or tap cars to mark as picked up. Take vehicle photos if required. You can add more cars to your load if you are picking up additional vehicles.
             </p>
           </div>
 
@@ -500,7 +529,7 @@ export default function PickupLoading() {
             <div className="space-y-2 text-xs font-extrabold">
               <div className="flex items-center gap-2.5 text-[#10B981]">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]"></span>
-                <span>Correct Car (Picked Up)</span>
+                <span>Picked Up</span>
               </div>
               <div className="flex items-center gap-2.5 text-[#EF4444]">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]"></span>
@@ -519,8 +548,8 @@ export default function PickupLoading() {
             <div className="flex items-start gap-2.5">
               <span className="p-1.5 bg-rose-50 text-rose-500 rounded-lg text-sm shrink-0">📍</span>
               <div>
-                <div className="font-extrabold text-slate-900 text-xs">{loadInfo?.pickupLocation || 'ABC Car Yard'}</div>
-                <div className="text-[11px] text-slate-400 font-semibold mt-0.5">{loadInfo?.address || '12a Sunshine Rd, Melbourne VIC 3000'}</div>
+                <div className="font-extrabold text-slate-900 text-xs">{loadInfo?.pickupLocation || loadInfo?.origin || 'No Pickup Location'}</div>
+                <div className="text-[11px] text-slate-400 font-semibold mt-0.5">{loadInfo?.address || '—'}</div>
               </div>
             </div>
           </div>
@@ -591,27 +620,27 @@ export default function PickupLoading() {
         {/* ================= CENTER COLUMN: MAIN CARS LOAD BREAKDOWN (6 COLS) ================= */}
         <div className="lg:col-span-6 space-y-4">
           
-          {/* Card 1: LD-3987 Top Banner */}
+          {/* Card 1: Top Banner */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4.5 shadow-2xs space-y-3.5">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-xl font-black text-indigo-700 tracking-tight">{loadInfo?.id || loadInfo?.loadRef || 'LD-3987'}</div>
+                <div className="text-xl font-black text-indigo-700 tracking-tight">{loadInfo?.id || loadInfo?.loadRef || '—'}</div>
                 <div className="text-sm font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                  <span>{loadInfo?.origin || 'Melbourne VIC'}</span>
+                  <span>{loadInfo?.origin || '—'}</span>
                   <span className="text-slate-400 font-normal">➔</span>
-                  <span>{loadInfo?.destination || 'Sydney NSW'}</span>
+                  <span>{loadInfo?.destination || '—'}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-2.5 rounded-xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">PICKUP TIME</span>
-                  <span className="font-mono text-slate-900 font-extrabold">{loadInfo?.pickupTime || '08:00 AM'}</span>
+                  <span className="font-mono text-slate-900 font-extrabold">{loadInfo?.pickupTime || '—'}</span>
                 </div>
                 <div className="h-5 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">EST. FINISH</span>
-                  <span className="font-mono text-slate-900 font-extrabold">{loadInfo?.estFinish || '04:30 PM'}</span>
+                  <span className="font-mono text-slate-900 font-extrabold">{loadInfo?.estFinish || '—'}</span>
                 </div>
                 <div className="h-5 w-px bg-slate-200"></div>
                 <div>

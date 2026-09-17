@@ -89,6 +89,35 @@ export default function ActiveRun() {
     setDispatchDetailsModalOpen(true);
   };
 
+  if (!runData || !runData.id) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] text-left font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Active Run</h1>
+            <p className="text-xs text-slate-400 font-semibold mt-0.5">No active run in progress.</p>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-3xl p-12 text-center max-w-lg mx-auto shadow-xs space-y-4 my-12">
+          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mx-auto">
+            🚚
+          </div>
+          <h3 className="text-lg font-black text-slate-900">No Active Run</h3>
+          <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+            You do not have any active load in progress right now. Once dispatch assigns or dispatches a load to you, your route, milestones, and vehicle checklist will appear here.
+          </p>
+          <button
+            onClick={() => navigate('/driver/jobs')}
+            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
+          >
+            View My Assigned Jobs
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-left font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24">
       
@@ -186,11 +215,11 @@ export default function ActiveRun() {
             {/* Header info */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
+                <div className="text-2xl font-black text-indigo-700 tracking-tight">{runData?.loadNumber || runData?.id || 'No Active Run'}</div>
                 <div className="text-lg font-black text-slate-900 mt-0.5 flex items-center gap-2">
-                  <span>Melbourne VIC</span>
+                  <span>{runData?.origin || '—'}</span>
                   <span className="text-slate-400">➔</span>
-                  <span>Sydney NSW</span>
+                  <span>{runData?.destination || '—'}</span>
                 </div>
               </div>
 
@@ -198,17 +227,17 @@ export default function ActiveRun() {
               <div className="flex items-center gap-4 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-100 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Start</span>
-                  <span className="font-mono text-slate-900">08:00 AM</span>
+                  <span className="font-mono text-slate-900">{runData?.startTime || '—'}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-                  <span className="font-mono text-slate-900">04:30 PM</span>
+                  <span className="font-mono text-slate-900">{runData?.finishTime || '—'}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Stops</span>
-                  <span className="font-mono text-slate-900">2</span>
+                  <span className="font-mono text-slate-900">{runData?.stopsCount || 0}</span>
                 </div>
               </div>
             </div>

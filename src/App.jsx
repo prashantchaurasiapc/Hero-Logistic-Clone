@@ -251,6 +251,13 @@ function App() {
             <Route path="assets/new" element={<CreateAsset />} />
             <Route path="assets/:id" element={<AssetDetails />} />
             <Route path="warehouse" element={<Warehouse />} />
+            <Route path="warehouse/current-stock" element={<WarehouseCurrentStock />} />
+            <Route path="warehouse/inbound" element={<WarehouseInbound />} />
+            <Route path="warehouse/outbound" element={<WarehouseOutbound />} />
+            <Route path="warehouse/reports" element={<WarehouseReports />} />
+            <Route path="warehouse/load-lanes" element={<WarehouseLoadLanes />} />
+            <Route path="warehouse/map" element={<WarehouseMap />} />
+            <Route path="warehouse/movements" element={<WarehouseMovements />} />
             <Route path="pricing" element={<StandalonePricing />} />
             <Route path="payroll" element={<StandalonePayroll />} />
             <Route path="finance" element={<Finance />} />
@@ -290,6 +297,7 @@ function App() {
             <Route path="customers" element={<Customers />} />
             <Route path="warehouse" element={<Warehouse />} />
             <Route path="current-stock" element={<WarehouseCurrentStock />} />
+            <Route path="load-lanes" element={<WarehouseLoadLanes />} />
             <Route path="movements" element={<WarehouseMovements />} />
             <Route path="inbound" element={<WarehouseInbound />} />
             <Route path="outbound" element={<WarehouseOutbound />} />

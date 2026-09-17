@@ -107,7 +107,7 @@ export default function LeaveManagement() {
     }
   };
 
-  const mockData = leaveHistory;
+  const historyData = leaveHistory;
 
   const toggleRow = (id) => {
     setSelectedRows(prev => 
@@ -364,7 +364,7 @@ export default function LeaveManagement() {
 
           {/* Mobile Card Layout (Visible only on mobile/small screens) */}
           <div className="block sm:hidden space-y-4">
-            {mockData.map((row, index) => {
+            {historyData.map((row, index) => {
               const isSelected = selectedRows.includes(row.id);
               
               let cardPadding = 'p-4';
@@ -444,11 +444,11 @@ export default function LeaveManagement() {
                 <tr className="border-b border-gray-100 bg-white">
                   <th className="p-4 w-12 text-center">
                     <button 
-                      onClick={() => setSelectedRows(selectedRows.length === mockData.length ? [] : mockData.map(d => d.id))}
+                      onClick={() => setSelectedRows(selectedRows.length === historyData.length ? [] : historyData.map(d => d.id))}
                       className="cursor-pointer"
                     >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === mockData.length ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
-                        {selectedRows.length === mockData.length && <Check className="w-3 h-3" strokeWidth={4} />}
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === historyData.length ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
+                        {selectedRows.length === historyData.length && <Check className="w-3 h-3" strokeWidth={4} />}
                       </div>
                     </button>
                   </th>
@@ -458,22 +458,29 @@ export default function LeaveManagement() {
                 </tr>
               </thead>
               <tbody>
-                {mockData.map((row, index) => {
-                  const isSelected = selectedRows.includes(row.id);
-                  return (
-                  <tr key={index} className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
-                    viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-lg' : 'text-sm'
-                  } ${isSelected ? 'bg-gray-50' : ''}`}>
-                    <td className={`p-4 text-center align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                      <button 
-                        onClick={() => toggleRow(row.id)}
-                        className="cursor-pointer"
-                      >
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
-                           {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
-                        </div>
-                      </button>
+                {historyData.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-slate-400 font-bold text-xs">
+                      No leave requests submitted yet.
                     </td>
+                  </tr>
+                ) : (
+                  historyData.map((row, index) => {
+                    const isSelected = selectedRows.includes(row.id);
+                    return (
+                    <tr key={index} className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
+                      viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-lg' : 'text-sm'
+                    } ${isSelected ? 'bg-gray-50' : ''}`}>
+                      <td className={`p-4 text-center align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                        <button 
+                          onClick={() => toggleRow(row.id)}
+                          className="cursor-pointer"
+                        >
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
+                             {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
+                          </div>
+                        </button>
+                      </td>
                     {visibleColumns.type && (
                       <td className={`p-4 font-black text-[#0F172A] align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
                         {row.type}
@@ -491,9 +498,11 @@ export default function LeaveManagement() {
                         </span>
                       </td>
                     )}
-                  </tr>
-                )})}
-              </tbody>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
             </table>
           </div>
         </div>

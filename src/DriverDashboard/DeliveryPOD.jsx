@@ -9,7 +9,7 @@ import {
   FiNavigation, FiShare2, FiTrash2, FiPlus
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
-import api from '../services/api';
+import api from '../../services/api';
 
 export default function DeliveryPOD() {
   const navigate = useNavigate();
@@ -43,6 +43,41 @@ export default function DeliveryPOD() {
   const fetchDeliveryPOD = async () => {
     try {
       setLoading(true);
+
+      // Check if Planning Board assigned an active load to current driver in local memory
+      const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+      const userStr = localStorage.getItem('user');
+      const userObj = userStr ? JSON.parse(userStr) : {};
+      const currentDriverName = userObj.name || userObj.firstName || '';
+      const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
+      const assignedList = currentDriverName ? (savedMap[currentDriverName] || []).filter(item => !deletedIds.includes(item.id)) : [];
+      
+      const activeAssignedLoad = assignedList[0];
+
+      if (activeAssignedLoad) {
+        const routeParts = activeAssignedLoad.route ? activeAssignedLoad.route.split(/\s*[\u2192\u2794\->]|\sto\s/i) : ['—', '—'];
+        const originStr = routeParts[0]?.trim() || activeAssignedLoad.origin || '—';
+        const destStr = routeParts[1]?.trim() || activeAssignedLoad.destination || '—';
+
+        setLoadInfo({
+          id: activeAssignedLoad.id || activeAssignedLoad.loadNumber || '—',
+          dbId: activeAssignedLoad.id,
+          origin: originStr,
+          destination: destStr,
+          deliveryLocation: activeAssignedLoad.destination || `${destStr} Hub`,
+          address: activeAssignedLoad.deliveryAddress || '—',
+          stopIndex: 1,
+          totalStops: 1,
+          eta: activeAssignedLoad.deliveryTime || '02:30 PM',
+          totalCars: (activeAssignedLoad.items || []).length,
+          deliveredCars: 0,
+          remainingCars: (activeAssignedLoad.items || []).length,
+          cars: activeAssignedLoad.items || []
+        });
+        setCars(activeAssignedLoad.items || []);
+        return;
+      }
+
       const res = await api.get('/driver-portal/delivery-pod');
       if (res.data?.success && res.data.data?.load) {
         setLoadInfo(res.data.data.load);
@@ -168,6 +203,46 @@ export default function DeliveryPOD() {
     }
   };
 
+  // Brand logo helper
+  const getBrandLogo = (makeModel = '') => {
+    const name = makeModel.toLowerCase();
+    if (name.includes('toyota')) {
+      return (
+        <div className="w-7 h-7 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center p-0.5 shrink-0 shadow-2xs">
+          <svg viewBox="0 0 24 24" className="w-4 h-4 fill-red-600">
+            <ellipse cx="12" cy="12" rx="10" ry="7" fill="none" stroke="currentColor" strokeWidth="1.8"/>
+            <ellipse cx="12" cy="12" rx="7" ry="4" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+            <ellipse cx="12" cy="9.5" rx="3.5" ry="4.5" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+          </svg>
+        </div>
+      );
+    }
+    if (name.includes('mazda')) {
+      return (
+        <div className="w-7 h-7 rounded-lg bg-slate-100 border border-slate-300 flex items-center justify-center p-0.5 shrink-0 shadow-2xs">
+          <svg viewBox="0 0 24 24" className="w-4 h-4 fill-slate-800">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8"/>
+            <path d="M6 14C8 10 10 8 12 11C14 8 16 10 18 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+          </svg>
+        </div>
+      );
+    }
+    if (name.includes('tesla')) {
+      return (
+        <div className="w-7 h-7 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center p-0.5 shrink-0 shadow-2xs">
+          <svg viewBox="0 0 24 24" className="w-4 h-4 fill-red-600">
+            <path d="M12 4L6 6v2c0 4 3 7 6 9 3-2 6-5 6-9V6l-6-2z"/>
+          </svg>
+        </div>
+      );
+    }
+    return (
+      <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+        🚗
+      </div>
+    );
+  };
+
   const totalCarsCount = cars.length;
   const deliveredCount = cars.filter(c => c.delivered).length;
   const progressPercent = totalCarsCount > 0 ? Math.round((deliveredCount / totalCarsCount) * 100) : 0;
@@ -178,6 +253,46 @@ export default function DeliveryPOD() {
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
           <p className="text-slate-500 font-bold text-sm">Loading delivery details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!loadInfo) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-5 pb-24 text-left" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/driver/jobs')}
+            className="p-2 bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs transition-all"
+            title="Back to Assigned Jobs"
+          >
+            <FiArrowLeft className="text-base" />
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Delivery & POD
+            </h1>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">
+              No active load in-transit for delivery.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center max-w-lg mx-auto shadow-2xs space-y-4 my-12">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl mx-auto">
+            🏁
+          </div>
+          <h3 className="text-lg font-black text-slate-900">No Active Delivery / POD</h3>
+          <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+            You do not currently have an active run or load waiting for proof-of-delivery (POD). Pick up and dispatch a load to begin the delivery process.
+          </p>
+          <button
+            onClick={() => navigate('/driver/jobs')}
+            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm"
+          >
+            View My Assigned Jobs
+          </button>
         </div>
       </div>
     );
@@ -209,7 +324,7 @@ export default function DeliveryPOD() {
               Delivery & POD
             </h1>
             <p className="text-xs font-semibold text-slate-400 mt-0.5">
-              Scan or select cars to deliver at Step 2: Auto World Sydney
+              Scan or select cars to deliver at Step {loadInfo?.stopIndex || 1}: {loadInfo?.deliveryLocation || loadInfo?.pickupLocation || '—'}
             </p>
           </div>
         </div>
@@ -267,8 +382,8 @@ export default function DeliveryPOD() {
             <div className="flex items-start gap-2.5">
               <span className="p-1.5 bg-rose-50 text-rose-500 rounded-lg text-sm shrink-0">📍</span>
               <div>
-                <div className="font-extrabold text-slate-900 text-xs">Auto World Sydney</div>
-                <div className="text-[11px] text-slate-400 font-semibold mt-0.5">45 Parramatta Rd, Sydney NSW 2150</div>
+                <div className="font-extrabold text-slate-900 text-xs">{loadInfo?.deliveryLocation || loadInfo?.pickupLocation || 'No Delivery Location'}</div>
+                <div className="text-[11px] text-slate-400 font-semibold mt-0.5">{loadInfo?.address || '—'}</div>
               </div>
             </div>
           </div>
@@ -279,7 +394,7 @@ export default function DeliveryPOD() {
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <div className="text-[9px] text-slate-400 font-extrabold uppercase">TOTAL CARS</div>
-                <div className="text-lg font-black text-slate-900 mt-0.5">{totalCarsCount}</div>
+                <div className="text-lg font-black text-slate-900 mt-0.5">{loadInfo?.totalCars || cars.length}</div>
               </div>
               <div className="bg-[#D1FAE5] p-2.5 rounded-xl border border-[#A7F3D0]">
                 <div className="text-[9px] text-[#047857] font-extrabold uppercase">DELIVERED</div>
@@ -287,7 +402,7 @@ export default function DeliveryPOD() {
               </div>
               <div className="bg-[#FEF3C7] p-2.5 rounded-xl border border-[#FDE68A]">
                 <div className="text-[9px] text-[#B45309] font-extrabold uppercase">REMAINING</div>
-                <div className="text-lg font-black text-[#B45309] mt-0.5">{Math.max(0, totalCarsCount - deliveredCount)}</div>
+                <div className="text-lg font-black text-[#B45309] mt-0.5">{Math.max(0, (loadInfo?.totalCars || cars.length) - deliveredCount)}</div>
               </div>
             </div>
           </div>
@@ -338,32 +453,32 @@ export default function DeliveryPOD() {
         {/* ================= CENTER COLUMN: MAIN CARS DELIVERY BREAKDOWN (6 COLS) ================= */}
         <div className="lg:col-span-6 space-y-4">
           
-          {/* Card 1: LD-3987 Top Banner */}
+          {/* Card 1: Top Banner */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4.5 shadow-2xs space-y-3.5">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-xl font-black text-indigo-700 tracking-tight">LD-3987</div>
+                <div className="text-xl font-black text-indigo-700 tracking-tight">{loadInfo?.id || loadInfo?.loadRef || '—'}</div>
                 <div className="text-sm font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                  <span>Melbourne VIC</span>
+                  <span>{loadInfo?.origin || '—'}</span>
                   <span className="text-slate-400 font-normal">➔</span>
-                  <span>Sydney NSW</span>
+                  <span>{loadInfo?.destination || '—'}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-2.5 rounded-xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">STOP</span>
-                  <span className="font-mono text-slate-900 font-extrabold">2 of 3</span>
+                  <span className="font-mono text-slate-900 font-extrabold">{loadInfo?.stopIndex || 1} of {loadInfo?.totalStops || 1}</span>
                 </div>
                 <div className="h-5 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">DELIVERY TIME</span>
-                  <span className="font-mono text-slate-900 font-extrabold">ETA 02:30 PM</span>
+                  <span className="font-mono text-slate-900 font-extrabold">ETA {loadInfo?.eta || '—'}</span>
                 </div>
                 <div className="h-5 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">TOTAL CARS TO DELIVER</span>
-                  <span className="font-mono text-slate-900 font-extrabold">{totalCarsCount} Cars</span>
+                  <span className="font-mono text-slate-900 font-extrabold">{cars.length} Cars</span>
                 </div>
               </div>
             </div>
@@ -397,45 +512,51 @@ export default function DeliveryPOD() {
 
             {/* Cars List */}
             <div className="divide-y divide-slate-100 bg-white">
-              {cars.map((car) => (
-                <div 
-                  key={car.id} 
-                  className={`p-3.5 flex items-center justify-between gap-3 rounded-xl transition-colors ${
-                    car.delivered ? 'bg-emerald-50/40' : 'hover:bg-slate-50/60'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <button
-                      onClick={() => toggleCarDelivery(car.id)}
-                      className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-xs cursor-pointer transition-all shrink-0 ${
-                        car.delivered ? 'bg-[#10B981] text-white shadow-xs' : 'border-2 border-slate-300 bg-white text-transparent hover:border-slate-400'
-                      }`}
-                    >
-                      ✓
-                    </button>
+              {cars.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 font-bold text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  No cars assigned for delivery at this location.
+                </div>
+              ) : (
+                cars.map((car) => (
+                  <div 
+                    key={car.id} 
+                    className={`p-3.5 flex items-center justify-between gap-3 rounded-xl transition-colors ${
+                      car.delivered ? 'bg-emerald-50/40' : 'hover:bg-slate-50/60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <button
+                        onClick={() => toggleCarDelivery(car.id)}
+                        className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-xs cursor-pointer transition-all shrink-0 ${
+                          car.delivered ? 'bg-[#10B981] text-white shadow-xs' : 'border-2 border-slate-300 bg-white text-transparent hover:border-slate-400'
+                        }`}
+                      >
+                        ✓
+                      </button>
 
-                    <div className="min-w-0 text-xs">
-                      <div className="font-mono text-[10.5px] font-bold text-slate-500 truncate">VIN: {car.vin}</div>
-                      <div className="font-extrabold text-slate-900 text-xs mt-0.5">
-                        {car.makeModel} <span className="text-slate-400 font-mono text-[10.5px] font-bold">({car.plate})</span>
+                      <div className="min-w-0 text-xs">
+                        <div className="font-mono text-[10.5px] font-bold text-slate-500 truncate">VIN: {car.vin}</div>
+                        <div className="font-extrabold text-slate-900 text-xs mt-0.5">
+                          {car.makeModel} {car.plate ? <span className="text-slate-400 font-mono text-[10.5px] font-bold">({car.plate})</span> : null}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline">Assigned to this step</span>
-                    {car.delivered ? (
-                      <span className="bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] text-[9.5px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                        Delivered {car.time || '01:57 PM'}
-                      </span>
-                    ) : (
-                      <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[9.5px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                        Not Delivered
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline">Assigned to this step</span>
+                      {car.delivered ? (
+                        <span className="bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] text-[9.5px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                          Delivered {car.time || 'Completed'}
+                        </span>
+                      ) : (
+                        <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[9.5px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                          Not Delivered
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             {/* WRONG VEHICLE SCANNED ALERT BANNER */}
@@ -446,7 +567,7 @@ export default function DeliveryPOD() {
                   <div>
                     <div className="font-black text-rose-900 text-xs uppercase tracking-wide">WRONG VEHICLE SCANNED</div>
                     <div className="text-rose-700 font-semibold text-[11px] mt-0.5">
-                      <strong className="font-mono font-bold">VIN: SALWR2RV1JA123456</strong> is NOT assigned to this delivery location (Auto World Sydney). Please scan a correct vehicle.
+                      <strong className="font-mono font-bold">VIN: {scanVinInput || 'SCANNED_VIN'}</strong> is NOT assigned to this delivery location ({loadInfo?.deliveryLocation || 'Auto World Sydney'}). Please scan a correct vehicle.
                     </div>
                   </div>
                 </div>
@@ -464,8 +585,8 @@ export default function DeliveryPOD() {
                   ✓
                 </div>
                 <div>
-                  <div className="font-black text-slate-900 text-xs">{deliveredCount} of {totalCarsCount} Cars Delivered</div>
-                  <div className="text-slate-400 font-semibold text-[11px]">You must deliver all {totalCarsCount} cars for this stop.</div>
+                  <div className="font-black text-slate-900 text-xs">{deliveredCount} of {cars.length} Cars Delivered</div>
+                  <div className="text-slate-400 font-semibold text-[11px]">You must deliver all {cars.length} cars for this stop.</div>
                 </div>
               </div>
 

@@ -54,33 +54,33 @@ export default function Jobs() {
       const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
       const userStr = localStorage.getItem('user');
       const userObj = userStr ? JSON.parse(userStr) : {};
-      const currentDriverName = userObj.name || userObj.firstName || 'Driver 1 demo';
+      const currentDriverName = userObj.name || userObj.firstName || '';
       const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
 
-      const driverList = savedMap[currentDriverName] || savedMap['Driver 1 demo'] || savedMap['driver1'] || [];
+      const driverList = currentDriverName ? (savedMap[currentDriverName] || []) : [];
       const localJobs = [];
 
       if (Array.isArray(driverList)) {
         driverList.forEach(item => {
           if (!deletedIds.includes(item.id) && !deletedIds.includes(item.dbId)) {
             localJobs.push({
-              id: item.id || `LD-${Math.floor(1000 + Math.random() * 9000)}`,
+              id: item.id || item.loadNumber || '—',
               dbId: item.id,
-              status: 'UPCOMING',
-              statusText: 'Upcoming',
-              date: new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }),
-              time: '08:00 AM',
+              status: item.status || 'UPCOMING',
+              statusText: item.statusText || 'Upcoming',
+              date: item.date || new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }),
+              time: item.time || '08:00 AM',
               timeColor: '#7c3aed',
-              origin: item.route ? (item.route.split(/\s*[\u2192\u2794\->]|\sto\s/i)[0]?.trim() || 'Indore') : 'Indore',
-              destination: item.route ? (item.route.split(/\s*[\u2192\u2794\->]|\sto\s/i)[1]?.trim() || 'Bhopal') : 'Bhopal',
+              origin: item.route ? (item.route.split(/\s*[\u2192\u2794\->]|\sto\s/i)[0]?.trim() || item.origin || '—') : (item.origin || '—'),
+              destination: item.route ? (item.route.split(/\s*[\u2192\u2794\->]|\sto\s/i)[1]?.trim() || item.destination || '—') : (item.destination || '—'),
               pickupName: item.customer || 'Direct Customer',
-              pickupAddress: item.route ? (item.route.split(/\s*[\u2192\u2794\->]|\sto\s/i)[0]?.trim() || 'Indore') : 'Indore',
+              pickupAddress: item.origin || '—',
               deliveryName: item.customer || 'Direct Customer',
-              deliveryAddress: item.route ? (item.route.split(/\s*[\u2192\u2794\->]|\sto\s/i)[1]?.trim() || 'Bhopal') : 'Bhopal',
+              deliveryAddress: item.destination || '—',
               loadType: item.loadType || 'General Freight',
-              reference: item.id || 'PO-170618',
-              stops: '2 Stops',
-              distance: '870 km'
+              reference: item.reference || item.id || '—',
+              stops: item.stops || '1 Stop',
+              distance: item.distance || '—'
             });
           }
         });
@@ -97,27 +97,7 @@ export default function Jobs() {
         }
       });
 
-      setJobs(combined.length > 0 ? combined : [
-        {
-          id: 'PO-170618',
-          dbId: 'ld_demo_1',
-          status: 'UPCOMING',
-          statusText: 'Upcoming',
-          date: new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }),
-          time: '08:00 AM',
-          timeColor: '#7c3aed',
-          origin: 'Goa',
-          destination: 'Mumbai',
-          pickupName: 'Direct Customer',
-          pickupAddress: 'Goa Depot',
-          deliveryName: 'Direct Customer',
-          deliveryAddress: 'Mumbai Hub',
-          loadType: 'General Freight',
-          reference: 'PO-170618',
-          stops: '2 Stops',
-          distance: '590 km'
-        }
-      ]);
+      setJobs(combined);
     } catch (error) {
       console.error('Failed to load jobs', error);
       showToast('❌ Failed to load jobs.');

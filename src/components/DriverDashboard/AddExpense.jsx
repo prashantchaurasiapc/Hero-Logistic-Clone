@@ -404,7 +404,7 @@ export default function AddExpense() {
               </div>
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Load ID</span>
-                <span className="font-bold text-indigo-700 font-mono">{runData?.id || 'PO-65432'}</span>
+                <span className="font-bold text-indigo-700 font-mono">{runData?.id || '—'}</span>
               </div>
             </div>
 

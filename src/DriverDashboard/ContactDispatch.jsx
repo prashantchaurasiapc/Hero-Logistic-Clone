@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, CheckCircle2, AlertCircle, Plus } from 'lucide-react';
 
 export default function ContactDispatch() {
@@ -11,10 +12,28 @@ export default function ContactDispatch() {
 
   // Form states
   const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState([
-    { id: 1, sender: 'DISPATCHER', time: '10:30 AM', text: 'John, please confirm trailer change at Chicago Gate 4. LD-9411 is scheduled for immediate departure.' },
-    { id: 2, sender: 'YOU', time: '10:32 AM', text: 'Copy that, logs updated and trailer verified. Rolling out now.', read: true }
-  ]);
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const fetchMessages = async () => {
+    try {
+      const res = await api.get('/driver-portal/messages');
+      const list = res.data?.messages || res.data || [];
+      const formatted = list.map(m => ({
+        id: m.id,
+        sender: m.sender === 'DRIVER' ? 'YOU' : 'DISPATCHER',
+        time: m.time || (m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now'),
+        text: m.text || m.content || '',
+        read: m.isRead || false
+      }));
+      setMessages(formatted);
+    } catch (err) {
+      console.error('Failed to load dispatch messages:', err);
+    }
+  };
 
   // SOS states
   const [shareGps, setShareGps] = useState(true);
@@ -26,19 +45,19 @@ export default function ContactDispatch() {
     setTimeout(() => setToastMsg(''), 4000);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputText.trim()) return;
     
-    const newMsg = {
-      id: Date.now(),
-      sender: 'YOU',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: inputText,
-      read: false
-    };
-
-    setMessages(prev => [...prev, newMsg]);
+    const textToSend = inputText;
     setInputText('');
+
+    try {
+      await api.post('/driver-portal/messages', { content: textToSend });
+      fetchMessages();
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      triggerToast('Failed to send message', 'error');
+    }
   };
 
   const handleVoiceNote = () => {

@@ -479,7 +479,7 @@ export default function WarehouseInbound() {
             {/* Actions */}
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
-                onClick={() => navigate(isYard ? '/yard/current-stock' : '/warehouse/find-stock')}
+                onClick={() => navigate(isYard ? '/yard/current-stock' : location.pathname.startsWith('/company-admin') ? '/company-admin/warehouse/current-stock' : location.pathname.startsWith('/dispatcher') ? '/dispatcher/current-stock' : '/warehouse/find-stock')}
                 style={{
                   flex: 1, height: '42px', borderRadius: '8px', border: 'none',
                   background: 'var(--primary-color, #FFD400)', fontSize: '12px', fontWeight: '800',

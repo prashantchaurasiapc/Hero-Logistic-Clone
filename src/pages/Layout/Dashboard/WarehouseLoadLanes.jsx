@@ -1196,7 +1196,7 @@ export default function WarehouseLoadLanes() {
 
             <div 
               className="wh-side-link"
-              onClick={() => navigate(isYard ? '/yard/map' : '/warehouse/warehouse-yard-map')}
+              onClick={() => navigate(isYard ? '/yard/map' : location.pathname.startsWith('/company-admin') ? '/company-admin/warehouse/map' : '/warehouse/warehouse-yard-map')}
             >
               <MapPin size={12} />
               <span>View lane map</span>
@@ -1245,7 +1245,7 @@ export default function WarehouseLoadLanes() {
               <span>Move Items to Lane</span>
             </button>
 
-            <button className="wh-qa-btn" onClick={() => navigate('/warehouse/dispatch-ready')}>
+            <button className="wh-qa-btn" onClick={() => navigate(location.pathname.startsWith('/company-admin') ? '/company-admin/warehouse/outbound' : location.pathname.startsWith('/dispatcher') ? '/dispatcher/outbound' : isYard ? '/yard/outbound' : '/warehouse/dispatch-ready')}>
               <Truck size={14} className="text-green-500" />
               <span>View Dispatch Ready</span>
             </button>

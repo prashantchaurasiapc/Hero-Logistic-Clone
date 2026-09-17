@@ -71,7 +71,7 @@ export default function JobDetails() {
       if (!loadData) {
         const jobsRes = await api.get('/driver-portal/jobs').catch(() => null);
         const list = jobsRes?.data?.data?.jobs || jobsRes?.data?.jobs || [];
-        loadData = list.find(j => j.id === id || j.loadNumber === id) || list[0];
+        loadData = id ? list.find(j => j.id === id || j.loadNumber === id) : list[0];
       }
 
       if (loadData) {
@@ -148,9 +148,9 @@ export default function JobDetails() {
     }
   };
 
-  const meta = STATUS_META[job.status] || STATUS_META.UPCOMING;
-  const pickupStop = STOP_STATUS[job.pickup?.status] || STOP_STATUS.UPCOMING;
-  const deliveryStop = STOP_STATUS[job.delivery?.status] || STOP_STATUS.UPCOMING;
+  const meta = STATUS_META[job?.status] || STATUS_META.UPCOMING;
+  const pickupStop = STOP_STATUS[job?.pickup?.status] || STOP_STATUS.UPCOMING;
+  const deliveryStop = STOP_STATUS[job?.delivery?.status] || STOP_STATUS.UPCOMING;
 
   const showToast = msg => {
     setToast(msg);

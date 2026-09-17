@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api from '../../services/api';
 import {
   FiPackage, FiTruck, FiClock, FiCheckCircle,
   FiUpload, FiMessageSquare,
@@ -11,8 +11,6 @@ import {
   FiMoreVertical, FiEye, FiEdit2, FiTrash2,
   FiTrendingUp,
 } from 'react-icons/fi';
-
-const ALL_JOBS = [];
 
 const STATUS_META = {
   UPCOMING:    { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },
@@ -25,86 +23,8 @@ const PAGE_SIZE = 5;
 
 export default function Jobs() {
   const navigate = useNavigate();
-  
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchJobs();
-  }, []);
-
-  const fetchJobs = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/driver-portal/jobs');
-      let apiJobs = [];
-      if (res.data?.success) {
-        apiJobs = res.data.data?.jobs || (Array.isArray(res.data.data) ? res.data.data : []);
-      }
-      
-      const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
-      const localJobs = [];
-      Object.values(savedMap).forEach(list => {
-        if (Array.isArray(list)) {
-          list.forEach(item => {
-            localJobs.push({
-              id: item.id || `LD-${Math.floor(1000 + Math.random() * 9000)}`,
-              dbId: item.id,
-              status: 'UPCOMING',
-              statusText: 'Upcoming',
-              date: new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }),
-              time: '08:00 AM',
-              timeColor: '#7c3aed',
-              origin: item.route ? item.route.split('➔')[0]?.trim() || item.route.split('->')[0]?.trim() || 'Melbourne VIC' : 'Melbourne VIC',
-              destination: item.route ? item.route.split('➔')[1]?.trim() || item.route.split('->')[1]?.trim() || 'Sydney NSW' : 'Sydney NSW',
-              pickupName: item.customer || 'Direct Customer',
-              pickupAddress: item.route || 'Melbourne VIC',
-              deliveryName: item.customer || 'Direct Customer',
-              deliveryAddress: item.route || 'Sydney NSW',
-              loadType: item.loadType || 'General Freight',
-              reference: item.id || 'PO-170618',
-              stops: '2 Stops',
-              distance: '870 km'
-            });
-          });
-        }
-      });
-
-      const combined = [...apiJobs];
-      localJobs.forEach(lj => {
-        if (!combined.some(cj => cj.id === lj.id || cj.reference === lj.reference)) {
-          combined.push(lj);
-        }
-      });
-
-      setJobs(combined.length > 0 ? combined : [
-        {
-          id: 'PO-170618',
-          dbId: 'ld_demo_1',
-          status: 'UPCOMING',
-          statusText: 'Upcoming',
-          date: new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }),
-          time: '08:00 AM',
-          timeColor: '#7c3aed',
-          origin: 'Goa',
-          destination: 'Mumbai',
-          pickupName: 'Direct Customer',
-          pickupAddress: 'Goa Depot',
-          deliveryName: 'Direct Customer',
-          deliveryAddress: 'Mumbai Hub',
-          loadType: 'General Freight',
-          reference: 'PO-170618',
-          stops: '2 Stops',
-          distance: '590 km'
-        }
-      ]);
-    } catch (err) {
-      console.error('Error fetching jobs', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const [jobs, setJobs]                 = useState([]);
+  const [loading, setLoading]           = useState(true);
   const [activeTab, setActiveTab]       = useState('ALL');
   const [searchQuery, setSearchQuery]   = useState('');
   const [page, setPage]                 = useState(1);
@@ -120,6 +40,75 @@ export default function Jobs() {
     pickupTime: '', deliveryTime: '', customer: '', reference: '',
     loadType: 'Car Carrier (4 Level)', stops: '1 Stop', notes: '',
   });
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/driver-portal/jobs');
+      let apiJobs = [];
+      if (res.data?.success) {
+        apiJobs = res.data.data?.jobs || (Array.isArray(res.data.data) ? res.data.data : []);
+      }
+      
+      // Check localStorage assigned loads strictly for the logged-in driver
+      const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+      const userStr = localStorage.getItem('user');
+      const userObj = userStr ? JSON.parse(userStr) : {};
+      const currentDriverName = userObj.name || userObj.firstName || '';
+      const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
+
+      const driverList = currentDriverName ? (savedMap[currentDriverName] || []) : [];
+      const localJobs = [];
+
+      if (Array.isArray(driverList)) {
+        driverList.forEach(item => {
+          if (!deletedIds.includes(item.id) && !deletedIds.includes(item.dbId)) {
+            localJobs.push({
+              id: item.id || item.loadNumber || '—',
+              dbId: item.id,
+              status: item.status || 'UPCOMING',
+              statusText: item.statusText || 'Upcoming',
+              date: item.date || new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }),
+              time: item.time || '08:00 AM',
+              timeColor: '#7c3aed',
+              origin: item.route ? (item.route.split(/\s*[\u2192\u2794\->]|\sto\s/i)[0]?.trim() || item.origin || '—') : (item.origin || '—'),
+              destination: item.route ? (item.route.split(/\s*[\u2192\u2794\->]|\sto\s/i)[1]?.trim() || item.destination || '—') : (item.destination || '—'),
+              pickupName: item.customer || 'Direct Customer',
+              pickupAddress: item.origin || '—',
+              deliveryName: item.customer || 'Direct Customer',
+              deliveryAddress: item.destination || '—',
+              loadType: item.loadType || 'General Freight',
+              reference: item.reference || item.id || '—',
+              stops: item.stops || '1 Stop',
+              distance: item.distance || '—'
+            });
+          }
+        });
+      }
+
+      // Filter out deleted loads from API jobs as well
+      const filteredApiJobs = apiJobs.filter(cj => !deletedIds.includes(cj.id) && !deletedIds.includes(cj.reference));
+
+      // Prioritize local assigned jobs for current driver first
+      const combined = [...localJobs];
+      filteredApiJobs.forEach(cj => {
+        if (!combined.some(lj => lj.id === cj.id || lj.reference === cj.reference)) {
+          combined.push(cj);
+        }
+      });
+
+      setJobs(combined);
+    } catch (error) {
+      console.error('Failed to load jobs', error);
+      showToast('❌ Failed to load jobs.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
 
   useEffect(() => {
     const handler = e => {
@@ -152,7 +141,7 @@ export default function Jobs() {
     return tabOk && searchOk;
   });
 
-  const totalPages = Math.ceil(filtered.length / perPage);
+  const totalPages = Math.ceil(filtered.length / perPage) || 1;
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   const handleTabChange = t => { setActiveTab(t); setPage(1); };

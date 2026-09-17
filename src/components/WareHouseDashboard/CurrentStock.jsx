@@ -1628,7 +1628,7 @@ export default function CurrentStock() {
 
                 <button 
                   className="wh-drawer-btn-secondary"
-                  onClick={() => navigate(isYard ? '/yard/load-lanes' : '/warehouse/load-lanes')}
+                  onClick={() => navigate(isYard ? '/yard/load-lanes' : location.pathname.startsWith('/company-admin') ? '/company-admin/warehouse/load-lanes' : location.pathname.startsWith('/dispatcher') ? '/dispatcher/load-lanes' : '/warehouse/load-lanes')}
                 >
                   <ExternalLink size={15} />
                   <span>View Load</span>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { 
   ArrowLeft, Edit, Trash2, ChevronDown, Plus, Download, Upload, Search, Filter, RotateCcw, 
@@ -269,6 +269,8 @@ function AlertItem({ icon, color, title, time, desc }) {
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────
 export default function Warehouse() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const warehouseBase = location.pathname.startsWith('/dispatcher') ? '/dispatcher' : '/company-admin/warehouse';
   const [view, setView] = useState('list');
   const [selectedWh, setSelectedWh] = useState(null);
   const [showMoreActions, setShowMoreActions] = useState(false);
@@ -588,7 +590,7 @@ export default function Warehouse() {
   // ── SUB VIEWS ──────────────────────────────────────────────────────────
   if (view === 'inventory') return <WarehouseInventoryStock wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
   if (view === 'movements') return <WarehouseStockMovements wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
-  if (view === 'pickpack') return <WarehousePickPackDispatch wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
+  if (view === 'pickpack') return <WarehousePickPackDispatch wh={selectedWh || whList[0]} onBack={() => setView(selectedWh ? 'details' : 'list')} />;
   if (view === 'locations') return <WarehouseLocationsBins wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
   if (view === 'staffequipment') return <WarehouseStaffEquipment wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
   if (view === 'reports') return <WarehouseReportsAnalytics wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
@@ -1185,7 +1187,7 @@ export default function Warehouse() {
                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, width: 210, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', zIndex: 50, padding: 8 }}>
                   {[
                     { label: 'Export Warehouse List', fn: handleExport },
-                    { label: 'Generate Inventory Report', fn: () => { navigate('/warehouse/reports'); setShowMoreActions(false); } },
+                    { label: 'Generate Inventory Report', fn: () => { navigate(`${warehouseBase}/reports`); setShowMoreActions(false); } },
                     { label: 'Import Bulk Warehouses', fn: handleImport },
                   ].map((item, i) => (
                     <div key={i} onClick={item.fn} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }}
@@ -1200,12 +1202,12 @@ export default function Warehouse() {
 
         {/* Metric Cards */}
         <div className="wh-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
-          <MetricCard icon={<BoxIcon color="#8B5CF6" />} bg="#F5F3FF" label="TOTAL WAREHOUSES" value={(kpiStats?.totalWarehouses ?? 0).toString()} sub="Active Warehouses" linkText="View all warehouses" onClick={() => {}} />
-          <MetricCard icon={<CheckCircleIcon color="#10B981" />} bg="#F0FDF4" label="TOTAL INVENTORY VALUE" value={kpiStats?.totalInventoryValue || '$0.00'} sub="Across all warehouses" linkText="View inventory" onClick={() => navigate(location.pathname.startsWith('/dispatcher') ? '/dispatcher/current-stock' : '/warehouse/current-stock')} />
-          <MetricCard icon={<BoxIcon color="#F59E0B" />} bg="#FFFBEB" label="TOTAL STOCK ITEMS" value={(kpiStats?.totalStockItems ?? 0).toLocaleString()} sub="All warehouses" linkText="View stock" onClick={() => navigate(location.pathname.startsWith('/dispatcher') ? '/dispatcher/current-stock' : '/warehouse/current-stock')} />
-          <MetricCard icon={<ClockIcon color="#3B82F6" />} bg="#EFF6FF" label="PENDING PICK TASKS" value={(kpiStats?.pendingTasks ?? 0).toString()} sub="Requires attention" linkText="View tasks" onClick={() => navigate(location.pathname.startsWith('/dispatcher') ? '/dispatcher/movements' : '/warehouse/movements')} />
-          <MetricCard icon={<TruckIcon color="#8B5CF6" />} bg="#F5F3FF" label="INCOMING SHIPMENTS" value={(kpiStats?.incomingShipments ?? 0).toString()} sub="In transit / Expected" linkText="View shipments" onClick={() => navigate(location.pathname.startsWith('/dispatcher') ? '/dispatcher/inbound' : '/warehouse/inbound')} />
-          <MetricCard icon={<TruckIcon color="#EF4444" />} bg="#FEF2F2" label="OUTGOING SHIPMENTS" value={(kpiStats?.outgoingShipments ?? 0).toString()} sub="Scheduled / In progress" linkText="View shipments" onClick={() => navigate(location.pathname.startsWith('/dispatcher') ? '/dispatcher/outbound' : '/warehouse/outbound')} />
+          <MetricCard icon={<BoxIcon color="#8B5CF6" />} bg="#F5F3FF" label="TOTAL WAREHOUSES" value={(kpiStats?.totalWarehouses ?? 0).toString()} sub="Active Warehouses" linkText="View all warehouses" onClick={() => document.getElementById('warehouse-list')?.scrollIntoView({ behavior: 'smooth' })} />
+          <MetricCard icon={<CheckCircleIcon color="#10B981" />} bg="#F0FDF4" label="TOTAL INVENTORY VALUE" value={kpiStats?.totalInventoryValue || '$0.00'} sub="Across all warehouses" linkText="View inventory" onClick={() => navigate(`${warehouseBase}/current-stock`)} />
+          <MetricCard icon={<BoxIcon color="#F59E0B" />} bg="#FFFBEB" label="TOTAL STOCK ITEMS" value={(kpiStats?.totalStockItems ?? 0).toLocaleString()} sub="All warehouses" linkText="View stock" onClick={() => navigate(`${warehouseBase}/current-stock`)} />
+          <MetricCard icon={<ClockIcon color="#3B82F6" />} bg="#EFF6FF" label="PENDING PICK TASKS" value={(kpiStats?.pendingTasks ?? 0).toString()} sub="Requires attention" linkText="View tasks" onClick={() => setView('pickpack')} />
+          <MetricCard icon={<TruckIcon color="#8B5CF6" />} bg="#F5F3FF" label="INCOMING SHIPMENTS" value={(kpiStats?.incomingShipments ?? 0).toString()} sub="In transit / Expected" linkText="View shipments" onClick={() => navigate(`${warehouseBase}/inbound`)} />
+          <MetricCard icon={<TruckIcon color="#EF4444" />} bg="#FEF2F2" label="OUTGOING SHIPMENTS" value={(kpiStats?.outgoingShipments ?? 0).toString()} sub="Scheduled / In progress" linkText="View shipments" onClick={() => navigate(`${warehouseBase}/outbound`)} />
         </div>
 
         {/* Middle Section */}
@@ -1419,7 +1421,7 @@ export default function Warehouse() {
             <div className="wh-panel">
               <div className="wh-panel-header">
                 <span className="wh-panel-title">WAREHOUSE ALERTS</span>
-                <span className="wh-panel-link" onClick={() => navigate('/warehouse/reports')}>View All →</span>
+                <span className="wh-panel-link" onClick={() => navigate(`${warehouseBase}/reports`)}>View All →</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {whList.length > 0 ? (
@@ -1473,7 +1475,7 @@ export default function Warehouse() {
           <div className="wh-bottom-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.2px', textTransform: 'uppercase', margin: 0 }}>INVENTORY SUMMARY</h3>
-              <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }} onClick={() => navigate('/warehouse/current-stock')}>View →</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }} onClick={() => navigate(`${warehouseBase}/current-stock`)}>View →</span>
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

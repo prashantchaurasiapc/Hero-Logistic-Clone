@@ -48,38 +48,33 @@ export default function DeliveryPOD() {
       const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
       const userStr = localStorage.getItem('user');
       const userObj = userStr ? JSON.parse(userStr) : {};
-      const currentDriverName = userObj.name || userObj.firstName || 'Driver 1 demo';
+      const currentDriverName = userObj.name || userObj.firstName || '';
       const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
-      const assignedList = (savedMap[currentDriverName] || savedMap['Driver 1 demo'] || savedMap['driver1'] || []).filter(item => !deletedIds.includes(item.id));
+      const assignedList = currentDriverName ? (savedMap[currentDriverName] || []).filter(item => !deletedIds.includes(item.id)) : [];
       
       const activeAssignedLoad = assignedList[0];
 
       if (activeAssignedLoad) {
-        const routeParts = activeAssignedLoad.route ? activeAssignedLoad.route.split(/\s*[\u2192\u2794\->]|\sto\s/i) : ['Indore', 'Bhopal'];
-        const originStr = routeParts[0]?.trim() || 'Indore';
-        const destStr = routeParts[1]?.trim() || routeParts[0]?.trim() || 'Bhopal';
-
-        const dynamicCars = [
-          { id: 'c1', dbId: 'c1', drop: 'DROP 1', dropLoc: `${destStr} Hub`, vin: '1HGCR2E33AA004352', makeModel: 'Toyota Camry 2024', color: 'White', plate: '4DCL23', delivered: false },
-          { id: 'c2', dbId: 'c2', drop: 'DROP 1', dropLoc: `${destStr} Hub`, vin: 'JM1BL1H2F01121234', makeModel: 'Mazda 3 Hatchback', color: 'Black', plate: 'C00467', delivered: false }
-        ];
+        const routeParts = activeAssignedLoad.route ? activeAssignedLoad.route.split(/\s*[\u2192\u2794\->]|\sto\s/i) : ['—', '—'];
+        const originStr = routeParts[0]?.trim() || activeAssignedLoad.origin || '—';
+        const destStr = routeParts[1]?.trim() || activeAssignedLoad.destination || '—';
 
         setLoadInfo({
-          id: activeAssignedLoad.id || 'PO-596060',
+          id: activeAssignedLoad.id || activeAssignedLoad.loadNumber || '—',
           dbId: activeAssignedLoad.id,
           origin: originStr,
           destination: destStr,
-          deliveryLocation: `${destStr} Receiving Hub`,
-          address: `${destStr} Depot, MP`,
-          stopIndex: 2,
-          totalStops: 2,
-          eta: '02:30 PM',
-          totalCars: 2,
+          deliveryLocation: activeAssignedLoad.destination || `${destStr} Hub`,
+          address: activeAssignedLoad.deliveryAddress || '—',
+          stopIndex: 1,
+          totalStops: 1,
+          eta: activeAssignedLoad.deliveryTime || '02:30 PM',
+          totalCars: (activeAssignedLoad.items || []).length,
           deliveredCars: 0,
-          remainingCars: 2,
-          cars: dynamicCars
+          remainingCars: (activeAssignedLoad.items || []).length,
+          cars: activeAssignedLoad.items || []
         });
-        setCars(dynamicCars);
+        setCars(activeAssignedLoad.items || []);
         return;
       }
 
@@ -263,6 +258,46 @@ export default function DeliveryPOD() {
     );
   }
 
+  if (!loadInfo) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-5 pb-24 text-left" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/driver/jobs')}
+            className="p-2 bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs transition-all"
+            title="Back to Assigned Jobs"
+          >
+            <FiArrowLeft className="text-base" />
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Delivery & POD
+            </h1>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">
+              No active load in-transit for delivery.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center max-w-lg mx-auto shadow-2xs space-y-4 my-12">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl mx-auto">
+            🏁
+          </div>
+          <h3 className="text-lg font-black text-slate-900">No Active Delivery / POD</h3>
+          <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+            You do not currently have an active run or load waiting for proof-of-delivery (POD). Pick up and dispatch a load to begin the delivery process.
+          </p>
+          <button
+            onClick={() => navigate('/driver/jobs')}
+            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm"
+          >
+            View My Assigned Jobs
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-5 pb-24 text-left" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
       
@@ -289,7 +324,7 @@ export default function DeliveryPOD() {
               Delivery & POD
             </h1>
             <p className="text-xs font-semibold text-slate-400 mt-0.5">
-              Scan or select cars to deliver at Step {loadInfo?.stopIndex || 2}: {loadInfo?.deliveryLocation || loadInfo?.pickupLocation || 'Auto World Sydney'}
+              Scan or select cars to deliver at Step {loadInfo?.stopIndex || 1}: {loadInfo?.deliveryLocation || loadInfo?.pickupLocation || '—'}
             </p>
           </div>
         </div>
@@ -347,8 +382,8 @@ export default function DeliveryPOD() {
             <div className="flex items-start gap-2.5">
               <span className="p-1.5 bg-rose-50 text-rose-500 rounded-lg text-sm shrink-0">📍</span>
               <div>
-                <div className="font-extrabold text-slate-900 text-xs">{loadInfo?.deliveryLocation || loadInfo?.pickupLocation || 'Auto World Sydney'}</div>
-                <div className="text-[11px] text-slate-400 font-semibold mt-0.5">{loadInfo?.address || '45 Parramatta Rd, Sydney NSW 2150'}</div>
+                <div className="font-extrabold text-slate-900 text-xs">{loadInfo?.deliveryLocation || loadInfo?.pickupLocation || 'No Delivery Location'}</div>
+                <div className="text-[11px] text-slate-400 font-semibold mt-0.5">{loadInfo?.address || '—'}</div>
               </div>
             </div>
           </div>
@@ -418,27 +453,27 @@ export default function DeliveryPOD() {
         {/* ================= CENTER COLUMN: MAIN CARS DELIVERY BREAKDOWN (6 COLS) ================= */}
         <div className="lg:col-span-6 space-y-4">
           
-          {/* Card 1: LD-3987 Top Banner */}
+          {/* Card 1: Top Banner */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4.5 shadow-2xs space-y-3.5">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-xl font-black text-indigo-700 tracking-tight">{loadInfo?.id || loadInfo?.loadRef || 'LD-3987'}</div>
+                <div className="text-xl font-black text-indigo-700 tracking-tight">{loadInfo?.id || loadInfo?.loadRef || '—'}</div>
                 <div className="text-sm font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                  <span>{loadInfo?.origin || 'Melbourne VIC'}</span>
+                  <span>{loadInfo?.origin || '—'}</span>
                   <span className="text-slate-400 font-normal">➔</span>
-                  <span>{loadInfo?.destination || 'Sydney NSW'}</span>
+                  <span>{loadInfo?.destination || '—'}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-2.5 rounded-xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">STOP</span>
-                  <span className="font-mono text-slate-900 font-extrabold">{loadInfo?.stopIndex || 2} of {loadInfo?.totalStops || 3}</span>
+                  <span className="font-mono text-slate-900 font-extrabold">{loadInfo?.stopIndex || 1} of {loadInfo?.totalStops || 1}</span>
                 </div>
                 <div className="h-5 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold uppercase block">DELIVERY TIME</span>
-                  <span className="font-mono text-slate-900 font-extrabold">ETA {loadInfo?.eta || '02:30 PM'}</span>
+                  <span className="font-mono text-slate-900 font-extrabold">ETA {loadInfo?.eta || '—'}</span>
                 </div>
                 <div className="h-5 w-px bg-slate-200"></div>
                 <div>
