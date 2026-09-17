@@ -577,13 +577,18 @@ export default function OfflineSyncQueue() {
 
             <div className="space-y-1.5">
               <div className="flex justify-between font-black text-slate-900">
-                <span>1.2 GB / 5 GB used</span>
-                <span className="text-indigo-700 font-mono">24%</span>
+                <span>{(syncItems.length * 0.45).toFixed(1)} MB / 5 GB used</span>
+                <span className="text-indigo-700 font-mono">
+                  {Math.min(100, Math.round(((syncItems.length * 0.45) / 5120) * 100))}%
+                </span>
               </div>
 
               {/* Progress bar */}
               <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-600 rounded-full w-[24%]"></div>
+                <div 
+                  className="h-full bg-indigo-600 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, Math.round(((syncItems.length * 0.45) / 5120) * 100))}%` }}
+                ></div>
               </div>
             </div>
 
@@ -605,15 +610,21 @@ export default function OfflineSyncQueue() {
             </div>
 
             <div className="space-y-2">
-              {recentActivity.map(act => (
-                <div key={act.id} className="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
-                  <div>
-                    <div className="font-black text-slate-900">{act.name}</div>
-                    <div className={`text-[10px] font-bold ${act.color}`}>{act.status}</div>
+              {recentActivity.length > 0 ? (
+                recentActivity.map(act => (
+                  <div key={act.id} className="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
+                    <div>
+                      <div className="font-black text-slate-900">{act.name}</div>
+                      <div className={`text-[10px] font-bold ${act.color}`}>{act.status}</div>
+                    </div>
+                    <span className="font-mono text-[10px] text-slate-400">{act.date}</span>
                   </div>
-                  <span className="font-mono text-[10px] text-slate-400">{act.date}</span>
+                ))
+              ) : (
+                <div className="text-center py-3 text-slate-400 text-xs font-semibold">
+                  No recent sync logs
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -727,8 +738,8 @@ export default function OfflineSyncQueue() {
             </div>
 
             <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2 text-xs font-semibold">
-              <div className="flex justify-between"><span>Offline Data Storage:</span><span className="font-black text-slate-900">1.2 GB</span></div>
-              <div className="flex justify-between"><span>Cached Media & Photos:</span><span className="font-black text-slate-900">850 MB</span></div>
+              <div className="flex justify-between"><span>Offline Data Storage:</span><span className="font-black text-slate-900">{(syncItems.length * 0.45).toFixed(1)} MB</span></div>
+              <div className="flex justify-between"><span>Cached Media & Photos:</span><span className="font-black text-slate-900">{syncItems.length > 0 ? (syncItems.length * 0.2).toFixed(1) + ' MB' : '0 MB'}</span></div>
               <div className="flex justify-between"><span>Maximum Limit:</span><span className="font-mono font-black text-slate-900">5.0 GB</span></div>
             </div>
 
