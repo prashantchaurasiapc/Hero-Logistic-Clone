@@ -18,6 +18,7 @@ export default function AddExpense() {
   // Tab & Filter States
   const [activeTab, setActiveTab] = useState('Fuel & Expenses'); // 'Fuel & Expenses', 'Summary', 'Receipts', 'Analytics'
   const [toastMsg, setToastMsg] = useState('');
+  const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [tipDismissed, setTipDismissed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,6 +116,7 @@ export default function AddExpense() {
       console.error('Error fetching expenses/active run:', error);
       triggerToast('Failed to load expenses data.');
     } finally {
+      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       setLoading(false);
     }
   };
@@ -338,7 +340,7 @@ export default function AddExpense() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">STATUS</div>
             <div className="space-y-1.5 font-bold text-slate-700">
-              <div className="text-[11px] text-slate-500">Last sync: Just now</div>
+              <div className="text-[11px] text-slate-500">Last sync: {syncTime}</div>
               <div className="flex items-center gap-2 text-emerald-700 font-black">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
@@ -346,7 +348,10 @@ export default function AddExpense() {
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
-              onClick={() => triggerToast('System status refreshed!')}
+              onClick={() => {
+                fetchData();
+                triggerToast('System status refreshed!');
+              }}
               className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl border border-slate-800 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <FiRefreshCw className="text-amber-400" />
