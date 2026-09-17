@@ -868,6 +868,7 @@ export default function Warehouse() {
                     <span className="icon">📦</span>
                     <input
                       name="code"
+                      required
                       value={addForm.code}
                       onChange={e => setAddForm({ ...addForm, code: e.target.value })}
                       className="wh-input"
