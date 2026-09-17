@@ -912,22 +912,16 @@ export default function Warehouse() {
 
                 <div>
                   <label className="wh-label">Status</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => setAddForm({ ...addForm, status: 'Active' })}
-                      style={{ flex: 1, padding: '10px', borderRadius: 8, border: addForm.status === 'Active' ? 'none' : '1px solid #E2E8F0', background: addForm.status === 'Active' ? '#F97316' : '#fff', color: addForm.status === 'Active' ? '#fff' : '#475569', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      Active
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAddForm({ ...addForm, status: 'Maintenance' })}
-                      style={{ flex: 1, padding: '10px', borderRadius: 8, border: addForm.status === 'Maintenance' ? 'none' : '1px solid #E2E8F0', background: addForm.status === 'Maintenance' ? '#F97316' : '#fff', color: addForm.status === 'Maintenance' ? '#fff' : '#475569', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      Maintenance
-                    </button>
-                  </div>
+                  <select
+                    value={addForm.status}
+                    onChange={e => setAddForm({ ...addForm, status: e.target.value })}
+                    className="wh-input"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Maintenance">Maintenance</option>
+                  </select>
                 </div>
               </div>
             </div>
