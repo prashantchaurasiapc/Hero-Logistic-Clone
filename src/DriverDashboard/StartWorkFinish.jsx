@@ -19,27 +19,27 @@ export default function StartWork() {
   const [loading, setLoading] = useState(true);
   const [contextData, setContextData] = useState(null);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
-  // 20 Inspection Checklist Items state
+  // 20 Inspection Checklist Items state (start fresh unchecked for new inspection)
   const [items, setItems] = useState([
-    { id: 1, label: 'Brakes (service & park brake)', status: 'pass' },
-    { id: 2, label: 'Tyres – condition & pressure', status: 'pass' },
-    { id: 3, label: 'Lights – all working (head, tail, indicators, brake, reverse)', status: 'pass' },
-    { id: 4, label: 'Indicators / Hazard lights', status: 'pass' },
-    { id: 5, label: 'Steering & Suspension', status: 'pass' },
-    { id: 6, label: 'Windscreen / Windows / Mirrors', status: 'pass' },
-    { id: 7, label: 'Wipers / Washer', status: 'pass' },
-    { id: 8, label: 'Horn', status: 'pass' },
-    { id: 9, label: 'Seat belts / Airbag', status: 'pass' },
-    { id: 10, label: 'Fire extinguisher', status: 'pass' },
-    { id: 11, label: 'First aid kit', status: 'pass' },
-    { id: 12, label: 'Load securement equipment', status: 'pass' },
-    { id: 13, label: 'Fluid levels (engine oil, coolant, brake fluid)', status: 'pass' },
-    { id: 14, label: 'Fuel level sufficient for trip', status: 'pass' },
-    { id: 15, label: 'Leaks (oil, fuel, coolant, air)', status: 'pass' },
-    { id: 16, label: 'Body / Chassis / Coupling', status: 'pass' },
-    { id: 17, label: 'Load area clear & safe', status: 'pass' },
-    { id: 18, label: 'Fatigue / Fitness for driving', status: 'pass' },
-    { id: 19, label: 'Load secured / Straps & chains checked', status: 'na' },
+    { id: 1, label: 'Brakes (service & park brake)', status: 'unchecked' },
+    { id: 2, label: 'Tyres – condition & pressure', status: 'unchecked' },
+    { id: 3, label: 'Lights – all working (head, tail, indicators, brake, reverse)', status: 'unchecked' },
+    { id: 4, label: 'Indicators / Hazard lights', status: 'unchecked' },
+    { id: 5, label: 'Steering & Suspension', status: 'unchecked' },
+    { id: 6, label: 'Windscreen / Windows / Mirrors', status: 'unchecked' },
+    { id: 7, label: 'Wipers / Washer', status: 'unchecked' },
+    { id: 8, label: 'Horn', status: 'unchecked' },
+    { id: 9, label: 'Seat belts / Airbag', status: 'unchecked' },
+    { id: 10, label: 'Fire extinguisher', status: 'unchecked' },
+    { id: 11, label: 'First aid kit', status: 'unchecked' },
+    { id: 12, label: 'Load securement equipment', status: 'unchecked' },
+    { id: 13, label: 'Fluid levels (engine oil, coolant, brake fluid)', status: 'unchecked' },
+    { id: 14, label: 'Fuel level sufficient for trip', status: 'unchecked' },
+    { id: 15, label: 'Leaks (oil, fuel, coolant, air)', status: 'unchecked' },
+    { id: 16, label: 'Body / Chassis / Coupling', status: 'unchecked' },
+    { id: 17, label: 'Load area clear & safe', status: 'unchecked' },
+    { id: 18, label: 'Fatigue / Fitness for driving', status: 'unchecked' },
+    { id: 19, label: 'Load secured / Straps & chains checked', status: 'unchecked' },
     { id: 20, label: 'Other (notes or additional checks)', status: 'unchecked' },
   ]);
 
@@ -297,12 +297,12 @@ export default function StartWork() {
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">STATUS</h3>
             <div className="text-xs space-y-1">
-              <div className="text-slate-500 font-medium">Last saved: <strong className="text-slate-800">29 May 2025, 06:10 AM</strong></div>
+              <div className="text-slate-500 font-medium">Last saved: <strong className="text-slate-800">{contextData?.lastSaved || 'Never'}</strong></div>
               <div className="text-emerald-600 font-extrabold flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Synced
               </div>
               <div className="text-slate-500 font-medium mt-2 pt-2 border-t border-slate-100">
-                Next reminder: <strong className="text-slate-800">Tomorrow, 06:00 AM</strong>
+                Next reminder: <strong className="text-slate-800">Before next shift</strong>
               </div>
             </div>
           </div>
@@ -327,19 +327,19 @@ export default function StartWork() {
             <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-100 rounded-xl p-3.5 mb-5 text-xs">
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Vehicle</span>
-                <span className="font-black text-slate-900">TRK-101 (MAN TGX 26.580)</span>
+                <span className="font-black text-slate-900">{contextData?.vehicle?.ref || contextData?.vehicle?.rego || 'No Vehicle Assigned'}</span>
               </div>
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Load / Reference</span>
-                <span className="font-black text-purple-700">LD-3987</span>
+                <span className="font-black text-purple-700">{contextData?.loadRef || 'No Active Load'}</span>
               </div>
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Trailer</span>
-                <span className="font-black text-slate-900">TRL-205 (Car Carrier 4 Level)</span>
+                <span className="font-black text-slate-900">{contextData?.trailerRef || 'No Trailer Assigned'}</span>
               </div>
               <div>
                 <span className="text-slate-400 font-bold text-[10px] uppercase block">Date / Time</span>
-                <span className="font-mono font-bold text-slate-800">29 May 2025, 06:15 AM</span>
+                <span className="font-mono font-bold text-slate-800">{new Date().toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             </div>
 

@@ -123,14 +123,17 @@ const DriverDashboard = () => {
     return item.status === scheduleFilter;
   });
 
+  const currentStatus = dashboardData?.driverInfo?.status || 'Off Duty';
+  const isShiftActive = ['On Duty', 'In Transit'].includes(currentStatus);
+
   const hosLog = dashboardData?.hosLog || {
     driveTimeElapsed: '0h 00m',
-    driveTimeLeft: '11h 00m',
+    driveTimeLeft: isShiftActive ? '11h 00m' : '--',
     drivePercent: 0,
     shiftElapsed: '0h 00m',
     shiftMax: '14h max',
     shiftPercent: 0,
-    nextBreakDue: 'in 4h 00m'
+    nextBreakDue: isShiftActive ? 'in 4h 00m' : 'Shift Not Started'
   };
 
   const unreadMessages = dashboardData?.unreadMessages || [];
@@ -534,8 +537,12 @@ const DriverDashboard = () => {
           <div className="bg-white border border-amber-200 rounded-2xl p-5 shadow-xs">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">BREAK / REST & HOS LOGGING</h3>
-              <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                Next Break Due {hosLog.nextBreakDue}
+              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
+                hosLog.nextBreakDue?.includes('Shift Not Started') || hosLog.nextBreakDue?.includes('Off Duty')
+                  ? 'text-slate-500 bg-slate-100 border-slate-200'
+                  : 'text-amber-600 bg-amber-50 border-amber-200'
+              }`}>
+                {hosLog.nextBreakDue?.startsWith('in') ? `Next Break Due ${hosLog.nextBreakDue}` : hosLog.nextBreakDue}
               </span>
             </div>
 

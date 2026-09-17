@@ -273,12 +273,12 @@ export default function Messages() {
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Trailer</div>
                 <div className="font-black text-slate-900 text-xs">{vehicleData?.trailer || 'Unassigned'}</div>
-                <div className="text-[11px] text-slate-500">Car Carrier (4 Level)</div>
+                <div className="text-[11px] text-slate-500">{vehicleData?.trailerType || (vehicleData?.trailer && vehicleData?.trailer !== 'Unassigned' ? 'Trailer Attached' : '--')}</div>
               </div>
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-indigo-500 uppercase font-extrabold">Load</div>
                 <div className="font-black text-indigo-900 text-xs">{activeLoadData?.loadRef || activeLoadData?.id || 'No Active Load'}</div>
-                <div className="text-[11px] text-indigo-700">Car Carrier (4 Level)</div>
+                <div className="text-[11px] text-indigo-700">{activeLoadData?.loadType || (activeLoadData?.loadRef ? 'Active Freight' : '--')}</div>
               </div>
             </div>
           </div>
@@ -482,7 +482,7 @@ export default function Messages() {
             <div className="space-y-2 font-bold text-slate-700 border-b border-slate-100 pb-3">
               <div className="flex justify-between items-center">
                 <span>Total Conversations</span>
-                <span className="font-mono text-slate-900">24</span>
+                <span className="font-mono text-slate-900">{conversations.length}</span>
               </div>
               <div className="flex justify-between items-center text-purple-700">
                 <span>Unread Messages</span>
@@ -510,41 +510,42 @@ export default function Messages() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">QUICK CONTACTS</div>
             <div className="space-y-2">
-              {[
-                { name: 'Dispatch', role: 'Online', avatar: 'DS', color: 'bg-purple-100 text-purple-800' },
-                { name: 'ABC Car Yard', role: 'Online', avatar: 'AC', color: 'bg-amber-100 text-amber-800' },
-                { name: 'Auto World Sydney', role: 'Online', avatar: 'AW', color: 'bg-emerald-100 text-emerald-800' },
-                { name: 'Maintenance', role: 'Online', avatar: 'MS', color: 'bg-blue-100 text-blue-800' },
-                { name: 'Safety Team', role: 'Online', avatar: 'ST', color: 'bg-slate-100 text-slate-800' },
-              ].map(contact => (
-                <div 
-                  key={contact.name}
-                  onClick={() => {
-                    setActiveChat({
-                      id: Date.now(),
-                      name: contact.name,
-                      avatar: contact.avatar,
-                      avatarColor: contact.color,
-                      messages: [
-                        { id: 1, sender: contact.name, text: `Hello Noah, how can we help?`, time: 'Just now', isMe: false }
-                      ]
-                    });
-                    setChatModalOpen(true);
-                  }}
-                  className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-2xl flex items-center justify-between border border-slate-200 cursor-pointer transition-colors"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px] ${contact.color}`}>
-                      {contact.avatar}
-                    </span>
-                    <div>
-                      <div className="font-bold text-slate-900 text-xs">{contact.name}</div>
-                      <div className="text-[9.5px] text-emerald-600 font-bold">● {contact.role}</div>
+              {contactsList && contactsList.length > 0 ? (
+                contactsList.filter(c => c.name).slice(0, 5).map(contact => (
+                  <div 
+                    key={contact.id || contact.name}
+                    onClick={() => {
+                      const existingChat = conversations.find(c => c.name === contact.name);
+                      if (existingChat) {
+                        setActiveChat(existingChat);
+                        setChatModalOpen(true);
+                      } else {
+                        setNewMessageRecipient(contact.id || contact.name);
+                        setNewMessageModalOpen(true);
+                      }
+                    }}
+                    className="p-2 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-100"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px] ${contact.color || 'bg-slate-100 text-slate-800'}`}>
+                        {contact.avatar || (contact.name ? contact.name.slice(0, 2).toUpperCase() : 'U')}
+                      </div>
+                      <div>
+                        <div className="font-black text-slate-900 leading-tight">{contact.name}</div>
+                        <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          <span>{contact.role || 'Available'}</span>
+                        </div>
+                      </div>
                     </div>
+                    <FiMessageSquare className="text-indigo-600 text-sm" />
                   </div>
-                  <FiMessageSquare className="text-indigo-600 text-sm" />
+                ))
+              ) : (
+                <div className="text-center py-3 text-slate-400 font-semibold text-xs">
+                  No quick contacts available
                 </div>
-              ))}
+              )}
             </div>
 
             <button 
@@ -747,29 +748,40 @@ export default function Messages() {
             </div>
 
             <div className="space-y-2 text-xs">
-              {[
-                { name: 'Dispatch Support', phone: '0411 111 222', role: 'Head Dispatcher' },
-                { name: 'ABC Car Yard', phone: '0422 333 444', role: 'Yard Manager' },
-                { name: 'Auto World Sydney', phone: '0411 987 654', role: 'Receiver' },
-                { name: 'Fleet Maintenance', phone: '0400 555 666', role: 'Workshop Supervisor' },
-                { name: 'Safety Officer', phone: '0433 777 888', role: 'OH&S Compliance' },
-              ].map(c => (
-                <div key={c.name} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
-                  <div>
-                    <div className="font-black text-slate-900">{c.name}</div>
-                    <div className="text-[10px] text-slate-500 font-bold">{c.role} • {c.phone}</div>
+              {contactsList && contactsList.length > 0 ? (
+                contactsList.filter(c => c.name).map(c => (
+                  <div key={c.id || c.name} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
+                    <div>
+                      <div className="font-black text-slate-900">{c.name}</div>
+                      <div className="text-[10px] text-slate-500 font-bold">{c.role || 'Contact'} {c.phone ? `• ${c.phone}` : ''}</div>
+                    </div>
+                    {c.phone ? (
+                      <a 
+                        href={`tel:${c.phone}`}
+                        onClick={() => triggerToast(`Calling ${c.name}...`)}
+                        className="bg-indigo-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl cursor-pointer"
+                      >
+                        Call
+                      </a>
+                    ) : (
+                      <button 
+                        onClick={() => {
+                          setQuickContactsModalOpen(false);
+                          setNewMessageRecipient(c.id || c.name);
+                          setNewMessageModalOpen(true);
+                        }}
+                        className="bg-indigo-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl cursor-pointer"
+                      >
+                        Message
+                      </button>
+                    )}
                   </div>
-                  <button 
-                    onClick={() => {
-                      setQuickContactsModalOpen(false);
-                      triggerToast(`Calling ${c.name} (${c.phone})...`);
-                    }}
-                    className="bg-indigo-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl cursor-pointer"
-                  >
-                    Call
-                  </button>
+                ))
+              ) : (
+                <div className="text-center py-6 text-slate-400 font-semibold text-xs">
+                  No directory contacts found.
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>

@@ -109,6 +109,8 @@ export default function Documents() {
   const expiredCount = documents.filter(d => d.status === 'Expired').length;
   const uploadedCount = documents.filter(d => d.status === 'Uploaded').length;
   const notRequiredCount = documents.filter(d => d.status === 'Not Required').length;
+  const expiringSoonDocs = documents.filter(d => (d.status || '').toLowerCase().includes('expiring') || (d.status || '').toLowerCase().includes('soon'));
+  const expiredDocs = documents.filter(d => (d.status || '').toLowerCase().includes('expired'));
   const totalDocs = documents.length;
 
   const compliancePercentage = (totalDocs - notRequiredCount) > 0 
@@ -294,7 +296,7 @@ export default function Documents() {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Online</span>
               </div>
-              <div className="text-[11px] text-slate-500">Last sync: 29 May 2025, 10:15 AM</div>
+              <div className="text-[11px] text-slate-500">Last sync: Just now</div>
               <div className="text-[11px] text-slate-500">Auto refresh: Every 5 minutes</div>
             </div>
             <button
@@ -561,24 +563,25 @@ export default function Documents() {
           {activeTab === 'Compliance History' && (
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
               <h3 className="text-base font-black text-slate-900">Compliance Audit Log & History</h3>
-              <div className="space-y-2 text-xs font-semibold">
-                {[
-                  { title: 'Driver Licence Renewed & Approved', date: '12 Aug 2024', status: 'Approved' },
-                  { title: 'Medical Check Certificate Uploaded', date: '15 Oct 2024', status: 'Approved' },
-                  { title: 'Chain of Responsibility Course Completed', date: '05 Jul 2024', status: 'Approved' },
-                  { title: 'Dangerous Goods Licence Renewal Alert Sent', date: '15 May 2025', status: 'Action Needed' },
-                ].map((item, idx) => (
-                  <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
-                    <div>
-                      <div className="font-black text-slate-900">{item.title}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">{item.date}</div>
+              {complianceHistory.length > 0 ? (
+                <div className="space-y-2 text-xs font-semibold">
+                  {complianceHistory.map((item, idx) => (
+                    <div key={item.id || idx} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
+                      <div>
+                        <div className="font-black text-slate-900">{item.title || item.name}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">{item.date || item.createdAt}</div>
+                      </div>
+                      <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                        {item.status || 'Recorded'}
+                      </span>
                     </div>
-                    <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full">
-                      {item.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 text-slate-400 font-semibold text-xs">
+                  No compliance history logs recorded yet
+                </div>
+              )}
             </div>
           )}
 
@@ -625,36 +628,54 @@ export default function Documents() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">EXPIRING SOON</div>
             <div className="space-y-2">
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl space-y-1">
-                <div className="font-black text-amber-900 text-xs">FAT / Heavy Vehicle Card</div>
-                <div className="text-[11px] text-amber-700 font-medium">Expires: 30 Jun 2025 (31 days left)</div>
-              </div>
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl space-y-1">
-                <div className="font-black text-amber-900 text-xs">Chain of Responsibility</div>
-                <div className="text-[11px] text-amber-700 font-medium">Expires: 05 Jul 2025 (36 days left)</div>
-              </div>
+              {expiringSoonDocs.length > 0 ? (
+                expiringSoonDocs.map((doc, idx) => (
+                  <div key={doc.id || idx} className="p-3 bg-amber-50 border border-amber-200 rounded-2xl space-y-1">
+                    <div className="font-black text-amber-900 text-xs">{doc.name}</div>
+                    <div className="text-[11px] text-amber-700 font-medium">Expires: {doc.expiry || 'Upcoming'}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-center text-slate-400 font-semibold text-xs">
+                  No documents expiring soon
+                </div>
+              )}
             </div>
-            <button 
-              onClick={() => setFilterCategory('EXPIRING_SOON')}
-              className="w-full text-center text-xs font-extrabold text-indigo-600 hover:text-indigo-800 pt-1 cursor-pointer block"
-            >
-              View All
-            </button>
+            {expiringSoonDocs.length > 0 && (
+              <button 
+                onClick={() => setFilterCategory('EXPIRING_SOON')}
+                className="w-full text-center text-xs font-extrabold text-indigo-600 hover:text-indigo-800 pt-1 cursor-pointer block"
+              >
+                View All
+              </button>
+            )}
           </div>
 
           {/* EXPIRED DOCUMENTS ALERT BOX */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">EXPIRED DOCUMENTS</div>
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl space-y-1 text-rose-900">
-              <div className="font-black text-xs">Dangerous Goods Licence</div>
-              <div className="text-[11px] text-rose-700 font-medium">Expired: 15 May 2025 (14 days overdue) 🔴</div>
-            </div>
-            <button 
-              onClick={() => setFilterCategory('EXPIRED')}
-              className="w-full text-center text-xs font-extrabold text-rose-600 hover:text-rose-800 pt-1 cursor-pointer block"
-            >
-              View All
-            </button>
+            {expiredDocs.length > 0 ? (
+              <div className="space-y-2">
+                {expiredDocs.map((doc, idx) => (
+                  <div key={doc.id || idx} className="p-3 bg-rose-50 border border-rose-200 rounded-2xl space-y-1 text-rose-900">
+                    <div className="font-black text-xs">{doc.name}</div>
+                    <div className="text-[11px] text-rose-700 font-medium">Expired: {doc.expiry || 'Action Required'} 🔴</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-center text-slate-400 font-semibold text-xs">
+                No expired documents
+              </div>
+            )}
+            {expiredDocs.length > 0 && (
+              <button 
+                onClick={() => setFilterCategory('EXPIRED')}
+                className="w-full text-center text-xs font-extrabold text-rose-600 hover:text-rose-800 pt-1 cursor-pointer block"
+              >
+                View All
+              </button>
+            )}
           </div>
 
           {/* QUICK ACTIONS PANEL */}
@@ -734,7 +755,7 @@ export default function Documents() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Medical Certificate 2025"
+                  placeholder="e.g. Medical Certificate / Driver Licence"
                   value={uploadDocName}
                   onChange={(e) => setUploadDocName(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"

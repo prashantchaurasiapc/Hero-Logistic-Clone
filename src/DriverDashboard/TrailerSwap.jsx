@@ -54,15 +54,15 @@ export default function TrailerSwap() {
 
   // Equipment Checklist Items (6 items)
   const [checklist, setChecklist] = useState({
-    tyres: true,
-    lights: true,
-    brakes: true,
-    coupling: true,
-    deck: true,
-    general: true
+    tyres: false,
+    lights: false,
+    brakes: false,
+    coupling: false,
+    deck: false,
+    general: false
   });
 
-  const [confirmedCheck, setConfirmedCheck] = useState(true);
+  const [confirmedCheck, setConfirmedCheck] = useState(false);
 
   // Modals
   const [policyModalOpen, setPolicyModalOpen] = useState(false);
@@ -207,17 +207,8 @@ export default function TrailerSwap() {
   };
 
   const handleViewMore = () => {
-    const extraTrailer = {
-      id: `TRL-${320 + trailers.length}`,
-      name: 'Car Carrier (4 Level)',
-      rego: `XT-${Math.floor(10 + Math.random() * 89)}XY`,
-      vin: `9TRT2AA1000000${Date.now().toString().slice(-4)}`,
-      status: 'Available',
-      yard: 'Newcastle Yard',
-      statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200'
-    };
-    setTrailers([...trailers, extraTrailer]);
-    triggerToast(`Loaded new available trailer ${extraTrailer.id} from Newcastle Yard!`);
+    fetchTrailerSwapData();
+    triggerToast('Refreshed fleet trailers from database.');
   };
 
   const openHelpModal = (title) => {
@@ -465,60 +456,66 @@ export default function TrailerSwap() {
 
             {/* TRAILER LIST ITEMS */}
             <div className="space-y-2.5">
-              {filteredTrailers.map((trl) => {
-                const isSelected = selectedTrailerId === trl.id;
-                const isCurrentActive = currentTrailer?.id === trl.id;
+              {filteredTrailers.length > 0 ? (
+                filteredTrailers.map((trl) => {
+                  const isSelected = selectedTrailerId === trl.id;
+                  const isCurrentActive = currentTrailer?.id === trl.id;
 
-                return (
-                  <div
-                    key={trl.id}
-                    onClick={() => setSelectedTrailerId(trl.id)}
-                    className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 cursor-pointer transition-all ${
-                      isSelected 
-                        ? 'bg-indigo-50/70 border-indigo-500 shadow-xs' 
-                        : 'bg-white border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* Radio button circle */}
-                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        isSelected ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'
-                      }`}>
-                        {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
+                  return (
+                    <div
+                      key={trl.id}
+                      onClick={() => setSelectedTrailerId(trl.id)}
+                      className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 cursor-pointer transition-all ${
+                        isSelected 
+                          ? 'bg-indigo-50/70 border-indigo-500 shadow-xs' 
+                          : 'bg-white border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Radio button circle */}
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                          isSelected ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'
+                        }`}>
+                          {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-xs text-slate-900">{trl.id}</span>
+                            {trl.name && <span className="text-xs text-slate-600 font-semibold">({trl.name})</span>}
+                            {isCurrentActive && (
+                              <span className="bg-purple-100 text-purple-800 text-[9px] font-black px-1.5 py-0.2 rounded">
+                                Current
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10.5px] font-mono text-slate-400 font-bold mt-0.5">
+                            Rego: {trl.rego || '--'} • VIN: {trl.vin || '--'}
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-xs text-slate-900">{trl.id}</span>
-                          <span className="text-xs text-slate-600 font-semibold">({trl.name})</span>
-                          {isCurrentActive && (
-                            <span className="bg-purple-100 text-purple-800 text-[9px] font-black px-1.5 py-0.2 rounded">
-                              Current
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[10.5px] font-mono text-slate-400 font-bold mt-0.5">
-                          Rego: {trl.rego} • VIN: {trl.vin}
-                        </div>
+                      <div className="text-right shrink-0">
+                        <span className={`text-[9.5px] font-black px-2 py-0.5 rounded-full border block mb-1 ${trl.statusColor || 'bg-slate-100 text-slate-800'}`}>
+                          {trl.status || 'Available'} {trl.status === 'Available' ? '🟢' : '🟠'}
+                        </span>
+                        <div className="text-[10px] text-slate-500 font-bold">{trl.yard || '--'}</div>
                       </div>
                     </div>
-
-                    <div className="text-right shrink-0">
-                      <span className={`text-[9.5px] font-black px-2 py-0.5 rounded-full border block mb-1 ${trl.statusColor}`}>
-                        {trl.status} {trl.status === 'Available' ? '🟢' : '🟠'}
-                      </span>
-                      <div className="text-[10px] text-slate-500 font-bold">{trl.yard}</div>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-slate-400 font-semibold text-xs">
+                  No alternative trailers available in the fleet.
+                </div>
+              )}
             </div>
 
             <button
               onClick={handleViewMore}
               className="w-full text-center text-xs font-extrabold text-indigo-600 hover:text-indigo-800 pt-1 cursor-pointer block"
             >
-              + View More Trailers
+              🔄 Refresh Fleet Trailers
             </button>
           </div>
 
@@ -571,11 +568,14 @@ export default function TrailerSwap() {
                     type="text"
                     value={swapLocation}
                     onChange={(e) => setSwapLocation(e.target.value)}
+                    placeholder="Enter swap location / Yard"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-bold focus:outline-none focus:border-indigo-500"
                   />
-                  <span className="absolute right-3 top-3 bg-emerald-100 text-emerald-800 text-[9px] font-black px-1.5 py-0.5 rounded">
-                    Auto Detected
-                  </span>
+                  {swapLocation ? (
+                    <span className="absolute right-3 top-3 bg-emerald-100 text-emerald-800 text-[9px] font-black px-1.5 py-0.5 rounded">
+                      Auto Detected
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </div>

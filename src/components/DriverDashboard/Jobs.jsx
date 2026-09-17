@@ -30,6 +30,7 @@ export default function Jobs() {
   const [page, setPage]                 = useState(1);
   const [perPage]                       = useState(PAGE_SIZE);
   const [toastMsg, setToastMsg]         = useState('');
+  const [syncTime, setSyncTime]         = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   const [newLoadOpen, setNewLoadOpen]   = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [editJob, setEditJob]           = useState(null);
@@ -102,6 +103,7 @@ export default function Jobs() {
       console.error('Failed to load jobs', error);
       showToast('❌ Failed to load jobs.');
     } finally {
+      setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       setLoading(false);
     }
   };
@@ -475,7 +477,7 @@ export default function Jobs() {
             <div style={{ display: 'flex', gap: 32 }}>
               <div>
                 <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Last sync</div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginTop: 2 }}>29 May 2025, 10:15 AM</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginTop: 2 }}>{syncTime}</div>
               </div>
               <div>
                 <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Auto refresh</div>
@@ -486,7 +488,7 @@ export default function Jobs() {
               <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 800, color: '#10b981' }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }}></span> Online
               </span>
-              <button onClick={() => showToast('Syncing with server...')}
+              <button onClick={() => { fetchJobs(); showToast('Jobs synced with server!'); }}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', background: '#0f172a', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 800, color: '#fff', cursor: 'pointer' }}>
                 <FiRefreshCw size={12} /> Sync Now
               </button>
@@ -502,7 +504,7 @@ export default function Jobs() {
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }}></span>
             Data auto-refreshes every 5 minutes
           </span>
-          <span>Last updated: 29 May 2025, 10:15 AM &nbsp; ↻</span>
+          <span>Last updated: {syncTime} &nbsp; ↻</span>
         </div>
       </div>
 
