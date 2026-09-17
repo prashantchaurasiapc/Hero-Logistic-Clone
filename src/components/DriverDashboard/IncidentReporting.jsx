@@ -87,7 +87,7 @@ export default function IncidentReporting() {
     }
   };
 
-  const mockData = incidentHistory;
+  const historyData = incidentHistory;
 
   const toggleRow = (id) => {
     setSelectedRows(prev => 
@@ -321,7 +321,7 @@ export default function IncidentReporting() {
 
           {/* Mobile Card Layout (Visible only on mobile/small screens) */}
           <div className="block sm:hidden space-y-4">
-            {mockData.map((row, index) => {
+            {historyData.map((row, index) => {
               const isSelected = selectedRows.includes(row.id);
               
               let cardPadding = 'p-4';
@@ -401,11 +401,11 @@ export default function IncidentReporting() {
                 <tr className="border-b border-gray-100 bg-white">
                   <th className="p-4 w-12 text-center">
                     <button 
-                      onClick={() => setSelectedRows(selectedRows.length === mockData.length ? [] : mockData.map(d => d.id))}
+                      onClick={() => setSelectedRows(selectedRows.length === historyData.length ? [] : historyData.map(d => d.id))}
                       className="cursor-pointer"
                     >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === mockData.length ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
-                        {selectedRows.length === mockData.length && <Check className="w-3 h-3" strokeWidth={4} />}
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === historyData.length ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
+                        {selectedRows.length === historyData.length && <Check className="w-3 h-3" strokeWidth={4} />}
                       </div>
                     </button>
                   </th>
@@ -415,41 +415,50 @@ export default function IncidentReporting() {
                 </tr>
               </thead>
               <tbody>
-                {mockData.map((row, index) => {
-                  const isSelected = selectedRows.includes(row.id);
-                  return (
-                  <tr key={index} className={`border-b border-gray-50 hover:bg-[#FFFBEB]/50 transition-colors ${
-                    viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-lg' : 'text-sm'
-                  } ${isSelected ? 'bg-[#FFFBEB]' : ''}`}>
-                    <td className={`p-4 text-center align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                      <button 
-                        onClick={() => toggleRow(row.id)}
-                        className="cursor-pointer"
-                      >
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#D97706] text-[#D97706]' : 'border-[#94A3B8]'}`}>
-                           {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
-                        </div>
-                      </button>
+                {historyData.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-slate-400 font-bold text-xs">
+                      No incident reports filed yet.
                     </td>
-                    {visibleColumns.category && (
-                      <td className={`p-4 font-black text-[#0F172A] align-middle whitespace-nowrap ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                        {row.category.replace(/\n/g, ' ')}
-                      </td>
-                    )}
-                    {visibleColumns.loggedDate && (
-                      <td className={`p-4 font-black text-[#334155] align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                        {row.loggedDate}
-                      </td>
-                    )}
-                    {visibleColumns.status && (
-                      <td className={`p-4 align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                        <span className={`inline-block px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wider uppercase whitespace-nowrap ${row.statusColor}`}>
-                          {row.status.replace(/\n/g, ' ')}
-                        </span>
-                      </td>
-                    )}
                   </tr>
-                )})}
+                ) : (
+                  historyData.map((row, index) => {
+                    const isSelected = selectedRows.includes(row.id);
+                    return (
+                      <tr key={row.id || index} className={`border-b border-gray-50 hover:bg-[#FFFBEB]/50 transition-colors ${
+                        viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-lg' : 'text-sm'
+                      } ${isSelected ? 'bg-[#FFFBEB]' : ''}`}>
+                        <td className={`p-4 text-center align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                          <button 
+                            onClick={() => toggleRow(row.id)}
+                            className="cursor-pointer"
+                          >
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#D97706] text-[#D97706]' : 'border-[#94A3B8]'}`}>
+                               {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
+                            </div>
+                          </button>
+                        </td>
+                        {visibleColumns.category && (
+                          <td className={`p-4 font-black text-[#0F172A] align-middle whitespace-nowrap ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                            {row.category?.replace(/\n/g, ' ') || 'Incident'}
+                          </td>
+                        )}
+                        {visibleColumns.loggedDate && (
+                          <td className={`p-4 font-black text-[#334155] align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                            {row.loggedDate || '—'}
+                          </td>
+                        )}
+                        {visibleColumns.status && (
+                          <td className={`p-4 align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                            <span className={`inline-block px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wider uppercase whitespace-nowrap ${row.statusColor || 'bg-slate-100 text-slate-700'}`}>
+                              {row.status?.replace(/\n/g, ' ') || 'Pending'}
+                            </span>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

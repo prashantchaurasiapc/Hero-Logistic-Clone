@@ -175,10 +175,10 @@ export default function WarehousePickPackDispatch({ wh, onBack }) {
   const [loading, setLoading] = useState(false);
 
   // Form State for Create Pick Task Modal
-  const [newTaskRef, setNewTaskRef] = useState('SO-66892');
-  const [newTaskCustomer, setNewTaskCustomer] = useState('Auto World Pty Ltd');
+  const [newTaskRef, setNewTaskRef] = useState('');
+  const [newTaskCustomer, setNewTaskCustomer] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState('High');
-  const [newTaskAssignee, setNewTaskAssignee] = useState('James Patel');
+  const [newTaskAssignee, setNewTaskAssignee] = useState('');
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -186,6 +186,10 @@ export default function WarehousePickPackDispatch({ wh, onBack }) {
   };
 
   const fetchTasks = async () => {
+    if (!wh?.id) {
+      setTasks([]);
+      return;
+    }
     try {
       setLoading(true);
       const whId = wh?.id || 'default';
@@ -206,6 +210,10 @@ export default function WarehousePickPackDispatch({ wh, onBack }) {
   }, [wh?.id]);
 
   const handleCreatePickTask = async (taskData) => {
+    if (!wh?.id) {
+      showToast('Add a warehouse before creating pick tasks.');
+      return;
+    }
     try {
       const whId = wh?.id || 'default';
       const payload = {

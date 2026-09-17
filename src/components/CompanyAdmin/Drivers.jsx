@@ -3174,6 +3174,7 @@ export default function Drivers() {
           const driverCode = rawDriverCode !== null ? rawDriverCode.trim() : (isEditMode && selectedDriver ? (selectedDriver.driverCode === '—' ? '' : selectedDriver.driverCode) : '');
           const phone = fd.get('PhoneNumber') || fd.get('phone') || '';
           const email = fd.get('EmailAddress') || fd.get('email') || (isEditMode && selectedDriver ? selectedDriver.email : undefined);
+          const password = fd.get('Password') || fd.get('password') || 'Driver@1234';
           const avatarUrl = photoPreview || (isEditMode && selectedDriver ? selectedDriver.avatar : '');
           const gender = fd.get('Gender') || '';
           const nationality = fd.get('Nationality') || '';
@@ -3241,6 +3242,7 @@ export default function Drivers() {
             driverCode,
             phone,
             email,
+            password,
             avatarUrl,
             gender,
             nationality,

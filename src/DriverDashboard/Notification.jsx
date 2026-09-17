@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Compass, Bell, Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Wifi } from 'lucide-react';
+import * as driverApi from '../../services/driverApi';
 
 export default function Notification() {
   const [sosModalOpen, setSosModalOpen] = useState(false);
@@ -10,30 +11,41 @@ export default function Notification() {
   const [shareGps, setShareGps] = useState(true);
   const [autoNotify, setAutoNotify] = useState(true);
 
-  // Notifications state list
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: 'New Load Assigned',
-      desc: 'LD-9411: Chicago HQ Terminal ➔ Dallas Depot Terminal',
-      time: '1 hour ago'
-    },
-    {
-      id: 2,
-      title: 'Compliance Reminder',
-      desc: 'Submit your signed DOT monthly logs before Friday.',
-      time: '1 day ago'
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await driverApi.getNotifications();
+      const formatted = (res.data?.notifications || []).map(n => ({
+        id: n.id,
+        title: n.title,
+        desc: n.message,
+        time: new Date(n.createdAt).toLocaleString(),
+      }));
+      setNotifications(formatted);
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
     }
-  ]);
+  };
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 4000);
   };
 
-  const handleDismiss = (id, title) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    triggerToast(`Dismissed: "${title}"`);
+  const handleDismiss = async (id, title) => {
+    try {
+      await driverApi.markNotificationRead(id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      triggerToast(`Dismissed: "${title}"`);
+    } catch (err) {
+      console.error('Error marking as read:', err);
+      triggerToast('Failed to dismiss notification');
+    }
   };
 
   return (

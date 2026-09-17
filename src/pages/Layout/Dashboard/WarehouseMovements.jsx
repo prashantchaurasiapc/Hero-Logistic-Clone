@@ -206,7 +206,7 @@ export default function WarehouseMovements() {
       );
 
       showToast(`✓ Transfer ${refNo} created! ${formItems.length} item(s) moved successfully.`);
-      setTimeout(() => navigate(isYard ? '/yard/movements' : '/warehouse/movement-history'), 1800);
+      setTimeout(() => navigate(isYard ? '/yard/movements' : location.pathname.startsWith('/company-admin') ? '/company-admin/warehouse/movements' : location.pathname.startsWith('/dispatcher') ? '/dispatcher/movements' : '/warehouse/movement-history'), 1800);
     } catch (err) {
       console.error('Failed to execute transfer:', err);
       showToast('Failed to create transfer: ' + (err.response?.data?.message || err.message), 'error');

@@ -1094,7 +1094,7 @@ export default function WarehouseOutbound() {
               <span>Create Load</span>
             </button>
 
-            <button className="wh-qa-btn" onClick={() => navigate('/warehouse/load-lanes')}>
+            <button className="wh-qa-btn" onClick={() => navigate(location.pathname.startsWith('/company-admin') ? '/company-admin/warehouse/load-lanes' : location.pathname.startsWith('/dispatcher') ? '/dispatcher/load-lanes' : isYard ? '/yard/load-lanes' : '/warehouse/load-lanes')}>
               <ArrowRight size={14} className="text-blue-500" />
               <span>Move to Load Lane</span>
             </button>
