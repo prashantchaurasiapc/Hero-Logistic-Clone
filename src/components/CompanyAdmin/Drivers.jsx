@@ -1761,7 +1761,6 @@ export default function Drivers() {
                         <option value="Car Carrier">Car Carrier</option>
                         <option value="General Freight">General Freight</option>
                         <option value="Dangerous Goods">Dangerous Goods</option>
-                        <option value="Refrigerated">Refrigerated</option>
                         <option value="Bulk Transport">Bulk Transport</option>
                       </select>
                     </div>

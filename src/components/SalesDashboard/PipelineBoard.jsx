@@ -203,7 +203,6 @@ export default function PipelineBoard() {
     'Car Carrying',
     'General Freight',
     'Dangerous Goods',
-    'Refrigerated',
     'Flatbed',
     'Container'
   ];

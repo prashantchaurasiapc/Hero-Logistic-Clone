@@ -76,8 +76,7 @@ const CompanySettingsDashboardView = () => {
                 {[
                   { label: 'General Freight', key: 'general' },
                   { label: 'Car / Vehicle Transport', key: 'car' },
-                  { label: 'Dangerous Goods (DG)', key: 'dangerous' },
-                  { label: 'Refrigerated / Cold Chain', key: 'refrigerated' }
+                  { label: 'Dangerous Goods (DG)', key: 'dangerous' }
                 ].map((spec) => (
                   <label key={spec.key} className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-gray-800">
                     <input

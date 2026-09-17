@@ -15,13 +15,12 @@ import {
 
 // Helper upload components moved outside to prevent unmounting on re-renders
 const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
-  const defaultPhoto = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop";
-  const [photoUrl, setPhotoUrl] = React.useState(value || defaultPhoto);
+  const [photoUrl, setPhotoUrl] = React.useState(value || "");
   const fileInputRef = React.useRef(null);
 
   React.useEffect(() => {
-    if (value !== undefined && value !== null) {
-      setPhotoUrl(value || defaultPhoto);
+    if (value !== undefined) {
+      setPhotoUrl(value || "");
     }
   }, [value]);
 
@@ -53,15 +52,18 @@ const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
           <Camera className="w-5 h-5 text-white mb-1" />
           <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
         </div>
-        <img 
-          src={photoUrl || defaultPhoto} 
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = defaultPhoto;
-          }}
-          className="w-full h-full object-cover" 
-          alt="Vehicle Photo" 
-        />
+        {photoUrl ? (
+          <img 
+            src={photoUrl} 
+            className="w-full h-full object-cover" 
+            alt="Vehicle Photo" 
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 text-gray-400">
+             <Camera className="w-8 h-8 opacity-40 mb-1" />
+             <span className="text-[8px] font-bold uppercase tracking-wider text-gray-400">Add Photo</span>
+          </div>
+        )}
       </div>
       <input 
         type="file" 
@@ -568,7 +570,6 @@ const Vehicles = () => {
   const handleSwapTrailer = (trailerId, reason) => {
     const trailerList = {
       'TRL105': { id: 'TRL105', name: 'TRL105 – Flatbed Heavy Trailer', type: 'Flatbed Trailer', reg: 'TRL105', vin: '6T9T25A21NOTR1105', axles: '3', depot: 'Sydney Depot', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60' },
-      'TRL302': { id: 'TRL302', name: 'TRL302 – Refrigerated Box Trailer', type: 'Refrigerated Box', reg: 'TRL302', vin: '6T9T25A21NOTR1302', axles: '2', depot: 'Melbourne Base', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=600&auto=format&fit=crop&q=60' },
       'TRL409': { id: 'TRL409', name: 'TRL409 – Low Loader Heavy Duty', type: 'Low Loader', reg: 'TRL409', vin: '6T9T25A21NOTR1409', axles: '4', depot: 'Brisbane Hub', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60' },
       'TRL512': { id: 'TRL512', name: 'TRL512 – Curtainsider 45ft Trailer', type: 'Curtainsider', reg: 'TRL512', vin: '6T9T25A21NOTR1512', axles: '3', depot: 'Sydney Depot', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60' },
       'TRL608': { id: 'TRL608', name: 'TRL608 – Liquid Tanker Trailer', type: 'Tanker', reg: 'TRL608', vin: '6T9T25A21NOTR1608', axles: '3', depot: 'Adelaide Depot', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60' }
@@ -917,34 +918,28 @@ const Vehicles = () => {
             <div className="p-6 flex flex-col sm:flex-row gap-8">
               {/* Vehicle Photos */}
               <div className="flex flex-col gap-2 shrink-0">
-                <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100">
-                   <img 
-                     src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null) || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} 
-                     alt="Vehicle Main" 
-                     className="w-full h-full object-cover" 
-                   />
-                </div>
-                <div className="grid grid-cols-4 gap-2 w-full sm:w-[300px]">
-                   {[1, 2, 3].map((num) => (
-                     <div key={num} className="h-16 rounded-lg overflow-hidden cursor-pointer opacity-70 hover:opacity-100 transition-opacity border border-gray-100">
-                        <img 
-                          src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null) || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} 
-                          alt="Thumb" 
-                          className="w-full h-full object-cover" 
-                        />
+                <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100 bg-slate-50 flex items-center justify-center">
+                   {managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') && managingVehicle.notes.split('Photo:')[1].split('|')[0].trim()) ? (
+                     <img 
+                       src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null)} 
+                       alt="Vehicle Main" 
+                       className="w-full h-full object-cover" 
+                     />
+                   ) : (
+                     <div className="flex flex-col items-center text-slate-300">
+                        <Truck size={48} className="mb-2" />
+                        <span className="text-xs font-bold text-slate-400">No Image Available</span>
                      </div>
-                   ))}
-                   <div className="h-16 rounded-lg bg-[#1a202c] text-white flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:bg-black transition-colors">
-                      +5
-                   </div>
+                   )}
                 </div>
+                {/* Thumbnails removed to prevent dummy data display */}
               </div>
 
               {/* Vehicle Data Grid */}
               <div className="flex-grow flex flex-col min-w-0">
                  <div className="flex items-center gap-3 mb-6">
                     <h2 className="text-2xl font-black text-gray-900 tracking-tight truncate">
-                       {(managingVehicle.reg || managingVehicle.rego || (managingVehicle.id && managingVehicle.id.length > 15 ? 'VEHICLE PROFILE' : managingVehicle.id))} – {managingVehicle.make?.toUpperCase() || '—'}
+                       {((managingVehicle.reg || managingVehicle.rego) && !(managingVehicle.reg || managingVehicle.rego).startsWith('VEH-') ? (managingVehicle.reg || managingVehicle.rego) : (managingVehicle.id && managingVehicle.id.length > 15 ? 'VEHICLE PROFILE' : managingVehicle.id))} – {managingVehicle.make?.toUpperCase() || '—'}
                     </h2>
                     <span className="px-2.5 py-0.5 bg-green-50 text-green-600 border border-green-200 rounded-md text-[11px] font-bold uppercase tracking-wider shrink-0">Active</span>
                  </div>
@@ -964,12 +959,12 @@ const Vehicles = () => {
                     </div>
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">VIN / Chassis No.</p>
-                       <p className="text-sm font-bold text-gray-900 break-all">{managingVehicle.vin || '—'}</p>
+                       <p className="text-sm font-bold text-gray-900 break-all">{managingVehicle.vin && !managingVehicle.vin.startsWith('VIN-') ? managingVehicle.vin : '—'}</p>
                     </div>
                     
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">Registration</p>
-                       <p className="text-sm font-bold text-gray-900 uppercase">{managingVehicle.reg || '—'}</p>
+                       <p className="text-sm font-bold text-gray-900 uppercase">{(managingVehicle.reg || managingVehicle.rego) && !(managingVehicle.reg || managingVehicle.rego).startsWith('VEH-') ? (managingVehicle.reg || managingVehicle.rego) : '—'}</p>
                     </div>
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">Odometer</p>
@@ -981,7 +976,7 @@ const Vehicles = () => {
                     </div>
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">Depot / Base</p>
-                       <p className="text-sm font-bold text-gray-900">{managingVehicle.branch || managingVehicle.depot || '—'}</p>
+                       <p className="text-sm font-bold text-gray-900">{(!managingVehicle.branch && !managingVehicle.depot) || managingVehicle.branch === 'N/A' || managingVehicle.depot === 'N/A' ? '—' : (managingVehicle.branch || managingVehicle.depot)}</p>
                      </div>
                   </div>
                </div>
@@ -1049,27 +1044,27 @@ const Vehicles = () => {
                 <div className="flex flex-col gap-4 text-[13px] font-medium">
                    <div className="flex justify-between items-center pb-3 border-b border-gray-50">
                       <span className="text-gray-600">Compliance</span>
-                      <div className="flex items-center gap-1.5 text-green-600"><span className="font-bold">Compliant</span> <CheckCircle2 size={16} className="fill-green-100" /></div>
+                      <span className="font-bold text-gray-400">—</span>
                    </div>
                    <div className="flex justify-between items-center pb-3 border-b border-gray-50">
                       <span className="text-gray-600">Maintenance</span>
-                      <div className="flex items-center gap-1.5 text-green-600"><span className="font-bold">Good</span> <CheckCircle2 size={16} className="fill-green-100" /></div>
+                      <span className="font-bold text-gray-400">—</span>
                    </div>
                    <div className="flex justify-between items-center pb-3 border-b border-gray-50">
                       <span className="text-gray-600">Insurance</span>
-                      <div className="flex items-center gap-1.5 text-green-600"><span className="font-bold">Active</span> <CheckCircle2 size={16} className="fill-green-100" /></div>
+                      <span className="font-bold text-gray-400">—</span>
                    </div>
                    <div className="flex justify-between items-center pb-3 border-b border-gray-50">
                       <span className="text-gray-600">Registration</span>
-                      <div className="flex items-center gap-1.5 text-green-600"><span className="font-bold">Valid</span> <CheckCircle2 size={16} className="fill-green-100" /></div>
+                      <div className="flex items-center gap-1.5 text-gray-600"><span className="font-bold">{managingVehicle.reg ? 'Pending Check' : '—'}</span></div>
                    </div>
                    <div className="flex justify-between items-center pb-3 border-b border-gray-50">
                       <span className="text-gray-600">Roadworthy</span>
-                      <div className="flex items-center gap-1.5 text-green-600"><span className="font-bold">Valid</span> <CheckCircle2 size={16} className="fill-green-100" /></div>
+                      <span className="font-bold text-gray-400">—</span>
                    </div>
                    <div className="flex justify-between items-center pb-2">
                       <span className="text-gray-600">GPS Tracking</span>
-                      <div className="flex items-center gap-1.5 text-blue-600"><span className="font-bold">Online</span> <div className="w-2 h-2 rounded-full bg-blue-600"></div></div>
+                      <span className="font-bold text-gray-400">—</span>
                    </div>
                 </div>
               </>
@@ -1287,23 +1282,23 @@ const Vehicles = () => {
                   </div>
                   <div className="flex justify-between border-b border-gray-50 pb-1.5">
                      <span className="text-gray-600 font-medium">Fifth Wheel Type</span>
-                     <span className="font-bold text-gray-900">JOST JSK37C</span>
+                     <span className="font-bold text-gray-400">—</span>
                   </div>
                   <div className="flex justify-between border-b border-gray-50 pb-1.5">
                      <span className="text-gray-600 font-medium">Electrical Connection</span>
-                     <span className="font-bold text-gray-900">7 Pin (ISO 1185)</span>
+                     <span className="font-bold text-gray-400">—</span>
                   </div>
                   <div className="flex justify-between border-b border-gray-50 pb-1.5">
                      <span className="text-gray-600 font-medium">Air Connection</span>
-                     <span className="font-bold text-gray-900">Gladhand (Red/Yellow)</span>
+                     <span className="font-bold text-gray-400">—</span>
                   </div>
                   <div className="flex justify-between border-b border-gray-50 pb-1.5">
                      <span className="text-gray-600 font-medium">Max Combined GCM</span>
-                     <span className="font-bold text-gray-900">62,500 kg</span>
+                     <span className="font-bold text-gray-400">—</span>
                   </div>
                   <div className="flex justify-between border-b border-gray-50 pb-1.5">
                      <span className="text-gray-600 font-medium">Last Swapped</span>
-                     <span className="font-bold text-gray-900">15 May 2025 - 08:30 AM</span>
+                     <span className="font-bold text-gray-400">—</span>
                   </div>
                   <div className="flex justify-between">
                      <span className="text-gray-600 font-medium">Connection Status</span>
@@ -1338,32 +1333,11 @@ const Vehicles = () => {
             </div>
           </div>
 
-          {/* AI Trailer Recommendations */}
-          <div className="lg:col-span-3 bg-purple-50/40 border border-purple-100 rounded-2xl shadow-sm p-6 flex flex-col h-full">
-            <div className="flex justify-between items-start mb-2">
-               <h3 className="text-[13px] font-black text-purple-900 uppercase tracking-widest leading-snug">AI Trailer Recommendations</h3>
-               <span className="bg-purple-700 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm shrink-0">AI</span>
-            </div>
-            <p className="text-[11px] text-gray-600 mb-5 font-medium">(AI Add-on) Based on upcoming loads and compatibility.</p>
-            
-            <div className="flex flex-col gap-4 mb-auto">
-               <div className="flex justify-between items-center text-[12px] font-bold text-gray-800 bg-white p-2.5 rounded-lg border border-purple-100 shadow-sm">
-                  <span>TRL305 - 6 Car Carrier</span>
-                  <span className="text-green-600 bg-green-50 px-1.5 py-0.5 rounded">95% Match</span>
-               </div>
-               <div className="flex justify-between items-center text-[12px] font-bold text-gray-800 bg-white p-2.5 rounded-lg border border-purple-100 shadow-sm">
-                  <span>TRL202 - 10 Car Carrier</span>
-                  <span className="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded">78% Match</span>
-               </div>
-               <div className="flex justify-between items-center text-[12px] font-bold text-gray-800 bg-white p-2.5 rounded-lg border border-purple-100 shadow-sm">
-                  <span>TRL104 - Enclosed Carrier</span>
-                  <span className="text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded">65% Match</span>
-               </div>
-            </div>
-            
-            <button className="w-full mt-6 py-2.5 bg-white border border-purple-200 text-purple-700 rounded-xl text-[12px] font-bold hover:bg-purple-50 transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
-               <Star size={14} className="fill-purple-700" /> View All Recommendations
-            </button>
+          {/* AI Trailer Recommendations (Hidden to avoid dummy data) */}
+          <div className="lg:col-span-3 bg-slate-50 border border-slate-100 rounded-2xl shadow-sm p-6 flex flex-col h-full justify-center items-center text-center">
+             <Star size={24} className="text-slate-300 mb-2" />
+             <h3 className="text-[13px] font-black text-slate-500 uppercase tracking-widest leading-snug">Recommendations Module</h3>
+             <p className="text-[11px] text-slate-400 font-medium mt-1">Activate AI add-on to see trailer matches.</p>
           </div>
         </div>
 
@@ -3367,7 +3341,6 @@ const Vehicles = () => {
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer"
                 >
                   <option value="TRL105">TRL105 – Flatbed Heavy Trailer (Available)</option>
-                  <option value="TRL302">TRL302 – Refrigerated Box Trailer (Available)</option>
                   <option value="TRL409">TRL409 – Low Loader Heavy Duty (Available)</option>
                   <option value="TRL512">TRL512 – Curtainsider 45ft Trailer (Available)</option>
                   <option value="TRL608">TRL608 – Liquid Tanker Trailer (Available)</option>
@@ -3572,7 +3545,22 @@ const Vehicles = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 mb-1">Vehicle Type</label>
-                  <input type="text" value={editVehicleModal.type || ''} onChange={e => setEditVehicleModal({...editVehicleModal, type: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                  <select 
+                    value={editVehicleModal.type || ''} 
+                    onChange={e => setEditVehicleModal({...editVehicleModal, type: e.target.value})} 
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer"
+                  >
+                    <option value="">Select Type...</option>
+                    <option value="Prime Mover">Prime Mover</option>
+                    <option value="Car Carrier">Car Carrier</option>
+                    <option value="Heavy Rigid (HR)">Heavy Rigid (HR)</option>
+                    <option value="General Freight">General Freight</option>
+                    <option value="Trailer">Trailer</option>
+                    <option value="Car Trailer">Car Trailer</option>
+                    {editVehicleModal.type && !['Prime Mover', 'Car Carrier', 'Heavy Rigid (HR)', 'General Freight', 'Trailer', 'Car Trailer'].includes(editVehicleModal.type) && (
+                      <option value={editVehicleModal.type}>{editVehicleModal.type}</option>
+                    )}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 mb-1">Year</label>
@@ -3742,7 +3730,7 @@ const Vehicles = () => {
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VEHICLE ID * (MANUAL EDIT OPTION)</label>
-                  <input name="id" type="text" defaultValue="VEH009" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-bold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                  <input name="id" type="text" placeholder="e.g. VEH009" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-bold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
                 
                 <div>
@@ -3754,19 +3742,23 @@ const Vehicles = () => {
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">COLOR *</label>
                   <select name="color" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option>White</option>
-                    <option>Red</option>
-                    <option>Blue</option>
-                    <option>Black</option>
+                    <option value="">Select Color</option>
+                    <option value="White">White</option>
+                    <option value="Red">Red</option>
+                    <option value="Blue">Blue</option>
+                    <option value="Black">Black</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">TYPE *</label>
                   <select name="type" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option>Prime Mover</option>
-                    <option>Car Carrier</option>
-                    <option>Heavy Rigid (HR)</option>
-                    <option>General Freight</option>
+                    <option value="">Select Type</option>
+                    <option value="Prime Mover">Prime Mover</option>
+                    <option value="Car Carrier">Car Carrier</option>
+                    <option value="Heavy Rigid (HR)">Heavy Rigid (HR)</option>
+                    <option value="General Freight">General Freight</option>
+                    <option value="Trailer">Trailer</option>
+                    <option value="Car Trailer">Car Trailer</option>
                   </select>
                 </div>
 
@@ -3819,11 +3811,12 @@ const Vehicles = () => {
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION TYPE *</label>
                   <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option>Heavy Vehicle Registration</option>
-                    <option>Light Vehicle Registration</option>
-                    <option>Commercial Registration</option>
-                    <option>Standard Registration</option>
-                    <option>Conditional Registration</option>
+                    <option value="">Select Registration Type</option>
+                    <option value="Heavy Vehicle Registration">Heavy Vehicle Registration</option>
+                    <option value="Light Vehicle Registration">Light Vehicle Registration</option>
+                    <option value="Commercial Registration">Commercial Registration</option>
+                    <option value="Standard Registration">Standard Registration</option>
+                    <option value="Conditional Registration">Conditional Registration</option>
                   </select>
                 </div>
                 <div>
@@ -3833,14 +3826,15 @@ const Vehicles = () => {
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION STATE *</label>
                   <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option>NSW</option>
-                    <option>VIC</option>
-                    <option>QLD</option>
-                    <option>SA</option>
-                    <option>WA</option>
-                    <option>TAS</option>
-                    <option>ACT</option>
-                    <option>NT</option>
+                    <option value="">Select State</option>
+                    <option value="NSW">NSW</option>
+                    <option value="VIC">VIC</option>
+                    <option value="QLD">QLD</option>
+                    <option value="SA">SA</option>
+                    <option value="WA">WA</option>
+                    <option value="TAS">TAS</option>
+                    <option value="ACT">ACT</option>
+                    <option value="NT">NT</option>
                   </select>
                 </div>
 
@@ -3859,11 +3853,12 @@ const Vehicles = () => {
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">FUEL TYPE</label>
                   <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option>Diesel</option>
-                    <option>Petrol</option>
-                    <option>Electric</option>
-                    <option>Hybrid</option>
-                    <option>LPG</option>
+                    <option value="">Select Fuel Type</option>
+                    <option value="Diesel">Diesel</option>
+                    <option value="Petrol">Petrol</option>
+                    <option value="Electric">Electric</option>
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="LPG">LPG</option>
                   </select>
                 </div>
               </div>
@@ -3905,33 +3900,35 @@ const Vehicles = () => {
             <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY MECHANIC</label>
-                <input type="text" defaultValue="Volvo FH16" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                <input type="text" placeholder="e.g. Volvo FH16" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
               </div>
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED ROUTES</label>
-                <input type="text" defaultValue="Sydney - Melbourne" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                <input type="text" placeholder="e.g. Sydney - Melbourne" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
               </div>
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED REGIONS</label>
-                <input type="text" defaultValue="East Coast" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                <input type="text" placeholder="e.g. East Coast" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
               </div>
               
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MAXIMUM DISTANCE PER TRIP (KM)</label>
-                <input type="text" defaultValue="1000" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                <input type="text" placeholder="e.g. 1000" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
               </div>
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">DANGEROUS GOODS CERTIFIED</label>
                 <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                  <option>No</option>
-                  <option>Yes</option>
+                  <option value="">Select Option</option>
+                  <option value="No">No</option>
+                  <option value="Yes">Yes</option>
                 </select>
               </div>
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">HEAVY VEHICLE CERTIFIED</label>
                 <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                  <option>Yes</option>
-                  <option>No</option>
+                  <option value="">Select Option</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
                 </select>
               </div>
             </div>
@@ -4345,16 +4342,18 @@ const Vehicles = () => {
                         >
                            <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
-                                 <img 
-                                      src={v.photoUrl || v.img} 
-                                      alt="Vehicle" 
-                                      onError={(e) => {
-                                         e.target.onerror = null; 
-                                         const isCar = (v.make && (v.make.toLowerCase().includes('nexon') || v.make.toLowerCase().includes('car') || v.make.toLowerCase().includes('tata') || v.make.toLowerCase().includes('suv') || v.make.toLowerCase().includes('sedan'))) || (v.regType && v.regType.toLowerCase().includes('car')) || (v.type && v.type.toLowerCase().includes('car')) || (v.category && v.category.toLowerCase().includes('car'));
-                                         e.target.src = isCar ? "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=60" : "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
-                                      }}
-                                      className="w-10 h-8 rounded object-cover border border-gray-200 shadow-sm" 
-                                  />
+                                 {(v.photoUrl || v.img) ? (
+                                    <img 
+                                        src={v.photoUrl || v.img} 
+                                        alt="Vehicle" 
+                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                        className="w-10 h-8 rounded object-cover border border-gray-200 shadow-sm shrink-0" 
+                                    />
+                                 ) : (
+                                    <div className="w-10 h-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center shadow-sm shrink-0">
+                                       <Truck size={14} className="text-gray-400" />
+                                    </div>
+                                 )}
                                  <div>
                                     <div className="text-[12px] font-bold text-gray-900 whitespace-nowrap">{v.displayId || v.reg || v.id} - {v.make}</div>
                                     <div className="text-[10px] text-gray-500 font-medium whitespace-nowrap">{v.reg}</div>

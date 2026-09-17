@@ -757,7 +757,6 @@ export default function CommandCentre() {
                     <option value="All Types">All Types</option>
                     <option value="Car Carrying">Car Carrying</option>
                     <option value="General Freight">General Freight</option>
-                    <option value="Refrigerated">Refrigerated</option>
                   </select>
                 </div>
 

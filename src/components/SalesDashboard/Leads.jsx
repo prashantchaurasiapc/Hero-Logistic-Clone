@@ -89,7 +89,6 @@ export default function Leads() {
     'Car Carrying',
     'General Freight',
     'Dangerous Goods',
-    'Refrigerated',
     'Flatbed',
     'Container'
   ];
@@ -852,7 +851,6 @@ export default function Leads() {
                     <option value="General Freight">📦 General Freight</option>
                     <option value="Car Carrying">🚗 Car Carrying</option>
                     <option value="Dangerous Goods">⚠️ Dangerous Goods</option>
-                    <option value="Refrigerated">❄️ Refrigerated</option>
                     <option value="Flatbed">🚛 Flatbed</option>
                     <option value="Container">🚢 Container</option>
                   </select>

@@ -46,13 +46,13 @@ export default function Branches() {
       if (Array.isArray(data)) {
         const formatted = data.map(b => ({
           id: b.id,
-          branchName: b.name || b.branchName || 'Branch',
-          branchCode: b.code || b.branchCode || b.id.substring(0, 7).toUpperCase(),
-          company: b.company?.name || 'Hero Logistics Pty Ltd',
-          country: 'Australia',
-          flag: '🇦🇺',
-          state: b.location || 'NSW',
-          manager: b.managerName || 'Unassigned',
+          branchName: b.name || b.branchName || 'Unknown Branch',
+          branchCode: b.code || b.branchCode || '',
+          company: b.company?.name || '',
+          country: '',
+          flag: '',
+          state: b.location || '',
+          manager: b.managerName || '',
           status: b.status || 'Active',
           loads: b._count?.warehouses || 0
         }));
@@ -118,20 +118,24 @@ export default function Branches() {
   const handleAddBranch = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const bName = fd.get('branchName') || 'New Branch';
-    const bCode = fd.get('branchCode') || 'NEW-001';
-    const bLoc = fd.get('address') || 'NSW';
-    const bMgr = fd.get('manager') || 'Unassigned';
+    const bName = fd.get('branchName') || 'Unknown Branch';
+    const bCode = fd.get('branchCode') || '';
+    const bType = fd.get('branchType') || '';
+    const bLoc = fd.get('address') || '';
+    const bMgr = fd.get('manager') || '';
+    const bPhone = fd.get('phone') || '';
 
     const newBranchObj = {
       id: Date.now().toString(),
       branchName: bName,
       branchCode: bCode,
-      company: 'Hero Logistics Pty Ltd',
-      country: 'Australia',
-      flag: '🇦🇺',
+      branchType: bType,
+      company: '',
+      country: '',
+      flag: '',
       state: bLoc,
       manager: bMgr,
+      phone: bPhone,
       status: 'Active',
       loads: 0
     };
@@ -219,9 +223,10 @@ export default function Branches() {
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">BRANCH TYPE</label>
                     <div className="relative">
                        <select name="branchType" className="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 shadow-sm appearance-none cursor-pointer">
-                          <option>Local Branch</option>
-                          <option>Head Office</option>
-                          <option>Distribution Center</option>
+                          <option value="">Select Branch Type</option>
+                          <option value="Local Branch">Local Branch</option>
+                          <option value="Head Office">Head Office</option>
+                          <option value="Distribution Center">Distribution Center</option>
                        </select>
                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     </div>
@@ -303,8 +308,7 @@ export default function Branches() {
                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">WORKING HOURS</label>
                        <input 
                           type="text" 
-                          placeholder="08:00 - 18:00" 
-                          defaultValue="08:00 - 18:00"
+                          placeholder="e.g. 08:00 - 18:00" 
                           className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 shadow-sm"
                        />
                     </div>
@@ -314,8 +318,7 @@ export default function Branches() {
                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">STORAGE SPACE (SQM)</label>
                        <input 
                           type="text" 
-                          placeholder="1000" 
-                          defaultValue="1000"
+                          placeholder="e.g. 1000" 
                           className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 shadow-sm"
                        />
                     </div>
@@ -431,8 +434,15 @@ export default function Branches() {
            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 mb-6">
               <div className="flex flex-col lg:flex-row gap-8 items-start">
                  <div className="flex flex-col gap-3 shrink-0">
-                    <div className="w-[300px] h-[160px] rounded-xl overflow-hidden bg-gray-100 border border-gray-200 relative">
-                       <img src={selectedBranch.photoUrl || "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=60"} alt="Branch" className="w-full h-full object-cover" />
+                    <div className="w-[300px] h-[160px] rounded-xl overflow-hidden bg-gray-100 border border-gray-200 relative flex items-center justify-center">
+                       {selectedBranch.photoUrl ? (
+                           <img src={selectedBranch.photoUrl} alt="Branch" className="w-full h-full object-cover" />
+                       ) : (
+                           <div className="flex flex-col items-center text-gray-400">
+                               <Building size={32} className="mb-2 text-gray-300" />
+                               <span className="text-[12px] font-medium">No Photo Available</span>
+                           </div>
+                       )}
                     </div>
                     <input 
                       type="file" 
@@ -467,37 +477,37 @@ export default function Branches() {
                     <div className="flex flex-col gap-4">
                        <div>
                           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Branch Code</div>
-                          <div className="font-bold text-gray-900">{selectedBranch.branchCode}</div>
+                          <div className="font-bold text-gray-900">{selectedBranch.branchCode || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Branch Type</div>
-                          <div className="font-bold text-gray-900">Head Office</div>
+                          <div className="font-bold text-gray-900">{selectedBranch.branchType || '—'}</div>
                        </div>
                     </div>
 
                     <div className="flex flex-col gap-4">
                        <div>
                           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Branch Manager</div>
-                          <div className="font-bold text-gray-900">{selectedBranch.manager}</div>
+                          <div className="font-bold text-gray-900">{selectedBranch.manager || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Phone</div>
-                          <div className="font-bold text-gray-900">{selectedBranch.phone || 'N/A'}</div>
+                          <div className="font-bold text-gray-900">{selectedBranch.phone || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Email</div>
-                          <div className="font-bold text-purple-600">{selectedBranch.email || 'N/A'}</div>
+                          <div className="font-bold text-gray-900">{selectedBranch.email || '—'}</div>
                        </div>
                     </div>
 
                     <div className="flex flex-col gap-4">
                        <div>
                           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Address</div>
-                          <div className="font-bold text-gray-900">{selectedBranch.state || selectedBranch.location || 'N/A'}</div>
+                          <div className="font-bold text-gray-900">{selectedBranch.state || selectedBranch.location || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Time Zone</div>
-                          <div className="font-bold text-gray-900">Australia/Sydney (AEST)</div>
+                          <div className="font-bold text-gray-900">{selectedBranch.timezone || '—'}</div>
                        </div>
                     </div>
 
@@ -508,18 +518,18 @@ export default function Branches() {
                        </div>
                        <div>
                           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Established</div>
-                          <div className="font-bold text-gray-900">N/A</div>
+                          <div className="font-bold text-gray-900">{selectedBranch.established || '—'}</div>
                        </div>
                     </div>
 
                     <div className="flex flex-col gap-4">
                        <div>
                           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Currency</div>
-                          <div className="font-bold text-gray-900">AUD - Australian Dollar</div>
+                          <div className="font-bold text-gray-900">{selectedBranch.currency || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Payment Terms</div>
-                          <div className="font-bold text-gray-900">30 Days</div>
+                          <div className="font-bold text-gray-900">{selectedBranch.paymentTerms || '—'}</div>
                        </div>
                     </div>
                  </div>
@@ -532,8 +542,12 @@ export default function Branches() {
            <div className={`flex flex-col lg:flex-row gap-6 items-center mb-6`}>
               <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 flex gap-6 items-center flex-grow w-full">
                  <div className="flex flex-col gap-2 shrink-0">
-                    <div className="w-32 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                       <img src={selectedBranch.photoUrl || "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&auto=format&fit=crop&q=60"} alt="Branch" className="w-full h-full object-cover" />
+                    <div className="w-32 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center">
+                       {selectedBranch.photoUrl ? (
+                           <img src={selectedBranch.photoUrl} alt="Branch" className="w-full h-full object-cover" />
+                       ) : (
+                           <Building size={20} className="text-gray-300" />
+                       )}
                     </div>
                     <button onClick={() => setSelectedBranch(null)} className="text-[10px] font-bold text-purple-700 hover:underline cursor-pointer flex items-center justify-center gap-1 w-full"><Edit3 size={10}/> Change Branch</button>
                  </div>
@@ -545,35 +559,35 @@ export default function Branches() {
                           {getStatusBadge(selectedBranch.status)}
                        </div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 mb-0.5">Branch Code</div>
-                       <div className="font-bold text-gray-900">{selectedBranch.branchCode}</div>
+                       <div className="font-bold text-gray-900">{selectedBranch.branchCode || '—'}</div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 mb-0.5">Company</div>
-                       <div className="font-bold text-gray-900">{selectedBranch.company}</div>
+                       <div className="font-bold text-gray-900">{selectedBranch.company || '—'}</div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 mb-0.5">Branch Type</div>
-                       <div className="font-bold text-gray-900">Head Office</div>
+                       <div className="font-bold text-gray-900">{selectedBranch.branchType || '—'}</div>
                     </div>
                     <div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 mb-0.5">Branch Manager</div>
-                       <div className="font-bold text-gray-900">{selectedBranch.manager}</div>
+                       <div className="font-bold text-gray-900">{selectedBranch.manager || '—'}</div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 mb-0.5">Phone</div>
-                       <div className="font-bold text-gray-900">{selectedBranch.phone || 'N/A'}</div>
+                       <div className="font-bold text-gray-900">{selectedBranch.phone || '—'}</div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 mb-0.5">Email</div>
-                       <div className="font-bold text-purple-600 truncate">{selectedBranch.email || 'N/A'}</div>
+                       <div className="font-bold text-gray-900 truncate">{selectedBranch.email || '—'}</div>
                     </div>
                     <div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 mb-0.5">Address</div>
-                       <div className="font-bold text-gray-900">{selectedBranch.state || selectedBranch.location || 'N/A'}</div>
+                       <div className="font-bold text-gray-900">{selectedBranch.state || selectedBranch.location || '—'}</div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 mb-0.5">Time Zone</div>
-                       <div className="font-bold text-gray-900">N/A</div>
+                       <div className="font-bold text-gray-900">{selectedBranch.timezone || '—'}</div>
                     </div>
                     <div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 mb-0.5">Status</div>
                        <div className="flex items-center gap-1.5 font-bold text-green-600"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> {selectedBranch.status || 'Active'}</div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 mb-0.5">Established</div>
-                       <div className="font-bold text-gray-900">N/A</div>
+                       <div className="font-bold text-gray-900">{selectedBranch.established || '—'}</div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 mb-0.5">Currency</div>
-                       <div className="font-bold text-gray-900">AUD - Australian Dollar</div>
+                       <div className="font-bold text-gray-900">{selectedBranch.currency || '—'}</div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 mb-0.5">Payment Terms</div>
-                       <div className="font-bold text-gray-900">30 Days</div>
+                       <div className="font-bold text-gray-900">{selectedBranch.paymentTerms || '—'}</div>
                     </div>
                  </div>
               </div>
@@ -631,63 +645,63 @@ export default function Branches() {
                     <div className="grid grid-cols-2 gap-y-5 gap-x-4">
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">Branch Name</div>
-                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.branchName}</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.branchName || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">Country</div>
-                          <div className="text-[12px] font-bold text-gray-900 flex items-center gap-1.5">{selectedBranch.flag} {selectedBranch.country}</div>
+                          <div className="text-[12px] font-bold text-gray-900 flex items-center gap-1.5">{selectedBranch.country ? `${selectedBranch.flag || ''} ${selectedBranch.country}` : '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">Branch Code</div>
-                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.branchCode}</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.branchCode || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">State / Region</div>
-                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.state}</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.state || selectedBranch.location || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">Company</div>
-                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.company}</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.company || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">Postal Code</div>
-                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.postalCode || 'N/A'}</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.postalCode || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">Branch Type</div>
-                          <div className="text-[12px] font-bold text-gray-900">Head Office</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.branchType || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">Latitude / Longitude</div>
-                          <div className="text-[12px] font-bold text-gray-900">N/A</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.coordinates || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">Manager</div>
-                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.manager}</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.manager || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">ABN</div>
-                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.abn || 'N/A'}</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.abn || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">Phone</div>
-                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.phone || 'N/A'}</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.phone || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">ACN</div>
-                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.acn || 'N/A'}</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.acn || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">Email</div>
-                          <div className="text-[12px] font-bold text-purple-600 truncate">{selectedBranch.email || 'N/A'}</div>
+                          <div className="text-[12px] font-bold text-gray-900 truncate">{selectedBranch.email || '—'}</div>
                        </div>
                        <div>
                           <div className="text-[10px] text-gray-500 mb-0.5">Default Currency</div>
-                          <div className="text-[12px] font-bold text-gray-900">AUD - Australian Dollar</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.currency || '—'}</div>
                        </div>
                        <div className="col-span-2">
                           <div className="text-[10px] text-gray-500 mb-0.5">Website</div>
-                          <div className="text-[12px] font-bold text-purple-600">{selectedBranch.website || 'N/A'}</div>
+                          <div className="text-[12px] font-bold text-gray-900">{selectedBranch.website || '—'}</div>
                        </div>
                     </div>
                  </div>
@@ -700,8 +714,11 @@ export default function Branches() {
                           <div className="w-8 h-8 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mb-1"><Clock size={16}/></div>
                           <div>
                              <div className="text-[12px] font-black text-gray-900 mb-1">Operational Hours</div>
-                             <div className="text-[11px] font-medium text-gray-600 mb-0.5">Mon - Fri: 7:00 AM - 6:00 PM</div>
-                             <div className="text-[11px] font-medium text-gray-600">Sat - Sun: Closed</div>
+                             {selectedBranch.operationalHours ? (
+                                 <div className="text-[11px] font-medium text-gray-600">{selectedBranch.operationalHours}</div>
+                             ) : (
+                                 <div className="text-[11px] font-medium text-gray-400">—</div>
+                             )}
                           </div>
                           <div className="mt-auto pt-2"><span className="text-[11px] font-bold text-purple-700 hover:underline cursor-pointer">Edit Hours</span></div>
                        </div>
@@ -709,8 +726,8 @@ export default function Branches() {
                           <div className="w-8 h-8 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mb-1"><Truck size={16}/></div>
                           <div>
                              <div className="text-[12px] font-black text-gray-900 mb-1">Branch Defaults</div>
-                             <div className="text-[11px] font-medium text-gray-600 mb-0.5">Default Load Type: Car Carrier</div>
-                             <div className="text-[11px] font-medium text-gray-600">Default Payment Terms: 30 Days</div>
+                             <div className="text-[11px] font-medium text-gray-600 mb-0.5">Default Load Type: {selectedBranch.defaultLoadType || '—'}</div>
+                             <div className="text-[11px] font-medium text-gray-600">Default Payment Terms: {selectedBranch.paymentTerms || '—'}</div>
                           </div>
                           <div className="mt-auto pt-2"><span className="text-[11px] font-bold text-purple-700 hover:underline cursor-pointer">Edit Defaults</span></div>
                        </div>
@@ -718,8 +735,8 @@ export default function Branches() {
                           <div className="w-8 h-8 rounded bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 mb-1"><Bell size={16}/></div>
                           <div>
                              <div className="text-[12px] font-black text-gray-900 mb-1">Notification Preferences</div>
-                             <div className="text-[11px] font-medium text-gray-600 mb-0.5">Email Notifications: Enabled</div>
-                             <div className="text-[11px] font-medium text-gray-600">SMS Notifications: Enabled</div>
+                             <div className="text-[11px] font-medium text-gray-600 mb-0.5">Email Notifications: {selectedBranch.emailNotifications || '—'}</div>
+                             <div className="text-[11px] font-medium text-gray-600">SMS Notifications: {selectedBranch.smsNotifications || '—'}</div>
                           </div>
                           <div className="mt-auto pt-2"><span className="text-[11px] font-bold text-purple-700 hover:underline cursor-pointer">Edit Preferences</span></div>
                        </div>
@@ -727,8 +744,8 @@ export default function Branches() {
                           <div className="w-8 h-8 rounded bg-green-50 text-green-600 flex items-center justify-center shrink-0 mb-1"><ShieldCheck size={16}/></div>
                           <div>
                              <div className="text-[12px] font-black text-gray-900 mb-1">Compliance & Safety</div>
-                             <div className="text-[11px] font-medium text-gray-600 mb-0.5">Safety Check Required: Yes</div>
-                             <div className="text-[11px] font-medium text-gray-600">Pre-Start Checklist: Enabled</div>
+                             <div className="text-[11px] font-medium text-gray-600 mb-0.5">Safety Check Required: {selectedBranch.safetyCheckRequired || '—'}</div>
+                             <div className="text-[11px] font-medium text-gray-600">Pre-Start Checklist: {selectedBranch.preStartChecklist || '—'}</div>
                           </div>
                           <div className="mt-auto pt-2"><span className="text-[11px] font-bold text-purple-700 hover:underline cursor-pointer">Edit Compliance</span></div>
                        </div>

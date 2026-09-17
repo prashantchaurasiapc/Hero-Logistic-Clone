@@ -753,7 +753,6 @@ export default function AILoadBuilder({ onBack }) {
                     >
                       <option>General Freight</option>
                       <option>Car Carrying</option>
-                      <option>Refrigerated</option>
                       <option>Oversized</option>
                       <option>Hazardous</option>
                       <option>Express Courier</option>

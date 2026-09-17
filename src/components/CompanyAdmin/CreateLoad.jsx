@@ -11,8 +11,7 @@ import { dispatcherStore } from '../../services/dispatcherStore';
 
 const STOP_TYPES = ['Pickup', 'Drop-off'];
 const PRIORITIES  = ['Normal', 'Urgent', 'High'];
-const LOAD_TYPES  = ['Car Carrying', 'General Freight', 'Dangerous Goods', 'Refrigerated'];
-const TRAILERS    = ['TRL-201 · B Car Carrier', 'TRL-202 · Flatbed', 'TRL-203 · Refrigerated'];
+const LOAD_TYPES  = ['Car Carrying', 'General Freight', 'Dangerous Goods'];
 
 function SectionHeader({ number, title, subtitle, action, colorCls = "bg-indigo-600" }) {
   return (
@@ -380,9 +379,15 @@ export default function CreateLoad({ onBack }) {
 
   const [items, setItems] = useState([
     {
-      id: 1, customer: '', pickupStop: '', dropStop: '', rcog: '', vin: '',
-      stockRec: '', make: 'Ford', model: 'Hilux', year: '2023', colour: 'Black', length: '5,325', width: '1,955',
-      height: '1,875', weight: '2,050', vehicleType: 'Ute / Utility', keys: 'Yes', damageReport: 'Yes', notes: ''
+      id: 1, customer: '', pickupStop: '', dropStop: '',
+      // Car Carrying
+      rcog: '', vin: '', stockRec: '', make: 'Ford', model: 'Hilux', year: '2023', colour: 'Black', 
+      length: '5,325', width: '1,955', height: '1,875', weight: '2,050', vehicleType: 'Ute / Utility', 
+      keys: 'Yes', damageReport: 'Yes', notes: '',
+      // General Freight
+      itemDescription: '', quantity: '1', pallets: '', cubicMetres: '', fragile: 'No', stackable: 'No', specialHandling: '',
+      // Dangerous Goods
+      unNumber: '', dgClass: '', packingGroup: '', hazchemCode: '', msdsUploaded: 'No', emergencyContact: '', complianceChecklist: 'No', placarding: 'No'
     }
   ]);
 
@@ -426,9 +431,14 @@ export default function CreateLoad({ onBack }) {
     bulkPreviewData.forEach(row => {
       setItems(prev => [...prev, {
         id: Date.now() + Math.random(), customer: row.customer, pickupStop: '', dropStop: '',
+        // Car Carrying
         rcog: row.rego, vin: row.vin, stockRec: '', make: row.make, model: row.model,
         year: row.year, colour: row.colour, length: '', width: '', height: '', weight: '',
-        vehicleType: '', keys: 'Yes', damageReport: 'Yes', notes: ''
+        vehicleType: '', keys: 'Yes', damageReport: 'Yes', notes: '',
+        // General Freight
+        itemDescription: '', quantity: '1', pallets: '', cubicMetres: '', fragile: 'No', stackable: 'No', specialHandling: '',
+        // Dangerous Goods
+        unNumber: '', dgClass: '', packingGroup: '', hazchemCode: '', msdsUploaded: 'No', emergencyContact: '', complianceChecklist: 'No', placarding: 'No'
       }]);
     });
     setShowBulkImportModal(false);
@@ -513,9 +523,14 @@ export default function CreateLoad({ onBack }) {
 
   const addItem = () => {
     setItems(prev => [...prev, {
-      id: Date.now(), customer: '', pickupStop: '', dropStop: '', rcog: '', vin: '',
-      stockRec: '', make: '', model: '', year: '', colour: '', length: '', width: '',
-      height: '', weight: '', vehicleType: '', keys: 'Yes', damageReport: 'Yes', notes: ''
+      id: Date.now(), customer: '', pickupStop: '', dropStop: '', 
+      // Car Carrying
+      rcog: '', vin: '', stockRec: '', make: '', model: '', year: '', colour: '', 
+      length: '', width: '', height: '', weight: '', vehicleType: '', keys: 'Yes', damageReport: 'Yes', notes: '',
+      // General Freight
+      itemDescription: '', quantity: '1', pallets: '', cubicMetres: '', fragile: 'No', stackable: 'No', specialHandling: '',
+      // Dangerous Goods
+      unNumber: '', dgClass: '', packingGroup: '', hazchemCode: '', msdsUploaded: 'No', emergencyContact: '', complianceChecklist: 'No', placarding: 'No'
     }]);
   };
 
@@ -551,12 +566,13 @@ export default function CreateLoad({ onBack }) {
           contactPhone: s.contactPhone || ''
         })),
         items: items.map(item => ({
+          ...item,
           stockRef: item.stockRec || item.vin || 'ITEM-REF',
           make: item.make || '',
           model: item.model || '',
           rego: item.rcog || '',
           vin: item.vin || '',
-          quantity: 1,
+          quantity: item.quantity || 1,
           notes: JSON.stringify(item)
         })),
         documents: {
@@ -676,7 +692,18 @@ export default function CreateLoad({ onBack }) {
                 <Truck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
                 <select
                   value={formData.loadType}
-                  onChange={e => setFormData({ ...formData, loadType: e.target.value })}
+                  onChange={e => {
+                    const newType = e.target.value;
+                    setFormData({ ...formData, loadType: newType });
+                    setItems([{
+                      id: Date.now(), customer: '', pickupStop: '', dropStop: '',
+                      rcog: '', vin: '', stockRec: '', make: 'Ford', model: 'Hilux', year: '2023', colour: 'Black', 
+                      length: '5,325', width: '1,955', height: '1,875', weight: '2,050', vehicleType: 'Ute / Utility', 
+                      keys: 'Yes', damageReport: 'Yes', notes: '',
+                      itemDescription: '', quantity: '1', pallets: '', cubicMetres: '', fragile: 'No', stackable: 'No', specialHandling: '',
+                      unNumber: '', dgClass: '', packingGroup: '', hazchemCode: '', msdsUploaded: 'No', emergencyContact: '', complianceChecklist: 'No', placarding: 'No'
+                    }]);
+                  }}
                   className={`${selectCls} pl-10`}
                 >
                   {LOAD_TYPES.map(t => <option key={t}>{t}</option>)}
@@ -1087,8 +1114,16 @@ export default function CreateLoad({ onBack }) {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <FieldLabel required>Customer / Owner</FieldLabel>
-                        <input type="text" value={item.customer} onChange={e => updateItem(item.id, 'customer', e.target.value)}
-                          className={inputCls} placeholder="Customer name" />
+                        <div className="relative">
+                          <select value={item.customer} onChange={e => updateItem(item.id, 'customer', e.target.value)}
+                            className={selectCls}>
+                            <option value="">Select Customer...</option>
+                            {dbCustomers.map((c, i) => (
+                              <option key={c.id || i} value={c.name || c.id}>{c.name || `Customer #${i + 1}`}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        </div>
                       </div>
                       <div>
                         <FieldLabel>Pickup Stop *</FieldLabel>
@@ -1122,134 +1157,300 @@ export default function CreateLoad({ onBack }) {
                       </div>
                     </div>
 
-                    {/* Row 2: RCOG / VIN / Stock */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <FieldLabel>Rego *</FieldLabel>
-                        <div className="relative">
-                          <input type="text" value={item.rcog} onChange={e => updateItem(item.id, 'rcog', e.target.value)}
-                            className={`${inputCls} pr-8`} placeholder="1ABC234" />
-                          <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
+                    {/* Dynamic Fields based on Load Type */}
+                    {formData.loadType === 'Car Carrying' && (
+                      <>
+                        {/* Row 2: RCOG / VIN / Stock */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <FieldLabel required>Rego</FieldLabel>
+                            <div className="flex">
+                              <input type="text" value={item.rcog} onChange={e => updateItem(item.id, 'rcog', e.target.value)}
+                                className={`${inputCls} !rounded-r-none border-r-0 focus:z-10`} placeholder="1ABC234" />
+                              <button type="button" className="px-3.5 bg-white border border-slate-200 rounded-r-xl text-slate-400 hover:text-indigo-600 transition-colors flex items-center justify-center focus:z-10 focus:border-indigo-400 focus:outline-none">
+                                <Search className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                          <div>
+                            <FieldLabel required>VIN / Chassis Number</FieldLabel>
+                            <div className="flex">
+                              <input type="text" value={item.vin} onChange={e => updateItem(item.id, 'vin', e.target.value)}
+                                className={`${inputCls} !rounded-r-none border-r-0 focus:z-10`} placeholder="JHMZE2H77AS000123" />
+                              <button type="button" className="px-3.5 bg-white border border-slate-200 rounded-r-xl text-slate-400 hover:text-indigo-600 transition-colors flex items-center justify-center focus:z-10 focus:border-indigo-400 focus:outline-none">
+                                <Search className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                          <div>
+                            <FieldLabel>Stock / Ref No.</FieldLabel>
+                            <input type="text" value={item.stockRec} onChange={e => updateItem(item.id, 'stockRec', e.target.value)}
+                              className={inputCls} placeholder="STK-7900" />
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <FieldLabel>VIN / Chassis Number *</FieldLabel>
-                        <div className="relative">
-                          <input type="text" value={item.vin} onChange={e => updateItem(item.id, 'vin', e.target.value)}
-                            className={`${inputCls} pr-8`} placeholder="JMM2EJH77..." />
-                          <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
-                        </div>
-                      </div>
-                      <div>
-                        <FieldLabel>Stock / Ref No.</FieldLabel>
-                        <input type="text" value={item.stockRec} onChange={e => updateItem(item.id, 'stockRec', e.target.value)}
-                          className={inputCls} placeholder="STK-7900" />
-                      </div>
-                    </div>
 
-                    {/* Row 3: Make / Model / Year / Colour */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <div>
-                        <FieldLabel>Make</FieldLabel>
-                        <div className="relative">
-                          <select value={item.make} onChange={e => updateItem(item.id, 'make', e.target.value)} className={selectCls}>
-                            <option>Toyota</option><option>Ford</option>
-                          </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                        {/* Row 3: Make / Model / Year / Colour */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div>
+                            <FieldLabel>Make</FieldLabel>
+                            <div className="relative">
+                              <select value={item.make} onChange={e => updateItem(item.id, 'make', e.target.value)} className={selectCls}>
+                                <option>Toyota</option><option>Ford</option>
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div>
+                            <FieldLabel>Model</FieldLabel>
+                            <div className="relative">
+                              <select value={item.model} onChange={e => updateItem(item.id, 'model', e.target.value)} className={selectCls}>
+                                <option>Hilux</option><option>Ranger</option>
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div>
+                            <FieldLabel>Year</FieldLabel>
+                            <div className="relative">
+                              <select value={item.year} onChange={e => updateItem(item.id, 'year', e.target.value)} className={selectCls}>
+                                <option>2024</option><option>2023</option>
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div>
+                            <FieldLabel>Colour</FieldLabel>
+                            <div className="relative">
+                              <select value={item.colour} onChange={e => updateItem(item.id, 'colour', e.target.value)} className={selectCls}>
+                                <option>White</option><option>Black</option>
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <FieldLabel>Model</FieldLabel>
-                        <div className="relative">
-                          <select value={item.model} onChange={e => updateItem(item.id, 'model', e.target.value)} className={selectCls}>
-                            <option>Hilux</option><option>Ranger</option>
-                          </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-                        </div>
-                      </div>
-                      <div>
-                        <FieldLabel>Year</FieldLabel>
-                        <div className="relative">
-                          <select value={item.year} onChange={e => updateItem(item.id, 'year', e.target.value)} className={selectCls}>
-                            <option>2024</option><option>2023</option>
-                          </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-                        </div>
-                      </div>
-                      <div>
-                        <FieldLabel>Colour</FieldLabel>
-                        <div className="relative">
-                          <select value={item.colour} onChange={e => updateItem(item.id, 'colour', e.target.value)} className={selectCls}>
-                            <option>White</option><option>Black</option>
-                          </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* VIN auto-fill notice */}
-                    <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3">
-                      <Info className="w-4 h-4 text-blue-500 shrink-0" />
-                      <p className="text-[11px] font-bold text-blue-700">
-                        Vehicle details auto-filled from Rego/VIN. Please verify and edit if needed.
-                      </p>
-                    </div>
-
-                    {/* Row 4: Dimensions */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                      <div>
-                        <FieldLabel>Length (mm)</FieldLabel>
-                        <input type="text" value={item.length} onChange={e => updateItem(item.id, 'length', e.target.value)}
-                          className={`${inputCls} text-center font-bold`} placeholder="5,325" />
-                      </div>
-                      <div>
-                        <FieldLabel>Width (mm)</FieldLabel>
-                        <input type="text" value={item.width} onChange={e => updateItem(item.id, 'width', e.target.value)}
-                          className={`${inputCls} text-center font-bold`} placeholder="1,955" />
-                      </div>
-                      <div>
-                        <FieldLabel>Height (mm)</FieldLabel>
-                        <input type="text" value={item.height} onChange={e => updateItem(item.id, 'height', e.target.value)}
-                          className={`${inputCls} text-center font-bold`} placeholder="1,875" />
-                      </div>
-                      <div>
-                        <FieldLabel>Weight (kg)</FieldLabel>
-                        <input type="text" value={item.weight} onChange={e => updateItem(item.id, 'weight', e.target.value)}
-                          className={`${inputCls} text-center font-bold`} placeholder="2,050" />
-                      </div>
-                      <div className="col-span-2 sm:col-span-1">
-                        <FieldLabel>Vehicle Type</FieldLabel>
-                        <input type="text" value={item.vehicleType} onChange={e => updateItem(item.id, 'vehicleType', e.target.value)}
-                          className={`${inputCls} text-center font-bold`} placeholder="Ute / Utility" />
-                      </div>
-                    </div>
-
-                    {/* Row 5: Keys / Damage / Notes */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <FieldLabel>Keys</FieldLabel>
-                        <div className="relative">
-                          <select value={item.keys} onChange={e => updateItem(item.id, 'keys', e.target.value)} className={selectCls}>
-                            <option>Yes</option><option>No</option>
-                          </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                        {/* VIN auto-fill notice */}
+                        <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3">
+                          <Info className="w-4 h-4 text-blue-500 shrink-0" />
+                          <p className="text-[11px] font-bold text-blue-700">
+                            Vehicle details auto-filled from Rego/VIN. Please verify and edit if needed.
+                          </p>
                         </div>
-                      </div>
-                      <div>
-                        <FieldLabel>Damage Report Required</FieldLabel>
-                        <div className="relative">
-                          <select value={item.damageReport} onChange={e => updateItem(item.id, 'damageReport', e.target.value)} className={selectCls}>
-                            <option>Yes</option><option>No</option>
-                          </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+
+                        {/* Row 4: Dimensions */}
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 bg-[#F8FAFC] border border-slate-100 rounded-xl p-4">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[10.5px] font-black text-slate-600 tracking-wide">Length (mm)</label>
+                            <input type="text" value={item.length} onChange={e => updateItem(item.id, 'length', e.target.value)}
+                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none" placeholder="5,325" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[10.5px] font-black text-slate-600 tracking-wide">Width (mm)</label>
+                            <input type="text" value={item.width} onChange={e => updateItem(item.id, 'width', e.target.value)}
+                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none" placeholder="1,855" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[10.5px] font-black text-slate-600 tracking-wide">Height (mm)</label>
+                            <input type="text" value={item.height} onChange={e => updateItem(item.id, 'height', e.target.value)}
+                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none" placeholder="1,815" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[10.5px] font-black text-slate-600 tracking-wide">Weight (kg)</label>
+                            <input type="text" value={item.weight} onChange={e => updateItem(item.id, 'weight', e.target.value)}
+                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none" placeholder="2,050" />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[10.5px] font-black text-slate-600 tracking-wide">Vehicle Type</label>
+                            <select value={item.vehicleType || ''} onChange={e => updateItem(item.id, 'vehicleType', e.target.value)}
+                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 outline-none cursor-pointer appearance-none">
+                              <option value="">Select Type...</option>
+                              <option>Ute / Utility</option>
+                              <option>Sedan</option>
+                              <option>SUV</option>
+                              <option>Hatchback</option>
+                              <option>Van</option>
+                              <option>Truck</option>
+                            </select>
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <FieldLabel>Additional Notes</FieldLabel>
-                        <input type="text" value={item.notes} onChange={e => updateItem(item.id, 'notes', e.target.value)}
-                          className={inputCls} placeholder="Any special notes about this vehicle" />
-                      </div>
-                    </div>
+
+                        {/* Row 5: Keys / Damage / Notes */}
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                          <div className="col-span-1">
+                            <FieldLabel>Keys</FieldLabel>
+                            <div className="relative">
+                              <select value={item.keys} onChange={e => updateItem(item.id, 'keys', e.target.value)} className={`${selectCls} text-emerald-600`}>
+                                <option>Yes</option><option>No</option>
+                              </select>
+                              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div className="col-span-1">
+                            <FieldLabel>Damage Report Required</FieldLabel>
+                            <div className="relative">
+                              <select value={item.damageReport} onChange={e => updateItem(item.id, 'damageReport', e.target.value)} className={`${selectCls} text-emerald-600`}>
+                                <option>Yes</option><option>No</option>
+                              </select>
+                              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div className="col-span-1 sm:col-span-2">
+                            <FieldLabel>Additional Notes</FieldLabel>
+                            <input type="text" value={item.notes} onChange={e => updateItem(item.id, 'notes', e.target.value)}
+                              className={inputCls} placeholder="Any special notes about this vehicle..." />
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {formData.loadType === 'General Freight' && (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <FieldLabel required>Item Description</FieldLabel>
+                            <div className="relative">
+                              <select value={item.itemDescription || ''} onChange={e => updateItem(item.id, 'itemDescription', e.target.value)} className={selectCls}>
+                                <option value="">Select Description...</option>
+                                <option>Pallet of electronics</option>
+                                <option>Pallet of goods</option>
+                                <option>Machinery</option>
+                                <option>Building materials</option>
+                                <option>Boxes / Cartons</option>
+                                <option>Other</option>
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div>
+                            <FieldLabel>Quantity</FieldLabel>
+                            <input type="number" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)}
+                              className={inputCls} placeholder="1" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <FieldLabel>Weight (kg)</FieldLabel>
+                            <input type="text" value={item.weight} onChange={e => updateItem(item.id, 'weight', e.target.value)}
+                              className={inputCls} placeholder="500" />
+                          </div>
+                          <div>
+                            <FieldLabel>Dimensions (LxWxH)</FieldLabel>
+                            <input type="text" value={item.dimensions || ''} onChange={e => updateItem(item.id, 'dimensions', e.target.value)}
+                              className={inputCls} placeholder="e.g. 1.2x1.2x1 m" />
+                          </div>
+                          <div>
+                            <FieldLabel>Cubic Metres (m³)</FieldLabel>
+                            <input type="text" value={item.cubicMetres} onChange={e => updateItem(item.id, 'cubicMetres', e.target.value)}
+                              className={inputCls} placeholder="1.44" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <FieldLabel>Fragile</FieldLabel>
+                            <div className="relative">
+                              <select value={item.fragile} onChange={e => updateItem(item.id, 'fragile', e.target.value)} className={selectCls}>
+                                <option>No</option><option>Yes</option>
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div>
+                            <FieldLabel>Stackable</FieldLabel>
+                            <div className="relative">
+                              <select value={item.stackable} onChange={e => updateItem(item.id, 'stackable', e.target.value)} className={selectCls}>
+                                <option>No</option><option>Yes</option>
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div>
+                            <FieldLabel>Special Handling</FieldLabel>
+                            <input type="text" value={item.specialHandling} onChange={e => updateItem(item.id, 'specialHandling', e.target.value)}
+                              className={inputCls} placeholder="Keep upright" />
+                          </div>
+                        </div>
+                        <div>
+                          <FieldLabel>Additional Notes</FieldLabel>
+                          <input type="text" value={item.notes} onChange={e => updateItem(item.id, 'notes', e.target.value)}
+                            className={inputCls} placeholder="Additional delivery instructions" />
+                        </div>
+                      </>
+                    )}
+
+                    {formData.loadType === 'Dangerous Goods' && (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <FieldLabel required>UN Number</FieldLabel>
+                            <input type="text" value={item.unNumber} onChange={e => updateItem(item.id, 'unNumber', e.target.value)}
+                              className={inputCls} placeholder="1203" />
+                          </div>
+                          <div>
+                            <FieldLabel required>DG Class</FieldLabel>
+                            <input type="text" value={item.dgClass} onChange={e => updateItem(item.id, 'dgClass', e.target.value)}
+                              className={inputCls} placeholder="3" />
+                          </div>
+                          <div>
+                            <FieldLabel>Packing Group</FieldLabel>
+                            <input type="text" value={item.packingGroup} onChange={e => updateItem(item.id, 'packingGroup', e.target.value)}
+                              className={inputCls} placeholder="II" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <FieldLabel>Hazchem Code</FieldLabel>
+                            <input type="text" value={item.hazchemCode} onChange={e => updateItem(item.id, 'hazchemCode', e.target.value)}
+                              className={inputCls} placeholder="3YE" />
+                          </div>
+                          <div>
+                            <FieldLabel required>Emergency Contact</FieldLabel>
+                            <input type="text" value={item.emergencyContact} onChange={e => updateItem(item.id, 'emergencyContact', e.target.value)}
+                              className={inputCls} placeholder="1800 XXX XXX" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <FieldLabel>Quantity</FieldLabel>
+                              <input type="number" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)}
+                                className={inputCls} placeholder="1" />
+                            </div>
+                            <div>
+                              <FieldLabel>Weight (kg)</FieldLabel>
+                              <input type="text" value={item.weight} onChange={e => updateItem(item.id, 'weight', e.target.value)}
+                                className={inputCls} placeholder="1000" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <FieldLabel>MSDS Uploaded</FieldLabel>
+                            <div className="relative">
+                              <select value={item.msdsUploaded} onChange={e => updateItem(item.id, 'msdsUploaded', e.target.value)} className={selectCls}>
+                                <option>No</option><option>Yes</option>
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div>
+                            <FieldLabel>Compliance Checklist</FieldLabel>
+                            <div className="relative">
+                              <select value={item.complianceChecklist} onChange={e => updateItem(item.id, 'complianceChecklist', e.target.value)} className={selectCls}>
+                                <option>No</option><option>Yes</option>
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div>
+                            <FieldLabel>Placarding Required</FieldLabel>
+                            <div className="relative">
+                              <select value={item.placarding} onChange={e => updateItem(item.id, 'placarding', e.target.value)} className={selectCls}>
+                                <option>No</option><option>Yes</option>
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
 
                     {/* Add Another Item */}
                     {idx === items.length - 1 && (
@@ -1464,7 +1665,12 @@ export default function CreateLoad({ onBack }) {
                   className={`${selectCls} pl-8`}
                 >
                   <option value="">Select Truck...</option>
-                  {dbTrucks.map((t, idx) => {
+                  {dbTrucks
+                    .filter(t => {
+                      const tType = String(t.category || t.regType || t.type || '').toUpperCase();
+                      return !tType.includes('TRAIL') && !tType.includes('TRL');
+                    })
+                    .map((t, idx) => {
                     const val = t.label || (t.rego ? `${t.code || t.rego} | ${t.make || ''} ${t.model || ''}`.trim() : `${t.make || ''} ${t.model || ''}`.trim() || `Truck #${idx + 1}`);
                     return <option key={t.id || idx} value={t.id}>{val}</option>;
                   })}
@@ -1482,7 +1688,16 @@ export default function CreateLoad({ onBack }) {
                   onChange={e => setFormData({ ...formData, trailer: e.target.value })}
                   className={`${selectCls} pl-8`}
                 >
-                  {TRAILERS.map(t => <option key={t}>{t}</option>)}
+                  <option value="">Select Trailer...</option>
+                  {dbTrucks
+                    .filter(t => {
+                      const tType = String(t.category || t.regType || t.type || '').toUpperCase();
+                      return tType.includes('TRAIL') || tType.includes('TRL');
+                    })
+                    .map((t, idx) => {
+                    const val = t.label || (t.rego ? `${t.code || t.rego} | ${t.make || ''} ${t.model || ''}`.trim() : `${t.make || ''} ${t.model || ''}`.trim() || `Trailer #${idx + 1}`);
+                    return <option key={t.id || idx} value={t.id}>{val}</option>;
+                  })}
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
               </div>
