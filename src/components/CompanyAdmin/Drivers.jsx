@@ -67,6 +67,20 @@ const safeDateToLocale = (dStr, locale = 'en-AU', fallback = '—') => {
   return isNaN(parsed.getTime()) ? fallback : parsed.toLocaleDateString(locale);
 };
 
+const formatPayRate = (rate, type) => {
+  if (rate === null || rate === undefined || rate === '' || rate === '—' || rate === '-') return '—';
+  const num = parseFloat(rate);
+  if (isNaN(num)) return '—';
+  const t = (type || '').toLowerCase();
+  let unit = '';
+  if (t.includes('hour')) unit = ' / hr';
+  else if (t.includes('load')) unit = ' / load';
+  else if (t.includes('km') || t.includes('kilometre')) unit = ' / km';
+  else if (t.includes('day') || t.includes('daily')) unit = ' / day';
+  else if (type) unit = ` / ${type.toLowerCase()}`;
+  return `$${num.toFixed(2)}${unit}`;
+};
+
 const safeCalculateAge = (dStr) => {
   if (!dStr || dStr === '—' || dStr === 'N/A' || dStr === 'null' || dStr === 'undefined' || String(dStr).startsWith('0000')) return '—';
   const parsed = new Date(dStr);
@@ -1342,6 +1356,20 @@ export default function Drivers() {
                   <input type="text" value={editDriverModal.licenseState || editDriverModal.licenceState || ''} onChange={e => setEditDriverModal({ ...editDriverModal, licenseState: e.target.value, licenceState: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" placeholder="e.g. VIC" />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Pay Rate ($)</label>
+                  <input type="number" step="0.01" value={editDriverModal.payRate !== undefined && editDriverModal.payRate !== null ? editDriverModal.payRate : ''} onChange={e => setEditDriverModal({ ...editDriverModal, payRate: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" placeholder="0.00" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Pay Type</label>
+                  <select value={editDriverModal.payType || 'Hourly'} onChange={e => setEditDriverModal({ ...editDriverModal, payType: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer">
+                    <option value="Hourly">Hourly</option>
+                    <option value="Per Load">Per Load</option>
+                    <option value="Per Km">Per Km</option>
+                  </select>
+                </div>
+              </div>
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">Residential Address</label>
                 <input type="text" value={editDriverModal.address || ''} onChange={e => setEditDriverModal({ ...editDriverModal, address: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" placeholder="e.g. 123 George St, Sydney NSW 2000" />
@@ -1365,7 +1393,9 @@ export default function Drivers() {
                     branch: editDriverModal.branch,
                     address: editDriverModal.address,
                     licenseState: editDriverModal.licenseState || editDriverModal.licenceState,
-                    licenseIssueDate: editDriverModal.issueDate || editDriverModal.licenseIssueDate
+                    licenseIssueDate: editDriverModal.issueDate || editDriverModal.licenseIssueDate,
+                    payRate: editDriverModal.payRate !== undefined && editDriverModal.payRate !== '' ? parseFloat(editDriverModal.payRate) : null,
+                    payType: editDriverModal.payType || 'Hourly'
                   });
                   await fetchDrivers();
                   if (selectedDriver && selectedDriver.id === editDriverModal.id) {
@@ -2174,8 +2204,16 @@ export default function Drivers() {
             <form onSubmit={async (e) => {
               e.preventDefault();
               const fd = new FormData(e.target);
+              const baseRateVal = parseFloat(fd.get('baseRate')) || 0;
+              const payTypeVal = fd.get('payType') || selectedDriver?.payType || 'Hourly';
+              let unitStr = '/ hr';
+              if (payTypeVal === 'Per Load') unitStr = '/ load';
+              else if (payTypeVal === 'Per Km') unitStr = '/ km';
+              else if (payTypeVal === 'Hourly') unitStr = '/ hr';
+              else unitStr = ` / ${payTypeVal.toLowerCase()}`;
+
               const newRates = payRatesList.map(r => {
-                if (r.id === 'base') return { ...r, rate: `$${fd.get('baseRate')} / day` };
+                if (r.id === 'base') return { ...r, type: payTypeVal, rate: `$${baseRateVal.toFixed(2)} ${unitStr}` };
                 if (r.id === 'ot15') return { ...r, rate: `$${fd.get('overtime15')} / hr` };
                 if (r.id === 'ot20') return { ...r, rate: `$${fd.get('overtime20')} / hr` };
                 if (r.id === 'km') return { ...r, rate: `$${fd.get('kmRate')} / km` };
@@ -2184,12 +2222,18 @@ export default function Drivers() {
               setPayRatesList(newRates);
               if (selectedDriver?.id) {
                 try {
+                  await api.put(`/drivers/${selectedDriver.id}`, {
+                    payRate: baseRateVal,
+                    payType: payTypeVal
+                  });
+                  setSelectedDriver(prev => prev ? { ...prev, payRate: baseRateVal, payType: payTypeVal } : prev);
+                  setDrivers(prev => prev.map(d => d.id === selectedDriver.id ? { ...d, payRate: baseRateVal, payType: payTypeVal } : d));
                   await api.post('/driver-pay-rates/bulk', {
                     driverId: selectedDriver.id,
                     rates: newRates.map(r => ({
                       category: r.category || 'Base Rate',
-                      type: r.type || 'Daily',
-                      rate: r.rate || '$0.00 / day',
+                      type: r.type || payTypeVal,
+                      rate: r.rate || `$${baseRateVal.toFixed(2)} ${unitStr}`,
                       rule: r.rule || 'Standard',
                       status: r.status || 'Active'
                     }))
@@ -2210,7 +2254,7 @@ export default function Drivers() {
                 </div>
                 <div>
                   <label className="block text-slate-500 font-bold mb-1">Pay Type</label>
-                  <select name="payType" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white">
+                  <select name="payType" defaultValue={selectedDriver?.payType || 'Hourly'} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white">
                     
                     <option value="Hourly">Hourly Rate</option>
                     <option value="Per Load">Per Load</option>
@@ -3982,12 +4026,12 @@ export default function Drivers() {
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                   <div className="flex justify-between items-center mb-4">
                     <SectionHeading title="Employment Information" />
-                    <button className="flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded text-[9px] font-bold text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"><Plus size={10} /> Edit</button>
+                    <button onClick={() => setPayrollModal('edit_rates')} className="flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded text-[9px] font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"><Plus size={10} /> Edit</button>
                   </div>
                   <div className="space-y-1">
                     <DataRow label="Role" value={selectedDriver.role || selectedDriver.driverRole || 'Driver'} />
                     <DataRow label="Reports To" value={selectedDriver.reportsTo || '—'} />
-                    <DataRow label="Pay Rate" value={selectedDriver.payRate ? `$${selectedDriver.payRate} / daily` : '—'} />
+                    <DataRow label="Pay Rate" value={formatPayRate(selectedDriver.payRate, selectedDriver.payType)} />
                     <DataRow label="Pay Type" value={selectedDriver.payType || '—'} />
                     <DataRow label="Super Fund" value={selectedDriver.superFund || superInfo.fundName || '—'} />
                     <DataRow label="TFN" value={selectedDriver.tfn ? `*** *** ${String(selectedDriver.tfn).slice(-3)}` : '—'} />
@@ -5339,8 +5383,8 @@ export default function Drivers() {
                       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col justify-between overflow-hidden">
                         <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-tight mb-2">Pay Rate</div>
                         <div>
-                          <div className="text-base xl:text-lg font-black text-slate-900 truncate">{selectedDriver?.payRate ? `$${selectedDriver.payRate} / ${selectedDriver.payType || 'day'}` : '$0.00 / day'}</div>
-                          <div className="text-[9px] text-slate-400 font-medium mt-1 truncate">{selectedDriver?.payType || 'Daily'} Base Rate</div>
+                          <div className="text-base xl:text-lg font-black text-slate-900 truncate">{formatPayRate(selectedDriver?.payRate, selectedDriver?.payType)}</div>
+                          <div className="text-[9px] text-slate-400 font-medium mt-1 truncate">{selectedDriver?.payType ? `${selectedDriver.payType} Base Rate` : 'Base Pay Rate'}</div>
                         </div>
                       </div>
                     </div>
