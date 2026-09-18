@@ -3,7 +3,7 @@ import {
   ArrowLeft, Save, Zap, Plus, Trash2, GripVertical,
   MapPin, User, Calendar, Clock, Package, Truck,
   Upload, ChevronDown, ChevronLeft, AlertCircle, CheckCircle, Info,
-  Camera, X, Search, Flag, MoreVertical
+  Camera, X, Search, Flag, MoreVertical, DollarSign
 } from 'lucide-react';
 import api from '../../services/api';
 import { dispatcherRepository } from '../../services/dispatcherRepository';
@@ -401,6 +401,8 @@ export default function CreateLoad({ onBack }) {
     trailer: '',
     driver: '',
     loadNotes: '',
+    rate: '',
+    driverPay: '',
   });
 
   const [showAddStopModal, setShowAddStopModal] = useState(false);
@@ -558,6 +560,8 @@ export default function CreateLoad({ onBack }) {
         customerId: formData.customer && formData.customer.length > 5 ? formData.customer : null,
         driverId: formData.driver && formData.driver.length > 5 ? formData.driver : null,
         truckId: formData.truck && formData.truck.length > 5 ? formData.truck : null,
+        rate: formData.rate ? parseFloat(formData.rate) : undefined,
+        driverPay: formData.driverPay ? parseFloat(formData.driverPay) : undefined,
         stops: stops.map((s, idx) => ({
           type: s.type.toUpperCase() === 'PICKUP' ? 'PICKUP' : 'DROPOFF',
           sequenceIndex: idx,
@@ -1735,6 +1739,44 @@ export default function CreateLoad({ onBack }) {
                 className={inputCls}
                 placeholder="Notes visible to driver..."
               />
+            </div>
+          </div>
+        </div>
+
+        {/* ═══════ Section 5: Financials & Pricing ══ */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6">
+          <SectionHeader number="5" title="Financials & Pricing" subtitle="Customer revenue & driver pay allocation" colorCls="bg-emerald-600" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <FieldLabel required>Customer Agreed Price / Income ($ AUD)</FieldLabel>
+              <div className="relative">
+                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.rate}
+                  onChange={e => setFormData({ ...formData, rate: e.target.value })}
+                  className={`${inputCls} pl-10 font-black text-emerald-700 text-sm`}
+                  placeholder="e.g. 1500.00"
+                  required
+                />
+              </div>
+              <p className="text-[10px] font-medium text-slate-400 mt-1">This amount creates the customer invoice and reflects in Company Finance Revenue.</p>
+            </div>
+            <div>
+              <FieldLabel>Agreed Driver Pay ($ AUD)</FieldLabel>
+              <div className="relative">
+                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-600" />
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.driverPay}
+                  onChange={e => setFormData({ ...formData, driverPay: e.target.value })}
+                  className={`${inputCls} pl-10 font-black text-indigo-700 text-sm`}
+                  placeholder="e.g. 450.00 (optional: leaves default rate)"
+                />
+              </div>
+              <p className="text-[10px] font-medium text-slate-400 mt-1">Directly credited to driver upon completion and deducted in Company Expenses.</p>
             </div>
           </div>
         </div>
