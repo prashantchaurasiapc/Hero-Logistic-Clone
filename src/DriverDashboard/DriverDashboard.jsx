@@ -143,6 +143,16 @@ const DriverDashboard = () => {
     taxNote: 'Before tax'
   };
 
+  const hasActiveOrCompletedWork = Boolean(
+    (metrics.loadsToday > 0) || 
+    (metrics.completedThisWeek > 0) || 
+    (metrics.driveTimeToday && metrics.driveTimeToday !== '0h 00m') || 
+    dashboardData?.currentLoad
+  );
+
+  const displayPayThisPeriod = hasActiveOrCompletedWork ? (metrics.payThisPeriod || 0) : 0;
+  const displayPaySummaryAmount = hasActiveOrCompletedWork ? (paySummary.amount || 0) : 0;
+
   return (
     <div className="flex-grow bg-[#f8fafc] p-4 lg:p-6 w-full text-left font-sans overflow-y-auto min-h-screen">
       
@@ -333,7 +343,7 @@ const DriverDashboard = () => {
               <FiDollarSign className="text-emerald-500 text-sm" /> Pay This Period
             </div>
             <div className="text-2xl font-black text-slate-900 leading-none">
-              ${typeof metrics.payThisPeriod === 'number' ? metrics.payThisPeriod.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : metrics.payThisPeriod}
+              ${typeof displayPayThisPeriod === 'number' ? displayPayThisPeriod.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : displayPayThisPeriod}
             </div>
             <div className="text-[10.5px] font-bold text-slate-500 mt-1">Before tax</div>
           </div>
@@ -709,7 +719,7 @@ const DriverDashboard = () => {
               </div>
               <div>
                 <div className="text-2xl font-black text-slate-900 leading-tight">
-                  ${typeof paySummary.amount === 'number' ? paySummary.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : paySummary.amount}
+                  ${typeof displayPaySummaryAmount === 'number' ? displayPaySummaryAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : displayPaySummaryAmount}
                 </div>
                 <div className="text-xs font-bold text-slate-400">{paySummary.taxNote || 'Before tax'}</div>
               </div>
