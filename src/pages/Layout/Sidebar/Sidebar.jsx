@@ -100,7 +100,16 @@ const roleConfigs = {
       { icon: <FiTruck />, label: 'Vehicles', path: '/company-admin/vehicles' },
       { icon: <FiMapPin />, label: 'Branches', path: '/company-admin/branches' },
       { icon: <FiLayers />, label: 'Assets', path: '/company-admin/assets' },
-      { icon: <FiHome />, label: 'Warehouse', path: '/company-admin/warehouse' },
+      {
+        key: 'warehouse-menu',
+        icon: <FiHome />,
+        label: 'Warehouse',
+        path: '/company-admin/warehouse',
+        items: [
+          { label: 'Dashboard', path: '/company-admin/warehouse' },
+          { label: 'Inventory (Freight)', path: '/company-admin/warehouse-inventory' }
+        ]
+      },
       { icon: <FiTag />, label: 'Pricing', path: '/company-admin/pricing' },
       { icon: <FiDollarSign />, label: 'Payroll', path: '/company-admin/payroll' },
       { icon: <FiDollarSign />, label: 'Finance', path: '/company-admin/finance' },
@@ -151,7 +160,16 @@ const roleConfigs = {
       { icon: <FiUsers />, label: 'Drivers', path: '/dispatcher/drivers' },
       { icon: <FiTruck />, label: 'Vehicles / Trailers', path: '/dispatcher/vehicles' },
       { icon: <FiUsers />, label: 'Customers', path: '/dispatcher/customers' },
-      { icon: <FiHome />, label: 'Yard / Warehouse', path: '/dispatcher/warehouse' },
+      {
+        key: 'warehouse-menu',
+        icon: <FiHome />,
+        label: 'Yard / Warehouse',
+        path: '/dispatcher/warehouse',
+        items: [
+          { label: 'Dashboard', path: '/dispatcher/warehouse' },
+          { label: 'Inventory (Freight)', path: '/dispatcher/warehouse-inventory' }
+        ]
+      },
       { icon: <FiClipboard />, label: 'Workforce Availability', path: '/dispatcher/workforce-availability' },
       { icon: <FiMessageSquare />, label: 'Messages', path: '/dispatcher/messages' },
       { icon: <FiBarChart2 />, label: 'Reports & Analytics', path: '/dispatcher/reports' },

@@ -116,6 +116,7 @@ import Assets from './components/CompanyAdmin/Assets';
 import AssetDetails from './components/CompanyAdmin/AssetDetails';
 import CreateAsset from './components/CompanyAdmin/CreateAsset';
 import Warehouse from './components/CompanyAdmin/Warehouse';
+import WarehouseInventory from './components/CompanyAdmin/WarehouseInventory';
 import StandalonePricing from './components/CompanyAdmin/Pricing';
 import StandalonePayroll from './components/CompanyAdmin/CompanyAdminPayroll';
 import Finance from './components/CompanyAdmin/Finance';
@@ -251,6 +252,7 @@ function App() {
             <Route path="assets/new" element={<CreateAsset />} />
             <Route path="assets/:id" element={<AssetDetails />} />
             <Route path="warehouse" element={<Warehouse />} />
+            <Route path="warehouse-inventory" element={<WarehouseInventory />} />
             <Route path="warehouse/current-stock" element={<WarehouseCurrentStock />} />
             <Route path="warehouse/inbound" element={<WarehouseInbound />} />
             <Route path="warehouse/outbound" element={<WarehouseOutbound />} />
@@ -296,6 +298,7 @@ function App() {
             <Route path="vehicles" element={<Vehicles />} />
             <Route path="customers" element={<Customers />} />
             <Route path="warehouse" element={<Warehouse />} />
+            <Route path="warehouse-inventory" element={<WarehouseInventory />} />
             <Route path="current-stock" element={<WarehouseCurrentStock />} />
             <Route path="load-lanes" element={<WarehouseLoadLanes />} />
             <Route path="movements" element={<WarehouseMovements />} />
