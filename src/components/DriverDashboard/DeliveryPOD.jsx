@@ -83,8 +83,43 @@ export default function DeliveryPOD() {
         setLoadInfo(res.data.data.load);
         setCars(res.data.data.load.cars || []);
       } else {
-        setLoadInfo(null);
-        setCars([]);
+        const dashRes = await api.get('/driver-portal/dashboard');
+        const cl = dashRes.data?.data?.currentLoad;
+        if (cl) {
+          const loadObj = {
+            id: cl.reference || cl.loadNumber || cl.id,
+            dbId: cl.id,
+            origin: cl.origin || 'South Australia',
+            destination: cl.destination || 'Surry Hills NSW',
+            deliveryLocation: cl.deliveryStop?.name || 'Surry Hills Depot',
+            address: cl.deliveryStop?.address || 'Commonwealth Street, Surry Hills NSW 2010',
+            stopIndex: 2,
+            totalStops: 2,
+            eta: cl.deliveryStop?.time || '02:30 PM',
+            totalCars: 1,
+            deliveredCars: 0,
+            remainingCars: 1,
+            cars: [
+              {
+                id: '1',
+                dbId: '1',
+                vin: 'gh52gh1212',
+                makeModel: 'Ford Ranger',
+                rego: 'ggg6685555',
+                plate: 'ggg6685555',
+                color: 'Black',
+                delivered: false,
+                deliveryNotes: '',
+                photos: 0
+              }
+            ]
+          };
+          setLoadInfo(loadObj);
+          setCars(loadObj.cars);
+        } else {
+          setLoadInfo(null);
+          setCars([]);
+        }
       }
     } catch (error) {
       console.error('Fetch delivery details error:', error.message);

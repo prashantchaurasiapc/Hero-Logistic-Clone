@@ -566,23 +566,27 @@ export default function CreateLoad({ onBack }) {
           contactPhone: s.contactPhone || ''
         })),
         items: items.map(item => ({
-          ...item,
-          stockRef: item.stockRec || item.vin || 'ITEM-REF',
+          stockRef: item.stockRec || item.vin || item.rcog || 'ITEM-REF',
           make: item.make || '',
           model: item.model || '',
-          rego: item.rcog || '',
+          rego: item.rcog || item.rego || '',
           vin: item.vin || '',
-          quantity: item.quantity || 1,
+          year: item.year ? parseInt(String(item.year).replace(/[^0-9]/g, ''), 10) || null : null,
+          color: item.colour || item.color || null,
+          quantity: parseInt(String(item.quantity || 1).replace(/[^0-9]/g, ''), 10) || 1,
+          weightKg: item.weight ? parseInt(String(item.weight).replace(/[^0-9]/g, ''), 10) || 0 : 0,
           notes: JSON.stringify(item)
         })),
-        documents: {
-          create: Object.entries(uploadedPhotos).flatMap(([key, photos]) => 
-            photos.map(photoDataUrl => ({
-              type: key.includes('pickup') ? 'PICKUP_PHOTO' : key.includes('loading') ? 'LOADING_PHOTO' : 'DELIVERY_PHOTO',
-              fileUrl: photoDataUrl
-            }))
-          )
-        }
+        ...(Object.keys(uploadedPhotos).length > 0 && {
+          documents: {
+            create: Object.entries(uploadedPhotos).flatMap(([key, photos]) => 
+              photos.map(photoDataUrl => ({
+                type: key.includes('pickup') ? 'PICKUP_PHOTO' : key.includes('loading') ? 'LOADING_PHOTO' : 'DELIVERY_PHOTO',
+                fileUrl: photoDataUrl
+              }))
+            )
+          }
+        })
       };
 
       const res = await api.post('/company-admin/loads', payload);

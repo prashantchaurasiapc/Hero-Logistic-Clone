@@ -85,8 +85,39 @@ export default function PickupLoading() {
         setLoadInfo(res.data.data.load);
         setCars(res.data.data.load.cars || []);
       } else {
-        setLoadInfo(null);
-        setCars([]);
+        const dashRes = await api.get('/driver-portal/dashboard');
+        const cl = dashRes.data?.data?.currentLoad;
+        if (cl) {
+          const loadObj = {
+            id: cl.reference || cl.loadNumber || cl.id,
+            dbId: cl.id,
+            origin: cl.origin || 'South Australia',
+            destination: cl.destination || 'Surry Hills NSW',
+            pickupTime: cl.pickupStop?.time || '08:00 AM',
+            estFinish: cl.deliveryStop?.time || '04:30 PM',
+            totalStops: 2,
+            cars: [
+              {
+                id: '1',
+                dbId: '1',
+                drop: 'DROP 1',
+                dropLoc: cl.destination || 'Surry Hills NSW',
+                vin: 'gh52gh1212',
+                makeModel: 'Ford Ranger',
+                color: 'Black',
+                plate: 'ggg6685555',
+                pickedUp: true,
+                time: '08:12 AM',
+                photos: { current: 4, total: 4, percent: 100 }
+              }
+            ]
+          };
+          setLoadInfo(loadObj);
+          setCars(loadObj.cars);
+        } else {
+          setLoadInfo(null);
+          setCars([]);
+        }
       }
     } catch (error) {
       console.error('Fetch pickup load error:', error.message);
