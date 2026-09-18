@@ -167,6 +167,15 @@ const FileListIcon = () => (
 // === DATA ===
 
 export default function WarehousePickPackDispatch({ wh, onBack }) {
+  if (!wh) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center', background: '#F8FAFC', minHeight: '100vh' }}>
+        <h2 style={{ fontSize: 18, color: '#0F172A', marginBottom: 12 }}>No Warehouse Selected</h2>
+        <p style={{ fontSize: 14, color: '#64748B', marginBottom: 24 }}>Please select a warehouse first to view its pick and pack tasks.</p>
+        <button onClick={onBack} style={{ padding: '10px 20px', borderRadius: 8, background: '#4F46E5', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>&lt; Back to Dashboard</button>
+      </div>
+    );
+  }
   const [tasks, setTasks] = useState([]);
   const [showCreatePickTaskModal, setShowCreatePickTaskModal] = useState(false);
   const [viewTaskModal, setViewTaskModal] = useState(null);

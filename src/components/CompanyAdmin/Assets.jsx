@@ -180,13 +180,33 @@ export default function Assets() {
       if (branchFilter !== 'All') params.branch = branchFilter;
       if (statusFilter !== 'All') params.status = statusFilter;
 
+      const cleanStr = (val, dummyVals = []) => {
+        if (!val) return '';
+        if (dummyVals.includes(val)) return '';
+        return val;
+      };
+
+      const cleanAsset = (a) => ({
+        ...a,
+        category: cleanStr(a.category, ['Equipment']),
+        type: cleanStr(a.type, ['General']),
+        branch: typeof a.branch === 'object' ? a.branch : cleanStr(a.branch, ['Sydney Head Office', 'asd']),
+        location: typeof a.location === 'object' ? a.location : cleanStr(a.location, ['Yard', 'Yard - Sydney HO', 'Sydney Head Office']),
+        assignedTo: typeof a.assignedTo === 'object' ? a.assignedTo : cleanStr(a.assignedTo, ['Unassigned']),
+        status: cleanStr(a.status, ['Active', 'ACTIVE']),
+        condition: cleanStr(a.condition, ['Good', 'GOOD']),
+        operatingHours: cleanStr(a.operatingHours, ['0 Hrs', '0']),
+        usageType: cleanStr(a.usageType, ['Operational']),
+        model: a.model === a.name ? '' : a.model
+      });
+
       const res = await api.get('/company-admin/assets', { params });
       if (res.data && res.data.data) {
         const payloadData = res.data.data;
         if (Array.isArray(payloadData)) {
-          setAssetList(payloadData);
+          setAssetList(payloadData.map(cleanAsset));
         } else if (payloadData.assets) {
-          setAssetList(payloadData.assets);
+          setAssetList(payloadData.assets.map(cleanAsset));
           if (payloadData.stats) setStats(payloadData.stats);
           if (payloadData.branches) setBranches(payloadData.branches);
         }
@@ -600,7 +620,7 @@ export default function Assets() {
                         
                         <td className="p-4">
                           <div onClick={() => setSelectedAsset(asset)} className="text-xs font-black text-slate-900 group-hover:text-purple-700 transition-colors cursor-pointer">{asset.name}</div>
-                          <div className="text-[10px] font-semibold text-slate-400 mt-0.5">{asset.model}</div>
+                          <div className="text-[10px] font-semibold text-slate-400 mt-0.5">{asset.model || '—'}</div>
                         </td>
                         
                         <td className="p-4">
@@ -613,16 +633,16 @@ export default function Assets() {
                         
                         <td className="p-4">
                           <div className="text-xs font-bold text-slate-800">
-                            {typeof asset.branch === 'object' ? (asset.branch?.name || asset.branch?.location || 'Sydney Head Office') : (asset.branch || 'Sydney Head Office')}
+                            {typeof asset.branch === 'object' ? (asset.branch?.name || asset.branch?.location || '—') : (asset.branch || '—')}
                           </div>
                           <div className="text-[10px] font-semibold text-slate-500 mt-0.5">
-                            {typeof asset.location === 'object' ? (asset.location?.name || asset.location?.location || 'Yard') : (asset.location || 'Yard')}
+                            {typeof asset.location === 'object' ? (asset.location?.name || asset.location?.location || '—') : (asset.location || '—')}
                           </div>
                         </td>
                         
                         <td className="p-4">
                           <div className="text-xs font-semibold text-slate-600">
-                            {typeof asset.assignedTo === 'object' ? (asset.assignedTo?.name || 'Unassigned') : (asset.assignedTo || 'Unassigned')}
+                            {typeof asset.assignedTo === 'object' ? (asset.assignedTo?.name || '—') : (asset.assignedTo || '—')}
                           </div>
                         </td>
                         

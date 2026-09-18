@@ -53,7 +53,7 @@ export default function Branches() {
           flag: '',
           state: b.location || '',
           manager: b.managerName || '',
-          status: b.status || 'Active',
+          status: b.status || '',
           loads: b._count?.warehouses || 0
         }));
         setBranchList(formatted);
@@ -64,6 +64,7 @@ export default function Branches() {
   };
 
   const getStatusBadge = (status) => {
+    if (!status) return <span className="font-bold text-gray-900">—</span>;
     switch(status) {
       case 'Active':
         return <span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Active</span>;
@@ -136,7 +137,7 @@ export default function Branches() {
       state: bLoc,
       manager: bMgr,
       phone: bPhone,
-      status: 'Active',
+      status: '',
       loads: 0
     };
 
@@ -514,7 +515,11 @@ export default function Branches() {
                     <div className="flex flex-col gap-4">
                        <div>
                           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Status</div>
-                          <div className="flex items-center gap-1.5 font-bold text-gray-900"><div className="w-2 h-2 rounded-full bg-green-500"></div> {selectedBranch.status || 'Active'}</div>
+                          <div className="flex items-center gap-1.5 font-bold text-gray-900">
+                             {selectedBranch.status ? (
+                                 <><div className="w-2 h-2 rounded-full bg-green-500"></div> {selectedBranch.status}</>
+                             ) : '—'}
+                          </div>
                        </div>
                        <div>
                           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Established</div>
@@ -581,7 +586,11 @@ export default function Branches() {
                     </div>
                     <div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 mb-0.5">Status</div>
-                       <div className="flex items-center gap-1.5 font-bold text-green-600"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> {selectedBranch.status || 'Active'}</div>
+                       <div className="flex items-center gap-1.5 font-bold text-green-600">
+                          {selectedBranch.status ? (
+                              <><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> {selectedBranch.status}</>
+                          ) : <span className="text-gray-900">—</span>}
+                       </div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 mb-0.5">Established</div>
                        <div className="font-bold text-gray-900">{selectedBranch.established || '—'}</div>
                        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2 mb-0.5">Currency</div>

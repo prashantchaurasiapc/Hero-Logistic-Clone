@@ -14,25 +14,41 @@ export default function CreateAsset() {
   const [formData, setFormData] = useState({
     name: '',
     serialNumber: '',
-    category: 'Workshop Equipment',
+    category: '',
     make: '',
     model: '',
-    year: '2024',
+    year: '',
     photoUrl: '',
-    branchName: 'Sydney Head Office',
+    branchId: '',
     location: '',
     assignedTo: '',
-    status: 'Active',
-    condition: 'Good',
+    status: '',
+    condition: '',
     lastServiceDate: '',
     nextServiceDate: '',
     serviceProvider: '',
     purchaseDate: '',
     purchasePrice: '',
-    lifespan: '5',
-    depreciation: 'Straight Line',
+    lifespan: '',
+    depreciation: '',
     notes: ''
   });
+
+  const [branches, setBranches] = useState([]);
+
+  React.useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const res = await api.get('/company-admin/branches');
+        if (res.data && res.data.data) {
+          setBranches(Array.isArray(res.data.data) ? res.data.data : []);
+        }
+      } catch (err) {
+        console.error('Failed to load branches:', err);
+      }
+    };
+    fetchBranches();
+  }, []);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -41,6 +57,10 @@ export default function CreateAsset() {
   const handleSaveAsset = async () => {
     if (!formData.name.trim()) {
       setErrorMessage('Asset Name is required');
+      return;
+    }
+    if (!formData.branchId) {
+      setErrorMessage('Branch is required. Please select a Home Branch.');
       return;
     }
 
@@ -55,14 +75,15 @@ export default function CreateAsset() {
         category: formData.category,
         make: formData.make.trim() || null,
         model: formData.model.trim() || null,
-        type: formData.model.trim() ? `${formData.make} ${formData.model}` : formData.category,
-        year: formData.year ? parseInt(formData.year) : 2024,
-        status: formData.status,
-        condition: formData.condition,
+        type: formData.model.trim() ? `${formData.make} ${formData.model}` : (formData.category || null),
+        year: formData.year ? parseInt(formData.year) : null,
+        status: formData.status || null,
+        condition: formData.condition || null,
         purchasePrice: formData.purchasePrice ? parseFloat(formData.purchasePrice) : null,
         purchaseDate: formData.purchaseDate || null,
         photoUrl: formData.photoUrl || null,
         image: formData.photoUrl || null,
+        branchId: formData.branchId,
         notes: formData.notes
       };
 
@@ -165,6 +186,7 @@ export default function CreateAsset() {
                 onChange={e => handleChange('category', e.target.value)}
                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 cursor-pointer"
               >
+                <option value="" disabled>Select Category...</option>
                 <option value="Workshop Equipment">Workshop Equipment</option>
                 <option value="Forklifts">Forklifts</option>
                 <option value="Containers">Containers</option>
@@ -273,12 +295,16 @@ export default function CreateAsset() {
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Home Branch</label>
               <select 
-                value={formData.branchName}
-                onChange={e => handleChange('branchName', e.target.value)}
+                value={formData.branchId}
+                onChange={e => handleChange('branchId', e.target.value)}
                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 cursor-pointer"
               >
-                <option value="Sydney Head Office">Sydney Head Office</option>
-                <option value="Melbourne Depot">Melbourne Depot</option>
+                <option value="" disabled>Select Branch...</option>
+                {branches.map(b => (
+                  <option key={b.id || b.branchId} value={b.realId || b.id || b.branchId}>
+                    {b.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="flex flex-col gap-2">
@@ -350,6 +376,7 @@ export default function CreateAsset() {
                 onChange={e => handleChange('condition', e.target.value)}
                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 cursor-pointer"
               >
+                <option value="" disabled>Select Condition...</option>
                 <option value="New">New</option>
                 <option value="Good">Good</option>
                 <option value="Fair">Fair</option>
@@ -447,7 +474,7 @@ export default function CreateAsset() {
                 type="text" 
                 value={formData.lifespan}
                 onChange={e => handleChange('lifespan', e.target.value)}
-                placeholder="5" 
+                placeholder="e.g. 5" 
                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-100 placeholder-slate-300" 
               />
             </div>
@@ -458,6 +485,7 @@ export default function CreateAsset() {
                 onChange={e => handleChange('depreciation', e.target.value)}
                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-purple-400 cursor-pointer"
               >
+                <option value="" disabled>Select Depreciation...</option>
                 <option value="Straight Line">Straight Line</option>
                 <option value="Declining Balance">Declining Balance</option>
               </select>

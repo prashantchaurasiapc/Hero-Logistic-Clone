@@ -109,6 +109,15 @@ const AlertTriangleIcon = ({ color }) => (
 );
 
 export default function WarehouseStockMovements({ wh, onBack }) {
+  if (!wh) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center', background: '#F8FAFC', minHeight: '100vh' }}>
+        <h2 style={{ fontSize: 18, color: '#0F172A', marginBottom: 12 }}>No Warehouse Selected</h2>
+        <p style={{ fontSize: 14, color: '#64748B', marginBottom: 24 }}>Please select a warehouse first to view its stock movements.</p>
+        <button onClick={onBack} style={{ padding: '10px 20px', borderRadius: 8, background: '#4F46E5', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>&lt; Back to Dashboard</button>
+      </div>
+    );
+  }
   const [movements, setMovements] = useState([]);
   const [showNewMovementModal, setShowNewMovementModal] = useState(false);
   const [viewMovementModal, setViewMovementModal] = useState(null);

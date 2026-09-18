@@ -296,9 +296,9 @@ export default function Warehouse() {
     code: '',
     photoUrl: '',
     image: '',
-    branch: 'Sydney Main',
-    status: 'Active',
-    type: 'General',
+    branch: '',
+    status: '',
+    type: '',
     totalAreaSqm: '',
     palletCapacity: '',
     loadingDocks: '',
@@ -418,7 +418,7 @@ export default function Warehouse() {
         }
         showToast(`Warehouse "${addForm.name}" created & saved to database!`);
         setAddForm({
-          name: '', code: '', branch: 'Sydney Main', status: 'Active', type: 'General',
+          name: '', code: '', branch: '', status: '', type: '',
           totalAreaSqm: '', palletCapacity: '', loadingDocks: '',
           street: '', suburb: '', state: '', postalCode: '',
           managerName: '', managerPhone: '', managerEmail: '', emergencyContact: '',
@@ -504,7 +504,8 @@ export default function Warehouse() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Status</label>
-                <select value={editModal.status || 'Active'} onChange={e => setEditModal({ ...editModal, status: e.target.value })} className="wh-input">
+                <select value={editModal.status || ''} onChange={e => setEditModal({ ...editModal, status: e.target.value })} className="wh-input">
+                  <option value="">Select Status...</option>
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
                   <option value="Maintenance">Maintenance</option>
@@ -518,7 +519,8 @@ export default function Warehouse() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Warehouse Type</label>
-                <select value={editModal.type || 'General'} onChange={e => setEditModal({ ...editModal, type: e.target.value })} className="wh-input">
+                <select value={editModal.type || ''} onChange={e => setEditModal({ ...editModal, type: e.target.value })} className="wh-input">
+                  <option value="">Select Type...</option>
                   <option value="General">General</option>
                   <option value="Cold Storage">Cold Storage</option>
                   <option value="Distribution Centre">Distribution Centre</option>
@@ -692,8 +694,8 @@ export default function Warehouse() {
                     { label: 'Warehouse Code', val: wh.code },
                     { label: 'Type', val: wh.type },
                     { label: 'Branch', val: wh.branch },
-                    { label: 'Phone', val: wh.phone || '+61 2 9756 4321' },
-                    { label: 'Email', val: wh.email || 'warehouse@hero.com.au' },
+                    { label: 'Phone', val: wh.phone || wh.managerPhone || '—' },
+                    { label: 'Email', val: wh.email || wh.managerEmail || '—' },
                     { label: 'Address', val: wh.addr },
                   ].map((f, i) => (
                     <div key={i}>
@@ -729,8 +731,8 @@ export default function Warehouse() {
                   <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>WAREHOUSE INFORMATION</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 10px' }}>
                     {[
-                      { l: 'Warehouse Code', v: wh.code }, { l: 'Total Area', v: `${wh.totalAreaSqm || 5000} m²` },
-                      { l: 'Type', v: wh.type }, { l: 'Pallet Capacity', v: (wh.palletCapacity || 15000).toLocaleString() },
+                      { l: 'Warehouse Code', v: wh.code || '—' }, { l: 'Total Area', v: wh.totalAreaSqm ? `${wh.totalAreaSqm} m²` : '—' },
+                      { l: 'Type', v: wh.type || '—' }, { l: 'Pallet Capacity', v: wh.palletCapacity ? Number(wh.palletCapacity).toLocaleString() : '—' },
                       { l: 'Branch', v: wh.branch }, { l: 'Status', v: wh.status },
                     ].map((f, i) => (
                       <div key={i}>
@@ -744,8 +746,8 @@ export default function Warehouse() {
                   <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>CONTACT & SETTINGS</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 10px' }}>
                     {[
-                      { l: 'Phone', v: wh.phone || '+61 2 9756 4321' }, { l: 'Email', v: wh.email || 'warehouse@hero.com' },
-                      { l: 'Timezone', v: 'AEST' }, { l: 'Auto Tasks', v: 'Enabled' },
+                      { l: 'Phone', v: wh.phone || wh.managerPhone || '—' }, { l: 'Email', v: wh.email || wh.managerEmail || '—' },
+                      { l: 'Timezone', v: wh.timezone || '—' }, { l: 'Auto Tasks', v: wh.autoTasks || '—' },
                     ].map((f, i) => (
                       <div key={i}>
                         <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>{f.l}</div>
@@ -759,19 +761,19 @@ export default function Warehouse() {
               <div>
                 <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>SERVICES & CAPABILITIES</h3>
                 <div className="wh-services">
-                  {[
-                    { name: 'Receiving', on: true }, { name: 'Storage', on: true }, { name: 'Picking', on: true },
-                    { name: 'Packing', on: true }, { name: 'Dispatch', on: true }, { name: 'Returns', on: true },
-                    { name: 'Cross Docking', on: true }
-                  ].map((item, idx) => (
-                    <div key={idx} className="wh-service-item">
-                      <div style={{ width: 32, height: 32, borderRadius: 8, background: item.on ? '#EEF2FF' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
-                        {item.on ? '📦' : '—'}
+                  {wh.capabilities && wh.capabilities.length > 0 ? (
+                    wh.capabilities.map((cap, idx) => (
+                      <div key={idx} className="wh-service-item">
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                          📦
+                        </div>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: '#334155', textAlign: 'center', lineHeight: 1.2 }}>{cap}</div>
+                        <div style={{ fontSize: 9, fontWeight: 800, color: '#10B981' }}>Yes</div>
                       </div>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: '#334155', textAlign: 'center', lineHeight: 1.2 }}>{item.name}</div>
-                      <div style={{ fontSize: 9, fontWeight: 800, color: item.on ? '#10B981' : '#EF4444' }}>{item.on ? 'Yes' : 'No'}</div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div style={{ fontSize: 11, color: '#94A3B8', fontStyle: 'italic', padding: '10px 0' }}>No capabilities listed</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -847,7 +849,7 @@ export default function Warehouse() {
                 <div style={{ width: 40, height: 40, borderRadius: 10, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BuildingIcon /></div>
                 <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>1. BASIC INFORMATION</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Facility Identity and Status</div></div>
               </div>
-              <div className="wh-form-grid-2">
+              <div className="wh-form-grid-3" style={{ marginBottom: 18 }}>
                 <div>
                   <label className="wh-label">Warehouse Name *</label>
                   <div className="wh-input-icon">
@@ -868,6 +870,7 @@ export default function Warehouse() {
                     <span className="icon">📦</span>
                     <input
                       name="code"
+                      required
                       value={addForm.code}
                       onChange={e => setAddForm({ ...addForm, code: e.target.value })}
                       className="wh-input"
@@ -877,32 +880,53 @@ export default function Warehouse() {
                 </div>
                 <div>
                   <label className="wh-label">Branch / Region</label>
-                  <input
+                  <select
                     name="branch"
                     value={addForm.branch}
                     onChange={e => setAddForm({ ...addForm, branch: e.target.value })}
                     className="wh-input"
-                    placeholder="Sydney Main"
-                  />
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <option value="" disabled>Select Branch...</option>
+                    <option value="Sydney Main">Sydney Main</option>
+                    <option value="Melbourne Depot">Melbourne Depot</option>
+                    <option value="Brisbane Hub">Brisbane Hub</option>
+                    <option value="Perth Logistics">Perth Logistics</option>
+                    <option value="Adelaide Center">Adelaide Center</option>
+                  </select>
                 </div>
+              </div>
+              
+              <div className="wh-form-grid-2">
+                <div>
+                  <label className="wh-label">Warehouse Type</label>
+                  <select
+                    value={addForm.type}
+                    onChange={e => setAddForm({ ...addForm, type: e.target.value })}
+                    className="wh-input"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <option value="">Select Type...</option>
+                    <option value="General">General</option>
+                    <option value="Cold Storage">Cold Storage</option>
+                    <option value="Distribution Centre">Distribution Centre</option>
+                    <option value="Bonded">Bonded</option>
+                  </select>
+                </div>
+
                 <div>
                   <label className="wh-label">Status</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => setAddForm({ ...addForm, status: 'Active' })}
-                      style={{ flex: 1, padding: '10px', borderRadius: 8, border: addForm.status === 'Active' ? 'none' : '1px solid #E2E8F0', background: addForm.status === 'Active' ? '#F97316' : '#fff', color: addForm.status === 'Active' ? '#fff' : '#475569', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      Active
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAddForm({ ...addForm, status: 'Maintenance' })}
-                      style={{ flex: 1, padding: '10px', borderRadius: 8, border: addForm.status === 'Maintenance' ? 'none' : '1px solid #E2E8F0', background: addForm.status === 'Maintenance' ? '#F97316' : '#fff', color: addForm.status === 'Maintenance' ? '#fff' : '#475569', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      Maintenance
-                    </button>
-                  </div>
+                  <select
+                    value={addForm.status}
+                    onChange={e => setAddForm({ ...addForm, status: e.target.value })}
+                    className="wh-input"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <option value="">Select Status...</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Maintenance">Maintenance</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1033,12 +1057,22 @@ export default function Warehouse() {
                   </div>
                   <div>
                     <label className="wh-label">State</label>
-                    <input
+                    <select
                       value={addForm.state}
                       onChange={e => setAddForm({ ...addForm, state: e.target.value })}
                       className="wh-input"
-                      placeholder="e.g. NSW"
-                    />
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <option value="" disabled>Select State...</option>
+                      <option value="NSW">NSW</option>
+                      <option value="VIC">VIC</option>
+                      <option value="QLD">QLD</option>
+                      <option value="WA">WA</option>
+                      <option value="SA">SA</option>
+                      <option value="TAS">TAS</option>
+                      <option value="ACT">ACT</option>
+                      <option value="NT">NT</option>
+                    </select>
                   </div>
                   <div>
                     <label className="wh-label">Postal Code</label>
@@ -1203,11 +1237,11 @@ export default function Warehouse() {
         {/* Metric Cards */}
         <div className="wh-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
           <MetricCard icon={<BoxIcon color="#8B5CF6" />} bg="#F5F3FF" label="TOTAL WAREHOUSES" value={(kpiStats?.totalWarehouses ?? 0).toString()} sub="Active Warehouses" linkText="View all warehouses" onClick={() => document.getElementById('warehouse-list')?.scrollIntoView({ behavior: 'smooth' })} />
-          <MetricCard icon={<CheckCircleIcon color="#10B981" />} bg="#F0FDF4" label="TOTAL INVENTORY VALUE" value={kpiStats?.totalInventoryValue || '$0.00'} sub="Across all warehouses" linkText="View inventory" onClick={() => navigate(`${warehouseBase}/current-stock`)} />
-          <MetricCard icon={<BoxIcon color="#F59E0B" />} bg="#FFFBEB" label="TOTAL STOCK ITEMS" value={(kpiStats?.totalStockItems ?? 0).toLocaleString()} sub="All warehouses" linkText="View stock" onClick={() => navigate(`${warehouseBase}/current-stock`)} />
+          <MetricCard icon={<CheckCircleIcon color="#10B981" />} bg="#F0FDF4" label="TOTAL INVENTORY VALUE" value={kpiStats?.totalInventoryValue || '$0.00'} sub="Across all warehouses" linkText="View inventory" onClick={() => setView('inventory')} />
+          <MetricCard icon={<BoxIcon color="#F59E0B" />} bg="#FFFBEB" label="TOTAL STOCK ITEMS" value={(kpiStats?.totalStockItems ?? 0).toLocaleString()} sub="All warehouses" linkText="View stock" onClick={() => setView('inventory')} />
           <MetricCard icon={<ClockIcon color="#3B82F6" />} bg="#EFF6FF" label="PENDING PICK TASKS" value={(kpiStats?.pendingTasks ?? 0).toString()} sub="Requires attention" linkText="View tasks" onClick={() => setView('pickpack')} />
-          <MetricCard icon={<TruckIcon color="#8B5CF6" />} bg="#F5F3FF" label="INCOMING SHIPMENTS" value={(kpiStats?.incomingShipments ?? 0).toString()} sub="In transit / Expected" linkText="View shipments" onClick={() => navigate(`${warehouseBase}/inbound`)} />
-          <MetricCard icon={<TruckIcon color="#EF4444" />} bg="#FEF2F2" label="OUTGOING SHIPMENTS" value={(kpiStats?.outgoingShipments ?? 0).toString()} sub="Scheduled / In progress" linkText="View shipments" onClick={() => navigate(`${warehouseBase}/outbound`)} />
+          <MetricCard icon={<TruckIcon color="#8B5CF6" />} bg="#F5F3FF" label="INCOMING SHIPMENTS" value={(kpiStats?.incomingShipments ?? 0).toString()} sub="In transit / Expected" linkText="View shipments" onClick={() => setView('movements')} />
+          <MetricCard icon={<TruckIcon color="#EF4444" />} bg="#FEF2F2" label="OUTGOING SHIPMENTS" value={(kpiStats?.outgoingShipments ?? 0).toString()} sub="Scheduled / In progress" linkText="View shipments" onClick={() => setView('movements')} />
         </div>
 
         {/* Middle Section */}
