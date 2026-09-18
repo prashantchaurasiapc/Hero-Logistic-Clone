@@ -52,13 +52,14 @@ export default function Messages() {
     try {
       setLoading(true);
       const res = await api.get('/driver-portal/messages');
-      if (res.data) {
-        if (res.data.conversations) setConversations(res.data.conversations);
-        if (res.data.contacts) setContactsList(res.data.contacts);
-        if (res.data.vehicle) setVehicleData(res.data.vehicle);
-        if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
-        if (res.data.contacts && res.data.contacts.length > 0 && !newMessageRecipient) {
-          setNewMessageRecipient(res.data.contacts[0].id);
+      const payload = res.data?.data || res.data;
+      if (payload) {
+        if (payload.conversations) setConversations(payload.conversations);
+        if (payload.contacts) setContactsList(payload.contacts);
+        if (payload.vehicle) setVehicleData(payload.vehicle);
+        if (payload.activeLoad) setActiveLoadData(payload.activeLoad);
+        if (payload.contacts && payload.contacts.length > 0 && !newMessageRecipient) {
+          setNewMessageRecipient(payload.contacts[0].id);
         }
       }
       setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));

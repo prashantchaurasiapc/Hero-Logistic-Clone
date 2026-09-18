@@ -2203,7 +2203,7 @@ export default function Drivers() {
             }} className="px-6 py-5 space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">Base Daily Rate ($) *</label>
+                  <label className="block text-slate-500 font-bold mb-1">Base Pay Rate ($) *</label>
                   <input required name="baseRate" type="number" step="0.01" placeholder="550.00"
                     defaultValue={selectedDriver?.payRate || ''}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
@@ -2211,7 +2211,7 @@ export default function Drivers() {
                 <div>
                   <label className="block text-slate-500 font-bold mb-1">Pay Type</label>
                   <select name="payType" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white">
-                    <option value="Daily">Daily Rate</option>
+                    
                     <option value="Hourly">Hourly Rate</option>
                     <option value="Per Load">Per Load</option>
                     <option value="Per Km">Per Kilometre</option>
@@ -3220,7 +3220,7 @@ export default function Drivers() {
             }
           }
 
-          const payType = fd.get('PayType') || 'Daily';
+          const payType = fd.get('PayType') || 'Hourly';
           const payRate = fd.get('PayRate') || null;
           const bankName = fd.get('BankName') || '';
           const accountNumber = fd.get('AccountNumber') || '';
@@ -3510,7 +3510,7 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">5. Payroll Information</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
-                <InputField label="Pay Type" type="select" options={['Daily', 'Hourly', 'Per Load', 'Per Km', 'Weekly']} defaultValue={isEditMode ? (defaultData.payType || "Daily") : ""} />
+                <InputField label="Pay Type" type="select" options={['Hourly', 'Per Load', 'Per Km']} defaultValue={isEditMode ? (defaultData.payType || "Hourly") : "Hourly"} />
                 <InputField label="Pay Rate ($)" defaultValue={isEditMode ? defaultData.payRate : ""} placeholder="0.00" />
                 <InputField label="Bank Name" defaultValue={isEditMode ? defaultData.bankName : ""} placeholder="e.g. Commonwealth Bank" />
                 <InputField label="Account Number" defaultValue={isEditMode ? defaultData.accountNumber : ""} />
@@ -5387,7 +5387,7 @@ export default function Drivers() {
                       <h3 className="text-[11px] font-black text-slate-800 mb-4">Earnings Breakdown</h3>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="font-semibold text-slate-600">Base Daily Rate</span>
+                          <span className="font-semibold text-slate-600">Base Pay Rate</span>
                           <span className="font-extrabold text-slate-900">$0.00</span>
                         </div>
                         <div className="flex justify-between items-center text-xs">
