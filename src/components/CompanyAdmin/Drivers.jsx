@@ -3216,8 +3216,15 @@ export default function Drivers() {
           const rawDriverCode = fd.has('EmployeeIDManualEditOption') ? fd.get('EmployeeIDManualEditOption') : fd.get('driverCode');
           const driverCode = rawDriverCode !== null ? rawDriverCode.trim() : (isEditMode && selectedDriver ? (selectedDriver.driverCode === '—' ? '' : selectedDriver.driverCode) : '');
           const phone = fd.get('PhoneNumber') || fd.get('phone') || '';
-          const email = fd.get('EmailAddress') || fd.get('email') || (isEditMode && selectedDriver ? selectedDriver.email : undefined);
-          const password = fd.get('Password') || fd.get('password') || 'Driver@1234';
+          const rawEmail = (fd.get('EmailAddress') || fd.get('email') || fd.get('Username') || fd.get('username') || '').trim();
+          let email = rawEmail || (isEditMode && selectedDriver ? selectedDriver.email : '');
+          if (!email && !isEditMode) {
+            const cleanFirst = firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || 'driver';
+            const cleanLast = lastName.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || Math.floor(100 + Math.random() * 900);
+            email = `${cleanFirst}.${cleanLast}@herologistics.com.au`;
+          }
+          const rawPassword = (fd.get('Password') || fd.get('password') || '').trim();
+          const password = rawPassword || '123456';
           const avatarUrl = photoPreview || (isEditMode && selectedDriver ? selectedDriver.avatar : '');
           const gender = fd.get('Gender') || '';
           const nationality = fd.get('Nationality') || '';
@@ -3412,7 +3419,7 @@ export default function Drivers() {
             }
             fetchDrivers();
             handleCloseDriverForm();
-            showToast(isEditMode ? "Driver Profile Updated successfully!" : "New Driver Added successfully!");
+            showToast(isEditMode ? "Driver Profile Updated successfully!" : `Driver Added! Login Email: ${email} | Password: ${password}`);
           } catch (err) {
             console.error('Error saving driver:', err);
             alert('Failed to save driver to database.');
@@ -3492,7 +3499,7 @@ export default function Drivers() {
                   <InputField label="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} defaultValue={isEditMode ? (defaultData.gender || '') : ''} />
                   <InputField label="Nationality" defaultValue={isEditMode ? defaultData.nationality : ''} />
                   <InputField label="Phone Number" defaultValue={isEditMode ? defaultData.phone : ''} />
-                  <InputField label="Email Address" defaultValue={isEditMode ? defaultData.email : ''} />
+                  <InputField label="Email Address" defaultValue={isEditMode ? defaultData.email : ''} placeholder="e.g. driver@gmail.com (Login Email)" />
                   <InputField label="Emergency Contact Name" defaultValue={isEditMode ? defaultData.emergencyContactName : ''} />
                   <InputField label="Emergency Contact Number" defaultValue={isEditMode ? defaultData.emergencyContactPhone : ''} />
                   <InputField label="Residential Address" className="sm:col-span-2" defaultValue={isEditMode ? defaultData.address : ''} />
@@ -3605,9 +3612,9 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">8. Account Information</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-5 mb-4">
-                <InputField label="Username" placeholder="e.g. mthompson" />
-                <InputField label="Password" type="password" />
-                <InputField label="Confirm Password" type="password" />
+                <InputField label="Username (Optional)" name="Username" placeholder="e.g. driver@gmail.com" defaultValue={isEditMode ? defaultData.email : ''} optional={true} />
+                <InputField label="Password" name="Password" type="password" placeholder="Default: 123456" optional={true} />
+                <InputField label="Confirm Password" name="ConfirmPassword" type="password" placeholder="Default: 123456" optional={true} />
               </div>
               <label className="flex items-center gap-2 cursor-pointer mt-2">
                 <input type="checkbox" defaultChecked className="w-3.5 h-3.5 rounded border-slate-300 text-purple-600 focus:ring-purple-500" />
