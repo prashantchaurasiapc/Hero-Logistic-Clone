@@ -83,21 +83,22 @@ export default function Timesheets() {
     try {
       setLoading(true);
       const res = await api.get('/driver-portal/timesheets');
-      if (res.data) {
-        if (res.data.clockStatus) setClockStatus(res.data.clockStatus);
-        if (res.data.secondsToday !== undefined) setSecondsToday(res.data.secondsToday);
-        if (res.data.isSubmitted !== undefined) setTimesheetSubmitted(res.data.isSubmitted);
-        if (res.data.sinceText) setSinceText(res.data.sinceText);
-        if (res.data.todayStats) setTodayStats(res.data.todayStats);
-        if (res.data.location) setLocationData(res.data.location);
-        if (res.data.timelineEvents) setTimelineEvents(res.data.timelineEvents);
-        if (res.data.weeklySummary) setWeeklySummary(res.data.weeklySummary);
-        if (res.data.weeklyBreakdown) setWeeklyBreakdown(res.data.weeklyBreakdown);
-        if (res.data.monthlySummary) setMonthlySummary(res.data.monthlySummary);
-        if (res.data.allTimesheets) setAllTimesheets(res.data.allTimesheets);
-        if (res.data.recentTimesheets) setRecentTimesheets(res.data.recentTimesheets);
-        if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
-        setTimerRunning(res.data.clockStatus === 'Clocked In');
+      const payload = res.data?.data || res.data;
+      if (payload) {
+        if (payload.clockStatus) setClockStatus(payload.clockStatus);
+        if (payload.secondsToday !== undefined) setSecondsToday(payload.secondsToday);
+        if (payload.isSubmitted !== undefined) setTimesheetSubmitted(payload.isSubmitted);
+        if (payload.sinceText) setSinceText(payload.sinceText);
+        if (payload.todayStats) setTodayStats(payload.todayStats);
+        if (payload.location) setLocationData(payload.location);
+        if (payload.timelineEvents) setTimelineEvents(payload.timelineEvents);
+        if (payload.weeklySummary) setWeeklySummary(payload.weeklySummary);
+        if (payload.weeklyBreakdown) setWeeklyBreakdown(payload.weeklyBreakdown);
+        if (payload.monthlySummary) setMonthlySummary(payload.monthlySummary);
+        if (payload.allTimesheets) setAllTimesheets(payload.allTimesheets);
+        if (payload.recentTimesheets) setRecentTimesheets(payload.recentTimesheets);
+        if (payload.activeLoad) setActiveLoadData(payload.activeLoad);
+        setTimerRunning(payload.clockStatus === 'Clocked In');
       }
       setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {

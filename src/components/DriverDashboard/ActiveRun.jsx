@@ -87,6 +87,9 @@ export default function ActiveRun() {
           try { sessionStorage.setItem('hero_cached_run', JSON.stringify(runObj)); } catch(e){}
           setIsDispatched(true);
           setLoadStatus(cl.status || 'In Transit');
+        } else {
+          setRunData(null);
+          try { sessionStorage.removeItem('hero_cached_run'); } catch(e){}
         }
       }
     } catch (error) {
@@ -107,7 +110,7 @@ export default function ActiveRun() {
   }, [location.state, isDispatched]);
 
   const carsPickedUp = runData ? runData.pickedUpCount : 0;
-  const totalCars = runData ? runData.totalCarsCount : 8;
+  const totalCars = runData ? (runData.totalCarsCount || runData.cars?.length || (Array.isArray(runData.items) ? runData.items.length : 1)) : 1;
   const deliveredCars = runData ? runData.deliveredCount : 0;
 
   const triggerToast = (msg) => {
@@ -214,8 +217,27 @@ export default function ActiveRun() {
                 >
                   <span className="w-2 h-2 rounded-full bg-indigo-600"></span> Dispatched
                 </button>
-                <button
-                  onClick={() => { setLoadStatus('Delivered'); setStatusMenuOpen(false); triggerToast('Status set to Delivered'); }}
+                 <button
+                  onClick={async () => {
+                    setLoadStatus('Delivered');
+                    setStatusMenuOpen(false);
+                    triggerToast('Delivery confirmed & auto-credited to payroll!');
+                    const targetId = runData?.dbId || runData?.id;
+                    if (targetId) {
+                      try {
+                        await api.post('/driver-portal/delivery-pod/confirm-delivery', {
+                          loadId: targetId,
+                          mode: 'normal',
+                          notes: 'Completed via Driver Active Run'
+                        });
+                      } catch (e) {
+                        await api.put('/company-admin/loads/' + targetId, { status: 'DELIVERED' }).catch(() => {});
+                      }
+                      try { sessionStorage.removeItem('hero_cached_run'); } catch(e){}
+                      setRunData(null);
+                      navigate('/driver/my-pay');
+                    }
+                  }}
                   className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2"
                 >
                   <span className="w-2 h-2 rounded-full bg-slate-400"></span> Delivered

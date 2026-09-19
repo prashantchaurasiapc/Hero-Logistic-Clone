@@ -5,6 +5,7 @@ import {
   Key, Mail, RefreshCw, Eye, EyeOff
 } from 'lucide-react';
 import api from '../../services/api';
+import CustomSelect from '../common/CustomSelect';
 
 export default function CreateCompany({ onBack, onCreated }) {
   const navigate = useNavigate();
@@ -414,41 +415,39 @@ export default function CreateCompany({ onBack, onCreated }) {
               {/* License Plan Tier */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">License Plan Tier</label>
-                <select
+                <CustomSelect
                   value={formData.planTier}
-                  onChange={e => handleChange('planTier', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition-all"
-                >
-                  {availablePlans.length > 0 ? (
-                    availablePlans.map(p => (
-                      <option key={p.id} value={p.name}>{p.name}</option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="Hero Pro">Hero Pro</option>
-                      <option value="Starter Tier">Starter Tier</option>
-                      <option value="Professional Tier">Professional Tier</option>
-                      <option value="Enterprise Tier">Enterprise Tier</option>
-                    </>
-                  )}
-                </select>
+                  onChange={val => handleChange('planTier', val)}
+                  options={
+                    availablePlans.length > 0
+                      ? availablePlans.map(p => ({ label: p.name, value: p.name }))
+                      : [
+                          { label: 'Hero Pro', value: 'Hero Pro' },
+                          { label: 'Starter Tier', value: 'Starter Tier' },
+                          { label: 'Professional Tier', value: 'Professional Tier' },
+                          { label: 'Enterprise Tier', value: 'Enterprise Tier' }
+                        ]
+                  }
+                  placeholder="Select Plan Tier"
+                />
               </div>
 
               {/* Status */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Status</label>
-                <select
+                <CustomSelect
                   value={formData.status}
-                  onChange={e => handleChange('status', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition-all"
-                >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="PROVISIONING">PROVISIONING</option>
-                  <option value="TRIAL">TRIAL</option>
-                  <option value="HOLD">HOLD</option>
-                  <option value="SUSPENDED">SUSPENDED</option>
-                  <option value="CLOSED">CLOSED</option>
-                </select>
+                  onChange={val => handleChange('status', val)}
+                  options={[
+                    { label: 'ACTIVE', value: 'ACTIVE' },
+                    { label: 'PROVISIONING', value: 'PROVISIONING' },
+                    { label: 'TRIAL', value: 'TRIAL' },
+                    { label: 'HOLD', value: 'HOLD' },
+                    { label: 'SUSPENDED', value: 'SUSPENDED' },
+                    { label: 'CLOSED', value: 'CLOSED' }
+                  ]}
+                  placeholder="Select Status"
+                />
               </div>
 
               {/* Account Manager (Optional) */}

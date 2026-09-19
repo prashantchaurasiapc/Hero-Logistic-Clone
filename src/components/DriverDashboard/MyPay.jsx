@@ -84,21 +84,22 @@ export default function MyPay() {
     try {
       setLoading(true);
       const res = await api.get('/driver-portal/payroll');
-      if (res.data) {
-        if (res.data.driverInfo) {
-          if (res.data.driverInfo.bankName) setBankName(res.data.driverInfo.bankName);
-          if (res.data.driverInfo.bsbNumber) setBsbNumber(res.data.driverInfo.bsbNumber);
-          if (res.data.driverInfo.accountNumber) setAccountNumber(res.data.driverInfo.accountNumber);
-          if (res.data.driverInfo.accountName) setAccountName(res.data.driverInfo.accountName);
+      const payload = res.data?.data || res.data;
+      if (payload) {
+        if (payload.driverInfo) {
+          if (payload.driverInfo.bankName) setBankName(payload.driverInfo.bankName);
+          if (payload.driverInfo.bsbNumber) setBsbNumber(payload.driverInfo.bsbNumber);
+          if (payload.driverInfo.accountNumber) setAccountNumber(payload.driverInfo.accountNumber);
+          if (payload.driverInfo.accountName) setAccountName(payload.driverInfo.accountName);
         }
-        if (res.data.currentPeriod) setCurrentPeriod(res.data.currentPeriod);
-        if (res.data.ytdSummary) setYtdSummary(res.data.ytdSummary);
-        if (res.data.currentPayBreakdown) setCurrentPayBreakdown(res.data.currentPayBreakdown);
-        if (res.data.payHistory) setPayRecords(res.data.payHistory);
-        if (res.data.totalSummary) setTotalSummary(res.data.totalSummary);
-        if (res.data.ytdEarningsBreakdown) setYtdEarningsBreakdown(res.data.ytdEarningsBreakdown);
-        if (res.data.taxStatements) setTaxStatements(res.data.taxStatements);
-        if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
+        if (payload.currentPeriod) setCurrentPeriod(payload.currentPeriod);
+        if (payload.ytdSummary) setYtdSummary(payload.ytdSummary);
+        if (payload.currentPayBreakdown) setCurrentPayBreakdown(payload.currentPayBreakdown);
+        if (payload.payHistory) setPayRecords(payload.payHistory);
+        if (payload.totalSummary) setTotalSummary(payload.totalSummary);
+        if (payload.ytdEarningsBreakdown) setYtdEarningsBreakdown(payload.ytdEarningsBreakdown);
+        if (payload.taxStatements) setTaxStatements(payload.taxStatements);
+        if (payload.activeLoad) setActiveLoadData(payload.activeLoad);
       }
       setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {

@@ -85,18 +85,19 @@ export default function TrailerSwap() {
     try {
       setLoading(true);
       const res = await api.get('/driver-portal/trailer-swap');
-      if (res.data) {
-        if (res.data.driverInfo) setDriverInfo(res.data.driverInfo);
-        if (res.data.truckInfo) setTruckInfo(res.data.truckInfo);
-        if (res.data.currentTrailer) setCurrentTrailer(res.data.currentTrailer);
-        if (res.data.trailers && res.data.trailers.length > 0) {
-          setTrailers(res.data.trailers);
-          setSelectedTrailerId(res.data.trailers[0].id);
+      const payload = res.data?.data || res.data;
+      if (payload) {
+        if (payload.driverInfo) setDriverInfo(payload.driverInfo);
+        if (payload.truckInfo) setTruckInfo(payload.truckInfo);
+        if (payload.currentTrailer) setCurrentTrailer(payload.currentTrailer);
+        if (payload.trailers && payload.trailers.length > 0) {
+          setTrailers(payload.trailers);
+          setSelectedTrailerId(payload.trailers[0].id);
         }
-        if (res.data.policy) setPolicy(res.data.policy);
-        if (res.data.recentSwaps) setRecentSwaps(res.data.recentSwaps);
-        if (res.data.currentDateTime) setSwapDateTime(res.data.currentDateTime);
-        if (res.data.currentLocation) setSwapLocation(res.data.currentLocation);
+        if (payload.policy) setPolicy(payload.policy);
+        if (payload.recentSwaps) setRecentSwaps(payload.recentSwaps);
+        if (payload.currentDateTime) setSwapDateTime(payload.currentDateTime);
+        if (payload.currentLocation) setSwapLocation(payload.currentLocation);
       }
       setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {

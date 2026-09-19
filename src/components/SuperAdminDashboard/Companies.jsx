@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import CreateCompany from './CreateCompany';
+import CustomSelect from '../common/CustomSelect';
 
 export default function Companies() {
   const navigate = useNavigate();
@@ -700,29 +701,29 @@ export default function Companies() {
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold text-slate-700">
             <div className="space-y-1.5">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Plan Level Filter</label>
-              <select
+              <CustomSelect
                 value={selectedPlanFilter}
-                onChange={(e) => setSelectedPlanFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
-              >
-                <option value="All Plans">All Plans</option>
-                {availablePlans.map(plan => (
-                  <option key={plan.id} value={plan.name}>{plan.name}</option>
-                ))}
-              </select>
+                onChange={(val) => setSelectedPlanFilter(val)}
+                options={[
+                  { label: 'All Plans', value: 'All Plans' },
+                  ...availablePlans.map(plan => ({ label: plan.name, value: plan.name }))
+                ]}
+                placeholder="Select Plan"
+              />
             </div>
 
             <div className="space-y-1.5">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Status Filter</label>
-              <select
+              <CustomSelect
                 value={selectedStatusFilter}
-                onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
-              >
-                <option value="All Statuses">All Statuses</option>
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="HOLD">HOLD</option>
-              </select>
+                onChange={(val) => setSelectedStatusFilter(val)}
+                options={[
+                  { label: 'All Statuses', value: 'All Statuses' },
+                  { label: 'ACTIVE', value: 'ACTIVE' },
+                  { label: 'HOLD', value: 'HOLD' }
+                ]}
+                placeholder="Select Status"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -1082,15 +1083,12 @@ export default function Companies() {
 
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">LICENSE PLAN TIER</label>
-                <select
+                <CustomSelect
                   value={selectedPlan}
-                  onChange={(e) => setSelectedPlan(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
-                >
-                  {availablePlans.map(plan => (
-                    <option key={plan.id} value={plan.name}>{plan.name}</option>
-                  ))}
-                </select>
+                  onChange={(val) => setSelectedPlan(val)}
+                  options={availablePlans.map(plan => ({ label: plan.name, value: plan.name }))}
+                  placeholder="Select Plan Tier"
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -1106,18 +1104,19 @@ export default function Companies() {
 
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">STATUS</label>
-                <select
+                <CustomSelect
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
-                >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="PROVISIONING">PROVISIONING</option>
-                  <option value="TRIAL">TRIAL</option>
-                  <option value="HOLD">HOLD</option>
-                  <option value="SUSPENDED">SUSPENDED</option>
-                  <option value="CLOSED">CLOSED</option>
-                </select>
+                  onChange={(val) => setStatus(val)}
+                  options={[
+                    { label: 'ACTIVE', value: 'ACTIVE' },
+                    { label: 'PROVISIONING', value: 'PROVISIONING' },
+                    { label: 'TRIAL', value: 'TRIAL' },
+                    { label: 'HOLD', value: 'HOLD' },
+                    { label: 'SUSPENDED', value: 'SUSPENDED' },
+                    { label: 'CLOSED', value: 'CLOSED' }
+                  ]}
+                  placeholder="Select Status"
+                />
               </div>
 
               {status === 'TRIAL' && (
