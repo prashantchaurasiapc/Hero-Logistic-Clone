@@ -65,27 +65,41 @@ export default function AddExpense() {
     try {
       setLoading(true);
       const [runRes, expensesRes] = await Promise.all([
-        api.get('/driver-portal/active-run'),
-        api.get('/driver-portal/expenses')
+        api.get('/driver-portal/active-run').catch(() => ({ data: {} })),
+        api.get('/driver-portal/expenses').catch(() => ({ data: { expenses: [] } }))
       ]);
-      const data = runRes.data;
+      const data = runRes.data || {};
+      
+      let lastDelivered = null;
+      try {
+        const lastDelStr = localStorage.getItem('hero_last_delivered_load');
+        if (lastDelStr) lastDelivered = JSON.parse(lastDelStr);
+      } catch (e) {}
+
+      const currentLoad = data.currentLoad || (lastDelivered ? {
+        loadNumber: lastDelivered.id,
+        origin: lastDelivered.origin,
+        destination: lastDelivered.destination,
+        status: 'DELIVERED'
+      } : null);
+
       setRunData({
-        id: data.currentLoad?.loadNumber || data.currentLoad?.id || 'No Active Load',
-        origin: data.currentLoad?.origin || data.currentLoad?.pickupStop?.name || 'Origin',
-        destination: data.currentLoad?.destination || data.currentLoad?.deliveryStop?.name || 'Destination',
-        status: data.currentLoad?.status || 'Assigned',
+        id: currentLoad?.loadNumber || currentLoad?.id || 'No Active Load',
+        origin: currentLoad?.origin || currentLoad?.pickupStop?.name || 'Origin',
+        destination: currentLoad?.destination || currentLoad?.deliveryStop?.name || 'Destination',
+        status: currentLoad?.status || 'Assigned',
         vehicle: {
           truck: data.driverInfo?.vehicle?.rego || 'Unassigned',
           trailer: 'Unassigned',
           trailerType: 'Trailer',
-          loadType: data.currentLoad?.loadType || 'General Freight',
+          loadType: currentLoad?.loadType || 'General Freight',
           estRangeKm: data.metrics?.estRangeKm || 0
         },
         stopsCount: 2,
         estFinish: 'TBA'
       });
       
-      const formattedExpenses = (expensesRes.data.expenses || []).map(e => ({
+      const formattedExpenses = ((expensesRes.data && expensesRes.data.expenses) || []).map(e => ({
         id: e.id,
         category: e.type,
         categoryColor: e.type === 'Fuel' ? 'purple' : e.type === 'Maintenance' ? 'emerald' : e.type === 'Tyres' ? 'amber' : e.type === 'Tolls' ? 'blue' : 'slate',

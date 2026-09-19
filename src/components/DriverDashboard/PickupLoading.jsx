@@ -53,14 +53,18 @@ export default function PickupLoading() {
       setLoading(true);
 
       // Check if Planning Board assigned an active load to current driver in local memory
-      const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
-      const userStr = localStorage.getItem('user');
-      const userObj = userStr ? JSON.parse(userStr) : {};
-      const currentDriverName = userObj.name || userObj.firstName || '';
-      const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
-      const assignedList = currentDriverName ? (savedMap[currentDriverName] || []).filter(item => !deletedIds.includes(item.id)) : [];
-      
-      const activeAssignedLoad = assignedList[0];
+      let activeAssignedLoad = null;
+      try {
+        const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+        const userStr = localStorage.getItem('user');
+        const userObj = userStr ? JSON.parse(userStr) : {};
+        const currentDriverName = userObj.name || userObj.firstName || '';
+        const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
+        const assignedList = currentDriverName ? (savedMap[currentDriverName] || []).filter(item => !deletedIds.includes(item.id)) : [];
+        activeAssignedLoad = assignedList[0];
+      } catch (err) {
+        console.warn('Error reading assigned driver loads from localStorage:', err);
+      }
 
       if (activeAssignedLoad) {
         const routeParts = activeAssignedLoad.route ? activeAssignedLoad.route.split(/\s*[\u2192\u2794\->]|\sto\s/i) : ['—', '—'];
@@ -85,9 +89,9 @@ export default function PickupLoading() {
         setLoadInfo(res.data.data.load);
         setCars(res.data.data.load.cars || []);
       } else {
-        const dashRes = await api.get('/driver-portal/dashboard');
-        const cl = dashRes.data?.data?.currentLoad;
-        if (cl) {
+        const dashRes = await api.get('/driver-portal/dashboard').catch(() => null);
+        const cl = dashRes?.data?.data?.currentLoad;
+        if (cl && cl.status !== 'DELIVERED' && cl.status !== 'COMPLETED') {
           const loadObj = {
             id: cl.reference || cl.loadNumber || cl.id,
             dbId: cl.id,

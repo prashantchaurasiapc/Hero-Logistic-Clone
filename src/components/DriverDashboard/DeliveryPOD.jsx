@@ -45,14 +45,18 @@ export default function DeliveryPOD() {
       setLoading(true);
 
       // Check if Planning Board assigned an active load to current driver in local memory
-      const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
-      const userStr = localStorage.getItem('user');
-      const userObj = userStr ? JSON.parse(userStr) : {};
-      const currentDriverName = userObj.name || userObj.firstName || '';
-      const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
-      const assignedList = currentDriverName ? (savedMap[currentDriverName] || []).filter(item => !deletedIds.includes(item.id)) : [];
-      
-      const activeAssignedLoad = assignedList[0];
+      let activeAssignedLoad = null;
+      try {
+        const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+        const userStr = localStorage.getItem('user');
+        const userObj = userStr ? JSON.parse(userStr) : {};
+        const currentDriverName = userObj.name || userObj.firstName || '';
+        const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
+        const assignedList = currentDriverName ? (savedMap[currentDriverName] || []).filter(item => !deletedIds.includes(item.id)) : [];
+        activeAssignedLoad = assignedList[0];
+      } catch (err) {
+        console.warn('Error reading assigned driver loads from localStorage:', err);
+      }
 
       if (activeAssignedLoad) {
         const routeParts = activeAssignedLoad.route ? activeAssignedLoad.route.split(/\s*[\u2192\u2794\->]|\sto\s/i) : ['—', '—'];
@@ -72,9 +76,15 @@ export default function DeliveryPOD() {
           totalCars: (activeAssignedLoad.items || []).length,
           deliveredCars: 0,
           remainingCars: (activeAssignedLoad.items || []).length,
-          cars: activeAssignedLoad.items || []
+          cars: (activeAssignedLoad.items || []).map(item => ({
+            ...item,
+            delivered: item.delivered || false
+          }))
         });
-        setCars(activeAssignedLoad.items || []);
+        setCars((activeAssignedLoad.items || []).map(item => ({
+          ...item,
+          delivered: item.delivered || false
+        })));
         return;
       }
 
@@ -83,9 +93,23 @@ export default function DeliveryPOD() {
         setLoadInfo(res.data.data.load);
         setCars(res.data.data.load.cars || []);
       } else {
-        const dashRes = await api.get('/driver-portal/dashboard');
-        const cl = dashRes.data?.data?.currentLoad;
+        // Check if there is a last delivered load saved locally
+        let lastDelivered = null;
+        try {
+          const lastDelStr = localStorage.getItem('hero_last_delivered_load');
+          if (lastDelStr) lastDelivered = JSON.parse(lastDelStr);
+        } catch (e) {}
+
+        if (lastDelivered) {
+          setLoadInfo(lastDelivered);
+          setCars(lastDelivered.cars || []);
+          return;
+        }
+
+        const dashRes = await api.get('/driver-portal/dashboard').catch(() => null);
+        const cl = dashRes?.data?.data?.currentLoad;
         if (cl) {
+          const isDeliveredState = cl.status === 'DELIVERED' || cl.status === 'COMPLETED';
           const loadObj = {
             id: cl.reference || cl.loadNumber || cl.id,
             dbId: cl.id,
@@ -97,8 +121,8 @@ export default function DeliveryPOD() {
             totalStops: 2,
             eta: cl.deliveryStop?.time || '02:30 PM',
             totalCars: 1,
-            deliveredCars: 0,
-            remainingCars: 1,
+            deliveredCars: isDeliveredState ? 1 : 0,
+            remainingCars: isDeliveredState ? 0 : 1,
             cars: [
               {
                 id: '1',
@@ -108,7 +132,7 @@ export default function DeliveryPOD() {
                 rego: 'ggg6685555',
                 plate: 'ggg6685555',
                 color: 'Black',
-                delivered: false,
+                delivered: isDeliveredState,
                 deliveryNotes: '',
                 photos: 0
               }
@@ -129,7 +153,6 @@ export default function DeliveryPOD() {
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     fetchDeliveryPOD();
@@ -221,6 +244,18 @@ export default function DeliveryPOD() {
       triggerToast('⚠️ Please mark at least 1 car as Delivered before confirming.');
       return;
     }
+
+    // Save completed delivery state locally
+    const updatedLoadInfo = {
+      ...loadInfo,
+      status: 'DELIVERED',
+      deliveredCars: cars.length,
+      remainingCars: 0,
+      cars: cars.map(c => ({ ...c, delivered: true }))
+    };
+    try {
+      localStorage.setItem('hero_last_delivered_load', JSON.stringify(updatedLoadInfo));
+    } catch (e) {}
 
     try {
       await api.post('/driver-portal/delivery-pod/confirm-delivery', {
