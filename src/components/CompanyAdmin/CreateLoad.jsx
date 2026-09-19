@@ -3,7 +3,7 @@ import {
   ArrowLeft, Save, Zap, Plus, Trash2, GripVertical,
   MapPin, User, Calendar, Clock, Package, Truck,
   Upload, ChevronDown, ChevronLeft, AlertCircle, CheckCircle, Info,
-  Camera, X, Search, Flag, MoreVertical
+  Camera, X, Search, Flag, MoreVertical, DollarSign
 } from 'lucide-react';
 import api from '../../services/api';
 import { dispatcherRepository } from '../../services/dispatcherRepository';
@@ -401,6 +401,8 @@ export default function CreateLoad({ onBack }) {
     trailer: '',
     driver: '',
     loadNotes: '',
+    rate: '',
+    driverPay: '',
   });
 
   const [showAddStopModal, setShowAddStopModal] = useState(false);
@@ -558,6 +560,8 @@ export default function CreateLoad({ onBack }) {
         customerId: formData.customer && formData.customer.length > 5 ? formData.customer : null,
         driverId: formData.driver && formData.driver.length > 5 ? formData.driver : null,
         truckId: formData.truck && formData.truck.length > 5 ? formData.truck : null,
+        rate: formData.rate ? parseFloat(formData.rate) : undefined,
+        driverPay: formData.driverPay ? parseFloat(formData.driverPay) : undefined,
         stops: stops.map((s, idx) => ({
           type: s.type.toUpperCase() === 'PICKUP' ? 'PICKUP' : 'DROPOFF',
           sequenceIndex: idx,

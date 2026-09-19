@@ -68,27 +68,18 @@ const Login = () => {
     };
   }, []);
 
-  const handleRoleLogin = (roleId) => {
-    const roleEmail = roleId === 'super-admin' ? 'super-admin@hero.com' : `${roleId}@hero.com`;
-    setEmailInput(roleEmail);
-    setPasswordInput('123456');
-    setErrorMsg('');
-  };
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const performLogin = async (email, password) => {
     setErrorMsg('');
     setIsAuthenticating(true);
     setLoggingInRole('Loading...');
 
-    const res = await login(emailInput, passwordInput);
+    const res = await login(email, password);
 
     if (res.success) {
       const userRole = res.user?.role || 'SUPER_ADMIN';
-      setLoggingInRole(userRole);
+      setLoggingInRole(userRole.replace(/_/g, ' '));
 
-      // Determine redirect path based on user role (case-insensitive)
-      const role = (userRole || '').toUpperCase();
+      const roleKey = (userRole || '').toUpperCase().replace(/-/g, '_');
       const roleRedirectMap = {
         'DRIVER': '/driver/dashboard',
         'DISPATCHER': '/dispatcher/command-center',
@@ -100,18 +91,29 @@ const Login = () => {
         'CUSTOMER': '/customer/dashboard',
         'SUPER_ADMIN': '/admin/dashboard',
         'SUPERADMIN': '/admin/dashboard',
-        'SUPER-ADMIN': '/admin/dashboard',
         'ADMIN': '/admin/dashboard'
       };
-      const targetPath = roleRedirectMap[role] || '/admin/dashboard';
+      const targetPath = roleRedirectMap[roleKey] || '/admin/dashboard';
 
       setTimeout(() => {
         navigate(targetPath);
-      }, 900);
+      }, 700);
     } else {
       setIsAuthenticating(false);
       setErrorMsg(res.message || 'Invalid email or password');
     }
+  };
+
+  const handleRoleLogin = (roleId) => {
+    const roleEmail = roleId === 'super-admin' ? 'super-admin@hero.com' : `${roleId}@hero.com`;
+    setEmailInput(roleEmail);
+    setPasswordInput('123456');
+    performLogin(roleEmail, '123456');
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    performLogin(emailInput, passwordInput);
   };
 
   return (

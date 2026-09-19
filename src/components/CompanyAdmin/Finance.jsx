@@ -208,7 +208,23 @@ export default function Finance() {
           branch: 'Sydney Head Office'
         })) : [];
 
-        setExpensesList([...billingMapped, ...mappedExpensesFromInvoices]);
+        const loadExpensesMapped = Array.isArray(data.loadExpenses) ? data.loadExpenses.map(e => ({
+          id: e.id,
+          date: e.date ? new Date(e.date).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
+          ref: e.load?.loadRef ? `EXP-${e.load.loadRef}` : `EXP-${(e.id || '').slice(0, 6)}`,
+          desc: e.description || (e.type === 'Fuel' && e.litres ? `Fuel: ${e.litres}L @ ${e.vendorName || 'Station'}` : `${e.type || 'Fleet'} Expense - ${e.vendorName || 'Operational'}`),
+          category: e.type || 'Fuel',
+          amount: `$${(parseFloat(e.amount) || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          rawAmount: parseFloat(e.amount) || 0,
+          type: 'Direct Fleet Expense',
+          status: e.status === 'APPROVED' ? 'Approved' : 'Pending',
+          user: e.driver ? `${e.driver.firstName || ''} ${e.driver.lastName || ''}`.trim() : 'Fleet Driver',
+          branch: 'Main Terminal',
+          vendorName: e.vendorName,
+          litres: e.litres
+        })) : [];
+
+        setExpensesList([...loadExpensesMapped, ...billingMapped, ...mappedExpensesFromInvoices]);
 
         const mappedPayrollFromInvoices = mapped.filter(inv => inv.type === 'Payroll Run' || inv.type === 'Payroll' || (inv.type && inv.type.includes('Payroll'))).map(inv => ({
           name: `Payroll Run - ${inv.issueDate}`,
@@ -236,7 +252,21 @@ export default function Finance() {
             }))
           : [];
 
-        setPayrollList([...billingPayrollMapped, ...mappedPayrollFromInvoices]);
+        const realPayrollMapped = Array.isArray(data.payrollRuns) ? data.payrollRuns.map(p => ({
+          id: p.id,
+          name: `Driver Pay - ${p.driver ? `${p.driver.firstName || ''} ${p.driver.lastName || ''}`.trim() : 'Driver'}`,
+          period: `${p.periodStart ? new Date(p.periodStart).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }) : '—'} – ${p.periodEnd ? new Date(p.periodEnd).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}`,
+          branch: 'Main Terminal',
+          employees: 1,
+          type: 'Driver Pay',
+          total: `$${(parseFloat(p.grossEarnings || p.netPay || 0)).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          rawTotal: parseFloat(p.grossEarnings || p.netPay || 0),
+          status: p.status === 'PAID' ? 'Paid' : (p.status === 'PROCESSING' ? 'Processing' : 'Pending'),
+          user: p.driver ? `${p.driver.firstName || ''} ${p.driver.lastName || ''}`.trim() : 'Driver',
+          date: p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+        })) : [];
+
+        setPayrollList([...realPayrollMapped, ...billingPayrollMapped, ...mappedPayrollFromInvoices]);
       }
     } catch (err) {
       console.error('Error fetching finance data:', err);
@@ -252,6 +282,18 @@ export default function Finance() {
   const triggerToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
+  };
+
+  const handleMarkInvoicePaid = async (inv) => {
+    try {
+      const targetId = inv.dbId || inv.id;
+      await api.put(`/company-admin/finance/invoices/${targetId}/status`, { status: 'PAID' });
+      triggerToast(`Invoice ${inv.id} marked as Paid! Total Revenue updated.`);
+      fetchFinanceData();
+    } catch (err) {
+      console.error('Error marking invoice paid:', err);
+      triggerToast('Failed to update invoice status.');
+    }
   };
 
   // Open Full Invoice Details Page 
@@ -1098,12 +1140,23 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                           <td className="py-3.5 px-4 font-mono text-slate-900 font-black">{inv.amount}</td>
                           <td className="py-3.5 px-4">{getStatusBadge(inv.status)}</td>
                           <td className="py-3.5 px-4 text-center">
-                            <button 
-                              onClick={() => handleOpenInvoiceDetail(inv)}
-                              className="text-[11px] font-bold text-purple-600 hover:text-purple-800 cursor-pointer underline"
-                            >
-                              View
-                            </button>
+                            <div className="flex items-center justify-center gap-2">
+                              <button 
+                                onClick={() => handleOpenInvoiceDetail(inv)}
+                                className="text-[11px] font-bold text-purple-600 hover:text-purple-800 cursor-pointer underline"
+                              >
+                                View
+                              </button>
+                              {inv.status !== 'Paid' && (
+                                <button
+                                  onClick={() => handleMarkInvoicePaid(inv)}
+                                  className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded text-[10px] font-bold transition-all cursor-pointer"
+                                  title="Mark invoice as Paid"
+                                >
+                                  ✓ Mark Paid
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1569,6 +1622,15 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                           <td className="py-3.5 px-4 font-semibold text-rose-500">{inv.dueIn}</td>
                           <td className="py-3.5 px-4 text-center">
                             <div className="flex items-center justify-center gap-1.5">
+                              {inv.status !== 'Paid' && (
+                                <button 
+                                  onClick={() => handleMarkInvoicePaid(inv)}
+                                  className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded text-[10px] font-bold transition-all cursor-pointer" 
+                                  title="Mark as Paid"
+                                >
+                                  ✓ Paid
+                                </button>
+                              )}
                               <button 
                                 onClick={() => handleOpenInvoiceDetail(inv)}
                                 className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded cursor-pointer" 

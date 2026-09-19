@@ -3,16 +3,55 @@ import api from '../services/api';
 
 const AuthContext = createContext(null);
 
+const directLogin = async (email, password) => {
+  try {
+    localStorage.removeItem('token');
+    localStorage.removeItem('hero_session');
+    localStorage.removeItem('hero_company_id');
+    localStorage.removeItem('selectedCompanyId');
+    localStorage.removeItem('activeCompany');
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('cache_') || key.startsWith('hero_cache_') || key.startsWith('hero_portal_')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {}
+
+    const res = await api.post('/auth/login', { email, password });
+    if (res.data && res.data.success) {
+      if (res.data.data.accessToken) {
+        localStorage.setItem('token', res.data.data.accessToken);
+      }
+      const loggedInUser = res.data.data.user;
+      localStorage.setItem('hero_session', JSON.stringify({
+        name: loggedInUser.name,
+        role: loggedInUser.role,
+        company: loggedInUser.company?.name || 'Hero Logistics',
+        companyId: loggedInUser.companyId || loggedInUser.company?.id || null,
+        email: loggedInUser.email,
+        permissions: loggedInUser.permissions || {}
+      }));
+
+      return { success: true, user: loggedInUser };
+    }
+    return { success: false, message: 'Invalid response from server' };
+  } catch (error) {
+    return { 
+      success: false, 
+      message: error.response?.data?.error?.message || error.message || 'Login failed'
+    };
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in on mount
     checkAuthStatus();
 
-    // Listen for unauthorized events from api interceptor
     const handleUnauthorized = () => {
       logout();
     };
@@ -27,7 +66,6 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token) {
       setIsAuthenticated(true);
-      // Quietly fetch user details in background
       try {
         const res = await api.get('/auth/me');
         if (res.data && res.data.success) {
@@ -41,12 +79,10 @@ export const AuthProvider = ({ children }) => {
             permissions: fetchedUser.permissions || {}
           }));
         } else {
-          // If the backend returns success: false
           logout();
         }
       } catch (error) {
-        console.warn('Silent token validation failed:', error);
-        // If it's a 401, log them out immediately
+        console.warn('Silent token validation notice:', error);
         if (error.response && error.response.status === 401) {
           logout();
         }
@@ -58,50 +94,13 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   };
 
-  const clearCompanyCache = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('hero_session');
-    localStorage.removeItem('hero_company_id');
-    localStorage.removeItem('selectedCompanyId');
-    localStorage.removeItem('activeCompany');
-    try {
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('cache_') || key.startsWith('hero_cache_') || key.startsWith('hero_portal_')) {
-          localStorage.removeItem(key);
-        }
-      });
-    } catch (e) {}
-  };
-
   const login = async (email, password) => {
-    try {
-      clearCompanyCache();
-      const res = await api.post('/auth/login', { email, password });
-      if (res.data && res.data.success) {
-        if (res.data.data.accessToken) {
-          localStorage.setItem('token', res.data.data.accessToken);
-        }
-        const loggedInUser = res.data.data.user;
-        setUser(loggedInUser);
-        localStorage.setItem('hero_session', JSON.stringify({
-          name: loggedInUser.name,
-          role: loggedInUser.role,
-          company: loggedInUser.company?.name || 'Hero Logistics',
-          companyId: loggedInUser.companyId || loggedInUser.company?.id || null,
-          email: loggedInUser.email,
-          permissions: loggedInUser.permissions || {}
-        }));
-        setIsAuthenticated(true);
-
-        return { success: true, user: res.data.data.user };
-      }
-      return { success: false, message: 'Invalid response from server' };
-    } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.error?.message || 'Login failed'
-      };
+    const res = await directLogin(email, password);
+    if (res.success) {
+      setUser(res.user);
+      setIsAuthenticated(true);
     }
+    return res;
   };
 
   const logout = async () => {
@@ -110,7 +109,11 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout failed on backend:', error);
     } finally {
-      clearCompanyCache();
+      localStorage.removeItem('token');
+      localStorage.removeItem('hero_session');
+      localStorage.removeItem('hero_company_id');
+      localStorage.removeItem('selectedCompanyId');
+      localStorage.removeItem('activeCompany');
       setUser(null);
       setIsAuthenticated(false);
     }
@@ -127,9 +130,13 @@ const defaultAuthValue = {
   user: null,
   isAuthenticated: false,
   loading: false,
-  login: async () => ({ success: false, message: 'Auth context not ready' }),
-  logout: async () => {},
+  login: directLogin,
+  logout: async () => { localStorage.clear(); },
   checkAuthStatus: async () => {}
 };
 
-export const useAuth = () => useContext(AuthContext) || defaultAuthValue;
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (ctx) return ctx;
+  return defaultAuthValue;
+};
