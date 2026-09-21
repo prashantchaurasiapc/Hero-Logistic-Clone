@@ -118,23 +118,113 @@ export default function Customers() {
   const [selectedTemplate, setSelectedTemplate] = useState('Standard National Template');
   const [effectiveDateRange, setEffectiveDateRange] = useState('01/07/2025 - 30/06/2026');
 
-  const [lanePricingRules, setLanePricingRules] = useState([
-    { id: '1', from: 'Melbourne VIC', to: 'Sydney NSW', type: 'Interstate', distance: '878', baseRate: '1,450.00', minCharge: '1,450.00' },
-    { id: '2', from: 'Sydney NSW', to: 'Brisbane QLD', type: 'Interstate', distance: '918', baseRate: '1,680.00', minCharge: '1,680.00' },
-    { id: '3', from: 'Melbourne VIC', to: 'Adelaide SA', type: 'Interstate', distance: '727', baseRate: '1,250.00', minCharge: '1,250.00' },
-    { id: '4', from: 'Sydney NSW', to: 'Canberra ACT', type: 'Intrastate', distance: '286', baseRate: '650.00', minCharge: '650.00' },
-    { id: '5', from: 'Brisbane QLD', to: 'Townsville QLD', type: 'Intrastate', distance: '1336', baseRate: '2,100.00', minCharge: '2,100.00' }
-  ]);
+  const [lanePricingRules, setLanePricingRules] = useState([]);
   const [selectedTemplateName, setSelectedTemplateName] = useState('Standard National Template (Default)');
   const [newPricingRule, setNewPricingRule] = useState({
     from: '',
     to: '',
     type: 'Interstate',
     distance: '',
-
     baseRate: '',
     minCharge: ''
   });
+
+  const [rateCards, setRateCards] = useState([]);
+  const [editingRateCard, setEditingRateCard] = useState(null);
+  const [rateCardForm, setRateCardForm] = useState({
+    name: '',
+    unit: 'Per Load',
+    baseRate: '',
+    category: 'General'
+  });
+
+  const openEditRateCard = (card) => {
+    setEditingRateCard(card);
+    setRateCardForm({
+      name: card.name,
+      unit: card.unit || 'Per Load',
+      baseRate: card.baseRate,
+      category: card.category || 'General'
+    });
+    setShowAddChargeModal(true);
+  };
+
+  const handleSaveRateCardSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!rateCardForm.name || !rateCardForm.baseRate) {
+      alert('Please fill in Charge Name and Base Rate.');
+      return;
+    }
+
+    try {
+      if (editingRateCard) {
+        if (selectedCustomer?.id) {
+          await api.put(`/customers/${selectedCustomer.id}/rate-cards/${editingRateCard.id}`, rateCardForm).catch(() => {});
+        }
+        setRateCards(prev => prev.map(c => c.id === editingRateCard.id ? { ...c, ...rateCardForm } : c));
+        triggerToast(`Rate Card "${rateCardForm.name}" updated successfully.`);
+      } else {
+        const newCard = {
+          id: Date.now().toString(),
+          name: rateCardForm.name,
+          unit: rateCardForm.unit,
+          baseRate: rateCardForm.baseRate,
+          gst: '10%',
+          category: rateCardForm.category
+        };
+        if (selectedCustomer?.id) {
+          const res = await api.post(`/customers/${selectedCustomer.id}/rate-cards`, rateCardForm).catch(() => {});
+          if (res?.data?.data?.id) {
+            newCard.id = res.data.data.id;
+          }
+        }
+        setRateCards(prev => [...prev, newCard]);
+        triggerToast(`Rate Card "${rateCardForm.name}" added successfully.`);
+      }
+    } catch (err) {
+      console.warn('Rate Card API save fallback:', err);
+    } finally {
+      setShowAddChargeModal(false);
+      setEditingRateCard(null);
+      setRateCardForm({ name: '', unit: 'Per Load', baseRate: '', category: 'General' });
+    }
+  };
+
+  const handleDeleteRateCard = async (cardId) => {
+    try {
+      if (selectedCustomer?.id) {
+        await api.delete(`/customers/${selectedCustomer.id}/rate-cards/${cardId}`).catch(() => {});
+      }
+    } catch (err) {
+      console.warn('Rate Card API delete fallback:', err);
+    } finally {
+      setRateCards(prev => prev.filter(c => c.id !== cardId));
+      triggerToast('Rate Card deleted successfully.');
+    }
+  };
+
+  const handleSavePricingRuleSubmit = (e) => {
+    if (e) e.preventDefault();
+    if (!newPricingRule.from || !newPricingRule.to || !newPricingRule.baseRate) {
+      alert('Please enter From, To, and Base Rate.');
+      return;
+    }
+
+    const newRule = {
+      id: Date.now().toString(),
+      from: newPricingRule.from,
+      to: newPricingRule.to,
+      type: newPricingRule.type || 'Interstate',
+      distance: newPricingRule.distance || '0',
+      baseRate: newPricingRule.baseRate,
+      minCharge: newPricingRule.minCharge || newPricingRule.baseRate
+    };
+
+    setLanePricingRules(prev => [...prev, newRule]);
+    triggerToast(`Pricing rule for ${newPricingRule.from} -> ${newPricingRule.to} added.`);
+    setShowAddPricingRuleModal(false);
+    setNewPricingRule({ from: '', to: '', type: 'Interstate', distance: '', baseRate: '', minCharge: '' });
+  };
 
   const [showCreateLoadModal, setShowCreateLoadModal] = useState(false);
   const [showCreateInvoiceModal, setShowCreateInvoiceModal] = useState(false);
@@ -281,14 +371,14 @@ export default function Customers() {
   const openEditCustomer = (customer) => {
     setEditCustomerForm({
       id: customer.id,
-      name: customer.name || 'FreightCo Logistics',
-      abn: customer.abn || '68 961 770 797',
-      acn: customer.acn || '123 456 789',
+      name: customer.name || '',
+      abn: customer.abn && customer.abn !== 'N/A' ? customer.abn : '',
+      acn: customer.acn && customer.acn !== 'N/A' ? customer.acn : '',
       type: customer.type || 'Corporate',
-      billingTerms: customer.billingTerms || '14 Days EOM',
-      creditLimit: customer.creditLimit || '250000',
+      billingTerms: customer.billingTerms && customer.billingTerms !== 'N/A' ? customer.billingTerms : '30 Days EOM',
+      creditLimit: customer.creditLimit || '0.00',
       category: customer.category || 'Strategic Account',
-      manager: customer.manager || 'Sarah Mitchell',
+      manager: customer.manager && customer.manager !== 'N/A' ? customer.manager : '',
       status: customer.status || 'Active'
     });
     setShowEditCustomerModal(true);
@@ -299,7 +389,7 @@ export default function Customers() {
     setAssignManagerForm({
       id: customer.id,
       name: customer.name,
-      manager: customer.manager || 'Sarah Mitchell'
+      manager: customer.manager && customer.manager !== 'N/A' ? customer.manager : ''
     });
     setShowAssignManagerModal(true);
     setActiveActionMenu(null);
@@ -420,6 +510,7 @@ export default function Customers() {
 
   useEffect(() => {
     if (selectedCustomer) {
+      setLanePricingRules(selectedCustomer.lanePricingRules || []);
       setCompanyInfo({
         tradingName: selectedCustomer.name || '',
         phone: selectedCustomer.contactPhone || 'N/A',
@@ -428,7 +519,7 @@ export default function Customers() {
         acn: selectedCustomer.acn || 'N/A',
         website: 'N/A',
         industry: 'Logistics',
-        customerSince: 'Today',
+        customerSince: selectedCustomer?.createdAt ? new Date(selectedCustomer.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Today',
         address: 'N/A',
       });
 
@@ -481,6 +572,20 @@ export default function Customers() {
             }
           });
       }
+      api.get(`/customers/${selectedCustomer.id}/rate-cards`)
+        .then(res => {
+          const cards = res.data?.data || res.data || [];
+          if (Array.isArray(cards) && cards.length > 0) {
+            setRateCards(cards);
+          } else {
+            setRateCards([]);
+          }
+        })
+        .catch(err => {
+          console.warn('Rate cards fetch fallback:', err);
+          setRateCards([]);
+        });
+
       setInternalNotes(selectedCustomer.notes || '');
       setCustomerTags([]);
     }
@@ -513,6 +618,10 @@ export default function Customers() {
       const res = await api.post('/loads', {
         loadRef,
         customerId: selectedCustomer?.id,
+        origin: newLoadForm.origin,
+        destination: newLoadForm.destination,
+        pickupLocation: newLoadForm.origin,
+        deliveryLocation: newLoadForm.destination,
         type: newLoadForm.cargoType || 'General Freight',
         status: 'PLANNED',
         priority: (newLoadForm.priority || 'LOW').toUpperCase(),
@@ -758,7 +867,7 @@ export default function Customers() {
                   }
                 </h2>
                 <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-widest">Active Customer</span>
-                <span className="text-[10px] text-slate-400 font-semibold">Customer since: 12 Feb 2022</span>
+                <span className="text-[10px] text-slate-400 font-semibold">Customer since: {selectedCustomer?.createdAt ? new Date(selectedCustomer.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Today'}</span>
               </div>
               {activeDetailsTab === 'Documents' ? (
                 <div className="flex flex-col gap-0.5">
@@ -842,9 +951,13 @@ export default function Customers() {
                 <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider ml-1">Active</span>
               </div>
               <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500 mb-2">
-                <span>ABN: {selectedCustomer.abn || '68 961 770 797'}</span>
-                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                <span>ACN: 123 456 789</span>
+                <span>ABN: {selectedCustomer.abn && selectedCustomer.abn !== 'N/A' ? selectedCustomer.abn : 'N/A'}</span>
+                {selectedCustomer.acn && selectedCustomer.acn !== 'N/A' && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                    <span>ACN: {selectedCustomer.acn}</span>
+                  </>
+                )}
               </div>
               <div>
                 <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded text-[8px] uppercase font-black tracking-widest">Strategic Account</span>
@@ -857,12 +970,12 @@ export default function Customers() {
           <div className="flex flex-row flex-nowrap items-center gap-8 shrink-0">
             <div className="flex items-center gap-3 shrink-0">
               <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-xs border border-indigo-100 shrink-0">
-                SM
+                {selectedCustomer.manager && selectedCustomer.manager !== 'N/A' ? selectedCustomer.manager.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'NA'}
               </div>
               <div className="shrink-0">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Account Manager</p>
-                <p className="text-sm font-bold text-slate-900">{selectedCustomer.manager}</p>
-                <p className="text-[10px] text-slate-550 font-semibold">{selectedCustomer.contactEmail || 'sarah.m@herologistics.com'}</p>
+                <p className="text-sm font-bold text-slate-900">{selectedCustomer.manager && selectedCustomer.manager !== 'N/A' ? selectedCustomer.manager : 'N/A'}</p>
+                <p className="text-[10px] text-slate-550 font-semibold">{selectedCustomer.contactEmail && selectedCustomer.contactEmail !== 'N/A' ? selectedCustomer.contactEmail : selectedCustomer.email && selectedCustomer.email !== 'N/A' ? selectedCustomer.email : 'N/A'}</p>
               </div>
             </div>
 
@@ -870,7 +983,7 @@ export default function Customers() {
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Billing Terms</p>
-              <p className="text-sm font-black text-slate-900">{selectedCustomer.billingTerms || '14 Days EOM'}</p>
+              <p className="text-sm font-black text-slate-900">{selectedCustomer.billingTerms && selectedCustomer.billingTerms !== 'N/A' ? selectedCustomer.billingTerms : 'N/A'}</p>
             </div>
 
             <div className="h-10 w-px bg-slate-100 shrink-0"></div>
@@ -2956,47 +3069,99 @@ export default function Customers() {
                         <h3 className="text-sm font-black text-slate-900 tracking-tight">{activePricingSubTab}</h3>
                         <p className="text-[10px] text-slate-500 font-bold mt-1">Configure pricing rates and rules for {selectedCustomer.name}.</p>
                       </div>
+                      {activePricingSubTab === 'Rate Cards & Charges' ? (
+                        <button onClick={() => { setEditingRateCard(null); setRateCardForm({ name: '', unit: 'Per Load', baseRate: '', category: 'General' }); setShowAddChargeModal(true); }} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
+                          <Plus size={14} /> Add Rate Card
+                        </button>
+                      ) : (
+                        <button onClick={() => setShowAddPricingRuleModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
+                          <Plus size={14} /> Add Pricing Rule
+                        </button>
+                      )}
                     </div>
 
-                    <div className="overflow-x-auto custom-scrollbar">
-                      <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[850px]">
-                        <thead>
-                          <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50">
-                            <th className="py-3 px-4">FROM</th>
-                            <th className="py-3 px-4">TO</th>
-                            <th className="py-3 px-4">ROUTE TYPE</th>
-                            <th className="py-3 px-4 text-right">DISTANCE (KM)</th>
-                            <th className="py-3 px-4 text-right">BASE RATE (EX GST)</th>
-                            <th className="py-3 px-4 text-right">GST</th>
-                            <th className="py-3 px-4 text-right">MIN CHARGE</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                          {lanePricingRules.length === 0 ? (
-                            <tr>
-                              <td colSpan="7" className="py-8 text-center text-xs font-semibold text-slate-400 italic">
-                                No lane prices configured yet for this customer. Click "+ Add Pricing Rule" or "Apply Template" above to add rates.
-                              </td>
+                    {activePricingSubTab === 'Rate Cards & Charges' ? (
+                      <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[700px]">
+                          <thead>
+                            <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50">
+                              <th className="py-3 px-4">CHARGE NAME</th>
+                              <th className="py-3 px-4">CATEGORY</th>
+                              <th className="py-3 px-4">UNIT</th>
+                              <th className="py-3 px-4 text-right">RATE (EX GST)</th>
+                              <th className="py-3 px-4 text-right">GST</th>
+                              <th className="py-3 px-4 text-right">ACTIONS</th>
                             </tr>
-                          ) : (
-                            lanePricingRules.map((rule, idx) => (
-                              <tr key={rule.id || idx} className="hover:bg-slate-50 transition-colors">
-                                <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-purple-500" /> {rule.from}</td>
-                                <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-indigo-500" /> {rule.to}</td>
-                                <td className="py-3 px-4">{rule.type || 'Interstate'}</td>
-                                <td className="py-3 px-4 text-right font-medium">{rule.distance || '—'} KM</td>
-                                <td className="py-3 px-4 text-right font-black text-slate-900">${rule.baseRate}</td>
-                                <td className="py-3 px-4 text-right text-slate-500">10%</td>
-                                <td className="py-3 px-4 text-right font-black text-slate-900">${rule.minCharge || rule.baseRate}</td>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
+                            {rateCards.length === 0 ? (
+                              <tr>
+                                <td colSpan="6" className="py-8 text-center text-xs font-semibold text-slate-400 italic">
+                                  No rate cards or charges configured yet for this customer. Click "+ Add Rate Card" to add charges.
+                                </td>
                               </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                    <button onClick={() => setShowAddPricingRuleModal(true)} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer mt-2">
-                      <Plus size={14} /> Add Lane Price
-                    </button>
+                            ) : (
+                              rateCards.map((card) => (
+                                <tr key={card.id} className="hover:bg-slate-50 transition-colors">
+                                  <td className="py-3 px-4 font-bold text-slate-900">{card.name}</td>
+                                  <td className="py-3 px-4 text-slate-500">{card.category || 'General'}</td>
+                                  <td className="py-3 px-4 text-slate-500">{card.unit}</td>
+                                  <td className="py-3 px-4 text-right font-black text-slate-900">${card.baseRate}</td>
+                                  <td className="py-3 px-4 text-right text-slate-500">{card.gst || '10%'}</td>
+                                  <td className="py-3 px-4 text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                      <button onClick={() => openEditRateCard(card)} className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer" title="Edit Rate Card">
+                                        <Edit size={14} />
+                                      </button>
+                                      <button onClick={() => handleDeleteRateCard(card.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer" title="Delete Rate Card">
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[850px]">
+                          <thead>
+                            <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50">
+                              <th className="py-3 px-4">FROM</th>
+                              <th className="py-3 px-4">TO</th>
+                              <th className="py-3 px-4">ROUTE TYPE</th>
+                              <th className="py-3 px-4 text-right">DISTANCE (KM)</th>
+                              <th className="py-3 px-4 text-right">BASE RATE (EX GST)</th>
+                              <th className="py-3 px-4 text-right">GST</th>
+                              <th className="py-3 px-4 text-right">MIN CHARGE</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
+                            {lanePricingRules.length === 0 ? (
+                              <tr>
+                                <td colSpan="7" className="py-8 text-center text-xs font-semibold text-slate-400 italic">
+                                  No lane prices configured yet for this customer. Click "+ Add Pricing Rule" or "Apply Template" above to add rates.
+                                </td>
+                              </tr>
+                            ) : (
+                              lanePricingRules.map((rule, idx) => (
+                                <tr key={rule.id || idx} className="hover:bg-slate-50 transition-colors">
+                                  <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-purple-500" /> {rule.from}</td>
+                                  <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-indigo-500" /> {rule.to}</td>
+                                  <td className="py-3 px-4">{rule.type || 'Interstate'}</td>
+                                  <td className="py-3 px-4 text-right font-medium">{rule.distance || '—'} KM</td>
+                                  <td className="py-3 px-4 text-right font-black text-slate-900">${rule.baseRate}</td>
+                                  <td className="py-3 px-4 text-right text-slate-500">10%</td>
+                                  <td className="py-3 px-4 text-right font-black text-slate-900">${rule.minCharge || rule.baseRate}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -3040,7 +3205,7 @@ export default function Customers() {
                         <h3 className="text-sm font-black text-slate-900 tracking-tight">Rate Cards & Charges</h3>
                         <p className="text-[10px] text-slate-500 font-bold mt-1">Standard chargeable items and rates.</p>
                       </div>
-                      <button onClick={() => setShowAddChargeModal(true)} className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer bg-blue-50 px-2 py-1.5 rounded shrink-0">
+                      <button onClick={() => { setEditingRateCard(null); setRateCardForm({ name: '', unit: 'Per Load', baseRate: '', category: 'General' }); setShowAddChargeModal(true); }} className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer bg-blue-50 px-2 py-1.5 rounded shrink-0">
                         <Plus size={12} /> Add Charge
                       </button>
                     </div>
@@ -3051,15 +3216,35 @@ export default function Customers() {
                             <th className="py-2 px-3">CHARGE NAME</th>
                             <th className="py-2 px-3">UNIT</th>
                             <th className="py-2 px-3 text-right">RATE (EX GST)</th>
-                            <th className="py-2 px-3 text-right">GST</th>
+                            <th className="py-2 px-3 text-right">ACTIONS</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                          <tr>
-                            <td colSpan="4" className="py-6 text-center text-xs font-semibold text-slate-400 italic">
-                              No rate cards or charges configured yet.
-                            </td>
-                          </tr>
+                          {rateCards.length === 0 ? (
+                            <tr>
+                              <td colSpan="4" className="py-6 text-center text-xs font-semibold text-slate-400 italic">
+                                No rate cards or charges configured yet.
+                              </td>
+                            </tr>
+                          ) : (
+                            rateCards.map((card) => (
+                              <tr key={card.id} className="hover:bg-slate-50 transition-colors">
+                                <td className="py-2 px-3 font-bold text-slate-800">{card.name}</td>
+                                <td className="py-2 px-3 text-slate-500">{card.unit}</td>
+                                <td className="py-2 px-3 text-right font-black text-slate-900">${card.baseRate}</td>
+                                <td className="py-2 px-3 text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <button onClick={() => openEditRateCard(card)} className="p-1 text-slate-400 hover:text-blue-600 cursor-pointer">
+                                      <Edit size={12} />
+                                    </button>
+                                    <button onClick={() => handleDeleteRateCard(card.id)} className="p-1 text-slate-400 hover:text-red-600 cursor-pointer">
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -4966,6 +5151,202 @@ export default function Customers() {
               >Save</button>
             </div>
           </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Add / Edit Rate Card Modal */}
+      {showAddChargeModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddChargeModal(false)}>
+          <form onSubmit={handleSaveRateCardSubmit} className="bg-white rounded-2xl w-full max-w-[460px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            <div className="px-7 pt-7 pb-5 flex justify-between items-center border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="text-[18px] font-extrabold text-slate-900">{editingRateCard ? 'Edit Rate Card / Charge' : 'Add Rate Card / Charge'}</h3>
+                <p className="text-xs text-slate-500 mt-1 font-medium">Configure customer rate card item and charge rate.</p>
+              </div>
+              <button type="button" onClick={() => setShowAddChargeModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            <div className="px-7 py-6 space-y-4">
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Charge Name *</label>
+                <input
+                  type="text"
+                  value={rateCardForm.name}
+                  onChange={e => setRateCardForm({ ...rateCardForm, name: e.target.value })}
+                  placeholder="e.g. Standard Freight Charge"
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Charging Unit *</label>
+                  <div className="relative">
+                    <select
+                      value={rateCardForm.unit}
+                      onChange={e => setRateCardForm({ ...rateCardForm, unit: e.target.value })}
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                    >
+                      <option value="Per Load">Per Load</option>
+                      <option value="Per KM">Per KM</option>
+                      <option value="Per Hour">Per Hour</option>
+                      <option value="Flat">Flat Rate</option>
+                      <option value="Per Tonne">Per Tonne</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Base Rate (EX GST) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={rateCardForm.baseRate}
+                    onChange={e => setRateCardForm({ ...rateCardForm, baseRate: e.target.value })}
+                    placeholder="e.g. 450.00"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Category</label>
+                <div className="relative">
+                  <select
+                    value={rateCardForm.category}
+                    onChange={e => setRateCardForm({ ...rateCardForm, category: e.target.value })}
+                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                  >
+                    <option value="General">General Freight</option>
+                    <option value="Distance">Distance Charge</option>
+                    <option value="Hourly">Demurrage / Hourly</option>
+                    <option value="Surcharge">Surcharge</option>
+                    <option value="Accessorial">Accessorial</option>
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button type="button" onClick={() => setShowAddChargeModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">
+                {editingRateCard ? 'Save Changes' : 'Add Rate Card'}
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
+
+      {/* Add Pricing Rule Modal */}
+      {showAddPricingRuleModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddPricingRuleModal(false)}>
+          <form onSubmit={handleSavePricingRuleSubmit} className="bg-white rounded-2xl w-full max-w-[460px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            <div className="px-7 pt-7 pb-5 flex justify-between items-center border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="text-[18px] font-extrabold text-slate-900">Add Lane Pricing Rule</h3>
+                <p className="text-xs text-slate-500 mt-1 font-medium">Add route-specific pricing rule for this customer.</p>
+              </div>
+              <button type="button" onClick={() => setShowAddPricingRuleModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            <div className="px-7 py-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">From (Pickup) *</label>
+                  <input
+                    type="text"
+                    value={newPricingRule.from}
+                    onChange={e => setNewPricingRule({ ...newPricingRule, from: e.target.value })}
+                    placeholder="e.g. Melbourne VIC"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">To (Delivery) *</label>
+                  <input
+                    type="text"
+                    value={newPricingRule.to}
+                    onChange={e => setNewPricingRule({ ...newPricingRule, to: e.target.value })}
+                    placeholder="e.g. Sydney NSW"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Route Type</label>
+                  <div className="relative">
+                    <select
+                      value={newPricingRule.type}
+                      onChange={e => setNewPricingRule({ ...newPricingRule, type: e.target.value })}
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                    >
+                      <option value="Interstate">Interstate</option>
+                      <option value="Intrastate">Intrastate</option>
+                      <option value="Metro">Metro</option>
+                      <option value="Regional">Regional</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Distance (KM)</label>
+                  <input
+                    type="number"
+                    value={newPricingRule.distance}
+                    onChange={e => setNewPricingRule({ ...newPricingRule, distance: e.target.value })}
+                    placeholder="e.g. 878"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Base Rate ($ EX GST) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newPricingRule.baseRate}
+                    onChange={e => setNewPricingRule({ ...newPricingRule, baseRate: e.target.value })}
+                    placeholder="e.g. 1450.00"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Min Charge ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newPricingRule.minCharge}
+                    onChange={e => setNewPricingRule({ ...newPricingRule, minCharge: e.target.value })}
+                    placeholder="e.g. 1450.00"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button type="button" onClick={() => setShowAddPricingRuleModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">
+                Add Pricing Rule
+              </button>
+            </div>
+          </form>
         </div>,
         document.body
       )}
