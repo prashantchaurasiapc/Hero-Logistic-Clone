@@ -8,7 +8,7 @@ import {
   Settings, User, MapPin, Briefcase, ChevronUp, Target, CheckSquare, Shield, UploadCloud,
   Edit2, MessageSquare, ShieldCheck, Activity, XCircle, Plus, ArrowRight,
   TrendingUp, Award, Zap, FileText as FileIcon, FileCheck, Star, ThumbsUp, CheckCircle, BarChart2,
-  Eye, Trash2, Printer, Search as SearchIcon, Edit, MoreHorizontal
+  Eye, Trash2, Printer, Search as SearchIcon, Edit, MoreHorizontal, DollarSign, Save, Check
 } from 'lucide-react';
 
 // All driver and document data comes from the backend API — no hardcoded mock data
@@ -218,6 +218,7 @@ export default function Drivers() {
             branch: branchName,
             payType: d.payType || '',
             payRate: d.payRate ? String(d.payRate) : '',
+            loadPaySchedule: d.loadPaySchedule || '',
             bankName: d.bankName || '',
             accountNumber: d.accountNumber || '',
             routingNumber: d.routingNumber || '',
@@ -497,6 +498,154 @@ export default function Drivers() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isEditingDriver, setIsEditingDriver] = useState(false);
+  const [driverFormPayType, setDriverFormPayType] = useState('Hourly');
+  const [driverLoadPaySchedule, setDriverLoadPaySchedule] = useState([
+    { id: '1', name: 'Local Load', amount: 350, isSelected: true },
+    { id: '2', name: 'Sydney -> Canberra', amount: 500, isSelected: false },
+    { id: '3', name: 'Sydney -> Melbourne', amount: 1000, isSelected: false },
+    { id: '4', name: 'Sydney -> Brisbane', amount: 1200, isSelected: false },
+    { id: '5', name: 'Sydney -> Adelaide', amount: 1700, isSelected: false }
+  ]);
+
+  useEffect(() => {
+    if (isEditingDriver && selectedDriver) {
+      setDriverFormPayType(selectedDriver.payType || 'Hourly');
+      let sched = [];
+      if (selectedDriver.loadPaySchedule) {
+        try {
+          sched = typeof selectedDriver.loadPaySchedule === 'string'
+            ? JSON.parse(selectedDriver.loadPaySchedule)
+            : selectedDriver.loadPaySchedule;
+        } catch (e) {}
+      }
+      if (Array.isArray(sched) && sched.length > 0) {
+        const hasSelected = sched.some(s => s.isSelected);
+        const normalized = sched.map((s, idx) => ({
+          ...s,
+          isSelected: hasSelected ? Boolean(s.isSelected) : idx === 0
+        }));
+        setDriverLoadPaySchedule(normalized);
+      } else {
+        setDriverLoadPaySchedule([
+          { id: '1', name: 'Local Load', amount: 350, isSelected: true },
+          { id: '2', name: 'Sydney -> Canberra', amount: 500, isSelected: false },
+          { id: '3', name: 'Sydney -> Melbourne', amount: 1000, isSelected: false },
+          { id: '4', name: 'Sydney -> Brisbane', amount: 1200, isSelected: false },
+          { id: '5', name: 'Sydney -> Adelaide', amount: 1700, isSelected: false }
+        ]);
+      }
+    } else if (showAddDriver) {
+      setDriverFormPayType('Hourly');
+      setDriverLoadPaySchedule([
+        { id: '1', name: 'Local Load', amount: 350, isSelected: true },
+        { id: '2', name: 'Sydney -> Canberra', amount: 500, isSelected: false },
+        { id: '3', name: 'Sydney -> Melbourne', amount: 1000, isSelected: false },
+        { id: '4', name: 'Sydney -> Brisbane', amount: 1200, isSelected: false },
+        { id: '5', name: 'Sydney -> Adelaide', amount: 1700, isSelected: false }
+      ]);
+    }
+  }, [isEditingDriver, selectedDriver, showAddDriver]);
+
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+
+  const handleQuickSaveSchedule = async () => {
+    setIsSavingSchedule(true);
+    try {
+      const scheduleJson = JSON.stringify(driverLoadPaySchedule);
+      const formEl = document.getElementById('driver-upsert-form');
+      const fd = formEl ? new FormData(formEl) : new FormData();
+
+      const rawEmail = (fd.get('EmailAddress') || fd.get('Username') || fd.get('email') || fd.get('username') || '').trim();
+      const firstName = (fd.get('FirstName') || fd.get('firstName') || '').trim();
+      const lastName = (fd.get('LastName') || fd.get('lastName') || '').trim();
+      const phone = (fd.get('PhoneNumber') || fd.get('phone') || '').trim();
+
+      if (selectedDriver?.id) {
+        // Edit Mode: Update existing driver immediately in database
+        const updatePayload = {
+          payType: driverFormPayType,
+          loadPaySchedule: scheduleJson
+        };
+        if (rawEmail) updatePayload.email = rawEmail;
+        if (firstName) updatePayload.firstName = firstName;
+        if (lastName) updatePayload.lastName = lastName;
+        if (phone) updatePayload.phone = phone;
+
+        const res = await api.put(`/drivers/${selectedDriver.id}`, updatePayload);
+        const updated = res?.data?.data || res?.data || {};
+
+        setSelectedDriver(prev => ({
+          ...prev,
+          ...updated,
+          email: rawEmail || updated.email || prev?.email,
+          firstName: firstName || updated.firstName || prev?.firstName,
+          lastName: lastName || updated.lastName || prev?.lastName,
+          payType: driverFormPayType,
+          loadPaySchedule: scheduleJson
+        }));
+
+        setDriverList(prev => prev.map(d => d.id === selectedDriver.id ? {
+          ...d,
+          ...updated,
+          email: rawEmail || updated.email || d.email,
+          firstName: firstName || updated.firstName || d.firstName,
+          lastName: lastName || updated.lastName || d.lastName,
+          payType: driverFormPayType,
+          loadPaySchedule: scheduleJson
+        } : d));
+
+        fetchDrivers();
+        showToast("🎉 Load Pay Schedule saved to Database (PUT /drivers)!");
+      } else {
+        // Create Mode (Add Driver): Create driver directly in DB with entered form fields + schedule
+        const email = rawEmail || null;
+
+        const createPayload = {
+          firstName: firstName || 'Driver',
+          lastName: lastName || '',
+          phone,
+          email: email,
+          payType: driverFormPayType,
+          loadPaySchedule: scheduleJson,
+          bankName: fd.get('BankName') || '',
+          accountNumber: fd.get('AccountNumber') || '',
+          routingNumber: fd.get('BSBRouting') || '',
+          taxNumber: fd.get('TaxNumber') || '',
+          superFund: fd.get('SuperannuationFund') || '',
+          preferredVehicle: fd.get('PreferredVehicle') || '',
+          preferredRoutes: fd.get('PreferredRoutes') || '',
+          status: 'AVAILABLE'
+        };
+
+        const res = await api.post('/drivers', createPayload);
+        if (res.data && res.data.data) {
+          const created = res.data.data;
+          setSelectedDriver({
+            ...created,
+            id: created.id,
+            name: `${created.firstName || firstName || 'Driver'} ${created.lastName || lastName}`.trim(),
+            firstName: created.firstName || firstName || 'Driver',
+            lastName: created.lastName || lastName,
+            phone: created.phone || phone,
+            email: created.email || email,
+            payType: driverFormPayType,
+            loadPaySchedule: scheduleJson,
+            status: created.status || 'Available'
+          });
+          setIsEditingDriver(true);
+          setShowAddDriver(false);
+          fetchDrivers();
+          showToast("🎉 Driver & Load Pay Schedule created in Database (POST /drivers)!");
+        }
+      }
+    } catch (err) {
+      console.error('Error saving load pay schedule:', err);
+      alert('Failed to save load pay schedule: ' + (err?.response?.data?.message || err.message));
+    } finally {
+      setIsSavingSchedule(false);
+    }
+  };
+
   const [isDetailsMoreOpen, setIsDetailsMoreOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -3182,7 +3331,9 @@ export default function Drivers() {
       licenceClass: selectedDriver?.licenseClass || '',
       branch: selectedDriver?.branch && selectedDriver?.branch !== '—' ? selectedDriver.branch : '',
       employmentType: selectedDriver?.employmentType && selectedDriver?.employmentType !== '—' ? selectedDriver.employmentType : '',
+      payType: selectedDriver?.payType || 'Hourly',
       payRate: selectedDriver?.payRate || '',
+      loadPaySchedule: selectedDriver?.loadPaySchedule || '',
       bankName: selectedDriver?.bankName || '',
       superFund: selectedDriver?.superFund || '',
       preferredVehicle: selectedDriver?.preferredVehicle || '',
@@ -3208,7 +3359,7 @@ export default function Drivers() {
             </div>
           </div>
 
-        <form key={isEditMode ? `edit-driver-${selectedDriver?.id || 'selected'}` : `create-driver-${formResetKey}`} onSubmit={async (e) => {
+        <form id="driver-upsert-form" key={isEditMode ? `edit-driver-${selectedDriver?.id || 'selected'}` : `create-driver-${formResetKey}`} onSubmit={async (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
           const firstName = fd.get('FirstName') || fd.get('firstName') || '';
@@ -3216,13 +3367,8 @@ export default function Drivers() {
           const rawDriverCode = fd.has('EmployeeIDManualEditOption') ? fd.get('EmployeeIDManualEditOption') : fd.get('driverCode');
           const driverCode = rawDriverCode !== null ? rawDriverCode.trim() : (isEditMode && selectedDriver ? (selectedDriver.driverCode === '—' ? '' : selectedDriver.driverCode) : '');
           const phone = fd.get('PhoneNumber') || fd.get('phone') || '';
-          const rawEmail = (fd.get('EmailAddress') || fd.get('email') || fd.get('Username') || fd.get('username') || '').trim();
+          const rawEmail = (fd.get('EmailAddress') || fd.get('Username') || fd.get('email') || fd.get('username') || '').trim();
           let email = rawEmail || (isEditMode && selectedDriver ? selectedDriver.email : '');
-          if (!email && !isEditMode) {
-            const cleanFirst = firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || 'driver';
-            const cleanLast = lastName.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || Math.floor(100 + Math.random() * 900);
-            email = `${cleanFirst}.${cleanLast}@herologistics.com.au`;
-          }
           const rawPassword = (fd.get('Password') || fd.get('password') || '').trim();
           const password = rawPassword || '123456';
           const avatarUrl = photoPreview || (isEditMode && selectedDriver ? selectedDriver.avatar : '');
@@ -3271,8 +3417,9 @@ export default function Drivers() {
             }
           }
 
-          const payType = fd.get('PayType') || 'Hourly';
-          const payRate = fd.get('PayRate') || null;
+          const payType = driverFormPayType;
+          const payRate = driverFormPayType === 'Per Load' ? null : (fd.get('PayRate') || null);
+          const loadPaySchedule = driverFormPayType === 'Per Load' ? JSON.stringify(driverLoadPaySchedule) : null;
           const bankName = fd.get('BankName') || '';
           const accountNumber = fd.get('AccountNumber') || '';
           const routingNumber = fd.get('BSBRouting') || '';
@@ -3319,6 +3466,7 @@ export default function Drivers() {
             age: manualAge,
             payType,
             payRate,
+            loadPaySchedule,
             bankName,
             accountNumber,
             routingNumber,
@@ -3368,7 +3516,9 @@ export default function Drivers() {
                   city,
                   state,
                   postalCode,
+                  payType,
                   payRate,
+                  loadPaySchedule,
                   bankName,
                   superFund,
                   preferredVehicle,
@@ -3412,6 +3562,9 @@ export default function Drivers() {
                   category: category,
                   shift: shift,
                   branch: branch || '—',
+                  payType: createdDriver.payType || payType,
+                  payRate: createdDriver.payRate ? String(createdDriver.payRate) : '',
+                  loadPaySchedule: createdDriver.loadPaySchedule || loadPaySchedule,
                   avatar: formatAvatarUrl(createdDriver.avatarUrl || avatarUrl, createdDriver.id)
                 };
                 setSelectedDriver(newMapped);
@@ -3559,16 +3712,233 @@ export default function Drivers() {
 
             {/* 5. Payroll Information */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
-              <h2 className="text-sm font-black text-slate-900 mb-6">5. Payroll Information</h2>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                <div>
+                  <h2 className="text-sm font-black text-slate-900">5. Payroll Information</h2>
+                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                    Configure driver payment schedule, banking details and superannuation.
+                  </p>
+                </div>
+                {driverFormPayType === 'Per Load' && (
+                  <span className="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse"></span>
+                    Per Load Schedule Active
+                  </span>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
-                <InputField label="Pay Type" type="select" options={['Hourly', 'Per Load', 'Per Km']} defaultValue={isEditMode ? (defaultData.payType || "Hourly") : "Hourly"} />
-                <InputField label="Pay Rate ($)" defaultValue={isEditMode ? defaultData.payRate : ""} placeholder="0.00" />
+                {/* Pay Type Selector */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                    Pay Type <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    name="PayType"
+                    value={driverFormPayType}
+                    onChange={(e) => setDriverFormPayType(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer shadow-xs"
+                  >
+                    <option value="Hourly">Hourly</option>
+                    <option value="Per Load">Per Load</option>
+                    <option value="Per Km">Per Km</option>
+                  </select>
+                </div>
+
+                {/* Rate Field only if Hourly or Per Km */}
+                {driverFormPayType !== 'Per Load' ? (
+                  <InputField
+                    label={driverFormPayType === 'Per Km' ? "Pay Rate ($/km)" : "Pay Rate ($/hr)"}
+                    name="PayRate"
+                    defaultValue={isEditMode ? defaultData.payRate : ""}
+                    placeholder={driverFormPayType === 'Per Km' ? "e.g. 0.55" : "e.g. 45.00"}
+                  />
+                ) : (
+                  <div className="flex flex-col gap-1.5 justify-center">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pay Model</label>
+                    <div className="text-xs font-bold text-purple-700 bg-purple-50/70 border border-purple-100 rounded-lg px-3 py-2">
+                      Multi-Route Trip Rate Schedule
+                    </div>
+                  </div>
+                )}
+
                 <InputField label="Bank Name" defaultValue={isEditMode ? defaultData.bankName : ""} placeholder="e.g. Commonwealth Bank" />
                 <InputField label="Account Number" defaultValue={isEditMode ? defaultData.accountNumber : ""} />
                 <InputField label="BSB/Routing" defaultValue={isEditMode ? defaultData.routingNumber : ""} />
                 <InputField label="Tax Number" defaultValue={isEditMode ? defaultData.taxNumber : ""} />
                 <InputField label="Superannuation Fund" className="sm:col-span-2" defaultValue={isEditMode ? defaultData.superFund : ""} placeholder="e.g. AustralianSuper" />
               </div>
+
+              {/* Dynamic Named Load-Pay Options Table for Per Load */}
+              {driverFormPayType === 'Per Load' && (
+                <div className="mt-8 pt-6 border-t border-slate-100">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <DollarSign size={15} className="text-purple-600" />
+                        <span>Named Load-Pay Options (Saved Payment Choices)</span>
+                        <span className="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                          {driverLoadPaySchedule.length} Options
+                        </span>
+                      </h3>
+                      <p className="text-[11px] text-slate-500 font-medium mt-1">
+                        Dispatch can pick these preset rates when assigning loads. You can add new routes, adjust rates, or delete options below.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDriverLoadPaySchedule(prev => [
+                            ...prev,
+                            { id: Date.now().toString(), name: '', amount: 0 }
+                          ]);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs"
+                      >
+                        <Plus size={14} />
+                        <span>Add Load Pay Option</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleQuickSaveSchedule}
+                        disabled={isSavingSchedule}
+                        className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-700 hover:bg-purple-800 disabled:bg-purple-400 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm"
+                      >
+                        <Save size={14} />
+                        <span>{isSavingSchedule ? "Saving..." : "Save Schedule"}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Active Assigned Route Banner */}
+                  {(() => {
+                    const activeOption = driverLoadPaySchedule.find(r => r.isSelected) || driverLoadPaySchedule[0];
+                    if (!activeOption) return null;
+                    return (
+                      <div className="mb-3 px-4 py-2.5 bg-emerald-50/90 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-emerald-900 font-semibold shadow-2xs">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                          <span>Active Assigned Route: <strong className="font-black text-emerald-950">{activeOption.name || 'Unnamed Route'}</strong> — <strong className="font-black text-emerald-950">${parseFloat(activeOption.amount || 0).toFixed(2)}</strong></span>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-200 px-2.5 py-0.5 rounded-full shrink-0">
+                          1 Single Route Assigned to this Driver
+                        </span>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                          <th className="py-2.5 px-3 w-2/12 text-center">Status / Assign</th>
+                          <th className="py-2.5 px-4 w-6/12">Route / Trip Name</th>
+                          <th className="py-2.5 px-4 w-3/12">Agreed Payment ($)</th>
+                          <th className="py-2.5 px-3 w-1/12 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs font-semibold">
+                        {driverLoadPaySchedule.map((item, idx) => (
+                          <tr key={item.id || idx} className={`transition-colors ${item.isSelected ? 'bg-emerald-50/40 font-bold' : 'hover:bg-purple-50/20'}`}>
+                            <td className="py-2.5 px-3 text-center">
+                              {item.isSelected ? (
+                                <div
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-lg text-[11px] font-black shadow-xs cursor-default"
+                                  title="Currently assigned active route for this driver"
+                                >
+                                  <Check size={13} className="stroke-[3] text-emerald-700" />
+                                  <span>Assigned (Active)</span>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDriverLoadPaySchedule(prev => prev.map((row, i) => ({
+                                      ...row,
+                                      isSelected: i === idx
+                                    })));
+                                  }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-purple-50 border border-slate-300 hover:border-purple-400 text-slate-700 hover:text-purple-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-xs"
+                                  title="Click to select and assign this single route to this driver"
+                                >
+                                  <span className="w-3 h-3 rounded-full border-2 border-slate-300"></span>
+                                  <span>Select / Assign</span>
+                                </button>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-4">
+                              <input
+                                type="text"
+                                value={item.name}
+                                placeholder="e.g. Sydney -> Melbourne"
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setDriverLoadPaySchedule(prev => prev.map((row, i) => i === idx ? { ...row, name: val } : row));
+                                }}
+                                className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+                              />
+                            </td>
+                            <td className="py-2.5 px-4">
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.amount === 0 ? '' : item.amount}
+                                  placeholder="0.00"
+                                  onChange={(e) => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    setDriverLoadPaySchedule(prev => prev.map((row, i) => i === idx ? { ...row, amount: val } : row));
+                                  }}
+                                  className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-lg pl-7 pr-3 py-1.5 text-xs font-bold text-slate-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+                                />
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDriverLoadPaySchedule(prev => prev.filter((_, i) => i !== idx));
+                                }}
+                                title="Delete Option"
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer inline-flex items-center justify-center"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {driverLoadPaySchedule.length === 0 && (
+                          <tr>
+                            <td colSpan="4" className="py-8 text-center text-xs text-slate-400">
+                              No load pay options configured. Click &quot;Add Load Pay Option&quot; above to create one.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Direct Save Bar right below the table */}
+                  <div className="mt-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                      <span>Instant Save: You can save this driver&apos;s load pay options directly without saving/closing the entire form.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleQuickSaveSchedule}
+                      disabled={isSavingSchedule}
+                      className="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm shrink-0"
+                    >
+                      <Save size={14} />
+                      <span>{isSavingSchedule ? "Saving to Database..." : "Save Load Pay Schedule"}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 6. Vehicle Preferences */}

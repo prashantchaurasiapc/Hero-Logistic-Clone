@@ -238,6 +238,7 @@ export default function CreateLoad({ onBack }) {
   const [dbDrivers, setDbDrivers] = useState([]);
   const [dbTrucks, setDbTrucks] = useState([]);
   const [dbCustomers, setDbCustomers] = useState([]);
+  const [selectedPayChoice, setSelectedPayChoice] = useState('');
 
   useEffect(() => {
     const loadMasterData = async () => {
@@ -1717,7 +1718,28 @@ export default function CreateLoad({ onBack }) {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <select
                   value={formData.driver}
-                  onChange={e => setFormData({ ...formData, driver: e.target.value })}
+                  onChange={e => {
+                    const drvId = e.target.value;
+                    const drvObj = dbDrivers.find(d => String(d.id) === String(drvId));
+                    let sched = [];
+                    if (drvObj?.loadPaySchedule) {
+                      try {
+                        sched = typeof drvObj.loadPaySchedule === 'string' ? JSON.parse(drvObj.loadPaySchedule) : drvObj.loadPaySchedule;
+                      } catch (err) {}
+                    }
+                    const activeRoute = Array.isArray(sched) && sched.length > 0
+                      ? (sched.find(s => s.isSelected) || sched[0])
+                      : null;
+                    const defaultPay = activeRoute
+                      ? String(activeRoute.amount)
+                      : (drvObj?.payRate ? String(drvObj.payRate) : '');
+                    setSelectedPayChoice(activeRoute ? String(activeRoute.amount) : '');
+                    setFormData(prev => ({
+                      ...prev,
+                      driver: drvId,
+                      driverPay: defaultPay
+                    }));
+                  }}
                   className={`${selectCls} pl-8`}
                 >
                   <option value="">Select Driver...</option>
@@ -1729,6 +1751,88 @@ export default function CreateLoad({ onBack }) {
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
               </div>
             </div>
+
+            {/* Dynamic Driver Pay Section based on Driver & Client Requirement */}
+            {formData.driver && (() => {
+              const selectedDriverObj = dbDrivers.find(d => String(d.id) === String(formData.driver));
+              let driverSchedule = [];
+              if (selectedDriverObj?.loadPaySchedule) {
+                try {
+                  driverSchedule = typeof selectedDriverObj.loadPaySchedule === 'string'
+                    ? JSON.parse(selectedDriverObj.loadPaySchedule)
+                    : selectedDriverObj.loadPaySchedule;
+                } catch (err) {}
+              }
+
+              return (
+                <div className="col-span-1 md:col-span-2 bg-purple-50/50 border border-purple-200/80 rounded-xl p-4 transition-all">
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <FieldLabel required>Driver Pay (Agreed Trip Payment)</FieldLabel>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-purple-700 bg-purple-100/80 border border-purple-200 px-2 py-0.5 rounded-md">
+                        {selectedDriverObj?.payType || 'Per Load'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Dropdown for Preset Choices */}
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-600" />
+                      <select
+                        value={selectedPayChoice}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSelectedPayChoice(val);
+                          if (val === 'custom') {
+                            // keep custom amount or leave blank
+                          } else if (val) {
+                            setFormData(prev => ({ ...prev, driverPay: val }));
+                          }
+                        }}
+                        className={`${selectCls} pl-8 font-semibold text-slate-800`}
+                      >
+                        <option value="">Select Agreed Driver Pay...</option>
+                        {Array.isArray(driverSchedule) && driverSchedule.map((item, idx) => (
+                          <option key={item.id || idx} value={item.amount}>
+                            {item.name} — ${item.amount} {item.isSelected ? '★ (Assigned Route)' : ''}
+                          </option>
+                        ))}
+                        <option value="custom">✏️ Custom Amount...</option>
+                      </select>
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                    </div>
+
+                    {/* Custom Amount or Manual Override */}
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.driverPay}
+                        onChange={e => {
+                          setSelectedPayChoice('custom');
+                          setFormData({ ...formData, driverPay: e.target.value });
+                        }}
+                        className={`${inputCls} pl-7 font-bold text-purple-900 border-purple-300 focus:border-purple-600`}
+                        placeholder={selectedPayChoice === 'custom' ? "Enter custom amount..." : "Agreed Pay Amount ($)"}
+                      />
+                    </div>
+                  </div>
+
+                  {formData.driverPay && !isNaN(parseFloat(formData.driverPay)) ? (
+                    <div className="mt-2.5 flex items-center justify-between text-[11px] text-purple-700 bg-purple-100/50 border border-purple-200/50 rounded-lg px-3 py-1.5 font-medium">
+                      <span>✓ Driver will receive: <strong className="font-black text-purple-900">${parseFloat(formData.driverPay).toFixed(2)}</strong> for this trip</span>
+                      <span className="text-[10px] text-purple-500 font-semibold">(Applies to this load only)</span>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-[10px] text-slate-500 font-medium">
+                      Select an agreed rate choice from the dropdown or type a custom amount for this specific load.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
 
             <div>
               <FieldLabel>Load Notes (Driver View)</FieldLabel>
