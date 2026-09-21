@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, Plus, Check, X, ShieldAlert, CheckCircle, ExternalLink,
-  Settings, Download, FileText, Filter, ChevronDown, RefreshCw, AlertCircle, Loader2
+  Settings, Download, FileText, Filter, ChevronDown, RefreshCw, AlertCircle, Loader2, Trash2
 } from 'lucide-react';
 import api from '../../services/api';
 import CreateCompany from './CreateCompany';
@@ -61,11 +61,34 @@ export default function Companies() {
   // Modals state
   const [showEditCompanyModal, setShowEditCompanyModal] = useState(false);
   const [showSuspendCompanyModal, setShowSuspendCompanyModal] = useState(false);
+  const [showDeleteCompanyModal, setShowDeleteCompanyModal] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState(null);
+  const [isDeletingCompany, setIsDeletingCompany] = useState(false);
   const [showLoginAsModal, setShowLoginAsModal] = useState(false);
   const [showChangeSubscriptionModal, setShowChangeSubscriptionModal] = useState(false);
   const [showManageFeaturesModal, setShowManageFeaturesModal] = useState(false);
   const [showSendNotificationModal, setShowSendNotificationModal] = useState(false);
   const [selectedActionCompany, setSelectedActionCompany] = useState(null);
+
+  const handleConfirmDelete = async () => {
+    if (!companyToDelete) return;
+    try {
+      setIsDeletingCompany(true);
+      const targetId = companyToDelete.dbId || companyToDelete.id;
+      const res = await api.delete(`/companys/${targetId}`);
+      if (res.data?.success || res.status === 200) {
+        showNotification(`Successfully deleted company: ${companyToDelete.name}`);
+        setShowDeleteCompanyModal(false);
+        setCompanyToDelete(null);
+        fetchCompaniesAndPlans(false);
+      }
+    } catch (err) {
+      console.error('Failed to delete company:', err);
+      showNotification('Failed to delete company: ' + (err?.response?.data?.message || err.message));
+    } finally {
+      setIsDeletingCompany(false);
+    }
+  };
 
   // Inspector state
   const [showInspector, setShowInspector] = useState(false);
@@ -893,16 +916,33 @@ export default function Companies() {
                         </td>
                       )}
 
-                      <td className={`${pyPadding} px-6 text-center relative`}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveActionsMenu(activeActionsMenu === c.id ? null : c.id);
-                          }}
-                          className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-[10px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs"
-                        >
-                          Actions Menu
-                        </button>
+                      <td className={`${pyPadding} px-4 text-center relative whitespace-nowrap`}>
+                        <div className="inline-flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCompanyToDelete(c);
+                              setShowDeleteCompanyModal(true);
+                            }}
+                            className="bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 font-black text-[10px] px-2.5 py-1.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs group"
+                            title={`Permanently delete ${c.name}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-500 group-hover:text-white transition-colors" />
+                            <span>Delete</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveActionsMenu(activeActionsMenu === c.id ? null : c.id);
+                            }}
+                            className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-[10px] px-2.5 py-1.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs"
+                          >
+                            <span>Actions</span>
+                            <ChevronDown className="w-3 h-3 text-slate-400" />
+                          </button>
+                        </div>
 
                         {/* Action dropdown card */}
                         {activeActionsMenu === c.id && (
@@ -994,22 +1034,16 @@ export default function Companies() {
                               Send Notification
                             </button>
                             <button
-                              onClick={async () => {
-                                if (window.confirm(`Are you sure you want to permanently delete company: ${c.name}?`)) {
-                                  try {
-                                    await api.delete(`/companys/${c.dbId || c.id}`);
-                                    showNotification(`Deleted company ${c.name}`);
-                                    fetchCompaniesAndPlans(false);
-                                  } catch (err) {
-                                    console.error('Failed to delete company:', err);
-                                    showNotification('Failed to delete company.');
-                                  }
-                                }
+                              type="button"
+                              onClick={() => {
+                                setCompanyToDelete(c);
+                                setShowDeleteCompanyModal(true);
                                 setActiveActionsMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-rose-50 rounded-lg text-rose-500 cursor-pointer"
+                              className="w-full text-left px-3 py-1.5 hover:bg-rose-50 rounded-lg text-rose-600 font-bold cursor-pointer flex items-center gap-1.5"
                             >
-                              Delete Company
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete Company</span>
                             </button>
                           </div>
                         )}
@@ -1255,6 +1289,65 @@ export default function Companies() {
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin text-white" />}
                 <span>{isSubmitting ? 'Processing...' : 'Suspend License'}</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Permanent Delete Company Modal */}
+      {showDeleteCompanyModal && companyToDelete && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[440px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-rose-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                  <Trash2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-800">Delete Company</h3>
+                  <p className="text-[10px] font-semibold text-rose-600">Permanent Action</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { if (!isDeletingCompany) setShowDeleteCompanyModal(false); }}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-xs font-semibold text-slate-600 leading-relaxed">
+                Are you sure you want to permanently delete company <strong className="text-slate-900 font-black">{companyToDelete.name}</strong> ({companyToDelete.id})?
+              </p>
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 font-medium space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Cascade Deletion:</span>
+                </div>
+                <p className="text-[10px] leading-normal text-amber-700">
+                  This will permanently delete all associated data including users, drivers, vehicles, branches, loads, and billing records.
+                </p>
+              </div>
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteCompanyModal(false)}
+                  disabled={isDeletingCompany}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  disabled={isDeletingCompany}
+                  className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                >
+                  {isDeletingCompany ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  <span>{isDeletingCompany ? 'Deleting...' : 'Delete Permanently'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
