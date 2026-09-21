@@ -3133,30 +3133,60 @@ export default function Customers() {
                               <th className="py-3 px-4">TO</th>
                               <th className="py-3 px-4">ROUTE TYPE</th>
                               <th className="py-3 px-4 text-right">DISTANCE (KM)</th>
+                              <th className="py-3 px-4 text-center">GST MODE</th>
                               <th className="py-3 px-4 text-right">BASE RATE (EX GST)</th>
-                              <th className="py-3 px-4 text-right">GST</th>
-                              <th className="py-3 px-4 text-right">MIN CHARGE</th>
+                              <th className="py-3 px-4 text-right">GST (10%)</th>
+                              <th className="py-3 px-4 text-right">TOTAL (INC GST)</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
                             {lanePricingRules.length === 0 ? (
                               <tr>
-                                <td colSpan="7" className="py-8 text-center text-xs font-semibold text-slate-400 italic">
+                                <td colSpan="8" className="py-8 text-center text-xs font-semibold text-slate-400 italic">
                                   No lane prices configured yet for this customer. Click "+ Add Pricing Rule" or "Apply Template" above to add rates.
                                 </td>
                               </tr>
                             ) : (
-                              lanePricingRules.map((rule, idx) => (
-                                <tr key={rule.id || idx} className="hover:bg-slate-50 transition-colors">
-                                  <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-purple-500" /> {rule.from}</td>
-                                  <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-indigo-500" /> {rule.to}</td>
-                                  <td className="py-3 px-4">{rule.type || 'Interstate'}</td>
-                                  <td className="py-3 px-4 text-right font-medium">{rule.distance || '—'} KM</td>
-                                  <td className="py-3 px-4 text-right font-black text-slate-900">${rule.baseRate}</td>
-                                  <td className="py-3 px-4 text-right text-slate-500">10%</td>
-                                  <td className="py-3 px-4 text-right font-black text-slate-900">${rule.minCharge || rule.baseRate}</td>
-                                </tr>
-                              ))
+                              lanePricingRules.map((rule, idx) => {
+                                const inputVal = parseFloat(rule.baseRate) || 0;
+                                const isIncGst = rule.gstMode === 'INC_GST';
+                                let baseExGst = 0;
+                                let gstVal = 0;
+                                let totalIncGst = 0;
+
+                                if (isIncGst) {
+                                  totalIncGst = inputVal;
+                                  baseExGst = Math.round((inputVal / 1.10) * 100) / 100;
+                                  gstVal = Math.round((totalIncGst - baseExGst) * 100) / 100;
+                                } else {
+                                  baseExGst = inputVal;
+                                  gstVal = Math.round((baseExGst * 0.10) * 100) / 100;
+                                  totalIncGst = Math.round((baseExGst + gstVal) * 100) / 100;
+                                }
+
+                                return (
+                                  <tr key={rule.id || idx} className="hover:bg-slate-50 transition-colors">
+                                    <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-purple-500" /> {rule.from}</td>
+                                    <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-indigo-500" /> {rule.to}</td>
+                                    <td className="py-3 px-4">{rule.type || 'Interstate'}</td>
+                                    <td className="py-3 px-4 text-right font-medium">{rule.distance || '—'} KM</td>
+                                    <td className="py-3 px-4 text-center">
+                                      <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md border ${
+                                        isIncGst 
+                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                          : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                      }`}>
+                                        {isIncGst ? 'Including GST' : 'Excluding GST'}
+                                      </span>
+                                    </td>
+                                    <td className="py-3 px-4 text-right font-bold text-slate-800">${baseExGst.toFixed(2)}</td>
+                                    <td className="py-3 px-4 text-right font-medium text-indigo-600">
+                                      {isIncGst ? `$${gstVal.toFixed(2)} (Extracted)` : `+$${gstVal.toFixed(2)} (10%)`}
+                                    </td>
+                                    <td className="py-3 px-4 text-right font-black text-indigo-950">${totalIncGst.toFixed(2)}</td>
+                                  </tr>
+                                );
+                              })
                             )}
                           </tbody>
                         </table>
@@ -5245,51 +5275,75 @@ export default function Customers() {
 
       {/* Add Pricing Rule Modal */}
       {showAddPricingRuleModal && createPortal(
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddPricingRuleModal(false)}>
-          <form onSubmit={handleSavePricingRuleSubmit} className="bg-white rounded-2xl w-full max-w-[460px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
-            <div className="px-7 pt-7 pb-5 flex justify-between items-center border-b border-slate-100 shrink-0">
-              <div>
-                <h3 className="text-[18px] font-extrabold text-slate-900">Add Lane Pricing Rule</h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">Add route-specific pricing rule for this customer.</p>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 sm:p-6" onClick={() => setShowAddPricingRuleModal(false)}>
+          <form 
+            onSubmit={handleSavePricingRuleSubmit} 
+            className="bg-white rounded-3xl w-full max-w-[500px] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-100" 
+            onClick={e => e.stopPropagation()} 
+            style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}
+          >
+            {/* Fixed Header */}
+            <div className="px-6 py-4.5 flex items-center justify-between border-b border-slate-100 bg-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-2xs shrink-0">
+                  <Calculator size={20} strokeWidth={2.2} />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">Add Lane Pricing Rule</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Configure route freight rates, distance & GST billing mode</p>
+                </div>
               </div>
-              <button type="button" onClick={() => setShowAddPricingRuleModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+              <button 
+                type="button" 
+                onClick={() => setShowAddPricingRuleModal(false)} 
+                className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-xl transition-all cursor-pointer"
+              >
+                <X size={18} strokeWidth={2} />
+              </button>
             </div>
 
-            <div className="px-7 py-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            {/* Scrollable Body Container */}
+            <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar text-left text-xs bg-slate-50/30">
+              {/* Pickup & Delivery */}
+              <div className="grid grid-cols-2 gap-3.5">
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">From (Pickup) *</label>
+                  <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center gap-1.5">
+                    <MapPin size={13} className="text-emerald-500 shrink-0" /> From (Pickup) <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={newPricingRule.from}
                     onChange={e => setNewPricingRule({ ...newPricingRule, from: e.target.value })}
                     placeholder="e.g. Melbourne VIC"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
+                    className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800 placeholder:text-slate-400 shadow-2xs"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">To (Delivery) *</label>
+                  <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center gap-1.5">
+                    <MapPin size={13} className="text-indigo-500 shrink-0" /> To (Delivery) <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={newPricingRule.to}
                     onChange={e => setNewPricingRule({ ...newPricingRule, to: e.target.value })}
                     placeholder="e.g. Sydney NSW"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
+                    className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800 placeholder:text-slate-400 shadow-2xs"
                     required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Route Type & Distance */}
+              <div className="grid grid-cols-2 gap-3.5">
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Route Type</label>
+                  <label className="text-[12px] font-bold text-slate-800 block mb-1.5">Route Type</label>
                   <div className="relative">
                     <select
                       value={newPricingRule.type}
                       onChange={e => setNewPricingRule({ ...newPricingRule, type: e.target.value })}
-                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                      className="appearance-none w-full border border-slate-200 bg-white rounded-xl pl-3.5 pr-9 py-2.5 text-[13px] font-semibold text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer shadow-2xs"
                     >
                       <option value="Interstate">Interstate</option>
                       <option value="Intrastate">Intrastate</option>
@@ -5301,49 +5355,135 @@ export default function Customers() {
                 </div>
 
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Distance (KM)</label>
+                  <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center justify-between">
+                    <span>Distance (KM)</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Optional</span>
+                  </label>
                   <input
                     type="number"
                     value={newPricingRule.distance}
                     onChange={e => setNewPricingRule({ ...newPricingRule, distance: e.target.value })}
                     placeholder="e.g. 878"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
+                    className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800 placeholder:text-slate-400 shadow-2xs"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Base Rate ($ EX GST) *</label>
+              {/* Pricing GST Mode Selection */}
+              <div>
+                <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center justify-between">
+                  <span>Pricing GST Billing Mode</span>
+                  <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">10% Statutory GST</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200/80">
+                  <button
+                    type="button"
+                    onClick={() => setNewPricingRule({ ...newPricingRule, gstMode: 'EX_GST' })}
+                    className={`py-2 px-3 text-xs font-extrabold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      (newPricingRule.gstMode || 'EX_GST') === 'EX_GST'
+                        ? 'bg-white text-indigo-900 shadow-sm border border-slate-200/80'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${ (newPricingRule.gstMode || 'EX_GST') === 'EX_GST' ? 'bg-indigo-600' : 'bg-slate-300' }`}></span>
+                    Excluding GST
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewPricingRule({ ...newPricingRule, gstMode: 'INC_GST' })}
+                    className={`py-2 px-3 text-xs font-extrabold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      newPricingRule.gstMode === 'INC_GST'
+                        ? 'bg-white text-indigo-900 shadow-sm border border-slate-200/80'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${ newPricingRule.gstMode === 'INC_GST' ? 'bg-indigo-600' : 'bg-slate-300' }`}></span>
+                    Including GST
+                  </button>
+                </div>
+              </div>
+
+              {/* Base Rate Input Field */}
+              <div>
+                <label className="text-[12px] font-bold text-slate-800 block mb-1.5">
+                  {newPricingRule.gstMode === 'INC_GST' ? 'Total Customer Rate ($ INC GST)' : 'Base Customer Rate ($ EX GST)'} <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[13px]">$</span>
                   <input
                     type="number"
                     step="0.01"
                     value={newPricingRule.baseRate}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, baseRate: e.target.value })}
-                    placeholder="e.g. 1450.00"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
+                    onChange={e => setNewPricingRule({ ...newPricingRule, baseRate: e.target.value, minCharge: e.target.value })}
+                    placeholder={newPricingRule.gstMode === 'INC_GST' ? 'e.g. 1100.00' : 'e.g. 1000.00'}
+                    className="w-full border border-slate-200 bg-white rounded-xl pl-8 pr-3.5 py-2.5 text-[13px] font-black focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-900 shadow-2xs"
                     required
                   />
                 </div>
-
-                <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Min Charge ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newPricingRule.minCharge}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, minCharge: e.target.value })}
-                    placeholder="e.g. 1450.00"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
-                  />
-                </div>
               </div>
+
+              {/* Dynamic Financial Calculation Breakdown */}
+              {(() => {
+                const inputVal = parseFloat(newPricingRule.baseRate) || 0;
+                const isIncGst = newPricingRule.gstMode === 'INC_GST';
+                
+                let baseExGst = 0;
+                let gstComponent = 0;
+                let totalIncGst = 0;
+
+                if (isIncGst) {
+                  totalIncGst = inputVal;
+                  baseExGst = Math.round((inputVal / 1.10) * 100) / 100;
+                  gstComponent = Math.round((totalIncGst - baseExGst) * 100) / 100;
+                } else {
+                  baseExGst = inputVal;
+                  gstComponent = Math.round((baseExGst * 0.10) * 100) / 100;
+                  totalIncGst = Math.round((baseExGst + gstComponent) * 100) / 100;
+                }
+
+                return (
+                  <div className="p-4 bg-gradient-to-br from-indigo-50/90 via-slate-50 to-indigo-50/40 border border-indigo-100 rounded-2xl space-y-2 text-xs shadow-2xs">
+                    <div className="flex justify-between items-center font-medium text-slate-600">
+                      <span className="flex items-center gap-1 text-slate-500">
+                        <DollarSign size={13} className="text-slate-400" /> Base Rate (Ex GST):
+                      </span>
+                      <span className="font-extrabold text-slate-800 text-[13px]">${baseExGst.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center font-medium text-slate-600">
+                      <span className="flex items-center gap-1 text-slate-500">
+                        <DollarSign size={13} className="text-indigo-400" /> {isIncGst ? 'GST Component (10% Extracted):' : 'Statutory GST (10% Added):'}
+                      </span>
+                      <span className="font-extrabold text-indigo-700 text-[13px]">${gstComponent.toFixed(2)}</span>
+                    </div>
+                    <div className="pt-2 border-t border-indigo-100 flex justify-between items-center font-black text-slate-900 text-sm">
+                      <span className="text-slate-900 font-extrabold">Total Customer Charge (Inc GST):</span>
+                      <span className="text-indigo-900 font-black text-base">${totalIncGst.toFixed(2)}</span>
+                    </div>
+                    <div className="text-[10px] text-indigo-700/90 font-medium italic pt-1 flex items-center gap-1">
+                      <CheckCircle2 size={12} className="text-indigo-600 shrink-0" />
+                      {isIncGst 
+                        ? '10% GST Component is extracted from total amount (not adding another 10%).'
+                        : '10% Statutory GST is added to the base rate.'}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
-            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
-              <button type="button" onClick={() => setShowAddPricingRuleModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
-              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">
-                Add Pricing Rule
+            {/* Fixed Footer */}
+            <div className="px-6 py-4 bg-white border-t border-slate-100 flex justify-end gap-3 shrink-0">
+              <button 
+                type="button" 
+                onClick={() => setShowAddPricingRuleModal(false)} 
+                className="px-5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-lg shadow-indigo-200 hover:shadow-indigo-300 flex items-center gap-1.5"
+              >
+                <Check size={15} strokeWidth={2.5} /> Add Pricing Rule
               </button>
             </div>
           </form>
@@ -6383,104 +6523,7 @@ export default function Customers() {
         document.body
       )}
 
-      {/* Add Pricing Rule Modal */}
-      {showAddPricingRuleModal && createPortal(
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddPricingRuleModal(false)}>
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!newPricingRule.from || !newPricingRule.to || !newPricingRule.baseRate) return;
-              const rule = {
-                id: Date.now(),
-                from: newPricingRule.from.trim(),
-                to: newPricingRule.to.trim(),
-                type: newPricingRule.type || 'Interstate',
-                distance: newPricingRule.distance || '500',
-                baseRate: parseFloat(newPricingRule.baseRate).toFixed(2),
-                minCharge: newPricingRule.minCharge ? parseFloat(newPricingRule.minCharge).toFixed(2) : parseFloat(newPricingRule.baseRate).toFixed(2)
-              };
-              setLanePricingRules([...lanePricingRules, rule]);
-              setNewPricingRule({ from: '', to: '', type: 'Interstate', distance: '', baseRate: '', minCharge: '' });
-              setShowAddPricingRuleModal(false);
-            }}
-            className="bg-white rounded-2xl w-full max-w-[520px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" 
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
-              <h3 className="text-base font-extrabold text-slate-900">Add New Pricing Rule</h3>
-              <button type="button" onClick={() => setShowAddPricingRuleModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
-            </div>
-            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-800 font-bold mb-1.5">Origin / From *</label>
-                  <input 
-                    type="text" 
-                    required 
-                    placeholder="e.g. Sydney (NSW)" 
-                    value={newPricingRule.from}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, from: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-800 font-bold mb-1.5">Destination / To *</label>
-                  <input 
-                    type="text" 
-                    required 
-                    placeholder="e.g. Melbourne (VIC)" 
-                    value={newPricingRule.to}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, to: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-slate-800 font-bold mb-1.5">Route Type</label>
-                  <select 
-                    value={newPricingRule.type}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, type: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer"
-                  >
-                    <option value="Interstate">Interstate</option>
-                    <option value="Intrastate">Intrastate</option>
-                    <option value="Metro">Metro</option>
-                    <option value="Regional">Regional</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-800 font-bold mb-1.5">Distance (KM)</label>
-                  <input 
-                    type="number" 
-                    placeholder="877" 
-                    value={newPricingRule.distance}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, distance: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-800 font-bold mb-1.5">Base Rate ($) *</label>
-                  <input 
-                    type="number" 
-                    required 
-                    step="0.01" 
-                    placeholder="450.00" 
-                    value={newPricingRule.baseRate}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, baseRate: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button type="button" onClick={() => setShowAddPricingRuleModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
-              <button type="submit" className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">Save Pricing Rule</button>
-            </div>
-          </form>
-        </div>,
-        document.body
-      )}
+
 
       {/* Add Vehicle Type Modal */}
       {showAddVehicleTypeModal && createPortal(
@@ -7127,138 +7170,7 @@ export default function Customers() {
         document.body
       )}
 
-      {/* Add Pricing Rule Modal */}
-      {showAddPricingRuleModal && createPortal(
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 text-left">
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                  <Plus className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">Add New Pricing Rule</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">Create a new lane rate</p>
-                </div>
-              </div>
-              <button onClick={() => setShowAddPricingRuleModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                const newRule = {
-                  id: String(Date.now()),
-                  from: newPricingRule.from || 'Melbourne VIC',
-                  to: newPricingRule.to || 'Perth WA',
-                  type: newPricingRule.type || 'Interstate',
-                  distance: newPricingRule.distance || '3410',
-                  baseRate: newPricingRule.baseRate || '2,850.00',
-                  minCharge: newPricingRule.minCharge || newPricingRule.baseRate || '2,850.00'
-                };
-                setLanePricingRules(prev => [newRule, ...prev]);
-                triggerToast(`New lane rule added: ${newRule.from} ➔ ${newRule.to} ($${newRule.baseRate})`);
-                setShowAddPricingRuleModal(false);
-                setNewPricingRule({ from: '', to: '', type: 'Interstate', distance: '', baseRate: '', minCharge: '' });
-              }}
-              className="p-5 space-y-3.5 text-xs"
-            >
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Origin (From)</label>
-                  <input 
-                    type="text"
-                    required
-                    placeholder="e.g. Melbourne VIC"
-                    value={newPricingRule.from}
-                    onChange={(e) => setNewPricingRule(prev => ({ ...prev, from: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Destination (To)</label>
-                  <input 
-                    type="text"
-                    required
-                    placeholder="e.g. Perth WA"
-                    value={newPricingRule.to}
-                    onChange={(e) => setNewPricingRule(prev => ({ ...prev, to: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Route Type</label>
-                  <select 
-                    value={newPricingRule.type}
-                    onChange={(e) => setNewPricingRule(prev => ({ ...prev, type: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-blue-500 cursor-pointer"
-                  >
-                    <option value="Interstate">Interstate</option>
-                    <option value="Intrastate">Intrastate</option>
-                    <option value="Metro">Metro</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Distance (KM)</label>
-                  <input 
-                    type="number"
-                    placeholder="e.g. 3410"
-                    value={newPricingRule.distance}
-                    onChange={(e) => setNewPricingRule(prev => ({ ...prev, distance: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Base Rate ($ EX. GST)</label>
-                  <input 
-                    type="text"
-                    required
-                    placeholder="e.g. 2,850.00"
-                    value={newPricingRule.baseRate}
-                    onChange={(e) => setNewPricingRule(prev => ({ ...prev, baseRate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-extrabold text-slate-900 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Minimum Charge ($)</label>
-                  <input 
-                    type="text"
-                    placeholder="e.g. 2,850.00"
-                    value={newPricingRule.minCharge}
-                    onChange={(e) => setNewPricingRule(prev => ({ ...prev, minCharge: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-extrabold text-slate-900 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2 -mx-5 -mb-5 mt-4">
-                <button 
-                  type="button"
-                  onClick={() => setShowAddPricingRuleModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
-                >
-                  Save Pricing Rule
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
 
     </div>
   );

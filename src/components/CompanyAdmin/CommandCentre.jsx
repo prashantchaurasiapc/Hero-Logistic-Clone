@@ -828,6 +828,67 @@ export default function CommandCentre() {
                   ))}
                 </select>
               </div>
+
+              {/* Dynamic Pay Calculation Preview */}
+              {(() => {
+                const selLoad = modalLoads.find(l => l.id === assignForm.loadId);
+                const selDrv = modalDrivers.find(d => d.id === assignForm.driverId);
+                if (!selLoad || !selDrv) return null;
+
+                let calculatedPay = 0;
+                let payDetail = '';
+                const payType = (selDrv.payType || 'Hourly').toLowerCase();
+                const rate = parseFloat(selDrv.payRate) || 0;
+                const dest = String(selLoad.destination || selLoad.destCity || selLoad.deliveryAddress || '').toLowerCase();
+                const freightCharge = parseFloat(selLoad.rate || selLoad.price || selLoad.customerFreightCharge || 1450) || 1450;
+
+                if (payType.includes('load')) {
+                  let routeRates = {};
+                  try {
+                    if (selDrv.preferredRoutes) {
+                      routeRates = typeof selDrv.preferredRoutes === 'string' ? JSON.parse(selDrv.preferredRoutes) : selDrv.preferredRoutes;
+                    }
+                  } catch(e) {}
+
+                  for (const [rKey, rVal] of Object.entries(routeRates)) {
+                    if (dest.includes(rKey.toLowerCase()) && parseFloat(rVal) > 0) {
+                      calculatedPay = parseFloat(rVal);
+                      payDetail = `Route Rate (${rKey}): $${calculatedPay.toFixed(2)}`;
+                      break;
+                    }
+                  }
+                  if (calculatedPay === 0 && rate > 0) {
+                    calculatedPay = rate;
+                    payDetail = `Driver Base Per Load Rate: $${rate.toFixed(2)}`;
+                  }
+                } else if (payType.includes('km') || payType.includes('kilomet')) {
+                  const dist = parseFloat(selLoad.totalDistance || selLoad.distance) || 878;
+                  const kmRate = rate || 0.55;
+                  calculatedPay = Math.round(dist * kmRate * 100) / 100;
+                  payDetail = `${dist} KM × $${kmRate.toFixed(2)}/KM = $${calculatedPay.toFixed(2)}`;
+                } else {
+                  const hrs = parseFloat(selLoad.estimatedHours) || 8;
+                  const hrRate = rate || 45;
+                  calculatedPay = Math.round(hrs * hrRate * 100) / 100;
+                  payDetail = `${hrs} Hrs × $${hrRate.toFixed(2)} = $${calculatedPay.toFixed(2)}`;
+                }
+
+                return (
+                  <div className="p-3 bg-purple-50/60 border border-purple-200/80 rounded-xl space-y-1.5 text-xs">
+                    <div className="font-extrabold text-purple-950 flex justify-between items-center">
+                      <span>Expected Driver Payment</span>
+                      <span className="text-sm font-black text-purple-700">${calculatedPay.toFixed(2)}</span>
+                    </div>
+                    <div className="text-[11px] text-purple-700 font-medium flex justify-between">
+                      <span>Calculation Basis: {payDetail || 'Configured Rate'}</span>
+                      <span className="text-slate-500 font-normal">Customer Charge: ${freightCharge.toFixed(2)}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 italic">
+                      ✓ Customer Freight Charge and Driver Expected Pay calculate completely independently.
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">

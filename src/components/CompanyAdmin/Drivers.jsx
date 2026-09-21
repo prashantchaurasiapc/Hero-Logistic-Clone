@@ -2212,6 +2212,19 @@ export default function Drivers() {
               else if (payTypeVal === 'Hourly') unitStr = '/ hr';
               else unitStr = ` / ${payTypeVal.toLowerCase()}`;
 
+              const sydneyRate = parseFloat(fd.get('sydneyRate')) || 0;
+              const melbourneRate = parseFloat(fd.get('melbourneRate')) || 0;
+              const qldRate = parseFloat(fd.get('qldRate')) || 0;
+
+              const routeRatesObj = {};
+              if (sydneyRate > 0) routeRatesObj.Sydney = sydneyRate;
+              if (melbourneRate > 0) routeRatesObj.Melbourne = melbourneRate;
+              if (qldRate > 0) routeRatesObj.Queensland = qldRate;
+
+              const preferredRoutesVal = Object.keys(routeRatesObj).length > 0 
+                ? JSON.stringify(routeRatesObj) 
+                : (selectedDriver?.preferredRoutes || null);
+
               const newRates = payRatesList.map(r => {
                 if (r.id === 'base') return { ...r, type: payTypeVal, rate: `$${baseRateVal.toFixed(2)} ${unitStr}` };
                 if (r.id === 'ot15') return { ...r, rate: `$${fd.get('overtime15')} / hr` };
@@ -2224,10 +2237,11 @@ export default function Drivers() {
                 try {
                   await api.put(`/drivers/${selectedDriver.id}`, {
                     payRate: baseRateVal,
-                    payType: payTypeVal
+                    payType: payTypeVal,
+                    preferredRoutes: preferredRoutesVal
                   });
-                  setSelectedDriver(prev => prev ? { ...prev, payRate: baseRateVal, payType: payTypeVal } : prev);
-                  setDrivers(prev => prev.map(d => d.id === selectedDriver.id ? { ...d, payRate: baseRateVal, payType: payTypeVal } : d));
+                  setSelectedDriver(prev => prev ? { ...prev, payRate: baseRateVal, payType: payTypeVal, preferredRoutes: preferredRoutesVal } : prev);
+                  setDrivers(prev => prev.map(d => d.id === selectedDriver.id ? { ...d, payRate: baseRateVal, payType: payTypeVal, preferredRoutes: preferredRoutesVal } : d));
                   await api.post('/driver-pay-rates/bulk', {
                     driverId: selectedDriver.id,
                     rates: newRates.map(r => ({
@@ -2245,47 +2259,84 @@ export default function Drivers() {
               setPayrollModal(null);
               showToast('Pay rates updated successfully!');
             }} className="px-6 py-5 space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-500 font-bold mb-1">Base Pay Rate ($) *</label>
-                  <input required name="baseRate" type="number" step="0.01" placeholder="550.00"
-                    defaultValue={selectedDriver?.payRate || ''}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
-                </div>
-                <div>
-                  <label className="block text-slate-500 font-bold mb-1">Pay Type</label>
-                  <select name="payType" defaultValue={selectedDriver?.payType || 'Hourly'} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white">
-                    
-                    <option value="Hourly">Hourly Rate</option>
-                    <option value="Per Load">Per Load</option>
-                    <option value="Per Km">Per Kilometre</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-500 font-bold mb-1">Overtime 1.5x Rate ($/hr)</label>
-                  <input name="overtime15" type="number" step="0.01" placeholder="82.50"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
-                </div>
-                <div>
-                  <label className="block text-slate-500 font-bold mb-1">Overtime 2.0x Rate ($/hr)</label>
-                  <input name="overtime20" type="number" step="0.01" placeholder="110.00"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
-                </div>
-                <div>
-                  <label className="block text-slate-500 font-bold mb-1">Per-Kilometre Rate ($/km)</label>
-                  <input name="kmRate" type="number" step="0.001" placeholder="0.85"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
-                </div>
-                <div>
-                  <label className="block text-slate-500 font-bold mb-1">Award / Agreement</label>
-                  <select name="award" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white">
-                    <option>Award Grade 5 (HR)</option>
-                    <option>Award Grade 3 (MR)</option>
-                    <option>Enterprise Agreement</option>
-                    <option>Individual Contract</option>
-                  </select>
-                </div>
-              </div>
+              {(() => {
+                let existingRouteRates = {};
+                try {
+                  if (selectedDriver?.preferredRoutes) {
+                    existingRouteRates = typeof selectedDriver.preferredRoutes === 'string'
+                      ? JSON.parse(selectedDriver.preferredRoutes)
+                      : selectedDriver.preferredRoutes;
+                  }
+                } catch(e) {}
+                return (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-slate-500 font-bold mb-1">Base Pay Rate ($) *</label>
+                      <input required name="baseRate" type="number" step="0.01" placeholder="550.00"
+                        defaultValue={selectedDriver?.payRate || ''}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                    </div>
+                    <div>
+                      <label className="block text-slate-500 font-bold mb-1">Pay Type</label>
+                      <select name="payType" defaultValue={selectedDriver?.payType || 'Hourly'} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white">
+                        <option value="Hourly">Hourly Rate</option>
+                        <option value="Per Load">Per Load</option>
+                        <option value="Per Km">Per Kilometre</option>
+                      </select>
+                    </div>
+                    <div className="col-span-2 p-3 bg-purple-50/50 border border-purple-100 rounded-xl space-y-2">
+                      <div className="text-[11px] font-black text-purple-900 flex items-center gap-1.5">
+                        <MapPin size={13} className="text-purple-600" />
+                        <span>Route-Specific Per Load Rates (Destination Payouts)</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[10px] text-slate-600 font-bold mb-0.5">Sydney ($/load)</label>
+                          <input name="sydneyRate" type="number" step="0.01" placeholder="450.00"
+                            defaultValue={existingRouteRates?.Sydney || ''}
+                            className="w-full px-2.5 py-1.5 border border-purple-200 rounded-lg outline-none focus:border-purple-500 font-bold text-slate-900 bg-white text-xs" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-slate-600 font-bold mb-0.5">Melbourne ($/load)</label>
+                          <input name="melbourneRate" type="number" step="0.01" placeholder="350.00"
+                            defaultValue={existingRouteRates?.Melbourne || ''}
+                            className="w-full px-2.5 py-1.5 border border-purple-200 rounded-lg outline-none focus:border-purple-500 font-bold text-slate-900 bg-white text-xs" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-slate-600 font-bold mb-0.5">Queensland ($/load)</label>
+                          <input name="qldRate" type="number" step="0.01" placeholder="550.00"
+                            defaultValue={existingRouteRates?.Queensland || existingRouteRates?.QLD || ''}
+                            className="w-full px-2.5 py-1.5 border border-purple-200 rounded-lg outline-none focus:border-purple-500 font-bold text-slate-900 bg-white text-xs" />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-slate-500 font-bold mb-1">Overtime 1.5x Rate ($/hr)</label>
+                      <input name="overtime15" type="number" step="0.01" placeholder="82.50"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                    </div>
+                    <div>
+                      <label className="block text-slate-500 font-bold mb-1">Overtime 2.0x Rate ($/hr)</label>
+                      <input name="overtime20" type="number" step="0.01" placeholder="110.00"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                    </div>
+                    <div>
+                      <label className="block text-slate-500 font-bold mb-1">Per-Kilometre Rate ($/km)</label>
+                      <input name="kmRate" type="number" step="0.001" placeholder="0.55"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                    </div>
+                    <div>
+                      <label className="block text-slate-500 font-bold mb-1">Award / Agreement</label>
+                      <select name="award" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white">
+                        <option>Award Grade 5 (HR)</option>
+                        <option>Award Grade 3 (MR)</option>
+                        <option>Enterprise Agreement</option>
+                        <option>Individual Contract</option>
+                      </select>
+                    </div>
+                  </div>
+                );
+              })()}
               <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
                 <button type="button" onClick={() => setPayrollModal(null)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Cancel</button>
                 <button type="submit" className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/20 cursor-pointer">Save Pay Rates</button>
