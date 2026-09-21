@@ -5373,7 +5373,9 @@ export default function Customers() {
               <div>
                 <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center justify-between">
                   <span>Pricing GST Billing Mode</span>
-                  <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">10% Statutory GST</span>
+                  <span className="text-[10px] font-black text-indigo-800 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-150 flex items-center gap-1.5 shadow-2xs">
+                    <Lock size={11} className="text-indigo-600 shrink-0" /> 10% Fixed GST (Non-Editable)
+                  </span>
                 </label>
                 <div className="grid grid-cols-2 gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200/80">
                   <button
@@ -5451,7 +5453,7 @@ export default function Customers() {
                     </div>
                     <div className="flex justify-between items-center font-medium text-slate-600">
                       <span className="flex items-center gap-1 text-slate-500">
-                        <DollarSign size={13} className="text-indigo-400" /> {isIncGst ? 'GST Component (10% Extracted):' : 'Statutory GST (10% Added):'}
+                        <DollarSign size={13} className="text-indigo-400" /> {isIncGst ? 'GST Component (10% Extracted):' : 'Statutory GST (10% Fixed):'}
                       </span>
                       <span className="font-extrabold text-indigo-700 text-[13px]">${gstComponent.toFixed(2)}</span>
                     </div>
@@ -5459,11 +5461,11 @@ export default function Customers() {
                       <span className="text-slate-900 font-extrabold">Total Customer Charge (Inc GST):</span>
                       <span className="text-indigo-900 font-black text-base">${totalIncGst.toFixed(2)}</span>
                     </div>
-                    <div className="text-[10px] text-indigo-700/90 font-medium italic pt-1 flex items-center gap-1">
-                      <CheckCircle2 size={12} className="text-indigo-600 shrink-0" />
+                    <div className="text-[10px] text-indigo-700/90 font-bold italic pt-1 flex items-center gap-1.5">
+                      <Lock size={11} className="text-indigo-600 shrink-0" />
                       {isIncGst 
-                        ? '10% GST Component is extracted from total amount (not adding another 10%).'
-                        : '10% Statutory GST is added to the base rate.'}
+                        ? '10% Fixed GST Component is extracted from total amount (AU Statutory Rate - Non-Editable).'
+                        : '10% Fixed Statutory GST is added to the base rate (AU Statutory Rate - Non-Editable).'}
                     </div>
                   </div>
                 );

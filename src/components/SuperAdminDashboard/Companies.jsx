@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, Plus, Check, X, ShieldAlert, CheckCircle, ExternalLink,
-  Settings, Download, FileText, Filter, ChevronDown, RefreshCw, AlertCircle, Loader2
+  Settings, Download, FileText, Filter, ChevronDown, RefreshCw, AlertCircle, Loader2,
+  Eye, Edit, Shield, UserCircle, DollarSign, Lock, MessageSquare, Trash2
 } from 'lucide-react';
 import api from '../../services/api';
 import CreateCompany from './CreateCompany';
@@ -57,6 +59,7 @@ export default function Companies() {
 
   // Action Menu dropdown state
   const [activeActionsMenu, setActiveActionsMenu] = useState(null); // ID of company whose menu is open
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
 
   // Modals state
   const [showEditCompanyModal, setShowEditCompanyModal] = useState(false);
@@ -75,7 +78,7 @@ export default function Companies() {
   const columnsMenuRef = useRef(null);
   const actionsMenuRef = useRef(null);
 
-  // Close dropdowns on click outside
+  // Close dropdowns on click outside & scroll
   useEffect(() => {
     function handleClickOutside(event) {
       if (columnsMenuRef.current && !columnsMenuRef.current.contains(event.target)) {
@@ -85,11 +88,19 @@ export default function Companies() {
         setActiveActionsMenu(null);
       }
     }
+    const handleScroll = (event) => {
+      if (actionsMenuRef.current && actionsMenuRef.current.contains(event.target)) {
+        return;
+      }
+      if (activeActionsMenu) setActiveActionsMenu(null);
+    };
     document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleScroll, true);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
     };
-  }, []);
+  }, [activeActionsMenu]);
 
   const showNotification = (msg) => {
     setToast(msg);
@@ -893,23 +904,55 @@ export default function Companies() {
                         </td>
                       )}
 
-                      <td className={`${pyPadding} px-6 text-center relative`}>
+                      <td className={`${pyPadding} px-6 text-center`}>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveActionsMenu(activeActionsMenu === c.id ? null : c.id);
+                            if (activeActionsMenu === c.id) {
+                              setActiveActionsMenu(null);
+                            } else {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              const menuWidth = 224;
+                              const estimatedHeight = 350;
+
+                              let leftPos = rect.right - menuWidth;
+                              if (leftPos + menuWidth > window.innerWidth - 12) {
+                                leftPos = window.innerWidth - menuWidth - 12;
+                              }
+                              if (leftPos < 12) {
+                                leftPos = 12;
+                              }
+
+                              let topPos = rect.bottom + 6;
+                              if (topPos + estimatedHeight > window.innerHeight - 12 && rect.top > estimatedHeight + 12) {
+                                topPos = rect.top - estimatedHeight - 6;
+                              } else {
+                                topPos = Math.min(topPos, window.innerHeight - 340 - 12);
+                              }
+                              topPos = Math.max(12, topPos);
+
+                              setMenuPos({ top: topPos, left: leftPos });
+                              setActiveActionsMenu(c.id);
+                            }
                           }}
                           className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-[10px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs"
                         >
-                          Actions Menu
+                          <span>Actions Menu</span>
+                          <ChevronDown className="w-3 h-3 text-slate-400" />
                         </button>
 
-                        {/* Action dropdown card */}
-                        {activeActionsMenu === c.id && (
+                        {/* Action dropdown card rendered via portal */}
+                        {activeActionsMenu === c.id && createPortal(
                           <div
                             ref={actionsMenuRef}
-                            className="absolute right-6 mt-1 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl p-2.5 z-40 space-y-1 text-left text-xs text-slate-700 font-bold"
+                            style={{ top: `${menuPos.top}px`, left: `${menuPos.left}px` }}
+                            className="fixed w-56 max-h-[350px] overflow-y-auto overscroll-contain custom-scrollbar bg-white border border-slate-200/90 rounded-2xl shadow-2xl p-2 z-[99999] flex flex-col space-y-0.5 text-left text-xs font-bold text-slate-700 animate-in fade-in zoom-in-95 duration-150"
+                            onClick={(e) => e.stopPropagation()}
                           >
+                            <div className="px-3 py-1.5 text-[9px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-100 mb-1 flex items-center justify-between">
+                              <span>Actions ({c.name})</span>
+                            </div>
+
                             <button
                               onClick={() => {
                                 setSelectedTenant(c);
@@ -917,82 +960,106 @@ export default function Companies() {
                                 setShowInspector(true);
                                 setActiveActionsMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                              className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 cursor-pointer flex items-center gap-2.5 transition-colors"
                             >
-                              View Company
+                              <Eye size={14} className="text-slate-400 shrink-0" />
+                              <span>View Company</span>
                             </button>
+
                             <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
                                 setShowEditCompanyModal(true);
                                 setActiveActionsMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                              className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 cursor-pointer flex items-center gap-2.5 transition-colors"
                             >
-                              Edit Company
+                              <Edit size={14} className="text-slate-400 shrink-0" />
+                              <span>Edit Company</span>
                             </button>
+
                             <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
                                 setShowSuspendCompanyModal(true);
                                 setActiveActionsMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-rose-50 rounded-lg text-rose-500 cursor-pointer"
+                              className="w-full text-left px-3 py-2 hover:bg-amber-50 rounded-xl text-amber-700 cursor-pointer flex items-center gap-2.5 transition-colors"
                             >
-                              {c.status === 'ACTIVE' ? 'Suspend Company' : 'Activate Company'}
+                              <Shield size={14} className="text-amber-500 shrink-0" />
+                              <span>{c.status === 'ACTIVE' ? 'Suspend Company' : 'Activate Company'}</span>
                             </button>
+
                             <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
                                 setShowLoginAsModal(true);
                                 setActiveActionsMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer mt-1"
+                              className="w-full text-left px-3 py-2 hover:bg-indigo-50 rounded-xl text-indigo-700 cursor-pointer flex items-center gap-2.5 transition-colors"
                             >
-                              Login as Company Admin
+                              <UserCircle size={14} className="text-indigo-600 shrink-0" />
+                              <span>Login as Admin</span>
                             </button>
+
                             <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
                                 setShowChangeSubscriptionModal(true);
                                 setActiveActionsMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                              className="w-full text-left px-3 py-2 hover:bg-emerald-50 rounded-xl text-emerald-700 cursor-pointer flex items-center gap-2.5 transition-colors"
                             >
-                              Change Subscription
+                              <DollarSign size={14} className="text-emerald-600 shrink-0" />
+                              <span>Change Subscription</span>
                             </button>
+
                             <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
                                 setShowManageFeaturesModal(true);
                                 setActiveActionsMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                              className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 cursor-pointer flex items-center gap-2.5 transition-colors"
                             >
-                              Manage Features
+                              <Settings size={14} className="text-slate-400 shrink-0" />
+                              <span>Manage Features</span>
                             </button>
-                            <button onClick={() => navigate('/admin/billing')} className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer">
-                              View Billing
+
+                            <button
+                              onClick={() => {
+                                navigate('/admin/billing');
+                                setActiveActionsMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 cursor-pointer flex items-center gap-2.5 transition-colors"
+                            >
+                              <FileText size={14} className="text-slate-400 shrink-0" />
+                              <span>View Billing</span>
                             </button>
+
                             <button
                               onClick={() => {
                                 showNotification(`Sent password reset instruction email to administrator of ${c.name}.`);
                                 setActiveActionsMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                              className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 cursor-pointer flex items-center gap-2.5 transition-colors"
                             >
-                              Reset Password
+                              <Lock size={14} className="text-slate-400 shrink-0" />
+                              <span>Reset Password</span>
                             </button>
+
                             <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
                                 setShowSendNotificationModal(true);
                                 setActiveActionsMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer mb-1 border-b border-slate-100"
+                              className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl text-slate-700 cursor-pointer flex items-center gap-2.5 transition-colors border-b border-slate-100 pb-2 mb-1"
                             >
-                              Send Notification
+                              <MessageSquare size={14} className="text-slate-400 shrink-0" />
+                              <span>Send Notification</span>
                             </button>
+
                             <button
                               onClick={async () => {
                                 if (window.confirm(`Are you sure you want to permanently delete company: ${c.name}?`)) {
@@ -1007,11 +1074,13 @@ export default function Companies() {
                                 }
                                 setActiveActionsMenu(null);
                               }}
-                              className="w-full text-left px-3 py-1.5 hover:bg-rose-50 rounded-lg text-rose-500 cursor-pointer"
+                              className="w-full text-left px-3 py-2 hover:bg-rose-50 rounded-xl text-rose-600 cursor-pointer flex items-center gap-2.5 transition-colors"
                             >
-                              Delete Company
+                              <Trash2 size={14} className="text-rose-500 shrink-0" />
+                              <span>Delete Company</span>
                             </button>
-                          </div>
+                          </div>,
+                          document.body
                         )}
                       </td>
                     </tr>
