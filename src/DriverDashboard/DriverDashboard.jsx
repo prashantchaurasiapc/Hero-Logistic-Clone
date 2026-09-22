@@ -31,12 +31,27 @@ const DriverDashboard = () => {
   const fetchDashboard = async () => {
     try {
       setIsLoading(true);
-      const res = await api.get('/driver-portal/dashboard');
+      const [res, payRes] = await Promise.all([
+        api.get('/driver-portal/dashboard'),
+        api.get('/driver-portal/payroll').catch(() => null)
+      ]);
       if (res.data?.success && res.data?.data) {
-        setDashboardData(res.data.data);
-        if (res.data.data.driverInfo?.status) {
-          setDriverStatus(res.data.data.driverInfo.status);
-          localStorage.setItem('hero_driver_duty_status', res.data.data.driverInfo.status);
+        const dData = res.data.data;
+        if (payRes?.data?.data?.currentPeriod) {
+          const cp = payRes.data.data.currentPeriod;
+          const grossNum = parseFloat(String(cp.grossEarnings || cp.netPay || '').replace(/[^0-9.]/g, ''));
+          if (!isNaN(grossNum) && grossNum > 0) {
+            if (!dData.metrics) dData.metrics = {};
+            dData.metrics.payThisPeriod = grossNum;
+            if (!dData.paySummary) dData.paySummary = {};
+            dData.paySummary.amount = grossNum;
+            dData.paySummary.taxNote = 'Total Earnings';
+          }
+        }
+        setDashboardData(dData);
+        if (dData.driverInfo?.status) {
+          setDriverStatus(dData.driverInfo.status);
+          localStorage.setItem('hero_driver_duty_status', dData.driverInfo.status);
         }
       }
     } catch (err) {
@@ -140,7 +155,7 @@ const DriverDashboard = () => {
   const alerts = dashboardData?.alerts || [];
   const paySummary = dashboardData?.paySummary || {
     amount: 0,
-    taxNote: 'Before tax'
+    taxNote: 'Total Earnings'
   };
 
   const hasActiveOrCompletedWork = Boolean(
@@ -345,7 +360,7 @@ const DriverDashboard = () => {
             <div className="text-2xl font-black text-slate-900 leading-none">
               ${typeof displayPayThisPeriod === 'number' ? displayPayThisPeriod.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : displayPayThisPeriod}
             </div>
-            <div className="text-[10.5px] font-bold text-slate-500 mt-1">Before tax</div>
+            <div className="text-[10.5px] font-bold text-slate-500 mt-1">Total Earnings</div>
           </div>
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
             <FiDollarSign className="text-xl" />
@@ -721,7 +736,7 @@ const DriverDashboard = () => {
                 <div className="text-2xl font-black text-slate-900 leading-tight">
                   ${typeof displayPaySummaryAmount === 'number' ? displayPaySummaryAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : displayPaySummaryAmount}
                 </div>
-                <div className="text-xs font-bold text-slate-400">{paySummary.taxNote || 'Before tax'}</div>
+                <div className="text-xs font-bold text-slate-400">Total Earnings</div>
               </div>
             </div>
 
