@@ -91,13 +91,88 @@ export default function MyPay() {
           if (res.data.driverInfo.accountNumber) setAccountNumber(res.data.driverInfo.accountNumber);
           if (res.data.driverInfo.accountName) setAccountName(res.data.driverInfo.accountName);
         }
-        if (res.data.currentPeriod) setCurrentPeriod(res.data.currentPeriod);
-        if (res.data.ytdSummary) setYtdSummary(res.data.ytdSummary);
-        if (res.data.currentPayBreakdown) setCurrentPayBreakdown(res.data.currentPayBreakdown);
-        if (res.data.payHistory) setPayRecords(res.data.payHistory);
-        if (res.data.totalSummary) setTotalSummary(res.data.totalSummary);
+
+        // Determine exact gross earnings (100% full amount, 0 deductions)
+        const detectedGross = res.data.currentPeriod?.grossEarnings 
+          || res.data.currentPayBreakdown?.earnings?.totalEarnings 
+          || res.data.totalSummary?.totalGrossEarnings 
+          || res.data.ytdSummary?.totalEarnings 
+          || '$0.00';
+
+        if (res.data.currentPeriod) {
+          const cp = res.data.currentPeriod;
+          const grossVal = cp.grossEarnings || detectedGross;
+          setCurrentPeriod({
+            ...cp,
+            grossEarnings: grossVal,
+            netPay: grossVal,
+            totalDeductions: '$0.00',
+            superannuation: '$0.00',
+            nextPayment: {
+              ...(cp.nextPayment || {}),
+              estimatedNetPay: grossVal
+            }
+          });
+        }
+
+        if (res.data.ytdSummary) {
+          const ytd = res.data.ytdSummary;
+          const grossVal = ytd.totalEarnings || detectedGross;
+          setYtdSummary({
+            ...ytd,
+            totalEarnings: grossVal,
+            netPayReceived: grossVal,
+            pendingPayments: grossVal,
+            totalDeductions: '$0.00',
+            totalSuperannuation: '$0.00'
+          });
+        }
+
+        if (res.data.currentPayBreakdown) {
+          const bkd = res.data.currentPayBreakdown;
+          const grossVal = bkd.earnings?.totalEarnings || detectedGross;
+          setCurrentPayBreakdown({
+            ...bkd,
+            earnings: {
+              ...(bkd.earnings || {}),
+              totalEarnings: grossVal
+            },
+            deductions: {
+              paygTax: '$0.00',
+              superannuation: '$0.00',
+              unionFees: '$0.00',
+              otherDeductions: '$0.00',
+              totalDeductions: '$0.00'
+            },
+            employerContributions: {
+              superannuationGuarantee: '$0.00'
+            },
+            estimatedNetPay: grossVal,
+            paySummaryTotalDeductions: '$0.00'
+          });
+        }
+
+        if (res.data.payHistory && Array.isArray(res.data.payHistory)) {
+          const sanitizedRecords = res.data.payHistory.map(rec => ({
+            ...rec,
+            netPay: detectedGross !== '$0.00' ? detectedGross : rec.netPay
+          }));
+          setPayRecords(sanitizedRecords);
+        }
+
+        if (res.data.totalSummary) {
+          const ts = res.data.totalSummary;
+          const grossVal = ts.totalGrossEarnings || detectedGross;
+          setTotalSummary({
+            ...ts,
+            totalGrossEarnings: grossVal,
+            totalDeductions: '$0.00',
+            totalNetPaid: grossVal
+          });
+        }
+
         if (res.data.ytdEarningsBreakdown) setYtdEarningsBreakdown(res.data.ytdEarningsBreakdown);
-        if (res.data.taxStatements) setTaxStatements(res.data.taxStatements);
+        setTaxStatements([]);
         if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
       }
       setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
@@ -152,13 +227,6 @@ export default function MyPay() {
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button
-            onClick={() => setTaxModalOpen(true)}
-            className="flex-1 sm:flex-initial bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <FiFileText className="text-indigo-600 text-base" />
-            <span>Tax Statements</span>
-          </button>
           <button
             onClick={() => setBankModalOpen(true)}
             className="flex-1 sm:flex-initial bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
@@ -231,7 +299,7 @@ export default function MyPay() {
             <div className="relative w-32 h-32 mx-auto flex items-center justify-center my-2">
               <div className="w-full h-full rounded-full border-8 border-slate-100 border-t-purple-600 border-r-indigo-600 border-b-purple-600 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-base font-black text-slate-900 font-mono">{ytdSummary?.totalEarnings && ytdSummary.totalEarnings !== '$0.00' ? ytdSummary.totalEarnings : (currentPeriod?.grossEarnings || '$552.50')}</div>
+                  <div className="text-base font-black text-slate-900 font-mono">{ytdSummary?.totalEarnings && ytdSummary.totalEarnings !== '$0.00' ? ytdSummary.totalEarnings : (currentPeriod?.grossEarnings || '$0.00')}</div>
                   <div className="text-[9.5px] font-bold text-slate-500">Total Earnings</div>
                 </div>
               </div>
@@ -240,15 +308,11 @@ export default function MyPay() {
             <div className="space-y-1.5 text-xs font-bold border-t border-slate-100 pt-3">
               <div className="flex justify-between text-emerald-700">
                 <span>Net Pay Received</span>
-                <span className="font-mono text-slate-900">{ytdSummary?.netPayReceived && ytdSummary.netPayReceived !== '$0.00' ? ytdSummary.netPayReceived : (currentPeriod?.netPay || '$408.84')}</span>
+                <span className="font-mono text-slate-900">{ytdSummary?.netPayReceived && ytdSummary.netPayReceived !== '$0.00' ? ytdSummary.netPayReceived : (currentPeriod?.netPay || currentPeriod?.grossEarnings || '$0.00')}</span>
               </div>
               <div className="flex justify-between text-amber-700">
                 <span>Pending Payments</span>
-                <span className="font-mono text-slate-900">{ytdSummary?.pendingPayments && ytdSummary.pendingPayments !== '$0.00' ? ytdSummary.pendingPayments : (currentPeriod?.netPay || '$408.84')}</span>
-              </div>
-              <div className="flex justify-between text-rose-700">
-                <span>Total Deductions</span>
-                <span className="font-mono text-slate-900">{ytdSummary?.totalDeductions && ytdSummary.totalDeductions !== '$0.00' ? ytdSummary.totalDeductions : (currentPeriod?.totalDeductions || '$143.66')}</span>
+                <span className="font-mono text-slate-900">{ytdSummary?.pendingPayments && ytdSummary.pendingPayments !== '$0.00' ? ytdSummary.pendingPayments : (currentPeriod?.netPay || currentPeriod?.grossEarnings || '$0.00')}</span>
               </div>
             </div>
           </div>
@@ -263,10 +327,6 @@ export default function MyPay() {
               </button>
               <button onClick={() => { setSelectedPayslip(payRecords[0]); setPayslipModalOpen(true); }} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
                 <span className="flex items-center gap-2">📥 Download Payslip</span>
-                <FiChevronRight className="text-slate-400" />
-              </button>
-              <button onClick={() => setTaxModalOpen(true)} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
-                <span className="flex items-center gap-2">📄 Tax Statements</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
               <button onClick={() => setBankModalOpen(true)} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
@@ -345,7 +405,7 @@ export default function MyPay() {
 
             {/* SUB NAV TABS */}
             <div className="flex border-b border-slate-200 space-x-6 text-xs font-black pt-2">
-              {['Overview', 'Pay History', 'Earnings', 'Deductions', 'Tax'].map(tab => (
+              {['Overview', 'Pay History', 'Earnings'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -364,8 +424,8 @@ export default function MyPay() {
           {/* TAB 1: OVERVIEW VIEW */}
           {activeTab === 'Overview' && (
             <>
-              {/* 4 STAT SUMMARY TILES */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* 3 STAT SUMMARY TILES */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
                   <div className="flex items-center gap-1.5 text-purple-700 font-black text-xs mb-1">
                     <span>👛 Net Pay (This Period)</span>
@@ -378,13 +438,6 @@ export default function MyPay() {
                     <span>🟢 Gross Earnings</span>
                   </div>
                   <div className="text-xl font-black text-emerald-700 font-mono">{currentPeriod?.grossEarnings}</div>
-                </div>
-
-                <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
-                  <div className="flex items-center gap-1.5 text-amber-700 font-black text-xs mb-1">
-                    <span>🟠 Total Deductions</span>
-                  </div>
-                  <div className="text-xl font-black text-slate-900 font-mono">{currentPeriod?.totalDeductions}</div>
                 </div>
 
                 <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
@@ -471,18 +524,14 @@ export default function MyPay() {
                 </div>
 
                 {/* TOTAL SUMMARY PILL BAR */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-xs font-bold text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-xs font-bold text-center">
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Gross Earnings</span>
-                    <span className="font-mono text-slate-900 text-sm font-black">{totalSummary?.totalGrossEarnings && totalSummary.totalGrossEarnings !== '$0.00' ? totalSummary.totalGrossEarnings : (currentPeriod?.grossEarnings || '$552.50')}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Deductions</span>
-                    <span className="font-mono text-slate-900 text-sm font-black">{totalSummary?.totalDeductions && totalSummary.totalDeductions !== '$0.00' ? totalSummary.totalDeductions : (currentPeriod?.totalDeductions || '$143.66')}</span>
+                    <span className="font-mono text-slate-900 text-sm font-black">{totalSummary?.totalGrossEarnings && totalSummary.totalGrossEarnings !== '$0.00' ? totalSummary.totalGrossEarnings : (currentPeriod?.grossEarnings || '$0.00')}</span>
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-400 uppercase font-extrabold block">Total Net Paid</span>
-                    <span className="font-mono text-emerald-700 text-sm font-black">{totalSummary?.totalNetPaid && totalSummary.totalNetPaid !== '$0.00' ? totalSummary.totalNetPaid : (currentPeriod?.netPay || '$408.84')}</span>
+                    <span className="font-mono text-emerald-700 text-sm font-black">{totalSummary?.totalNetPaid && totalSummary.totalNetPaid !== '$0.00' ? totalSummary.totalNetPaid : (currentPeriod?.netPay || currentPeriod?.grossEarnings || '$0.00')}</span>
                   </div>
                 </div>
               </div>
@@ -505,27 +554,26 @@ export default function MyPay() {
                     <div className="space-y-1.5 font-bold text-slate-700 border-t border-slate-100 pt-2">
                       <div className="flex justify-between"><span>Base Pay</span><span className="font-mono text-slate-900">{currentPayBreakdown?.earnings?.basePay || '$0.00'}</span></div>
                       <div className="flex justify-between"><span>Load Allowance</span><span className="font-mono text-slate-900">{currentPayBreakdown?.earnings?.loadAllowance || '$0.00'}</span></div>
-                      <div className="flex justify-between"><span>Distance Allowance</span><span className="font-mono text-slate-900">{currentPayBreakdown?.earnings?.distanceAllowance || '$552.50'}</span></div>
+                      <div className="flex justify-between"><span>Distance Allowance</span><span className="font-mono text-slate-900">{currentPayBreakdown?.earnings?.distanceAllowance || '$0.00'}</span></div>
                       <div className="flex justify-between"><span>Other Allowances</span><span className="font-mono text-slate-900">{currentPayBreakdown?.earnings?.otherAllowances || '$0.00'}</span></div>
                     </div>
                     <div className="flex justify-between font-black text-sm border-t border-slate-200 pt-2 text-emerald-700">
                       <span>Total Earnings</span>
-                      <span className="font-mono">{currentPayBreakdown?.earnings?.totalEarnings || currentPeriod?.grossEarnings || '$552.50'}</span>
+                      <span className="font-mono">{currentPayBreakdown?.earnings?.totalEarnings || currentPeriod?.grossEarnings || '$0.00'}</span>
                     </div>
                   </div>
 
-                  {/* DEDUCTIONS */}
+                  {/* NET PAYOUT SUMMARY */}
                   <div className="space-y-2">
-                    <div className="text-[10px] font-black text-rose-700 uppercase tracking-widest">DEDUCTIONS</div>
+                    <div className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">NET PAYOUT SUMMARY</div>
                     <div className="space-y-1.5 font-bold text-slate-700 border-t border-slate-100 pt-2">
-                      <div className="flex justify-between"><span>PAYG Tax</span><span className="font-mono text-slate-900">{currentPayBreakdown?.deductions?.paygTax || '$82.88'}</span></div>
-                      <div className="flex justify-between text-indigo-700"><span>Super (Employer Contribution)</span><span className="font-mono text-indigo-700">{currentPayBreakdown?.employerContributions?.superannuationGuarantee && currentPayBreakdown.employerContributions.superannuationGuarantee !== '$0.00' ? currentPayBreakdown.employerContributions.superannuationGuarantee : (currentPeriod?.superannuation && currentPeriod.superannuation !== '$0.00' ? currentPeriod.superannuation : '$60.78')}</span></div>
-                      <div className="flex justify-between"><span>Union Fees</span><span className="font-mono text-slate-900">{currentPayBreakdown?.deductions?.unionFees || '$0.00'}</span></div>
-                      <div className="flex justify-between"><span>Other Deductions</span><span className="font-mono text-slate-900">{currentPayBreakdown?.deductions?.otherDeductions || '$0.00'}</span></div>
+                      <div className="flex justify-between"><span>Gross Earnings</span><span className="font-mono text-slate-900">{currentPayBreakdown?.earnings?.totalEarnings || currentPeriod?.grossEarnings || '$0.00'}</span></div>
+                      <div className="flex justify-between"><span>Payment Method</span><span className="text-slate-900">Direct Deposit</span></div>
+                      <div className="flex justify-between"><span>Payout Frequency</span><span className="text-slate-900">{currentPeriod?.payFrequency || 'Scheduled'}</span></div>
                     </div>
-                    <div className="flex justify-between font-black text-sm border-t border-slate-200 pt-2 text-rose-700">
-                      <span>Total Net Deductions</span>
-                      <span className="font-mono">{currentPayBreakdown?.deductions?.totalDeductions || currentPeriod?.totalDeductions || '$143.66'}</span>
+                    <div className="flex justify-between font-black text-sm border-t border-slate-200 pt-2 text-indigo-700">
+                      <span>Total Net Payable</span>
+                      <span className="font-mono">{currentPeriod?.netPay || currentPayBreakdown?.earnings?.totalEarnings || currentPeriod?.grossEarnings || '$0.00'}</span>
                     </div>
                   </div>
                 </div>
@@ -619,36 +667,7 @@ export default function MyPay() {
             </div>
           )}
 
-          {/* TAB 4: DEDUCTIONS VIEW */}
-          {activeTab === 'Deductions' && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
-              <h3 className="text-base font-black text-slate-900">Deductions & Superannuation Details</h3>
-              <div className="space-y-3 text-xs font-semibold">
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl flex justify-between items-center text-rose-900">
-                  <span>PAYG Income Tax</span>
-                  <span className="font-mono font-black">{currentPayBreakdown?.deductions?.paygTax || currentPeriod?.totalDeductions || '$0.00'}</span>
-                </div>
-                <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl flex justify-between items-center text-indigo-900">
-                  <span>Superannuation Guarantee (Employer Paid Contribution)</span>
-                  <span className="font-mono font-black">{currentPayBreakdown?.employerContributions?.superannuationGuarantee || currentPeriod?.superannuation || '$0.00'}</span>
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* TAB 5: TAX VIEW */}
-          {activeTab === 'Tax' && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
-              <h3 className="text-base font-black text-slate-900">Single Touch Payroll (STP) & Tax Statements</h3>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 text-xs">
-                <div className="font-black text-slate-900">Tax Year 2024/25 Statement Available</div>
-                <div className="text-slate-600 font-medium">Reported to Australian Taxation Office (ATO) via STP.</div>
-                <button onClick={() => setTaxModalOpen(true)} className="bg-indigo-600 text-white font-bold px-4 py-2 rounded-xl cursor-pointer">
-                  Download PAYG Tax Statement PDF
-                </button>
-              </div>
-            </div>
-          )}
 
         </div>
 
@@ -667,15 +686,11 @@ export default function MyPay() {
                 <span className="font-sans text-slate-600">Gross Earnings</span>
                 <span className="text-emerald-700 font-black">{currentPeriod?.grossEarnings || '$0.00'}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="font-sans text-slate-600">Total Deductions</span>
-                <span className="text-rose-700 font-black">{currentPeriod?.totalDeductions && currentPeriod.totalDeductions !== '$0.00' ? `-${currentPeriod.totalDeductions}` : '$0.00'}</span>
-              </div>
             </div>
 
             <div className="flex justify-between items-center pt-1 font-black text-sm">
               <span className="text-slate-900">Estimated Net Pay</span>
-              <span className="text-indigo-700 font-mono text-base">{currentPeriod?.netPay || '$0.00'}</span>
+              <span className="text-indigo-700 font-mono text-base">{currentPeriod?.netPay || currentPeriod?.grossEarnings || '$0.00'}</span>
             </div>
             <span className="bg-blue-100 text-blue-800 text-[9.5px] font-black px-2 py-0.5 rounded-full border border-blue-200 block text-center">
               {currentPeriod?.nextPayment?.status && currentPeriod.nextPayment.status !== '--' ? `${currentPeriod.nextPayment.status} 🔵` : 'Scheduled 🔵'}
@@ -726,9 +741,9 @@ export default function MyPay() {
             </div>
           </div>
 
-          {/* PAYSLIP EXPORTS & ATO COMPLIANCE PANEL */}
+          {/* PAYSLIP EXPORTS PANEL */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">EXPORTS & TAX COMPLIANCE</div>
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">EXPORTS & PAYSLIPS</div>
             <div className="space-y-2">
               <button 
                 onClick={() => { setSelectedPayslip(payRecords[0]); setPayslipModalOpen(true); }} 
@@ -739,18 +754,10 @@ export default function MyPay() {
               </button>
 
               <button 
-                onClick={() => setTaxModalOpen(true)} 
-                className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200"
-              >
-                <span className="flex items-center gap-2">📑 ATO Income Statement</span>
-                <FiChevronRight className="text-slate-400" />
-              </button>
-
-              <button 
                 onClick={() => setSettingsModalOpen(true)} 
                 className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200"
               >
-                <span className="flex items-center gap-2">⚙️ Super & Tax Preferences</span>
+                <span className="flex items-center gap-2">⚙️ Payment Preferences</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
             </div>
@@ -766,10 +773,6 @@ export default function MyPay() {
               </button>
               <button onClick={() => triggerToast('Opening Payslip Guide...')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-between cursor-pointer border border-slate-200">
                 <span className="flex items-center gap-2">📋 Payslip Guide</span>
-                <FiChevronRight className="text-slate-400" />
-              </button>
-              <button onClick={() => triggerToast('Opening Tax Info...')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-between cursor-pointer border border-slate-200">
-                <span className="flex items-center gap-2">📑 Tax Information</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
               <button onClick={() => triggerToast('Opening Payment Cycles Info...')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-between cursor-pointer border border-slate-200">
@@ -908,41 +911,7 @@ export default function MyPay() {
         </div>
       )}
 
-      {/* TAX STATEMENTS MODAL */}
-      {taxModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[150] flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
-                📄 Annual PAYG Tax Statements
-              </h3>
-              <button onClick={() => setTaxModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
-            </div>
 
-            <div className="space-y-2 text-xs font-semibold">
-              {[
-                { year: 'Financial Year 2024/25 (YTD)', gross: '$28,345.50', tax: '$3,675.00' },
-                { year: 'Financial Year 2023/24', gross: '$68,400.00', tax: '$9,210.00' },
-                { year: 'Financial Year 2022/23', gross: '$64,150.00', tax: '$8,640.00' }
-              ].map(t => (
-                <div key={t.year} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
-                  <div>
-                    <div className="font-black text-slate-900">{t.year}</div>
-                    <div className="text-[10px] text-slate-500">Gross: {t.gross} • Tax Withheld: {t.tax}</div>
-                  </div>
-                  <button onClick={() => triggerToast(`Downloaded ${t.year} Tax Summary!`)} className="bg-indigo-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl cursor-pointer">
-                    PDF
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <button onClick={() => setTaxModalOpen(false)} className="w-full bg-slate-900 text-white font-black text-xs py-3 rounded-xl cursor-pointer">
-              Close
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* PAYMENT SETTINGS MODAL */}
       {settingsModalOpen && (
@@ -992,13 +961,10 @@ export default function MyPay() {
                 <div className="text-[11px] text-emerald-700">Calculated from completed trips and approved allowances for this period.</div>
               </div>
 
-              <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-900 space-y-1">
-                <div className="font-black text-sm">Deductions & Taxes: {currentPeriod?.totalDeductions && currentPeriod.totalDeductions !== '$0.00' ? `-${currentPeriod.totalDeductions}` : '$0.00'}</div>
-                <div className="text-[11px] text-rose-700">Includes PAYG tax withholding, superannuation contributions, and deductions.</div>
-              </div>
+
 
               <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-2xl text-indigo-900 space-y-1">
-                <div className="font-black text-sm">Net Payable: {currentPeriod?.netPay || '$0.00'}</div>
+                <div className="font-black text-sm">Net Payable: {currentPeriod?.netPay || currentPeriod?.grossEarnings || '$0.00'}</div>
                 <div className="text-[11px] text-indigo-700">
                   {bankName ? `Scheduled for direct deposit into ${bankName} (${accountNumber ? `Acc ending ${accountNumber.slice(-4)}` : ''}).` : 'Direct deposit via nominated bank account.'}
                 </div>
