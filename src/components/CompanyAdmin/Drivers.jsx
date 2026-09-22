@@ -106,6 +106,201 @@ const formatAvatarUrl = (url) => {
   return trimmed;
 };
 
+const InputField = ({ label, name, type = "text", placeholder, defaultValue, optional = false, className = "", options = [], autoComplete }) => {
+  const fieldName = name || label.replace(/[^a-zA-Z0-9]/g, '');
+  return (
+    <div className={`flex flex-col gap-1.5 ${className}`}>
+      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+        {label} {!optional && <span className="text-rose-500">*</span>}
+      </label>
+      {type === "select" ? (
+        <select name={fieldName} defaultValue={defaultValue || ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer">
+          <option value="">Select {label}</option>
+          {options.length > 0 ? options.map((opt, i) => (
+            <option key={i} value={opt}>{opt}</option>
+          )) : (
+            defaultValue ? <option value={defaultValue}>{defaultValue}</option> : null
+          )}
+        </select>
+      ) : (
+        <input
+          name={fieldName}
+          type={type}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          defaultValue={defaultValue || ""}
+          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+        />
+      )}
+    </div>
+  );
+};
+
+const DocumentUploadBox = ({ title }) => {
+  const [docFile, setDocFile] = useState(null);
+  const docInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setDocFile({
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+      });
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <input
+        type="file"
+        ref={docInputRef}
+        className="hidden"
+        accept=".pdf,.png,.jpg,.jpeg"
+        onChange={handleFileChange}
+      />
+      {!docFile ? (
+        <div
+          onClick={() => docInputRef.current?.click()}
+          className="border border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center justify-center text-center hover:border-purple-500 hover:bg-purple-50 transition-colors cursor-pointer group bg-slate-50/40"
+        >
+          <p className="text-[10px] font-bold text-slate-700 mb-2 truncate max-w-full">{title}</p>
+          <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 group-hover:text-purple-600">
+            <UploadCloud size={13} />
+            <span>Upload</span>
+          </div>
+        </div>
+      ) : (
+        <div className="border border-purple-200 bg-purple-50/60 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-2xs">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <CheckCircle size={14} className="text-emerald-600 shrink-0" />
+            <div className="overflow-hidden">
+              <p className="text-[10px] font-bold text-slate-800 truncate">{docFile.name}</p>
+              <p className="text-[8px] font-medium text-slate-500">{docFile.size}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDocFile(null)}
+            className="text-slate-400 hover:text-rose-600 transition-colors shrink-0"
+            title="Remove File"
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const LicenceFileUploadBox = () => {
+  const [file, setFile] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleFile = (selectedFile) => {
+    if (selectedFile) {
+      setFile({
+        name: selectedFile.name,
+        size: (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB',
+        url: URL.createObjectURL(selectedFile)
+      });
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept=".pdf,.png,.jpg,.jpeg"
+        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+      />
+
+      {!file ? (
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group w-full ${isDragging
+              ? 'border-purple-600 bg-purple-100/50 scale-[0.99]'
+              : 'border-slate-300 bg-slate-50/50 hover:border-purple-500 hover:bg-purple-50/50'
+            }`}
+        >
+          <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-2xs">
+            <UploadCloud size={24} />
+          </div>
+          <p className="text-xs font-bold text-slate-800 mb-1">Drag and drop file here, or click to browse</p>
+          <p className="text-[10px] font-medium text-slate-400 mb-4">Supports PDF, PNG, JPG up to 10MB.</p>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-2xs text-xs font-bold text-slate-700 hover:text-purple-600 hover:border-purple-300 transition-all cursor-pointer"
+          >
+            Browse file
+          </button>
+        </div>
+      ) : (
+        <div className="border border-purple-200 bg-purple-50/50 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <FileText size={20} />
+            </div>
+            <div className="overflow-hidden">
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-black text-slate-800 truncate max-w-[240px]">{file.name}</p>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[9px] font-bold">Uploaded</span>
+              </div>
+              <p className="text-[10px] text-slate-500 font-semibold">{file.size} • Ready for processing</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <a
+              href={file.url}
+              target="_blank"
+              rel="noreferrer"
+              className="px-3 py-1.5 bg-white border border-purple-200 text-purple-700 rounded-lg text-xs font-bold hover:bg-purple-100 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <Eye size={13} /> View File
+            </a>
+            <button
+              type="button"
+              onClick={() => setFile(null)}
+              className="p-1.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-100 transition-all cursor-pointer"
+              title="Remove File"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function Drivers() {
   const [driverList, setDriverList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -561,95 +756,38 @@ export default function Drivers() {
     setIsSavingSchedule(true);
     try {
       const scheduleJson = JSON.stringify(driverLoadPaySchedule);
-      const formEl = document.getElementById('driver-upsert-form');
-      const fd = formEl ? new FormData(formEl) : new FormData();
-
-      const rawEmail = (fd.get('EmailAddress') || fd.get('Username') || fd.get('email') || fd.get('username') || '').trim();
-      const firstName = (fd.get('FirstName') || fd.get('firstName') || '').trim();
-      const lastName = (fd.get('LastName') || fd.get('lastName') || '').trim();
-      const phone = (fd.get('PhoneNumber') || fd.get('phone') || '').trim();
 
       if (selectedDriver?.id) {
-        // Edit Mode: Update existing driver immediately in database
+        // Edit Mode: Update existing driver immediately in database without wiping form inputs
         const updatePayload = {
           payType: driverFormPayType,
           loadPaySchedule: scheduleJson
         };
-        if (rawEmail) updatePayload.email = rawEmail;
-        if (firstName) updatePayload.firstName = firstName;
-        if (lastName) updatePayload.lastName = lastName;
-        if (phone) updatePayload.phone = phone;
 
-        const res = await api.put(`/drivers/${selectedDriver.id}`, updatePayload);
-        const updated = res?.data?.data || res?.data || {};
+        await api.put(`/drivers/${selectedDriver.id}`, updatePayload);
 
         setSelectedDriver(prev => ({
           ...prev,
-          ...updated,
-          email: rawEmail || updated.email || prev?.email,
-          firstName: firstName || updated.firstName || prev?.firstName,
-          lastName: lastName || updated.lastName || prev?.lastName,
           payType: driverFormPayType,
           loadPaySchedule: scheduleJson
         }));
 
         setDriverList(prev => prev.map(d => d.id === selectedDriver.id ? {
           ...d,
-          ...updated,
-          email: rawEmail || updated.email || d.email,
-          firstName: firstName || updated.firstName || d.firstName,
-          lastName: lastName || updated.lastName || d.lastName,
           payType: driverFormPayType,
           loadPaySchedule: scheduleJson
         } : d));
 
-        fetchDrivers();
-        showToast("🎉 Load Pay Schedule saved to Database (PUT /drivers)!");
+        showToast("🎉 Load Pay Schedule saved to Database!");
       } else {
-        // Create Mode (Add Driver): Create driver directly in DB with entered form fields + schedule
-        const email = rawEmail || null;
-
-        const createPayload = {
-          firstName: firstName || 'Driver',
-          lastName: lastName || '',
-          phone,
-          email: email,
-          payType: driverFormPayType,
-          loadPaySchedule: scheduleJson,
-          bankName: fd.get('BankName') || '',
-          accountNumber: fd.get('AccountNumber') || '',
-          routingNumber: fd.get('BSBRouting') || '',
-          taxNumber: fd.get('TaxNumber') || '',
-          superFund: fd.get('SuperannuationFund') || '',
-          preferredVehicle: fd.get('PreferredVehicle') || '',
-          preferredRoutes: fd.get('PreferredRoutes') || '',
-          status: 'AVAILABLE'
-        };
-
-        const res = await api.post('/drivers', createPayload);
-        if (res.data && res.data.data) {
-          const created = res.data.data;
-          setSelectedDriver({
-            ...created,
-            id: created.id,
-            name: `${created.firstName || firstName || 'Driver'} ${created.lastName || lastName}`.trim(),
-            firstName: created.firstName || firstName || 'Driver',
-            lastName: created.lastName || lastName,
-            phone: created.phone || phone,
-            email: created.email || email,
-            payType: driverFormPayType,
-            loadPaySchedule: scheduleJson,
-            status: created.status || 'Available'
-          });
-          setIsEditingDriver(true);
-          setShowAddDriver(false);
-          fetchDrivers();
-          showToast("🎉 Driver & Load Pay Schedule created in Database (POST /drivers)!");
-        }
+        // Create Mode (Add Driver): Driver is still being filled in!
+        // We do NOT do an early partial POST to the database because that would reset the form and wipe other fields.
+        // The schedule is already safely kept in `driverLoadPaySchedule` state.
+        showToast("✅ Load Pay Schedule saved in form! Fill remaining details and click Save Driver at the bottom.");
       }
     } catch (err) {
       console.error('Error saving load pay schedule:', err);
-      alert('Failed to save load pay schedule: ' + (err?.response?.data?.message || err.message));
+      showToast('⚠️ Failed to save load pay schedule: ' + (err?.response?.data?.message || err.message));
     } finally {
       setIsSavingSchedule(false);
     }
@@ -1101,203 +1239,6 @@ export default function Drivers() {
     if (branchFilter !== 'All' && driver.branch !== branchFilter) return false;
     return true;
   });
-
-  const InputField = ({ label, name, type = "text", placeholder, defaultValue, optional = false, className = "", options = [], autoComplete }) => {
-    const fieldName = name || label.replace(/[^a-zA-Z0-9]/g, '');
-    const fieldKey = `${fieldName}-${defaultValue || ''}-${formResetKey}`;
-    return (
-    <div className={`flex flex-col gap-1.5 ${className}`}>
-      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-        {label} {!optional && <span className="text-rose-500">*</span>}
-      </label>
-      {type === "select" ? (
-        <select key={fieldKey} name={fieldName} defaultValue={defaultValue || ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer">
-          <option value="">Select {label}</option>
-          {options.length > 0 ? options.map((opt, i) => (
-            <option key={i} value={opt}>{opt}</option>
-          )) : (
-            defaultValue ? <option value={defaultValue}>{defaultValue}</option> : null
-          )}
-        </select>
-      ) : (
-        <input
-          key={fieldKey}
-          name={fieldName}
-          type={type}
-          autoComplete={autoComplete}
-          placeholder={placeholder}
-          defaultValue={defaultValue || ""}
-          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-        />
-      )}
-    </div>
-    );
-  };
-
-  const DocumentUploadBox = ({ title }) => {
-    const [docFile, setDocFile] = useState(null);
-    const docInputRef = useRef(null);
-
-    const handleFileChange = (e) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        setDocFile({
-          name: file.name,
-          size: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
-        });
-      }
-    };
-
-    return (
-      <div className="w-full">
-        <input
-          type="file"
-          ref={docInputRef}
-          className="hidden"
-          accept=".pdf,.png,.jpg,.jpeg"
-          onChange={handleFileChange}
-        />
-        {!docFile ? (
-          <div
-            onClick={() => docInputRef.current?.click()}
-            className="border border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center justify-center text-center hover:border-purple-500 hover:bg-purple-50 transition-colors cursor-pointer group bg-slate-50/40"
-          >
-            <p className="text-[10px] font-bold text-slate-700 mb-2 truncate max-w-full">{title}</p>
-            <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 group-hover:text-purple-600">
-              <UploadCloud size={13} />
-              <span>Upload</span>
-            </div>
-          </div>
-        ) : (
-          <div className="border border-purple-200 bg-purple-50/60 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-2xs">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <CheckCircle size={14} className="text-emerald-600 shrink-0" />
-              <div className="overflow-hidden">
-                <p className="text-[10px] font-bold text-slate-800 truncate">{docFile.name}</p>
-                <p className="text-[8px] font-medium text-slate-500">{docFile.size}</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setDocFile(null)}
-              className="text-slate-400 hover:text-rose-600 transition-colors shrink-0"
-              title="Remove File"
-            >
-              <Trash2 size={12} />
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const LicenceFileUploadBox = () => {
-    const [file, setFile] = useState(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const fileInputRef = useRef(null);
-
-    const handleFile = (selectedFile) => {
-      if (selectedFile) {
-        setFile({
-          name: selectedFile.name,
-          size: (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB',
-          url: URL.createObjectURL(selectedFile)
-        });
-      }
-    };
-
-    const handleDragOver = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(true);
-    };
-
-    const handleDragLeave = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(false);
-    };
-
-    const handleDrop = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(false);
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        handleFile(e.dataTransfer.files[0]);
-      }
-    };
-
-    return (
-      <div className="w-full">
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept=".pdf,.png,.jpg,.jpeg"
-          onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-        />
-
-        {!file ? (
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group w-full ${isDragging
-                ? 'border-purple-600 bg-purple-100/50 scale-[0.99]'
-                : 'border-slate-300 bg-slate-50/50 hover:border-purple-500 hover:bg-purple-50/50'
-              }`}
-          >
-            <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-2xs">
-              <UploadCloud size={24} />
-            </div>
-            <p className="text-xs font-bold text-slate-800 mb-1">Drag and drop file here, or click to browse</p>
-            <p className="text-[10px] font-medium text-slate-400 mb-4">Supports PDF, PNG, JPG up to 10MB.</p>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-              className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-2xs text-xs font-bold text-slate-700 hover:text-purple-600 hover:border-purple-300 transition-all cursor-pointer"
-            >
-              Browse file
-            </button>
-          </div>
-        ) : (
-          <div className="border border-purple-200 bg-purple-50/50 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <FileText size={20} />
-              </div>
-              <div className="overflow-hidden">
-                <div className="flex items-center gap-2">
-                  <p className="text-xs font-black text-slate-800 truncate max-w-[240px]">{file.name}</p>
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[9px] font-bold">Uploaded</span>
-                </div>
-                <p className="text-[10px] text-slate-500 font-semibold">{file.size} • Ready for processing</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <a
-                href={file.url}
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-1.5 bg-white border border-purple-200 text-purple-700 rounded-lg text-xs font-bold hover:bg-purple-100 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-              >
-                <Eye size={13} /> View File
-              </a>
-              <button
-                type="button"
-                onClick={() => setFile(null)}
-                className="p-1.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-100 transition-all cursor-pointer"
-                title="Remove File"
-              >
-                <Trash2 size={15} />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   const HeaderIcons = () => {
     const alertsList = React.useMemo(() => {
@@ -3420,7 +3361,7 @@ export default function Drivers() {
             </div>
           </div>
 
-        <form id="driver-upsert-form" key={isEditMode ? `edit-driver-${selectedDriver?.id || 'selected'}` : `create-driver-${formResetKey}`} onSubmit={async (e) => {
+        <form id="driver-upsert-form" key={`driver-upsert-form-${isEditMode ? (selectedDriver?.id || 'edit') : 'create'}-${formResetKey}`} onSubmit={async (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
           const firstName = fd.get('FirstName') || fd.get('firstName') || '';
@@ -3638,12 +3579,14 @@ export default function Drivers() {
                 setSelectedDriver(newMapped);
               }
             }
-            fetchDrivers();
-            handleCloseDriverForm();
-            showToast(isEditMode ? "Driver Profile Updated successfully!" : `Driver Added! Login Email: ${email} | Password: ${password}`);
+            const finalPassDisplay = passwordToSubmit || rawPassword || '123456';
+            setIsEditingDriver(false);
+            setShowAddDriver(false);
+            fetchDrivers().catch(() => {});
+            showToast(isEditMode ? "🎉 Driver Profile Updated successfully!" : `🎉 Driver Added! Login Email: ${email || 'Assigned'} | Password: ${finalPassDisplay}`);
           } catch (err) {
             console.error('Error saving driver:', err);
-            alert('Failed to save driver to database.');
+            alert('Failed to save driver to database: ' + (err?.response?.data?.message || err.message));
           }
         }}>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-6 border-b border-slate-200">
@@ -3653,7 +3596,7 @@ export default function Drivers() {
             </div>
             <div className="flex items-center gap-3">
               <button type="button" onClick={handleCloseDriverForm} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Cancel</button>
-              <button type="button" className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Save as Draft</button>
+              <button type="button" onClick={() => { const formEl = document.getElementById('driver-upsert-form'); if (formEl) formEl.requestSubmit(); }} className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Save as Draft</button>
               <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"><Settings size={14} /> {isEditMode ? "Update Driver" : "Save Driver"}</button>
             </div>
           </div>
@@ -4130,11 +4073,11 @@ export default function Drivers() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Driver Notes</label>
-                  <textarea className="w-full h-24 bg-white border border-slate-200 rounded-lg p-3 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-none"></textarea>
+                  <textarea name="notes" defaultValue={isEditMode ? (defaultData.notes || selectedDriver?.notes || '') : ''} className="w-full h-24 bg-white border border-slate-200 rounded-lg p-3 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-none"></textarea>
                 </div>
                 <div>
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Internal Comments</label>
-                  <textarea className="w-full h-24 bg-white border border-slate-200 rounded-lg p-3 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-none"></textarea>
+                  <textarea name="internalComments" className="w-full h-24 bg-white border border-slate-200 rounded-lg p-3 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-none"></textarea>
                 </div>
               </div>
             </div>
@@ -4149,7 +4092,7 @@ export default function Drivers() {
               </div>
               <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                 <button type="button" onClick={handleCloseDriverForm} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Cancel</button>
-                <button type="button" className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Save as Draft</button>
+                <button type="button" onClick={() => { const formEl = document.getElementById('driver-upsert-form'); if (formEl) formEl.requestSubmit(); }} className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Save as Draft</button>
                 <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">
                   <Settings size={14} /> {isEditMode ? "Update Driver" : "Save Driver"}
                 </button>

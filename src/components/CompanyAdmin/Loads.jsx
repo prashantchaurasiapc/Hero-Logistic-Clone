@@ -16,60 +16,237 @@ import AILoadBuilder from './AILoadBuilder';
 import L from 'leaflet';
 
 // Reusable Map Component using Vanilla Leaflet (bulletproof for React 19)
-function MapComponent() {
+const AUSTRALIAN_LOCATIONS = {
+  // Major Capitals & Cities
+  'sydney': [-33.8688, 151.2093],
+  'melbourne': [-37.8136, 144.9631],
+  'brisbane': [-27.4705, 153.0260],
+  'perth': [-31.9505, 115.8605],
+  'adelaide': [-34.9285, 138.6007],
+  'geelong': [-38.1499, 144.3617],
+  'canberra': [-35.2809, 149.1300],
+  'gold coast': [-28.0167, 153.4000],
+  'sunshine coast': [-26.6500, 153.0667],
+  'newcastle': [-32.9283, 151.7817],
+  'wollongong': [-34.4278, 150.8931],
+  'central coast': [-33.3266, 151.3478],
+  'townsville': [-19.2590, 146.8169],
+  'cairns': [-16.9186, 145.7781],
+  'toowoomba': [-27.5598, 151.9507],
+  'ballarat': [-37.5622, 143.8503],
+  'bendigo': [-36.7570, 144.2794],
+  'albury': [-36.0737, 146.9135],
+  'wagga wagga': [-35.1082, 147.3598],
+  'wagga': [-35.1082, 147.3598],
+  'dubbo': [-32.2569, 148.6011],
+  'tamworth': [-31.0927, 150.9320],
+  'orange': [-33.2833, 149.1000],
+  'bathurst': [-33.4193, 149.5775],
+  'coffs harbour': [-30.2963, 153.1141],
+  'port macquarie': [-31.4333, 152.9000],
+  'tweed heads': [-28.1764, 153.5413],
+  'shepparton': [-36.3833, 145.4000],
+  'mildura': [-34.2080, 142.1246],
+  'warrnambool': [-38.3828, 142.4844],
+  'launceston': [-41.4332, 147.1441],
+  'hobart': [-42.8821, 147.3272],
+  'darwin': [-12.4634, 130.8456],
+  'alice springs': [-23.6980, 133.8807],
+
+  // Sydney & NSW Suburbs & Freight Hubs
+  'parramatta': [-33.8150, 151.0011],
+  'blacktown': [-33.7710, 150.9063],
+  'penrith': [-33.7511, 150.6942],
+  'liverpool': [-33.9200, 150.9258],
+  'campbelltown': [-34.0647, 150.8142],
+  'bankstown': [-33.9172, 151.0336],
+  'hornsby': [-33.7039, 151.0991],
+  'chatswood': [-33.7961, 151.1804],
+  'manly': [-33.7971, 151.2881],
+  'botany': [-33.9450, 151.1960],
+  'mascot': [-33.9248, 151.1873],
+  'wetherill park': [-33.8475, 150.9000],
+  'eastern creek': [-33.8050, 150.8600],
+  'chullora': [-33.8950, 151.0450],
+  'prestons': [-33.9400, 150.8700],
+  'erskine park': [-33.8100, 150.7900],
+  'ingleburn': [-34.0000, 150.8600],
+  'sydney metro': [-33.8688, 151.2093],
+  'central warehouse': [-33.8850, 151.1950],
+  'sydney airport': [-33.9399, 151.1753],
+
+  // Melbourne & VIC Suburbs & Freight Hubs
+  'dandenong': [-37.9810, 145.2150],
+  'campbellfield': [-37.6710, 144.9540],
+  'tullamarine': [-37.7010, 144.8820],
+  'laverton': [-37.8610, 144.7640],
+  'port melbourne': [-37.8380, 144.9390],
+  'altona': [-37.8680, 144.8310],
+  'somerton': [-37.6320, 144.9380],
+  'truganina': [-37.8280, 144.7170],
+  'epping': [-37.6540, 145.0310],
+  'derrimut': [-37.7980, 144.7730],
+  'melbourne airport': [-37.6690, 144.8410],
+
+  // Brisbane & QLD Suburbs & Freight Hubs
+  'rocklea': [-27.5450, 153.0030],
+  'acacia ridge': [-27.5850, 153.0230],
+  'port of brisbane': [-27.3780, 153.1670],
+  'yatala': [-27.7530, 153.2280],
+  'lytton': [-27.4170, 153.1490],
+  'wacol': [-27.5900, 152.9230],
+  'hendra': [-27.4190, 153.0720],
+  'eagle farm': [-27.4330, 153.0900],
+  'banyo': [-27.3720, 153.0780],
+  'pinkenba': [-27.4280, 153.1180],
+
+  // Perth & WA Suburbs
+  'welshpool': [-31.9960, 115.9320],
+  'kewdale': [-31.9790, 115.9520],
+  'canning vale': [-32.0830, 115.9170],
+  'hazelmere': [-31.8980, 115.9920],
+  'kwinana': [-32.2470, 115.7720],
+  'fremantle': [-32.0569, 115.7439],
+
+  // Adelaide & SA Suburbs
+  'wingfield': [-34.8450, 138.5630],
+  'regency park': [-34.8710, 138.5710],
+  'gillman': [-34.8360, 138.5290],
+  'pooraka': [-34.8290, 138.6180],
+  'port adelaide': [-34.8460, 138.5040],
+  'edinburgh': [-34.7170, 138.6330],
+};
+
+function getStopCoords(stop, index, totalStops) {
+  if (!stop) return [-33.8688, 151.2093];
+  if (stop.lat && stop.lng) return [parseFloat(stop.lat), parseFloat(stop.lng)];
+  if (stop.latitude && stop.longitude) return [parseFloat(stop.latitude), parseFloat(stop.longitude)];
+  
+  const addr = (stop.address || '').toLowerCase();
+  
+  for (const key of Object.keys(AUSTRALIAN_LOCATIONS)) {
+    if (addr.includes(key)) {
+      const [baseLat, baseLng] = AUSTRALIAN_LOCATIONS[key];
+      const latOffset = (index - (totalStops - 1) / 2) * 0.03;
+      const lngOffset = (index - (totalStops - 1) / 2) * 0.03;
+      return [baseLat + latOffset, baseLng + lngOffset];
+    }
+  }
+
+  let hash = 0;
+  for (let i = 0; i < addr.length; i++) {
+    hash = addr.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const defaultLat = -33.8688 + ((hash % 80) / 400) + (index * 0.05);
+  const defaultLng = 151.2093 + (((hash >> 2) % 80) / 400) + (index * 0.05);
+  return [defaultLat, defaultLng];
+}
+
+function getHaversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c);
+}
+
+function MapComponent({ stops = [] }) {
   const mapRef = useRef(null);
+  const leafletInstanceRef = useRef(null);
+
   useEffect(() => {
     if (!mapRef.current) return;
-    
-    // Melbourne (-37.8136, 144.9631)
-    // Geelong (-38.1499, 144.3617)
-    // Sydney (-33.8688, 151.2093)
-    const melbourne = [-37.8136, 144.9631];
-    const geelong = [-38.1499, 144.3617];
-    const sydney = [-33.8688, 151.2093];
 
-    // Initialize map
+    if (leafletInstanceRef.current) {
+      leafletInstanceRef.current.remove();
+      leafletInstanceRef.current = null;
+    }
+
+    const currentStops = stops && stops.length > 0 ? stops : [
+      { id: 1, type: 'PICKUP', address: 'Sydney Metro Hub', date: '21/09/2026' },
+      { id: 2, type: 'DROP-OFF', address: 'Central Warehouse Geelong', date: '22/09/2026' }
+    ];
+
+    const latLngList = currentStops.map((stop, idx) => ({
+      ...stop,
+      coords: getStopCoords(stop, idx, currentStops.length)
+    }));
+
+    const centerCoords = latLngList[0]?.coords || [-33.8688, 151.2093];
+
     const map = L.map(mapRef.current, {
       zoomControl: true,
       scrollWheelZoom: false,
-    }).setView([-35.8, 147.5], 6);
+    }).setView(centerCoords, 8);
+
+    leafletInstanceRef.current = map;
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Setup custom marker icon configurations
-    const createMarkerIcon = (label) => {
+    const createMarkerIcon = (stopNumber, stopType, stopTitle, isCompleted) => {
+      const isPickup = stopType === 'PICKUP' || stopNumber === 1;
+      const bgColor = isCompleted ? '#10b981' : isPickup ? '#8b5cf6' : '#3b82f6';
+      const textColor = isCompleted ? '#065f46' : isPickup ? '#5b21b6' : '#1e3a8a';
+
       return L.divIcon({
         className: 'custom-div-icon',
         html: `<div style="display:flex; flex-direction:column; align-items:center;">
-          <div style="background:#3b82f6; width:22px; height:22px; border-radius:50%; border:3px bg-white; display:flex; align-items:center; justify-content:center; box-shadow: 0 2px 5px rgba(0,0,0,0.3)">
-            <div style="width:8px; height:8px; background:white; border-radius:50%"></div>
+          <div style="background:${bgColor}; width:26px; height:26px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; box-shadow: 0 3px 8px rgba(0,0,0,0.35); font-weight:900; font-size:11px; color:white;">
+            ${isCompleted ? '✓' : stopNumber}
           </div>
-          <span style="font-weight:bold; font-size:10px; color:#1e3a8a; background:rgba(255,255,255,0.9); padding:1px 5px; border-radius:4px; margin-top:2px; box-shadow:0 1px 3px rgba(0,0,0,0.2); white-space:nowrap;">${label}</span>
+          <span style="font-weight:800; font-size:10px; color:${textColor}; background:rgba(255,255,255,0.95); padding:2px 6px; border-radius:6px; margin-top:3px; box-shadow:0 2px 5px rgba(0,0,0,0.2); white-space:nowrap; border:1px solid rgba(0,0,0,0.08);">
+            ${stopTitle.length > 22 ? stopTitle.substring(0, 20) + '...' : stopTitle}
+          </span>
         </div>`,
-        iconSize: [60, 42],
-        iconAnchor: [30, 20]
+        iconSize: [80, 48],
+        iconAnchor: [40, 22]
       });
     };
 
-    const melbourneMarker = L.marker(melbourne, { icon: createMarkerIcon('Melbourne') }).addTo(map);
-    const geelongMarker = L.marker(geelong, { icon: createMarkerIcon('Geelong') }).addTo(map);
-    const sydneyMarker = L.marker(sydney, { icon: createMarkerIcon('Sydney') }).addTo(map);
+    const polylineCoords = [];
 
-    const routePolyline = L.polyline([melbourne, geelong, sydney], {
-      color: '#3b82f6',
-      weight: 3,
-      dashArray: '8, 8',
-      opacity: 0.8
-    }).addTo(map);
+    latLngList.forEach((st, idx) => {
+      polylineCoords.push(st.coords);
+      const markerTitle = st.address ? st.address.split(',')[0] : `Stop ${idx + 1}`;
+      const marker = L.marker(st.coords, {
+        icon: createMarkerIcon(idx + 1, st.type, markerTitle, st.completed)
+      }).addTo(map);
 
-    map.fitBounds(routePolyline.getBounds(), { padding: [30, 30] });
+      marker.bindPopup(`
+        <div style="font-family:sans-serif; padding:4px; min-width:160px;">
+          <div style="font-size:10px; font-weight:900; color:#64748b; text-transform:uppercase;">${st.type || 'STOP'} ${idx + 1}</div>
+          <div style="font-size:13px; font-weight:800; color:#0f172a; margin-top:2px; line-height:1.3;">${st.address || 'Address Not Provided'}</div>
+          ${st.date ? `<div style="font-size:11px; color:#475569; margin-top:4px;">📅 Scheduled: ${st.date} ${st.time || ''}</div>` : ''}
+          ${st.contactName && st.contactName !== '—' ? `<div style="font-size:11px; color:#475569; margin-top:2px;">👤 Contact: ${st.contactName} (${st.contactPhone || ''})</div>` : ''}
+        </div>
+      `);
+    });
+
+    if (polylineCoords.length >= 2) {
+      const routePolyline = L.polyline(polylineCoords, {
+        color: '#4f46e5',
+        weight: 4,
+        dashArray: '8, 8',
+        opacity: 0.85
+      }).addTo(map);
+
+      map.fitBounds(routePolyline.getBounds(), { padding: [40, 40], maxZoom: 13 });
+    } else if (polylineCoords.length === 1) {
+      map.setView(polylineCoords[0], 11);
+    }
 
     return () => {
-      map.remove();
+      if (leafletInstanceRef.current) {
+        leafletInstanceRef.current.remove();
+        leafletInstanceRef.current = null;
+      }
     };
-  }, []);
+  }, [stops]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', zIndex: 1, isolation: 'isolate' }}>
@@ -602,27 +779,61 @@ function LoadDetail({ load, onBack }) {
               <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                 <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4">Load Summary</h3>
                 <div className="flex flex-col gap-3.5">
-                  {[
-                    { icon: <FileText className="w-4 h-4 text-slate-400" />, label: 'Load Reference', value: currentLoad.id },
-                    { icon: <Layers className="w-4 h-4 text-slate-400" />, label: 'Load Type', value: currentLoad.type },
-                    { icon: <AlertCircle className="w-4 h-4 text-rose-500" />, label: 'Priority', value: currentLoad.priority === 'High' ? '🔴 High' : currentLoad.priority === 'Urgent' ? '⚡ Urgent' : '🟢 Normal' },
-                    { icon: <User className="w-4 h-4 text-slate-400" />, label: 'Booking Customer', value: currentLoad.customer },
-                    { icon: <MapPin className="w-4 h-4 text-slate-400" />, label: 'Total Stops', value: `${stopsList.length} Stops` },
-                    { icon: <Package className="w-4 h-4 text-slate-400" />, label: 'Items / Vehicles', value: `${itemsList.length} Cargo Items` },
-                    { icon: <Navigation className="w-4 h-4 text-slate-400" />, label: 'Total Distance (EST.)', value: load?.totalDistance ? `${load.totalDistance} km` : '—' },
-                    { icon: <Thermometer className="w-4 h-4 text-slate-400" />, label: 'Total Weight (EST.)', value: load?.totalWeight ? `${load.totalWeight} kg` : '—' },
-                    { icon: <BarChart2 className="w-4 h-4 text-slate-400" />, label: 'Total Volume (EST.)', value: load?.totalVolume ? `${load.totalVolume} m³` : '—' },
-                    { icon: <Calendar className="w-4 h-4 text-slate-400" />, label: 'Created', value: currentLoad.createdAt },
-                    { icon: <Clock className="w-4 h-4 text-slate-400" />, label: 'Last Updated', value: currentLoad.updatedAt },
-                  ].map((row, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <span className="shrink-0">{row.icon}</span>
-                        <span className="text-[12px] text-slate-400 font-semibold">{row.label}</span>
+                  {(() => {
+                    const computedDist = (() => {
+                      if (load?.totalDistance) return `${load.totalDistance} km`;
+                      if (stopsList.length >= 2) {
+                        let dist = 0;
+                        for (let i = 0; i < stopsList.length - 1; i++) {
+                          const c1 = getStopCoords(stopsList[i], i, stopsList.length);
+                          const c2 = getStopCoords(stopsList[i + 1], i + 1, stopsList.length);
+                          dist += getHaversineDistance(c1[0], c1[1], c2[0], c2[1]);
+                        }
+                        return dist > 0 ? `${dist} km` : '—';
+                      }
+                      return '—';
+                    })();
+
+                    const computedW = (() => {
+                      if (load?.totalWeight) return `${load.totalWeight} kg`;
+                      const w = itemsList.reduce((acc, it) => acc + (parseFloat(it.weight || it.grossWeight || 0) * parseInt(it.quantity || 1, 10)), 0);
+                      if (w > 0) return `${w.toLocaleString()} kg`;
+                      if (itemsList.length > 0) return `${(itemsList.length * 450).toLocaleString()} kg`;
+                      if (stopsList.length > 0) return '1,250 kg';
+                      return '—';
+                    })();
+
+                    const computedV = (() => {
+                      if (load?.totalVolume) return `${load.totalVolume} m³`;
+                      const v = itemsList.reduce((acc, it) => acc + (parseFloat(it.volume || it.cubic || 0) * parseInt(it.quantity || 1, 10)), 0);
+                      if (v > 0) return `${v} m³`;
+                      if (itemsList.length > 0) return `${(itemsList.length * 3.5).toFixed(1)} m³`;
+                      if (stopsList.length > 0) return '8.5 m³';
+                      return '—';
+                    })();
+
+                    return [
+                      { icon: <FileText className="w-4 h-4 text-slate-400" />, label: 'Load Reference', value: currentLoad.id },
+                      { icon: <Layers className="w-4 h-4 text-slate-400" />, label: 'Load Type', value: currentLoad.type },
+                      { icon: <AlertCircle className="w-4 h-4 text-rose-500" />, label: 'Priority', value: currentLoad.priority === 'High' ? '🔴 High' : currentLoad.priority === 'Urgent' ? '⚡ Urgent' : '🟢 Normal' },
+                      { icon: <User className="w-4 h-4 text-slate-400" />, label: 'Booking Customer', value: currentLoad.customer },
+                      { icon: <MapPin className="w-4 h-4 text-slate-400" />, label: 'Total Stops', value: `${stopsList.length} Stops` },
+                      { icon: <Package className="w-4 h-4 text-slate-400" />, label: 'Items / Vehicles', value: `${itemsList.length} Cargo Items` },
+                      { icon: <Navigation className="w-4 h-4 text-slate-400" />, label: 'Total Distance (EST.)', value: computedDist },
+                      { icon: <Thermometer className="w-4 h-4 text-slate-400" />, label: 'Total Weight (EST.)', value: computedW },
+                      { icon: <BarChart2 className="w-4 h-4 text-slate-400" />, label: 'Total Volume (EST.)', value: computedV },
+                      { icon: <Calendar className="w-4 h-4 text-slate-400" />, label: 'Created', value: currentLoad.createdAt },
+                      { icon: <Clock className="w-4 h-4 text-slate-400" />, label: 'Last Updated', value: currentLoad.updatedAt },
+                    ].map((row, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span className="shrink-0">{row.icon}</span>
+                          <span className="text-[12px] text-slate-400 font-semibold">{row.label}</span>
+                        </div>
+                        <span className="text-[12px] font-bold text-slate-800 text-right">{row.value}</span>
                       </div>
-                      <span className="text-[12px] font-bold text-slate-800 text-right">{row.value}</span>
-                    </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
               </div>
 
@@ -723,7 +934,7 @@ function LoadDetail({ load, onBack }) {
 
                 {/* MapContainer using Leaflet */}
                 <div className="rounded-xl overflow-hidden border border-slate-200" style={{ height: 235 }}>
-                  <MapComponent />
+                  <MapComponent stops={stopsList} />
                 </div>
               </div>
 
@@ -784,21 +995,32 @@ function LoadDetail({ load, onBack }) {
                   </span>
                 </div>
                 <div className="space-y-4">
-                  {[
-                    { label: 'Current Status', value: currentLoad.status === 'ACTIVE' ? 'En Route / Active' : currentLoad.status, icon: <Radio className="w-4 h-4 text-blue-500" /> },
-                    { label: 'Current Location', value: stopsList[0]?.address || 'In Transit', icon: <MapPin className="w-4 h-4 text-rose-500" /> },
-                    { label: 'Last Update', value: currentLoad.updatedAt, icon: <Clock className="w-4 h-4 text-slate-400" /> },
-                    { label: 'Updated By', value: `${activeDriver.name}`, icon: <User className="w-4 h-4 text-slate-400" /> },
-                    { label: 'Next Stop', value: stopsList[1]?.address ? `Next Stop: ${stopsList[1].address}` : 'Final Destination', icon: <Navigation className="w-4 h-4 text-emerald-500" /> },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <span className="mt-0.5 shrink-0">{item.icon}</span>
-                      <div className="min-w-0">
-                        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{item.label}</p>
-                        <p className="text-xs font-bold text-slate-800 whitespace-pre-line leading-tight mt-0.5">{item.value}</p>
+                  {(() => {
+                    const upcomingSt = stopsList.find(s => !s.completed) || stopsList[stopsList.length - 1];
+                    const activeSt = [...stopsList].reverse().find(s => s.completed) || stopsList[0];
+                    const currLoc = currentLoad.status === 'COMPLETED' 
+                      ? (stopsList[stopsList.length - 1]?.address || 'Final Destination')
+                      : (activeSt?.address || 'In Transit');
+                    const nxtStop = currentLoad.status === 'COMPLETED'
+                      ? 'Delivered (All Stops Completed)'
+                      : (upcomingSt?.address ? `Next Stop: ${upcomingSt.address}` : 'Final Destination');
+
+                    return [
+                      { label: 'Current Status', value: currentLoad.status === 'ACTIVE' ? 'En Route / Active' : currentLoad.status, icon: <Radio className="w-4 h-4 text-blue-500" /> },
+                      { label: 'Current Location', value: currLoc, icon: <MapPin className="w-4 h-4 text-rose-500" /> },
+                      { label: 'Last Update', value: currentLoad.updatedAt, icon: <Clock className="w-4 h-4 text-slate-400" /> },
+                      { label: 'Updated By', value: `${activeDriver.name}`, icon: <User className="w-4 h-4 text-slate-400" /> },
+                      { label: 'Next Stop', value: nxtStop, icon: <Navigation className="w-4 h-4 text-emerald-500" /> },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <span className="mt-0.5 shrink-0">{item.icon}</span>
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{item.label}</p>
+                          <p className="text-xs font-bold text-slate-800 whitespace-pre-line leading-tight mt-0.5">{item.value}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
               </div>
 
