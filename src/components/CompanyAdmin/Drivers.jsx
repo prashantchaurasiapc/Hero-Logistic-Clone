@@ -498,14 +498,44 @@ export default function Drivers() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isEditingDriver, setIsEditingDriver] = useState(false);
+  const defaultLoadPaySchedule = [
+    { id: '1', name: 'Local Load', pickupLocation: 'Sydney Metro Hub', deliveryLocation: 'Central Warehouse', amount: 350, isSelected: true },
+    { id: '2', name: 'Sydney -> Canberra', pickupLocation: 'Sydney Port Logistics', deliveryLocation: 'Canberra Freight Terminal', amount: 500, isSelected: false },
+    { id: '3', name: 'Sydney -> Melbourne', pickupLocation: 'Sydney Chullora Depot', deliveryLocation: 'Melbourne Laverton Hub', amount: 1000, isSelected: false },
+    { id: '4', name: 'Sydney -> Brisbane', pickupLocation: 'Sydney Logistics Park', deliveryLocation: 'Brisbane Acacia Ridge', amount: 1200, isSelected: false },
+    { id: '5', name: 'Sydney -> Adelaide', pickupLocation: 'Sydney Enfield Intermodal', deliveryLocation: 'Adelaide Regency Park', amount: 1700, isSelected: false }
+  ];
+
+  const normalizeSchedule = (rawSched) => {
+    if (!Array.isArray(rawSched) || rawSched.length === 0) return defaultLoadPaySchedule;
+    const hasSelected = rawSched.some(s => s.isSelected);
+    return rawSched.map((s, idx) => {
+      let pickup = s.pickupLocation || s.pickup || '';
+      let delivery = s.deliveryLocation || s.delivery || '';
+      if (!pickup && !delivery && s.name) {
+        if (s.name.includes(' -> ')) {
+          const parts = s.name.split(' -> ');
+          pickup = parts[0]?.trim() || '';
+          delivery = parts[1]?.trim() || '';
+        } else if (s.name.includes(' - ')) {
+          const parts = s.name.split(' - ');
+          pickup = parts[0]?.trim() || '';
+          delivery = parts[1]?.trim() || '';
+        }
+      }
+      return {
+        id: s.id || String(Date.now() + idx),
+        name: s.name || '',
+        pickupLocation: pickup,
+        deliveryLocation: delivery,
+        amount: typeof s.amount !== 'undefined' ? s.amount : 0,
+        isSelected: hasSelected ? Boolean(s.isSelected) : idx === 0
+      };
+    });
+  };
+
   const [driverFormPayType, setDriverFormPayType] = useState('Hourly');
-  const [driverLoadPaySchedule, setDriverLoadPaySchedule] = useState([
-    { id: '1', name: 'Local Load', amount: 350, isSelected: true },
-    { id: '2', name: 'Sydney -> Canberra', amount: 500, isSelected: false },
-    { id: '3', name: 'Sydney -> Melbourne', amount: 1000, isSelected: false },
-    { id: '4', name: 'Sydney -> Brisbane', amount: 1200, isSelected: false },
-    { id: '5', name: 'Sydney -> Adelaide', amount: 1700, isSelected: false }
-  ]);
+  const [driverLoadPaySchedule, setDriverLoadPaySchedule] = useState(defaultLoadPaySchedule);
 
   useEffect(() => {
     if (isEditingDriver && selectedDriver) {
@@ -518,31 +548,10 @@ export default function Drivers() {
             : selectedDriver.loadPaySchedule;
         } catch (e) {}
       }
-      if (Array.isArray(sched) && sched.length > 0) {
-        const hasSelected = sched.some(s => s.isSelected);
-        const normalized = sched.map((s, idx) => ({
-          ...s,
-          isSelected: hasSelected ? Boolean(s.isSelected) : idx === 0
-        }));
-        setDriverLoadPaySchedule(normalized);
-      } else {
-        setDriverLoadPaySchedule([
-          { id: '1', name: 'Local Load', amount: 350, isSelected: true },
-          { id: '2', name: 'Sydney -> Canberra', amount: 500, isSelected: false },
-          { id: '3', name: 'Sydney -> Melbourne', amount: 1000, isSelected: false },
-          { id: '4', name: 'Sydney -> Brisbane', amount: 1200, isSelected: false },
-          { id: '5', name: 'Sydney -> Adelaide', amount: 1700, isSelected: false }
-        ]);
-      }
+      setDriverLoadPaySchedule(normalizeSchedule(sched));
     } else if (showAddDriver) {
       setDriverFormPayType('Hourly');
-      setDriverLoadPaySchedule([
-        { id: '1', name: 'Local Load', amount: 350, isSelected: true },
-        { id: '2', name: 'Sydney -> Canberra', amount: 500, isSelected: false },
-        { id: '3', name: 'Sydney -> Melbourne', amount: 1000, isSelected: false },
-        { id: '4', name: 'Sydney -> Brisbane', amount: 1200, isSelected: false },
-        { id: '5', name: 'Sydney -> Adelaide', amount: 1700, isSelected: false }
-      ]);
+      setDriverLoadPaySchedule(defaultLoadPaySchedule);
     }
   }, [isEditingDriver, selectedDriver, showAddDriver]);
 
@@ -1093,7 +1102,7 @@ export default function Drivers() {
     return true;
   });
 
-  const InputField = ({ label, name, type = "text", placeholder, defaultValue, optional = false, className = "", options = [] }) => {
+  const InputField = ({ label, name, type = "text", placeholder, defaultValue, optional = false, className = "", options = [], autoComplete }) => {
     const fieldName = name || label.replace(/[^a-zA-Z0-9]/g, '');
     const fieldKey = `${fieldName}-${defaultValue || ''}-${formResetKey}`;
     return (
@@ -1115,6 +1124,7 @@ export default function Drivers() {
           key={fieldKey}
           name={fieldName}
           type={type}
+          autoComplete={autoComplete}
           placeholder={placeholder}
           defaultValue={defaultValue || ""}
           className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
@@ -3421,7 +3431,14 @@ export default function Drivers() {
           const rawEmail = (fd.get('EmailAddress') || fd.get('Username') || fd.get('email') || fd.get('username') || '').trim();
           let email = rawEmail || (isEditMode && selectedDriver ? selectedDriver.email : '');
           const rawPassword = (fd.get('Password') || fd.get('password') || '').trim();
-          const password = rawPassword || '123456';
+          let passwordToSubmit = null;
+          if (isEditMode) {
+            if (rawPassword && rawPassword.length > 0) {
+              passwordToSubmit = rawPassword;
+            }
+          } else {
+            passwordToSubmit = rawPassword || '123456';
+          }
           const avatarUrl = photoPreview || (isEditMode && selectedDriver ? selectedDriver.avatar : '');
           const gender = fd.get('Gender') || '';
           const nationality = fd.get('Nationality') || '';
@@ -3490,7 +3507,7 @@ export default function Drivers() {
             driverCode,
             phone,
             email,
-            password,
+            ...(passwordToSubmit ? { password: passwordToSubmit } : {}),
             avatarUrl,
             gender,
             nationality,
@@ -3842,7 +3859,7 @@ export default function Drivers() {
                         onClick={() => {
                           setDriverLoadPaySchedule(prev => [
                             ...prev,
-                            { id: Date.now().toString(), name: '', amount: 0 }
+                            { id: Date.now().toString(), pickupLocation: '', deliveryLocation: '', amount: 0, isSelected: false }
                           ]);
                         }}
                         className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs"
@@ -3867,11 +3884,19 @@ export default function Drivers() {
                   {(() => {
                     const activeOption = driverLoadPaySchedule.find(r => r.isSelected) || driverLoadPaySchedule[0];
                     if (!activeOption) return null;
+                    const pLoc = activeOption.pickupLocation || 'Pickup Location';
+                    const dLoc = activeOption.deliveryLocation || 'Delivery Location';
                     return (
                       <div className="mb-3 px-4 py-2.5 bg-emerald-50/90 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-emerald-900 font-semibold shadow-2xs">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                          <span>Active Assigned Route: <strong className="font-black text-emerald-950">{activeOption.name || 'Unnamed Route'}</strong> — <strong className="font-black text-emerald-950">${parseFloat(activeOption.amount || 0).toFixed(2)}</strong></span>
+                          <span>Active Assigned Route:</span>
+                          <span className="text-emerald-900 bg-emerald-100/90 border border-emerald-200 px-2.5 py-0.5 rounded text-[11px] font-extrabold flex items-center gap-1.5">
+                            <span>📍 {pLoc}</span>
+                            <ArrowRight size={11} className="text-emerald-600 stroke-[3]" />
+                            <span>🎯 {dLoc}</span>
+                          </span>
+                          <span className="text-emerald-950 font-black">— ${parseFloat(activeOption.amount || 0).toFixed(2)}</span>
                         </div>
                         <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-200 px-2.5 py-0.5 rounded-full shrink-0">
                           1 Single Route Assigned to this Driver
@@ -3884,24 +3909,26 @@ export default function Drivers() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                          <th className="py-2.5 px-3 w-2/12 text-center">Status / Assign</th>
-                          <th className="py-2.5 px-4 w-6/12">Route / Trip Name</th>
-                          <th className="py-2.5 px-4 w-3/12">Agreed Payment ($)</th>
-                          <th className="py-2.5 px-3 w-1/12 text-center">Action</th>
+                          <th className="py-2.5 px-2.5 w-[90px] text-center">Status</th>
+                          <th className="py-2.5 px-3.5 w-[38%]">Pickup Location</th>
+                          <th className="py-2.5 px-3.5 w-[38%]">Delivery (Drop-off) Location</th>
+                          <th className="py-2.5 px-3.5 w-[140px] text-left">Payment ($)</th>
+                          <th className="py-2.5 px-2 w-[45px] text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs font-semibold">
                         {driverLoadPaySchedule.map((item, idx) => (
                           <tr key={item.id || idx} className={`transition-colors ${item.isSelected ? 'bg-emerald-50/40 font-bold' : 'hover:bg-purple-50/20'}`}>
-                            <td className="py-2.5 px-3 text-center">
+                            <td className="py-2.5 px-2 text-center">
                               {item.isSelected ? (
-                                <div
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-lg text-[11px] font-black shadow-xs cursor-default"
-                                  title="Currently assigned active route for this driver"
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500 text-white rounded-md text-[11px] font-black shadow-xs cursor-default"
+                                  title="Currently assigned active route"
                                 >
-                                  <Check size={13} className="stroke-[3] text-emerald-700" />
-                                  <span>Assigned (Active)</span>
-                                </div>
+                                  <Check size={12} className="stroke-[3]" />
+                                  <span>Active</span>
+                                </button>
                               ) : (
                                 <button
                                   type="button"
@@ -3911,29 +3938,47 @@ export default function Drivers() {
                                       isSelected: i === idx
                                     })));
                                   }}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-purple-50 border border-slate-300 hover:border-purple-400 text-slate-700 hover:text-purple-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-xs"
-                                  title="Click to select and assign this single route to this driver"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-purple-50 border border-slate-300 hover:border-purple-400 text-slate-600 hover:text-purple-700 rounded-md text-[11px] font-bold transition-all cursor-pointer shadow-xs"
+                                  title="Click to assign this route to driver"
                                 >
-                                  <span className="w-3 h-3 rounded-full border-2 border-slate-300"></span>
-                                  <span>Select / Assign</span>
+                                  <span className="w-2 h-2 rounded-full border border-slate-400"></span>
+                                  <span>Select</span>
                                 </button>
                               )}
                             </td>
-                            <td className="py-2.5 px-4">
-                              <input
-                                type="text"
-                                value={item.name}
-                                placeholder="e.g. Sydney -> Melbourne"
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setDriverLoadPaySchedule(prev => prev.map((row, i) => i === idx ? { ...row, name: val } : row));
-                                }}
-                                className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
-                              />
-                            </td>
-                            <td className="py-2.5 px-4">
+                            <td className="py-2.5 px-3">
                               <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
+                                <MapPin size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-600" />
+                                <input
+                                  type="text"
+                                  value={item.pickupLocation || ''}
+                                  placeholder="Pickup Address / Suburb"
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setDriverLoadPaySchedule(prev => prev.map((row, i) => i === idx ? { ...row, pickupLocation: val } : row));
+                                  }}
+                                  className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-lg pl-7 pr-2.5 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+                                />
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <div className="relative">
+                                <MapPin size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-purple-600" />
+                                <input
+                                  type="text"
+                                  value={item.deliveryLocation || ''}
+                                  placeholder="Delivery Address / Suburb"
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setDriverLoadPaySchedule(prev => prev.map((row, i) => i === idx ? { ...row, deliveryLocation: val } : row));
+                                  }}
+                                  className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-lg pl-7 pr-2.5 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+                                />
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <div className="relative min-w-[120px]">
+                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
                                 <input
                                   type="number"
                                   step="0.01"
@@ -3943,11 +3988,11 @@ export default function Drivers() {
                                     const val = parseFloat(e.target.value) || 0;
                                     setDriverLoadPaySchedule(prev => prev.map((row, i) => i === idx ? { ...row, amount: val } : row));
                                   }}
-                                  className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-lg pl-7 pr-3 py-1.5 text-xs font-bold text-slate-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+                                  className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-lg pl-6 pr-2.5 py-1.5 text-xs font-bold text-slate-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
                                 />
                               </div>
                             </td>
-                            <td className="py-2.5 px-3 text-center">
+                            <td className="py-2.5 px-2 text-center">
                               <button
                                 type="button"
                                 onClick={() => {
@@ -3963,7 +4008,7 @@ export default function Drivers() {
                         ))}
                         {driverLoadPaySchedule.length === 0 && (
                           <tr>
-                            <td colSpan="4" className="py-8 text-center text-xs text-slate-400">
+                            <td colSpan="6" className="py-8 text-center text-xs text-slate-400">
                               No load pay options configured. Click &quot;Add Load Pay Option&quot; above to create one.
                             </td>
                           </tr>
@@ -4031,14 +4076,50 @@ export default function Drivers() {
 
             {/* 8. Account Information */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
-              <h2 className="text-sm font-black text-slate-900 mb-6">8. Account Information</h2>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
+                <div>
+                  <h2 className="text-sm font-black text-slate-900">8. Account Information</h2>
+                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                    {isEditMode 
+                      ? "Driver mobile app credentials. Leave password blank to keep current password unchanged." 
+                      : "Driver mobile app login credentials. Username defaults to login email address."}
+                  </p>
+                </div>
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${isEditMode ? 'text-slate-700 bg-slate-100 border-slate-200' : 'text-purple-700 bg-purple-50 border-purple-200'}`}>
+                  {isEditMode ? "Password Unchanged by Default" : "New Account Setup"}
+                </span>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-5 mb-4">
-                <InputField label="Username (Optional)" name="Username" placeholder="e.g. driver@gmail.com" defaultValue={isEditMode ? defaultData.email : ''} optional={true} />
-                <InputField label="Password" name="Password" type="password" placeholder="Default: 123456" optional={true} />
-                <InputField label="Confirm Password" name="ConfirmPassword" type="password" placeholder="Default: 123456" optional={true} />
+                <InputField
+                  label="Username (Optional)"
+                  name="Username"
+                  placeholder="e.g. driver@gmail.com"
+                  defaultValue={isEditMode ? (defaultData.email || selectedDriver?.email || '') : ''}
+                  autoComplete="off"
+                  optional={true}
+                />
+                <InputField
+                  label={isEditMode ? "Reset Password (Optional)" : "Password (Default: 123456)"}
+                  name="Password"
+                  type="password"
+                  placeholder={isEditMode ? "Leave blank to keep existing" : "Default: 123456"}
+                  autoComplete="new-password"
+                  defaultValue=""
+                  optional={true}
+                />
+                <InputField
+                  label={isEditMode ? "Confirm New Password" : "Confirm Password"}
+                  name="ConfirmPassword"
+                  type="password"
+                  placeholder={isEditMode ? "Re-enter new password to confirm" : "Default: 123456"}
+                  autoComplete="new-password"
+                  defaultValue=""
+                  optional={true}
+                />
               </div>
               <label className="flex items-center gap-2 cursor-pointer mt-2">
-                <input type="checkbox" defaultChecked className="w-3.5 h-3.5 rounded border-slate-300 text-purple-600 focus:ring-purple-500" />
+                <input type="checkbox" name="sendCredentialsEmail" defaultChecked className="w-3.5 h-3.5 rounded border-slate-300 text-purple-600 focus:ring-purple-500" />
                 <span className="text-[10px] font-semibold text-slate-600">Send login credentials to driver's email address</span>
               </label>
             </div>

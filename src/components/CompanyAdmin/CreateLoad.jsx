@@ -1793,11 +1793,16 @@ export default function CreateLoad({ onBack }) {
                         className={`${selectCls} pl-8 font-semibold text-slate-800`}
                       >
                         <option value="">Select Agreed Driver Pay...</option>
-                        {Array.isArray(driverSchedule) && driverSchedule.map((item, idx) => (
-                          <option key={item.id || idx} value={item.amount}>
-                            {item.name} — ${item.amount} {item.isSelected ? '★ (Assigned Route)' : ''}
-                          </option>
-                        ))}
+                        {Array.isArray(driverSchedule) && driverSchedule.map((item, idx) => {
+                          const routeLabel = (item.pickupLocation || item.deliveryLocation)
+                            ? `${item.pickupLocation || 'Pickup'} ➔ ${item.deliveryLocation || 'Delivery'}`
+                            : (item.name || `Route #${idx + 1}`);
+                          return (
+                            <option key={item.id || idx} value={item.amount}>
+                              📍 {routeLabel} — ${item.amount} {item.isSelected ? '★ (Assigned Route)' : ''}
+                            </option>
+                          );
+                        })}
                         <option value="custom">✏️ Custom Amount...</option>
                       </select>
                       <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
