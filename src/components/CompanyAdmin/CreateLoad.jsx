@@ -41,7 +41,7 @@ function FieldLabel({ children, required }) {
 const inputCls = "w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs sm:text-[13px] font-bold text-slate-800 placeholder-slate-400 transition-colors shadow-xs";
 const selectCls = "w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs sm:text-[13px] font-bold text-slate-800 cursor-pointer transition-colors appearance-none shadow-xs";
 
-function AddressAutocomplete({ value, onChange, placeholder, className, autoFocus = false }) {
+function AddressAutocomplete({ value, onChange, placeholder, className, autoFocus = false, savedLocations = [] }) {
   const [inputValue, setInputValue] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -75,7 +75,7 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
 
     if (!query || query.trim().length < 2) {
       setSuggestions([]);
-      setIsOpen(false);
+      setIsOpen(savedLocations && savedLocations.length > 0);
       setLoading(false);
       setSearchedQuery('');
       return;
@@ -152,18 +152,31 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
     setSuggestions([]);
   };
 
+  const filteredSavedLocations = (savedLocations || []).filter(loc => {
+    if (!inputValue || inputValue.trim().length === 0) return true;
+    return loc.display.toLowerCase().includes(inputValue.toLowerCase()) ||
+           (loc.driverName && loc.driverName.toLowerCase().includes(inputValue.toLowerCase()));
+  });
+
+  const totalItemsCount = filteredSavedLocations.length + suggestions.length;
+
   const handleKeyDown = (e) => {
     if (!isOpen) return;
 
-    if (e.key === 'ArrowDown' && suggestions.length > 0) {
+    if (e.key === 'ArrowDown' && totalItemsCount > 0) {
       e.preventDefault();
-      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : 0));
-    } else if (e.key === 'ArrowUp' && suggestions.length > 0) {
+      setSelectedIndex(prev => (prev < totalItemsCount - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp' && totalItemsCount > 0) {
       e.preventDefault();
-      setSelectedIndex(prev => (prev > 0 ? prev - 1 : suggestions.length - 1));
-    } else if (e.key === 'Enter' && selectedIndex >= 0 && suggestions[selectedIndex]) {
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : totalItemsCount - 1));
+    } else if (e.key === 'Enter' && selectedIndex >= 0) {
       e.preventDefault();
-      handleSelect(suggestions[selectedIndex]);
+      if (selectedIndex < filteredSavedLocations.length) {
+        handleSelect(filteredSavedLocations[selectedIndex]);
+      } else {
+        const apiIdx = selectedIndex - filteredSavedLocations.length;
+        if (suggestions[apiIdx]) handleSelect(suggestions[apiIdx]);
+      }
     } else if (e.key === 'Escape') {
       setIsOpen(false);
     }
@@ -177,7 +190,7 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => {
-            if (inputValue.trim().length >= 2 && (suggestions.length > 0 || loading)) setIsOpen(true);
+            setIsOpen(true);
           }}
           onKeyDown={handleKeyDown}
           className={className}
@@ -192,36 +205,92 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
         )}
       </div>
 
-      {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-[9999] overflow-hidden max-h-64 overflow-y-auto">
+      {isOpen && (filteredSavedLocations.length > 0 || suggestions.length > 0 || loading || searchedQuery.trim().length >= 2) && (
+        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-[9999] overflow-hidden max-h-72 overflow-y-auto">
+          {/* Driver Saved Locations at top of dropdown */}
+          {filteredSavedLocations.length > 0 && (
+            <div className="bg-purple-50/50 border-b border-purple-100 pb-1">
+              <div className="px-3.5 py-1.5 bg-purple-100/70 border-b border-purple-200/60 flex items-center justify-between">
+                <span className="text-[10px] font-black text-purple-900 uppercase tracking-wider flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-purple-600"></span> Driver Saved Locations
+                </span>
+                <span className="text-[9px] font-bold text-purple-700 bg-white px-1.5 py-0.2 rounded-md">
+                  {filteredSavedLocations.length} choice(s)
+                </span>
+              </div>
+              {filteredSavedLocations.map((item, idx) => {
+                const isSelected = idx === selectedIndex;
+                return (
+                  <button
+                    key={`saved-${idx}`}
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
+                    onMouseEnter={() => setSelectedIndex(idx)}
+                    className={`w-full text-left px-3.5 py-2.5 text-xs transition-colors flex items-start gap-2.5 border-b border-purple-100/50 last:border-0 ${
+                      isSelected ? 'bg-purple-200/80 text-purple-950 font-bold' : 'hover:bg-purple-100/60 text-slate-800 font-medium'
+                    }`}
+                  >
+                    <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${isSelected ? 'text-purple-700' : 'text-purple-600'}`} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate font-black text-slate-900 text-[12.5px]">{item.display}</p>
+                        <span className="shrink-0 px-2 py-0.5 bg-purple-600 text-white rounded text-[9px] font-black uppercase tracking-wider shadow-2xs">
+                          {item.type || 'Saved'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] font-bold text-purple-700">Driver: {item.driverName}</span>
+                        {item.amount && (
+                          <span className="text-[10px] font-extrabold text-emerald-600">Rate: ${item.amount}</span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Address Search API Results */}
           {loading ? (
             <div className="p-4 text-center text-xs font-medium text-slate-400 flex items-center justify-center gap-2">
               <span className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></span>
               Finding matching Australian addresses...
             </div>
           ) : suggestions.length > 0 ? (
-            suggestions.map((item, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
-                onMouseEnter={() => setSelectedIndex(idx)}
-                className={`w-full text-left px-3.5 py-2.5 text-xs transition-colors flex items-start gap-2.5 border-b border-slate-50 last:border-0 ${
-                  idx === selectedIndex ? 'bg-indigo-50 text-indigo-950 font-bold' : 'hover:bg-slate-50 text-slate-700 font-medium'
-                }`}
-              >
-                <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${idx === selectedIndex ? 'text-indigo-600' : 'text-slate-400'}`} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate leading-tight font-bold">{item.display}</p>
-                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                    {item.details.street && <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[9.5px] font-semibold text-slate-600">Street: {item.details.street}</span>}
-                    {item.details.suburb && <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[9.5px] font-bold">Suburb: {item.details.suburb}</span>}
-                    {item.details.state && <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded text-[9.5px] font-bold">{item.details.state}</span>}
-                    {item.details.postcode && <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded text-[9.5px] font-bold">{item.details.postcode}</span>}
-                  </div>
+            <div>
+              {filteredSavedLocations.length > 0 && (
+                <div className="px-3.5 py-1 bg-slate-50 border-b border-slate-100 text-[9.5px] font-black text-slate-400 uppercase tracking-wider">
+                  Address Search Results
                 </div>
-              </button>
-            ))
+              )}
+              {suggestions.map((item, idx) => {
+                const globalIdx = filteredSavedLocations.length + idx;
+                const isSelected = globalIdx === selectedIndex;
+                return (
+                  <button
+                    key={`api-${idx}`}
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
+                    onMouseEnter={() => setSelectedIndex(globalIdx)}
+                    className={`w-full text-left px-3.5 py-2.5 text-xs transition-colors flex items-start gap-2.5 border-b border-slate-50 last:border-0 ${
+                      isSelected ? 'bg-indigo-50 text-indigo-950 font-bold' : 'hover:bg-slate-50 text-slate-700 font-medium'
+                    }`}
+                  >
+                    <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate leading-tight font-bold">{item.display}</p>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        {item.details.street && <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[9.5px] font-semibold text-slate-600">Street: {item.details.street}</span>}
+                        {item.details.suburb && <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[9.5px] font-bold">Suburb: {item.details.suburb}</span>}
+                        {item.details.state && <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded text-[9.5px] font-bold">{item.details.state}</span>}
+                        {item.details.postcode && <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded text-[9.5px] font-bold">{item.details.postcode}</span>}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           ) : searchedQuery.trim().length >= 2 ? (
             <div className="p-4 text-center text-xs font-medium text-slate-400">
               <p className="font-bold text-slate-600">No results found</p>
@@ -411,8 +480,73 @@ export default function CreateLoad({ onBack }) {
     type: 'Pickup', address: '', addressDetails: null, contactName: '', contactPhone: '', date: '', time: '', instructions: ''
   });
 
-  const openAddStopModal = () => {
-    setNewStopForm({ type: 'Pickup', address: '', addressDetails: null, contactName: '', contactPhone: '', date: '', time: '', instructions: '' });
+  const getDriverSavedLocations = (driverId = null, filterType = null) => {
+    let driversToSearch = dbDrivers;
+    if (driverId) {
+      const target = dbDrivers.find(d => String(d.id) === String(driverId));
+      driversToSearch = target ? [target] : dbDrivers;
+    }
+
+    const locations = [];
+    driversToSearch.forEach(drv => {
+      let sched = [];
+      if (drv.loadPaySchedule) {
+        try {
+          sched = typeof drv.loadPaySchedule === 'string' ? JSON.parse(drv.loadPaySchedule) : drv.loadPaySchedule;
+        } catch (e) {}
+      }
+      if (Array.isArray(sched)) {
+        sched.forEach((item, idx) => {
+          const driverName = drv.name || `${drv.firstName || ''} ${drv.lastName || ''}`.trim() || drv.userCode || 'Driver';
+          if (item.pickupLocation && item.pickupLocation.trim() && (!filterType || filterType === 'Pickup')) {
+            locations.push({
+              id: `${drv.id}-p-${idx}`,
+              display: item.pickupLocation.trim(),
+              full: item.pickupLocation.trim(),
+              details: { street: '', suburb: '', state: '', postcode: '', country: 'Australia' },
+              driverId: drv.id,
+              driverName,
+              type: 'Pickup',
+              address: item.pickupLocation.trim(),
+              amount: item.amount,
+              routeName: item.name || `Route #${idx + 1}`
+            });
+          }
+          if (item.deliveryLocation && item.deliveryLocation.trim() && (!filterType || filterType === 'Drop-off')) {
+            locations.push({
+              id: `${drv.id}-d-${idx}`,
+              display: item.deliveryLocation.trim(),
+              full: item.deliveryLocation.trim(),
+              details: { street: '', suburb: '', state: '', postcode: '', country: 'Australia' },
+              driverId: drv.id,
+              driverName,
+              type: 'Drop-off',
+              address: item.deliveryLocation.trim(),
+              amount: item.amount,
+              routeName: item.name || `Route #${idx + 1}`
+            });
+          }
+        });
+      }
+    });
+
+    return locations;
+  };
+
+  const openAddStopModal = (initialType = 'Pickup') => {
+    const typeStr = (typeof initialType === 'string' && initialType) ? initialType : 'Pickup';
+    const savedForType = getDriverSavedLocations(formData.driver || null, typeStr);
+    const defaultAddress = savedForType.length > 0 ? savedForType[0].address : '';
+    setNewStopForm({
+      type: typeStr,
+      address: defaultAddress,
+      addressDetails: null,
+      contactName: '',
+      contactPhone: '',
+      date: formData.loadDate || new Date().toISOString().split('T')[0],
+      time: '',
+      instructions: ''
+    });
     setShowAddStopModal(true);
   };
 
@@ -420,6 +554,70 @@ export default function CreateLoad({ onBack }) {
     if (!newStopForm.address.trim()) { alert('Please enter an address.'); return; }
     setStops(prev => [...prev, { id: Date.now(), ...newStopForm }]);
     setShowAddStopModal(false);
+  };
+
+  const handleImportDriverRoute = (targetDriverId = null) => {
+    const drvId = (typeof targetDriverId === 'string' || typeof targetDriverId === 'number') ? targetDriverId : formData.driver;
+    if (!drvId) {
+      alert('Please assign a driver first in Section 4, or select a driver with saved route locations.');
+      return;
+    }
+    const drvObj = dbDrivers.find(d => String(d.id) === String(drvId));
+    if (!drvObj) return;
+
+    let sched = [];
+    if (drvObj.loadPaySchedule) {
+      try {
+        sched = typeof drvObj.loadPaySchedule === 'string' ? JSON.parse(drvObj.loadPaySchedule) : drvObj.loadPaySchedule;
+      } catch (e) {}
+    }
+
+    if (!Array.isArray(sched) || sched.length === 0) {
+      alert(`No saved route locations found for driver ${drvObj.name || drvObj.firstName || ''}.`);
+      return;
+    }
+
+    const activeRoute = sched.find(s => s.isSelected) || sched[0];
+    const newStopsToAdd = [];
+
+    if (activeRoute.pickupLocation && activeRoute.pickupLocation.trim()) {
+      newStopsToAdd.push({
+        id: Date.now() + Math.random(),
+        type: 'Pickup',
+        address: activeRoute.pickupLocation.trim(),
+        addressDetails: null,
+        contactName: '',
+        contactPhone: '',
+        date: formData.loadDate || new Date().toISOString().split('T')[0],
+        time: '',
+        instructions: `Pickup location from ${drvObj.name || drvObj.firstName || 'Driver'}'s profile`
+      });
+    }
+
+    if (activeRoute.deliveryLocation && activeRoute.deliveryLocation.trim()) {
+      newStopsToAdd.push({
+        id: Date.now() + Math.random() + 1,
+        type: 'Drop-off',
+        address: activeRoute.deliveryLocation.trim(),
+        addressDetails: null,
+        contactName: '',
+        contactPhone: '',
+        date: formData.loadDate || new Date().toISOString().split('T')[0],
+        time: '',
+        instructions: `Delivery location from ${drvObj.name || drvObj.firstName || 'Driver'}'s profile`
+      });
+    }
+
+    if (newStopsToAdd.length > 0) {
+      setStops(prev => [...prev, ...newStopsToAdd]);
+      if (activeRoute.amount) {
+        setSelectedPayChoice(String(activeRoute.amount));
+        setFormData(prev => ({ ...prev, driverPay: String(activeRoute.amount) }));
+      }
+      alert(`✅ Imported ${newStopsToAdd.length} stop(s) from ${drvObj.name || drvObj.firstName}'s saved route!`);
+    } else {
+      alert(`No pickup or delivery addresses defined in driver's route schedule.`);
+    }
   };
 
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
@@ -773,7 +971,7 @@ export default function CreateLoad({ onBack }) {
               <button
                 type="button"
                 onClick={openAddStopModal}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-full text-[10px] font-black transition-colors uppercase tracking-wider shadow-xs"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-full text-[10px] font-black transition-colors uppercase tracking-wider shadow-xs cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[3px]" /> ADD STOP
               </button>
@@ -1752,93 +1950,6 @@ export default function CreateLoad({ onBack }) {
               </div>
             </div>
 
-            {/* Dynamic Driver Pay Section based on Driver & Client Requirement */}
-            {formData.driver && (() => {
-              const selectedDriverObj = dbDrivers.find(d => String(d.id) === String(formData.driver));
-              let driverSchedule = [];
-              if (selectedDriverObj?.loadPaySchedule) {
-                try {
-                  driverSchedule = typeof selectedDriverObj.loadPaySchedule === 'string'
-                    ? JSON.parse(selectedDriverObj.loadPaySchedule)
-                    : selectedDriverObj.loadPaySchedule;
-                } catch (err) {}
-              }
-
-              return (
-                <div className="col-span-1 md:col-span-2 bg-purple-50/50 border border-purple-200/80 rounded-xl p-4 transition-all">
-                  <div className="flex items-center justify-between gap-2 mb-2.5">
-                    <FieldLabel required>Driver Pay (Agreed Trip Payment)</FieldLabel>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-purple-700 bg-purple-100/80 border border-purple-200 px-2 py-0.5 rounded-md">
-                        {selectedDriverObj?.payType || 'Per Load'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Dropdown for Preset Choices */}
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-600" />
-                      <select
-                        value={selectedPayChoice}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setSelectedPayChoice(val);
-                          if (val === 'custom') {
-                            // keep custom amount or leave blank
-                          } else if (val) {
-                            setFormData(prev => ({ ...prev, driverPay: val }));
-                          }
-                        }}
-                        className={`${selectCls} pl-8 font-semibold text-slate-800`}
-                      >
-                        <option value="">Select Agreed Driver Pay...</option>
-                        {Array.isArray(driverSchedule) && driverSchedule.map((item, idx) => {
-                          const routeLabel = (item.pickupLocation || item.deliveryLocation)
-                            ? `${item.pickupLocation || 'Pickup'} ➔ ${item.deliveryLocation || 'Delivery'}`
-                            : (item.name || `Route #${idx + 1}`);
-                          return (
-                            <option key={item.id || idx} value={item.amount}>
-                              📍 {routeLabel} — ${item.amount} {item.isSelected ? '★ (Assigned Route)' : ''}
-                            </option>
-                          );
-                        })}
-                        <option value="custom">✏️ Custom Amount...</option>
-                      </select>
-                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-                    </div>
-
-                    {/* Custom Amount or Manual Override */}
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.driverPay}
-                        onChange={e => {
-                          setSelectedPayChoice('custom');
-                          setFormData({ ...formData, driverPay: e.target.value });
-                        }}
-                        className={`${inputCls} pl-7 font-bold text-purple-900 border-purple-300 focus:border-purple-600`}
-                        placeholder={selectedPayChoice === 'custom' ? "Enter custom amount..." : "Agreed Pay Amount ($)"}
-                      />
-                    </div>
-                  </div>
-
-                  {formData.driverPay && !isNaN(parseFloat(formData.driverPay)) ? (
-                    <div className="mt-2.5 flex items-center justify-between text-[11px] text-purple-700 bg-purple-100/50 border border-purple-200/50 rounded-lg px-3 py-1.5 font-medium">
-                      <span>✓ Driver will receive: <strong className="font-black text-purple-900">${parseFloat(formData.driverPay).toFixed(2)}</strong> for this trip</span>
-                      <span className="text-[10px] text-purple-500 font-semibold">(Applies to this load only)</span>
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-[10px] text-slate-500 font-medium">
-                      Select an agreed rate choice from the dropdown or type a custom amount for this specific load.
-                    </p>
-                  )}
-                </div>
-              );
-            })()}
-
             <div>
               <FieldLabel>Load Notes (Driver View)</FieldLabel>
               <input
@@ -2186,7 +2297,15 @@ export default function CreateLoad({ onBack }) {
                     <button
                       key={t}
                       type="button"
-                      onClick={() => setNewStopForm(f => ({ ...f, type: t }))}
+                      onClick={() => {
+                        const savedForNewType = getDriverSavedLocations(formData.driver || null, t);
+                        const defaultAddr = savedForNewType.length > 0 ? savedForNewType[0].address : '';
+                        setNewStopForm(f => ({
+                          ...f,
+                          type: t,
+                          address: defaultAddr || f.address
+                        }));
+                      }}
                       className={`flex-1 py-2.5 rounded-xl text-xs font-black border-2 transition-all ${
                         newStopForm.type === t
                           ? t === 'Pickup'
@@ -2207,8 +2326,13 @@ export default function CreateLoad({ onBack }) {
                 <AddressAutocomplete
                   value={newStopForm.address}
                   onChange={(val, details) => setNewStopForm(f => ({ ...f, address: val, addressDetails: details }))}
+                  savedLocations={getDriverSavedLocations(formData.driver || null, newStopForm.type)}
                   className={inputCls}
-                  placeholder="e.g. 123 Smith St, Melbourne VIC 3000"
+                  placeholder={
+                    newStopForm.type === 'Pickup'
+                      ? "Select driver pickup location or type address..."
+                      : "Select driver drop-off location or type address..."
+                  }
                   autoFocus
                 />
               </div>
