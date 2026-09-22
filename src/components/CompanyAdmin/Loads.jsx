@@ -2008,12 +2008,14 @@ function LoadDetail({ load, onBack }) {
                   type,
                   desc,
                   amount,
-                  date
+                  date,
+                  driverId: activeDriver?.rawId || activeDriver?.id,
+                  vehicleId: activeTruck?.rawId || activeTruck?.id
                 });
                 const createdExp = res.data?.data || res.data;
                 if (createdExp) {
                   setExpensesList(prev => [createdExp, ...prev]);
-                  triggerToast("Expense saved successfully to database!", "success");
+                  triggerToast("Expense saved & assigned to driver!", "success");
                 }
               } catch (err) {
                 console.error("Error saving expense via API, using local fallback:", err);

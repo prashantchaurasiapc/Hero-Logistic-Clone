@@ -576,6 +576,25 @@ export default function Drivers() {
     }
   };
 
+  const [driverExpensesList, setDriverExpensesList] = useState([]);
+
+  const fetchDriverExpenses = async (driverId) => {
+    if (!driverId) return;
+    try {
+      const res = await api.get(`/company-admin/drivers/${driverId}/expenses`);
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        setDriverExpensesList(res.data.data);
+      } else {
+        const res2 = await api.get(`/driver-portal/expenses?driverId=${driverId}`);
+        if (res2.data?.data?.expenses) {
+          setDriverExpensesList(res2.data.data.expenses);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching driver expenses:', err);
+    }
+  };
+
   const fetchDriverSuperInfo = async (driverId) => {
     if (!driverId) return;
     try {
@@ -601,6 +620,7 @@ export default function Drivers() {
       fetchDriverPayRates(selectedDriver.id);
       fetchDriverActivities(selectedDriver.id);
       fetchDriverSuperInfo(selectedDriver.id);
+      fetchDriverExpenses(selectedDriver.id);
     }
   }, [selectedDriver]);
   const [showAddDriver, setShowAddDriver] = useState(false);
