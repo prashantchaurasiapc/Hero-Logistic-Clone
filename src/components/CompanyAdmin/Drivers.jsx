@@ -3486,8 +3486,8 @@ export default function Drivers() {
           }
 
           const payType = driverFormPayType;
-          const payRate = driverFormPayType === 'Per Load' ? null : (fd.get('PayRate') || null);
-          const loadPaySchedule = driverFormPayType === 'Per Load' ? JSON.stringify(driverLoadPaySchedule) : null;
+          const payRate = fd.get('PayRate') || (isEditMode ? selectedDriver?.payRate : null);
+          const loadPaySchedule = driverLoadPaySchedule && driverLoadPaySchedule.length > 0 ? JSON.stringify(driverLoadPaySchedule) : (selectedDriver?.loadPaySchedule || null);
           const bankName = fd.get('BankName') || '';
           const accountNumber = fd.get('AccountNumber') || '';
           const routingNumber = fd.get('BSBRouting') || '';
@@ -3837,8 +3837,8 @@ export default function Drivers() {
                 <InputField label="Superannuation Fund" className="sm:col-span-2" defaultValue={isEditMode ? defaultData.superFund : ""} placeholder="e.g. AustralianSuper" />
               </div>
 
-              {/* Dynamic Named Load-Pay Options Table for Per Load */}
-              {driverFormPayType === 'Per Load' && (
+              {/* Dynamic Named Load-Pay Options Table for Per Load / Per Km */}
+              {(driverFormPayType === 'Per Load' || driverFormPayType === 'Per Km' || (driverLoadPaySchedule && driverLoadPaySchedule.length > 0)) && (
                 <div className="mt-8 pt-6 border-t border-slate-100">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
                     <div>
