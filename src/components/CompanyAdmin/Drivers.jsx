@@ -106,7 +106,7 @@ const formatAvatarUrl = (url) => {
   return trimmed;
 };
 
-const InputField = ({ label, name, type = "text", placeholder, defaultValue, optional = false, className = "", options = [], autoComplete }) => {
+const InputField = ({ label, name, type = "text", placeholder, defaultValue, optional = false, className = "", options = [], autoComplete, value, onChange }) => {
   const fieldName = name || label.replace(/[^a-zA-Z0-9]/g, '');
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
@@ -114,7 +114,13 @@ const InputField = ({ label, name, type = "text", placeholder, defaultValue, opt
         {label} {!optional && <span className="text-rose-500">*</span>}
       </label>
       {type === "select" ? (
-        <select name={fieldName} defaultValue={defaultValue || ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer">
+        <select
+          name={fieldName}
+          value={value}
+          defaultValue={value !== undefined ? undefined : (defaultValue || "")}
+          onChange={onChange}
+          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer"
+        >
           <option value="">Select {label}</option>
           {options.length > 0 ? options.map((opt, i) => (
             <option key={i} value={opt}>{opt}</option>
@@ -128,7 +134,9 @@ const InputField = ({ label, name, type = "text", placeholder, defaultValue, opt
           type={type}
           autoComplete={autoComplete}
           placeholder={placeholder}
-          defaultValue={defaultValue || ""}
+          value={value}
+          defaultValue={value !== undefined ? undefined : (defaultValue || "")}
+          onChange={onChange}
           className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
         />
       )}
@@ -749,11 +757,13 @@ export default function Drivers() {
     });
   };
 
+  const [driverFormEmail, setDriverFormEmail] = useState('');
   const [driverFormPayType, setDriverFormPayType] = useState('Hourly');
   const [driverLoadPaySchedule, setDriverLoadPaySchedule] = useState(defaultLoadPaySchedule);
 
   useEffect(() => {
     if (isEditingDriver && selectedDriver) {
+      setDriverFormEmail(selectedDriver.email && selectedDriver.email !== '—' ? selectedDriver.email : '');
       setDriverFormPayType(selectedDriver.payType || 'Hourly');
       let sched = [];
       if (selectedDriver.loadPaySchedule) {
@@ -765,6 +775,7 @@ export default function Drivers() {
       }
       setDriverLoadPaySchedule(normalizeSchedule(sched));
     } else if (showAddDriver) {
+      setDriverFormEmail('');
       setDriverFormPayType('Hourly');
       setDriverLoadPaySchedule(defaultLoadPaySchedule);
     }
@@ -3389,7 +3400,9 @@ export default function Drivers() {
           const rawDriverCode = fd.has('EmployeeIDManualEditOption') ? fd.get('EmployeeIDManualEditOption') : fd.get('driverCode');
           const driverCode = rawDriverCode !== null ? rawDriverCode.trim() : (isEditMode && selectedDriver ? (selectedDriver.driverCode === '—' ? '' : selectedDriver.driverCode) : '');
           const phone = fd.get('PhoneNumber') || fd.get('phone') || '';
-          const rawEmail = (fd.get('EmailAddress') || fd.get('Username') || fd.get('email') || fd.get('username') || '').trim();
+          const usernameVal = (fd.get('Username') || fd.get('username') || '').trim();
+          const emailAddrVal = (fd.get('EmailAddress') || fd.get('email') || '').trim();
+          const rawEmail = (driverFormEmail || usernameVal || emailAddrVal).trim();
           let email = rawEmail || (isEditMode && selectedDriver ? selectedDriver.email : '');
           const rawPassword = (fd.get('Password') || fd.get('password') || '').trim();
           let passwordToSubmit = null;
@@ -3683,7 +3696,7 @@ export default function Drivers() {
                   <InputField label="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} defaultValue={isEditMode ? (defaultData.gender || '') : ''} />
                   <InputField label="Nationality" defaultValue={isEditMode ? defaultData.nationality : ''} />
                   <InputField label="Phone Number" defaultValue={isEditMode ? defaultData.phone : ''} />
-                  <InputField label="Email Address" defaultValue={isEditMode ? defaultData.email : ''} placeholder="e.g. driver@gmail.com (Login Email)" />
+                  <InputField label="Email Address" value={driverFormEmail} onChange={(e) => setDriverFormEmail(e.target.value)} defaultValue={isEditMode ? defaultData.email : ''} placeholder="e.g. driver@gmail.com (Login Email)" />
                   <InputField label="Emergency Contact Name" defaultValue={isEditMode ? defaultData.emergencyContactName : ''} />
                   <InputField label="Emergency Contact Number" defaultValue={isEditMode ? defaultData.emergencyContactPhone : ''} />
                   <InputField label="Residential Address" className="sm:col-span-2" defaultValue={isEditMode ? defaultData.address : ''} />
@@ -4058,6 +4071,8 @@ export default function Drivers() {
                   label="Username (Optional)"
                   name="Username"
                   placeholder="e.g. driver@gmail.com"
+                  value={driverFormEmail}
+                  onChange={(e) => setDriverFormEmail(e.target.value)}
                   defaultValue={isEditMode ? (defaultData.email || selectedDriver?.email || '') : ''}
                   autoComplete="off"
                   optional={true}
