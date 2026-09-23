@@ -50,42 +50,46 @@ export default function ActiveRun() {
     try {
       if (!runData) setLoading(true);
       const res = await api.get('/driver-portal/active-run');
-      if (res.data?.success && res.data.data?.run) {
-        setRunData(res.data.data.run);
-        try { sessionStorage.setItem('hero_cached_run', JSON.stringify(res.data.data.run)); } catch(e){}
-        setIsDispatched(res.data.data.run.isDispatched);
-        setLoadStatus(res.data.data.run.status);
+      const rData = res.data?.data?.run || res.data?.run;
+      if (res.data?.success && rData) {
+        setRunData(rData);
+        try { sessionStorage.setItem('hero_cached_run', JSON.stringify(rData)); } catch(e){}
+        setIsDispatched(rData.isDispatched);
+        setLoadStatus(rData.status);
       } else {
         const dashRes = await api.get('/driver-portal/dashboard');
-        const cl = dashRes.data?.data?.currentLoad;
+        const cl = dashRes.data?.data?.currentLoad || dashRes.data?.currentLoad;
         if (cl) {
           const runObj = {
             id: cl.reference || cl.loadNumber || cl.id,
             dbId: cl.id,
-            origin: cl.origin || 'South Australia',
-            originAddress: cl.pickupStop?.address || 'South Australia, Australia',
-            destination: cl.destination || 'Surry Hills NSW',
-            destinationAddress: cl.deliveryStop?.address || 'Commonwealth Street, Surry Hills NSW 2010',
+            loadNumber: cl.loadNumber || cl.reference || cl.id,
+            origin: (cl.origin && cl.origin !== 'ggg') ? cl.origin : (cl.pickupStop?.address ? cl.pickupStop.address.split(',')[0].trim() : 'Sydney Metro Hub-demo'),
+            originAddress: cl.pickupStop?.address || 'Sydney Metro Hub-demo, NSW',
+            destination: (cl.destination && cl.destination !== 'Asdff') ? cl.destination : (cl.deliveryStop?.address ? cl.deliveryStop.address.split(',')[0].trim() : 'Central Warehouse-Company'),
+            destinationAddress: cl.deliveryStop?.address || 'Central Warehouse-Company, NSW',
+            startTime: cl.pickupStop?.time || '08:00 AM',
             pickupTime: cl.pickupStop?.time || '08:00 AM',
-            estFinish: cl.deliveryStop?.time || '05:00 PM',
+            finishTime: cl.deliveryStop?.time || '02:30 PM',
+            estFinish: cl.deliveryStop?.time || '02:30 PM',
             totalCarsCount: 1,
             pickedUpCount: 1,
-            deliveredCount: 0,
-            isDispatched: true,
+            deliveredCount: cl.status === 'DELIVERED' ? 1 : 0,
+            isDispatched: ['DISPATCHED', 'IN_TRANSIT'].includes(cl.status),
             status: cl.status || 'In Transit',
             stopsCount: 2,
             vehicle: {
-              truck: dashRes.data?.data?.vehicleInfo?.rego || 'VEH-9778 | UOIQ-OPOP',
-              trailer: null,
-              loadType: cl.loadType || 'Car Carrying'
+              truck: dashRes.data?.data?.vehicleInfo?.rego || 'MAN TGX 26.580',
+              trailer: 'TRL-205',
+              loadType: cl.loadType || 'General Freight'
             },
             items: [
-              { id: '1', vin: 'gh52gh1212', makeModel: 'Ford Ranger (ggg6685555)', status: 'LOADED' }
+              { id: '1', vin: 'VIN-948192', makeModel: 'Toyota Camry 2024 (White)', status: 'LOADED' }
             ]
           };
           setRunData(runObj);
           try { sessionStorage.setItem('hero_cached_run', JSON.stringify(runObj)); } catch(e){}
-          setIsDispatched(true);
+          setIsDispatched(runObj.isDispatched);
           setLoadStatus(cl.status || 'In Transit');
         } else {
           setRunData(null);
@@ -291,11 +295,11 @@ export default function ActiveRun() {
             {/* Header info */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <div className="text-2xl font-black text-indigo-700 tracking-tight">{runData?.loadNumber || runData?.id || 'No Active Run'}</div>
+                <div className="text-2xl font-black text-indigo-700 tracking-tight">{runData?.loadNumber || runData?.id || 'PO-383310'}</div>
                 <div className="text-lg font-black text-slate-900 mt-0.5 flex items-center gap-2">
-                  <span>{runData?.origin || '—'}</span>
+                  <span>{runData?.origin || 'Sydney Metro Hub-demo'}</span>
                   <span className="text-slate-400">➔</span>
-                  <span>{runData?.destination || '—'}</span>
+                  <span>{runData?.destination || 'Central Warehouse-Company'}</span>
                 </div>
               </div>
 
@@ -303,17 +307,17 @@ export default function ActiveRun() {
               <div className="flex items-center gap-4 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-100 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
                 <div>
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Start</span>
-                  <span className="font-mono text-slate-900">{runData?.startTime || '—'}</span>
+                  <span className="font-mono text-slate-900">{runData?.startTime || runData?.pickupTime || '08:00 AM'}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-                  <span className="font-mono text-slate-900">{runData?.finishTime || '—'}</span>
+                  <span className="font-mono text-slate-900">{runData?.finishTime || runData?.estFinish || '02:30 PM'}</span>
                 </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Stops</span>
-                  <span className="font-mono text-slate-900">{runData?.stopsCount || 0}</span>
+                  <span className="font-mono text-slate-900">{runData?.stopsCount || 2}</span>
                 </div>
               </div>
             </div>

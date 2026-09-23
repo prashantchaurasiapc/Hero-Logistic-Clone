@@ -257,7 +257,7 @@ function MapComponent({ stops = [] }) {
 
 
 // ─── Load Detail View ─────────────────────────────────────────────────────────
-function LoadDetail({ load, onBack }) {
+function LoadDetail({ load, onBack, onEdit }) {
   const [activeTab, setActiveTab] = useState('Overview');
   const [selectedStop, setSelectedStop] = useState(null);
   const [showStopModal, setShowStopModal] = useState(false);
@@ -627,14 +627,18 @@ function LoadDetail({ load, onBack }) {
         <div className="flex items-center gap-2 w-full sm:w-auto relative">
           <button 
             onClick={() => {
-              setEditFormData({
-                type: currentLoad.type,
-                customer: currentLoad.customer,
-                priority: currentLoad.priority,
-                status: currentLoad.status,
-                notes: currentLoad.notes
-              });
-              setShowEditLoadModal(true);
+              if (onEdit) {
+                onEdit(load);
+              } else {
+                setEditFormData({
+                  type: currentLoad.type,
+                  customer: currentLoad.customer,
+                  priority: currentLoad.priority,
+                  status: currentLoad.status,
+                  notes: currentLoad.notes
+                });
+                setShowEditLoadModal(true);
+              }
             }}
             className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
           >
@@ -881,14 +885,18 @@ function LoadDetail({ load, onBack }) {
                   <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Load Notes</h3>
                   <button 
                     onClick={() => {
-                      setEditFormData({
-                        type: currentLoad.type,
-                        customer: currentLoad.customer,
-                        priority: currentLoad.priority,
-                        status: currentLoad.status,
-                        notes: currentLoad.notes
-                      });
-                      setShowEditLoadModal(true);
+                      if (onEdit) {
+                        onEdit(load);
+                      } else {
+                        setEditFormData({
+                          type: currentLoad.type,
+                          customer: currentLoad.customer,
+                          priority: currentLoad.priority,
+                          status: currentLoad.status,
+                          notes: currentLoad.notes
+                        });
+                        setShowEditLoadModal(true);
+                      }
                     }}
                     className="text-[11px] font-bold text-indigo-600 hover:underline uppercase tracking-wider cursor-pointer"
                   >
@@ -2609,6 +2617,7 @@ export default function Loads() {
   const [showCreateForm, setShowCreateForm] = useState(location.state?.openNewLoadModal || false);
   const [showAILoadBuilder, setShowAILoadBuilder] = useState(false);
   const [selectedLoad, setSelectedLoad] = useState(null);
+  const [editLoad, setEditLoad] = useState(null); // load to edit in CreateLoad form
 
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -2690,14 +2699,8 @@ export default function Loads() {
   };
 
   const openEditModal = (load) => {
-    setEditModalLoad(load);
-    setEditForm({
-      customer: load.customer || '',
-      type: load.type || 'General Freight',
-      priority: load.priority || 'Normal',
-      status: load.status || 'DRAFT',
-      notes: load.notes || ''
-    });
+    // Open the full CreateLoad form in edit mode instead of simple modal
+    setEditLoad(load);
   };
 
   const handleSaveEdit = async () => {
@@ -2874,8 +2877,24 @@ export default function Loads() {
     fetchLoads();
   }, [showCreateForm, showAILoadBuilder]);
 
+  if (editLoad) {
+    return (
+      <CreateLoad
+        editMode={true}
+        loadToEdit={editLoad}
+        onBack={() => { setEditLoad(null); fetchLoads(); }}
+      />
+    );
+  }
+
   if (selectedLoad) {
-    return <LoadDetail load={selectedLoad} onBack={() => { setSelectedLoad(null); fetchLoads(); }} />;
+    return (
+      <LoadDetail
+        load={selectedLoad}
+        onBack={() => { setSelectedLoad(null); fetchLoads(); }}
+        onEdit={(load) => { setSelectedLoad(null); setEditLoad(load); }}
+      />
+    );
   }
 
   if (showCreateForm) {

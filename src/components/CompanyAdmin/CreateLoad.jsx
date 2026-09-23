@@ -303,7 +303,7 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
   );
 }
 
-export default function CreateLoad({ onBack }) {
+export default function CreateLoad({ onBack, editMode = false, loadToEdit = null }) {
   const [dbDrivers, setDbDrivers] = useState([]);
   const [dbTrucks, setDbTrucks] = useState([]);
   const [dbCustomers, setDbCustomers] = useState([]);
@@ -365,6 +365,75 @@ export default function CreateLoad({ onBack }) {
 
     loadMasterData();
   }, []);
+
+  // Pre-populate fields if editing an existing load
+  useEffect(() => {
+    if (editMode && loadToEdit) {
+      const loadIdToFetch = loadToEdit.rawId || loadToEdit.id;
+      api.get(`/company-admin/loads/${loadIdToFetch}`).then(res => {
+        const lData = res.data?.data || res.data;
+        if (lData) {
+          setFormData(prev => ({
+            ...prev,
+            customer: lData.customerId || lData.customer?.id || (typeof lData.customer === 'string' ? lData.customer : prev.customer),
+            loadType: lData.type || prev.loadType,
+            loadRef: lData.loadRef || lData.id || prev.loadRef,
+            priority: lData.priority ? lData.priority.charAt(0).toUpperCase() + lData.priority.slice(1).toLowerCase() : prev.priority,
+            loadDate: lData.loadDate ? lData.loadDate.split('T')[0] : (lData.createdAt ? lData.createdAt.split('T')[0] : prev.loadDate),
+            truck: lData.truckId || lData.truck?.id || prev.truck,
+            trailer: lData.trailerId || lData.trailer?.id || prev.trailer,
+            driver: lData.driverId || lData.driver?.id || prev.driver,
+            loadNotes: lData.notes ? lData.notes.replace(/\[(AGREED_RATE|DRIVER_PAY):[^\]]+\]/g, '').trim() : prev.loadNotes,
+            rate: lData.rate ? String(lData.rate) : prev.rate,
+            driverPay: lData.driverPay ? String(lData.driverPay) : prev.driverPay
+          }));
+
+          if (Array.isArray(lData.stops) && lData.stops.length > 0) {
+            setStops(lData.stops.map((s, idx) => ({
+              id: s.id || Date.now() + idx,
+              type: s.type === 'PICKUP' ? 'Pickup' : 'Drop-off',
+              address: s.address || '',
+              contactName: s.contactName || '',
+              contactPhone: s.contactPhone || '',
+              date: s.scheduledDate ? s.scheduledDate.split('T')[0] : (lData.loadDate ? lData.loadDate.split('T')[0] : ''),
+              time: s.scheduledTime || '',
+              instructions: s.instructions || ''
+            })));
+          }
+
+          if (Array.isArray(lData.items) && lData.items.length > 0) {
+            setItems(lData.items.map((i, idx) => {
+              let parsedNotes = {};
+              if (i.notes) {
+                try { parsedNotes = JSON.parse(i.notes); } catch (e) {}
+              }
+              return {
+                id: i.id || Date.now() + idx,
+                customer: i.customerId || parsedNotes.customer || '',
+                pickupStop: parsedNotes.pickupStop || '',
+                dropStop: parsedNotes.dropStop || '',
+                rcog: i.rego || parsedNotes.rcog || '',
+                vin: i.vin || parsedNotes.vin || '',
+                stockRec: i.stockRef || parsedNotes.stockRec || '',
+                make: i.make || parsedNotes.make || '',
+                model: i.model || parsedNotes.model || '',
+                year: i.year ? String(i.year) : (parsedNotes.year || ''),
+                colour: i.color || parsedNotes.colour || '',
+                weight: i.weightKg ? String(i.weightKg) : (parsedNotes.weight || ''),
+                quantity: i.quantity ? String(i.quantity) : '1',
+                itemDescription: i.description || parsedNotes.itemDescription || '',
+                pallets: i.pallets ? String(i.pallets) : (parsedNotes.pallets || ''),
+                cubicMetres: i.cubicMetres ? String(i.cubicMetres) : (parsedNotes.cubicMetres || ''),
+                fragile: i.fragile ? 'Yes' : (parsedNotes.fragile || 'No'),
+                stackable: i.stackable ? 'Yes' : (parsedNotes.stackable || 'No'),
+                specialHandling: i.specialHandling || parsedNotes.specialHandling || ''
+              };
+            }));
+          }
+        }
+      }).catch(err => console.error("Error populating load for edit:", err));
+    }
+  }, [editMode, loadToEdit]);
 
   const [stops, setStops] = useState([]);
 
@@ -476,6 +545,7 @@ export default function CreateLoad({ onBack }) {
   });
 
   const [showAddStopModal, setShowAddStopModal] = useState(false);
+  const [editingStopId, setEditingStopId] = useState(null); // null = add mode, stopId = edit mode
   const [newStopForm, setNewStopForm] = useState({
     type: 'Pickup', address: '', addressDetails: null, contactName: '', contactPhone: '', date: '', time: '', instructions: ''
   });
@@ -552,8 +622,31 @@ export default function CreateLoad({ onBack }) {
 
   const handleSaveNewStop = () => {
     if (!newStopForm.address.trim()) { alert('Please enter an address.'); return; }
-    setStops(prev => [...prev, { id: Date.now(), ...newStopForm }]);
+    if (editingStopId !== null) {
+      // Edit mode: update existing stop
+      setStops(prev => prev.map(s => s.id === editingStopId ? { ...s, ...newStopForm } : s));
+    } else {
+      // Add mode: append new stop
+      setStops(prev => [...prev, { id: Date.now(), ...newStopForm }]);
+    }
     setShowAddStopModal(false);
+    setEditingStopId(null);
+  };
+
+  const openEditStopModal = (stop) => {
+    setEditingStopId(stop.id);
+    setNewStopForm({
+      type: stop.type || 'Pickup',
+      address: stop.address || '',
+      addressDetails: stop.addressDetails || null,
+      contactName: stop.contactName || '',
+      contactPhone: stop.contactPhone || '',
+      date: stop.date || '',
+      time: stop.time || '',
+      instructions: stop.instructions || ''
+    });
+    setShowAddStopModal(true);
+    setActiveStopMenu(null);
   };
 
   const handleImportDriverRoute = (targetDriverId = null) => {
@@ -741,6 +834,12 @@ export default function CreateLoad({ onBack }) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i));
 
   const [submitting, setSubmitting] = useState(false);
+  const [saveToast, setSaveToast] = useState(null);
+
+  const showSaveToast = (msg, type = 'success') => {
+    setSaveToast({ msg, type });
+    setTimeout(() => setSaveToast(null), 3500);
+  };
 
   const saveLoadToDatabase = async (targetStatus = 'ACTIVE') => {
     if (!formData.loadRef.trim()) {
@@ -792,18 +891,25 @@ export default function CreateLoad({ onBack }) {
         })
       };
 
-      const res = await api.post('/company-admin/loads', payload);
+      let res;
+      if (editMode && (loadToEdit?.rawId || loadToEdit?.id)) {
+        const targetId = loadToEdit.rawId || loadToEdit.id;
+        res = await api.put(`/company-admin/loads/${targetId}`, payload);
+      } else {
+        res = await api.post('/company-admin/loads', payload);
+      }
+
       dispatcherRepository.syncWithBackend();
       if (res.data && res.data.success) {
-        alert(`🎉 Load ${formData.loadRef} saved to database as ${targetStatus}!`);
-        onBack();
+        showSaveToast(`Load ${formData.loadRef} ${editMode ? 'updated successfully!' : 'saved successfully!'}`, 'success');
+        setTimeout(() => onBack(), 1000);
       } else {
-        alert(res.data?.message || res.data?.error?.message || 'Error saving load. Please check inputs and database constraints.');
+        showSaveToast(res.data?.message || res.data?.error?.message || 'Error saving load. Please check inputs.', 'error');
       }
     } catch (err) {
-      console.error('Error creating load:', err);
+      console.error('Error creating/updating load:', err);
       dispatcherRepository.syncWithBackend();
-      alert(`❌ Failed to save Load ${formData.loadRef}. Error: ${err.response?.data?.error?.message || err.message}`);
+      showSaveToast(`Failed to ${editMode ? 'update' : 'save'} load. ${err.response?.data?.error?.message || err.message}`, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -811,13 +917,23 @@ export default function CreateLoad({ onBack }) {
 
   const handleActivate = (e) => {
     if (e) e.preventDefault();
-    saveLoadToDatabase('ACTIVE');
+    saveLoadToDatabase(editMode ? (loadToEdit?.status || 'ACTIVE') : 'ACTIVE');
   };
 
   return (
     <div 
       className="flex-grow bg-[#F8FAFC] w-full overflow-y-auto min-h-0 flex flex-col font-sans text-left"
     >
+      {/* Save Toast Notification */}
+      {saveToast && (
+        <div className={`fixed bottom-5 right-5 z-[999999] flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl text-xs font-bold text-white ${
+          saveToast.type === 'error' ? 'bg-rose-600' : 'bg-slate-900'
+        }`}>
+          <Save className="w-4 h-4 shrink-0" />
+          {saveToast.msg}
+        </div>
+      )}
+
       <input
         type="file"
         ref={fileInputRef}
@@ -838,7 +954,9 @@ export default function CreateLoad({ onBack }) {
           </button>
           <div>
             <div className="flex items-baseline gap-2">
-              <h1 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-tight">CREATE LOAD</h1>
+              <h1 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-tight">
+                {editMode ? 'EDIT LOAD' : 'CREATE LOAD'}
+              </h1>
               <span className="text-lg sm:text-[22px] font-bold text-amber-500 uppercase tracking-tight italic">CONSOLE</span>
             </div>
             <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
@@ -858,10 +976,10 @@ export default function CreateLoad({ onBack }) {
           <button
             type="button"
             disabled={submitting}
-            onClick={() => saveLoadToDatabase('ACTIVE')}
+            onClick={() => saveLoadToDatabase(editMode ? (loadToEdit?.status || 'ACTIVE') : 'ACTIVE')}
             className="flex-1 sm:flex-none justify-center px-4 sm:px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black flex items-center gap-2 transition-colors shadow-xs uppercase tracking-wider disabled:opacity-50"
           >
-            <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {submitting ? 'ACTIVATING...' : 'ACTIVATE LOAD'}
+            <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {submitting ? 'SAVING...' : (editMode ? 'UPDATE LOAD' : 'ACTIVATE LOAD')}
           </button>
         </div>
       </div>
@@ -1027,8 +1145,17 @@ export default function CreateLoad({ onBack }) {
                     </div>
                     <button
                       type="button"
+                      onClick={() => openEditStopModal(stop)}
+                      className="p-1 rounded-lg text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 transition-colors"
+                      title="Edit Stop Details"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => removeStop(stop.id)}
                       className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                      title="Delete Stop"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1237,7 +1364,15 @@ export default function CreateLoad({ onBack }) {
                         <MoreVertical className="w-4 h-4" />
                       </button>
                       {activeStopMenu === stop.id && (
-                        <div className="absolute right-0 top-8 z-50 bg-white border border-slate-200 rounded-xl shadow-lg py-1 min-w-[130px]">
+                        <div className="absolute right-0 top-8 z-50 bg-white border border-slate-200 rounded-xl shadow-lg py-1 min-w-[150px]">
+                          <button
+                            type="button"
+                            onClick={() => openEditStopModal(stop)}
+                            className="w-full flex items-center gap-2 px-3.5 py-2 text-[12px] font-bold text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            Edit Stop
+                          </button>
                           <button
                             type="button"
                             onClick={() => { removeStop(stop.id); setActiveStopMenu(null); }}
@@ -2274,7 +2409,7 @@ export default function CreateLoad({ onBack }) {
                   <MapPin className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900">Add New Stop</h3>
+                  <h3 className="text-base font-black text-slate-900">{editingStopId !== null ? 'Edit Stop' : 'Add New Stop'}</h3>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Route Stop Details</p>
                 </div>
               </div>
@@ -2457,7 +2592,7 @@ export default function CreateLoad({ onBack }) {
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() => setShowAddStopModal(false)}
+                onClick={() => { setShowAddStopModal(false); setEditingStopId(null); }}
                 className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 Cancel
@@ -2467,7 +2602,11 @@ export default function CreateLoad({ onBack }) {
                 onClick={handleSaveNewStop}
                 className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
               >
-                <Plus className="w-3.5 h-3.5" /> Add Stop to Route
+                {editingStopId !== null ? (
+                  <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Save Changes</>
+                ) : (
+                  <><Plus className="w-3.5 h-3.5" /> Add Stop to Route</>
+                )}
               </button>
             </div>
           </div>
