@@ -3016,14 +3016,14 @@ export default function Customers() {
                 <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex-grow">
                   <h3 className="text-sm font-black text-slate-900 tracking-tight mb-4">Quick Actions</h3>
                   <div className="space-y-3">
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
+                    <button onClick={() => setShowAddPricingRuleModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
                       <div className="flex items-center gap-3">
                         <Plus size={16} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Add Pricing Rule</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
+                    <button onClick={() => setShowAddSurchargeModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
                       <div className="flex items-center gap-3">
                         <Plus size={16} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Add Surcharge</span>
@@ -5042,144 +5042,9 @@ export default function Customers() {
         document.body
       )}
 
-      {/* Add / Edit Pricing Rule Modal */}
-      {showAddPricingRuleModal && createPortal(
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddPricingRuleModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-[460px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
-            {/* Header */}
-            <div className="px-7 pt-6 pb-4 flex justify-between items-center border-b border-slate-100 shrink-0">
-              <div className="flex items-center gap-2 text-blue-600">
-                <FileText size={20} />
-                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">
-                  {pricingRuleModalForm.id ? 'Edit Pricing Rule' : 'Add Custom Pricing Rule'}
-                </h3>
-              </div>
-              <button onClick={() => setShowAddPricingRuleModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={20} strokeWidth={2} /></button>
-            </div>
 
-            {/* Form */}
-            <form onSubmit={handleSaveBillingPricingRule} className="px-7 py-6 space-y-4">
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-1.5">Rule Description</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Metro Standard Rate, Highway Freight"
-                  value={pricingRuleModalForm.description}
-                  onChange={e => setPricingRuleModalForm({ ...pricingRuleModalForm, description: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all placeholder:text-slate-400"
-                  required
-                />
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-1.5">Rate ex. GST ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={pricingRuleModalForm.rate}
-                    onChange={e => setPricingRuleModalForm({ ...pricingRuleModalForm, rate: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all placeholder:text-slate-400"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-1.5">Unit</label>
-                  <select
-                    value={pricingRuleModalForm.unit}
-                    onChange={e => setPricingRuleModalForm({ ...pricingRuleModalForm, unit: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-white cursor-pointer"
-                  >
-                    <option value="Per Km">Per Km</option>
-                    <option value="Per Hour">Per Hour</option>
-                    <option value="Per Pallet">Per Pallet</option>
-                    <option value="Flat Fee">Flat Fee</option>
-                    <option value="Per Trip">Per Trip</option>
-                    <option value="Per Tonne">Per Tonne</option>
-                  </select>
-                </div>
-              </div>
 
-              {/* Footer */}
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6">
-                <button type="button" onClick={() => setShowAddPricingRuleModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
-                <button type="submit" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-blue-200">Save Pricing Rule</button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Add / Edit Surcharge & Fuel Levy Modal */}
-      {showAddSurchargeModal && createPortal(
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddSurchargeModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-[460px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
-            {/* Header */}
-            <div className="px-7 pt-6 pb-4 flex justify-between items-center border-b border-slate-100 shrink-0">
-              <div className="flex items-center gap-2 text-purple-600">
-                <FileText size={20} />
-                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">
-                  {surchargeModalForm.id ? 'Edit Fuel Levy / Surcharge' : 'Add Surcharge & Fuel Levy'}
-                </h3>
-              </div>
-              <button onClick={() => setShowAddSurchargeModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={20} strokeWidth={2} /></button>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSaveBillingSurcharge} className="px-7 py-6 space-y-4">
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-1.5">Surcharge / Levy Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Fuel Levy (National), Peak Hour Fee, Hazmat Surcharge"
-                  value={surchargeModalForm.description}
-                  onChange={e => setSurchargeModalForm({ ...surchargeModalForm, description: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] font-medium text-slate-800 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-100 transition-all placeholder:text-slate-400"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-1.5">Calculation Type</label>
-                  <select
-                    value={surchargeModalForm.calculation}
-                    onChange={e => setSurchargeModalForm({ ...surchargeModalForm, calculation: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-800 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-100 transition-all bg-white cursor-pointer"
-                  >
-                    <option value="Percentage (%)">Percentage (%)</option>
-                    <option value="Flat Fee ($)">Flat Fee ($)</option>
-                    <option value="Per Km ($)">Per Km ($)</option>
-                    <option value="Per Hour ($)">Per Hour ($)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-1.5">
-                    {surchargeModalForm.calculation?.includes('Percentage') ? 'Percentage (%)' : 'Rate ($)'}
-                  </label>
-                  <input
-                    type="text"
-                    placeholder={surchargeModalForm.calculation?.includes('Percentage') ? '12.5' : '45.00'}
-                    value={surchargeModalForm.rate}
-                    onChange={e => setSurchargeModalForm({ ...surchargeModalForm, rate: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] font-medium text-slate-800 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-100 transition-all placeholder:text-slate-400"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6">
-                <button type="button" onClick={() => setShowAddSurchargeModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
-                <button type="submit" className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-purple-200">Save Surcharge</button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
 
       {/* Edit Company Information Modal */}
       {showEditCompanyInfoModal && createPortal(
