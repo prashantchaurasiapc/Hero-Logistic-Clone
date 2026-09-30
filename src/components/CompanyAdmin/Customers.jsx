@@ -3224,13 +3224,9 @@ export default function Customers() {
                         <h3 className="text-sm font-black text-slate-900 tracking-tight">{activePricingSubTab}</h3>
                         <p className="text-[10px] text-slate-500 font-bold mt-1">Configure pricing rates and rules for {selectedCustomer.name}.</p>
                       </div>
-                      {activePricingSubTab === 'Rate Cards & Charges' ? (
+                      {activePricingSubTab === 'Rate Cards & Charges' && (
                         <button onClick={() => { setEditingRateCard(null); setRateCardForm({ name: '', unit: 'Per Load', baseRate: '', category: 'General' }); setShowAddChargeModal(true); }} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
                           <Plus size={14} /> Add Rate Card
-                        </button>
-                      ) : (
-                        <button onClick={() => setShowAddPricingRuleModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
-                          <Plus size={14} /> Add Pricing Rule
                         </button>
                       )}
                     </div>
