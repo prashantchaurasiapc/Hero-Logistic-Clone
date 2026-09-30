@@ -75,7 +75,7 @@ export default function Customers() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [activeActionMenu, setActiveActionMenu] = useState(null);
   const [activeDetailsTab, setActiveDetailsTab] = useState('Overview');
-  const [activePricingSubTab, setActivePricingSubTab] = useState('Lane Pricing');
+  const [activePricingSubTab, setActivePricingSubTab] = useState('Pricing Rules');
   const [showPricingMatrixModal, setShowPricingMatrixModal] = useState(false);
   const [showApplyTemplateModal, setShowApplyTemplateModal] = useState(false);
   const [showImportPricingModal, setShowImportPricingModal] = useState(false);
@@ -131,7 +131,7 @@ export default function Customers() {
     autoSendInvoice: false
   });
 
-  const [lanePricingRules, setLanePricingRules] = useState([]);
+  const [customerPricingRules, setCustomerPricingRules] = useState([]);
   const [selectedTemplateName, setSelectedTemplateName] = useState('Standard National Template (Default)');
   const [newPricingRule, setNewPricingRule] = useState({
     from: '',
@@ -199,7 +199,7 @@ export default function Customers() {
         return { ...prev, [currentCustomerId]: [ruleObj, ...list] };
       });
 
-      setLanePricingRules(prev => [ruleObj, ...prev]);
+      setCustomerPricingRules(prev => [ruleObj, ...prev]);
 
       setShowAddPricingRuleModal(false);
       triggerToast(`Pricing Rule "${ruleObj.name}" saved! ($${ruleObj.baseRate})`);
@@ -370,7 +370,7 @@ export default function Customers() {
       minCharge: newPricingRule.minCharge || newPricingRule.baseRate
     };
 
-    setLanePricingRules(prev => [...prev, newRule]);
+    setCustomerPricingRules(prev => [...prev, newRule]);
     triggerToast(`Pricing rule for ${newPricingRule.from} -> ${newPricingRule.to} added.`);
     setShowAddPricingRuleModal(false);
     setNewPricingRule({ from: '', to: '', type: 'Interstate', distance: '', baseRate: '', minCharge: '' });
@@ -626,7 +626,7 @@ export default function Customers() {
       api.get(`/company-admin/customers/${selectedCustomer.id}/pricing-profiles`)
         .then(res => {
           const rules = res.data?.data || res.data || [];
-          setLanePricingRules(rules);
+          setCustomerPricingRules(rules);
           
           setCustomerPricingRulesMap(prev => ({
             ...prev,
@@ -635,7 +635,7 @@ export default function Customers() {
         })
         .catch(err => {
           console.error("Error loading pricing profiles:", err);
-          setLanePricingRules(selectedCustomer.lanePricingRules || []);
+          setCustomerPricingRules(selectedCustomer.customerPricingRules || []);
         });
       setCompanyInfo({
         tradingName: selectedCustomer.name || '',
@@ -2696,14 +2696,14 @@ export default function Customers() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {lanePricingRules.length === 0 ? (
+                    {customerPricingRules.length === 0 ? (
                       <tr>
                         <td colSpan="7" className="py-12 text-center text-xs font-semibold text-slate-400 italic">
                           No billing rules configured yet for this customer. Click "+ Add Pricing Rule" above to add rules.
                         </td>
                       </tr>
                     ) : (
-                      lanePricingRules.map(rule => (
+                      customerPricingRules.map(rule => (
                         <tr key={rule.id} className="hover:bg-slate-50/80 transition-colors group">
                           <td className="py-4 px-6 font-bold text-slate-800">{selectedCustomer?.name || 'ABC Motors'}</td>
                           <td className="py-4 px-6 font-bold text-slate-800">{rule.from}</td>
@@ -2725,7 +2725,7 @@ export default function Customers() {
                               <button onClick={() => setShowAddPricingRuleModal(true)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer">
                                 <Edit size={14} />
                               </button>
-                              <button onClick={() => setLanePricingRules(prev => prev.filter(r => r.id !== rule.id))} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer">
+                              <button onClick={() => setCustomerPricingRules(prev => prev.filter(r => r.id !== rule.id))} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer">
                                 <Trash2 size={14} />
                               </button>
                             </div>
@@ -5485,11 +5485,11 @@ export default function Customers() {
                   <p className="font-extrabold text-blue-900">Applied Template: {selectedTemplateName}</p>
                   <p className="text-[11px] text-blue-700 mt-0.5">Effective Date Range: 01/07/2025 – 30/06/2026</p>
                 </div>
-                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">{lanePricingRules.length} Active Rules</span>
+                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">{customerPricingRules.length} Active Rules</span>
               </div>
               <div className="space-y-3">
-                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Configured Rates ({lanePricingRules.length})</h4>
-                {lanePricingRules.length === 0 ? (
+                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Configured Rates ({customerPricingRules.length})</h4>
+                {customerPricingRules.length === 0 ? (
                   <div className="border border-slate-100 rounded-xl p-6 text-center text-slate-400 italic">
                     No custom pricing rules added yet. Click "+ Add Pricing Rule" to configure rates.
                   </div>
@@ -5506,7 +5506,7 @@ export default function Customers() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                        {lanePricingRules.map((rule, idx) => (
+                        {customerPricingRules.map((rule, idx) => (
                           <tr key={idx} className="hover:bg-slate-50/50">
                             <td className="py-2.5 px-4">{rule.from}</td>
                             <td className="py-2.5 px-4">{rule.to}</td>
@@ -5995,7 +5995,7 @@ export default function Customers() {
                 <table className="w-full text-left text-xs whitespace-nowrap">
                   <thead>
                     <tr className="bg-slate-100/70 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
-                      <th className="py-2.5 px-3">ROUTE / LANE</th>
+                      <th className="py-2.5 px-3">ROUTE / LOCATION</th>
                       <th className="py-2.5 px-3">TYPE</th>
                       <th className="py-2.5 px-3 text-right">DISTANCE</th>
                       <th className="py-2.5 px-3 text-right">BASE RATE</th>
@@ -6005,7 +6005,7 @@ export default function Customers() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                    {lanePricingRules.map((rule, idx) => {
+                    {customerPricingRules.map((rule, idx) => {
                       const base = parseFloat(rule.baseRate.replace(/,/g, '')) || 1000;
                       const fuel = base * 0.145;
                       const gst = (base + fuel) * 0.10;
@@ -6105,7 +6105,7 @@ export default function Customers() {
 
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 space-y-1">
                 <span className="font-bold block">Notice:</span>
-                <span>Applying this template will update all base lane rates and surcharges for this customer.</span>
+                <span>Applying this template will update all base pricing rates and surcharges for this customer.</span>
               </div>
             </div>
 
@@ -6136,7 +6136,7 @@ export default function Customers() {
                       { id: Date.now() + 3, from: 'Melbourne (VIC)', to: 'Adelaide (SA)', type: 'Interstate', distance: '726', baseRate: '480.00', minCharge: '480.00' }
                     ];
                   }
-                  setLanePricingRules(sampleRules);
+                  setCustomerPricingRules(sampleRules);
                   triggerToast(`Applied template "${selectedTemplate}" successfully!`);
                   setShowApplyTemplateModal(false);
                 }}
@@ -6195,7 +6195,7 @@ export default function Customers() {
                     { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Newcastle (NSW)', type: 'Regional', distance: '162', baseRate: '280.00', minCharge: '280.00' },
                     { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Gold Coast (QLD)', type: 'Metro', distance: '78', baseRate: '190.00', minCharge: '190.00' }
                   ];
-                  setLanePricingRules([...lanePricingRules, ...imported]);
+                  setCustomerPricingRules([...customerPricingRules, ...imported]);
                   triggerToast('Successfully imported 2 pricing rules from CSV!');
                   setShowImportPricingModal(false);
                 }}
