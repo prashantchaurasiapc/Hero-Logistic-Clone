@@ -118,6 +118,19 @@ export default function Customers() {
   const [effectiveStartDate, setEffectiveStartDate] = useState('2025-07-01');
   const [effectiveEndDate, setEffectiveEndDate] = useState('2026-06-30');
 
+  const [billingRulesState, setBillingRulesState] = useState({
+    consolidateLoads: true,
+    reqPO: true,
+    reqPOD: true,
+    reqSig: false,
+    reqLoadNum: false,
+    reqPhotos: false,
+    reqConNote: false,
+    autoCreateDraft: true,
+    accountsApprovalReq: true,
+    autoSendInvoice: false
+  });
+
   const [lanePricingRules, setLanePricingRules] = useState([]);
   const [selectedTemplateName, setSelectedTemplateName] = useState('Standard National Template (Default)');
   const [newPricingRule, setNewPricingRule] = useState({
@@ -2700,9 +2713,12 @@ export default function Customers() {
                         </select>
                       </div>
                       <div className="pt-2 border-t border-slate-50">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs font-bold text-slate-700">Consolidate Multiple Loads</span>
-                          <ToggleRight size={24} className="text-blue-600 cursor-pointer" />
+                        <div className="flex justify-between items-center" onClick={() => setBillingRulesState({...billingRulesState, consolidateLoads: !billingRulesState.consolidateLoads})}>
+                          <span className="text-xs font-bold text-slate-700 cursor-pointer">Consolidate Multiple Loads</span>
+                          {billingRulesState.consolidateLoads ? 
+                            <ToggleRight size={24} className="text-blue-600 cursor-pointer" /> : 
+                            <ToggleLeft size={24} className="text-slate-300 cursor-pointer" />
+                          }
                         </div>
                       </div>
                     </div>
@@ -2716,44 +2732,53 @@ export default function Customers() {
                     </div>
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
-                        <input type="checkbox" id="reqPO" defaultChecked className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                        <input type="checkbox" id="reqPO" checked={billingRulesState.reqPO} onChange={(e) => setBillingRulesState({...billingRulesState, reqPO: e.target.checked})} className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
                         <label htmlFor="reqPO" className="text-xs font-bold text-slate-900 cursor-pointer">Customer PO Number Mandatory</label>
                       </div>
                       <div className="flex items-center gap-3">
-                        <input type="checkbox" id="reqPOD" defaultChecked className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                        <input type="checkbox" id="reqPOD" checked={billingRulesState.reqPOD} onChange={(e) => setBillingRulesState({...billingRulesState, reqPOD: e.target.checked})} className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
                         <label htmlFor="reqPOD" className="text-xs font-bold text-slate-900 cursor-pointer">Signed POD Required for Invoicing</label>
                       </div>
                       <div className="flex items-center gap-3">
-                        <input type="checkbox" id="reqSig" className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                        <input type="checkbox" id="reqSig" checked={billingRulesState.reqSig} onChange={(e) => setBillingRulesState({...billingRulesState, reqSig: e.target.checked})} className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
                         <label htmlFor="reqSig" className="text-xs font-bold text-slate-900 cursor-pointer">Customer Signature Required</label>
                       </div>
                       <div className="flex items-center gap-3">
-                        <input type="checkbox" id="reqLoadNum" className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                        <input type="checkbox" id="reqLoadNum" checked={billingRulesState.reqLoadNum} onChange={(e) => setBillingRulesState({...billingRulesState, reqLoadNum: e.target.checked})} className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
                         <label htmlFor="reqLoadNum" className="text-xs font-bold text-slate-900 cursor-pointer">Customer Load Number Required</label>
                       </div>
                       <div className="flex items-center gap-3">
-                        <input type="checkbox" id="reqPhotos" className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                        <input type="checkbox" id="reqPhotos" checked={billingRulesState.reqPhotos} onChange={(e) => setBillingRulesState({...billingRulesState, reqPhotos: e.target.checked})} className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
                         <label htmlFor="reqPhotos" className="text-xs font-bold text-slate-900 cursor-pointer">Delivery Photos Attached to Invoice</label>
                       </div>
                       <div className="flex items-center gap-3">
-                        <input type="checkbox" id="reqConNote" className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                        <input type="checkbox" id="reqConNote" checked={billingRulesState.reqConNote} onChange={(e) => setBillingRulesState({...billingRulesState, reqConNote: e.target.checked})} className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
                         <label htmlFor="reqConNote" className="text-xs font-bold text-slate-900 cursor-pointer">Consignment Note Required</label>
                       </div>
                       
                       <div className="mt-4 pt-4 border-t border-slate-50">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">INVOICE AUTOMATION</label>
                         <div className="space-y-3 mt-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-slate-700">Automatically create draft invoice</span>
-                            <ToggleRight size={24} className="text-blue-600 cursor-pointer" />
+                          <div className="flex justify-between items-center" onClick={() => setBillingRulesState({...billingRulesState, autoCreateDraft: !billingRulesState.autoCreateDraft})}>
+                            <span className="text-xs font-bold text-slate-700 cursor-pointer">Automatically create draft invoice</span>
+                            {billingRulesState.autoCreateDraft ? 
+                              <ToggleRight size={24} className="text-blue-600 cursor-pointer" /> : 
+                              <ToggleLeft size={24} className="text-slate-300 cursor-pointer" />
+                            }
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-slate-700">Accounts approval required</span>
-                            <ToggleRight size={24} className="text-blue-600 cursor-pointer" />
+                          <div className="flex justify-between items-center" onClick={() => setBillingRulesState({...billingRulesState, accountsApprovalReq: !billingRulesState.accountsApprovalReq})}>
+                            <span className="text-xs font-bold text-slate-700 cursor-pointer">Accounts approval required</span>
+                            {billingRulesState.accountsApprovalReq ? 
+                              <ToggleRight size={24} className="text-blue-600 cursor-pointer" /> : 
+                              <ToggleLeft size={24} className="text-slate-300 cursor-pointer" />
+                            }
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-slate-700">Automatically send approved invoice</span>
-                            <ToggleRight size={24} className="text-slate-300 cursor-pointer" />
+                          <div className="flex justify-between items-center" onClick={() => setBillingRulesState({...billingRulesState, autoSendInvoice: !billingRulesState.autoSendInvoice})}>
+                            <span className="text-xs font-bold text-slate-700 cursor-pointer">Automatically send approved invoice</span>
+                            {billingRulesState.autoSendInvoice ? 
+                              <ToggleRight size={24} className="text-blue-600 cursor-pointer" /> : 
+                              <ToggleLeft size={24} className="text-slate-300 cursor-pointer" />
+                            }
                           </div>
                         </div>
                       </div>
