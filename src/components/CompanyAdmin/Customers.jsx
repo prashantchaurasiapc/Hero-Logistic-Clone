@@ -3143,12 +3143,6 @@ export default function Customers() {
               </div>
 
               <div className="flex items-center gap-3 mt-5">
-                <button onClick={() => setShowApplyTemplateModal(true)} className="px-5 py-2.5 bg-blue-50 border border-blue-100 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
-                  <Activity size={14} /> Apply Template
-                </button>
-                <button onClick={() => setShowImportPricingModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm">
-                  <Upload size={14} /> Import Pricing
-                </button>
                 <button onClick={() => setShowAddPricingRuleModal(true)} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
                   <Plus size={14} /> Add Pricing Rule
                 </button>
@@ -3268,7 +3262,7 @@ export default function Customers() {
                             {lanePricingRules.length === 0 ? (
                               <tr>
                                 <td colSpan="8" className="py-8 text-center text-xs font-semibold text-slate-400 italic">
-                                  No lane prices configured yet for this customer. Click "+ Add Pricing Rule" or "Apply Template" above to add rates.
+                                  No lane prices configured yet for this customer. Click "+ Add Pricing Rule" above to add rates.
                                 </td>
                               </tr>
                             ) : (
@@ -6311,7 +6305,7 @@ export default function Customers() {
                 <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Configured Rates ({lanePricingRules.length})</h4>
                 {lanePricingRules.length === 0 ? (
                   <div className="border border-slate-100 rounded-xl p-6 text-center text-slate-400 italic">
-                    No custom pricing rules added yet. Click "+ Add Pricing Rule" or "Apply Template" to configure rates.
+                    No custom pricing rules added yet. Click "+ Add Pricing Rule" to configure rates.
                   </div>
                 ) : (
                   <div className="border border-slate-100 rounded-xl overflow-hidden">
