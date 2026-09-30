@@ -5379,19 +5379,15 @@ export default function Customers() {
               
               {/* SECTION: BASIC INFO */}
               <div>
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">1. Profile Details</h4>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">1. Rule Details</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Pricing Profile Name <span className="text-rose-500">*</span></label>
-                    <input type="text" value={fullPricingRuleForm.name} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, name: e.target.value })} placeholder="e.g. ABC Sydney to Canberra Rate" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" required />
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Customer <span className="text-rose-500">*</span></label>
+                    <input type="text" value={selectedCustomer?.name || 'ABC Motors'} disabled className="w-full border border-slate-200 bg-slate-100 text-slate-500 rounded-xl px-3.5 py-2.5 text-[12px] font-bold shadow-sm cursor-not-allowed" />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Niche</label>
-                    <select className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm">
-                      <option>Car Carrying</option>
-                      <option>General Freight</option>
-                      <option>Dangerous Goods</option>
-                    </select>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Pricing Profile Name <span className="text-rose-500">*</span></label>
+                    <input type="text" value={fullPricingRuleForm.name} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, name: e.target.value })} placeholder="e.g. ABC Sydney to Melbourne Rate" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" required />
                   </div>
                   <div>
                     <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Effective From</label>
@@ -5505,16 +5501,25 @@ export default function Customers() {
                 </div>
               </div>
 
-              {/* TAX TREATMENT */}
+              {/* SECTION: BILLING SETTINGS */}
               <div>
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">4. Tax Treatment</h4>
-                <div className="w-1/2">
-                   <label className="text-[11px] font-bold text-slate-800 block mb-1.5">GST/Tax Treatment</label>
-                    <select className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm">
-                      <option>Excluding GST (Add 10%)</option>
-                      <option>Including GST</option>
-                      <option>GST Free</option>
-                    </select>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">4. Applicable Billing Settings</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                     <label className="text-[11px] font-bold text-slate-800 block mb-1.5">GST/Tax Treatment</label>
+                      <select className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm">
+                        <option>Excluding GST (Add 10%)</option>
+                        <option>Including GST</option>
+                        <option>GST Free</option>
+                      </select>
+                  </div>
+                  <div>
+                     <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Apply Surcharges (Fuel Levy, etc.)</label>
+                      <select className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm">
+                        <option>Yes, apply all profile surcharges</option>
+                        <option>No, flat rate only</option>
+                      </select>
+                  </div>
                 </div>
               </div>
 
