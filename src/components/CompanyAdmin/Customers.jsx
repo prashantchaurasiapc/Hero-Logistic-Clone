@@ -115,7 +115,8 @@ export default function Customers() {
 
   const [selectedNiche, setSelectedNiche] = useState('Car Carrying');
   const [selectedTemplate, setSelectedTemplate] = useState('Standard National Template');
-  const [effectiveDateRange, setEffectiveDateRange] = useState('01/07/2025 - 30/06/2026');
+  const [effectiveStartDate, setEffectiveStartDate] = useState('2025-07-01');
+  const [effectiveEndDate, setEffectiveEndDate] = useState('2026-06-30');
 
   const [lanePricingRules, setLanePricingRules] = useState([]);
   const [selectedTemplateName, setSelectedTemplateName] = useState('Standard National Template (Default)');
@@ -3130,14 +3131,24 @@ export default function Customers() {
                 </div>
                 <div className="flex-grow min-w-[200px]">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">EFFECTIVE DATE RANGE</label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      value={effectiveDateRange} 
-                      onChange={(e) => setEffectiveDateRange(e.target.value)}
-                      className="pl-3 pr-8 py-2.5 border border-slate-200 rounded-lg text-sm font-bold text-slate-900 bg-white focus:outline-none focus:border-blue-500 cursor-pointer w-full shadow-sm" 
-                    />
-                    <Calendar size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-grow">
+                      <input 
+                        type="date" 
+                        value={effectiveStartDate} 
+                        onChange={(e) => setEffectiveStartDate(e.target.value)}
+                        className="pl-3 pr-2 py-2.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 bg-white focus:outline-none focus:border-blue-500 cursor-pointer w-full shadow-sm" 
+                      />
+                    </div>
+                    <span className="text-slate-400 font-bold text-xs">-</span>
+                    <div className="relative flex-grow">
+                      <input 
+                        type="date" 
+                        value={effectiveEndDate} 
+                        onChange={(e) => setEffectiveEndDate(e.target.value)}
+                        className="pl-3 pr-2 py-2.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 bg-white focus:outline-none focus:border-blue-500 cursor-pointer w-full shadow-sm" 
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -6900,12 +6911,21 @@ export default function Customers() {
 
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Effective Date Range</label>
-                <input 
-                  type="text"
-                  value={effectiveDateRange}
-                  onChange={(e) => setEffectiveDateRange(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs"
-                />
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="date"
+                    value={effectiveStartDate}
+                    onChange={(e) => setEffectiveStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer"
+                  />
+                  <span className="text-slate-400 font-bold">-</span>
+                  <input 
+                    type="date"
+                    value={effectiveEndDate}
+                    onChange={(e) => setEffectiveEndDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer"
+                  />
+                </div>
               </div>
 
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 space-y-1">
