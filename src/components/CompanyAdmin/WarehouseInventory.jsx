@@ -115,6 +115,9 @@ const WarehouseInventory = () => {
 
   // Filter Logic
   const filteredInventory = inventory.filter(item => {
+    // 0. Ignore empty non-stock placeholder items
+    if (!item.sku || item.sku === 'N/A' || !item.description || item.description === 'N/A') return false;
+
     // 1. Search Query Filter
     const matchesSearch = 
       (item.sku || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -150,7 +153,7 @@ const WarehouseInventory = () => {
 
   // Calculate Metrics dynamically from filtered dataset
   const totalItems = filteredInventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  const uniqueSkus = new Set(filteredInventory.map(item => item.sku).filter(Boolean)).size;
+  const uniqueSkus = new Set(filteredInventory.map(item => item.sku).filter(s => s && s !== 'N/A')).size;
   const lowStockAlertsCount = filteredInventory.filter(i => (i.quantity || 0) > 0 && (i.quantity || 0) < (i.minQuantity || 5)).length;
 
   // Active filters count

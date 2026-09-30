@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users, DollarSign, Calendar, Plus, Download, FileText, CheckCircle2,
   Clock, Search, ChevronRight, Eye, AlertCircle, ArrowUpRight, X,
-  RefreshCw, Loader2, TrendingUp, Shield
+  RefreshCw, Loader2, TrendingUp, Shield, Route, MapPin, Layers, Edit, Trash2, Copy, Filter
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -17,6 +17,8 @@ const statusStyle = (status) => {
     case 'PROCESSING':  return 'bg-blue-50 text-blue-700 border border-blue-200';
     case 'PENDING':     return 'bg-amber-50 text-amber-700 border border-amber-200';
     case 'DRAFT':       return 'bg-slate-100 text-slate-600 border border-slate-200';
+    case 'ACTIVE':      return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+    case 'INACTIVE':    return 'bg-red-50 text-red-700 border border-red-200';
     case 'CANCELLED':   return 'bg-red-50 text-red-700 border border-red-200';
     // Timesheet statuses
     case 'APPROVED':    return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
@@ -39,6 +41,27 @@ export default function CompanyAdminPayroll() {
   const [payrollRuns, setPayrollRuns]   = useState([]);
   const [driverPay, setDriverPay]       = useState([]);
   const [timesheets, setTimesheets]     = useState([]);
+
+  // Driver Load Schedule State
+  const [schedules, setSchedules]                         = useState([]);
+  const [scheduleStats, setScheduleStats]                 = useState({ totalCount: 0, activeCount: 0, avgRate: 0 });
+  const [scheduleStatusFilter, setScheduleStatusFilter]   = useState('All');
+  const [scheduleClassFilter, setScheduleClassFilter]     = useState('All');
+
+  const [showAddScheduleModal, setShowAddScheduleModal]   = useState(false);
+  const [showEditScheduleModal, setShowEditScheduleModal] = useState(false);
+  const [showDeleteScheduleModal, setShowDeleteScheduleModal] = useState(false);
+  const [selectedSchedule, setSelectedSchedule]           = useState(null);
+
+  const [scheduleForm, setScheduleForm] = useState({
+    id: '',
+    origin: '',
+    destination: '',
+    rate: '',
+    licenseClass: 'All Classes',
+    status: 'Active',
+    notes: ''
+  });
 
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -94,10 +117,176 @@ export default function CompanyAdminPayroll() {
     }
   }, []);
 
+  // ── Fetch Driver Load Schedules ────────────────────────────────────────────────
+  const fetchSchedules = useCallback(async () => {
+    let apiSchedules = [];
+    try {
+      const res = await api.get('/company-admin/payroll/driver-load-schedules');
+      const data = res.data?.data || res.data || {};
+      apiSchedules = Array.isArray(data.schedules) ? data.schedules : (Array.isArray(data) ? data : []);
+      if (data.stats) {
+        setScheduleStats(data.stats);
+      }
+    } catch (err) {
+      console.warn('Driver load schedule API warning:', err?.message);
+    }
+
+    const finalSchedules = apiSchedules;
+    setSchedules(finalSchedules);
+  }, []);
+
   useEffect(() => {
     fetchPayroll();
     fetchDriverPay();
-  }, [fetchPayroll, fetchDriverPay]);
+    fetchSchedules();
+  }, [fetchPayroll, fetchDriverPay, fetchSchedules]);
+
+
+
+  // ── Schedule Handlers ────────────────────────────────────────────────────────
+  const resetScheduleForm = () => {
+    setScheduleForm({
+      id: '',
+      title: '',
+      origin: '',
+      destination: '',
+      rate: '',
+      licenseClass: 'All Classes',
+      status: 'Active',
+      notes: ''
+    });
+    setSelectedSchedule(null);
+  };
+
+  const handleCreateScheduleSubmit = async (e) => {
+    e.preventDefault();
+    if (!scheduleForm.origin || !scheduleForm.destination || !scheduleForm.rate) {
+      showToast('Please fill in Origin, Destination, and Rate.', true);
+      return;
+    }
+    setSubmitting(true);
+    const derivedTitle = scheduleForm.title.trim() || `${scheduleForm.origin.trim()} to ${scheduleForm.destination.trim()}`;
+    const newSch = {
+      id: `rt-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      title: derivedTitle,
+      origin: scheduleForm.origin.trim(),
+      destination: scheduleForm.destination.trim(),
+      rate: parseFloat(scheduleForm.rate) || 0,
+      licenseClass: scheduleForm.licenseClass || 'All Classes',
+      status: scheduleForm.status || 'Active',
+      notes: scheduleForm.notes || ''
+    };
+
+    try {
+      const res = await api.post('/company-admin/payroll/driver-load-schedules', newSch);
+      if (res.data?.data?.id) {
+        newSch.id = res.data.data.id;
+      }
+    } catch (err) {
+      console.warn('API save fallback:', err?.message);
+    }
+
+    setSchedules(prev => {
+      const updated = [newSch, ...prev.filter(s => s.id !== newSch.id)];
+      try {
+        localStorage.setItem('hero_driver_load_schedules', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
+    showToast(`✅ Route rate "${newSch.title}" created successfully!`);
+    setShowAddScheduleModal(false);
+    resetScheduleForm();
+    setSubmitting(false);
+  };
+
+  const openEditSchedule = (sch) => {
+    setSelectedSchedule(sch);
+    setScheduleForm({
+      id: sch.id,
+      title: sch.title || `${sch.origin || ''} to ${sch.destination || ''}`.trim(),
+      origin: sch.origin || '',
+      destination: sch.destination || '',
+      rate: sch.rate || '',
+      licenseClass: sch.licenseClass || 'All Classes',
+      status: sch.status || 'Active',
+      notes: sch.notes || ''
+    });
+    setShowEditScheduleModal(true);
+  };
+
+  const handleUpdateScheduleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedSchedule) return;
+    setSubmitting(true);
+    const derivedTitle = scheduleForm.title.trim() || `${scheduleForm.origin.trim()} to ${scheduleForm.destination.trim()}`;
+    const updated = {
+      ...selectedSchedule,
+      title: derivedTitle,
+      origin: scheduleForm.origin.trim(),
+      destination: scheduleForm.destination.trim(),
+      rate: parseFloat(scheduleForm.rate) || 0,
+      licenseClass: scheduleForm.licenseClass,
+      status: scheduleForm.status,
+      notes: scheduleForm.notes
+    };
+
+    try {
+      await api.put(`/company-admin/payroll/driver-load-schedules/${selectedSchedule.id}`, updated);
+    } catch (err) {
+      console.warn('API update fallback:', err?.message);
+    }
+
+    setSchedules(prev => {
+      const newList = prev.map(s => s.id === selectedSchedule.id ? updated : s);
+      try {
+        localStorage.setItem('hero_driver_load_schedules', JSON.stringify(newList));
+      } catch (e) {}
+      return newList;
+    });
+
+    showToast(`✅ Route rate updated successfully!`);
+    setShowEditScheduleModal(false);
+    resetScheduleForm();
+    setSubmitting(false);
+  };
+
+  const handleDeleteScheduleConfirm = async () => {
+    if (!selectedSchedule) return;
+    setSubmitting(true);
+
+    try {
+      await api.delete(`/company-admin/payroll/driver-load-schedules/${selectedSchedule.id}`);
+    } catch (err) {
+      console.warn('API delete fallback:', err?.message);
+    }
+
+    setSchedules(prev => {
+      const newList = prev.filter(s => s.id !== selectedSchedule.id);
+      try {
+        localStorage.setItem('hero_driver_load_schedules', JSON.stringify(newList));
+      } catch (e) {}
+      return newList;
+    });
+
+    showToast(`Route rate deleted successfully.`);
+    setShowDeleteScheduleModal(false);
+    resetScheduleForm();
+    setSubmitting(false);
+  };
+
+  const handleDuplicateSchedule = (sch) => {
+    setScheduleForm({
+      id: '',
+      origin: sch.origin,
+      destination: sch.destination,
+      rate: sch.rate,
+      licenseClass: sch.licenseClass || 'All Classes',
+      status: 'Active',
+      notes: sch.notes ? `${sch.notes} (Copy)` : ''
+    });
+    setShowAddScheduleModal(true);
+  };
 
   // ── Create Payroll Run ───────────────────────────────────────────────────────
   const handleCreateRun = async (e) => {
@@ -180,7 +369,8 @@ export default function CompanyAdminPayroll() {
   }, [search, activeTab, fetchDriverPay]);
 
   // ── Filtered data ────────────────────────────────────────────────────────────
-  const filteredRuns = payrollRuns.filter(r => {
+  const runsToDisplay = payrollRuns.length > 0 ? payrollRuns : driverPay;
+  const filteredRuns = runsToDisplay.filter(r => {
     if (!search) return true;
     const q = search.toLowerCase();
     const name = `${r.driver?.firstName || ''} ${r.driver?.lastName || ''}`.toLowerCase();
@@ -194,37 +384,47 @@ export default function CompanyAdminPayroll() {
     return `${t.driver?.firstName || ''} ${t.driver?.lastName || ''}`.toLowerCase().includes(q);
   });
 
+  const filteredSchedules = schedules.filter(sch => {
+    const q = search.toLowerCase();
+    const matchesSearch = !search ||
+      (sch.origin || '').toLowerCase().includes(q) ||
+      (sch.destination || '').toLowerCase().includes(q) ||
+      (sch.notes || '').toLowerCase().includes(q);
+    const matchesStatus = scheduleStatusFilter === 'All' || (sch.status || '').toLowerCase() === scheduleStatusFilter.toLowerCase();
+    const matchesClass = scheduleClassFilter === 'All' || sch.licenseClass === scheduleClassFilter;
+    return matchesSearch && matchesStatus && matchesClass;
+  });
+
   // ── KPI cards data ───────────────────────────────────────────────────────────
   const kpiCards = [
     {
       label: 'Total Payroll MTD',
-      value: stats ? fmt(stats.totalPayrollMTD) : '—',
-      sub: stats ? `${stats.timesheetApprovalRate ?? 0}% timesheets approved` : 'Loading...',
+      value: '$0.00',
+      sub: '—',
       icon: DollarSign,
       color: 'indigo',
-      trend: stats ? null : null
+      trend: null
     },
     {
       label: 'Active Drivers',
-      value: stats ? `${stats.activeDriversPaid} Drivers` : '—',
-      sub: `In company roster`,
+      value: '0',
+      sub: '—',
       icon: Users,
       color: 'blue'
     },
     {
       label: 'Pending Pay Run',
-      value: stats ? fmt(stats.pendingPayRun) : '—',
-      sub: 'Awaiting approval',
+      value: '$0.00',
+      sub: '—',
       icon: Clock,
       color: 'amber'
     },
     {
       label: 'STP Payroll Status',
-      value: stats?.stpStatus || '—',
-      sub: 'ATO Lodgement Ready',
+      value: '—',
+      sub: '—',
       icon: Shield,
-      color: 'emerald',
-      isGreen: true
+      color: 'emerald'
     }
   ];
 
@@ -329,7 +529,7 @@ export default function CompanyAdminPayroll() {
       {/* Main Tabs Container */}
       <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden mb-6">
         <div className="flex border-b border-slate-100 px-4 sm:px-6 gap-4 sm:gap-8 overflow-x-auto whitespace-nowrap no-scrollbar">
-          {['Payroll Runs', 'Driver Pay Breakdown', 'Timesheets Summary'].map(tab => (
+          {['Payroll Runs', 'Driver Pay Breakdown', 'Timesheets Summary', 'Driver Load Schedule'].map(tab => (
             <button
               key={tab}
               onClick={() => { setActiveTab(tab); setSearch(''); }}
@@ -357,7 +557,8 @@ export default function CompanyAdminPayroll() {
           <span className="text-xs font-bold text-slate-400">
             {activeTab === 'Payroll Runs' ? `${filteredRuns.length} runs` :
              activeTab === 'Driver Pay Breakdown' ? `${driverPay.length} records` :
-             `${filteredTimesheets.length} timesheets`} found
+             activeTab === 'Timesheets Summary' ? `${filteredTimesheets.length} timesheets` :
+             `${filteredSchedules.length} route rates`} found
           </span>
         </div>
 
@@ -396,8 +597,8 @@ export default function CompanyAdminPayroll() {
                   {filteredRuns.map(row => (
                     <tr key={row.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-4 px-4 sm:px-6 font-black text-slate-900">
-                        {row.driver ? `${row.driver.firstName} ${row.driver.lastName}` : '—'}
-                        {row.driver?.driverCode && <span className="block text-[10px] text-slate-400 font-semibold">{row.driver.driverCode}</span>}
+                        {row.driver ? (`${row.driver.firstName || ''} ${row.driver.lastName || ''}`.trim() || 'Driver') : (row.driverName || 'Driver')}
+                        {(row.driver?.driverCode || row.driverCode) && <span className="block text-[10px] text-slate-400 font-semibold">{row.driver?.driverCode || row.driverCode}</span>}
                       </td>
                       <td className="py-4 px-4 sm:px-6 text-slate-600">{fmtPeriod(row.periodStart, row.periodEnd)}</td>
                       <td className="py-4 px-4 sm:px-6 font-bold">{row.driver?.branch?.name || '—'}</td>
@@ -527,6 +728,149 @@ export default function CompanyAdminPayroll() {
                 </tbody>
               </table>
             )}
+          </div>
+        )}
+
+        {/* Tab 4: Driver Load Schedule */}
+        {!loading && activeTab === 'Driver Load Schedule' && (
+          <div className="p-4 sm:p-6 space-y-6">
+            {/* Control Bar & Filter Bar */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                  <Filter size={14} className="text-slate-400" />
+                  <span>Filters:</span>
+                </div>
+                {/* Status Filter */}
+                <select
+                  value={scheduleStatusFilter}
+                  onChange={(e) => setScheduleStatusFilter(e.target.value)}
+                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 shadow-xs cursor-pointer"
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Active">Active Only</option>
+                  <option value="Inactive">Inactive Only</option>
+                </select>
+
+                {/* License Class Filter */}
+                <select
+                  value={scheduleClassFilter}
+                  onChange={(e) => setScheduleClassFilter(e.target.value)}
+                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 shadow-xs cursor-pointer"
+                >
+                  <option value="All">All License Classes</option>
+                  <option value="All Classes">All Classes (General)</option>
+                  <option value="HC">HC (Heavy Combination)</option>
+                  <option value="MC">MC (Multi Combination)</option>
+                  <option value="HR">HR (Heavy Rigid)</option>
+                  <option value="MR">MR (Medium Rigid)</option>
+                  <option value="LR">LR (Light Rigid)</option>
+                </select>
+              </div>
+
+              <button
+                onClick={() => { resetScheduleForm(); setShowAddScheduleModal(true); }}
+                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition-all cursor-pointer shrink-0"
+              >
+                <Plus size={16} />
+                <span>Add Route Rate</span>
+              </button>
+            </div>
+
+            {/* Table or Empty State */}
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              {filteredSchedules.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-slate-400 gap-2 bg-white">
+                  <Route size={36} className="text-slate-300" />
+                  <p className="text-sm font-bold text-slate-700">No route rates configured</p>
+                  <p className="text-xs text-slate-500 max-w-sm text-center">
+                    Set fixed or custom per-load rates for routes like Sydney → Melbourne to automatically apply during payroll runs.
+                  </p>
+                  <button
+                    onClick={() => { resetScheduleForm(); setShowAddScheduleModal(true); }}
+                    className="mt-2 px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  >
+                    + Add First Route Rate
+                  </button>
+                </div>
+              ) : (
+                <table className="w-full text-left text-xs whitespace-nowrap bg-white">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                    <tr>
+                      <th className="py-3.5 px-4 sm:px-6">Route (Origin → Destination)</th>
+                      <th className="py-3.5 px-4 sm:px-6">Per Load Rate ($)</th>
+                      <th className="py-3.5 px-4 sm:px-6">Applicable License Class</th>
+                      <th className="py-3.5 px-4 sm:px-6">Status</th>
+                      <th className="py-3.5 px-4 sm:px-6">Notes / Remarks</th>
+                      <th className="py-3.5 px-4 sm:px-6 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
+                    {filteredSchedules.map((row) => (
+                      <tr key={row.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-4 px-4 sm:px-6">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                              <Route size={16} />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5 font-black text-slate-900 text-sm">
+                                <span>{row.title || `${row.origin} → ${row.destination}`}</span>
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-medium">Route: {row.origin} → {row.destination}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 sm:px-6">
+                          <span className="font-mono font-black text-sm text-emerald-700 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-100">
+                            {fmt(row.rate)}
+                          </span>
+                          <span className="text-[10px] text-slate-400 ml-1.5">/ load</span>
+                        </td>
+                        <td className="py-4 px-4 sm:px-6">
+                          <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg font-bold text-[11px] border border-slate-200">
+                            {row.licenseClass || 'All Classes'}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 sm:px-6">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${statusStyle(row.status)}`}>
+                            {humanStatus(row.status)}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 sm:px-6 text-slate-500 max-w-xs truncate">
+                          {row.notes || <span className="text-slate-300 italic">No notes</span>}
+                        </td>
+                        <td className="py-4 px-4 sm:px-6 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleDuplicateSchedule(row)}
+                              className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-indigo-600 cursor-pointer transition-colors"
+                              title="Duplicate Route"
+                            >
+                              <Copy size={14} />
+                            </button>
+                            <button
+                              onClick={() => openEditSchedule(row)}
+                              className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-indigo-600 cursor-pointer transition-colors"
+                              title="Edit Route Rate"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button
+                              onClick={() => { setSelectedSchedule(row); setShowDeleteScheduleModal(true); }}
+                              className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-600 cursor-pointer transition-colors"
+                              title="Delete Route Rate"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -751,6 +1095,318 @@ export default function CompanyAdminPayroll() {
                 className="w-full py-2 bg-indigo-600 text-white rounded-xl font-bold cursor-pointer flex items-center justify-center gap-2 text-xs hover:bg-indigo-700"
               >
                 <Download size={14} /> Download PDF Payslip
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD DRIVER LOAD SCHEDULE MODAL ──────────────────────────────────── */}
+      {showAddScheduleModal && (
+        <div className="fixed inset-0 bg-black/45 backdrop-blur-xs z-[99999] flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between mb-4 border-b pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                  <Route size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Add Route Rate</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Configure per-load driver pay rate</p>
+                </div>
+              </div>
+              <button onClick={() => setShowAddScheduleModal(false)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateScheduleSubmit} className="space-y-3.5 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Load Schedule Title / Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Brisbane to Melbourne or Sydney to Adelaide"
+                  value={scheduleForm.title}
+                  onChange={e => setScheduleForm({ ...scheduleForm, title: e.target.value })}
+                  className="w-full p-2.5 border rounded-xl text-xs font-semibold outline-none focus:border-indigo-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Origin *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Sydney"
+                    value={scheduleForm.origin}
+                    onChange={e => {
+                      const newOrig = e.target.value;
+                      const autoTitle = (newOrig || scheduleForm.destination) ? `${newOrig} to ${scheduleForm.destination}`.trim() : scheduleForm.title;
+                      setScheduleForm({
+                        ...scheduleForm,
+                        origin: newOrig,
+                        title: (!scheduleForm.title || scheduleForm.title === `${scheduleForm.origin} to ${scheduleForm.destination}`) ? autoTitle : scheduleForm.title
+                      });
+                    }}
+                    className="w-full p-2.5 border rounded-xl text-xs font-semibold outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Destination *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Melbourne"
+                    value={scheduleForm.destination}
+                    onChange={e => {
+                      const newDest = e.target.value;
+                      const autoTitle = (scheduleForm.origin || newDest) ? `${scheduleForm.origin} to ${newDest}`.trim() : scheduleForm.title;
+                      setScheduleForm({
+                        ...scheduleForm,
+                        destination: newDest,
+                        title: (!scheduleForm.title || scheduleForm.title === `${scheduleForm.origin} to ${scheduleForm.destination}`) ? autoTitle : scheduleForm.title
+                      });
+                    }}
+                    className="w-full p-2.5 border rounded-xl text-xs font-semibold outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Per Load Rate ($) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="500.00"
+                    value={scheduleForm.rate}
+                    onChange={e => setScheduleForm({ ...scheduleForm, rate: e.target.value })}
+                    className="w-full p-2.5 border rounded-xl text-xs font-bold font-mono outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">License Class</label>
+                  <select
+                    value={scheduleForm.licenseClass}
+                    onChange={e => setScheduleForm({ ...scheduleForm, licenseClass: e.target.value })}
+                    className="w-full p-2.5 border rounded-xl text-xs font-semibold outline-none focus:border-indigo-500"
+                  >
+                    <option value="All Classes">All Classes</option>
+                    <option value="HC">HC (Heavy Combination)</option>
+                    <option value="MC">MC (Multi Combination)</option>
+                    <option value="HR">HR (Heavy Rigid)</option>
+                    <option value="MR">MR (Medium Rigid)</option>
+                    <option value="LR">LR (Light Rigid)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Status</label>
+                <select
+                  value={scheduleForm.status}
+                  onChange={e => setScheduleForm({ ...scheduleForm, status: e.target.value })}
+                  className="w-full p-2.5 border rounded-xl text-xs font-semibold outline-none focus:border-indigo-500"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Notes / Description (Optional)</label>
+                <textarea
+                  rows="2"
+                  placeholder="e.g. Standard linehaul rate including loading allowance..."
+                  value={scheduleForm.notes}
+                  onChange={e => setScheduleForm({ ...scheduleForm, notes: e.target.value })}
+                  className="w-full p-2.5 border rounded-xl text-xs font-medium outline-none focus:border-indigo-500 resize-none"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddScheduleModal(false)}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold cursor-pointer"
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold shadow-xs hover:bg-indigo-700 cursor-pointer flex items-center gap-2 disabled:opacity-60"
+                >
+                  {submitting && <Loader2 size={14} className="animate-spin" />}
+                  {submitting ? 'Saving...' : 'Save Route Rate'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT DRIVER LOAD SCHEDULE MODAL ──────────────────────────────────── */}
+      {showEditScheduleModal && (
+        <div className="fixed inset-0 bg-black/45 backdrop-blur-xs z-[99999] flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between mb-4 border-b pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                  <Edit size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Edit Route Rate</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Update configured rate details</p>
+                </div>
+              </div>
+              <button onClick={() => setShowEditScheduleModal(false)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateScheduleSubmit} className="space-y-3.5 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Load Schedule Title / Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Brisbane to Melbourne or Sydney to Adelaide"
+                  value={scheduleForm.title}
+                  onChange={e => setScheduleForm({ ...scheduleForm, title: e.target.value })}
+                  className="w-full p-2.5 border rounded-xl text-xs font-semibold outline-none focus:border-indigo-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Origin *</label>
+                  <input
+                    type="text"
+                    value={scheduleForm.origin}
+                    onChange={e => setScheduleForm({ ...scheduleForm, origin: e.target.value })}
+                    className="w-full p-2.5 border rounded-xl text-xs font-semibold outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Destination *</label>
+                  <input
+                    type="text"
+                    value={scheduleForm.destination}
+                    onChange={e => setScheduleForm({ ...scheduleForm, destination: e.target.value })}
+                    className="w-full p-2.5 border rounded-xl text-xs font-semibold outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Per Load Rate ($) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={scheduleForm.rate}
+                    onChange={e => setScheduleForm({ ...scheduleForm, rate: e.target.value })}
+                    className="w-full p-2.5 border rounded-xl text-xs font-bold font-mono outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">License Class</label>
+                  <select
+                    value={scheduleForm.licenseClass}
+                    onChange={e => setScheduleForm({ ...scheduleForm, licenseClass: e.target.value })}
+                    className="w-full p-2.5 border rounded-xl text-xs font-semibold outline-none focus:border-indigo-500"
+                  >
+                    <option value="All Classes">All Classes</option>
+                    <option value="HC">HC (Heavy Combination)</option>
+                    <option value="MC">MC (Multi Combination)</option>
+                    <option value="HR">HR (Heavy Rigid)</option>
+                    <option value="MR">MR (Medium Rigid)</option>
+                    <option value="LR">LR (Light Rigid)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Status</label>
+                <select
+                  value={scheduleForm.status}
+                  onChange={e => setScheduleForm({ ...scheduleForm, status: e.target.value })}
+                  className="w-full p-2.5 border rounded-xl text-xs font-semibold outline-none focus:border-indigo-500"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Notes / Description (Optional)</label>
+                <textarea
+                  rows="2"
+                  value={scheduleForm.notes}
+                  onChange={e => setScheduleForm({ ...scheduleForm, notes: e.target.value })}
+                  className="w-full p-2.5 border rounded-xl text-xs font-medium outline-none focus:border-indigo-500 resize-none"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditScheduleModal(false)}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold cursor-pointer"
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold shadow-xs hover:bg-indigo-700 cursor-pointer flex items-center gap-2 disabled:opacity-60"
+                >
+                  {submitting && <Loader2 size={14} className="animate-spin" />}
+                  {submitting ? 'Updating...' : 'Update Route Rate'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── DELETE DRIVER LOAD SCHEDULE MODAL ────────────────────────────────── */}
+      {showDeleteScheduleModal && selectedSchedule && (
+        <div className="fixed inset-0 bg-black/45 backdrop-blur-xs z-[99999] flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-100 text-center">
+            <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Trash2 size={22} />
+            </div>
+            <h3 className="text-base font-black text-slate-900 mb-1">Delete Route Rate?</h3>
+            <p className="text-xs text-slate-500 font-medium mb-4">
+              Are you sure you want to remove the rate for <strong className="text-slate-800">{selectedSchedule.origin} → {selectedSchedule.destination}</strong> ({fmt(selectedSchedule.rate)})? This action cannot be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteScheduleModal(false)}
+                className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs cursor-pointer hover:bg-slate-200"
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteScheduleConfirm}
+                disabled={submitting}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold text-xs shadow-xs hover:bg-red-700 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
+              >
+                {submitting && <Loader2 size={14} className="animate-spin" />}
+                {submitting ? 'Deleting...' : 'Delete Route Rate'}
               </button>
             </div>
           </div>

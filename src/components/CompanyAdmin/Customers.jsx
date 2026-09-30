@@ -31,7 +31,6 @@ export default function Customers() {
         transportModules: Array.isArray(c.transportModules) ? c.transportModules : (c.transportModules ? JSON.parse(c.transportModules) : ['truck']),
         billingTerms: c.billingTerms || '14 Days EOM',
         billingType: 'EOM',
-        manager: c.manager || 'N/A',
         status: c.status === 'Inactive' || c.status === 'INACTIVE' ? 'Inactive' : 'Active'
       }));
       setCustomersList(mapped);
@@ -128,6 +127,143 @@ export default function Customers() {
     baseRate: '',
     minCharge: ''
   });
+
+  // Billing Rules Tab — Pricing Rules & Surcharges State
+  const [customerPricingRulesMap, setCustomerPricingRulesMap] = useState({});
+  const [pricingRuleModalForm, setPricingRuleModalForm] = useState({ id: null, description: '', rate: '', unit: 'Per Km' });
+
+  const [fullPricingRuleForm, setFullPricingRuleForm] = useState({
+    name: '',
+    from: '',
+    to: '',
+    method: 'Per Load',
+    baseRate: '',
+    fuelLevy: ''
+  });
+
+  const handleSaveFullPricingRule = async (e) => {
+    if (e) e.preventDefault();
+    const rateVal = parseFloat(fullPricingRuleForm.baseRate) || 500;
+    
+    if (!selectedCustomer) {
+      triggerToast('Please select a customer first.');
+      return;
+    }
+
+    const payload = {
+      name: fullPricingRuleForm.name,
+      from: fullPricingRuleForm.from,
+      to: fullPricingRuleForm.to,
+      method: fullPricingRuleForm.method,
+      baseRate: rateVal,
+      fuelLevy: fullPricingRuleForm.fuelLevy || 0
+    };
+
+    try {
+      const res = await api.post(`/company-admin/customers/${selectedCustomer.id}/pricing-profiles`, payload);
+      const savedRule = res.data?.data || res.data;
+      
+      // Map back to UI format
+      const ruleObj = {
+        id: savedRule.id,
+        customerId: savedRule.customerId,
+        customerName: selectedCustomer.name,
+        name: savedRule.name,
+        from: savedRule.origin,
+        to: savedRule.destination,
+        method: savedRule.calculationMethod,
+        baseRate: savedRule.baseRate,
+        fuelLevy: savedRule.fuelLevyPercent,
+        description: savedRule.name,
+        rate: savedRule.baseRate,
+        unit: savedRule.calculationMethod,
+        gstMode: 'EXC_GST'
+      };
+
+      setCustomerPricingRulesMap(prev => {
+        const list = prev[currentCustomerId] || [];
+        return { ...prev, [currentCustomerId]: [ruleObj, ...list] };
+      });
+
+      setLanePricingRules(prev => [ruleObj, ...prev]);
+
+      setShowAddPricingRuleModal(false);
+      triggerToast(`Pricing Rule "${ruleObj.name}" saved! ($${ruleObj.baseRate})`);
+      setFullPricingRuleForm({ name: '', from: '', to: '', method: 'Per Load', baseRate: '', fuelLevy: '' });
+    } catch (err) {
+      console.error("Failed to save pricing rule:", err);
+      triggerToast('Error saving pricing rule to database');
+    }
+  };
+
+  const [customerSurchargesMap, setCustomerSurchargesMap] = useState({});
+  const [surchargeModalForm, setSurchargeModalForm] = useState({ id: null, description: '', calculation: 'Percentage (%)', rate: '' });
+
+  const currentCustomerId = selectedCustomer?.id || 'default';
+  const currentPricingRules = customerPricingRulesMap[currentCustomerId] || [];
+  const currentSurcharges = customerSurchargesMap[currentCustomerId] || [];
+
+  const handleSaveBillingPricingRule = (e) => {
+    if (e) e.preventDefault();
+    if (!pricingRuleModalForm.description.trim() || !pricingRuleModalForm.rate) {
+      triggerToast('Please provide a Description and Rate.');
+      return;
+    }
+    const newItem = {
+      id: pricingRuleModalForm.id || Date.now().toString(),
+      description: pricingRuleModalForm.description.trim(),
+      rate: parseFloat(pricingRuleModalForm.rate) || 0,
+      unit: pricingRuleModalForm.unit || 'Per Km'
+    };
+    setCustomerPricingRulesMap(prev => {
+      const list = prev[currentCustomerId] || [];
+      const exists = list.some(r => r.id === newItem.id);
+      const updated = exists ? list.map(r => r.id === newItem.id ? newItem : r) : [...list, newItem];
+      return { ...prev, [currentCustomerId]: updated };
+    });
+    setShowAddPricingRuleModal(false);
+    setPricingRuleModalForm({ id: null, description: '', rate: '', unit: 'Per Km' });
+    triggerToast('Pricing rule saved successfully!');
+  };
+
+  const handleDeleteBillingPricingRule = (ruleId) => {
+    setCustomerPricingRulesMap(prev => {
+      const list = prev[currentCustomerId] || [];
+      return { ...prev, [currentCustomerId]: list.filter(r => r.id !== ruleId) };
+    });
+    triggerToast('Pricing rule deleted.');
+  };
+
+  const handleSaveBillingSurcharge = (e) => {
+    if (e) e.preventDefault();
+    if (!surchargeModalForm.description.trim() || !surchargeModalForm.rate) {
+      triggerToast('Please provide a Description and Rate / Percentage.');
+      return;
+    }
+    const newItem = {
+      id: surchargeModalForm.id || Date.now().toString(),
+      description: surchargeModalForm.description.trim(),
+      calculation: surchargeModalForm.calculation || 'Percentage (%)',
+      rate: surchargeModalForm.rate.toString().trim()
+    };
+    setCustomerSurchargesMap(prev => {
+      const list = prev[currentCustomerId] || [];
+      const exists = list.some(s => s.id === newItem.id);
+      const updated = exists ? list.map(s => s.id === newItem.id ? newItem : s) : [...list, newItem];
+      return { ...prev, [currentCustomerId]: updated };
+    });
+    setShowAddSurchargeModal(false);
+    setSurchargeModalForm({ id: null, description: '', calculation: 'Percentage (%)', rate: '' });
+    triggerToast('Surcharge saved successfully!');
+  };
+
+  const handleDeleteBillingSurcharge = (surchargeId) => {
+    setCustomerSurchargesMap(prev => {
+      const list = prev[currentCustomerId] || [];
+      return { ...prev, [currentCustomerId]: list.filter(s => s.id !== surchargeId) };
+    });
+    triggerToast('Surcharge deleted.');
+  };
 
   const [rateCards, setRateCards] = useState([]);
   const [editingRateCard, setEditingRateCard] = useState(null);
@@ -353,14 +489,7 @@ export default function Customers() {
     billingTerms: '30 Days EOM',
     creditLimit: '250000',
     category: 'Strategic Account',
-    manager: '',
     status: 'Active'
-  });
-
-  const [assignManagerForm, setAssignManagerForm] = useState({
-    id: '',
-    name: '',
-    manager: ''
   });
 
   const [deleteCustomerForm, setDeleteCustomerForm] = useState({
@@ -378,20 +507,9 @@ export default function Customers() {
       billingTerms: customer.billingTerms && customer.billingTerms !== 'N/A' ? customer.billingTerms : '30 Days EOM',
       creditLimit: customer.creditLimit || '0.00',
       category: customer.category || 'Strategic Account',
-      manager: customer.manager && customer.manager !== 'N/A' ? customer.manager : '',
       status: customer.status || 'Active'
     });
     setShowEditCustomerModal(true);
-    setActiveActionMenu(null);
-  };
-
-  const openAssignManager = (customer) => {
-    setAssignManagerForm({
-      id: customer.id,
-      name: customer.name,
-      manager: customer.manager && customer.manager !== 'N/A' ? customer.manager : ''
-    });
-    setShowAssignManagerModal(true);
     setActiveActionMenu(null);
   };
 
@@ -420,25 +538,6 @@ export default function Customers() {
     } finally {
       setShowEditCustomerModal(false);
     }
-  };
-
-  const handleSaveAssignManager = (e) => {
-    if (e) e.preventDefault();
-    const updatedList = customersList.map(c => {
-      if (c.id === assignManagerForm.id) {
-        return { ...c, manager: assignManagerForm.manager };
-      }
-      return c;
-    });
-    setCustomersList(updatedList);
-
-    if (selectedCustomer && selectedCustomer.id === assignManagerForm.id) {
-      setSelectedCustomer({
-        ...selectedCustomer,
-        manager: assignManagerForm.manager
-      });
-    }
-    setShowAssignManagerModal(false);
   };
 
   const handleConfirmDelete = async (e) => {
@@ -510,7 +609,20 @@ export default function Customers() {
 
   useEffect(() => {
     if (selectedCustomer) {
-      setLanePricingRules(selectedCustomer.lanePricingRules || []);
+      api.get(`/company-admin/customers/${selectedCustomer.id}/pricing-profiles`)
+        .then(res => {
+          const rules = res.data?.data || res.data || [];
+          setLanePricingRules(rules);
+          
+          setCustomerPricingRulesMap(prev => ({
+            ...prev,
+            [selectedCustomer.id]: rules
+          }));
+        })
+        .catch(err => {
+          console.error("Error loading pricing profiles:", err);
+          setLanePricingRules(selectedCustomer.lanePricingRules || []);
+        });
       setCompanyInfo({
         tradingName: selectedCustomer.name || '',
         phone: selectedCustomer.contactPhone || 'N/A',
@@ -545,13 +657,17 @@ export default function Customers() {
             if (Array.isArray(contactsData) && contactsData.length > 0) {
               setContacts(contactsData);
             } else {
-              // Fallback: build from contactName/email/phone on the customer record
-              const parts = (selectedCustomer.contactName || '').trim().split(' ');
-              const first = parts[0] || '';
-              const last = parts.slice(1).join(' ') || '';
-              if (first && first !== 'N/A') {
+              // Only build a contact from customer record if it has a real name (not default/empty)
+              const rawName = (selectedCustomer.contactName || '').trim();
+              const isRealName = rawName && rawName !== 'N/A' && rawName !== 'Primary Contact';
+              if (isRealName) {
+                const parts = rawName.split(' ');
+                const first = parts[0] || '';
+                const last = parts.slice(1).join(' ') || '';
+                const realEmail = (selectedCustomer.contactEmail || '').trim();
+                const isRealEmail = realEmail && realEmail !== 'contact@example.com' && realEmail !== 'N/A';
                 setContacts([
-                  { id: 1, firstName: first, lastName: last, role: 'Primary', phone: selectedCustomer.contactPhone || 'N/A', email: selectedCustomer.contactEmail || 'N/A', isPrimary: true }
+                  { id: 1, firstName: first, lastName: last, role: 'Primary', phone: selectedCustomer.contactPhone || '', email: isRealEmail ? realEmail : '', isPrimary: true }
                 ]);
               } else {
                 setContacts([]);
@@ -560,16 +676,7 @@ export default function Customers() {
           })
           .catch(err => {
             console.warn('Contacts API fallback:', err);
-            const parts = (selectedCustomer.contactName || '').trim().split(' ');
-            const first = parts[0] || '';
-            const last = parts.slice(1).join(' ') || '';
-            if (first && first !== 'N/A') {
-              setContacts([
-                { id: 1, firstName: first, lastName: last, role: 'Primary', phone: selectedCustomer.contactPhone || 'N/A', email: selectedCustomer.contactEmail || 'N/A', isPrimary: true }
-              ]);
-            } else {
-              setContacts([]);
-            }
+            setContacts([]);
           });
       }
       api.get(`/customers/${selectedCustomer.id}/rate-cards`)
@@ -725,15 +832,13 @@ export default function Customers() {
     status: 'Active',
     category: 'Strategic Account',
     billingTerms: '14 Days EOM',
-    creditLimit: '250000',
-    manager: 'Sarah Mitchell'
+    creditLimit: '250000'
   });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All States');
   const [typeFilter, setTypeFilter] = useState('All Types');
   const [moduleFilter, setModuleFilter] = useState('All Mods');
-  const [managerFilter, setManagerFilter] = useState('All Managers');
 
   // More Filters panel state
   const [showMoreFilters, setShowMoreFilters] = useState(false);
@@ -763,7 +868,6 @@ export default function Customers() {
     if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase()) && !c.abn.includes(searchQuery)) return false;
     if (statusFilter !== 'All States' && c.status !== statusFilter) return false;
     if (typeFilter !== 'All Types' && c.type !== typeFilter) return false;
-    if (managerFilter !== 'All Managers' && c.manager !== managerFilter) return false;
     if (moduleFilter !== 'All Mods') {
       const modMap = { 'Truck': 'truck', 'Box': 'box', 'Alert': 'alert' };
       const modKey = modMap[moduleFilter];
@@ -797,13 +901,12 @@ export default function Customers() {
       name: newCustomerForm.name,
       abn: newCustomerForm.abn || 'N/A',
       type: newCustomerForm.type || 'Corporate',
-      contactName: 'Primary Contact',
-      contactEmail: 'contact@example.com',
-      contactPhone: 'N/A',
+      contactName: '',
+      contactEmail: '',
+      contactPhone: '',
       transportModules: ['truck'],
       billingTerms: newCustomerForm.billingTerms || '14 Days EOM',
       billingType: 'EOM',
-      manager: newCustomerForm.manager || 'Sarah Mitchell',
       status: newCustomerForm.status || 'Active'
     };
 
@@ -839,8 +942,7 @@ export default function Customers() {
         status: 'Active',
         category: 'Strategic Account',
         billingTerms: '14 Days EOM',
-        creditLimit: '250000',
-        manager: 'Sarah Mitchell'
+        creditLimit: '250000'
       });
       setShowAddModal(false);
       triggerToast(`Customer "${newCustomerObj.name}" added successfully!`);
@@ -908,9 +1010,6 @@ export default function Customers() {
                   <button onClick={() => { setShowMoreActionsMenu(false); window.print(); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
                     <Printer size={14} className="text-slate-400" /> Print Customer Profile
                   </button>
-                  <button onClick={() => { setShowMoreActionsMenu(false); openAssignManager(selectedCustomer); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
-                    <UserCircle size={14} className="text-slate-400" /> Assign Account Manager
-                  </button>
                   <button onClick={() => { setShowMoreActionsMenu(false); alert(`Customer status updated for ${selectedCustomer.name}.`); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
                     <CheckCircle2 size={14} className="text-slate-400" /> Toggle Active / Inactive
                   </button>
@@ -968,19 +1067,6 @@ export default function Customers() {
           <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
           <div className="flex flex-row flex-nowrap items-center gap-8 shrink-0">
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-xs border border-indigo-100 shrink-0">
-                {selectedCustomer.manager && selectedCustomer.manager !== 'N/A' ? selectedCustomer.manager.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'NA'}
-              </div>
-              <div className="shrink-0">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Account Manager</p>
-                <p className="text-sm font-bold text-slate-900">{selectedCustomer.manager && selectedCustomer.manager !== 'N/A' ? selectedCustomer.manager : 'N/A'}</p>
-                <p className="text-[10px] text-slate-550 font-semibold">{selectedCustomer.contactEmail && selectedCustomer.contactEmail !== 'N/A' ? selectedCustomer.contactEmail : selectedCustomer.email && selectedCustomer.email !== 'N/A' ? selectedCustomer.email : 'N/A'}</p>
-              </div>
-            </div>
-
-            <div className="h-10 w-px bg-slate-100 shrink-0"></div>
-
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Billing Terms</p>
               <p className="text-sm font-black text-slate-900">{selectedCustomer.billingTerms && selectedCustomer.billingTerms !== 'N/A' ? selectedCustomer.billingTerms : 'N/A'}</p>
@@ -2583,62 +2669,94 @@ export default function Customers() {
 
                 {/* Top Row: 2 columns */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* 1. Pricing & Rate Structure */}
+                  {/* 1. Invoice Trigger & Grouping */}
                   <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
                     <div className="flex items-center gap-2 text-slate-800 mb-5 pb-4 border-b border-slate-50">
-                      <FileText size={18} className="text-blue-600" />
-                      <h3 className="text-sm font-black tracking-tight">1. Pricing & Rate Structure</h3>
+                      <Settings size={18} className="text-blue-600" />
+                      <h3 className="text-sm font-black tracking-tight">1. Invoice Trigger & Grouping</h3>
                     </div>
-                    <div className="overflow-x-auto custom-scrollbar">
-                      <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[400px]">
-                        <thead>
-                          <tr className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
-                            <th className="py-2">DESCRIPTION</th>
-                            <th className="py-2 text-right">RATE (EX. GST)</th>
-                            <th className="py-2 pl-4">UNIT</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                          <tr>
-                            <td colSpan="3" className="py-6 text-center text-xs font-semibold text-slate-400 italic">
-                              No custom pricing rules configured yet.
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">INVOICE TRIGGER</label>
+                        <select className="w-full pl-3 pr-8 py-2.5 border border-slate-200 rounded-lg text-sm font-bold text-slate-900 bg-white focus:outline-none focus:border-blue-500 cursor-pointer shadow-sm appearance-none">
+                          <option>All items delivered</option>
+                          <option>Delivery completed</option>
+                          <option>POD received</option>
+                          <option>Load completed</option>
+                          <option>Manually approved</option>
+                          <option>Scheduled billing cycle</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">INVOICE GROUPING</label>
+                        <select className="w-full pl-3 pr-8 py-2.5 border border-slate-200 rounded-lg text-sm font-bold text-slate-900 bg-white focus:outline-none focus:border-blue-500 cursor-pointer shadow-sm appearance-none">
+                          <option>Per load</option>
+                          <option>Per item</option>
+                          <option>Per delivery</option>
+                          <option>Per PO number</option>
+                          <option>Weekly (Consolidated)</option>
+                          <option>Monthly (Consolidated)</option>
+                        </select>
+                      </div>
+                      <div className="pt-2 border-t border-slate-50">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-slate-700">Consolidate Multiple Loads</span>
+                          <ToggleRight size={24} className="text-blue-600 cursor-pointer" />
+                        </div>
+                      </div>
                     </div>
-                    <button onClick={() => setShowAddPricingRuleModal(true)} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
-                      <Plus size={14} /> Add Pricing Rule
-                    </button>
                   </div>
 
-                  {/* 2. Fuel Levy & Surcharges */}
+                  {/* 2. Required References & Documents */}
                   <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
                     <div className="flex items-center gap-2 text-slate-800 mb-5 pb-4 border-b border-slate-50">
                       <FileText size={18} className="text-blue-600" />
-                      <h3 className="text-sm font-black tracking-tight">2. Fuel Levy & Surcharges</h3>
+                      <h3 className="text-sm font-black tracking-tight">2. Required References & Documents</h3>
                     </div>
-                    <div className="overflow-x-auto custom-scrollbar">
-                      <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[400px]">
-                        <thead>
-                          <tr className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
-                            <th className="py-2">DESCRIPTION</th>
-                            <th className="py-2 text-center">CALCULATION</th>
-                            <th className="py-2 text-right">RATE / %</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                          <tr>
-                            <td colSpan="3" className="py-6 text-center text-xs font-semibold text-slate-400 italic">
-                              No surcharges configured yet.
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" id="reqPO" defaultChecked className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                        <label htmlFor="reqPO" className="text-xs font-bold text-slate-900 cursor-pointer">Customer PO Number Mandatory</label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" id="reqPOD" defaultChecked className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                        <label htmlFor="reqPOD" className="text-xs font-bold text-slate-900 cursor-pointer">Signed POD Required for Invoicing</label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" id="reqSig" className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                        <label htmlFor="reqSig" className="text-xs font-bold text-slate-900 cursor-pointer">Customer Signature Required</label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" id="reqLoadNum" className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                        <label htmlFor="reqLoadNum" className="text-xs font-bold text-slate-900 cursor-pointer">Customer Load Number Required</label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" id="reqPhotos" className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                        <label htmlFor="reqPhotos" className="text-xs font-bold text-slate-900 cursor-pointer">Delivery Photos Attached to Invoice</label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input type="checkbox" id="reqConNote" className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
+                        <label htmlFor="reqConNote" className="text-xs font-bold text-slate-900 cursor-pointer">Consignment Note Required</label>
+                      </div>
+                      
+                      <div className="mt-4 pt-4 border-t border-slate-50">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">INVOICE AUTOMATION</label>
+                        <div className="space-y-3 mt-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-slate-700">Automatically create draft invoice</span>
+                            <ToggleRight size={24} className="text-blue-600 cursor-pointer" />
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-slate-700">Accounts approval required</span>
+                            <ToggleRight size={24} className="text-blue-600 cursor-pointer" />
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-slate-700">Automatically send approved invoice</span>
+                            <ToggleRight size={24} className="text-slate-300 cursor-pointer" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <button onClick={() => setShowAddSurchargeModal(true)} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
-                      <Plus size={14} /> Add Surcharge
-                    </button>
                   </div>
                 </div>
 
@@ -2653,7 +2771,14 @@ export default function Customers() {
                     <div className="space-y-4 flex-grow">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Calendar size={14} /> Payment Terms</div>
-                        <div className="text-xs font-black text-slate-900 text-right">30 Days End of<br />Month</div>
+                        <select className="text-xs font-black text-slate-900 bg-transparent text-right outline-none cursor-pointer">
+                          <option>Due immediately</option>
+                          <option>7 days</option>
+                          <option>14 days</option>
+                          <option>30 days</option>
+                          <option>45 days</option>
+                          <option>Custom</option>
+                        </select>
                       </div>
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Activity size={14} /> Invoice Frequency</div>
@@ -2843,11 +2968,11 @@ export default function Customers() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Pricing Rules</span>
-                      <span className="font-black text-slate-900">0 Active</span>
+                      <span className="font-black text-slate-900">{currentPricingRules.length} Active</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Surcharges</span>
-                      <span className="font-black text-slate-900">0 Active</span>
+                      <span className="font-black text-slate-900">{currentSurcharges.length} Active</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Payment Terms</span>
@@ -4558,7 +4683,7 @@ export default function Customers() {
                       })
                     ) : (
                       <>
-                        <option>Sarah Mitchell (Account Manager)</option>
+                        <option>Company Operations Admin</option>
                         <option>Mike Thompson (Admin)</option>
                       </>
                     )}
@@ -4698,89 +4823,12 @@ export default function Customers() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
-                <div className="relative">
-                  <select 
-                    value={editCustomerForm.manager} 
-                    onChange={e => setEditCustomerForm({ ...editCustomerForm, manager: e.target.value })}
-                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
-                  >
-                    {companyUsers.length > 0 ? (
-                      companyUsers.map(user => {
-                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
-                        return <option key={user.id} value={fullName}>{fullName}</option>;
-                      })
-                    ) : (
-                      <>
-                        <option value="Sarah Mitchell">Sarah Mitchell</option>
-                        <option value="Mike Thompson">Mike Thompson</option>
-                        <option value="John Davis">John Davis</option>
-                        <option value="Emily Rogers">Emily Rogers</option>
-                      </>
-                    )}
-                  </select>
-                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
             </div>
 
             {/* Footer */}
             <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
               <button type="button" onClick={() => setShowEditCustomerModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
               <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
-            </div>
-          </form>
-        </div>,
-        document.body
-      )}
-
-      {/* Assign Manager Modal */}
-      {showAssignManagerModal && createPortal(
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAssignManagerModal(false)}>
-          <form onSubmit={handleSaveAssignManager} className="bg-white rounded-2xl w-full max-w-[420px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
-            {/* Header */}
-            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
-              <div>
-                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Assign Account Manager</h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">Select a manager for {assignManagerForm.name}</p>
-              </div>
-              <button type="button" onClick={() => setShowAssignManagerModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
-            </div>
-
-            {/* Body */}
-            <div className="px-7 py-6 space-y-4">
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
-                <div className="relative">
-                  <select 
-                    value={assignManagerForm.manager} 
-                    onChange={e => setAssignManagerForm({ ...assignManagerForm, manager: e.target.value })}
-                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
-                  >
-                    {companyUsers.length > 0 ? (
-                      companyUsers.map(user => {
-                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
-                        return <option key={user.id} value={fullName}>{fullName}</option>;
-                      })
-                    ) : (
-                      <>
-                        <option value="Sarah Mitchell">Sarah Mitchell</option>
-                        <option value="Mike Thompson">Mike Thompson</option>
-                        <option value="John Davis">John Davis</option>
-                        <option value="Emily Rogers">Emily Rogers</option>
-                      </>
-                    )}
-                  </select>
-                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
-              <button type="button" onClick={() => setShowAssignManagerModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
-              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Assign</button>
             </div>
           </form>
         </div>,
@@ -4989,6 +5037,145 @@ export default function Customers() {
               <button onClick={() => setShowUploadDocumentModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
               <button onClick={() => setShowUploadDocumentModal(false)} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Add / Edit Pricing Rule Modal */}
+      {showAddPricingRuleModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddPricingRuleModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[460px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-6 pb-4 flex justify-between items-center border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2 text-blue-600">
+                <FileText size={20} />
+                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">
+                  {pricingRuleModalForm.id ? 'Edit Pricing Rule' : 'Add Custom Pricing Rule'}
+                </h3>
+              </div>
+              <button onClick={() => setShowAddPricingRuleModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={20} strokeWidth={2} /></button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveBillingPricingRule} className="px-7 py-6 space-y-4">
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-1.5">Rule Description</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Metro Standard Rate, Highway Freight"
+                  value={pricingRuleModalForm.description}
+                  onChange={e => setPricingRuleModalForm({ ...pricingRuleModalForm, description: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all placeholder:text-slate-400"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-1.5">Rate ex. GST ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={pricingRuleModalForm.rate}
+                    onChange={e => setPricingRuleModalForm({ ...pricingRuleModalForm, rate: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all placeholder:text-slate-400"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-1.5">Unit</label>
+                  <select
+                    value={pricingRuleModalForm.unit}
+                    onChange={e => setPricingRuleModalForm({ ...pricingRuleModalForm, unit: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition-all bg-white cursor-pointer"
+                  >
+                    <option value="Per Km">Per Km</option>
+                    <option value="Per Hour">Per Hour</option>
+                    <option value="Per Pallet">Per Pallet</option>
+                    <option value="Flat Fee">Flat Fee</option>
+                    <option value="Per Trip">Per Trip</option>
+                    <option value="Per Tonne">Per Tonne</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6">
+                <button type="button" onClick={() => setShowAddPricingRuleModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+                <button type="submit" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-blue-200">Save Pricing Rule</button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Add / Edit Surcharge & Fuel Levy Modal */}
+      {showAddSurchargeModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddSurchargeModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[460px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-6 pb-4 flex justify-between items-center border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2 text-purple-600">
+                <FileText size={20} />
+                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">
+                  {surchargeModalForm.id ? 'Edit Fuel Levy / Surcharge' : 'Add Surcharge & Fuel Levy'}
+                </h3>
+              </div>
+              <button onClick={() => setShowAddSurchargeModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={20} strokeWidth={2} /></button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveBillingSurcharge} className="px-7 py-6 space-y-4">
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-1.5">Surcharge / Levy Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Fuel Levy (National), Peak Hour Fee, Hazmat Surcharge"
+                  value={surchargeModalForm.description}
+                  onChange={e => setSurchargeModalForm({ ...surchargeModalForm, description: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] font-medium text-slate-800 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-100 transition-all placeholder:text-slate-400"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-1.5">Calculation Type</label>
+                  <select
+                    value={surchargeModalForm.calculation}
+                    onChange={e => setSurchargeModalForm({ ...surchargeModalForm, calculation: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-800 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-100 transition-all bg-white cursor-pointer"
+                  >
+                    <option value="Percentage (%)">Percentage (%)</option>
+                    <option value="Flat Fee ($)">Flat Fee ($)</option>
+                    <option value="Per Km ($)">Per Km ($)</option>
+                    <option value="Per Hour ($)">Per Hour ($)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-1.5">
+                    {surchargeModalForm.calculation?.includes('Percentage') ? 'Percentage (%)' : 'Rate ($)'}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={surchargeModalForm.calculation?.includes('Percentage') ? '12.5' : '45.00'}
+                    value={surchargeModalForm.rate}
+                    onChange={e => setSurchargeModalForm({ ...surchargeModalForm, rate: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] font-medium text-slate-800 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-100 transition-all placeholder:text-slate-400"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6">
+                <button type="button" onClick={() => setShowAddSurchargeModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+                <button type="submit" className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-purple-200">Save Surcharge</button>
+              </div>
+            </form>
           </div>
         </div>,
         document.body
@@ -5273,24 +5460,24 @@ export default function Customers() {
         document.body
       )}
 
-      {/* Add Pricing Rule Modal */}
+      {/* Add Pricing Profile Modal */}
       {showAddPricingRuleModal && createPortal(
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 sm:p-6" onClick={() => setShowAddPricingRuleModal(false)}>
           <form 
-            onSubmit={handleSavePricingRuleSubmit} 
-            className="bg-white rounded-3xl w-full max-w-[500px] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-100" 
+            onSubmit={handleSaveFullPricingRule} 
+            className="bg-white rounded-3xl w-full max-w-[800px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-100" 
             onClick={e => e.stopPropagation()} 
             style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}
           >
             {/* Fixed Header */}
-            <div className="px-6 py-4.5 flex items-center justify-between border-b border-slate-100 bg-white shrink-0">
+            <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 bg-white shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-2xs shrink-0">
                   <Calculator size={20} strokeWidth={2.2} />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">Add Lane Pricing Rule</h3>
-                  <p className="text-[11px] text-slate-500 font-medium">Configure route freight rates, distance & GST billing mode</p>
+                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">Add Pricing Rule</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Configure all charges and surcharges for {selectedCustomer?.name || 'this customer'}</p>
                 </div>
               </div>
               <button 
@@ -5303,173 +5490,149 @@ export default function Customers() {
             </div>
 
             {/* Scrollable Body Container */}
-            <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar text-left text-xs bg-slate-50/30">
-              {/* Pickup & Delivery */}
-              <div className="grid grid-cols-2 gap-3.5">
-                <div>
-                  <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center gap-1.5">
-                    <MapPin size={13} className="text-emerald-500 shrink-0" /> From (Pickup) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newPricingRule.from}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, from: e.target.value })}
-                    placeholder="e.g. Melbourne VIC"
-                    className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800 placeholder:text-slate-400 shadow-2xs"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center gap-1.5">
-                    <MapPin size={13} className="text-indigo-500 shrink-0" /> To (Delivery) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newPricingRule.to}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, to: e.target.value })}
-                    placeholder="e.g. Sydney NSW"
-                    className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800 placeholder:text-slate-400 shadow-2xs"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Route Type & Distance */}
-              <div className="grid grid-cols-2 gap-3.5">
-                <div>
-                  <label className="text-[12px] font-bold text-slate-800 block mb-1.5">Route Type</label>
-                  <div className="relative">
-                    <select
-                      value={newPricingRule.type}
-                      onChange={e => setNewPricingRule({ ...newPricingRule, type: e.target.value })}
-                      className="appearance-none w-full border border-slate-200 bg-white rounded-xl pl-3.5 pr-9 py-2.5 text-[13px] font-semibold text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer shadow-2xs"
-                    >
-                      <option value="Interstate">Interstate</option>
-                      <option value="Intrastate">Intrastate</option>
-                      <option value="Metro">Metro</option>
-                      <option value="Regional">Regional</option>
+            <div className="px-6 py-5 space-y-6 overflow-y-auto flex-1 custom-scrollbar text-left text-xs bg-slate-50/50">
+              
+              {/* SECTION: BASIC INFO */}
+              <div>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">1. Profile Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Pricing Profile Name <span className="text-rose-500">*</span></label>
+                    <input type="text" value={fullPricingRuleForm.name} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, name: e.target.value })} placeholder="e.g. ABC Sydney to Canberra Rate" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" required />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Niche</label>
+                    <select className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm">
+                      <option>Car Carrying</option>
+                      <option>General Freight</option>
+                      <option>Dangerous Goods</option>
                     </select>
-                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Effective From</label>
+                    <input type="date" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Effective Until (Optional)</label>
+                    <input type="date" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Status</label>
+                    <select className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm">
+                      <option>Active</option>
+                      <option>Inactive</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION: ROUTING & METHOD */}
+              <div>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">2. Core Rate Calculation</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Origin (Pickup Location)</label>
+                    <input type="text" value={fullPricingRuleForm.from} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, from: e.target.value })} placeholder="e.g. Sydney" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Destination (Delivery Location)</label>
+                    <input type="text" value={fullPricingRuleForm.to} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, to: e.target.value })} placeholder="e.g. Canberra" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Zone (if applicable)</label>
+                    <input type="text" placeholder="e.g. North Metro" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center justify-between">
-                    <span>Distance (KM)</span>
-                    <span className="text-[10px] text-slate-400 font-normal">Optional</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={newPricingRule.distance}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, distance: e.target.value })}
-                    placeholder="e.g. 878"
-                    className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800 placeholder:text-slate-400 shadow-2xs"
-                  />
-                </div>
-              </div>
-
-              {/* Pricing GST Mode Selection */}
-              <div>
-                <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center justify-between">
-                  <span>Pricing GST Billing Mode</span>
-                  <span className="text-[10px] font-black text-indigo-800 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-150 flex items-center gap-1.5 shadow-2xs">
-                    <Lock size={11} className="text-indigo-600 shrink-0" /> 10% Fixed GST (Non-Editable)
-                  </span>
-                </label>
-                <div className="grid grid-cols-2 gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200/80">
-                  <button
-                    type="button"
-                    onClick={() => setNewPricingRule({ ...newPricingRule, gstMode: 'EX_GST' })}
-                    className={`py-2 px-3 text-xs font-extrabold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      (newPricingRule.gstMode || 'EX_GST') === 'EX_GST'
-                        ? 'bg-white text-indigo-900 shadow-sm border border-slate-200/80'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${ (newPricingRule.gstMode || 'EX_GST') === 'EX_GST' ? 'bg-indigo-600' : 'bg-slate-300' }`}></span>
-                    Excluding GST
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewPricingRule({ ...newPricingRule, gstMode: 'INC_GST' })}
-                    className={`py-2 px-3 text-xs font-extrabold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      newPricingRule.gstMode === 'INC_GST'
-                        ? 'bg-white text-indigo-900 shadow-sm border border-slate-200/80'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${ newPricingRule.gstMode === 'INC_GST' ? 'bg-indigo-600' : 'bg-slate-300' }`}></span>
-                    Including GST
-                  </button>
-                </div>
-              </div>
-
-              {/* Base Rate Input Field */}
-              <div>
-                <label className="text-[12px] font-bold text-slate-800 block mb-1.5">
-                  {newPricingRule.gstMode === 'INC_GST' ? 'Total Customer Rate ($ INC GST)' : 'Base Customer Rate ($ EX GST)'} <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[13px]">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newPricingRule.baseRate}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, baseRate: e.target.value, minCharge: e.target.value })}
-                    placeholder={newPricingRule.gstMode === 'INC_GST' ? 'e.g. 1100.00' : 'e.g. 1000.00'}
-                    className="w-full border border-slate-200 bg-white rounded-xl pl-8 pr-3.5 py-2.5 text-[13px] font-black focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-900 shadow-2xs"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Dynamic Financial Calculation Breakdown */}
-              {(() => {
-                const inputVal = parseFloat(newPricingRule.baseRate) || 0;
-                const isIncGst = newPricingRule.gstMode === 'INC_GST';
-                
-                let baseExGst = 0;
-                let gstComponent = 0;
-                let totalIncGst = 0;
-
-                if (isIncGst) {
-                  totalIncGst = inputVal;
-                  baseExGst = Math.round((inputVal / 1.10) * 100) / 100;
-                  gstComponent = Math.round((totalIncGst - baseExGst) * 100) / 100;
-                } else {
-                  baseExGst = inputVal;
-                  gstComponent = Math.round((baseExGst * 0.10) * 100) / 100;
-                  totalIncGst = Math.round((baseExGst + gstComponent) * 100) / 100;
-                }
-
-                return (
-                  <div className="p-4 bg-gradient-to-br from-indigo-50/90 via-slate-50 to-indigo-50/40 border border-indigo-100 rounded-2xl space-y-2 text-xs shadow-2xs">
-                    <div className="flex justify-between items-center font-medium text-slate-600">
-                      <span className="flex items-center gap-1 text-slate-500">
-                        <DollarSign size={13} className="text-slate-400" /> Base Rate (Ex GST):
-                      </span>
-                      <span className="font-extrabold text-slate-800 text-[13px]">${baseExGst.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between items-center font-medium text-slate-600">
-                      <span className="flex items-center gap-1 text-slate-500">
-                        <DollarSign size={13} className="text-indigo-400" /> {isIncGst ? 'GST Component (10% Extracted):' : 'Statutory GST (10% Fixed):'}
-                      </span>
-                      <span className="font-extrabold text-indigo-700 text-[13px]">${gstComponent.toFixed(2)}</span>
-                    </div>
-                    <div className="pt-2 border-t border-indigo-100 flex justify-between items-center font-black text-slate-900 text-sm">
-                      <span className="text-slate-900 font-extrabold">Total Customer Charge (Inc GST):</span>
-                      <span className="text-indigo-900 font-black text-base">${totalIncGst.toFixed(2)}</span>
-                    </div>
-                    <div className="text-[10px] text-indigo-700/90 font-bold italic pt-1 flex items-center gap-1.5">
-                      <Lock size={11} className="text-indigo-600 shrink-0" />
-                      {isIncGst 
-                        ? '10% Fixed GST Component is extracted from total amount (AU Statutory Rate - Non-Editable).'
-                        : '10% Fixed Statutory GST is added to the base rate (AU Statutory Rate - Non-Editable).'}
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5 flex items-center gap-1.5"><Settings size={12} className="text-blue-500"/> Pricing Method <span className="text-rose-500">*</span></label>
+                    <select value={fullPricingRuleForm.method} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, method: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-black text-blue-700 focus:outline-none focus:border-indigo-500 shadow-sm" required>
+                      <option>Per Load</option>
+                      <option>Per Item</option>
+                      <option>Per Vehicle</option>
+                      <option>Per Pallet</option>
+                      <option>Per Tonne</option>
+                      <option>Per Kilometre</option>
+                      <option>Per Hour</option>
+                      <option>Per Day</option>
+                      <option>Per Stop</option>
+                      <option>Fixed Route</option>
+                      <option>Distance Band</option>
+                      <option>Combination</option>
+                    </select>
                   </div>
-                );
-              })()}
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Customer Charge / Base Rate ($) <span className="text-rose-500">*</span></label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.baseRate} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, baseRate: e.target.value })} placeholder="e.g. 500.00" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-black focus:outline-none focus:border-indigo-500 shadow-sm" required />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Minimum Charge ($)</label>
+                    <input type="number" step="0.01" placeholder="e.g. 100.00" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION: SURCHARGES */}
+              <div>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">3. Surcharges & Accessorials</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Fuel Levy (%)</label>
+                    <input type="number" step="0.01" placeholder="e.g. 7" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm text-purple-700 font-bold" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Additional Stop ($)</label>
+                    <input type="number" step="0.01" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Waiting Time ($/hr)</label>
+                    <input type="number" step="0.01" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Storage Charge ($)</label>
+                    <input type="number" step="0.01" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Tolls ($)</label>
+                    <input type="number" step="0.01" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">DG Surcharge ($)</label>
+                    <input type="number" step="0.01" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">After-Hours ($)</label>
+                    <input type="number" step="0.01" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Weekend ($)</label>
+                    <input type="number" step="0.01" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Redelivery ($)</label>
+                    <input type="number" step="0.01" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Other Charges ($)</label>
+                    <input type="number" step="0.01" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                </div>
+              </div>
+
+              {/* TAX TREATMENT */}
+              <div>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">4. Tax Treatment</h4>
+                <div className="w-1/2">
+                   <label className="text-[11px] font-bold text-slate-800 block mb-1.5">GST/Tax Treatment</label>
+                    <select className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm">
+                      <option>Excluding GST (Add 10%)</option>
+                      <option>Including GST</option>
+                      <option>GST Free</option>
+                    </select>
+                </div>
+              </div>
+
             </div>
 
             {/* Fixed Footer */}
@@ -5485,7 +5648,7 @@ export default function Customers() {
                 type="submit" 
                 className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-lg shadow-indigo-200 hover:shadow-indigo-300 flex items-center gap-1.5"
               >
-                <Check size={15} strokeWidth={2.5} /> Add Pricing Rule
+                <Check size={15} strokeWidth={2.5} /> Save Pricing Profile
               </button>
             </div>
           </form>
@@ -5506,7 +5669,19 @@ export default function Customers() {
           <p className="text-sm text-slate-500 mt-0.5 font-medium">Manage your customers, contacts, billing rules and history.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-          <button onClick={() => setShowAddModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
+          <button onClick={() => {
+            setNewCustomerForm({
+              name: '',
+              abn: '',
+              acn: '',
+              type: 'Corporate',
+              status: 'Active',
+              category: 'Strategic Account',
+              billingTerms: '14 Days EOM',
+              creditLimit: '250000'
+            });
+            setShowAddModal(true);
+          }} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
             <Plus size={14} /> Add Customer
           </button>
           <button onClick={() => setShowImportModal(true)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex-grow sm:flex-grow-0 justify-center">
@@ -5656,21 +5831,12 @@ export default function Customers() {
                 </div>
               </div>
               <div className="xl:col-span-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Account Manager</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Transport Modules</label>
                 <div className="relative">
-                  <select value={managerFilter} onChange={e => setManagerFilter(e.target.value)} className="appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-500 cursor-pointer w-full">
-                    <option value="All Managers">All Managers</option>
-                    {companyUsers.length > 0 ? (
-                      companyUsers.map(user => {
-                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
-                        return <option key={user.id} value={fullName}>{fullName}</option>;
-                      })
-                    ) : (
-                      <>
-                        <option value="Sarah Mitchell">Sarah Mitchell</option>
-                        <option value="Mike Thompson">Mike Thompson</option>
-                      </>
-                    )}
+                  <select value={moduleFilter} onChange={e => setModuleFilter(e.target.value)} className="appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-500 cursor-pointer w-full">
+                    <option value="All Mods">All Mods</option>
+                    <option value="Truck">Truck</option>
+                    <option value="Box">Box</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -5719,13 +5885,13 @@ export default function Customers() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b border-slate-100 bg-slate-50/50 gap-3">
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{filteredCustomers.length} customers found</span>
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
+                <button className="px-3 py-1.5 bg-white border border-slate-200 text-[#475569] rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
                   <Package size={12} /> Columns
                 </button>
-                <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
+                <button className="px-3 py-1.5 bg-white border border-slate-200 text-[#475569] rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
                   <List size={12} /> Group By
                 </button>
-                <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
+                <button className="px-3 py-1.5 bg-white border border-slate-200 text-[#475569] rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
                   <ChevronDown size={12} /> Sort By: Created Date
                 </button>
               </div>
@@ -5741,7 +5907,6 @@ export default function Customers() {
                     <th className="py-3 px-4">CONTACT</th>
                     <th className="py-3 px-4">TRANSPORT MODULES</th>
                     <th className="py-3 px-4">BILLING TERMS</th>
-                    <th className="py-3 px-4">ACCOUNT MANAGER</th>
                     <th className="py-3 px-4">STATUS</th>
                     <th className="py-3 px-4 text-right">ACTIONS</th>
                   </tr>
@@ -5749,7 +5914,7 @@ export default function Customers() {
                 <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
                   {filteredCustomers.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-16 text-center">
+                      <td colSpan={7} className="py-16 text-center">
                         <div className="flex flex-col items-center justify-center">
                           <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
                             <Users size={24} className="text-slate-400" />
@@ -5814,11 +5979,6 @@ export default function Customers() {
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">{c.manager}</p>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
                           <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-md border ${c.status === 'Active' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
                             c.status === 'Inactive' ? 'bg-red-50 border-red-100 text-red-600' :
                               'bg-amber-50 border-amber-100 text-amber-600'
@@ -5837,9 +5997,6 @@ export default function Customers() {
                               </button>
                               <button onClick={() => openEditCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
                                 <Edit size={14} className="text-slate-400" /> Edit Customer
-                              </button>
-                              <button onClick={() => openAssignManager(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
-                                <UserCircle size={14} className="text-slate-400" /> Assign Manager
                               </button>
                               <div className="my-1 border-t border-slate-50"></div>
                               <button onClick={() => openDeleteCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer">
@@ -6087,29 +6244,6 @@ export default function Customers() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
-                <div className="relative">
-                  <select
-                    value={newCustomerForm.manager}
-                    onChange={e => setNewCustomerForm({ ...newCustomerForm, manager: e.target.value })}
-                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
-                  >
-                    {companyUsers.length > 0 ? (
-                      companyUsers.map(user => {
-                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
-                        return <option key={user.id} value={fullName}>{fullName}</option>;
-                      })
-                    ) : (
-                      <>
-                        <option value="Sarah Mitchell">Sarah Mitchell</option>
-                        <option value="Mike Thompson">Mike Thompson</option>
-                      </>
-                    )}
-                  </select>
-                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
             </div>
 
             {/* Sticky Footer */}
@@ -6242,89 +6376,12 @@ export default function Customers() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
-                <div className="relative">
-                  <select 
-                    value={editCustomerForm.manager} 
-                    onChange={e => setEditCustomerForm({ ...editCustomerForm, manager: e.target.value })}
-                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
-                  >
-                    {companyUsers.length > 0 ? (
-                      companyUsers.map(user => {
-                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
-                        return <option key={user.id} value={fullName}>{fullName}</option>;
-                      })
-                    ) : (
-                      <>
-                        <option value="Sarah Mitchell">Sarah Mitchell</option>
-                        <option value="Mike Thompson">Mike Thompson</option>
-                        <option value="John Davis">John Davis</option>
-                        <option value="Emily Rogers">Emily Rogers</option>
-                      </>
-                    )}
-                  </select>
-                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
             </div>
 
             {/* Footer */}
             <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
               <button type="button" onClick={() => setShowEditCustomerModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
               <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
-            </div>
-          </form>
-        </div>,
-        document.body
-      )}
-
-      {/* Assign Manager Modal (List View) */}
-      {showAssignManagerModal && createPortal(
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAssignManagerModal(false)}>
-          <form onSubmit={handleSaveAssignManager} className="bg-white rounded-2xl w-full max-w-[420px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
-            {/* Header */}
-            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
-              <div>
-                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Assign Account Manager</h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">Select a manager for {assignManagerForm.name}</p>
-              </div>
-              <button type="button" onClick={() => setShowAssignManagerModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
-            </div>
-
-            {/* Body */}
-            <div className="px-7 py-6 space-y-4">
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
-                <div className="relative">
-                  <select 
-                    value={assignManagerForm.manager} 
-                    onChange={e => setAssignManagerForm({ ...assignManagerForm, manager: e.target.value })}
-                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
-                  >
-                    {companyUsers.length > 0 ? (
-                      companyUsers.map(user => {
-                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
-                        return <option key={user.id} value={fullName}>{fullName}</option>;
-                      })
-                    ) : (
-                      <>
-                        <option value="Sarah Mitchell">Sarah Mitchell</option>
-                        <option value="Mike Thompson">Mike Thompson</option>
-                        <option value="John Davis">John Davis</option>
-                        <option value="Emily Rogers">Emily Rogers</option>
-                      </>
-                    )}
-                  </select>
-                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
-              <button type="button" onClick={() => setShowAssignManagerModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
-              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Assign</button>
             </div>
           </form>
         </div>,

@@ -3702,7 +3702,7 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL REPORTS</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{2 + customReportsList.length}</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{customReportsList.length}</div>
             <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Active system reports</div>
             <button
               onClick={() => showToast('Showing all reports')}
@@ -3721,7 +3721,7 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">RECENTLY VIEWED</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{Math.max(2, customReportsList.length + (recentlyRunOperationsReports?.length || 0))}</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{customReportsList.length + (recentlyRunOperationsReports?.length || 0)}</div>
             <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Recent activity logs</div>
             <button
               onClick={() => showToast('Viewing report history')}
@@ -3778,7 +3778,7 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">DOWNLOADS (MTD)</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{(kpiStats?.downloadsMtd || 0) + (customReportsList.length > 0 ? 1 : 0)}</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.downloadsMtd || 0}</div>
             <div className="text-[9.5px] font-semibold text-slate-400 mt-1 whitespace-nowrap">Exported this month</div>
             <button
               onClick={() => showToast('Showing report downloads')}
@@ -4099,14 +4099,14 @@ export default function Reports() {
             <div className="bg-[#F5F3FF] rounded-xl p-2.5 border border-[#DDD6FE] text-left shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#6366F1] uppercase tracking-wider">Generated</div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-xl font-black text-slate-900 leading-none">{2 + customReportsList.length}</span>
+                <span className="text-xl font-black text-slate-900 leading-none">{customReportsList.length}</span>
                 <span className="text-[10px] font-bold text-indigo-600">This Month</span>
               </div>
             </div>
             <div className="bg-[#EFF6FF] rounded-xl p-2.5 border border-[#BFDBFE] text-left shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#2563EB] uppercase tracking-wider">Downloaded</div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-xl font-black text-slate-900 leading-none">{(kpiStats?.downloadsMtd || 0) + (customReportsList.length > 0 ? 1 : 0)}</span>
+                <span className="text-xl font-black text-slate-900 leading-none">{kpiStats?.downloadsMtd || 0}</span>
                 <span className="text-[10px] font-bold text-blue-600">MTD Total</span>
               </div>
             </div>

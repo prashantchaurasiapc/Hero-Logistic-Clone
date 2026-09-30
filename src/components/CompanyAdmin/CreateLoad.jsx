@@ -41,7 +41,7 @@ function FieldLabel({ children, required }) {
 const inputCls = "w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs sm:text-[13px] font-bold text-slate-800 placeholder-slate-400 transition-colors shadow-xs";
 const selectCls = "w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs sm:text-[13px] font-bold text-slate-800 cursor-pointer transition-colors appearance-none shadow-xs";
 
-function AddressAutocomplete({ value, onChange, placeholder, className, autoFocus = false, savedLocations = [] }) {
+function AddressAutocomplete({ value, onChange, placeholder, className, autoFocus = false }) {
   const [inputValue, setInputValue] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -75,7 +75,7 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
 
     if (!query || query.trim().length < 2) {
       setSuggestions([]);
-      setIsOpen(savedLocations && savedLocations.length > 0);
+      setIsOpen(false);
       setLoading(false);
       setSearchedQuery('');
       return;
@@ -152,31 +152,18 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
     setSuggestions([]);
   };
 
-  const filteredSavedLocations = (savedLocations || []).filter(loc => {
-    if (!inputValue || inputValue.trim().length === 0) return true;
-    return loc.display.toLowerCase().includes(inputValue.toLowerCase()) ||
-           (loc.driverName && loc.driverName.toLowerCase().includes(inputValue.toLowerCase()));
-  });
-
-  const totalItemsCount = filteredSavedLocations.length + suggestions.length;
-
   const handleKeyDown = (e) => {
     if (!isOpen) return;
 
-    if (e.key === 'ArrowDown' && totalItemsCount > 0) {
+    if (e.key === 'ArrowDown' && suggestions.length > 0) {
       e.preventDefault();
-      setSelectedIndex(prev => (prev < totalItemsCount - 1 ? prev + 1 : 0));
-    } else if (e.key === 'ArrowUp' && totalItemsCount > 0) {
+      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp' && suggestions.length > 0) {
       e.preventDefault();
-      setSelectedIndex(prev => (prev > 0 ? prev - 1 : totalItemsCount - 1));
-    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : suggestions.length - 1));
+    } else if (e.key === 'Enter' && selectedIndex >= 0 && suggestions[selectedIndex]) {
       e.preventDefault();
-      if (selectedIndex < filteredSavedLocations.length) {
-        handleSelect(filteredSavedLocations[selectedIndex]);
-      } else {
-        const apiIdx = selectedIndex - filteredSavedLocations.length;
-        if (suggestions[apiIdx]) handleSelect(suggestions[apiIdx]);
-      }
+      handleSelect(suggestions[selectedIndex]);
     } else if (e.key === 'Escape') {
       setIsOpen(false);
     }
@@ -190,11 +177,13 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => {
-            setIsOpen(true);
+            if (inputValue && inputValue.trim().length >= 2 && suggestions.length > 0) {
+              setIsOpen(true);
+            }
           }}
           onKeyDown={handleKeyDown}
           className={className}
-          placeholder={placeholder}
+          placeholder={placeholder || "Type address or suburb (e.g. Sydney NSW)..."}
           autoFocus={autoFocus}
         />
         {loading && (
@@ -205,53 +194,8 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
         )}
       </div>
 
-      {isOpen && (filteredSavedLocations.length > 0 || suggestions.length > 0 || loading || searchedQuery.trim().length >= 2) && (
+      {isOpen && (suggestions.length > 0 || loading || searchedQuery.trim().length >= 2) && (
         <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-[9999] overflow-hidden max-h-72 overflow-y-auto">
-          {/* Driver Saved Locations at top of dropdown */}
-          {filteredSavedLocations.length > 0 && (
-            <div className="bg-purple-50/50 border-b border-purple-100 pb-1">
-              <div className="px-3.5 py-1.5 bg-purple-100/70 border-b border-purple-200/60 flex items-center justify-between">
-                <span className="text-[10px] font-black text-purple-900 uppercase tracking-wider flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-purple-600"></span> Driver Saved Locations
-                </span>
-                <span className="text-[9px] font-bold text-purple-700 bg-white px-1.5 py-0.2 rounded-md">
-                  {filteredSavedLocations.length} choice(s)
-                </span>
-              </div>
-              {filteredSavedLocations.map((item, idx) => {
-                const isSelected = idx === selectedIndex;
-                return (
-                  <button
-                    key={`saved-${idx}`}
-                    type="button"
-                    onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
-                    onMouseEnter={() => setSelectedIndex(idx)}
-                    className={`w-full text-left px-3.5 py-2.5 text-xs transition-colors flex items-start gap-2.5 border-b border-purple-100/50 last:border-0 ${
-                      isSelected ? 'bg-purple-200/80 text-purple-950 font-bold' : 'hover:bg-purple-100/60 text-slate-800 font-medium'
-                    }`}
-                  >
-                    <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${isSelected ? 'text-purple-700' : 'text-purple-600'}`} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate font-black text-slate-900 text-[12.5px]">{item.display}</p>
-                        <span className="shrink-0 px-2 py-0.5 bg-purple-600 text-white rounded text-[9px] font-black uppercase tracking-wider shadow-2xs">
-                          {item.type || 'Saved'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-bold text-purple-700">Driver: {item.driverName}</span>
-                        {item.amount && (
-                          <span className="text-[10px] font-extrabold text-emerald-600">Rate: ${item.amount}</span>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Address Search API Results */}
           {loading ? (
             <div className="p-4 text-center text-xs font-medium text-slate-400 flex items-center justify-center gap-2">
               <span className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></span>
@@ -259,20 +203,14 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
             </div>
           ) : suggestions.length > 0 ? (
             <div>
-              {filteredSavedLocations.length > 0 && (
-                <div className="px-3.5 py-1 bg-slate-50 border-b border-slate-100 text-[9.5px] font-black text-slate-400 uppercase tracking-wider">
-                  Address Search Results
-                </div>
-              )}
               {suggestions.map((item, idx) => {
-                const globalIdx = filteredSavedLocations.length + idx;
-                const isSelected = globalIdx === selectedIndex;
+                const isSelected = idx === selectedIndex;
                 return (
                   <button
                     key={`api-${idx}`}
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
-                    onMouseEnter={() => setSelectedIndex(globalIdx)}
+                    onMouseEnter={() => setSelectedIndex(idx)}
                     className={`w-full text-left px-3.5 py-2.5 text-xs transition-colors flex items-start gap-2.5 border-b border-slate-50 last:border-0 ${
                       isSelected ? 'bg-indigo-50 text-indigo-950 font-bold' : 'hover:bg-slate-50 text-slate-700 font-medium'
                     }`}
@@ -544,6 +482,159 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
     driverPay: '',
   });
 
+  const [selectedScheduleId, setSelectedScheduleId] = useState('');
+  const [matchedPricingRule, setMatchedPricingRule] = useState(null);
+  const [customerPricingRules, setCustomerPricingRules] = useState([]);
+
+  // Fetch Pricing Profiles when customer changes
+  useEffect(() => {
+    if (formData.customer) {
+      api.get(`/company-admin/customers/${formData.customer}/pricing-profiles`)
+        .then(res => {
+          const rules = res.data?.data || res.data || [];
+          setCustomerPricingRules(rules);
+        })
+        .catch(err => {
+          console.error("Failed to load customer pricing rules:", err);
+          setCustomerPricingRules([]);
+        });
+    } else {
+      setCustomerPricingRules([]);
+    }
+  }, [formData.customer]);
+
+  // Automatic Customer Pricing & Billing Rule Match
+  useEffect(() => {
+    if (!formData.customer) {
+      setMatchedPricingRule(null);
+      return;
+    }
+
+    const selectedCust = dbCustomers.find(c => String(c.id) === String(formData.customer));
+    const pickupStop = stops.find(s => (s.type || '').toLowerCase().includes('pick'));
+    const dropStop = stops.find(s => (s.type || '').toLowerCase().includes('drop'));
+
+    const pAddr = (pickupStop?.address || '').toLowerCase();
+    const dAddr = (dropStop?.address || '').toLowerCase();
+
+    // Use fetched customer rules
+    const custRules = customerPricingRules.filter(r => !r.isDefaultSample);
+
+    let foundRule = null;
+    if (custRules.length > 0) {
+      foundRule = custRules.find(r => {
+        const fromMatch = !r.from || (pAddr && pAddr.includes(r.from.toLowerCase()));
+        const toMatch = !r.to || (dAddr && dAddr.includes(r.to.toLowerCase()));
+        return fromMatch && toMatch;
+      }) || custRules[0];
+    }
+
+    if (foundRule) {
+      let base = parseFloat(foundRule.baseRate) || 0;
+      const count = items.length || 1;
+      const methodStr = (foundRule.method || '').toLowerCase();
+
+      if (methodStr.includes('item') || methodStr.includes('vehicle') || methodStr.includes('car') || methodStr.includes('pallet')) {
+        base = base * count;
+      }
+
+      const fuelPct = parseFloat(foundRule.fuelLevy) || 0;
+      const fuelAmt = fuelPct > 0 ? (base * fuelPct / 100) : 0;
+      const rateAmount = base + fuelAmt;
+
+      const ruleName = fuelPct > 0 
+        ? `${foundRule.name || 'Saved Pricing Rule'} ($${base.toFixed(2)} + ${fuelPct}% Fuel Levy = $${rateAmount.toFixed(2)})`
+        : `${foundRule.name || 'Saved Pricing Rule'} ($${rateAmount.toFixed(2)} ${foundRule.method || 'Per Load'})`;
+
+      setMatchedPricingRule({
+        customerName: selectedCust?.name || 'Selected Customer',
+        ruleName,
+        amount: rateAmount,
+        hasRule: true
+      });
+
+      if (!editMode) {
+        setFormData(prev => ({
+          ...prev,
+          rate: String(rateAmount)
+        }));
+      }
+    } else {
+      // No rule configured for this specific customer — leave Customer Charge blank for manual input
+      setMatchedPricingRule({
+        customerName: selectedCust?.name || 'Selected Customer',
+        ruleName: `No Pricing Rule configured for ${selectedCust?.name || 'this customer'}. Enter Customer Charge manually.`,
+        amount: 0,
+        hasRule: false
+      });
+
+      if (!editMode) {
+        setFormData(prev => ({
+          ...prev,
+          rate: ''
+        }));
+      }
+    }
+  }, [formData.customer, stops, items.length, dbCustomers, editMode, customerPricingRules]);
+
+  const getDriverSchedules = (driverId = null) => {
+    let globalSchedules = [];
+    try {
+      const savedStr = localStorage.getItem('hero_driver_load_schedules');
+      if (savedStr) {
+        const parsed = JSON.parse(savedStr);
+        if (Array.isArray(parsed)) {
+          globalSchedules = parsed;
+        }
+      }
+    } catch (e) {}
+
+    const combined = [];
+    globalSchedules.forEach((g, idx) => {
+      const titleName = g.title || g.name || `${g.origin || ''} → ${g.destination || ''}`.trim() || `Route Schedule #${idx + 1}`;
+      const amt = parseFloat(g.rate || g.amount || 0);
+      combined.push({
+        id: String(g.id || `g-${idx}`),
+        title: titleName,
+        origin: g.origin || '',
+        destination: g.destination || '',
+        amount: amt,
+        display: `${titleName} — $${amt.toFixed(2)}`,
+        isSelected: false
+      });
+    });
+
+    if (driverId) {
+      const drvObj = dbDrivers.find(d => String(d.id) === String(driverId));
+      let driverSpecific = [];
+      if (drvObj?.loadPaySchedule) {
+        try {
+          driverSpecific = typeof drvObj.loadPaySchedule === 'string' ? JSON.parse(drvObj.loadPaySchedule) : drvObj.loadPaySchedule;
+        } catch (err) {}
+      }
+      if (Array.isArray(driverSpecific) && driverSpecific.length > 0) {
+        driverSpecific.forEach((d, idx) => {
+          const titleName = d.title || d.name || (d.pickupLocation && d.deliveryLocation ? `${d.pickupLocation} → ${d.deliveryLocation}` : `Driver Schedule #${idx + 1}`);
+          const amt = parseFloat(d.amount || d.rate || 0);
+          const exists = combined.some(c => c.title.toLowerCase() === titleName.toLowerCase());
+          if (!exists) {
+            combined.push({
+              id: String(d.id || `d-${idx}`),
+              title: titleName,
+              origin: d.pickupLocation || '',
+              destination: d.deliveryLocation || '',
+              amount: amt,
+              display: `${titleName} — $${amt.toFixed(2)}`,
+              isSelected: Boolean(d.isSelected)
+            });
+          }
+        });
+      }
+    }
+
+    return combined;
+  };
+
   const [showAddStopModal, setShowAddStopModal] = useState(false);
   const [editingStopId, setEditingStopId] = useState(null); // null = add mode, stopId = edit mode
   const [newStopForm, setNewStopForm] = useState({
@@ -605,11 +696,9 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
 
   const openAddStopModal = (initialType = 'Pickup') => {
     const typeStr = (typeof initialType === 'string' && initialType) ? initialType : 'Pickup';
-    const savedForType = getDriverSavedLocations(formData.driver || null, typeStr);
-    const defaultAddress = savedForType.length > 0 ? savedForType[0].address : '';
     setNewStopForm({
       type: typeStr,
-      address: defaultAddress,
+      address: '',
       addressDetails: null,
       contactName: '',
       contactPhone: '',
@@ -744,13 +833,6 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
   const [uploadedPhotos, setUploadedPhotos] = useState({}); // { 'itemId-category': [url1, url2] }
   const [activeUploadTarget, setActiveUploadTarget] = useState(null); // { itemId, category }
 
-  const DUMMY_PHOTOS = [
-    'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600',
-    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&q=80&w=600',
-    'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&q=80&w=600',
-    'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=600'
-  ];
-
   const fileInputRef = useRef(null);
 
   const getPhotoKey = (itemId, category) => `${String(itemId)}-${String(category)}`;
@@ -776,10 +858,6 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
         };
         reader.readAsDataURL(file);
       });
-    } else {
-      const existing = uploadedPhotos[key] || [];
-      const nextPhoto = DUMMY_PHOTOS[existing.length % DUMMY_PHOTOS.length];
-      setUploadedPhotos(prev => ({ ...prev, [key]: [...existing, nextPhoto] }));
     }
     e.target.value = '';
   };
@@ -792,10 +870,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
   };
 
   const handleAddDemoPhoto = (itemId, category) => {
-    const key = getPhotoKey(itemId, category);
-    const existing = uploadedPhotos[key] || [];
-    const nextPhoto = DUMMY_PHOTOS[existing.length % DUMMY_PHOTOS.length];
-    setUploadedPhotos(prev => ({ ...prev, [key]: [...existing, nextPhoto] }));
+    triggerDirectUpload(itemId, category);
   };
 
   const handleAddPhotos = (itemId, category) => {
@@ -853,7 +928,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
         type: formData.loadType || 'General Freight',
         status: targetStatus,
         priority: (formData.priority || 'NORMAL').toUpperCase(),
-        notes: formData.loadNotes || `Created via Load Console`,
+        notes: formData.loadScheduleTitle ? `${formData.loadNotes || 'Created via Load Console'} [SCHEDULE:${formData.loadScheduleTitle}]` : (formData.loadNotes || `Created via Load Console`),
         loadDate: formData.loadDate ? new Date(formData.loadDate).toISOString() : new Date().toISOString(),
         customerId: formData.customer && formData.customer.length > 5 ? formData.customer : null,
         driverId: formData.driver && formData.driver.length > 5 ? formData.driver : null,
@@ -897,6 +972,37 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
         res = await api.put(`/company-admin/loads/${targetId}`, payload);
       } else {
         res = await api.post('/company-admin/loads', payload);
+      }
+
+      // Persist local driver assignment with load schedule title & pay rate
+      if (formData.driver) {
+        try {
+          const selectedDrv = dbDrivers.find(d => String(d.id) === String(formData.driver));
+          const drvName = selectedDrv ? (selectedDrv.name || `${selectedDrv.firstName || ''} ${selectedDrv.lastName || ''}`.trim()) : '';
+          if (drvName) {
+            const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+            const pickupStop = stops.find(s => (s.type || '').toLowerCase().includes('pickup')) || stops[0];
+            const dropStop = stops.find(s => (s.type || '').toLowerCase().includes('drop')) || stops[stops.length - 1];
+            const newAssignedLoad = {
+              id: formData.loadRef.trim(),
+              reference: formData.loadRef.trim(),
+              route: `${pickupStop?.address || 'Origin'} → ${dropStop?.address || 'Destination'}`,
+              origin: pickupStop?.address || 'Origin',
+              destination: dropStop?.address || 'Destination',
+              loadType: formData.loadType || 'General Freight',
+              driverPay: formData.driverPay ? parseFloat(formData.driverPay) : 0,
+              loadScheduleTitle: formData.loadScheduleTitle || '',
+              status: 'ASSIGNED',
+              items: items
+            };
+            const existingList = savedMap[drvName] || [];
+            const filtered = existingList.filter(l => l.id !== newAssignedLoad.id && l.reference !== newAssignedLoad.reference);
+            savedMap[drvName] = [newAssignedLoad, ...filtered];
+            localStorage.setItem('hero_assigned_driver_loads', JSON.stringify(savedMap));
+          }
+        } catch (e) {
+          console.warn('Error saving local driver assignment:', e);
+        }
       }
 
       dispatcherRepository.syncWithBackend();
@@ -991,7 +1097,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6">
           <SectionHeader number="1" title="Load Information" colorCls="bg-indigo-600" />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
             <div className="col-span-1">
               <FieldLabel>Booking Customer (Optional)</FieldLabel>
               <div className="relative">
@@ -1007,7 +1113,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                 </select>
               </div>
               <p className="text-[10.5px] font-bold text-emerald-500 mt-1.5 leading-snug">
-                Fields below will change based on load type
+                Auto-finds Pricing Rule
               </p>
             </div>
 
@@ -1075,7 +1181,42 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                 <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-0 pointer-events-none" />
               </div>
             </div>
+
+            <div className="col-span-1">
+              <FieldLabel required>Customer Charge ($)</FieldLabel>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.rate || ''}
+                  onChange={e => setFormData({ ...formData, rate: e.target.value })}
+                  className={`${inputCls} pl-8 font-bold text-emerald-700 bg-emerald-50/40 border-emerald-300 focus:border-emerald-500`}
+                  placeholder="Enter rate (e.g. 500.00)"
+                />
+              </div>
+            </div>
           </div>
+
+          {matchedPricingRule && matchedPricingRule.hasRule ? (
+            <div className="mt-4 p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-emerald-950 font-semibold shadow-2xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shrink-0"></span>
+                <span>⚡ Auto-Matched Customer Pricing Rule:</span>
+                <span className="bg-emerald-100 border border-emerald-200 text-emerald-950 px-2.5 py-0.5 rounded-md font-black flex items-center gap-1">
+                  <span>{matchedPricingRule.ruleName}</span>
+                </span>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-700 bg-white border border-emerald-200 px-2.5 py-0.5 rounded-full shrink-0">
+                Invoice automatically created on Load Save (${matchedPricingRule.amount.toFixed(2)})
+              </span>
+            </div>
+          ) : matchedPricingRule && !matchedPricingRule.hasRule ? (
+            <div className="mt-4 p-3 bg-amber-50/70 border border-amber-200 rounded-xl flex items-center gap-2 text-xs text-amber-900 font-semibold shadow-2xs">
+              <Info className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>{matchedPricingRule.ruleName}</span>
+            </div>
+          ) : null}
         </div>
 
         {/* ═══════ Section 2: Route Stops ═══════════ */}
@@ -2053,24 +2194,33 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                   value={formData.driver}
                   onChange={e => {
                     const drvId = e.target.value;
-                    const drvObj = dbDrivers.find(d => String(d.id) === String(drvId));
-                    let sched = [];
-                    if (drvObj?.loadPaySchedule) {
-                      try {
-                        sched = typeof drvObj.loadPaySchedule === 'string' ? JSON.parse(drvObj.loadPaySchedule) : drvObj.loadPaySchedule;
-                      } catch (err) {}
+                    const schedules = getDriverSchedules(drvId);
+                    
+                    // Smart route auto-matching based on stops added in Section 2
+                    const pickupStop = stops.find(s => s.type === 'Pickup');
+                    const dropStop = stops.find(s => s.type === 'Drop-off');
+                    const pAddr = (pickupStop?.address || '').toLowerCase();
+                    const dAddr = (dropStop?.address || '').toLowerCase();
+
+                    let matchedSched = null;
+                    if (pAddr || dAddr) {
+                      matchedSched = schedules.find(s => {
+                        const titleLower = s.title.toLowerCase();
+                        const pLoc = (s.raw?.pickupLocation || '').toLowerCase();
+                        const dLoc = (s.raw?.deliveryLocation || '').toLowerCase();
+                        return (pAddr && (titleLower.includes(pAddr) || (pLoc && pAddr.includes(pLoc)))) ||
+                               (dAddr && (titleLower.includes(dAddr) || (dLoc && dAddr.includes(dLoc))));
+                      });
                     }
-                    const activeRoute = Array.isArray(sched) && sched.length > 0
-                      ? (sched.find(s => s.isSelected) || sched[0])
-                      : null;
-                    const defaultPay = activeRoute
-                      ? String(activeRoute.amount)
-                      : (drvObj?.payRate ? String(drvObj.payRate) : '');
-                    setSelectedPayChoice(activeRoute ? String(activeRoute.amount) : '');
+
+                    const activeSched = matchedSched || schedules.find(s => s.isSelected) || schedules[0];
+                    setSelectedScheduleId(activeSched ? activeSched.id : '');
+                    const defaultPay = activeSched ? String(activeSched.amount) : '';
                     setFormData(prev => ({
                       ...prev,
                       driver: drvId,
-                      driverPay: defaultPay
+                      driverPay: defaultPay,
+                      loadScheduleTitle: activeSched ? activeSched.title : ''
                     }));
                   }}
                   className={`${selectCls} pl-8`}
@@ -2085,17 +2235,124 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
               </div>
             </div>
 
-            <div>
-              <FieldLabel>Load Notes (Driver View)</FieldLabel>
-              <input
-                type="text"
-                value={formData.loadNotes}
-                onChange={e => setFormData({ ...formData, loadNotes: e.target.value })}
-                className={inputCls}
-                placeholder="Notes visible to driver..."
-              />
-            </div>
+            {/* Dynamic Load Schedule Dropdown when Driver is selected */}
+            {formData.driver ? (
+              <div>
+                <FieldLabel required>Load Schedule (Driver Pay Rule)</FieldLabel>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-600" />
+                  <select
+                    value={selectedScheduleId}
+                    onChange={e => {
+                      const schedId = e.target.value;
+                      setSelectedScheduleId(schedId);
+                      if (schedId === 'custom') {
+                        setFormData(prev => ({ ...prev, driverPay: '', loadScheduleTitle: 'Custom Rate' }));
+                      } else {
+                        const schedules = getDriverSchedules(formData.driver);
+                        const chosen = schedules.find(s => String(s.id) === String(schedId));
+                        if (chosen) {
+                          setFormData(prev => ({
+                            ...prev,
+                            driverPay: String(chosen.amount),
+                            loadScheduleTitle: chosen.title
+                          }));
+                        }
+                      }
+                    }}
+                    className={`${selectCls} pl-8 bg-purple-50/70 border-purple-200 text-purple-900 font-bold focus:border-purple-500`}
+                  >
+                    <option value="">Select Load Schedule...</option>
+                    {getDriverSchedules(formData.driver).map(s => (
+                      <option key={s.id} value={s.id}>{s.display}</option>
+                    ))}
+                    <option value="custom">Custom Amount</option>
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-purple-600 pointer-events-none" />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <FieldLabel>Load Notes (Driver View)</FieldLabel>
+                <input
+                  type="text"
+                  value={formData.loadNotes}
+                  onChange={e => setFormData({ ...formData, loadNotes: e.target.value })}
+                  className={inputCls}
+                  placeholder="Notes visible to driver..."
+                />
+              </div>
+            )}
+
+            {/* Extra Driver Pay & Load Notes fields if Driver is selected */}
+            {formData.driver && (
+              <>
+                <div>
+                  <FieldLabel required={selectedScheduleId === 'custom'}>
+                    {selectedScheduleId === 'custom' ? 'Custom Amount ($)' : 'Driver Pay Amount ($)'}
+                  </FieldLabel>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.driverPay || ''}
+                      onChange={e => {
+                        setFormData({ ...formData, driverPay: e.target.value });
+                        if (selectedScheduleId !== 'custom') {
+                          setSelectedScheduleId('custom');
+                        }
+                      }}
+                      className={`${inputCls} pl-7 font-bold ${
+                        selectedScheduleId === 'custom'
+                          ? 'text-purple-900 bg-white border-purple-500 ring-2 ring-purple-100 placeholder:text-slate-300'
+                          : 'text-emerald-700 bg-emerald-50/40 border-emerald-200'
+                      }`}
+                      placeholder={selectedScheduleId === 'custom' ? "e.g. 1250.00" : "0.00"}
+                    />
+                  </div>
+                </div>
+
+                <div className="col-span-1 sm:col-span-2 lg:col-span-2">
+                  <FieldLabel>Load Notes (Driver View)</FieldLabel>
+                  <input
+                    type="text"
+                    value={formData.loadNotes}
+                    onChange={e => setFormData({ ...formData, loadNotes: e.target.value })}
+                    className={inputCls}
+                    placeholder="Notes visible to driver..."
+                  />
+                </div>
+              </>
+            )}
           </div>
+
+          {/* Dynamic Active Schedule Summary Banner */}
+          {formData.driver && (
+            <div className="mt-4 p-3 bg-purple-50/80 border border-purple-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-purple-900 font-semibold shadow-2xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse shrink-0"></span>
+                <span>Assigned Payment Rule:</span>
+                <span className="bg-purple-100 border border-purple-200 text-purple-950 px-2.5 py-0.5 rounded-md font-black flex items-center gap-1.5">
+                  <span>⚡ {(() => {
+                    if (selectedScheduleId === 'custom') {
+                      const val = parseFloat(formData.driverPay || 0);
+                      return val > 0 ? `Driver Pay: Custom — $${val.toFixed(2)} (Applies to this load only)` : 'Custom Amount Required';
+                    }
+                    const schedules = getDriverSchedules(formData.driver);
+                    const sel = schedules.find(s => String(s.id) === String(selectedScheduleId));
+                    if (sel) {
+                      return `${sel.title} — $${parseFloat(formData.driverPay || sel.amount || 0).toFixed(2)}`;
+                    }
+                    return formData.driverPay ? `Driver Pay: Custom — $${parseFloat(formData.driverPay).toFixed(2)} (Applies to this load only)` : 'Custom Amount Required';
+                  })()}</span>
+                </span>
+              </div>
+              <span className="text-[10px] font-bold text-purple-700 bg-white border border-purple-200 px-2.5 py-0.5 rounded-full shrink-0">
+                Payment calculated on Load Completion
+              </span>
+            </div>
+          )}
         </div>
 
       </form>

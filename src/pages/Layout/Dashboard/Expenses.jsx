@@ -24,11 +24,12 @@ export default function Expenses() {
     setLoading(true);
     try {
       const res = await api.get('/accounts/expenses');
-      if (res.data?.success && Array.isArray(res.data.data?.expenses) && res.data.data.expenses.length > 0) {
+      if (res.data?.success && Array.isArray(res.data.data?.expenses)) {
         setExpensesData(res.data.data.expenses);
       }
     } catch (err) {
-      console.warn('Using live fallback expenses:', err);
+      console.error('Failed to fetch expenses:', err);
+      setExpensesData([]);
     } finally {
       setLoading(false);
     }

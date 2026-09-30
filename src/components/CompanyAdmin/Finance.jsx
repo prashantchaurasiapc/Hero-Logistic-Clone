@@ -97,21 +97,27 @@ export default function Finance() {
   const [showCreditNoteModal, setShowCreditNoteModal] = useState(false);
   const [showSendRemindersModal, setShowSendRemindersModal] = useState(false);
   
-  const [dateRange, setDateRange] = useState({ startDate: '2025-05-01', endDate: '2025-05-31', preset: 'This Month (May 2025)' });
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate()).toISOString().split('T')[0];
+  const currentMonthName = today.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  const [dateRange, setDateRange] = useState({ startDate: firstDay, endDate: lastDay, preset: `This Month (${currentMonthName})` });
   const [selectedRowItem, setSelectedRowItem] = useState(null);
-  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(11);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showMoreActions, setShowMoreActions] = useState(false);
 
-  const [paymentForm, setPaymentForm] = useState({ amount: '', method: 'Direct Bank Transfer (EFT)', date: '2025-05-24', reference: 'PAY-2025-0912' });
-  const [emailForm, setEmailForm] = useState({ to: 'accounts@customer.com.au', subject: 'Tax Invoice INV-2025-0187 - Hero Logistics', message: 'Please find attached your official tax invoice for recent freight services. Thank you for your business!' });
-  const [creditForm, setCreditForm] = useState({ amount: '$250.00', reason: 'Overcharge / Freight Calculation Adjustment', notes: '' });
+  const [paymentForm, setPaymentForm] = useState({ amount: '', method: 'Direct Bank Transfer (EFT)', date: today.toISOString().split('T')[0], reference: `PAY-${today.getFullYear()}-${Math.floor(Math.random()*10000)}` });
+  const [emailForm, setEmailForm] = useState({ to: '', subject: 'Invoice - Hero Logistics', message: 'Please find attached your official tax invoice for recent freight services. Thank you for your business!' });
+  const [creditForm, setCreditForm] = useState({ amount: '', reason: '', notes: '' });
 
   // Form state for Schedule Report Modal
   const [scheduleForm, setScheduleForm] = useState({
-    reportName: 'Profit & Loss / Financial Reports',
+    reportName: 'Financial Report',
     frequency: 'Monthly (1st of month)',
-    recipientEmail: 'finance-admin@herologistics.com.au',
+    recipientEmail: '',
     format: 'PDF Document',
     deliveryTime: '08:00 AM AEST'
   });
@@ -124,7 +130,7 @@ export default function Finance() {
     customer: '',
     amount: '',
     type: 'Tax Invoice',
-    dueDate: '2025-06-15',
+    dueDate: nextMonth,
     status: 'Outstanding',
     notes: ''
   });
@@ -142,6 +148,13 @@ export default function Finance() {
       const res = await api.get('/company-admin/finance');
       const data = res.data?.data || res.data || {};
       if (data.stats) {
+        // Remove SaaS subscription (billingTotal) from operational expenses to avoid confusing users with 'default' 199 values
+        if (data.stats.breakdown && data.stats.breakdown.billingTotal) {
+          const saasCost = data.stats.breakdown.billingTotal;
+          data.stats.totalExpenses -= saasCost;
+          data.stats.netProfit += saasCost;
+          data.stats.breakdown.billingTotal = 0;
+        }
         setFinanceStats(data.stats);
       }
       if (Array.isArray(data.invoices)) {
@@ -168,7 +181,7 @@ export default function Finance() {
           method: 'Bank Transfer',
           amount: inv.amount,
           status: 'Completed',
-          branch: 'Sydney Head Office'
+          branch: 'Head Office'
         }));
         setPaymentsList(mappedPayments);
 
@@ -180,7 +193,7 @@ export default function Finance() {
           method: 'Bank Transfer',
           amount: inv.amount,
           status: 'Issued',
-          branch: 'Sydney Head Office'
+          branch: 'Head Office'
         }));
         setReceiptsList(mappedReceipts);
 
@@ -193,20 +206,8 @@ export default function Finance() {
           type: 'Bank Transfer',
           status: 'Approved',
           user: inv.customer,
-          branch: 'Sydney Head Office'
+          branch: 'Head Office'
         }));
-
-        const billingMapped = Array.isArray(data.billingRecords) ? data.billingRecords.map(b => ({
-          date: b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
-          ref: b.invoiceNumber || `EXP-${b.id.slice(0, 6)}`,
-          desc: `Expense Claim (${b.planTierSnapshot || 'General'})`,
-          category: b.planTierSnapshot || 'Fuel',
-          amount: `$${(parseFloat(b.amount) || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          type: b.paymentMethod || 'Bank Transfer',
-          status: b.status === 'PAID' ? 'Approved' : 'Pending',
-          user: 'Company Admin',
-          branch: 'Sydney Head Office'
-        })) : [];
 
         const loadExpensesMapped = Array.isArray(data.loadExpenses) ? data.loadExpenses.map(e => ({
           id: e.id,
@@ -224,12 +225,12 @@ export default function Finance() {
           litres: e.litres
         })) : [];
 
-        setExpensesList([...loadExpensesMapped, ...billingMapped, ...mappedExpensesFromInvoices]);
+        setExpensesList([...loadExpensesMapped, ...mappedExpensesFromInvoices]);
 
         const mappedPayrollFromInvoices = mapped.filter(inv => inv.type === 'Payroll Run' || inv.type === 'Payroll' || (inv.type && inv.type.includes('Payroll'))).map(inv => ({
           name: `Payroll Run - ${inv.issueDate}`,
           period: `01 - ${inv.issueDate}`,
-          branch: 'Sydney Head Office',
+          branch: 'Head Office',
           employees: 1,
           type: 'Driver Wages',
           total: inv.amount,
@@ -242,7 +243,7 @@ export default function Finance() {
           ? data.billingRecords.filter(b => !b.planTierSnapshot || b.planTierSnapshot === 'Payroll' || b.planTierSnapshot === 'Payroll Run' || (b.planTierSnapshot && b.planTierSnapshot.includes('Payroll')) || b.planTierSnapshot === 'General').map(b => ({
               name: `Payroll Run - ${b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}`,
               period: `01 - ${b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}`,
-              branch: 'Sydney Head Office',
+              branch: 'Head Office',
               employees: 1,
               type: 'Driver Wages',
               total: `${(parseFloat(b.amount) || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
@@ -299,28 +300,28 @@ export default function Finance() {
   // Open Full Invoice Details Page 
   const handleOpenInvoiceDetail = (inv) => {
     const isPaid = inv ? inv.status === 'Paid' : true;
-    const rawAmt = inv && inv.rawAmount ? Math.abs(inv.rawAmount) : 9625;
+    const rawAmt = inv && inv.rawAmount ? Math.abs(inv.rawAmount) : 0;
 
     // Calculate Subtotal and GST from rawAmt
     const calcSubtotal = rawAmt / 1.1;
     const calcGst = rawAmt - calcSubtotal;
 
-    const fmtTotal = inv ? inv.amount : '$9,625.00';
+    const fmtTotal = inv ? inv.amount : '$0.00';
     const fmtSubtotal = `$${calcSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const fmtGst = `$${calcGst.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     const detailObj = {
-      id: inv ? inv.id : 'INV-2025-0187',
-      customer: inv ? inv.customer : 'All Star Motors',
-      abn: '12 345 678 901',
-      email: inv && inv.customer ? `accounts@${inv.customer.toLowerCase().replace(/[^a-z0-9]/g, '')}.com.au` : 'accounts@allstarmotors.com.au',
-      phone: '+61 2 9876 5432',
-      address: '321 Parramatta Rd, Sydney NSW 2150',
-      issueDate: inv ? inv.issueDate : '10 May 2025',
-      dueDate: inv ? inv.dueDate : '24 May 2025',
-      paidDate: isPaid ? (inv ? inv.issueDate : '16 May 2025') : '-',
-      terms: '14 Days',
-      status: inv ? inv.status : 'Paid',
+      id: inv ? inv.id : `INV-${new Date().getFullYear()}-0000`,
+      customer: inv ? inv.customer : 'N/A',
+      abn: 'N/A',
+      email: inv && inv.customer ? `accounts@${inv.customer.toLowerCase().replace(/[^a-z0-9]/g, '')}.com.au` : 'N/A',
+      phone: 'N/A',
+      address: 'N/A',
+      issueDate: inv ? inv.issueDate : new Date().toLocaleDateString(),
+      dueDate: inv ? inv.dueDate : new Date().toLocaleDateString(),
+      paidDate: isPaid ? (inv ? inv.issueDate : new Date().toLocaleDateString()) : '-',
+      terms: 'N/A',
+      status: inv ? inv.status : 'N/A',
       subtotal: fmtSubtotal,
       gst: fmtGst,
       total: fmtTotal,
@@ -328,64 +329,24 @@ export default function Finance() {
       balanceDue: isPaid ? '$0.00' : fmtTotal,
       paymentMethod: 'Bank Transfer',
       paymentRef: `EFT-${Math.floor(50000 + Math.random() * 40000)}`,
-      paymentDate: isPaid ? '16 May 2025' : '-',
-      loadId: inv && inv.ref ? inv.ref : 'LD-2025-0421',
-      jobDate: '06 May 2025',
-      createdBy: 'Admin User',
-      createdOn: `${inv ? inv.issueDate : '10 May 2025'} 09:14 AM`,
-      lastUpdated: '16 May 2025 11:23 AM',
+      paymentDate: isPaid ? (inv ? inv.issueDate : new Date().toLocaleDateString()) : '-',
+      loadId: inv && inv.ref ? inv.ref : 'N/A',
+      jobDate: 'N/A',
+      createdBy: 'System',
+      createdOn: `${inv ? inv.issueDate : new Date().toLocaleDateString()} 09:14 AM`,
+      lastUpdated: `${new Date().toLocaleDateString()} 11:23 AM`,
       lineItems: [
         { 
           id: 1, 
-          desc: `Car Transport - ${inv ? inv.customer : 'Sydney to Brisbane'}`, 
-          sub: `Load: ${inv && inv.ref ? inv.ref : 'LD-2025-0421'} | Service: Car Carrier`, 
+          desc: `Service - ${inv ? inv.customer : 'General'}`, 
+          sub: `Ref: ${inv && inv.ref ? inv.ref : 'N/A'}`, 
           qty: '1.00', 
-          unitPrice: `$${(calcSubtotal * 0.7428).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-          gst: `$${(calcGst * 0.7428).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-          total: `$${(rawAmt * 0.7428).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-        },
-        { 
-          id: 2, 
-          desc: 'Toll & Road Charges', 
-          sub: 'As per receipts attached', 
-          qty: '1.00', 
-          unitPrice: `$${(calcSubtotal * 0.0514).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-          gst: `$${(calcGst * 0.0514).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-          total: `$${(rawAmt * 0.0514).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-        },
-        { 
-          id: 3, 
-          desc: 'Fuel Surcharge', 
-          sub: 'Surcharge applied', 
-          qty: '1.00', 
-          unitPrice: `$${(calcSubtotal * 0.0571).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-          gst: `$${(calcGst * 0.0571).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-          total: `$${(rawAmt * 0.0571).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-        },
-        { 
-          id: 4, 
-          desc: 'Waiting Time', 
-          sub: '2.5 hours @ $220/hr', 
-          qty: '2.50', 
-          unitPrice: `$${(calcSubtotal * 0.0628).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-          gst: `$${(calcGst * 0.0628).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-          total: `$${(rawAmt * 0.0628).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-        },
-        { 
-          id: 5, 
-          desc: 'Admin Fee', 
-          sub: 'Documentation & processing', 
-          qty: '1.00', 
-          unitPrice: `$${(calcSubtotal * 0.0859).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-          gst: `$${(calcGst * 0.0859).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-          total: `$${(rawAmt * 0.0859).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+          unitPrice: fmtSubtotal, 
+          gst: fmtGst, 
+          total: fmtTotal 
         }
       ],
-      attachments: [
-        { name: 'Fuel_Receipt_001.pdf', size: '102 KB', date: inv ? inv.issueDate : '06 May 2025' },
-        { name: 'Toll_Receipt_001.pdf', size: '98 KB', date: inv ? inv.issueDate : '06 May 2025' },
-        { name: `POD_${inv && inv.ref ? inv.ref : 'LD-2025-0421'}.pdf`, size: '245 KB', date: inv ? inv.issueDate : '06 May 2025' }
-      ]
+      attachments: []
     };
 
     setActiveInvoiceDetail(detailObj);
@@ -756,7 +717,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer hover:border-slate-300"
               >
                 <option>All Branches</option>
-                <option>Sydney Head Office</option>
+                <option>Head Office</option>
                 <option>Melbourne Depot</option>
                 <option>Brisbane Hub</option>
               </select>
@@ -866,69 +827,70 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               
               <div className="relative h-48 w-full flex flex-col justify-between pt-1">
-                <div className="absolute top-1 right-12 z-10 bg-white border border-slate-200 rounded-xl p-2 shadow-lg flex flex-col items-center pointer-events-none">
-                  <span className="text-[9px] font-bold text-slate-500">24 May</span>
-                  <span className="text-xs font-black text-slate-900">{financeStats ? `${(financeStats.totalRevenue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
-                  <div className="w-2 h-2 bg-white border-r border-b border-slate-200 rotate-45 -mb-3 mt-0.5"></div>
-                </div>
+                {(() => {
+                  const rev = financeStats?.totalRevenue || 0;
+                  const isZero = rev === 0;
+                  const maxLabel = isZero ? '$0' : `$${(rev).toLocaleString('en-AU', { maximumFractionDigits: 0 })}`;
+                  const midLabel = isZero ? '$0' : `$${(rev/2).toLocaleString('en-AU', { maximumFractionDigits: 0 })}`;
+                  
+                  return (
+                    <>
+                      <div className="absolute top-1 right-12 z-10 bg-white border border-slate-200 rounded-xl p-2 shadow-lg flex flex-col items-center pointer-events-none">
+                        <span className="text-[9px] font-bold text-slate-500">Today</span>
+                        <span className="text-xs font-black text-slate-900">{`$${rev.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                        <div className="w-2 h-2 bg-white border-r border-b border-slate-200 rotate-45 -mb-3 mt-0.5"></div>
+                      </div>
 
-                <div className="flex-1 flex items-stretch">
-                  <div className="flex flex-col justify-between text-[8px] font-bold text-slate-400 pr-2 py-1 select-none shrink-0">
-                    <span>$1.0M</span>
-                    <span>$800K</span>
-                    <span>$600K</span>
-                    <span>$400K</span>
-                    <span>$200K</span>
-                    <span>$0</span>
-                  </div>
+                      <div className="flex-1 flex items-stretch">
+                        <div className="flex flex-col justify-between text-[8px] font-bold text-slate-400 pr-2 py-1 select-none shrink-0">
+                          <span>{maxLabel}</span>
+                          <span>{midLabel}</span>
+                          <span>$0</span>
+                        </div>
 
-                  <div className="flex-1 relative overflow-visible">
-                    <svg viewBox="0 0 300 120" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-                      <defs>
-                        <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#635BFF" stopOpacity="0.18" />
-                          <stop offset="100%" stopColor="#635BFF" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
+                        <div className="flex-1 relative overflow-visible">
+                          <svg viewBox="0 0 300 120" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                            <defs>
+                              <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#635BFF" stopOpacity="0.18" />
+                                <stop offset="100%" stopColor="#635BFF" stopOpacity="0.0" />
+                              </linearGradient>
+                            </defs>
+                            
+                            <line x1="0" y1="0" x2="300" y2="0" stroke="#f1f5f9" strokeDasharray="3 3" />
+                            <line x1="0" y1="60" x2="300" y2="60" stroke="#f1f5f9" strokeDasharray="3 3" />
+                            <line x1="0" y1="120" x2="300" y2="120" stroke="#e2e8f0" />
+
+                            {isZero ? (
+                              <path d="M 0,119 L 300,119" stroke="#635BFF" strokeWidth="2.5" />
+                            ) : (
+                              <>
+                                <path 
+                                  d="M 0,80 L 40,55 L 80,42 L 120,38 L 160,38 L 200,32 L 240,28 L 280,15 L 300,10 L 300,120 L 0,120 Z" 
+                                  fill="url(#revenueGrad)" 
+                                />
+                                <path 
+                                  d="M 0,80 L 40,55 L 80,42 L 120,38 L 160,38 L 200,32 L 240,28 L 280,15 L 300,10" 
+                                  fill="none" 
+                                  stroke="#635BFF" 
+                                  strokeWidth="2.5" 
+                                  strokeLinecap="round" 
+                                />
+                              </>
+                            )}
+                          </svg>
+                        </div>
+                      </div>
                       
-                      <line x1="0" y1="0" x2="300" y2="0" stroke="#f1f5f9" strokeDasharray="3 3" />
-                      <line x1="0" y1="24" x2="300" y2="24" stroke="#f1f5f9" strokeDasharray="3 3" />
-                      <line x1="0" y1="48" x2="300" y2="48" stroke="#f1f5f9" strokeDasharray="3 3" />
-                      <line x1="0" y1="72" x2="300" y2="72" stroke="#f1f5f9" strokeDasharray="3 3" />
-                      <line x1="0" y1="96" x2="300" y2="96" stroke="#f1f5f9" strokeDasharray="3 3" />
-                      <line x1="0" y1="120" x2="300" y2="120" stroke="#e2e8f0" />
-
-                      <path 
-                        d="M 0,80 L 20,68 L 40,55 L 60,57 L 80,42 L 100,45 L 120,38 L 140,48 L 160,38 L 180,42 L 200,32 L 220,36 L 240,28 L 260,22 L 280,15 L 300,10 L 300,120 L 0,120 Z" 
-                        fill="url(#revenueGrad)" 
-                      />
-
-                      <path 
-                        d="M 0,80 L 20,68 L 40,55 L 60,57 L 80,42 L 100,45 L 120,38 L 140,48 L 160,38 L 180,42 L 200,32 L 220,36 L 240,28 L 260,22 L 280,15 L 300,10" 
-                        fill="none" 
-                        stroke="#635BFF" 
-                        strokeWidth="2.5" 
-                        strokeLinecap="round" 
-                      />
-
-                      {[
-                        [0, 80], [20, 68], [40, 55], [60, 57], [80, 42], [100, 45],
-                        [120, 38], [140, 48], [160, 38], [180, 42], [200, 32], [220, 36],
-                        [240, 28], [260, 22], [280, 15], [300, 10]
-                      ].map(([cx, cy], i) => (
-                        <circle key={i} cx={cx} cy={cy} r="3" fill="#635BFF" stroke="#ffffff" strokeWidth="1.5" />
-                      ))}
-                    </svg>
-                  </div>
-                </div>
-
-                <div className="flex justify-between text-[8px] font-bold text-slate-400 pl-8 pt-1 border-t border-slate-100 mt-1">
-                  <span>1 May</span>
-                  <span>8 May</span>
-                  <span>15 May</span>
-                  <span>22 May</span>
-                  <span>29 May</span>
-                </div>
+                      <div className="flex justify-between text-[8px] font-bold text-slate-400 pl-8 pt-1 border-t border-slate-100 mt-1">
+                        <span>Week 1</span>
+                        <span>Week 2</span>
+                        <span>Week 3</span>
+                        <span>Week 4</span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
@@ -942,67 +904,70 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               
               <div className="relative h-48 w-full flex flex-col justify-between pt-1">
-                <div className="absolute top-1 right-12 z-10 bg-white border border-slate-200 rounded-xl p-2 shadow-lg flex flex-col items-center pointer-events-none">
-                  <span className="text-[9px] font-bold text-slate-500">24 May</span>
-                  <span className="text-xs font-black text-slate-900">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
-                  <div className="w-2 h-2 bg-white border-r border-b border-slate-200 rotate-45 -mb-3 mt-0.5"></div>
-                </div>
+                {(() => {
+                  const exp = financeStats?.totalExpenses || 0;
+                  const isZero = exp === 0;
+                  const maxLabel = isZero ? '$0' : `$${(exp).toLocaleString('en-AU', { maximumFractionDigits: 0 })}`;
+                  const midLabel = isZero ? '$0' : `$${(exp/2).toLocaleString('en-AU', { maximumFractionDigits: 0 })}`;
+                  
+                  return (
+                    <>
+                      <div className="absolute top-1 right-12 z-10 bg-white border border-slate-200 rounded-xl p-2 shadow-lg flex flex-col items-center pointer-events-none">
+                        <span className="text-[9px] font-bold text-slate-500">Today</span>
+                        <span className="text-xs font-black text-slate-900">{`$${exp.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                        <div className="w-2 h-2 bg-white border-r border-b border-slate-200 rotate-45 -mb-3 mt-0.5"></div>
+                      </div>
 
-                <div className="flex-1 flex items-stretch">
-                  <div className="flex flex-col justify-between text-[8px] font-bold text-slate-400 pr-2 py-1 select-none shrink-0">
-                    <span>$400K</span>
-                    <span>$300K</span>
-                    <span>$200K</span>
-                    <span>$100K</span>
-                    <span>$0</span>
-                  </div>
+                      <div className="flex-1 flex items-stretch">
+                        <div className="flex flex-col justify-between text-[8px] font-bold text-slate-400 pr-2 py-1 select-none shrink-0">
+                          <span>{maxLabel}</span>
+                          <span>{midLabel}</span>
+                          <span>$0</span>
+                        </div>
 
-                  <div className="flex-1 relative overflow-visible">
-                    <svg viewBox="0 0 300 120" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-                      <defs>
-                        <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#EF4444" stopOpacity="0.18" />
-                          <stop offset="100%" stopColor="#EF4444" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-                      
-                      <line x1="0" y1="0" x2="300" y2="0" stroke="#f1f5f9" strokeDasharray="3 3" />
-                      <line x1="0" y1="30" x2="300" y2="30" stroke="#f1f5f9" strokeDasharray="3 3" />
-                      <line x1="0" y1="60" x2="300" y2="60" stroke="#f1f5f9" strokeDasharray="3 3" />
-                      <line x1="0" y1="90" x2="300" y2="90" stroke="#f1f5f9" strokeDasharray="3 3" />
-                      <line x1="0" y1="120" x2="300" y2="120" stroke="#e2e8f0" />
+                        <div className="flex-1 relative overflow-visible">
+                          <svg viewBox="0 0 300 120" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                            <defs>
+                              <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#EF4444" stopOpacity="0.18" />
+                                <stop offset="100%" stopColor="#EF4444" stopOpacity="0.0" />
+                              </linearGradient>
+                            </defs>
+                            
+                            <line x1="0" y1="0" x2="300" y2="0" stroke="#f1f5f9" strokeDasharray="3 3" />
+                            <line x1="0" y1="60" x2="300" y2="60" stroke="#f1f5f9" strokeDasharray="3 3" />
+                            <line x1="0" y1="120" x2="300" y2="120" stroke="#e2e8f0" />
 
-                      <path 
-                        d="M 0,75 L 20,62 L 40,52 L 60,56 L 80,48 L 100,58 L 120,48 L 140,40 L 160,32 L 180,42 L 200,38 L 220,45 L 240,55 L 260,48 L 280,46 L 300,40 L 300,120 L 0,120 Z" 
-                        fill="url(#expenseGrad)" 
-                      />
+                            {isZero ? (
+                              <path d="M 0,119 L 300,119" stroke="#EF4444" strokeWidth="2.5" />
+                            ) : (
+                              <>
+                                <path 
+                                  d="M 0,75 L 40,52 L 80,48 L 120,48 L 160,32 L 200,38 L 240,55 L 280,46 L 300,40 L 300,120 L 0,120 Z" 
+                                  fill="url(#expenseGrad)" 
+                                />
+                                <path 
+                                  d="M 0,75 L 40,52 L 80,48 L 120,48 L 160,32 L 200,38 L 240,55 L 280,46 L 300,40" 
+                                  fill="none" 
+                                  stroke="#EF4444" 
+                                  strokeWidth="2.5" 
+                                  strokeLinecap="round" 
+                                />
+                              </>
+                            )}
+                          </svg>
+                        </div>
+                      </div>
 
-                      <path 
-                        d="M 0,75 L 20,62 L 40,52 L 60,56 L 80,48 L 100,58 L 120,48 L 140,40 L 160,32 L 180,42 L 200,38 L 220,45 L 240,55 L 260,48 L 280,46 L 300,40" 
-                        fill="none" 
-                        stroke="#EF4444" 
-                        strokeWidth="2.5" 
-                        strokeLinecap="round" 
-                      />
-
-                      {[
-                        [0, 75], [20, 62], [40, 52], [60, 56], [80, 48], [100, 58],
-                        [120, 48], [140, 40], [160, 32], [180, 42], [200, 38], [220, 45],
-                        [240, 55], [260, 48], [280, 46], [300, 40]
-                      ].map(([cx, cy], i) => (
-                        <circle key={i} cx={cx} cy={cy} r="3" fill="#EF4444" stroke="#ffffff" strokeWidth="1.5" />
-                      ))}
-                    </svg>
-                  </div>
-                </div>
-
-                <div className="flex justify-between text-[8px] font-bold text-slate-400 pl-8 pt-1 border-t border-slate-100 mt-1">
-                  <span>1 May</span>
-                  <span>8 May</span>
-                  <span>15 May</span>
-                  <span>22 May</span>
-                  <span>29 May</span>
-                </div>
+                      <div className="flex justify-between text-[8px] font-bold text-slate-400 pl-8 pt-1 border-t border-slate-100 mt-1">
+                        <span>Week 1</span>
+                        <span>Week 2</span>
+                        <span>Week 3</span>
+                        <span>Week 4</span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
@@ -1016,37 +981,50 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               
               <div className="relative h-48 w-full flex flex-col justify-between pt-1">
-                <div className="absolute top-1 right-12 z-10 bg-white border border-slate-200 rounded-xl p-2 shadow-lg flex flex-col items-center pointer-events-none">
-                  <span className="text-[9px] font-bold text-slate-500">24 May</span>
-                  <span className="text-xs font-black text-slate-900">{financeStats ? `${(financeStats.netProfit || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
-                  <div className="w-2 h-2 bg-white border-r border-b border-slate-200 rotate-45 -mb-3 mt-0.5"></div>
-                </div>
+                {(() => {
+                  const net = financeStats?.netProfit || 0;
+                  const isZero = net === 0;
+                  const maxLabel = isZero ? '$0' : `$${(Math.abs(net)).toLocaleString('en-AU', { maximumFractionDigits: 0 })}`;
+                  const minLabel = isZero ? '$0' : `-$${(Math.abs(net)).toLocaleString('en-AU', { maximumFractionDigits: 0 })}`;
+                  
+                  return (
+                    <>
+                      <div className="absolute top-1 right-12 z-10 bg-white border border-slate-200 rounded-xl p-2 shadow-lg flex flex-col items-center pointer-events-none">
+                        <span className="text-[9px] font-bold text-slate-500">Today</span>
+                        <span className="text-xs font-black text-slate-900">{`${net < 0 ? '-' : ''}$${Math.abs(net).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                        <div className="w-2 h-2 bg-white border-r border-b border-slate-200 rotate-45 -mb-3 mt-0.5"></div>
+                      </div>
 
-                <div className="flex-1 flex items-stretch">
-                  <div className="flex flex-col justify-between text-[8px] font-bold text-slate-400 pr-2 py-1 select-none shrink-0">
-                    <span>$1.5M</span>
-                    <span>$1.0M</span>
-                    <span>$500K</span>
-                    <span>$0</span>
-                    <span>-$500K</span>
-                  </div>
+                      <div className="flex-1 flex items-stretch">
+                        <div className="flex flex-col justify-between text-[8px] font-bold text-slate-400 pr-2 py-1 select-none shrink-0">
+                          <span>{maxLabel}</span>
+                          <span>$0</span>
+                          <span>{minLabel}</span>
+                        </div>
 
-                  <div className="flex-1 relative flex items-end justify-between gap-1 pl-1 pb-1">
-                    <div className="absolute top-[52%] left-0 right-0 border-t border-rose-400 z-10 pointer-events-none"></div>
+                        <div className="flex-1 relative flex items-end justify-between gap-1 pl-1 pb-1">
+                          <div className="absolute top-[50%] left-0 right-0 border-t border-slate-300 z-10 pointer-events-none"></div>
 
-                    {[45, 28, 55, 32, 82, 44, 38, 68, 42, 52, 40, 48, 60, 44, 68, 65, 42, 45, 60, 55, 58].map((h, i) => (
-                      <div 
-                        key={i} 
-                        className="flex-1 bg-[#10B981] hover:bg-[#059669] rounded-t-xs transition-colors" 
-                        style={{ height: `${h}%` }}
-                      ></div>
-                    ))}
-                  </div>
-                </div>
+                          {isZero ? (
+                            <div className="w-full flex items-center justify-center text-[10px] text-slate-400 font-bold h-full">No Activity</div>
+                          ) : (
+                            [45, 28, 55, 32, 82, 44, 38, 68, 42, 52, 40, 48, 60, 44, 68, 65, 42, 45, 60, 55, 58].map((h, i) => (
+                              <div 
+                                key={i} 
+                                className={`flex-1 ${net > 0 ? 'bg-[#10B981] hover:bg-[#059669]' : 'bg-[#EF4444] hover:bg-[#DC2626]'} rounded-t-xs transition-colors`} 
+                                style={{ height: `${net > 0 ? h : 100 - h}%` }}
+                              ></div>
+                            ))
+                          )}
+                        </div>
+                      </div>
 
-                <div className="flex justify-center text-[8px] font-bold text-slate-400 pl-8 pt-1 border-t border-slate-100 mt-1">
-                  <span>May</span>
-                </div>
+                      <div className="flex justify-center text-[8px] font-bold text-slate-400 pl-8 pt-1 border-t border-slate-100 mt-1">
+                        <span>This Month</span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
@@ -1063,9 +1041,20 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
                   <svg viewBox="0 0 36 36" className="w-16 h-16 transform -rotate-90">
                     <circle cx="18" cy="18" r="14" fill="none" stroke="#E2E8F0" strokeWidth="4.5" />
-                    <circle cx="18" cy="18" r="14" fill="none" stroke="#10B981" strokeWidth="4.5" strokeDasharray="55.7 100" strokeDashoffset="0" />
-                    <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4.5" strokeDasharray="21.5 100" strokeDashoffset="-55.7" />
-                    <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4.5" strokeDasharray="100" strokeDashoffset="-77.2" />
+                    {(() => {
+                      const total = financeStats?.totalInvoices || 0;
+                      if (total === 0) return null;
+                      const paidPct = ((financeStats.paidCount || 0) / total) * 100;
+                      const outPct = ((financeStats.outstandingCount || 0) / total) * 100;
+                      const overPct = ((financeStats.overdueCount || 0) / total) * 100;
+                      return (
+                        <>
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#10B981" strokeWidth="4.5" strokeDasharray={`${paidPct} 100`} strokeDashoffset="0" />
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4.5" strokeDasharray={`${outPct} 100`} strokeDashoffset={`-${paidPct}`} />
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4.5" strokeDasharray={`${overPct} 100`} strokeDashoffset={`-${paidPct + outPct}`} />
+                        </>
+                      );
+                    })()}
                   </svg>
                   <div className="absolute flex flex-col items-center">
                     <span className="text-sm font-black text-slate-900 leading-none">{financeStats ? (financeStats.totalInvoices || 0) : 0}</span>
@@ -1189,11 +1178,23 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="relative w-32 h-32 flex items-center justify-center">
                     <svg viewBox="0 0 36 36" className="w-32 h-32 transform -rotate-90">
                       <circle cx="18" cy="18" r="14" fill="none" stroke="#E2E8F0" strokeWidth="4.5" />
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#8B5CF6" strokeWidth="4.5" strokeDasharray="38.4 100" />
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#14B8A6" strokeWidth="4.5" strokeDasharray="22 100" strokeDashoffset="-38.4" />
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4.5" strokeDasharray="16.6 100" strokeDashoffset="-60.4" />
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4.5" strokeDasharray="11.3 100" strokeDashoffset="-77" />
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4.5" strokeDasharray="11.7 100" strokeDashoffset="-88.3" />
+                      {(() => {
+                        const t = financeStats?.totalExpenses || 0;
+                        if (t === 0) return null;
+                        const b = financeStats?.breakdown || {};
+                        const pFuel = ((b.fuelExpensesTotal || 0) / t) * 100;
+                        const pStaff = ((b.driverPayrollTotal || 0) / t) * 100;
+                        const pWarehouse = ((b.billingTotal || 0) / t) * 100;
+                        const pOther = ((b.otherExpensesTotal || 0) / t) * 100;
+                        return (
+                          <>
+                            {pFuel > 0 && <circle cx="18" cy="18" r="14" fill="none" stroke="#8B5CF6" strokeWidth="4.5" strokeDasharray={`${pFuel} 100`} strokeDashoffset="0" />}
+                            {pStaff > 0 && <circle cx="18" cy="18" r="14" fill="none" stroke="#14B8A6" strokeWidth="4.5" strokeDasharray={`${pStaff} 100`} strokeDashoffset={`-${pFuel}`} />}
+                            {pWarehouse > 0 && <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4.5" strokeDasharray={`${pWarehouse} 100`} strokeDashoffset={`-${pFuel + pStaff}`} />}
+                            {pOther > 0 && <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4.5" strokeDasharray={`${pOther} 100`} strokeDashoffset={`-${pFuel + pStaff + pWarehouse}`} />}
+                          </>
+                        );
+                      })()}
                     </svg>
                     <div className="absolute flex flex-col items-center">
                       <span className="text-xs font-black text-slate-900 leading-none">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
@@ -1203,26 +1204,34 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 </div>
 
                 <div className="space-y-2.5 text-xs font-bold text-slate-700 pt-2 border-t border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-purple-600"></span> Fuel</span>
-                    <span>{financeStats && financeStats.totalExpenses > 0 ? `${((financeStats.totalExpenses * 0.384)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (38.4%)` : "$0.00 (0%)"}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-teal-500"></span> Staff</span>
-                    <span>{financeStats && financeStats.totalExpenses > 0 ? `${((financeStats.totalExpenses * 0.220)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (22.0%)` : "$0.00 (0%)"}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Maintenance</span>
-                    <span>{financeStats && financeStats.totalExpenses > 0 ? `${((financeStats.totalExpenses * 0.166)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (16.6%)` : "$0.00 (0%)"}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Warehouse</span>
-                    <span>{financeStats && financeStats.totalExpenses > 0 ? `${((financeStats.totalExpenses * 0.113)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (11.3%)` : "$0.00 (0%)"}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Other</span>
-                    <span>{financeStats && financeStats.totalExpenses > 0 ? `${((financeStats.totalExpenses * 0.117)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (11.7%)` : "$0.00 (0%)"}</span>
-                  </div>
+                  {(() => {
+                    const t = financeStats?.totalExpenses || 0;
+                    const b = financeStats?.breakdown || {};
+                    const fuel = b.fuelExpensesTotal || 0;
+                    const staff = b.driverPayrollTotal || 0;
+                    const warehouse = b.billingTotal || 0;
+                    const other = b.otherExpensesTotal || 0;
+                    return (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-purple-600"></span> Fuel</span>
+                          <span>{t > 0 ? `${fuel.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${((fuel/t)*100).toFixed(1)}%)` : "$0.00 (0%)"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-teal-500"></span> Staff</span>
+                          <span>{t > 0 ? `${staff.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${((staff/t)*100).toFixed(1)}%)` : "$0.00 (0%)"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Operations</span>
+                          <span>{t > 0 ? `${warehouse.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${((warehouse/t)*100).toFixed(1)}%)` : "$0.00 (0%)"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Other</span>
+                          <span>{t > 0 ? `${other.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${((other/t)*100).toFixed(1)}%)` : "$0.00 (0%)"}</span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -1241,7 +1250,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Building className="w-4 h-4" /></div>
                       <span className="text-xs font-bold text-slate-700">Cash in Bank</span>
                     </div>
-                    <span className="text-sm font-black text-slate-900">{financeStats ? `${((financeStats.totalRevenue || 0) - (financeStats.totalExpenses || 0)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
+                    <span className={`text-sm font-black ${financeStats && financeStats.netProfit < 0 ? 'text-rose-600' : 'text-slate-900'}`}>{financeStats ? `${financeStats.netProfit < 0 ? '-' : ''}$${Math.abs(financeStats.netProfit || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                   </div>
 
                   <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -1257,7 +1266,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="p-2 bg-rose-50 text-rose-600 rounded-lg"><FileText className="w-4 h-4" /></div>
                       <span className="text-xs font-bold text-slate-700">Accounts Payable</span>
                     </div>
-                    <span className="text-sm font-black text-slate-900">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
+                    <span className="text-sm font-black text-slate-900">{financeStats ? `$${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                   </div>
 
                   <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -1448,7 +1457,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer hover:border-slate-300"
               >
                 <option>All Branches</option>
-                <option>Sydney Head Office</option>
+                <option>Head Office</option>
                 <option>Melbourne Depot</option>
                 <option>Brisbane Hub</option>
               </select>
@@ -2327,7 +2336,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">PAYMENTS RECEIVED (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalRevenue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ Live API <span className="text-slate-400 font-normal">Database</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Payments Report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -2345,7 +2354,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">RECEIPTS ISSUED (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ Live API <span className="text-slate-400 font-normal">Database</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Receipts Report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -2363,7 +2372,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">OUTSTANDING RECEIVABLES</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalOutstanding || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5 font-bold">▼ 9.3% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Receivables Report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -2381,7 +2390,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">OVERDUE AMOUNT</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5 font-bold">▲ 14.1% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Overdue Amount Report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -2399,7 +2408,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">CASH IN BANK</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${((financeStats.totalRevenue || 0) - (financeStats.totalExpenses || 0)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 9.1% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Cash Flow Report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -2429,7 +2438,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer hover:border-slate-300"
               >
                 <option>All Branches</option>
-                <option>Sydney Head Office</option>
+                <option>Head Office</option>
                 <option>Melbourne Depot</option>
                 <option>Brisbane Hub</option>
               </select>
@@ -2785,66 +2794,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <button onClick={() => triggerToast('Opening Payment Methods detailed report')} className="text-[10px] font-bold text-indigo-600 hover:underline">View Report &rarr;</button>
                 </div>
 
-                <div className="flex flex-row items-center gap-4 py-2">
-                  {/* SVG Donut Chart */}
-                  <div className="relative w-28 h-28 shrink-0">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" strokeWidth="4" />
-                      {/* Bank Transfer (55.3%) -> Dasharray 55.3 44.7 */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#4f46e5" strokeWidth="4.2" strokeDasharray="55.3 44.7" strokeDashoffset="25" />
-                      {/* EFTPOS (21.9%) -> Dasharray 21.9 78.1 */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#06b6d4" strokeWidth="4.2" strokeDasharray="21.9 78.1" strokeDashoffset="-30.3" />
-                      {/* Credit Card (14.1%) -> Dasharray 14.1 85.9 */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#3b82f6" strokeWidth="4.2" strokeDasharray="14.1 85.9" strokeDashoffset="-52.2" />
-                      {/* Cash (5.6%) -> Dasharray 5.6 94.4 */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f59e0b" strokeWidth="4.2" strokeDasharray="5.6 94.4" strokeDashoffset="-66.3" />
-                      {/* Other (3.0%) -> Dasharray 3 97 */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#ec4899" strokeWidth="4.2" strokeDasharray="3 97" strokeDashoffset="-71.9" />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-[11px] font-black text-slate-800 leading-tight">{financeStats ? `${(financeStats.totalRevenue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
-                      <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Total</span>
-                    </div>
-                  </div>
-
-                  {/* Legend list */}
-                  <div className="flex-1 min-w-0 space-y-1.5 text-xs font-bold text-slate-700">
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-2 h-2 rounded-full bg-[#4f46e5] shrink-0" />
-                        <span className="truncate text-[11px]">Bank Transfer</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$324,560 (55.3%)</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-2 h-2 rounded-full bg-[#06b6d4] shrink-0" />
-                        <span className="truncate text-[11px]">EFTPOS</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$128,750 (21.9%)</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-2 h-2 rounded-full bg-[#3b82f6] shrink-0" />
-                        <span className="truncate text-[11px]">Credit Card</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$82,430 (14.1%)</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0" />
-                        <span className="truncate text-[11px]">Cash</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$32,980 (5.6%)</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-2 h-2 rounded-full bg-[#ec4899] shrink-0" />
-                        <span className="truncate text-[11px]">Other</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$17,500 (3.0%)</span>
-                    </div>
-                  </div>
+                <div className="flex flex-col items-center justify-center py-6 text-slate-400">
+                  <span className="text-[11px] font-bold">No payment methods to display.</span>
                 </div>
               </div>
 
@@ -2859,20 +2810,20 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>Current (0-30 days)</span>
-                      <span>{financeStats ? `${(financeStats.totalOutstanding || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (100%)` : "$0.00 (0%)"}</span>
+                      <span>$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: '71%' }} />
+                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: '0%' }} />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>31-60 days</span>
-                      <span>{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00 (0%)"}</span>
+                      <span>$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-amber-500 rounded-full" style={{ width: '15.1%' }} />
+                      <div className="h-full bg-amber-500 rounded-full" style={{ width: '0%' }} />
                     </div>
                   </div>
 
@@ -2882,7 +2833,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <span>$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-orange-400 rounded-full" style={{ width: '8.5%' }} />
+                      <div className="h-full bg-orange-400 rounded-full" style={{ width: '0%' }} />
                     </div>
                   </div>
 
@@ -2892,7 +2843,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <span>$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-red-500 rounded-full" style={{ width: '5.4%' }} />
+                      <div className="h-full bg-red-500 rounded-full" style={{ width: '0%' }} />
                     </div>
                   </div>
 
@@ -2911,64 +2862,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 </div>
 
                 <div className="space-y-3.5">
-                  <div className="flex items-start gap-2.5 text-xs font-bold text-slate-700">
-                    <div className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-slate-800 font-extrabold leading-snug">
-                        Payment <span className="font-mono font-black text-slate-900">PAY-2025-0567</span> of <span className="text-slate-900 font-black font-mono">$9,625.00</span> from All Star Motors
-                      </p>
-                      <span className="text-[10px] text-slate-400 font-normal">24 May 2025</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2.5 text-xs font-bold text-slate-700">
-                    <div className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-slate-800 font-extrabold leading-snug">
-                        Payment <span className="font-mono font-black text-slate-900">PAY-2025-0566</span> of <span className="text-slate-900 font-black font-mono">$2,860.00</span> from Sydney Car Sales
-                      </p>
-                      <span className="text-[10px] text-slate-400 font-normal">23 May 2025</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2.5 text-xs font-bold text-slate-700">
-                    <div className="w-4 h-4 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-slate-800 font-extrabold leading-snug">
-                        Receipt <span className="font-mono font-black text-slate-900">REC-2025-0125</span> of <span className="text-slate-900 font-black font-mono">$1,250.00</span> to ABC Wholesalers
-                      </p>
-                      <span className="text-[10px] text-slate-400 font-normal">24 May 2025</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2.5 text-xs font-bold text-slate-700">
-                    <div className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-slate-800 font-extrabold leading-snug">
-                        Payment <span className="font-mono font-black text-slate-900">PAY-2025-0565</span> of <span className="text-slate-900 font-black font-mono">$5,280.00</span> from Fast Freight Pty Ltd
-                      </p>
-                      <span className="text-[10px] text-slate-400 font-normal">22 May 2025</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2.5 text-xs font-bold text-slate-700">
-                    <div className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-slate-800 font-extrabold leading-snug">
-                        Payment <span className="font-mono font-black text-slate-900">PAY-2025-0564</span> of <span className="text-slate-900 font-black font-mono">$1,650.00</span> from Metro Group Sydney
-                      </p>
-                      <span className="text-[10px] text-slate-400 font-normal">22 May 2025</span>
-                    </div>
+                  <div className="flex flex-col items-center justify-center py-6 text-slate-400">
+                    <span className="text-[11px] font-bold">No recent payment activity.</span>
                   </div>
                 </div>
               </div>
@@ -3149,7 +3044,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL EXPENSES (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 8.59% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening MTD Expenses report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -3167,7 +3062,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">PENDING APPROVAL</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$0.00</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5 font-bold">▼ 12.41% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Pending approvals list')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View items &rarr;
@@ -3185,7 +3080,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">APPROVED (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 8.10% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); setViewMode('payroll'); }} className="text-[10px] font-bold text-indigo-600 group-hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -3203,7 +3098,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">REJECTED (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$0.00</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 4.21% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Rejected items breakdown')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View items &rarr;
@@ -3221,7 +3116,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">REIMBURSEMENTS PAID</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$0.00</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 9.31% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); setViewMode('payments_receipts'); }} className="text-[10px] font-bold text-indigo-600 group-hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -3251,7 +3146,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer hover:border-slate-300"
               >
                 <option>All Branches</option>
-                <option>Sydney Head Office</option>
+                <option>Head Office</option>
                 <option>Melbourne Depot</option>
                 <option>Brisbane Hub</option>
               </select>
@@ -3480,31 +3375,14 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
                   <div>
                     <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
-                      <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">RECENT UPLOADS (5)</h3>
+                      <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">RECENT UPLOADS</h3>
                       <button onClick={() => triggerToast('Viewing all uploads')} className="text-[10px] font-bold text-indigo-600 hover:underline">View all uploads &rarr;</button>
                     </div>
 
                     <div className="space-y-3.5">
-                      {[
-                        { name: 'Fuel_Receipt_001.pdf', size: '102 KB', date: '24 May 2025' },
-                        { name: 'Service_Invoice_001.pdf', size: '245 KB', date: '24 May 2025' },
-                        { name: 'Toll_Receipt_001.pdf', size: '98 KB', date: '23 May 2025' },
-                        { name: 'Tyre_Repair_001.pdf', size: '122 KB', date: '23 May 2025' },
-                        { name: 'Truck_Wash_001.pdf', size: '76 KB', date: '22 May 2025' }
-                      ].map((doc, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-xs font-bold text-slate-700 pb-2 border-b border-slate-50 last:border-0 last:pb-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] bg-slate-100 text-slate-400 p-1.5 rounded-lg">📄</span>
-                            <div>
-                              <p className="text-slate-800 font-extrabold truncate max-w-[150px]">{doc.name}</p>
-                              <span className="text-[10px] text-slate-400 font-normal">{doc.size} &bull; {doc.date}</span>
-                            </div>
-                          </div>
-                          <button onClick={() => triggerToast(`Downloading ${doc.name}`)} className="p-2 hover:bg-slate-50 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-800 transition-colors cursor-pointer">
-                            <Download className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
+                      <div className="flex flex-col items-center justify-center py-6 text-slate-400">
+                        <span className="text-[11px] font-bold">No recent uploads.</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -3521,10 +3399,10 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-[11px] font-bold text-slate-700">
                           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Approved</span>
-                          <span>{expensesList.length} <span className="text-slate-400 font-normal">(100%)</span></span>
+                          <span>0 <span className="text-slate-400 font-normal">(0%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: '50.0%' }} />
+                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: '0%' }} />
                         </div>
                       </div>
 
@@ -3534,7 +3412,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                           <span>0 <span className="text-slate-400 font-normal">(0%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-amber-500 rounded-full" style={{ width: '16.7%' }} />
+                          <div className="h-full bg-amber-500 rounded-full" style={{ width: '0%' }} />
                         </div>
                       </div>
 
@@ -3544,7 +3422,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                           <span>0 <span className="text-slate-400 font-normal">(0%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-rose-500 rounded-full" style={{ width: '2.8%' }} />
+                          <div className="h-full bg-rose-500 rounded-full" style={{ width: '0%' }} />
                         </div>
                       </div>
 
@@ -3554,13 +3432,13 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                           <span>0 <span className="text-slate-400 font-normal">(0%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: '30.5%' }} />
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: '0%' }} />
                         </div>
                       </div>
 
                       <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-slate-900 text-xs font-black">
                         <span>Total</span>
-                        <span className="text-slate-700 font-black">{expensesList.length}</span>
+                        <span className="text-slate-700 font-black">0</span>
                       </div>
                     </div>
                   </div>
@@ -3580,75 +3458,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <button onClick={() => triggerToast('Opening category breakdown detailed report')} className="text-[10px] font-bold text-indigo-600 hover:underline">View Report &rarr;</button>
                 </div>
 
-                <div className="flex flex-row items-center gap-4 py-2">
-                  {/* SVG Donut Chart */}
-                  <div className="relative w-28 h-28 shrink-0">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" strokeWidth="4" />
-                      {/* Fuel (38.4%) -> Dasharray 38.4 61.6 */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#8b5cf6" strokeWidth="4.2" strokeDasharray="38.4 61.6" strokeDashoffset="25" />
-                      {/* Maintenance (22.0%) -> Dasharray 22 78 */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#06b6d4" strokeWidth="4.2" strokeDasharray="22 78" strokeDashoffset="-13.4" />
-                      {/* Repairs (16.6%) -> Dasharray 16.6 83.4 */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#3b82f6" strokeWidth="4.2" strokeDasharray="16.6 83.4" strokeDashoffset="-35.4" />
-                      {/* Tolls (8.5%) -> Dasharray 8.5 91.5 */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f59e0b" strokeWidth="4.2" strokeDasharray="8.5 91.5" strokeDashoffset="-52" />
-                      {/* Accommodation (7.1%) -> Dasharray 7.1 92.9 */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#ec4899" strokeWidth="4.2" strokeDasharray="7.1 92.9" strokeDashoffset="-60.5" />
-                      {/* Other (7.2%) -> Dasharray 7.2 92.8 */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#94a3b8" strokeWidth="4.2" strokeDasharray="7.2 92.8" strokeDashoffset="-67.6" />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-[11px] font-black text-slate-800 leading-tight">$256,430</span>
-                      <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Total</span>
-                    </div>
-                  </div>
-
-                  {/* Legend list */}
-                  <div className="flex-1 min-w-0 space-y-1.5 text-xs font-bold text-slate-700">
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-2 h-2 rounded-full bg-[#8b5cf6] shrink-0" />
-                        <span className="truncate text-[11px]">Fuel</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$98,560 (38.4%)</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-2 h-2 rounded-full bg-[#06b6d4] shrink-0" />
-                        <span className="truncate text-[11px]">Maintenance</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$56,420 (22.0%)</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-2 h-2 rounded-full bg-[#3b82f6] shrink-0" />
-                        <span className="truncate text-[11px]">Repairs</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$42,670 (16.6%)</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0" />
-                        <span className="truncate text-[11px]">Tolls</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$21,850 (8.5%)</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-2 h-2 rounded-full bg-[#ec4899] shrink-0" />
-                        <span className="truncate text-[11px]">Accommodation</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$18,320 (7.1%)</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-2 h-2 rounded-full bg-[#94a3b8] shrink-0" />
-                        <span className="truncate text-[11px]">Other</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$18,610 (7.2%)</span>
-                    </div>
-                  </div>
+                <div className="flex flex-col items-center justify-center py-6 text-slate-400">
+                  <span className="text-[11px] font-bold">No category data to display.</span>
                 </div>
               </div>
 
@@ -3666,17 +3477,17 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <span className="font-mono text-slate-600">$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#8b5cf6] rounded-full" style={{ width: '53.9%' }} />
+                      <div className="h-full bg-[#8b5cf6] rounded-full" style={{ width: '0%' }} />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>Bank Transfer</span>
-                      <span className="font-mono text-slate-600">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (100%)` : "$0.00 (0%)"}</span>
+                      <span className="font-mono text-slate-600">$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#3b82f6] rounded-full" style={{ width: '29.2%' }} />
+                      <div className="h-full bg-[#3b82f6] rounded-full" style={{ width: '0%' }} />
                     </div>
                   </div>
 
@@ -3686,7 +3497,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <span className="font-mono text-slate-600">$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#10b981] rounded-full" style={{ width: '8.9%' }} />
+                      <div className="h-full bg-[#10b981] rounded-full" style={{ width: '0%' }} />
                     </div>
                   </div>
 
@@ -3696,7 +3507,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <span className="font-mono text-slate-600">$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#f59e0b] rounded-full" style={{ width: '7.9%' }} />
+                      <div className="h-full bg-[#f59e0b] rounded-full" style={{ width: '0%' }} />
                     </div>
                   </div>
                 </div>
@@ -3710,44 +3521,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 </div>
 
                 <div className="space-y-3.5 text-xs font-bold text-slate-700">
-                  <div className="flex justify-between items-center">
-                    <span>Fuel</span>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-slate-900">$98,560</span>
-                      <span className="text-[10px] font-bold text-emerald-600 font-bold">▲ 12.3%</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span>Maintenance</span>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-slate-900">$56,420</span>
-                      <span className="text-[10px] font-bold text-emerald-600 font-bold">▲ 6.7%</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span>Repairs</span>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-slate-900">$42,670</span>
-                      <span className="text-[10px] font-bold text-emerald-600 font-bold">▲ 3.4%</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span>Tolls</span>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-slate-900">$0.00</span>
-                      <span className="text-[10px] font-bold text-rose-500 font-bold">▼ 8.1%</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span>Accommodation</span>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-slate-900">$0.00</span>
-                      <span className="text-[10px] font-bold text-emerald-600 font-bold">▲ 2.9%</span>
-                    </div>
+                  <div className="flex flex-col items-center justify-center py-6 text-slate-400">
+                    <span className="text-[11px] font-bold">No top categories data.</span>
                   </div>
                 </div>
               </div>
@@ -4060,7 +3835,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL PAYROLL (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 8.35% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Payroll MTD Detailed Report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -4078,7 +3853,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">PENDING APPROVAL</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$0.00</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5 font-bold">▼ 12.41% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Pending approvals list')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View items &rarr;
@@ -4096,7 +3871,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">APPROVED (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 7.92% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Approved payroll runs ledger')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -4114,7 +3889,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">PAID (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 9.11% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); setViewMode('payments_receipts'); }} className="text-[10px] font-bold text-indigo-600 group-hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -4132,7 +3907,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">SUPER PAYABLE (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$0.00</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 6.23% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Super payable detailed ledger')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -4162,7 +3937,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer hover:border-slate-300"
               >
                 <option>All Branches</option>
-                <option>Sydney Head Office</option>
+                <option>Head Office</option>
                 <option>Melbourne Branch</option>
                 <option>Brisbane Branch</option>
               </select>
@@ -4391,27 +4166,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <button onClick={() => triggerToast('Viewing all payroll activity')} className="text-[10px] font-bold text-indigo-600 hover:underline">View All &rarr;</button>
                     </div>
 
-                    <div className="space-y-3.5">
-                      {[
-                        { title: 'Weekly Run - 26 May 2025 paid', value: '$58,420.00', date: '26 May 2025' },
-                        { title: 'Timesheets imported', value: '42 records', date: '25 May 2025' },
-                        { title: 'Fortnightly Run - 18 May 2025 approved', value: '$31,240.00', date: '18 May 2025' },
-                        { title: 'Payslips generated', value: '27 employees', date: '17 May 2025' },
-                        { title: 'Superannuation file generated', value: '$9,120.00', date: '16 May 2025' }
-                      ].map((activity, idx) => (
-                        <div key={idx} className="flex justify-between items-start text-xs font-bold text-slate-700 pb-2 border-b border-slate-50 last:border-0 last:pb-0">
-                          <div className="flex items-start gap-2.5">
-                            <div className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                              <Check className="w-2.5 h-2.5 stroke-[3]" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-slate-800 font-extrabold leading-snug">{activity.title}</p>
-                              <span className="text-[10px] text-slate-400 font-normal">{activity.date}</span>
-                            </div>
-                          </div>
-                          <span className="font-mono text-slate-900 font-black text-[11px] shrink-0">{activity.value}</span>
-                        </div>
-                      ))}
+                    <div className="text-[11px] font-bold text-slate-400 py-6 text-center">
+                      No recent activity
                     </div>
                   </div>
                 </div>
@@ -4424,66 +4180,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <button onClick={() => triggerToast('Opening pay types breakdown detailed report')} className="text-[10px] font-bold text-indigo-600 hover:underline">View Report &rarr;</button>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[11px] font-bold text-slate-700">
-                          <span>Driver Wages</span>
-                          <span>{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"} <span className="text-slate-400 font-normal">(100%)</span></span>
-                        </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-purple-500 rounded-full" style={{ width: '62.3%' }} />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[11px] font-bold text-slate-700">
-                          <span>Staff Salaries</span>
-                          <span>$0.00 <span className="text-slate-400 font-normal">(0%)</span></span>
-                        </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: '27.1%' }} />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[11px] font-bold text-slate-700">
-                          <span>Allowances</span>
-                          <span>$0.00 <span className="text-slate-400 font-normal">(0%)</span></span>
-                        </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: '5.2%' }} />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[11px] font-bold text-slate-700">
-                          <span>Deductions</span>
-                          <span>$0.00 <span className="text-slate-400 font-normal">(0%)</span></span>
-                        </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-orange-500 rounded-full" style={{ width: '1.5%' }} />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[11px] font-bold text-slate-700">
-                          <span>Overtime</span>
-                          <span>$0.00 <span className="text-slate-400 font-normal">(0%)</span></span>
-                        </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-rose-500 rounded-full" style={{ width: '2.1%' }} />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between text-[11px] font-bold text-slate-700">
-                          <span>Other</span>
-                          <span>$0.00 <span className="text-slate-400 font-normal">(0%)</span></span>
-                        </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-slate-400 rounded-full" style={{ width: '1.8%' }} />
-                        </div>
-                      </div>
+                    <div className="text-[11px] font-bold text-slate-400 py-6 text-center">
+                      No breakdown data
                     </div>
                   </div>
                 </div>
@@ -4502,50 +4200,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <button onClick={() => triggerToast('Opening summary detailed report')} className="text-[10px] font-bold text-indigo-600 hover:underline">View Report &rarr;</button>
                 </div>
 
-                {/* Donut Chart - centered */}
-                <div className="flex justify-center pt-1">
-                  <div className="relative w-32 h-32 shrink-0">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" strokeWidth="4" />
-                      {/* Driver Wages (62.3%) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#8b5cf6" strokeWidth="4.2" strokeDasharray="62.3 37.7" strokeDashoffset="25" />
-                      {/* Staff Salaries (27.1%) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#3b82f6" strokeWidth="4.2" strokeDasharray="27.1 72.9" strokeDashoffset="-37.3" />
-                      {/* Allowances (5.2%) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" strokeWidth="4.2" strokeDasharray="5.2 94.8" strokeDashoffset="-64.4" />
-                      {/* Superannuation (3.8%) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f59e0b" strokeWidth="4.2" strokeDasharray="3.8 96.2" strokeDashoffset="-69.6" />
-                      {/* Other Deductions (1.5%) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#ef4444" strokeWidth="4.2" strokeDasharray="1.5 98.5" strokeDashoffset="-73.4" />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-[11px] font-black text-slate-800 leading-tight">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
-                      <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Total</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Legend - clean rows */}
-                <div className="space-y-2">
-                  {[
-                    { color: 'bg-[#8b5cf6]', name: 'Driver Wages',     amount: '$148,200', pct: '62.3%' },
-                    { color: 'bg-[#3b82f6]', name: 'Staff Salaries',   amount: '$64,500',  pct: '27.1%' },
-                    { color: 'bg-[#10b981]', name: 'Allowances',       amount: '$12,340',  pct: '5.2%'  },
-                    { color: 'bg-[#f59e0b]', name: 'Superannuation',   amount: '$9,120',   pct: '3.8%'  },
-                    { color: 'bg-[#ef4444]', name: 'Other Deductions', amount: '$3,520',   pct: '1.5%'  },
-                    { color: 'bg-slate-400', name: 'Tax Payable',      amount: '$0.00',    pct: '0%'    },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={`w-2 h-2 rounded-full ${item.color} shrink-0`} />
-                        <span className="text-[11px] font-bold text-slate-700 truncate">{item.name}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[11px] font-black font-mono text-slate-900">{item.amount}</span>
-                        <span className="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5 whitespace-nowrap">{item.pct}</span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                  <span className="text-[11px] font-bold">No summary data</span>
                 </div>
               </div>
 
@@ -4556,46 +4212,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <button onClick={() => triggerToast('Opening Status detailed report')} className="text-[10px] font-bold text-indigo-600 hover:underline">View Report &rarr;</button>
                 </div>
 
-                <div className="space-y-4 text-xs font-bold text-slate-700">
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-[11px]">
-                      <span>Draft</span>
-                      <span className="font-mono text-slate-600">0 (0%)</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#8b5cf6] rounded-full" style={{ width: '8.3%' }} />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-[11px]">
-                      <span>Pending Approval</span>
-                      <span className="font-mono text-slate-600">0 (0%)</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#f59e0b] rounded-full" style={{ width: '5.6%' }} />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-[11px]">
-                      <span>Approved</span>
-                      <span className="font-mono text-slate-600">0 (0%)</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#10b981] rounded-full" style={{ width: '13.9%' }} />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-[11px]">
-                      <span>Paid</span>
-                      <span className="font-mono text-slate-600">{payrollList.length} (100%)</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full" style={{ width: '83.3%' }} />
-                    </div>
-                  </div>
+                <div className="text-[11px] font-bold text-slate-400 py-6 text-center">
+                  No status data
                 </div>
               </div>
 
@@ -4605,30 +4223,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">UPCOMING PAYROLL</h3>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="p-3 border border-slate-100 rounded-xl flex justify-between items-center text-xs font-bold bg-slate-50/50">
-                    <div>
-                      <p className="text-slate-800 font-extrabold">Weekly Run - 02 Jun 2025</p>
-                      <span className="text-[10px] text-slate-400 font-normal">Period: 26 May - 01 Jun 2025</span>
-                    </div>
-                    <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded text-[10px] font-black shrink-0">Due in 2 days</span>
-                  </div>
-
-                  <div className="p-3 border border-slate-100 rounded-xl flex justify-between items-center text-xs font-bold bg-slate-50/50">
-                    <div>
-                      <p className="text-slate-800 font-extrabold">Fortnightly Run - 01 Jun 2025</p>
-                      <span className="text-[10px] text-slate-400 font-normal">Period: 19 May - 01 Jun 2025</span>
-                    </div>
-                    <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded text-[10px] font-black shrink-0">Due in 6 days</span>
-                  </div>
-
-                  <div className="p-3 border border-slate-100 rounded-xl flex justify-between items-center text-xs font-bold bg-slate-50/50">
-                    <div>
-                      <p className="text-slate-800 font-extrabold">Salary Run - Jun 2025</p>
-                      <span className="text-[10px] text-slate-400 font-normal">Period: 01 Jun - 30 Jun 2025</span>
-                    </div>
-                    <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded text-[10px] font-black shrink-0">Due in 12 days</span>
-                  </div>
+                <div className="text-[11px] font-bold text-slate-400 py-6 text-center">
+                  No upcoming payrolls
                 </div>
               </div>
 
@@ -4783,7 +4379,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL RECEIVABLES (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${((financeStats.totalOutstanding || 0) + (financeStats.totalOverdue || 0)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 9.31% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Total Receivables report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -4801,7 +4397,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">OVERDUE AMOUNT</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5 font-bold">▲ 14.1% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Overdue Amount ledger')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -4819,7 +4415,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">OVERDUE INVOICES</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? (financeStats.overdueCount || 0) : 0}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5 font-bold">▲ 4 <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Overdue Invoices list')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -4837,7 +4433,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">CURRENT RECEIVABLES</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalOutstanding || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 7.42% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Current Receivables report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -4853,9 +4449,9 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">AVG DAYS TO PAY</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">14 Days</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">0 Days</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▼ 3 Days <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Days to Pay Analytics')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -4885,7 +4481,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
                 <option>All Branches</option>
-                <option>Sydney Head Office</option>
+                <option>Head Office</option>
                 <option>Melbourne Branch</option>
                 <option>Brisbane Branch</option>
               </select>
@@ -4992,120 +4588,9 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
-                  {/* Left: Donut SVG Chart */}
-                  <div className="sm:col-span-6 flex flex-col sm:flex-row items-center gap-4">
-                    <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
-                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                        <path
-                          className="text-emerald-500"
-                          strokeWidth="4"
-                          strokeDasharray="71, 100"
-                          stroke="currentColor"
-                          fill="none"
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        />
-                        <path
-                          className="text-amber-500"
-                          strokeWidth="4"
-                          strokeDasharray="15.1, 100"
-                          strokeDashoffset="-71"
-                          stroke="currentColor"
-                          fill="none"
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        />
-                        <path
-                          className="text-rose-500"
-                          strokeWidth="4"
-                          strokeDasharray="8.5, 100"
-                          strokeDashoffset="-86.1"
-                          stroke="currentColor"
-                          fill="none"
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        />
-                        <path
-                          className="text-purple-600"
-                          strokeWidth="4"
-                          strokeDasharray="5.4, 100"
-                          strokeDashoffset="-94.6"
-                          stroke="currentColor"
-                          fill="none"
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <span className="text-[13px] font-black text-slate-900 tracking-tight">{financeStats ? `${((financeStats.totalOutstanding || 0) + (financeStats.totalOverdue || 0)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
-                        <span className="text-[9px] font-bold text-slate-400">Total</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5 text-xs font-bold">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-                        <span className="text-slate-600">Current (0-30 days)</span>
-                        <span className="text-slate-900 font-mono ml-auto">{financeStats ? `${(financeStats.totalOutstanding || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (100%)` : "$0.00 (0%)"}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-                        <span className="text-slate-600">31-60 days</span>
-                        <span className="text-slate-900 font-mono ml-auto">{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00 (0%)"}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
-                        <span className="text-slate-600">61-90 days</span>
-                        <span className="text-slate-900 font-mono ml-auto">$0.00 (0%)</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-purple-600 shrink-0" />
-                        <span className="text-slate-600">90+ days</span>
-                        <span className="text-slate-900 font-mono ml-auto">$0.00 (0%)</span>
-                      </div>
-                    </div>
+                  <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <span className="text-[11px] font-bold">No aged receivables data</span>
                   </div>
-
-                  {/* Right: Horizontal Progress Bars */}
-                  <div className="sm:col-span-6 space-y-3 border-t sm:border-t-0 sm:border-l border-slate-100 pt-4 sm:pt-0 sm:pl-6 text-xs font-bold">
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-slate-600">Current (0-30 days)</span>
-                        <span className="font-mono text-slate-800">$105,140</span>
-                      </div>
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '71%' }} />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-slate-600">31-60 days</span>
-                        <span className="font-mono text-slate-800">$22,350</span>
-                      </div>
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-500 rounded-full" style={{ width: '15.1%' }} />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-slate-600">61-90 days</span>
-                        <span className="font-mono text-slate-800">$12,600</span>
-                      </div>
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-rose-500 rounded-full" style={{ width: '8.5%' }} />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-slate-600">90+ days</span>
-                        <span className="font-mono text-slate-800">$7,800</span>
-                      </div>
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-purple-600 rounded-full" style={{ width: '5.4%' }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* OVERDUE INVOICES TABLE CARD */}
@@ -5238,19 +4723,9 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700">
-                      {[
-                        { customer: 'General Customer', amount: '$0.00', percentage: '0%' },
-                        { customer: 'Fast Freight Pty Ltd', amount: '$18,920.00', percentage: '12.8%' },
-                        { customer: 'Metro Group Sydney', amount: '$14,780.00', percentage: '10.0%' },
-                        { customer: 'ABC Wholesalers', amount: '$12,540.00', percentage: '8.5%' },
-                        { customer: 'Prime Car Carriers', amount: '$9,860.00', percentage: '6.7%' },
-                      ].map((row, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/50">
-                          <td className="py-2.5 text-slate-900 font-extrabold">{row.customer}</td>
-                          <td className="py-2.5 font-mono">{row.amount}</td>
-                          <td className="py-2.5 text-right font-mono text-slate-500">{row.percentage}</td>
-                        </tr>
-                      ))}
+                      <tr>
+                        <td colSpan="3" className="py-6 text-center text-[11px] font-bold text-slate-400">No debtors data</td>
+                      </tr>
                       <tr className="bg-slate-50/80 font-black text-slate-900 border-t-2 border-slate-200">
                         <td className="py-2.5">Total Top Debtors</td>
                         <td className="py-2.5 font-mono">$0.00</td>
@@ -5270,22 +4745,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   </button>
                 </div>
 
-                <div className="space-y-3 text-xs font-bold text-slate-700">
-                  {[
-                    { ref: 'Payment PAY-2025-0567 of $9,625.00 from All Star Motors', date: '24 May 2025' },
-                    { ref: 'Payment PAY-2025-0566 of $2,860.00 from Sydney Car Sales', date: '23 May 2025' },
-                    { ref: 'Payment PAY-2025-0565 of $5,280.00 from Fast Freight Pty Ltd', date: '22 May 2025' },
-                    { ref: 'Payment PAY-2025-0564 of $1,650.00 from Metro Group Sydney', date: '22 May 2025' },
-                    { ref: 'Payment PAY-2025-0563 of $3,960.00 from Blue Line Logistics', date: '21 May 2025' },
-                  ].map((act, idx) => (
-                    <div key={idx} className="flex items-center justify-between pb-2 border-b border-slate-50 last:border-0 last:pb-0">
-                      <div className="flex items-center gap-2 min-w-0 pr-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span className="truncate text-slate-800 text-[11px] font-semibold">{act.ref}</span>
-                      </div>
-                      <span className="text-slate-400 font-mono text-[10px] shrink-0">{act.date}</span>
-                    </div>
-                  ))}
+                <div className="text-[11px] font-bold text-slate-400 py-4 text-center">
+                  No recent activity
                 </div>
               </div>
 
@@ -5298,47 +4759,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   </button>
                 </div>
 
-                <div className="space-y-3 text-xs font-bold text-slate-700">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-                      <span>Invoices &gt; 90 days</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-slate-600 font-mono">7</span>
-                      <span className="font-mono text-slate-900">$7,800.00</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                      <span>Invoices 61-90 days</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-slate-600 font-mono">5</span>
-                      <span className="font-mono text-slate-900">$12,600.00</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-                      <span>Invoices 31-60 days</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-slate-600 font-mono">8</span>
-                      <span className="font-mono text-slate-900">{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-slate-100 pt-2 flex items-center justify-between text-rose-600 font-black">
-                    <span>Total Overdue</span>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono">24</span>
-                      <span className="font-mono text-sm">{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
-                    </div>
-                  </div>
+                <div className="text-[11px] font-bold text-slate-400 py-4 text-center">
+                  No overdue snapshot
                 </div>
               </div>
 
@@ -5495,7 +4917,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">NET PROFIT (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.netProfit || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 11.2% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Net Profit report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -5513,7 +4935,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL REVENUE (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalRevenue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 12.3% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Revenue breakdown')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -5531,7 +4953,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL EXPENSES (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 8.5% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Expenses breakdown')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -5549,7 +4971,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">GROSS PROFIT (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.netProfit || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 13.7% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Gross Profit ledger')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -5567,7 +4989,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">NET PROFIT MARGIN (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats && financeStats.totalRevenue > 0 ? `${((financeStats.netProfit / financeStats.totalRevenue)*100).toFixed(1)}%` : "0%"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 2.4% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Opening Profit Margin Analytics')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -5597,7 +5019,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
                 <option>All Branches</option>
-                <option>Sydney Head Office</option>
+                <option>Head Office</option>
                 <option>Melbourne Branch</option>
                 <option>Brisbane Branch</option>
               </select>
@@ -5746,54 +5168,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                     <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-emerald-500" /> Net Profit</span>
                   </div>
 
-                  <div className="relative h-44 w-full pt-4">
-                    <svg className="w-full h-full" viewBox="0 0 280 120" preserveAspectRatio="none">
-                      {/* Grid Lines */}
-                      <line x1="0" y1="20" x2="280" y2="20" stroke="#f1f5f9" strokeWidth="1" />
-                      <line x1="0" y1="50" x2="280" y2="50" stroke="#f1f5f9" strokeWidth="1" />
-                      <line x1="0" y1="80" x2="280" y2="80" stroke="#f1f5f9" strokeWidth="1" />
-                      
-                      {/* Bars Pair 1 */}
-                      <rect x="25" y="30" width="10" height="50" fill="#6366f1" rx="2" />
-                      <rect x="37" y="65" width="10" height="15" fill="#f43f5e" rx="2" />
-                      
-                      {/* Bars Pair 2 */}
-                      <rect x="75" y="20" width="10" height="60" fill="#6366f1" rx="2" />
-                      <rect x="87" y="60" width="10" height="20" fill="#f43f5e" rx="2" />
-
-                      {/* Bars Pair 3 */}
-                      <rect x="125" y="15" width="10" height="65" fill="#6366f1" rx="2" />
-                      <rect x="137" y="62" width="10" height="18" fill="#f43f5e" rx="2" />
-
-                      {/* Bars Pair 4 */}
-                      <rect x="175" y="25" width="10" height="55" fill="#6366f1" rx="2" />
-                      <rect x="187" y="58" width="10" height="22" fill="#f43f5e" rx="2" />
-
-                      {/* Bars Pair 5 */}
-                      <rect x="225" y="35" width="10" height="45" fill="#6366f1" rx="2" />
-                      <rect x="237" y="68" width="10" height="12" fill="#f43f5e" rx="2" />
-
-                      {/* Net Profit Overlay Line */}
-                      <path
-                        d="M 31 42 Q 81 32, 131 28 T 231 46"
-                        fill="none"
-                        stroke="#10b981"
-                        strokeWidth="2.5"
-                      />
-                      <circle cx="31" cy="42" r="3" fill="#10b981" />
-                      <circle cx="81" cy="32" r="3" fill="#10b981" />
-                      <circle cx="131" cy="28" r="3" fill="#10b981" />
-                      <circle cx="181" cy="38" r="3" fill="#10b981" />
-                      <circle cx="231" cy="46" r="3" fill="#10b981" />
-                    </svg>
-
-                    <div className="flex justify-between text-[9px] font-bold text-slate-400 pt-1">
-                      <span>1 May</span>
-                      <span>8 May</span>
-                      <span>15 May</span>
-                      <span>22 May</span>
-                      <span>29 May</span>
-                    </div>
+                  <div className="relative h-44 w-full pt-4 flex flex-col items-center justify-center text-slate-400">
+                    <span className="text-[11px] font-bold">No summary data to display.</span>
                   </div>
                 </div>
               </div>
@@ -5808,52 +5184,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 </button>
               </div>
 
-              <div className="relative h-56 w-full pt-4">
-                <svg className="w-full h-full" viewBox="0 0 240 130" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#818cf8" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  
-                  {/* Area fill */}
-                  <path
-                    d="M 15 65 Q 55 50, 95 30 T 175 45 T 225 15 L 225 110 L 15 110 Z"
-                    fill="url(#profitGrad)"
-                  />
-                  
-                  {/* Smooth Line */}
-                  <path
-                    d="M 15 65 Q 55 50, 95 30 T 175 45 T 225 15"
-                    fill="none"
-                    stroke="#6366f1"
-                    strokeWidth="3"
-                  />
-                  
-                  {/* Nodes */}
-                  <circle cx="15" cy="65" r="3.5" fill="#6366f1" stroke="#ffffff" strokeWidth="2" />
-                  <circle cx="55" cy="50" r="3.5" fill="#6366f1" stroke="#ffffff" strokeWidth="2" />
-                  <circle cx="95" cy="30" r="3.5" fill="#6366f1" stroke="#ffffff" strokeWidth="2" />
-                  <circle cx="135" cy="55" r="3.5" fill="#6366f1" stroke="#ffffff" strokeWidth="2" />
-                  <circle cx="175" cy="45" r="3.5" fill="#6366f1" stroke="#ffffff" strokeWidth="2" />
-                  <circle cx="225" cy="15" r="4" fill="#4f46e5" stroke="#ffffff" strokeWidth="2" />
-                </svg>
-
-                {/* Callout box on latest node */}
-                <div className="absolute top-1 right-2 bg-white border border-slate-200 rounded-xl px-2.5 py-1 shadow-md text-[10px] font-bold text-slate-800">
-                  <span className="text-slate-400 block text-[8px] uppercase">May 2025</span>
-                  <span className="font-mono text-indigo-600 font-extrabold">$586,220</span>
-                </div>
-
-                <div className="flex justify-between text-[9px] font-bold text-slate-400 pt-2 border-t border-slate-100">
-                  <span>Dec 24</span>
-                  <span>Jan 25</span>
-                  <span>Feb 25</span>
-                  <span>Mar 25</span>
-                  <span>Apr 25</span>
-                  <span>May 25</span>
-                </div>
+              <div className="relative h-56 w-full pt-4 flex flex-col items-center justify-center text-slate-400">
+                <span className="text-[11px] font-bold">No trend data to display.</span>
               </div>
             </div>
 
@@ -5885,30 +5217,17 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {[
-                      { cat: 'Freight Income', rev: '$612,340', revP: '72.7%', exp: '$145,210', expP: '56.7%', net: '$467,130', margin: '76.3%' },
-                      { cat: 'Fuel Surcharge', rev: '$86,750', revP: '%', exp: '$12,860', expP: '5.0%', net: '$73,890', margin: '85.2%' },
-                      { cat: 'Storage Income', rev: '$42,560', revP: '5.1%', exp: '$8,320', expP: '3.2%', net: '$34,240', margin: '80.5%' },
-                      { cat: 'Other Income', rev: '$101,000', revP: '12.0%', exp: '$29,050', expP: '11.3%', net: '$71,950', margin: '71.2%' },
-                    ].map((row, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 pr-3 text-slate-900 font-extrabold text-xs whitespace-nowrap">{row.cat}</td>
-                        <td className="py-3 px-2 text-right font-mono text-slate-800 text-[11px] whitespace-nowrap">{row.rev}</td>
-                        <td className="py-3 px-2 text-right font-mono text-slate-400 text-[10px] whitespace-nowrap">{row.revP}</td>
-                        <td className="py-3 px-2 text-right font-mono text-slate-800 text-[11px] whitespace-nowrap">{row.exp}</td>
-                        <td className="py-3 px-2 text-right font-mono text-slate-400 text-[10px] whitespace-nowrap">{row.expP}</td>
-                        <td className="py-3 px-2 text-right font-mono font-black text-slate-900 text-[11px] whitespace-nowrap">{row.net}</td>
-                        <td className="py-3 pl-2 text-right font-mono font-extrabold text-emerald-600 text-[11px] whitespace-nowrap">{row.margin}</td>
-                      </tr>
-                    ))}
+                    <tr>
+                      <td colSpan="7" className="py-6 text-center text-[11px] font-bold text-slate-400">No category data to display.</td>
+                    </tr>
                     <tr className="bg-slate-50/90 font-black text-slate-900 border-t-2 border-slate-200 text-xs">
                       <td className="py-3 pr-3 whitespace-nowrap">Total</td>
-                      <td className="py-3 px-2 text-right font-mono whitespace-nowrap">$842,650</td>
-                      <td className="py-3 px-2 text-right font-mono text-slate-500 text-[10px] whitespace-nowrap">100%</td>
-                      <td className="py-3 px-2 text-right font-mono whitespace-nowrap">$195,440</td>
-                      <td className="py-3 px-2 text-right font-mono text-slate-500 text-[10px] whitespace-nowrap">100%</td>
-                      <td className="py-3 px-2 text-right font-mono font-black text-indigo-700 whitespace-nowrap">$647,210</td>
-                      <td className="py-3 pl-2 text-right font-mono font-black text-emerald-600 whitespace-nowrap">76.7%</td>
+                      <td className="py-3 px-2 text-right font-mono whitespace-nowrap">$0.00</td>
+                      <td className="py-3 px-2 text-right font-mono text-slate-500 text-[10px] whitespace-nowrap">0%</td>
+                      <td className="py-3 px-2 text-right font-mono whitespace-nowrap">$0.00</td>
+                      <td className="py-3 px-2 text-right font-mono text-slate-500 text-[10px] whitespace-nowrap">0%</td>
+                      <td className="py-3 px-2 text-right font-mono font-black text-indigo-700 whitespace-nowrap">$0.00</td>
+                      <td className="py-3 pl-2 text-right font-mono font-black text-emerald-600 whitespace-nowrap">0%</td>
                     </tr>
                   </tbody>
                 </table>
@@ -5923,83 +5242,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   View Report &rarr;
                 </button>
               </div>
-
-              {/* Donut Chart - centered */}
-              <div className="flex justify-center pt-1">
-                <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                    <path
-                      className="text-indigo-600"
-                      strokeWidth="4"
-                      strokeDasharray="42.3, 100"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                      className="text-blue-500"
-                      strokeWidth="4"
-                      strokeDasharray="22.0, 100"
-                      strokeDashoffset="-42.3"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                      className="text-emerald-500"
-                      strokeWidth="4"
-                      strokeDasharray="12.7, 100"
-                      strokeDashoffset="-64.3"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                      className="text-amber-500"
-                      strokeWidth="4"
-                      strokeDasharray="8.5, 100"
-                      strokeDashoffset="-77.0"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                      className="text-rose-500"
-                      strokeWidth="4"
-                      strokeDasharray="14.5, 100"
-                      strokeDashoffset="-85.5"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                    <span className="text-[13px] font-black text-slate-900 tracking-tight">$256,430</span>
-                    <span className="text-[9px] font-bold text-slate-400">Total</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Legend - clean rows */}
-              <div className="space-y-2 pt-1">
-                {[
-                  { color: 'bg-indigo-600', name: 'Driver Wages', amount: '$108,650', pct: '42.3%' },
-                  { color: 'bg-blue-500',   name: 'Fuel',         amount: '$56,420',  pct: '22.0%' },
-                  { color: 'bg-emerald-500',name: 'Maintenance',  amount: '$32,670',  pct: '12.7%' },
-                  { color: 'bg-amber-500',  name: 'Repairs',      amount: '$21,850',  pct: '8.5%'  },
-                  { color: 'bg-rose-500',   name: 'Other Expenses',amount: '$36,840', pct: '14.5%' },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className={`w-2.5 h-2.5 rounded-full ${item.color} shrink-0`} />
-                      <span className="text-[11px] font-bold text-slate-700 truncate">{item.name}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[11px] font-black font-mono text-slate-900">{item.amount}</span>
-                      <span className="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5 whitespace-nowrap">{item.pct}</span>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                <span className="text-[11px] font-bold">No breakdown data to display.</span>
               </div>
             </div>
 
@@ -6200,9 +5444,9 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">LAST EXPORT</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">24 May 2025</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">None</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-500">10:32 AM AEST</span>
+                  <span className="text-[10px] font-bold text-slate-500">—</span>
                 </div>
                 <button onClick={() => setShowExportHistoryModal(true)} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View history &rarr;
@@ -6220,7 +5464,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">SUCCESSFUL EXPORTS (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">0</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">▲ 16.7% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Viewing successful exports report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -6238,7 +5482,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">SCHEDULED EXPORTS</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">0</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-500">Next: 25 May 2025</span>
+                  <span className="text-[10px] font-bold text-slate-500">None scheduled</span>
                 </div>
                 <button onClick={() => triggerToast('Viewing schedules')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View schedules &rarr;
@@ -6254,9 +5498,9 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">INTEGRATIONS ACTIVE</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">2</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">0</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-500">Xero, MYOB</span>
+                  <span className="text-[10px] font-bold text-slate-500">None connected</span>
                 </div>
                 <button onClick={() => triggerToast('Managing integrations')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   Manage integrations &rarr;
@@ -6274,7 +5518,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">EXPORT ISSUES (MTD)</span>
                 <div className="text-xl font-black text-slate-900 tracking-tight mb-1">0</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">▼ 50% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-slate-400">—</span>
                 </div>
                 <button onClick={() => triggerToast('Viewing export issues log')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View issues &rarr;
@@ -6506,7 +5750,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                     <div className="flex items-center gap-1.5">
                       <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">EXPORT TYPES</h3>
-                      <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-1.5 py-0.5 rounded-full">8</span>
+                      <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-1.5 py-0.5 rounded-full">0</span>
                     </div>
                     <button onClick={() => triggerToast('Viewing all export types')} className="text-indigo-600 hover:text-indigo-800 text-[11px] font-bold flex items-center gap-0.5 cursor-pointer">
                       View All &rarr;
@@ -6514,27 +5758,10 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   </div>
 
                   <div className="space-y-1.5 text-xs font-bold text-slate-700">
-                    {[
-                      { name: 'P&L Statement', desc: 'Detailed profit and loss statement', count: '12' },
-                      { name: 'Balance Sheet', desc: 'Company balance sheet', count: '12' },
-                      { name: 'General Ledger', desc: 'Complete general ledger export', count: '24' },
-                      { name: 'Accounts Receivable', desc: 'Customer receivables aging', count: '12' },
-                      { name: 'Accounts Payable', desc: 'Supplier payables aging', count: '12' },
-                      { name: 'Bank Reconciliation', desc: 'Bank transactions and reconciliation', count: '8' },
-                      { name: 'Tax Summary', desc: 'GST/BAS and tax summary', count: '6' },
-                      { name: 'Cash Flow Statement', desc: 'Cash flow statement', count: '6' },
-                    ].map((item, idx) => (
-                      <div key={idx} className="p-2 hover:bg-slate-50 rounded-xl flex items-center justify-between transition-colors">
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                          <div>
-                            <span className="text-slate-900 block text-[11px] leading-tight">{item.name}</span>
-                            <span className="text-[9px] text-slate-400 font-normal">{item.desc}</span>
-                          </div>
-                        </div>
-                        <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-2 py-0.5 rounded-full">{item.count}</span>
-                      </div>
-                    ))}
+                    <div className="text-center py-6 text-slate-400 flex flex-col items-center">
+                      <FileText className="w-8 h-8 text-slate-200 mb-2" />
+                      <p className="text-[10px] font-bold">No export types defined.</p>
+                    </div>
                   </div>
                 </div>
 
@@ -6548,28 +5775,11 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   </div>
 
                   <div className="space-y-2 text-xs font-bold text-slate-700">
-                    {[
-                      { text: 'May 2025 - Profit & Loss exported successfully', time: '24 May 2025 10:32 AM', success: true },
-                      { text: 'May 2025 - Balance Sheet exported successfully', time: '24 May 2025 10:32 AM', success: true },
-                      { text: 'May 2025 - General Ledger exported successfully', time: '24 May 2025 10:32 AM', success: true },
-                      { text: 'May 2025 - Accounts Receivable exported successfully', time: '23 May 2025 04:15 PM', success: true },
-                      { text: 'May 2025 - Accounts Payable exported successfully', time: '23 May 2025 04:14 PM', success: true },
-                      { text: 'May 2025 - Tax Summary export failed', time: '20 May 2025 11:05 AM', success: false },
-                      { text: 'May 2025 - Cash Flow exported successfully', time: '19 May 2025 03:40 PM', success: true },
-                      { text: 'Apr - May 2025 - Bank Reconciliation exported successfully', time: '22 May 2025 09:20 AM', success: true },
-                    ].map((act, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-[10px]">
-                        {act.success ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                        ) : (
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <span className="text-slate-800 font-extrabold block leading-tight truncate">{act.text}</span>
-                          <span className="text-[8px] text-slate-400 font-normal">{act.time}</span>
-                        </div>
-                      </div>
-                    ))}
+                    {/* Empty State */}
+                    <div className="text-center py-6 text-slate-400 flex flex-col items-center">
+                      <FileText className="w-8 h-8 text-slate-200 mb-2" />
+                      <p className="text-[10px] font-bold">No recent export activity.</p>
+                    </div>
                   </div>
                 </div>
 
@@ -6589,44 +5799,9 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   </button>
                 </div>
 
-                {/* Xero Card */}
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-cyan-500 text-white font-black text-xs flex items-center justify-center shadow-xs">
-                        xero
-                      </div>
-                      <div>
-                        <span className="font-extrabold text-slate-900 text-xs block">Xero</span>
-                        <span className="text-[9px] text-slate-400">Organisation: Hero Logistics Pty Ltd</span>
-                      </div>
-                    </div>
-                    <span className="bg-emerald-100 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded-full">Connected</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[9px]">
-                    <span className="text-slate-400">Last Sync: 24 May 2025 10:15 AM</span>
-                    <button onClick={() => triggerToast('Syncing with Xero...')} className="text-indigo-600 font-extrabold hover:underline">Sync Now &rarr;</button>
-                  </div>
-                </div>
-
-                {/* MYOB Card */}
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-purple-600 text-white font-black text-[9px] flex items-center justify-center shadow-xs">
-                        myob
-                      </div>
-                      <div>
-                        <span className="font-extrabold text-slate-900 text-xs block">MYOB AccountRight</span>
-                        <span className="text-[9px] text-slate-400">File: Hero Logistics Data File</span>
-                      </div>
-                    </div>
-                    <span className="bg-emerald-100 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded-full">Connected</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[9px]">
-                    <span className="text-slate-400">Last Sync: 23 May 2025 04:45 PM</span>
-                    <button onClick={() => triggerToast('Syncing with MYOB...')} className="text-indigo-600 font-extrabold hover:underline">Sync Now &rarr;</button>
-                  </div>
+                <div className="text-center py-6 text-slate-400 flex flex-col items-center">
+                  <Cloud className="w-8 h-8 text-slate-200 mb-2" />
+                  <p className="text-[10px] font-bold">No integrations configured.</p>
                 </div>
               </div>
 
@@ -6635,7 +5810,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-1.5">
                     <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">EXPORT SCHEDULES</h3>
-                    <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-1.5 py-0.5 rounded-full">3</span>
+                    <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-1.5 py-0.5 rounded-full">0</span>
                   </div>
                   <button onClick={() => triggerToast('Viewing all schedules')} className="text-indigo-600 hover:text-indigo-800 text-xs font-extrabold flex items-center gap-1 cursor-pointer">
                     View All &rarr;
@@ -6653,22 +5828,11 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {[
-                        { name: 'Monthly Financial Reports', freq: 'Monthly', next: '25 May 2025', status: 'Active' },
-                        { name: 'Weekly AR & AP Export', freq: 'Weekly', next: '26 May 2025', status: 'Active' },
-                        { name: 'Daily Bank Transactions', freq: 'Daily', next: '25 May 2025', status: 'Active' },
-                      ].map((sch, idx) => (
-                        <tr key={idx}>
-                          <td className="py-2 text-slate-900 font-extrabold text-[10px]">{sch.name}</td>
-                          <td className="py-2 text-slate-500 text-[9px]">{sch.freq}</td>
-                          <td className="py-2 text-slate-500 text-[9px]">{sch.next}</td>
-                          <td className="py-2 text-right">
-                            <span className="bg-emerald-100 text-emerald-700 text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">
-                              {sch.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      <tr>
+                        <td colSpan="4" className="py-6 text-center text-[10px] text-slate-400 font-bold">
+                          No schedules defined
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -6683,27 +5847,11 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-                  {[
-                    { title: 'Profit & Loss', fmt: 'PDF' },
-                    { title: 'Balance Sheet', fmt: 'PDF' },
-                    { title: 'General Ledger', fmt: 'CSV / XLSX' },
-                    { title: 'Trial Balance', fmt: 'CSV / XLSX' },
-                    { title: 'Accounts Receivable', fmt: 'CSV / XLSX' },
-                    { title: 'Accounts Payable', fmt: 'CSV / XLSX' },
-                    { title: 'Bank Reconciliation', fmt: 'CSV / OFX' },
-                    { title: 'Tax Summary', fmt: 'PDF' },
-                  ].map((tile, idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => triggerToast(`Downloading ${tile.title} (${tile.fmt})...`)}
-                      className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl cursor-pointer transition-colors flex flex-col justify-between"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-indigo-600 mb-1" />
-                      <span className="text-[10px] font-extrabold text-slate-900 leading-tight block">{tile.title}</span>
-                      <span className="text-[8px] text-slate-400 block mt-0.5">{tile.fmt}</span>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 gap-2 text-xs font-bold">
+                  <div className="text-center py-6 text-slate-400 flex flex-col items-center">
+                    <FileText className="w-8 h-8 text-slate-200 mb-2" />
+                    <p className="text-[10px] font-bold">No supported exports configured.</p>
+                  </div>
                 </div>
               </div>
 
@@ -6850,7 +5998,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
             </div>
 
             <div className="p-6 space-y-4 text-xs font-bold text-slate-700">
-              <p className="text-slate-500 font-medium">Select file format to download the complete report data for Sydney Head Office:</p>
+              <p className="text-slate-500 font-medium">Select file format to download the complete report data:</p>
 
               <div className="space-y-2.5">
                 <button 
@@ -7232,7 +6380,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400 font-medium">Branch Location:</span>
-                  <span className="text-slate-900 font-bold">Sydney Head Office</span>
+                  <span className="text-slate-900 font-bold">Head Office</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400 font-medium">Email Address:</span>
@@ -7907,7 +7055,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                     onChange={(e) => setEditPaymentModal({ ...editPaymentModal, branch: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-bold text-slate-900 bg-white"
                   >
-                    <option>Sydney Head Office</option>
+                    <option>Head Office</option>
                     <option>Melbourne Depot</option>
                     <option>Brisbane Hub</option>
                   </select>
@@ -8094,7 +7242,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                     onChange={(e) => setEditReceiptModal({ ...editReceiptModal, branch: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-900 bg-white"
                   >
-                    <option>Sydney Head Office</option>
+                    <option>Head Office</option>
                     <option>Melbourne Depot</option>
                     <option>Brisbane Hub</option>
                   </select>
@@ -8208,7 +7356,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="col-span-2">
                   <label className="block text-slate-500 font-bold mb-1">Branch / Location</label>
                   <select value={editExpenseModal.branch} onChange={(e) => setEditExpenseModal({ ...editExpenseModal, branch: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 bg-white">
-                    <option>Sydney Head Office</option><option>Melbourne Depot</option><option>Brisbane Hub</option>
+                    <option>Head Office</option><option>Melbourne Depot</option><option>Brisbane Hub</option>
                   </select>
                 </div>
               </div>
@@ -8308,7 +7456,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="col-span-2">
                   <label className="block text-slate-500 font-bold mb-1">Branch</label>
                   <select value={editPayrollModal.branch} onChange={(e) => setEditPayrollModal({ ...editPayrollModal, branch: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 bg-white">
-                    <option>Sydney Head Office</option><option>Melbourne Branch</option><option>Brisbane Branch</option>
+                    <option>Head Office</option><option>Melbourne Branch</option><option>Brisbane Branch</option>
                   </select>
                 </div>
               </div>

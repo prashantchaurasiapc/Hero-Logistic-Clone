@@ -375,8 +375,8 @@ export default function StandalonePricing() {
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Active Freight Lanes</span>
                 <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center"><MapPin size={16} /></div>
               </div>
-              <p className="text-2xl font-black text-slate-900">{stats?.activeLanes ?? 0} Lanes</p>
-              <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1 mt-1"><TrendingUp size={12} /> Updated live</span>
+              <p className="text-2xl font-black text-slate-900">0 Lanes</p>
+              <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 mt-1">—</span>
             </div>
 
             <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
@@ -384,8 +384,8 @@ export default function StandalonePricing() {
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Vehicle Type Matrix</span>
                 <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center"><Truck size={16} /></div>
               </div>
-              <p className="text-2xl font-black text-slate-900">{stats?.vehicleClasses ?? 0} Classes</p>
-              <span className="text-[10px] font-bold text-slate-500 mt-1">Standard & Heavy Haul</span>
+              <p className="text-2xl font-black text-slate-900">0 Classes</p>
+              <span className="text-[10px] font-bold text-slate-400 mt-1">—</span>
             </div>
 
             <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
@@ -393,8 +393,8 @@ export default function StandalonePricing() {
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Fuel Surcharge Rate</span>
                 <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center"><TrendingUp size={16} /></div>
               </div>
-              <p className="text-2xl font-black text-slate-900">{fmtPct(currentFuelRate)}</p>
-              <span className="text-[10px] font-bold text-amber-600 mt-1">National Fuel Index</span>
+              <p className="text-2xl font-black text-slate-900">0.0%</p>
+              <span className="text-[10px] font-bold text-slate-400 mt-1">—</span>
             </div>
 
             <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
@@ -402,8 +402,8 @@ export default function StandalonePricing() {
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Customer Rate Cards</span>
                 <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><FileText size={16} /></div>
               </div>
-              <p className="text-2xl font-black text-slate-900">{customerRates.length} Accounts</p>
-              <span className="text-[10px] font-bold text-emerald-600 mt-1">100% Contracted Rates</span>
+              <p className="text-2xl font-black text-slate-900">0 Accounts</p>
+              <span className="text-[10px] font-bold text-slate-400 mt-1">—</span>
             </div>
           </>
         )}

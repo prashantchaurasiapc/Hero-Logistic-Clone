@@ -102,12 +102,12 @@ export default function MyPay() {
             const l = runRes.data.load;
             activeLoadObj = {
               id: l.loadRef || l.loadNumber || `PO-${l.id.slice(0, 6).toUpperCase()}`,
-              origin: l.origin || l.pickupLocation || 'Melbourne VIC Yard',
-              destination: l.destination || l.deliveryLocation || 'Sydney NSW Depot',
+              origin: l.origin || l.pickupLocation || 'N/A',
+              destination: l.destination || l.deliveryLocation || 'N/A',
               startDate: l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-US') : new Date().toLocaleDateString('en-US'),
               estFinish: l.deliveryDate ? new Date(l.deliveryDate).toLocaleDateString('en-US') : new Date(Date.now() + 2 * 86400000).toLocaleDateString('en-US'),
               status: l.status || 'DELIVERED',
-              poNumber: l.loadRef || l.loadNumber || 'PO-383310'
+              poNumber: l.loadRef || l.loadNumber || 'N/A'
             };
           }
         } catch (e) {}
@@ -116,18 +116,18 @@ export default function MyPay() {
       // Default active load if none found
       if (!activeLoadObj) {
         activeLoadObj = {
-          id: 'PO-383310',
-          origin: 'Melbourne VIC Yard',
-          destination: 'Sydney NSW Logistics Hub',
-          startDate: new Date().toLocaleDateString('en-US'),
-          estFinish: new Date(Date.now() + 2 * 86400000).toLocaleDateString('en-US'),
-          status: 'DELIVERED',
-          poNumber: 'PO-383310'
+          id: '—',
+          origin: '—',
+          destination: '—',
+          startDate: '—',
+          estFinish: '—',
+          status: '—',
+          poNumber: '—'
         };
       }
 
       if (!rawGross || rawGross === '$0.00') {
-        rawGross = '$1,250.00';
+        rawGross = '$0.00';
       }
 
       setActiveLoadData(activeLoadObj);
@@ -140,9 +140,9 @@ export default function MyPay() {
         superannuation: '$0.00',
         payFrequency: cp.payFrequency || 'Fortnightly',
         nextPayment: {
-          date: cp.nextPayment?.date || 'Friday, 26 Sep 2026',
-          daysLeft: cp.nextPayment?.daysLeft || 3,
-          period: cp.nextPayment?.period || 'Current Active Pay Cycle',
+          date: cp.nextPayment?.date || '—',
+          daysLeft: cp.nextPayment?.daysLeft ?? 0,
+          period: cp.nextPayment?.period || '—',
           estimatedNetPay: rawGross,
           status: cp.nextPayment?.status || 'Scheduled'
         }
@@ -152,7 +152,7 @@ export default function MyPay() {
       setYtdSummary({
         totalEarnings: ytd.totalEarnings && ytd.totalEarnings !== '$0.00' ? ytd.totalEarnings : rawGross,
         netPayReceived: ytd.netPayReceived && ytd.netPayReceived !== '$0.00' ? ytd.netPayReceived : rawGross,
-        pendingPayments: ytd.pendingPayments && ytd.pendingPayments !== '$0.00' ? ytd.pendingPayments : rawGross,
+        pendingPayments: ytd.pendingPayments && ytd.pendingPayments !== '$0.00' ? ytd.pendingPayments : '$0.00',
         totalDeductions: '$0.00',
         totalSuperannuation: '$0.00'
       });
@@ -187,15 +187,7 @@ export default function MyPay() {
           netPay: rec.netPay && rec.netPay !== '$0.00' ? rec.netPay : rawGross
         }));
       } else {
-        records = [{
-          id: 'rec-active-1',
-          period: '10 Sep 2026 – 24 Sep 2026',
-          payDate: 'Paid on 24 Sep 2026',
-          netPay: rawGross,
-          status: 'Paid',
-          statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-          amount: 1250
-        }];
+        records = [];
       }
       setPayRecords(records);
 

@@ -76,8 +76,10 @@ export default function CompanyAdminDocuments() {
       if (q) params.search = q;
       const res = await api.get('/company-admin/documents', { params });
       const data = res.data?.data || res.data || {};
-      setDocuments(Array.isArray(data.documents) ? data.documents : Array.isArray(data) ? data : []);
-      setTotal(data.total ?? (Array.isArray(data.documents) ? data.documents.length : 0));
+      let docsArray = Array.isArray(data.documents) ? data.documents : Array.isArray(data) ? data : [];
+      docsArray = docsArray.filter(doc => !(doc.fileUrl || '').includes('1789468454266'));
+      setDocuments(docsArray);
+      setTotal(data.total ?? docsArray.length);
     } catch (err) {
       console.error('Documents fetch error:', err);
       setError(err?.response?.data?.message || 'Failed to load documents.');
@@ -192,8 +194,8 @@ export default function CompanyAdminDocuments() {
     {
       cat: 'Company Documents',
       label: 'Company Documents',
-      sub: 'SOPs & Policies',
-      sub2: 'NHVA & Safety Certs',
+      sub: '0',
+      sub2: '—',
       icon: Building,
       color: 'blue',
       active: activeCategory === 'Company Documents',
@@ -203,8 +205,8 @@ export default function CompanyAdminDocuments() {
     {
       cat: 'Driver Documents',
       label: 'Driver Documents',
-      sub: 'Licenses & Meds',
-      sub2: stats?.byCategory?.['Driver Documents'] > 0 ? `${stats.byCategory['Driver Documents']} docs on file` : 'No docs yet',
+      sub: '0',
+      sub2: '—',
       icon: UserCheck,
       color: 'purple',
       active: activeCategory === 'Driver Documents',
@@ -214,8 +216,8 @@ export default function CompanyAdminDocuments() {
     {
       cat: 'Vehicle Documents',
       label: 'Vehicle Documents',
-      sub: 'Rego & Insurance',
-      sub2: 'Fleet docs',
+      sub: '0',
+      sub2: '—',
       icon: Truck,
       color: 'emerald',
       active: activeCategory === 'Vehicle Documents',
@@ -225,8 +227,8 @@ export default function CompanyAdminDocuments() {
     {
       cat: 'Customer Documents',
       label: 'Customer Documents',
-      sub: 'Contracts & PODs',
-      sub2: 'Signed Agreements & PODs',
+      sub: '0',
+      sub2: '—',
       icon: Users,
       color: 'amber',
       active: activeCategory === 'Customer Documents',

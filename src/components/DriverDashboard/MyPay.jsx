@@ -103,12 +103,12 @@ export default function MyPay() {
           const rData = runRes?.data?.data?.run || runRes?.data?.run || runRes?.data?.data?.load || runRes?.data?.load;
           if (rData) {
             activeLoadObj = {
-              id: rData.loadNumber || rData.id || 'PO-383310',
-              poNumber: rData.loadNumber || rData.id || 'PO-383310',
-              origin: rData.origin || 'Sydney Metro Hub-demo',
-              destination: rData.destination || 'Central Warehouse-Company',
-              startDate: new Date().toLocaleDateString('en-US'),
-              estFinish: new Date(Date.now() + 2 * 86400000).toLocaleDateString('en-US'),
+              id: rData.loadNumber || rData.id,
+              poNumber: rData.loadNumber || rData.id,
+              origin: rData.origin || 'N/A',
+              destination: rData.destination || 'N/A',
+              startDate: rData.startDate || new Date().toLocaleDateString('en-US'),
+              estFinish: rData.estFinish || new Date(Date.now() + 2 * 86400000).toLocaleDateString('en-US'),
               status: rData.status || 'IN TRANSIT'
             };
           }
@@ -124,10 +124,10 @@ export default function MyPay() {
             activeLoadObj = {
               id: cl.reference || cl.loadNumber || cl.id,
               poNumber: cl.reference || cl.loadNumber || cl.id,
-              origin: cl.origin || 'Sydney Metro Hub-demo',
-              destination: cl.destination || 'Central Warehouse-Company',
-              startDate: new Date().toLocaleDateString('en-US'),
-              estFinish: new Date(Date.now() + 2 * 86400000).toLocaleDateString('en-US'),
+              origin: cl.origin || 'N/A',
+              destination: cl.destination || 'N/A',
+              startDate: cl.startDate || new Date().toLocaleDateString('en-US'),
+              estFinish: cl.estFinish || new Date(Date.now() + 2 * 86400000).toLocaleDateString('en-US'),
               status: cl.status || 'IN TRANSIT'
             };
             if (dashRes?.data?.data?.metrics?.payThisPeriod) {
@@ -140,19 +140,11 @@ export default function MyPay() {
 
       // Default active load if none found
       if (!activeLoadObj) {
-        activeLoadObj = {
-          id: 'PO-383310',
-          poNumber: 'PO-383310',
-          origin: 'Sydney Metro Hub-demo',
-          destination: 'Central Warehouse-Company',
-          startDate: new Date().toLocaleDateString('en-US'),
-          estFinish: new Date(Date.now() + 2 * 86400000).toLocaleDateString('en-US'),
-          status: 'DELIVERED'
-        };
+        activeLoadObj = null;
       }
 
-      if (!rawGross || rawGross === '$0.00') {
-        rawGross = '$1,000.00';
+      if (!rawGross) {
+        rawGross = '$0.00';
       }
 
       setActiveLoadData(activeLoadObj);
@@ -165,9 +157,9 @@ export default function MyPay() {
         superannuation: '$0.00',
         payFrequency: cp.payFrequency || 'Fortnightly',
         nextPayment: {
-          date: cp.nextPayment?.date || 'Friday, 26 Sep 2026',
-          daysLeft: cp.nextPayment?.daysLeft || 3,
-          period: cp.nextPayment?.period || 'Current Active Pay Cycle',
+          date: cp.nextPayment?.date || '—',
+          daysLeft: cp.nextPayment?.daysLeft ?? 0,
+          period: cp.nextPayment?.period || '—',
           estimatedNetPay: cp.nextPayment?.estimatedNetPay || rawGross,
           status: cp.nextPayment?.status || 'Scheduled'
         }
@@ -177,7 +169,7 @@ export default function MyPay() {
       setYtdSummary({
         totalEarnings: ytd.totalEarnings || rawGross,
         netPayReceived: ytd.netPayReceived || rawGross,
-        pendingPayments: ytd.pendingPayments || rawGross,
+        pendingPayments: ytd.pendingPayments && ytd.pendingPayments !== '$0.00' ? ytd.pendingPayments : '$0.00',
         totalDeductions: '$0.00',
         totalSuperannuation: '$0.00'
       });
@@ -211,16 +203,6 @@ export default function MyPay() {
           ...rec,
           netPay: rec.netPay && rec.netPay !== '$0.00' ? rec.netPay : rawGross
         }));
-      } else {
-        records = [{
-          id: 'rec-active-1',
-          period: `${activeLoadObj.id} (${activeLoadObj.origin} ➔ ${activeLoadObj.destination})`,
-          payDate: 'Paid on 24 Sep 2026',
-          netPay: rawGross,
-          status: 'Paid',
-          statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-          amount: parseFloat(rawGross.replace(/[^0-9.]/g, '')) || 1000
-        }];
       }
       setPayRecords(records);
 
