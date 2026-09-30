@@ -3100,16 +3100,10 @@ export default function Customers() {
 
         {activeDetailsTab === 'Pricing' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+            <div className="mb-2">
               <p className="text-xs text-slate-500 font-medium">
                 Configure all rates, price lists and chargeable items for <span className="font-bold text-slate-800">{(!selectedCustomer?.name || selectedCustomer?.name === 'asdf') ? 'Auto World Sydney (Primary Customer)' : selectedCustomer.name}</span>. Prices are used when creating loads and generating invoices.
               </p>
-              <button 
-                onClick={() => setShowPricingMatrixModal(true)} 
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-2 cursor-pointer bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors border border-blue-100 shadow-sm shrink-0"
-              >
-                <Eye size={14} /> Preview Pricing Matrix
-              </button>
             </div>
 
             {/* Filter Bar */}
