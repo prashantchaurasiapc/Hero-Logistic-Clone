@@ -6929,6 +6929,25 @@ export default function Customers() {
               </button>
               <button 
                 onClick={() => {
+                  let sampleRules = [];
+                  if (selectedTemplate.includes('Metro')) {
+                    sampleRules = [
+                      { id: Date.now() + 1, from: 'Sydney Metro East', to: 'Sydney Metro West', type: 'Intrastate', distance: '45', baseRate: '120.00', minCharge: '120.00' },
+                      { id: Date.now() + 2, from: 'Melbourne CBD', to: 'Dandenong Hub', type: 'Intrastate', distance: '35', baseRate: '110.00', minCharge: '110.00' }
+                    ];
+                  } else if (selectedTemplate.includes('Interstate')) {
+                    sampleRules = [
+                      { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Perth (WA)', type: 'Interstate', distance: '3931', baseRate: '1850.00', minCharge: '1850.00' },
+                      { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Townsville (QLD)', type: 'Intrastate', distance: '1336', baseRate: '890.00', minCharge: '890.00' }
+                    ];
+                  } else {
+                    sampleRules = [
+                      { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Melbourne (VIC)', type: 'Interstate', distance: '877', baseRate: '450.00', minCharge: '450.00' },
+                      { id: Date.now() + 2, from: 'Sydney (NSW)', to: 'Brisbane (QLD)', type: 'Interstate', distance: '925', baseRate: '620.00', minCharge: '620.00' },
+                      { id: Date.now() + 3, from: 'Melbourne (VIC)', to: 'Adelaide (SA)', type: 'Interstate', distance: '726', baseRate: '480.00', minCharge: '480.00' }
+                    ];
+                  }
+                  setLanePricingRules(sampleRules);
                   triggerToast(`Applied template "${selectedTemplate}" successfully!`);
                   setShowApplyTemplateModal(false);
                 }}
@@ -6983,7 +7002,12 @@ export default function Customers() {
               </button>
               <button 
                 onClick={() => {
-                  triggerToast('Successfully imported 12 pricing rules from CSV!');
+                  const imported = [
+                    { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Newcastle (NSW)', type: 'Regional', distance: '162', baseRate: '280.00', minCharge: '280.00' },
+                    { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Gold Coast (QLD)', type: 'Metro', distance: '78', baseRate: '190.00', minCharge: '190.00' }
+                  ];
+                  setLanePricingRules([...lanePricingRules, ...imported]);
+                  triggerToast('Successfully imported 2 pricing rules from CSV!');
                   setShowImportPricingModal(false);
                 }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
