@@ -537,9 +537,9 @@ Exported On: ${new Date().toLocaleString()}`;
     triggerToast('Pricing rule deleted.');
   };
 
-  const handleSaveBillingSurcharge = async (e) => {
+  const handleSaveSurcharge = async (e) => {
     if (e) e.preventDefault();
-    if (!surchargeModalForm.description.trim() || !surchargeModalForm.rate) {
+    if (!surchargeModalForm.description.trim() || surchargeModalForm.rate === '' || surchargeModalForm.rate === null) {
       triggerToast('Please provide a Description and Rate / Percentage.');
       return;
     }
@@ -572,6 +572,7 @@ Exported On: ${new Date().toLocaleString()}`;
     setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' });
     triggerToast(surchargeModalForm.id ? 'Surcharge updated successfully!' : 'Surcharge saved successfully!');
   };
+  const handleSaveBillingSurcharge = handleSaveSurcharge;
 
   const handleDeleteBillingSurcharge = (surchargeId) => {
     setCustomerSurchargesMap(prev => {
@@ -585,33 +586,16 @@ Exported On: ${new Date().toLocaleString()}`;
     triggerToast('Surcharge deleted.');
   };
 
-  const handleAddPresetSurcharge = async (preset) => {
-    const newItem = {
-      id: Date.now().toString(),
+  const handleAddPresetSurcharge = (preset) => {
+    setSurchargeModalForm({
+      id: null,
       description: preset.description,
       calculation: preset.calculation,
       rate: preset.rate.toString(),
       taxable: true,
       notes: preset.notes || ''
-    };
-    setCustomerSurchargesMap(prev => {
-      const list = prev[currentCustomerId] || [];
-      const exists = list.some(s => s.description === newItem.description);
-      if (exists) return prev;
-      const updated = [...list, newItem];
-      try {
-        localStorage.setItem(`hero_surcharges_${currentCustomerId}`, JSON.stringify(updated));
-      } catch (err) {}
-      return { ...prev, [currentCustomerId]: updated };
     });
-
-    if (currentCustomerId && currentCustomerId !== 'default') {
-      try {
-        await api.post(`/company-admin/customers/${currentCustomerId}/surcharges`, newItem)
-          .catch(() => api.post(`/customers/${currentCustomerId}/surcharges`, newItem));
-      } catch (err) {}
-    }
-    triggerToast(`Added ${preset.description} surcharge!`, 'success');
+    setShowAddSurchargeModal(true);
   };
 
   const [rateCards, setRateCards] = useState([]);
@@ -3680,15 +3664,34 @@ Exported On: ${new Date().toLocaleString()}`;
                                           {sc.isFromRule ? 'Contract Profile' : 'Custom Add-On'}
                                         </span>
                                       </td>
-                                      <td className="py-3 px-4 text-right">
+                                      <td className="py-3 px-4 text-right flex items-center justify-end gap-1">
                                         {!sc.isFromRule && (
-                                          <button
-                                            onClick={() => handleDeleteBillingSurcharge(sc.id)}
-                                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                            title="Delete Surcharge"
-                                          >
-                                            <Trash2 size={14} />
-                                          </button>
+                                          <>
+                                            <button
+                                              onClick={() => {
+                                                setSurchargeModalForm({
+                                                  id: sc.id,
+                                                  description: sc.description,
+                                                  calculation: sc.calculation || '% of Base Rate',
+                                                  rate: sc.rate,
+                                                  taxable: sc.taxable !== false,
+                                                  notes: sc.notes || ''
+                                                });
+                                                setShowAddSurchargeModal(true);
+                                              }}
+                                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                              title="Edit Surcharge"
+                                            >
+                                              <Edit size={14} />
+                                            </button>
+                                            <button
+                                              onClick={() => handleDeleteBillingSurcharge(sc.id)}
+                                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                              title="Delete Surcharge"
+                                            >
+                                              <Trash2 size={14} />
+                                            </button>
+                                          </>
                                         )}
                                       </td>
                                     </tr>
