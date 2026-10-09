@@ -3642,17 +3642,17 @@ Exported On: ${new Date().toLocaleString()}`;
                           <div className="flex flex-wrap items-center gap-2">
                             {[
                               { label: '⛽ Fuel Levy (12.5%)', description: 'Fuel Levy', calculation: '% of Base Rate', rate: '12.5' },
-                              { label: '🛣️ Toll Charge ($25)', description: 'Toll Recovery Fee', calculation: 'Flat Fee ($)', rate: '25.00' },
-                              { label: '⏳ Waiting Time ($65/hr)', description: 'Waiting Time Charge', calculation: 'Per Hour ($)', rate: '65.00' },
-                              { label: '📦 Extra Pickup ($50)', description: 'Extra Pickup Fee', calculation: 'Per Stop ($)', rate: '50.00' },
-                              { label: '🚚 Extra Delivery ($50)', description: 'Extra Delivery Fee', calculation: 'Per Stop ($)', rate: '50.00' },
-                              { label: '🏭 Storage ($100/day)', description: 'Storage Charge', calculation: 'Per Hour ($)', rate: '100.00' },
-                              { label: '🔄 Redelivery ($75)', description: 'Redelivery Fee', calculation: 'Flat Fee ($)', rate: '75.00' },
-                              { label: '🎉 Weekend Charge (25%)', description: 'Weekend Surcharge', calculation: '% of Base Rate', rate: '25.0' },
-                              { label: '🌙 After Hours (15%)', description: 'After Hours Surcharge', calculation: '% of Base Rate', rate: '15.0' },
-                              { label: '☣️ DG Surcharge ($150)', description: 'Dangerous Goods (DG) Fee', calculation: 'Flat Fee ($)', rate: '150.00' },
-                              { label: '❌ Cancellation Fee ($200)', description: 'Cancellation Fee', calculation: 'Flat Fee ($)', rate: '200.00' },
-                              { label: '📝 Other Charges ($0)', description: 'Other Charges', calculation: 'Flat Fee ($)', rate: '0.00' }
+                              { label: '🛣️ Tolls ($25)', description: 'Tolls', calculation: 'Flat Fee ($)', rate: '25.00' },
+                              { label: '⏳ Waiting Time ($65/hr)', description: 'Waiting Time', calculation: 'Per Hour ($)', rate: '65.00' },
+                              { label: '📦 Extra Pickup ($50)', description: 'Extra Pickup', calculation: 'Flat Fee ($)', rate: '50.00' },
+                              { label: '🚚 Extra Delivery ($50)', description: 'Extra Delivery', calculation: 'Flat Fee ($)', rate: '50.00' },
+                              { label: '🏢 Storage ($20/day)', description: 'Storage', calculation: 'Per Unit ($)', rate: '20.00' },
+                              { label: '🔄 Redelivery ($80)', description: 'Redelivery', calculation: 'Flat Fee ($)', rate: '80.00' },
+                              { label: '🏖️ Weekend Charge (20%)', description: 'Weekend Charge', calculation: '% of Base Rate', rate: '20.0' },
+                              { label: '🌙 After Hours Charge (15%)', description: 'After Hours Charge', calculation: '% of Base Rate', rate: '15.0' },
+                              { label: '☣️ DG Surcharge ($150)', description: 'Dangerous Goods Surcharge', calculation: 'Flat Fee ($)', rate: '150.00' },
+                              { label: '❌ Cancellation Fee ($100)', description: 'Cancellation Fee', calculation: 'Flat Fee ($)', rate: '100.00' },
+                              { label: '➕ Other Charges', description: 'Other Charges', calculation: 'Flat Fee ($)', rate: '0.00' }
                             ].map((preset, idx) => (
                               <button
                                 key={idx}
