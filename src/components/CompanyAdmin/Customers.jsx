@@ -271,13 +271,15 @@ Exported On: ${new Date().toLocaleString()}`;
     baseRate: '',
     minCharge: '',
     fuelLevy: '',
-    additionalStopCharge: '',
+    extraPickupCharge: '',
+    extraDeliveryCharge: '',
     waitingTimeCharge: '',
     storageCharge: '',
     tolls: '',
     dgSurcharge: '',
     afterHoursCharge: '',
     weekendCharge: '',
+    cancellationFee: '',
     redeliveryCharge: '',
     otherCharges: '',
     gstTreatment: 'Excluding GST (Add 10%)'
@@ -286,8 +288,8 @@ Exported On: ${new Date().toLocaleString()}`;
   const EMPTY_PRICING_RULE_FORM = {
     id: null, name: '', niche: 'Car Carrying', effectiveFrom: '', effectiveTo: '', status: 'Active',
     from: '', to: '', zone: '', method: 'Per Load', baseRate: '', minCharge: '',
-    fuelLevy: '', additionalStopCharge: '', waitingTimeCharge: '', storageCharge: '',
-    tolls: '', dgSurcharge: '', afterHoursCharge: '', weekendCharge: '', redeliveryCharge: '',
+    fuelLevy: '', extraPickupCharge: '', extraDeliveryCharge: '', waitingTimeCharge: '', storageCharge: '',
+    tolls: '', dgSurcharge: '', afterHoursCharge: '', weekendCharge: '', cancellationFee: '', redeliveryCharge: '',
     otherCharges: '', gstTreatment: 'Excluding GST (Add 10%)'
   };
 
@@ -329,7 +331,8 @@ Exported On: ${new Date().toLocaleString()}`;
     const fuelLevyPct = parseFloat(rule.fuelLevy) || 0;
     const fuelLevyAmount = (baseCharge * fuelLevyPct) / 100;
     const additionalCharges =
-      (parseFloat(rule.additionalStopCharge) || 0) +
+      (parseFloat(rule.extraPickupCharge) || 0) +
+      (parseFloat(rule.extraDeliveryCharge) || 0) +
       (parseFloat(rule.waitingTimeCharge) || 0) +
       (parseFloat(rule.storageCharge) || 0) +
       (parseFloat(rule.tolls) || 0) +
@@ -372,13 +375,15 @@ Exported On: ${new Date().toLocaleString()}`;
       baseRate: rateVal,
       minCharge: parseFloat(fullPricingRuleForm.minCharge) || 0,
       fuelLevy: parseFloat(fullPricingRuleForm.fuelLevy) || 0,
-      additionalStopCharge: parseFloat(fullPricingRuleForm.additionalStopCharge) || 0,
+      extraPickupCharge: parseFloat(fullPricingRuleForm.extraPickupCharge) || 0,
+      extraDeliveryCharge: parseFloat(fullPricingRuleForm.extraDeliveryCharge) || 0,
       waitingTimeCharge: parseFloat(fullPricingRuleForm.waitingTimeCharge) || 0,
       storageCharge: parseFloat(fullPricingRuleForm.storageCharge) || 0,
       tolls: parseFloat(fullPricingRuleForm.tolls) || 0,
       dgSurcharge: parseFloat(fullPricingRuleForm.dgSurcharge) || 0,
       afterHoursCharge: parseFloat(fullPricingRuleForm.afterHoursCharge) || 0,
       weekendCharge: parseFloat(fullPricingRuleForm.weekendCharge) || 0,
+      cancellationFee: parseFloat(fullPricingRuleForm.cancellationFee) || 0,
       redeliveryCharge: parseFloat(fullPricingRuleForm.redeliveryCharge) || 0,
       otherCharges: parseFloat(fullPricingRuleForm.otherCharges) || 0,
       gstTreatment: fullPricingRuleForm.gstTreatment
@@ -405,13 +410,15 @@ Exported On: ${new Date().toLocaleString()}`;
         baseRate: savedRule.baseRate ?? rateVal,
         minCharge: savedRule.minimumCharge ?? payload.minCharge,
         fuelLevy: savedRule.fuelLevyPercent ?? payload.fuelLevy,
-        additionalStopCharge: savedRule.additionalStopCharge ?? payload.additionalStopCharge,
+        extraPickupCharge: savedRule.extraPickupCharge ?? payload.extraPickupCharge,
+        extraDeliveryCharge: savedRule.extraDeliveryCharge ?? payload.extraDeliveryCharge,
         waitingTimeCharge: savedRule.waitingTimeCharge ?? payload.waitingTimeCharge,
         storageCharge: savedRule.storageCharge ?? payload.storageCharge,
         tolls: savedRule.tollsCharge ?? payload.tolls,
         dgSurcharge: savedRule.dgSurcharge ?? payload.dgSurcharge,
         afterHoursCharge: savedRule.afterHoursSurcharge ?? payload.afterHoursCharge,
         weekendCharge: savedRule.weekendCharge ?? payload.weekendCharge,
+        cancellationFee: savedRule.cancellationFee ?? payload.cancellationFee,
         redeliveryCharge: savedRule.redeliveryCharge ?? payload.redeliveryCharge,
         otherCharges: savedRule.otherCharges ?? payload.otherCharges,
         gstTreatment: savedRule.gstTreatment || fullPricingRuleForm.gstTreatment,
@@ -461,12 +468,21 @@ Exported On: ${new Date().toLocaleString()}`;
         isFromRule: true
       });
     }
-    if (rule.additionalStopCharge && parseFloat(rule.additionalStopCharge) > 0) {
+    if (rule.extraPickupCharge && parseFloat(rule.extraPickupCharge) > 0) {
       profileSurcharges.push({
-        id: `profile_stop_${rule.id}`,
-        description: `Additional Stop Charge`,
+        id: `profile_pickup_${rule.id}`,
+        description: `Extra Pickup Charge`,
         calculation: 'Flat Fee ($)',
-        rate: rule.additionalStopCharge,
+        rate: rule.extraPickupCharge,
+        isFromRule: true
+      });
+    }
+    if (rule.extraDeliveryCharge && parseFloat(rule.extraDeliveryCharge) > 0) {
+      profileSurcharges.push({
+        id: `profile_delivery_${rule.id}`,
+        description: `Extra Delivery Charge`,
+        calculation: 'Flat Fee ($)',
+        rate: rule.extraDeliveryCharge,
         isFromRule: true
       });
     }
@@ -6096,8 +6112,12 @@ Exported On: ${new Date().toLocaleString()}`;
                     <input type="number" step="0.01" value={fullPricingRuleForm.fuelLevy} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, fuelLevy: e.target.value })} placeholder="e.g. 7" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-bold text-purple-700 focus:outline-none focus:border-indigo-500 shadow-sm" />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Additional Stop ($)</label>
-                    <input type="number" step="0.01" value={fullPricingRuleForm.additionalStopCharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, additionalStopCharge: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Extra Pickup ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.extraPickupCharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, extraPickupCharge: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Extra Delivery ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.extraDeliveryCharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, extraDeliveryCharge: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
                   </div>
                   <div>
                     <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Waiting Time ($/hr)</label>
@@ -6122,6 +6142,10 @@ Exported On: ${new Date().toLocaleString()}`;
                   <div>
                     <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Weekend ($)</label>
                     <input type="number" step="0.01" value={fullPricingRuleForm.weekendCharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, weekendCharge: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Cancellation ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.cancellationFee} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, cancellationFee: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
                   </div>
                   <div>
                     <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Redelivery ($)</label>
