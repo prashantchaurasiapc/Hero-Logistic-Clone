@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import {
   ArrowLeft, Save, Zap, Plus, Trash2, GripVertical,
   MapPin, User, Calendar, Clock, Package, Truck,
@@ -470,6 +470,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
 
   const [formData, setFormData] = useState({
     customer: '',
+    billedCustomerIds: [],
     loadType: 'General Freight',
     loadRef: `PO-${Math.floor(100000 + Math.random() * 900000)}`,
     priority: 'Normal',
@@ -484,29 +485,60 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
 
   const [selectedScheduleId, setSelectedScheduleId] = useState('');
   const [matchedPricingRule, setMatchedPricingRule] = useState(null);
+  const [manuallyAppliedRule, setManuallyAppliedRule] = useState(null);
   const [customerPricingRules, setCustomerPricingRules] = useState([]);
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
 
-  // Fetch Pricing Profiles when customer changes
+  const [multiCustomerPricingRules, setMultiCustomerPricingRules] = useState({});
+  const itemCustomersStr = items.map(i => i.customer).join(',');
+
+  // Fetch Pricing Profiles for all unique customers
   useEffect(() => {
-    if (formData.customer) {
-      api.get(`/company-admin/customers/${formData.customer}/pricing-profiles`)
-        .then(res => {
-          const rules = res.data?.data || res.data || [];
-          setCustomerPricingRules(rules);
-        })
-        .catch(err => {
-          console.error("Failed to load customer pricing rules:", err);
-          setCustomerPricingRules([]);
+    const uniqueCustomers = new Set();
+    if (formData.customer) uniqueCustomers.add(formData.customer);
+    items.forEach(item => {
+      if (item.customer) uniqueCustomers.add(item.customer);
+    });
+
+    const customersToFetch = Array.from(uniqueCustomers);
+
+    if (customersToFetch.length > 0) {
+      Promise.all(customersToFetch.map(custId => 
+        api.get(`/company-admin/customers/${custId}/pricing-profiles`)
+          .then(res => ({ custId, rules: res.data?.data || res.data || [] }))
+          .catch(err => {
+            console.error(`Failed to load pricing rules for ${custId}:`, err);
+            return { custId, rules: [] };
+          })
+      )).then(results => {
+        const rulesMap = {};
+        let defaultRules = [];
+        results.forEach(res => {
+          rulesMap[res.custId] = res.rules;
+          if (String(res.custId) === String(formData.customer)) {
+            defaultRules = res.rules;
+          }
         });
+        setMultiCustomerPricingRules(rulesMap);
+        setCustomerPricingRules(defaultRules);
+      });
     } else {
+      setMultiCustomerPricingRules({});
       setCustomerPricingRules([]);
     }
-  }, [formData.customer]);
+  }, [formData.customer, itemCustomersStr]);
 
   // Automatic Customer Pricing & Billing Rule Match
   useEffect(() => {
     if (!formData.customer) {
       setMatchedPricingRule(null);
+      setManuallyAppliedRule(null);
+      return;
+    }
+
+    // If user manually applied a rule for this same customer, keep it — do not override
+    if (manuallyAppliedRule && String(manuallyAppliedRule.customerId) === String(formData.customer)) {
       return;
     }
 
@@ -542,9 +574,10 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
       const fuelAmt = fuelPct > 0 ? (base * fuelPct / 100) : 0;
       const rateAmount = base + fuelAmt;
 
-      const ruleName = fuelPct > 0 
-        ? `${foundRule.name || 'Saved Pricing Rule'} ($${base.toFixed(2)} + ${fuelPct}% Fuel Levy = $${rateAmount.toFixed(2)})`
-        : `${foundRule.name || 'Saved Pricing Rule'} ($${rateAmount.toFixed(2)} ${foundRule.method || 'Per Load'})`;
+      const methodLabel = foundRule.method || 'Per Load';
+      const ruleName = fuelPct > 0
+        ? `${foundRule.name || 'Saved Pricing Rule'} ($${base.toFixed(2)} + ${fuelPct}% Fuel Levy = $${rateAmount.toFixed(2)} ${methodLabel})`
+        : `${foundRule.name || 'Saved Pricing Rule'} ($${rateAmount.toFixed(2)} ${methodLabel})`;
 
       setMatchedPricingRule({
         customerName: selectedCust?.name || 'Selected Customer',
@@ -560,7 +593,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
         }));
       }
     } else {
-      // No rule configured for this specific customer — leave Customer Charge blank for manual input
+      // No rule configured for this specific customer
       setMatchedPricingRule({
         customerName: selectedCust?.name || 'Selected Customer',
         ruleName: `No Pricing Rule configured for ${selectedCust?.name || 'this customer'}. Enter Customer Charge manually.`,
@@ -575,7 +608,113 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
         }));
       }
     }
-  }, [formData.customer, stops, items.length, dbCustomers, editMode, customerPricingRules]);
+  }, [formData.customer, stops, items.length, dbCustomers, editMode, customerPricingRules, manuallyAppliedRule]);
+
+  const [multiCustomerBreakdown, setMultiCustomerBreakdown] = useState([]);
+
+  // Multi-Customer Billing Breakdown Match
+  useEffect(() => {
+    const pickupStop = stops.find(s => (s.type || '').toLowerCase().includes('pick'));
+    const dropStop = stops.find(s => (s.type || '').toLowerCase().includes('drop'));
+    const pAddr = (pickupStop?.address || '').toLowerCase();
+    const dAddr = (dropStop?.address || '').toLowerCase();
+
+    // Group items by customer
+    const itemsByCust = {};
+    items.forEach((item, idx) => {
+      const custId = item.customer || formData.customer; // Fallback to primary
+      if (!custId) return;
+      if (!itemsByCust[custId]) itemsByCust[custId] = { count: 0, items: [] };
+      itemsByCust[custId].count += 1;
+      itemsByCust[custId].items.push(`Item ${idx + 1}`);
+    });
+
+    const breakdown = [];
+    let totalRevenue = 0;
+
+    Object.keys(itemsByCust).forEach(custId => {
+      const custInfo = dbCustomers.find(c => String(c.id) === String(custId));
+      const custName = custInfo?.name || `Customer #${custId}`;
+      const rules = (multiCustomerPricingRules[custId] || []).filter(r => !r.isDefaultSample);
+
+      let foundRule = null;
+      if (rules.length > 0) {
+        foundRule = rules.find(r => {
+          const fromMatch = !r.from || (pAddr && pAddr.includes(r.from.toLowerCase()));
+          const toMatch = !r.to || (dAddr && dAddr.includes(r.to.toLowerCase()));
+          return fromMatch && toMatch;
+        }) || rules[0];
+      }
+
+      const count = itemsByCust[custId].count;
+      let charge = 0;
+      let ruleDesc = 'No Pricing Rule (Enter Manually)';
+
+      if (foundRule) {
+        let base = parseFloat(foundRule.baseRate) || 0;
+        const methodStr = (foundRule.method || '').toLowerCase();
+
+        if (methodStr.includes('item') || methodStr.includes('vehicle') || methodStr.includes('car') || methodStr.includes('pallet')) {
+          base = base * count;
+        }
+
+        const fuelPct = parseFloat(foundRule.fuelLevy) || 0;
+        const fuelAmt = fuelPct > 0 ? (base * fuelPct / 100) : 0;
+        charge = base + fuelAmt;
+        totalRevenue += charge;
+
+        ruleDesc = fuelPct > 0 
+          ? `${foundRule.name || 'Lane Rate'} ($${base.toFixed(2)} + ${fuelPct}% Fuel Levy)`
+          : `${foundRule.name || 'Lane Rate'} ($${charge.toFixed(2)} ${foundRule.method || 'Per Load'})`;
+      }
+
+      breakdown.push({
+        customerId: custId,
+        customerName: custName,
+        itemNames: itemsByCust[custId].items.join(', '),
+        ruleDesc,
+        charge,
+        hasRule: !!foundRule,
+        route: `${pickupStop?.address?.split(',')[0] || 'Any'} → ${dropStop?.address?.split(',')[0] || 'Any'}`
+      });
+    });
+
+    setMultiCustomerBreakdown(breakdown);
+  }, [items, formData.customer, stops, dbCustomers, multiCustomerPricingRules]);
+
+  const handleApplyPricingRule = (rule) => {
+    let base = parseFloat(rule.baseRate) || 0;
+    const count = items.length || 1;
+    const methodStr = (rule.method || '').toLowerCase();
+    
+    if (methodStr.includes('item') || methodStr.includes('vehicle') || methodStr.includes('car') || methodStr.includes('pallet')) {
+      base = base * count;
+    }
+    
+    const fuelPct = parseFloat(rule.fuelLevy) || 0;
+    const fuelAmt = fuelPct > 0 ? (base * fuelPct / 100) : 0;
+    const rateAmount = base + fuelAmt;
+
+    // Apply Rate to Load Information & Customer Revenue ONLY - Route Stops are NOT modified
+    setFormData(prev => ({ ...prev, rate: String(rateAmount) }));
+
+    // Update the banner to reflect the manually selected rule
+    const methodLabel = rule.method || 'Per Load';
+    const ruleName = fuelPct > 0
+      ? `${rule.name || 'Pricing Rule'} ($${base.toFixed(2)} + ${fuelPct}% Fuel Levy = $${rateAmount.toFixed(2)} ${methodLabel})`
+      : `${rule.name || 'Pricing Rule'} ($${rateAmount.toFixed(2)} ${methodLabel})`;
+
+    const manualRule = {
+      customerId: formData.customer,
+      ruleName,
+      amount: rateAmount,
+      hasRule: true
+    };
+    setManuallyAppliedRule(manualRule);
+    setMatchedPricingRule(manualRule);
+
+    showSaveToast(`Applied ${rule.name || 'Pricing Rule'} - Rate set to $${rateAmount.toFixed(2)}`, 'success');
+  };
 
   const getDriverSchedules = (driverId = null) => {
     let globalSchedules = [];
@@ -952,8 +1091,10 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
           color: item.colour || item.color || null,
           quantity: parseInt(String(item.quantity || 1).replace(/[^0-9]/g, ''), 10) || 1,
           weightKg: item.weight ? parseInt(String(item.weight).replace(/[^0-9]/g, ''), 10) || 0 : 0,
+          customerId: item.customer && item.customer.length > 5 ? item.customer : (formData.customer && formData.customer.length > 5 ? formData.customer : null),
           notes: JSON.stringify(item)
         })),
+        billingSnapshots: multiCustomerBreakdown,
         ...(Object.keys(uploadedPhotos).length > 0 && {
           documents: {
             create: Object.entries(uploadedPhotos).flatMap(([key, photos]) => 
@@ -1095,22 +1236,77 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
 
         {/* ═══════ Section 1: Load Information ═══════ */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6">
-          <SectionHeader number="1" title="Load Information" colorCls="bg-indigo-600" />
+          <SectionHeader number="1" title="Load Information & Customer Revenue" subtitle="Customer Pricing (Inbound Revenue)" colorCls="bg-indigo-600" />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-            <div className="col-span-1">
+            <div className="col-span-1" onMouseLeave={() => setIsCustomerDropdownOpen(false)}>
               <FieldLabel>Booking Customer (Optional)</FieldLabel>
               <div className="relative">
-                <select
-                  value={formData.customer}
-                  onChange={e => setFormData({ ...formData, customer: e.target.value })}
-                  className={`${selectCls} pl-8 font-normal`}
+                <div 
+                  className={`${selectCls} pl-4 pr-8 font-normal flex items-center cursor-pointer min-h-[40px]`}
+                  onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
                 >
-                  <option value="">Select Customer...</option>
-                  {dbCustomers.map((c, idx) => (
-                    <option key={c.id || idx} value={c.id}>{c.name || `Customer #${idx + 1}`}</option>
-                  ))}
-                </select>
+                  <span className="truncate w-full block text-left">
+                    {formData.billedCustomerIds?.length > 0 
+                      ? formData.billedCustomerIds.map(id => dbCustomers.find(c => c.id === id)?.name || 'Unknown').join(', ') 
+                      : <span className="text-slate-400">Select Customer...</span>}
+                  </span>
+                </div>
+                <ChevronDown className={`absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-transform duration-200 pointer-events-none ${isCustomerDropdownOpen ? 'rotate-180' : ''}`} />
+                
+                {isCustomerDropdownOpen && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 max-h-72 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl custom-scrollbar p-2 flex flex-col gap-1 animate-fadeIn">
+                    <div className="sticky top-0 z-10 bg-white pb-1.5 pt-0.5 border-b border-slate-100" onClick={e => e.stopPropagation()}>
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                        <input
+                          type="text"
+                          value={customerSearchQuery}
+                          onChange={e => setCustomerSearchQuery(e.target.value)}
+                          placeholder="Search customer (e.g. Jess...)"
+                          className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-indigo-500 bg-slate-50/50"
+                          onClick={e => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
+                    {dbCustomers
+                      .filter(c => (c.name || '').toLowerCase().includes(customerSearchQuery.toLowerCase()))
+                      .map((c, idx) => {
+                        const isChecked = (formData.billedCustomerIds || []).includes(c.id);
+                        return (
+                          <label 
+                            key={c.id || idx} 
+                            className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors border border-transparent ${isChecked ? 'bg-indigo-50/80 border-indigo-100' : 'hover:bg-slate-50 hover:border-slate-100'}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={e => {
+                                let newBilled = [...(formData.billedCustomerIds || [])];
+                                if (e.target.checked) {
+                                  if (!newBilled.includes(c.id)) newBilled.push(c.id);
+                                } else {
+                                  newBilled = newBilled.filter(id => id !== c.id);
+                                }
+                                const newPrimary = newBilled.length > 0 ? newBilled[0] : '';
+                                setFormData({ ...formData, billedCustomerIds: newBilled, customer: newPrimary });
+                                setItems(prev => prev.map(item => ({ ...item, customer: item.customer || newPrimary })));
+                              }}
+                              className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer shadow-xs"
+                            />
+                            <div className="flex flex-col">
+                              <span className={`text-xs truncate ${isChecked ? 'font-black text-indigo-900' : 'font-bold text-slate-700'}`}>
+                                {c.name || `Customer #${idx + 1}`}
+                              </span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    {dbCustomers.filter(c => (c.name || '').toLowerCase().includes(customerSearchQuery.toLowerCase())).length === 0 && (
+                      <p className="text-center py-3 text-xs text-slate-400 font-medium">No matching customer found</p>
+                    )}
+                  </div>
+                )}
               </div>
               <p className="text-[10.5px] font-bold text-emerald-500 mt-1.5 leading-snug">
                 Auto-finds Pricing Rule
@@ -1217,6 +1413,43 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
               <span>{matchedPricingRule.ruleName}</span>
             </div>
           ) : null}
+
+          {/* Applicable Customer Pricing Rules UI */}
+          {formData.customer && (
+            <div className="mt-6 border-t border-slate-100 pt-5">
+              <h4 className="text-xs font-bold text-slate-800 mb-3 uppercase tracking-wider flex items-center gap-2">
+                <DollarSign size={14} className="text-emerald-600" /> Applicable Pricing Rules
+              </h4>
+              {customerPricingRules.filter(r => !r.isDefaultSample).length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {customerPricingRules.filter(r => !r.isDefaultSample).map(rule => (
+                    <div key={rule.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-emerald-300 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xs font-bold text-slate-900">{rule.name || 'Lane Rate'}</span>
+                        <span className="text-xs font-black text-emerald-700">${parseFloat(rule.baseRate).toFixed(2)}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 mb-3 space-y-1">
+                        <p><span className="font-semibold text-slate-600">Route:</span> {rule.from || 'Any'} → {rule.to || 'Any'}</p>
+                        <p><span className="font-semibold text-slate-600">Type:</span> {rule.type || 'General'}</p>
+                        <p><span className="font-semibold text-slate-600">Method:</span> {rule.method || 'Per Load'}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPricingRule(rule)}
+                        className="w-full py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                      >
+                        <CheckCircle size={12} /> Apply Rule
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-500 italic text-center">
+                  No pricing rules configured for this customer.
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ═══════ Section 2: Route Stops ═══════════ */}
@@ -2135,7 +2368,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
 
         {/* ═══════ Section 4: Assign Truck & Driver ══ */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6">
-          <SectionHeader number="4" title="Assign Truck & Driver" colorCls="bg-indigo-600" />
+          <SectionHeader number="4" title="Assign Resources & Driver Pay" subtitle="Driver Compensation & Payroll (Outbound Expense)" colorCls="bg-purple-700" />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
@@ -2354,6 +2587,41 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
             </div>
           )}
         </div>
+
+        {/* Split Billing Breakdown section removed */}
+        {false && multiCustomerBreakdown.length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6 mt-6">
+            <SectionHeader number="4" title="Split Billing Breakdown" colorCls="bg-emerald-600" />
+            <div className="space-y-4">
+              {multiCustomerBreakdown.map((b, idx) => (
+                <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-slate-100 bg-slate-50">
+                  <div>
+                    <h5 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                      <span className="text-xl">🧾</span> Invoice {idx + 1}: {b.customerName}
+                    </h5>
+                    <div className="text-xs text-slate-500 mt-1 flex flex-col gap-1">
+                      <p><span className="font-semibold text-slate-600">Route:</span> {b.route}</p>
+                      <p><span className="font-semibold text-slate-600">Items:</span> {b.itemNames}</p>
+                      <p><span className="font-semibold text-slate-600">Applicable Rule:</span> <span className={b.hasRule ? "text-emerald-600 font-semibold" : "text-amber-600 font-semibold"}>{b.ruleDesc}</span></p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Customer Charge</span>
+                    <span className={`text-xl font-black ${b.hasRule ? 'text-emerald-600' : 'text-slate-700'}`}>
+                      ${b.charge.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              <div className="pt-4 border-t border-slate-200 flex justify-between items-center px-2">
+                <span className="text-sm font-bold text-slate-600">Total Expected Revenue:</span>
+                <span className="text-2xl font-black text-indigo-700">
+                  ${multiCustomerBreakdown.reduce((sum, b) => sum + b.charge, 0).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
       </form>
 
