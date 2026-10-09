@@ -590,7 +590,7 @@ Exported On: ${new Date().toLocaleString()}`;
   };
   const handleSaveBillingSurcharge = handleSaveSurcharge;
 
-  const handleDeleteBillingSurcharge = (surchargeId) => {
+  const handleDeleteBillingSurcharge = async (surchargeId) => {
     setHiddenSurchargesMap(prev => {
       const list = prev[currentCustomerId] || [];
       const updated = [...list, surchargeId];
@@ -607,6 +607,13 @@ Exported On: ${new Date().toLocaleString()}`;
       } catch (err) {}
       return { ...prev, [currentCustomerId]: updated };
     });
+
+    if (currentCustomerId && currentCustomerId !== 'default' && surchargeId) {
+      try {
+        await api.delete(`/company-admin/customers/${currentCustomerId}/surcharges/${surchargeId}`)
+          .catch(() => api.delete(`/customers/${currentCustomerId}/surcharges/${surchargeId}`));
+      } catch (err) {}
+    }
     triggerToast('Surcharge deleted.');
   };
 
