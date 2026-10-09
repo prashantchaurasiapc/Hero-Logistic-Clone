@@ -3644,8 +3644,15 @@ Exported On: ${new Date().toLocaleString()}`;
                               { label: '⛽ Fuel Levy (12.5%)', description: 'Fuel Levy', calculation: '% of Base Rate', rate: '12.5' },
                               { label: '🛣️ Toll Charge ($25)', description: 'Toll Recovery Fee', calculation: 'Flat Fee ($)', rate: '25.00' },
                               { label: '⏳ Waiting Time ($65/hr)', description: 'Waiting Time Charge', calculation: 'Per Hour ($)', rate: '65.00' },
+                              { label: '📦 Extra Pickup ($50)', description: 'Extra Pickup Fee', calculation: 'Per Stop ($)', rate: '50.00' },
+                              { label: '🚚 Extra Delivery ($50)', description: 'Extra Delivery Fee', calculation: 'Per Stop ($)', rate: '50.00' },
+                              { label: '🏭 Storage ($100/day)', description: 'Storage Charge', calculation: 'Per Hour ($)', rate: '100.00' },
+                              { label: '🔄 Redelivery ($75)', description: 'Redelivery Fee', calculation: 'Flat Fee ($)', rate: '75.00' },
+                              { label: '🎉 Weekend Charge (25%)', description: 'Weekend Surcharge', calculation: '% of Base Rate', rate: '25.0' },
+                              { label: '🌙 After Hours (15%)', description: 'After Hours Surcharge', calculation: '% of Base Rate', rate: '15.0' },
                               { label: '☣️ DG Surcharge ($150)', description: 'Dangerous Goods (DG) Fee', calculation: 'Flat Fee ($)', rate: '150.00' },
-                              { label: '🌙 After Hours (15%)', description: 'After Hours Surcharge', calculation: '% of Base Rate', rate: '15.0' }
+                              { label: '❌ Cancellation Fee ($200)', description: 'Cancellation Fee', calculation: 'Flat Fee ($)', rate: '200.00' },
+                              { label: '📝 Other Charges ($0)', description: 'Other Charges', calculation: 'Flat Fee ($)', rate: '0.00' }
                             ].map((preset, idx) => (
                               <button
                                 key={idx}
