@@ -2589,7 +2589,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
         </div>
 
         {/* Split Billing Breakdown section */}
-        {multiCustomerBreakdown.length > 0 && (
+        {false && multiCustomerBreakdown.length > 0 && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6 mt-6">
             <SectionHeader number="4" title="Split Billing Breakdown" colorCls="bg-emerald-600" />
             <div className="space-y-4">
