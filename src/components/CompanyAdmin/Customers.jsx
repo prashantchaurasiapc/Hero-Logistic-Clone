@@ -441,6 +441,7 @@ Exported On: ${new Date().toLocaleString()}`;
   };
 
   const [customerSurchargesMap, setCustomerSurchargesMap] = useState({});
+  const [hiddenSurchargesMap, setHiddenSurchargesMap] = useState({});
   const [surchargeModalForm, setSurchargeModalForm] = useState({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' });
 
   const currentCustomerId = selectedCustomer?.id || 'default';
@@ -498,9 +499,10 @@ Exported On: ${new Date().toLocaleString()}`;
     }
   });
 
-  const mergedSurcharges = [...storedSurcharges];
+  const hiddenSurcharges = hiddenSurchargesMap[currentCustomerId] || [];
+  const mergedSurcharges = storedSurcharges.filter(s => !hiddenSurcharges.includes(s.id));
   profileSurcharges.forEach(ps => {
-    if (!mergedSurcharges.some(cs => cs.description === ps.description)) {
+    if (!hiddenSurcharges.includes(ps.id) && !mergedSurcharges.some(cs => cs.description === ps.description)) {
       mergedSurcharges.push(ps);
     }
   });
@@ -543,8 +545,22 @@ Exported On: ${new Date().toLocaleString()}`;
       triggerToast('Please provide a Description and Rate / Percentage.');
       return;
     }
+    const isEditingProfile = surchargeModalForm.id && surchargeModalForm.id.startsWith('profile_');
+    const targetId = isEditingProfile ? Date.now().toString() : (surchargeModalForm.id || Date.now().toString());
+
+    if (isEditingProfile) {
+      setHiddenSurchargesMap(prev => {
+        const list = prev[currentCustomerId] || [];
+        const updated = [...list, surchargeModalForm.id];
+        try {
+          localStorage.setItem(`hero_hidden_surcharges_${currentCustomerId}`, JSON.stringify(updated));
+        } catch (err) {}
+        return { ...prev, [currentCustomerId]: updated };
+      });
+    }
+
     const newItem = {
-      id: surchargeModalForm.id || Date.now().toString(),
+      id: targetId,
       description: surchargeModalForm.description.trim(),
       calculation: surchargeModalForm.calculation || '% of Base Rate',
       rate: surchargeModalForm.rate.toString().trim(),
@@ -575,6 +591,14 @@ Exported On: ${new Date().toLocaleString()}`;
   const handleSaveBillingSurcharge = handleSaveSurcharge;
 
   const handleDeleteBillingSurcharge = (surchargeId) => {
+    setHiddenSurchargesMap(prev => {
+      const list = prev[currentCustomerId] || [];
+      const updated = [...list, surchargeId];
+      try {
+        localStorage.setItem(`hero_hidden_surcharges_${currentCustomerId}`, JSON.stringify(updated));
+      } catch (err) {}
+      return { ...prev, [currentCustomerId]: updated };
+    });
     setCustomerSurchargesMap(prev => {
       const list = prev[currentCustomerId] || [];
       const updated = list.filter(s => s.id !== surchargeId);
@@ -963,6 +987,10 @@ Exported On: ${new Date().toLocaleString()}`;
           if (Array.isArray(parsed) && parsed.length > 0) {
             setCustomerSurchargesMap(prev => ({ ...prev, [selectedCustomer.id]: parsed }));
           }
+        }
+        const savedHidden = localStorage.getItem(`hero_hidden_surcharges_${selectedCustomer.id}`);
+        if (savedHidden) {
+          setHiddenSurchargesMap(prev => ({ ...prev, [selectedCustomer.id]: JSON.parse(savedHidden) }));
         }
       } catch (e) {}
 
@@ -3665,34 +3693,30 @@ Exported On: ${new Date().toLocaleString()}`;
                                         </span>
                                       </td>
                                       <td className="py-3 px-4 text-right flex items-center justify-end gap-1">
-                                        {!sc.isFromRule && (
-                                          <>
-                                            <button
-                                              onClick={() => {
-                                                setSurchargeModalForm({
-                                                  id: sc.id,
-                                                  description: sc.description,
-                                                  calculation: sc.calculation || '% of Base Rate',
-                                                  rate: sc.rate,
-                                                  taxable: sc.taxable !== false,
-                                                  notes: sc.notes || ''
-                                                });
-                                                setShowAddSurchargeModal(true);
-                                              }}
-                                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                                              title="Edit Surcharge"
-                                            >
-                                              <Edit size={14} />
-                                            </button>
-                                            <button
-                                              onClick={() => handleDeleteBillingSurcharge(sc.id)}
-                                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                              title="Delete Surcharge"
-                                            >
-                                              <Trash2 size={14} />
-                                            </button>
-                                          </>
-                                        )}
+                                        <button
+                                          onClick={() => {
+                                            setSurchargeModalForm({
+                                              id: sc.id,
+                                              description: sc.description,
+                                              calculation: sc.calculation || '% of Base Rate',
+                                              rate: sc.rate,
+                                              taxable: sc.taxable !== false,
+                                              notes: sc.notes || ''
+                                            });
+                                            setShowAddSurchargeModal(true);
+                                          }}
+                                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                          title="Edit Surcharge"
+                                        >
+                                          <Edit size={14} />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteBillingSurcharge(sc.id)}
+                                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                          title="Delete Surcharge"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
                                       </td>
                                     </tr>
                                   );
