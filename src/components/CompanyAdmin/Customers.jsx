@@ -3634,31 +3634,6 @@ Exported On: ${new Date().toLocaleString()}`;
                       </div>
                     ) : activePricingSubTab === 'Surcharges' ? (
                       <div className="flex flex-col gap-6">
-                        {/* Quick Add Presets Bar */}
-                        <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl">
-                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
-                            <Zap size={12} className="text-amber-500" /> Quick Add Industry Presets
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            {[
-                              { label: '⛽ Fuel Levy (12.5%)', description: 'Fuel Levy', calculation: '% of Base Rate', rate: '12.5' },
-                              { label: '🛣️ Toll Charge ($25)', description: 'Toll Recovery Fee', calculation: 'Flat Fee ($)', rate: '25.00' },
-                              { label: '⏳ Waiting Time ($65/hr)', description: 'Waiting Time Charge', calculation: 'Per Hour ($)', rate: '65.00' },
-                              { label: '☣️ DG Surcharge ($150)', description: 'Dangerous Goods (DG) Fee', calculation: 'Flat Fee ($)', rate: '150.00' },
-                              { label: '🌙 After Hours (15%)', description: 'After Hours Surcharge', calculation: '% of Base Rate', rate: '15.0' }
-                            ].map((preset, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => handleAddPresetSurcharge(preset)}
-                                className="px-3 py-1.5 bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-bold text-xs rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
-                              >
-                                <Plus size={12} className="text-emerald-600" />
-                                <span>{preset.label}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
                         {/* Surcharges Table */}
                         <div className="overflow-x-auto custom-scrollbar">
                           <table className="w-full text-left text-xs whitespace-nowrap min-w-[700px]">
@@ -3676,7 +3651,7 @@ Exported On: ${new Date().toLocaleString()}`;
                               {currentSurcharges.length === 0 ? (
                                 <tr>
                                   <td colSpan="6" className="py-10 text-center text-xs font-semibold text-slate-400 italic">
-                                    No surcharges added yet. Click "+ Add Surcharge" or choose a Quick Add preset above.
+                                    No surcharges added yet. Click "+ Add Surcharge" to configure rates.
                                   </td>
                                 </tr>
                               ) : (
@@ -6212,48 +6187,6 @@ Exported On: ${new Date().toLocaleString()}`;
             </div>
 
             <div className="p-6 space-y-5 text-xs font-semibold text-slate-700 max-h-[75vh] overflow-y-auto">
-              {/* Quick Presets */}
-              <div>
-                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">Quick Presets</label>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Fuel Levy', calculation: '% of Base Rate', rate: '14.50', taxable: true })}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <span>⛽</span> Fuel Levy (14.5%)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Tolls Charge', calculation: 'Flat Fee ($)', rate: '15.00', taxable: true })}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <span>🌉</span> Tolls ($15.00)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Waiting Time Charge', calculation: 'Per Hour', rate: '65.00', taxable: true })}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <span>⏱️</span> Waiting ($65/hr)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Tail Lift Service Fee', calculation: 'Flat Fee ($)', rate: '35.00', taxable: true })}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <span>🚚</span> Tail Lift ($35)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Dangerous Goods (DG) Surcharge', calculation: '% of Base Rate', rate: '10.00', taxable: true })}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <span>☣️</span> DG Fee (10%)
-                  </button>
-                </div>
-              </div>
-
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">Surcharge / Levy Name <span className="text-red-500">*</span></label>
                 <input
