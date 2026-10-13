@@ -469,14 +469,25 @@ export default function PickupLoading() {
     setNewModel('');
     setNewPlate('');
     setNewCustomerId('');
+    // Fix: reset newDrop so next item defaults back to DROP 1 (not the last selected drop)
+    setNewDrop('DROP 1');
     const customerLabel = selectedCustomer ? ` for ${selectedCustomer.name}` : '';
-    triggerToast(`Added ${newModel} to ${newDrop}${customerLabel}!`);
+    // Fix: was using newDrop (always 'DROP 1/2/3/4'), now uses effectiveDrop (customer name when selected)
+    triggerToast(`Added ${newModel} to ${effectiveDrop}${customerLabel}!`);
   };
+
 
   const handleEditCarSubmit = async (e) => {
     e.preventDefault();
     if (!editingCar) return;
-    setCars(cars.map(c => c.id === editingCar.id ? editingCar : c));
+    // Step 10 fix: also update customerName in local state when customer changes
+    const editedCustomer = customers.find(c => c.id === editingCar.customerId) || null;
+    const updatedCar = {
+      ...editingCar,
+      customerName: editedCustomer?.name || editingCar.customerName || null,
+      dropLoc: editedCustomer?.name || editingCar.dropLoc
+    };
+    setCars(cars.map(c => c.id === editingCar.id ? updatedCar : c));
     setEditCarModalOpen(false);
     triggerToast(`Updated ${editingCar.makeModel}!`);
 
@@ -486,7 +497,9 @@ export default function PickupLoading() {
           makeModel: editingCar.makeModel,
           vin: editingCar.vin,
           plate: editingCar.plate,
-          drop: editingCar.drop
+          drop: editingCar.drop,
+          // Step 10 fix: send customerId so DB record is also updated
+          ...(editingCar.customerId && { customerId: editingCar.customerId })
         });
       }
     } catch (err) {
@@ -1303,9 +1316,19 @@ export default function PickupLoading() {
             {/* ACTION BUTTON */}
             <button
               onClick={() => {
-                const targetId = scanVinInput ? parseInt(scanVinInput) : 3;
-                const matchedCar = cars.find(c => c.id === targetId) || cars.find(c => !c.pickedUp) || cars[0];
-                
+                // Fix: was using parseInt() which breaks UUID/Date.now IDs — use string match instead
+                const matchedCar = cars.find(c => String(c.id) === String(scanVinInput))
+                  || cars.find(c => !c.pickedUp)
+                  || cars[0];
+
+                // Fix: null guard — if cars list is empty, show toast instead of crash
+                if (!matchedCar) {
+                  triggerToast('No items in load to scan. Please add items first.');
+                  setScanVinModalOpen(false);
+                  setScanVinInput('');
+                  return;
+                }
+
                 setScanVinModalOpen(false);
                 togglePickUp(matchedCar.id);
                 triggerToast(`✅ VIN ${matchedCar.vin} Scanned! ${matchedCar.makeModel} marked as Picked Up.`);
@@ -1314,11 +1337,11 @@ export default function PickupLoading() {
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-3.5 rounded-xl transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
             >
               <FiCheckCircle className="text-base" />
-              <span>Simulate VIN Scan & Mark Picked Up</span>
+              <span>Simulate VIN Scan &amp; Mark Picked Up</span>
             </button>
 
             <p className="text-center text-[10px] text-slate-500 font-semibold">
-              Scanning automatically validates VIN against assigned load manifest LD-3987.
+              Scanning automatically validates VIN against your assigned load manifest.
             </p>
           </div>
         </div>
@@ -1475,8 +1498,32 @@ export default function PickupLoading() {
             </div>
 
             <div className="space-y-3 text-xs font-semibold">
+              {/* Step 10 fix: Customer dropdown added to edit modal so driver can reassign items */}
               <div>
-                <label className="text-slate-700 font-bold block mb-1">Make & Model</label>
+                <label className="text-slate-700 font-bold block mb-1 flex items-center gap-1">
+                  <span>🏢</span> Customer Assignment
+                </label>
+                <select
+                  value={editingCar.customerId || ''}
+                  onChange={(e) => {
+                    const cust = customers.find(c => c.id === e.target.value) || null;
+                    setEditingCar({
+                      ...editingCar,
+                      customerId: e.target.value || null,
+                      customerName: cust?.name || null
+                    });
+                  }}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
+                >
+                  <option value="">— No Customer (use Drop location) —</option>
+                  {customers.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}{c.contactName ? ` — ${c.contactName}` : ''}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-700 font-bold block mb-1">Make &amp; Model</label>
                 <input
                   type="text"
                   value={editingCar.makeModel}
