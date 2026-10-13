@@ -6187,6 +6187,57 @@ Exported On: ${new Date().toLocaleString()}`;
             </div>
 
             <div className="p-6 space-y-5 text-xs font-semibold text-slate-700 max-h-[75vh] overflow-y-auto">
+              {/* Quick Presets */}
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Zap size={13} className="text-amber-500" /> Quick Presets
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Fuel Levy', calculation: '% of Base Rate', rate: '14.50', taxable: true })}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span>⛽</span> Fuel Levy (14.5%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Toll Recovery Fee', calculation: 'Flat Fee ($)', rate: '25.00', taxable: true })}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span>🛣️</span> Toll Charge ($25)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Waiting Time Charge', calculation: 'Per Hour', rate: '65.00', taxable: true })}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span>⏳</span> Waiting ($65/hr)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Tail Lift Service Fee', calculation: 'Flat Fee ($)', rate: '35.00', taxable: true })}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span>🚚</span> Tail Lift ($35)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Dangerous Goods (DG) Fee', calculation: '% of Base Rate', rate: '10.00', taxable: true })}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span>☣️</span> DG Surcharge (10%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'After Hours Surcharge', calculation: '% of Base Rate', rate: '15.00', taxable: true })}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span>🌙</span> After Hours (15%)
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">Surcharge / Levy Name <span className="text-red-500">*</span></label>
                 <input
