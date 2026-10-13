@@ -1094,6 +1094,10 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
           customerId: item.customer && item.customer.length > 5 ? item.customer : (formData.customer && formData.customer.length > 5 ? formData.customer : null),
           notes: JSON.stringify(item)
         })),
+        // Phase 7A: send all selected billed customer IDs so backend can connect them to this load
+        billedCustomerIds: Array.isArray(formData.billedCustomerIds) && formData.billedCustomerIds.length > 0
+          ? formData.billedCustomerIds
+          : (formData.customer && formData.customer.length > 5 ? [formData.customer] : []),
         billingSnapshots: multiCustomerBreakdown,
         ...(Object.keys(uploadedPhotos).length > 0 && {
           documents: {
