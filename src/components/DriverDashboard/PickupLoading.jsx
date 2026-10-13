@@ -427,6 +427,8 @@ export default function PickupLoading() {
 
     // Phase 4: find selected customer for UI label
     const selectedCustomer = customers.find(c => c.id === newCustomerId) || null;
+    // Phase 7: if customer selected, override drop to customer name for clean grouping
+    const effectiveDrop = selectedCustomer ? selectedCustomer.name : newDrop;
 
     let addedDbItem = null;
     try {
@@ -435,7 +437,7 @@ export default function PickupLoading() {
         vin: newVin.toUpperCase(),
         makeModel: newModel,
         plate: newPlate.toUpperCase() || 'TEMP-99',
-        drop: newDrop,
+        drop: effectiveDrop,
         // Phase 4: send customerId to backend
         ...(newCustomerId && { customerId: newCustomerId })
       });
@@ -447,9 +449,9 @@ export default function PickupLoading() {
     const newCarItem = {
       id: addedDbItem?.id || Date.now(),
       dbId: addedDbItem?.id || null,
-      drop: newDrop,
+      drop: effectiveDrop,
       // Phase 6: real customer name instead of hardcoded location
-      dropLoc: selectedCustomer?.name || newDrop,
+      dropLoc: selectedCustomer?.name || effectiveDrop,
       vin: newVin.toUpperCase(),
       makeModel: newModel,
       color: 'White',
@@ -1165,16 +1167,25 @@ export default function PickupLoading() {
 
               <div>
                 <label className="text-slate-700 font-bold block mb-1">Target Drop Location</label>
-                <select
-                  value={newDrop}
-                  onChange={(e) => setNewDrop(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
-                >
-                  <option value="DROP 1">DROP 1</option>
-                  <option value="DROP 2">DROP 2</option>
-                  <option value="DROP 3">DROP 3</option>
-                  <option value="DROP 4">DROP 4</option>
-                </select>
+                {newCustomerId ? (
+                  // When customer is selected — auto-fill drop with customer name
+                  <div className="w-full bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-indigo-800 font-bold text-xs flex items-center gap-2">
+                    <span>🏢</span>
+                    <span>{customers.find(c => c.id === newCustomerId)?.name || 'Selected Customer'}</span>
+                    <span className="text-indigo-400 font-normal text-[10px] ml-auto">Auto-set from customer</span>
+                  </div>
+                ) : (
+                  <select
+                    value={newDrop}
+                    onChange={(e) => setNewDrop(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
+                  >
+                    <option value="DROP 1">DROP 1</option>
+                    <option value="DROP 2">DROP 2</option>
+                    <option value="DROP 3">DROP 3</option>
+                    <option value="DROP 4">DROP 4</option>
+                  </select>
+                )}
               </div>
 
               <div>
