@@ -1091,7 +1091,14 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
           color: item.colour || item.color || null,
           quantity: parseInt(String(item.quantity || 1).replace(/[^0-9]/g, ''), 10) || 1,
           weightKg: item.weight ? parseInt(String(item.weight).replace(/[^0-9]/g, ''), 10) || 0 : 0,
-          customerId: item.customer && item.customer.length > 5 ? item.customer : (formData.customer && formData.customer.length > 5 ? formData.customer : null),
+          customerId: (() => {
+            const resolved = dbCustomers.find(c => c.id === item.customer || c.name === item.customer);
+            if (resolved?.id) return resolved.id;
+            if (item.customer && item.customer.length > 5) return item.customer;
+            const primResolved = dbCustomers.find(c => c.id === formData.customer || c.name === formData.customer);
+            if (primResolved?.id) return primResolved.id;
+            return formData.customer && formData.customer.length > 5 ? formData.customer : null;
+          })(),
           notes: JSON.stringify(item)
         })),
         // Phase 7A: send all selected billed customer IDs so backend can connect them to this load
@@ -1835,11 +1842,14 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                       <div>
                         <FieldLabel required>Customer / Owner</FieldLabel>
                         <div className="relative">
-                          <select value={item.customer} onChange={e => updateItem(item.id, 'customer', e.target.value)}
-                            className={selectCls}>
+                          <select 
+                            value={(dbCustomers.find(c => c.id === item.customer || c.name === item.customer)?.id) || item.customer || ''} 
+                            onChange={e => updateItem(item.id, 'customer', e.target.value)}
+                            className={selectCls}
+                          >
                             <option value="">Select Customer...</option>
                             {dbCustomers.map((c, i) => (
-                              <option key={c.id || i} value={c.name || c.id}>{c.name || `Customer #${i + 1}`}</option>
+                              <option key={c.id || i} value={c.id}>{c.name || `Customer #${i + 1}`}</option>
                             ))}
                           </select>
                           <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />

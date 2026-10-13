@@ -1453,7 +1453,7 @@ function LoadDetail({ load, onBack, onEdit }) {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {[
-                      { label: 'CUSTOMER BOOKING', value: currentLoad.customer },
+                      { label: 'CUSTOMER / OWNER', value: item.customer?.name || item.customerName || (typeof item.customer === 'string' && item.customer.length > 2 ? item.customer : null) || currentLoad.customer, color: (item.customer?.name || item.customerName) ? 'text-indigo-600 font-extrabold' : '' },
                       { label: 'STOCK REF / REGO', value: item.rego || item.stockRef || 'ITEM-001', color: 'text-indigo-600' },
                       { label: 'DESCRIPTION', value: item.model || item.name || 'Cargo Item' },
                       { label: 'QUANTITY', value: `${item.quantity || 1} Units` },

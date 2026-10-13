@@ -32,7 +32,7 @@ export default function PickupLoading() {
   const [newModel, setNewModel] = useState('');
   const [newPlate, setNewPlate] = useState('');
   const [newDrop, setNewDrop] = useState('DROP 1');
-  // Phase 4: customer selection state for multi-customer loads
+  // Phase 4: customer selection for multi-customer loads
   const [newCustomerId, setNewCustomerId] = useState('');
   const [customers, setCustomers] = useState([]);
 
@@ -211,7 +211,7 @@ export default function PickupLoading() {
     fetchPickupLoad();
   }, []);
 
-  // Phase 4: Fetch customers for this load whenever loadInfo.dbId is set
+  // Phase 4: fetch customers when loadInfo.dbId is available
   useEffect(() => {
     const fetchCustomers = async () => {
       if (!loadInfo?.dbId) return;
@@ -221,7 +221,6 @@ export default function PickupLoading() {
           setCustomers(res.data.data.customers);
         }
       } catch (err) {
-        // silently fail — customers list not critical
         console.warn('Could not fetch pickup customers:', err?.message);
       }
     };
@@ -426,8 +425,10 @@ export default function PickupLoading() {
     e.preventDefault();
     if (!newModel || !newVin) return;
 
-    // Phase 4: find selected customer object for UI display
+    // Phase 4: find selected customer for UI label
     const selectedCustomer = customers.find(c => c.id === newCustomerId) || null;
+    // Phase 7: if customer selected, override drop to customer name for clean grouping
+    const effectiveDrop = selectedCustomer ? selectedCustomer.name : newDrop;
 
     let addedDbItem = null;
     try {
@@ -436,7 +437,7 @@ export default function PickupLoading() {
         vin: newVin.toUpperCase(),
         makeModel: newModel,
         plate: newPlate.toUpperCase() || 'TEMP-99',
-        drop: newDrop,
+        drop: effectiveDrop,
         // Phase 4: send customerId to backend
         ...(newCustomerId && { customerId: newCustomerId })
       });
@@ -448,9 +449,9 @@ export default function PickupLoading() {
     const newCarItem = {
       id: addedDbItem?.id || Date.now(),
       dbId: addedDbItem?.id || null,
-      drop: newDrop,
-      // Phase 6: use real customer name/address instead of hardcoded DROP values
-      dropLoc: selectedCustomer?.name || newDrop,
+      drop: effectiveDrop,
+      // Phase 6: real customer name instead of hardcoded location
+      dropLoc: selectedCustomer?.name || effectiveDrop,
       vin: newVin.toUpperCase(),
       makeModel: newModel,
       color: 'White',
@@ -458,7 +459,7 @@ export default function PickupLoading() {
       pickedUp: false,
       time: null,
       photos: { current: 0, total: 4, percent: 0 },
-      // Phase 4: attach customer info to local state too
+      // Phase 4: store customer info in state
       customerId: newCustomerId || null,
       customerName: selectedCustomer?.name || null
     };
@@ -468,14 +469,25 @@ export default function PickupLoading() {
     setNewModel('');
     setNewPlate('');
     setNewCustomerId('');
+    // Fix: reset newDrop so next item defaults back to DROP 1 (not the last selected drop)
+    setNewDrop('DROP 1');
     const customerLabel = selectedCustomer ? ` for ${selectedCustomer.name}` : '';
-    triggerToast(`Added ${newModel} to ${newDrop}${customerLabel}!`);
+    // Fix: was using newDrop (always 'DROP 1/2/3/4'), now uses effectiveDrop (customer name when selected)
+    triggerToast(`Added ${newModel} to ${effectiveDrop}${customerLabel}!`);
   };
+
 
   const handleEditCarSubmit = async (e) => {
     e.preventDefault();
     if (!editingCar) return;
-    setCars(cars.map(c => c.id === editingCar.id ? editingCar : c));
+    // Step 10 fix: also update customerName in local state when customer changes
+    const editedCustomer = customers.find(c => c.id === editingCar.customerId) || null;
+    const updatedCar = {
+      ...editingCar,
+      customerName: editedCustomer?.name || editingCar.customerName || null,
+      dropLoc: editedCustomer?.name || editingCar.dropLoc
+    };
+    setCars(cars.map(c => c.id === editingCar.id ? updatedCar : c));
     setEditCarModalOpen(false);
     triggerToast(`Updated ${editingCar.makeModel}!`);
 
@@ -485,7 +497,9 @@ export default function PickupLoading() {
           makeModel: editingCar.makeModel,
           vin: editingCar.vin,
           plate: editingCar.plate,
-          drop: editingCar.drop
+          drop: editingCar.drop,
+          // Step 10 fix: send customerId so DB record is also updated
+          ...(editingCar.customerId && { customerId: editingCar.customerId })
         });
       }
     } catch (err) {
@@ -851,9 +865,8 @@ export default function PickupLoading() {
                   No {getItemLabel(loadType, 2).toLowerCase()} assigned to pick up for this load.
                 </div>
               ) : (
-                // Phase 5: Group items by customer (customerId) instead of DROP
+                // Phase 5: group by customer if customerId set, else by drop label
                 (() => {
-                  // Build groups: keyed by customerId if set, else by drop label
                   const groups = {};
                   cars.forEach(car => {
                     let key, label, isCustomerGroup;
@@ -879,16 +892,13 @@ export default function PickupLoading() {
 
                     return (
                       <div key={groupKey} className="bg-slate-50/70 border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs">
-                        {/* Group Header */}
                         <div className={`px-3.5 py-2 border-b border-slate-200/80 flex justify-between items-center text-xs font-bold ${
                           group.isCustomerGroup ? 'bg-indigo-50/80' : 'bg-slate-100/90'
                         }`}>
                           <div className="flex items-center gap-2 text-indigo-950">
-                            {group.isCustomerGroup ? (
-                              <span className="text-indigo-600 text-sm">🏢</span>
-                            ) : (
-                              <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                            )}
+                            {group.isCustomerGroup
+                              ? <span className="text-indigo-600 text-sm">🏢</span>
+                              : <span className="w-2 h-2 rounded-full bg-indigo-600"></span>}
                             <span className="font-black text-xs">{group.label}</span>
                             {group.isCustomerGroup && (
                               <span className="bg-indigo-100 text-indigo-700 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">Customer</span>
@@ -897,25 +907,21 @@ export default function PickupLoading() {
                             <span className="text-slate-600 text-[11px]">Deliver: {dropLoc}</span>
                           </div>
                           <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                            group.isCustomerGroup
-                              ? 'bg-indigo-100 text-indigo-800'
-                              : 'bg-slate-200 text-slate-700'
+                            group.isCustomerGroup ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-200 text-slate-700'
                           }`}>
                             {dropCars.length} {getItemShortLabel(loadType, dropCars.length)}
                           </span>
                         </div>
 
-                        {/* Cars / Freight Items List */}
                         <div className="divide-y divide-slate-100 bg-white">
                           {dropCars.map((car) => (
-                            <div 
-                              key={car.id} 
+                            <div
+                              key={car.id}
                               className={`p-3 flex items-center justify-between gap-3 transition-colors ${
                                 car.pickedUp ? 'bg-emerald-50/30' : 'hover:bg-slate-50/50'
                               }`}
                             >
                               <div className="flex items-center gap-3 min-w-0">
-                                {/* Checkbox circle */}
                                 <button
                                   onClick={() => togglePickUp(car.id)}
                                   className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-xs cursor-pointer transition-all shrink-0 ${
@@ -932,7 +938,6 @@ export default function PickupLoading() {
                                   <div className="font-extrabold text-slate-900 text-xs mt-0.5">
                                     {car.makeModel || car.description} {car.plate ? <span className="text-slate-400 font-mono text-[10.5px] font-bold">({car.plate})</span> : null}
                                   </div>
-                                  {/* Phase 5: show customer badge on items that have customer set */}
                                   {car.customerName && !group.isCustomerGroup && (
                                     <div className="text-[10px] text-indigo-600 font-bold mt-0.5">🏢 {car.customerName}</div>
                                   )}
@@ -946,7 +951,6 @@ export default function PickupLoading() {
                                 </div>
                               </div>
 
-                              {/* Status & Actions */}
                               <div className="flex items-center gap-2.5 shrink-0">
                                 {car.pickedUp ? (
                                   <span className="bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] text-[9.5px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap">
@@ -957,28 +961,13 @@ export default function PickupLoading() {
                                     Not Picked Up
                                   </span>
                                 )}
-
-                                <button
-                                  onClick={() => { setSelectedCarForModal(car); setPhotoModalOpen(true); }}
-                                  className="text-indigo-500 hover:text-indigo-700 p-1 cursor-pointer rounded-md hover:bg-indigo-50"
-                                  title="Manage item photos"
-                                >
+                                <button onClick={() => { setSelectedCarForModal(car); setPhotoModalOpen(true); }} className="text-indigo-500 hover:text-indigo-700 p-1 cursor-pointer rounded-md hover:bg-indigo-50" title="Manage item photos">
                                   <FiCamera className="text-xs" />
                                 </button>
-
-                                <button
-                                  onClick={() => { setEditingCar(car); setEditCarModalOpen(true); }}
-                                  className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer rounded-md hover:bg-slate-100"
-                                  title="Edit item details"
-                                >
+                                <button onClick={() => { setEditingCar(car); setEditCarModalOpen(true); }} className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer rounded-md hover:bg-slate-100" title="Edit item details">
                                   <FiEdit2 className="text-xs" />
                                 </button>
-
-                                <button
-                                  onClick={() => deleteCar(car.id)}
-                                  className="text-rose-400 hover:text-rose-600 p-1 cursor-pointer rounded-md hover:bg-rose-50"
-                                  title="Remove item"
-                                >
+                                <button onClick={() => deleteCar(car.id)} className="text-rose-400 hover:text-rose-600 p-1 cursor-pointer rounded-md hover:bg-rose-50" title="Remove item">
                                   <FiTrash2 className="text-xs" />
                                 </button>
                               </div>
@@ -991,6 +980,7 @@ export default function PickupLoading() {
                 })()
               )}
             </div>
+
 
             {/* ADD ITEM FROM YARD / POOL BAR */}
             <div className="bg-[#F3E8FF] border border-[#E9D5FF] rounded-xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -1168,7 +1158,7 @@ export default function PickupLoading() {
             </div>
 
             <div className="space-y-3 text-xs font-semibold">
-              {/* Phase 4: Customer Selector — shown when load has customers */}
+              {/* Phase 4: Customer dropdown at top of modal */}
               <div>
                 <label className="text-slate-700 font-bold block mb-1 flex items-center gap-1">
                   <span>🏢</span> Customer (for this item)
@@ -1190,16 +1180,25 @@ export default function PickupLoading() {
 
               <div>
                 <label className="text-slate-700 font-bold block mb-1">Target Drop Location</label>
-                <select
-                  value={newDrop}
-                  onChange={(e) => setNewDrop(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
-                >
-                  <option value="DROP 1">DROP 1</option>
-                  <option value="DROP 2">DROP 2</option>
-                  <option value="DROP 3">DROP 3</option>
-                  <option value="DROP 4">DROP 4</option>
-                </select>
+                {newCustomerId ? (
+                  // When customer is selected — auto-fill drop with customer name
+                  <div className="w-full bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-indigo-800 font-bold text-xs flex items-center gap-2">
+                    <span>🏢</span>
+                    <span>{customers.find(c => c.id === newCustomerId)?.name || 'Selected Customer'}</span>
+                    <span className="text-indigo-400 font-normal text-[10px] ml-auto">Auto-set from customer</span>
+                  </div>
+                ) : (
+                  <select
+                    value={newDrop}
+                    onChange={(e) => setNewDrop(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
+                  >
+                    <option value="DROP 1">DROP 1</option>
+                    <option value="DROP 2">DROP 2</option>
+                    <option value="DROP 3">DROP 3</option>
+                    <option value="DROP 4">DROP 4</option>
+                  </select>
+                )}
               </div>
 
               <div>
@@ -1317,9 +1316,19 @@ export default function PickupLoading() {
             {/* ACTION BUTTON */}
             <button
               onClick={() => {
-                const targetId = scanVinInput ? parseInt(scanVinInput) : 3;
-                const matchedCar = cars.find(c => c.id === targetId) || cars.find(c => !c.pickedUp) || cars[0];
-                
+                // Fix: was using parseInt() which breaks UUID/Date.now IDs — use string match instead
+                const matchedCar = cars.find(c => String(c.id) === String(scanVinInput))
+                  || cars.find(c => !c.pickedUp)
+                  || cars[0];
+
+                // Fix: null guard — if cars list is empty, show toast instead of crash
+                if (!matchedCar) {
+                  triggerToast('No items in load to scan. Please add items first.');
+                  setScanVinModalOpen(false);
+                  setScanVinInput('');
+                  return;
+                }
+
                 setScanVinModalOpen(false);
                 togglePickUp(matchedCar.id);
                 triggerToast(`✅ VIN ${matchedCar.vin} Scanned! ${matchedCar.makeModel} marked as Picked Up.`);
@@ -1328,11 +1337,11 @@ export default function PickupLoading() {
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-3.5 rounded-xl transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
             >
               <FiCheckCircle className="text-base" />
-              <span>Simulate VIN Scan & Mark Picked Up</span>
+              <span>Simulate VIN Scan &amp; Mark Picked Up</span>
             </button>
 
             <p className="text-center text-[10px] text-slate-500 font-semibold">
-              Scanning automatically validates VIN against assigned load manifest LD-3987.
+              Scanning automatically validates VIN against your assigned load manifest.
             </p>
           </div>
         </div>
@@ -1447,15 +1456,15 @@ export default function PickupLoading() {
               <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1.5">
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Pickup Location</span>
-                  <span className="text-slate-900 font-black">ABC Car Yard, Melbourne</span>
+                  <span className="text-slate-900 font-black">{loadInfo?.origin || 'Not Set'}</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Total Assigned Load</span>
-                  <span className="text-slate-900 font-mono">8 Vehicles Total</span>
+                  <span className="text-slate-900 font-mono">{cars.length} {getItemLabel(loadType, cars.length)} Total</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Primary Drop</span>
-                  <span className="text-slate-900">Auto World Sydney</span>
+                  <span className="text-slate-900">{loadInfo?.destination || '—'}</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Dispatch Hotline</span>
@@ -1489,8 +1498,32 @@ export default function PickupLoading() {
             </div>
 
             <div className="space-y-3 text-xs font-semibold">
+              {/* Step 10 fix: Customer dropdown added to edit modal so driver can reassign items */}
               <div>
-                <label className="text-slate-700 font-bold block mb-1">Make & Model</label>
+                <label className="text-slate-700 font-bold block mb-1 flex items-center gap-1">
+                  <span>🏢</span> Customer Assignment
+                </label>
+                <select
+                  value={editingCar.customerId || ''}
+                  onChange={(e) => {
+                    const cust = customers.find(c => c.id === e.target.value) || null;
+                    setEditingCar({
+                      ...editingCar,
+                      customerId: e.target.value || null,
+                      customerName: cust?.name || null
+                    });
+                  }}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
+                >
+                  <option value="">— No Customer (use Drop location) —</option>
+                  {customers.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}{c.contactName ? ` — ${c.contactName}` : ''}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-700 font-bold block mb-1">Make &amp; Model</label>
                 <input
                   type="text"
                   value={editingCar.makeModel}
