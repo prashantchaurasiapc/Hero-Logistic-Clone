@@ -241,7 +241,7 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
   );
 }
 
-export default function CreateLoad({ onBack, editMode = false, loadToEdit = null }) {
+export default function CreateLoad({ onBack, editMode = false, loadToEdit = null, initialCustomerId = null }) {
   const [dbDrivers, setDbDrivers] = useState([]);
   const [dbTrucks, setDbTrucks] = useState([]);
   const [dbCustomers, setDbCustomers] = useState([]);
@@ -303,6 +303,18 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
 
     loadMasterData();
   }, []);
+
+  // Pre-populate customer if passed via initialCustomerId
+  useEffect(() => {
+    if (initialCustomerId) {
+      setFormData(prev => ({
+        ...prev,
+        customer: initialCustomerId,
+        billedCustomerIds: [initialCustomerId]
+      }));
+      setItems(prev => prev.map(item => ({ ...item, customer: item.customer || initialCustomerId })));
+    }
+  }, [initialCustomerId]);
 
   // Pre-populate fields if editing an existing load
   useEffect(() => {

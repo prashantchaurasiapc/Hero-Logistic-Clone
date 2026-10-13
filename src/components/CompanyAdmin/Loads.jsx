@@ -2988,7 +2988,7 @@ export default function Loads() {
   }
 
   if (showCreateForm) {
-    return <CreateLoad onBack={() => { setShowCreateForm(false); fetchLoads(); }} />;
+    return <CreateLoad onBack={() => { setShowCreateForm(false); fetchLoads(); }} initialCustomerId={location.state?.customerId} />;
   }
 
   if (showAILoadBuilder) {

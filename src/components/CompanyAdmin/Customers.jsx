@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { createPortal } from 'react-dom';
 import {
   Users, UserCheck, UserPlus, UserMinus, Star, Search, Plus, Upload, Download, MoreVertical,
-  ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight, Printer, Zap
+  ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight, Printer, Zap, Loader2
 } from 'lucide-react';
 
 const mockCustomers = [];
@@ -11,6 +12,7 @@ const mockCustomers = [];
 const initialDocuments = [];
 
 export default function Customers() {
+  const navigate = useNavigate();
   const [customersList, setCustomersList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -97,6 +99,7 @@ export default function Customers() {
   });
 
   const [customerLoads, setCustomerLoads] = useState([]);
+  const [isCreatingLoad, setIsCreatingLoad] = useState(false);
   const [newLoadForm, setNewLoadForm] = useState({
     origin: '',
     destination: '',
@@ -104,6 +107,9 @@ export default function Customers() {
     weight: '',
     priority: 'Low',
     driverName: '',
+    rate: '',
+    pickupDate: new Date().toISOString().split('T')[0],
+    deliveryDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
     notes: ''
   });
 
@@ -1052,7 +1058,19 @@ Exported On: ${new Date().toLocaleString()}`;
         .then(res => {
           const data = res.data?.data || res.data || [];
           if (Array.isArray(data)) {
-            setCustomerLoads(data);
+            const mapped = data.map(l => {
+              const pickupStop = (l.stops || []).find(s => s.type === 'PICKUP') || l.stops?.[0];
+              const dropoffStop = (l.stops || []).find(s => s.type === 'DROPOFF') || l.stops?.[l.stops?.length - 1];
+              return {
+                ...l,
+                origin: l.origin || pickupStop?.address || pickupStop?.location || l.pickupLocation || 'N/A',
+                destination: l.destination || dropoffStop?.address || dropoffStop?.location || l.deliveryLocation || 'N/A',
+                driverName: l.driver?.user?.name || l.driver?.name || l.driverName || 'Unassigned',
+                pickupDate: l.pickupDate || (pickupStop?.scheduledDate ? new Date(pickupStop.scheduledDate).toLocaleDateString('en-GB') : (l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-GB') : 'Today')),
+                deliveryDate: l.deliveryDate || (dropoffStop?.scheduledDate ? new Date(dropoffStop.scheduledDate).toLocaleDateString('en-GB') : 'Tomorrow')
+              };
+            });
+            setCustomerLoads(mapped);
           }
         })
         .catch(err => {
@@ -1113,15 +1131,20 @@ Exported On: ${new Date().toLocaleString()}`;
 
   const handleCreateLoadSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (!newLoadForm.origin || !newLoadForm.destination) {
+    if (!newLoadForm.origin?.trim() || !newLoadForm.destination?.trim()) {
       alert('Please enter Origin and Destination');
       return;
     }
 
+    setIsCreatingLoad(true);
     const loadRef = `LD-${Math.floor(10000 + Math.random() * 90000)}`;
 
     // Build pricing snapshot from matched rule (frozen at creation time)
     const matchedRule = loadPricingCalc.matchedRule;
+    const finalRate = (loadPricingCalc.totalIncGST && loadPricingCalc.totalIncGST > 0)
+      ? loadPricingCalc.totalIncGST
+      : (parseFloat(newLoadForm.rate) || 0);
+
     const pricingSnapshot = matchedRule ? {
       pricingRuleId: matchedRule.id,
       pricingRuleName: matchedRule.name,
@@ -1139,49 +1162,122 @@ Exported On: ${new Date().toLocaleString()}`;
       snapshotDate: new Date().toISOString()
     } : null;
 
-    const newLoadObj = {
-      id: Date.now().toString(),
+    const payload = {
       loadRef,
       customerId: selectedCustomer?.id,
-      origin: newLoadForm.origin,
-      destination: newLoadForm.destination,
+      billedCustomerIds: selectedCustomer?.id ? [selectedCustomer.id] : [],
       type: newLoadForm.cargoType || 'General Freight',
-      weight: newLoadForm.weight || '5.0t',
-      priority: newLoadForm.priority || 'Low',
-      driverName: newLoadForm.driverName || 'Unassigned',
       status: 'PLANNED',
-      pickupDate: new Date().toLocaleDateString('en-GB'),
-      deliveryDate: new Date(Date.now() + 86400000).toLocaleDateString('en-GB'),
-      pricingSnapshot
+      priority: (newLoadForm.priority || 'LOW').toUpperCase(),
+      pickupLocation: newLoadForm.origin.trim(),
+      deliveryLocation: newLoadForm.destination.trim(),
+      rate: finalRate > 0 ? finalRate : undefined,
+      driverName: newLoadForm.driverName?.trim() || undefined,
+      pickupDate: newLoadForm.pickupDate ? new Date(newLoadForm.pickupDate).toISOString() : new Date().toISOString(),
+      deliveryDate: newLoadForm.deliveryDate ? new Date(newLoadForm.deliveryDate).toISOString() : new Date(Date.now() + 86400000).toISOString(),
+      notes: newLoadForm.notes?.trim() || `Created via Customer Quick Load for ${selectedCustomer?.name || 'Customer'}`,
+      stops: [
+        {
+          type: 'PICKUP',
+          sequenceIndex: 0,
+          address: newLoadForm.origin.trim(),
+          scheduledDate: newLoadForm.pickupDate || new Date().toISOString().split('T')[0]
+        },
+        {
+          type: 'DROPOFF',
+          sequenceIndex: 1,
+          address: newLoadForm.destination.trim(),
+          scheduledDate: newLoadForm.deliveryDate || new Date(Date.now() + 86400000).toISOString().split('T')[0]
+        }
+      ],
+      items: [
+        {
+          stockRef: `ITM-${loadRef}`,
+          make: newLoadForm.cargoType || 'General Cargo',
+          quantity: parseInt(loadPricingCalc.quantity, 10) || 1,
+          weightKg: parseFloat(newLoadForm.weight) ? Math.round(parseFloat(newLoadForm.weight) * 1000) : 1000,
+          customerId: selectedCustomer?.id
+        }
+      ],
+      pricingSnapshot,
+      pricingStatus: pricingSnapshot ? 'AUTO_CALCULATED' : (finalRate > 0 ? 'MANUAL' : 'NOT_READY'),
+      billingStatus: 'NOT_READY'
     };
 
+    let createdLoadId = null;
+    let finalRef = loadRef;
+
     try {
-      const res = await api.post('/company-admin/loads', {
-        loadRef,
-        customerId: selectedCustomer?.id,
-        origin: newLoadForm.origin,
-        destination: newLoadForm.destination,
-        pickupLocation: newLoadForm.origin,
-        deliveryLocation: newLoadForm.destination,
-        type: newLoadForm.cargoType || 'General Freight',
-        status: 'PLANNED',
-        priority: (newLoadForm.priority || 'LOW').toUpperCase(),
-        notes: newLoadForm.notes,
-        pricingSnapshot,
-        pricingStatus: pricingSnapshot ? 'AUTO_CALCULATED' : 'NOT_READY',
-        billingStatus: 'NOT_READY'
-      });
+      const res = await api.post('/company-admin/loads', payload);
       const createdData = res.data?.data || res.data;
       if (createdData && createdData.id) {
-        newLoadObj.id = createdData.id;
-        newLoadObj.loadRef = createdData.loadRef || loadRef;
+        createdLoadId = createdData.id;
+        finalRef = createdData.loadRef || loadRef;
       }
+      triggerToast(`✅ Load ${finalRef} created successfully for ${selectedCustomer?.name || 'Customer'}!`);
     } catch (err) {
-      console.warn('API save fallback to live state:', err);
+      console.warn('API save warning:', err);
+      triggerToast(`⚠️ Load saved locally: ${err.response?.data?.message || err.message}`);
     }
 
-    setCustomerLoads(prev => [newLoadObj, ...prev]);
+    // Refresh live loads from backend
+    if (selectedCustomer?.id) {
+      try {
+        const freshRes = await api.get(`/loads?customerId=${selectedCustomer.id}`);
+        const freshData = freshRes.data?.data || freshRes.data || [];
+        if (Array.isArray(freshData) && freshData.length > 0) {
+          const mapped = freshData.map(l => {
+            const pickupStop = (l.stops || []).find(s => s.type === 'PICKUP') || l.stops?.[0];
+            const dropoffStop = (l.stops || []).find(s => s.type === 'DROPOFF') || l.stops?.[l.stops?.length - 1];
+            return {
+              ...l,
+              origin: l.origin || pickupStop?.address || pickupStop?.location || l.pickupLocation || 'N/A',
+              destination: l.destination || dropoffStop?.address || dropoffStop?.location || l.deliveryLocation || 'N/A',
+              driverName: l.driver?.user?.name || l.driver?.name || l.driverName || 'Unassigned',
+              pickupDate: l.pickupDate || (pickupStop?.scheduledDate ? new Date(pickupStop.scheduledDate).toLocaleDateString('en-GB') : 'Today'),
+              deliveryDate: l.deliveryDate || (dropoffStop?.scheduledDate ? new Date(dropoffStop.scheduledDate).toLocaleDateString('en-GB') : 'Tomorrow')
+            };
+          });
+          setCustomerLoads(mapped);
+        } else {
+          const optimisticLoad = {
+            id: createdLoadId || Date.now().toString(),
+            loadRef: finalRef,
+            customerId: selectedCustomer?.id,
+            origin: newLoadForm.origin,
+            destination: newLoadForm.destination,
+            type: newLoadForm.cargoType || 'General Freight',
+            weight: newLoadForm.weight || '5.0t',
+            priority: newLoadForm.priority || 'Low',
+            driverName: newLoadForm.driverName || 'Unassigned',
+            status: 'PLANNED',
+            pickupDate: newLoadForm.pickupDate ? new Date(newLoadForm.pickupDate).toLocaleDateString('en-GB') : 'Today',
+            deliveryDate: newLoadForm.deliveryDate ? new Date(newLoadForm.deliveryDate).toLocaleDateString('en-GB') : 'Tomorrow',
+            pricingSnapshot
+          };
+          setCustomerLoads(prev => [optimisticLoad, ...prev]);
+        }
+      } catch {
+        const optimisticLoad = {
+          id: createdLoadId || Date.now().toString(),
+          loadRef: finalRef,
+          customerId: selectedCustomer?.id,
+          origin: newLoadForm.origin,
+          destination: newLoadForm.destination,
+          type: newLoadForm.cargoType || 'General Freight',
+          weight: newLoadForm.weight || '5.0t',
+          priority: newLoadForm.priority || 'Low',
+          driverName: newLoadForm.driverName || 'Unassigned',
+          status: 'PLANNED',
+          pickupDate: newLoadForm.pickupDate ? new Date(newLoadForm.pickupDate).toLocaleDateString('en-GB') : 'Today',
+          deliveryDate: newLoadForm.deliveryDate ? new Date(newLoadForm.deliveryDate).toLocaleDateString('en-GB') : 'Tomorrow',
+          pricingSnapshot
+        };
+        setCustomerLoads(prev => [optimisticLoad, ...prev]);
+      }
+    }
 
+    setIsCreatingLoad(false);
     setNewLoadForm({
       origin: '',
       destination: '',
@@ -1189,6 +1285,9 @@ Exported On: ${new Date().toLocaleString()}`;
       weight: '',
       priority: 'Low',
       driverName: '',
+      rate: '',
+      pickupDate: new Date().toISOString().split('T')[0],
+      deliveryDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
       notes: ''
     });
     setLoadPricingCalc({ matchedRule: null, quantity: 1, baseCharge: 0, fuelLevyAmount: 0, additionalCharges: 0, totalExGST: 0, gstAmount: 0, totalIncGST: 0 });
@@ -1896,7 +1995,7 @@ Exported On: ${new Date().toLocaleString()}`;
                     <Truck size={16} className="text-blue-600" />
                     <h3 className="text-sm font-black tracking-tight">Recent Loads</h3>
                   </div>
-                  <button onClick={() => setActiveDetailsTab('Activity')} className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+                  <button onClick={() => navigate('/company-admin/loads', { state: { customerId: selectedCustomer?.id } })} className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
                     View All Loads <ArrowRight size={12} />
                   </button>
                 </div>
@@ -1918,13 +2017,21 @@ Exported On: ${new Date().toLocaleString()}`;
                       {customerLoads.length === 0 ? (
                         <tr>
                           <td colSpan="8" className="py-8 px-5 text-center text-xs font-semibold text-slate-400">
-                            No recent loads recorded for this customer yet.
+                            No recent loads recorded for this customer yet. Click "+ Create Load" above to add one.
                           </td>
                         </tr>
                       ) : (
                         customerLoads.map((load, idx) => (
-                          <tr key={load.id || idx} className="hover:bg-slate-50 transition-colors">
-                            <td className="py-3 px-5 font-black text-blue-600">{load.loadRef}</td>
+                          <tr 
+                            key={load.id || idx} 
+                            onClick={() => navigate('/company-admin/loads', { state: { loadRef: load.loadRef } })} 
+                            className="hover:bg-indigo-50/40 transition-colors cursor-pointer"
+                            title="Click to view load details"
+                          >
+                            <td className="py-3 px-5 font-black text-blue-600 flex items-center gap-1.5">
+                              {load.loadRef}
+                              <ExternalLink size={11} className="text-blue-400 opacity-60" />
+                            </td>
                             <td className="py-3 px-5">
                               <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600">
                                 {load.status || 'PLANNED'}
@@ -5020,22 +5127,57 @@ Exported On: ${new Date().toLocaleString()}`;
 
       {/* Create New Load Modal */}
       {showCreateLoadModal && createPortal(
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowCreateLoadModal(false)}>
-          <form onSubmit={handleCreateLoadSubmit} className="bg-white rounded-2xl w-full max-w-[600px] max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => !isCreatingLoad && setShowCreateLoadModal(false)}>
+          <form onSubmit={handleCreateLoadSubmit} className="bg-white rounded-2xl w-full max-w-[620px] max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
             {/* Header */}
-            <div className="px-7 pt-6 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
+            <div className="px-7 pt-6 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0 bg-slate-50/50">
               <div>
-                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Create New Load</h3>
-                <p className="text-[13px] font-normal text-slate-400 mt-1 leading-snug">New loads will be created in the Draft queue.</p>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                    <Truck size={14} />
+                  </div>
+                  <h3 className="text-[18px] font-black text-slate-900 leading-tight">Create New Load</h3>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="text-[11px] font-bold text-indigo-700 bg-indigo-100/70 border border-indigo-200/80 rounded-md px-2 py-0.5 flex items-center gap-1">
+                    <Star size={11} className="fill-amber-400 text-amber-500" />
+                    Customer: {selectedCustomer?.name || 'Selected Customer'}
+                  </span>
+                  <span className="text-[11px] font-semibold text-slate-400">• Saved to Database & Draft Queue</span>
+                </div>
               </div>
-              <button type="button" onClick={() => setShowCreateLoadModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+              <div className="flex items-center gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => { 
+                    setShowCreateLoadModal(false); 
+                    navigate('/company-admin/loads', { state: { openNewLoadModal: true, customerId: selectedCustomer?.id } }); 
+                  }} 
+                  className="text-[11px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Open full load builder console for multi-car or multi-stop loads"
+                >
+                  <Zap size={12} className="text-amber-500 fill-amber-500" />
+                  Full Load Builder ➔
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => !isCreatingLoad && setShowCreateLoadModal(false)} 
+                  disabled={isCreatingLoad}
+                  className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-40"
+                >
+                  <X size={18} strokeWidth={2} />
+                </button>
+              </div>
             </div>
 
             {/* Body */}
-            <div className="px-7 py-5 space-y-5 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-5">
+            <div className="px-7 py-5 space-y-4 overflow-y-auto max-h-[calc(92vh-150px)]">
+              {/* Origin & Destination */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Origin *</label>
+                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
+                    <MapPin size={13} className="text-emerald-600" /> Origin Address *
+                  </label>
                   <input
                     type="text"
                     value={newLoadForm.origin}
@@ -5045,13 +5187,15 @@ Exported On: ${new Date().toLocaleString()}`;
                       const rule = findMatchingPricingRule(selectedCustomer?.id, val, newLoadForm.destination);
                       recalcLoadPricing(rule, loadPricingCalc.quantity);
                     }}
-                    placeholder="e.g. Sydney Depot"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
+                    placeholder="e.g. Sydney Depot, NSW"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-800"
                     required
                   />
                 </div>
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Destination *</label>
+                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
+                    <MapPin size={13} className="text-rose-600" /> Destination Address *
+                  </label>
                   <input
                     type="text"
                     value={newLoadForm.destination}
@@ -5061,85 +5205,135 @@ Exported On: ${new Date().toLocaleString()}`;
                       const rule = findMatchingPricingRule(selectedCustomer?.id, newLoadForm.origin, val);
                       recalcLoadPricing(rule, loadPricingCalc.quantity);
                     }}
-                    placeholder="e.g. Canberra Branch"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
+                    placeholder="e.g. Melbourne Terminal, VIC"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-800"
                     required
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Cargo Type *</label>
-                <input
-                  type="text"
-                  value={newLoadForm.cargoType}
-                  onChange={e => setNewLoadForm({ ...newLoadForm, cargoType: e.target.value })}
-                  placeholder="e.g. Beverages, Electronics, Dry Goods"
-                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-5">
+              {/* Pickup & Delivery Dates */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Weight</label>
+                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
+                    <Calendar size={13} className="text-slate-400" /> Scheduled Pickup Date
+                  </label>
                   <input
-                    type="text"
-                    value={newLoadForm.weight}
-                    onChange={e => setNewLoadForm({ ...newLoadForm, weight: e.target.value })}
-                    placeholder="e.g. 6.2t"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
+                    type="date"
+                    value={newLoadForm.pickupDate}
+                    onChange={e => setNewLoadForm({ ...newLoadForm, pickupDate: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-500 bg-white"
                   />
                 </div>
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Priority</label>
+                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
+                    <Calendar size={13} className="text-slate-400" /> Scheduled Delivery Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newLoadForm.deliveryDate}
+                    onChange={e => setNewLoadForm({ ...newLoadForm, deliveryDate: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-500 bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Cargo Type & Priority */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
+                    <Package size={13} className="text-slate-400" /> Cargo Type *
+                  </label>
+                  <input
+                    type="text"
+                    value={newLoadForm.cargoType}
+                    onChange={e => setNewLoadForm({ ...newLoadForm, cargoType: e.target.value })}
+                    placeholder="e.g. Car Carrying, General Freight"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-800"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5">Priority</label>
                   <div className="relative">
                     <select
                       value={newLoadForm.priority}
                       onChange={e => setNewLoadForm({ ...newLoadForm, priority: e.target.value })}
-                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                      className="appearance-none w-full border border-slate-200 rounded-xl pl-3.5 pr-8 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-500 bg-white cursor-pointer"
                     >
                       <option>Low</option>
                       <option>Medium</option>
                       <option>High</option>
                       <option>Urgent</option>
                     </select>
-                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               </div>
 
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Assign Driver</label>
-                <input
-                  type="text"
-                  value={newLoadForm.driverName}
-                  onChange={e => setNewLoadForm({ ...newLoadForm, driverName: e.target.value })}
-                  placeholder="Driver name (optional)"
-                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
-                />
+              {/* Weight & Driver Assignment */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5">Weight / Quantity</label>
+                  <input
+                    type="text"
+                    value={newLoadForm.weight}
+                    onChange={e => setNewLoadForm({ ...newLoadForm, weight: e.target.value })}
+                    placeholder="e.g. 5.5t or 3 units"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5">Assign Driver (Optional)</label>
+                  <input
+                    type="text"
+                    value={newLoadForm.driverName}
+                    onChange={e => setNewLoadForm({ ...newLoadForm, driverName: e.target.value })}
+                    placeholder="e.g. John Doe (or unassigned)"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-800"
+                  />
+                </div>
               </div>
 
+              {/* Agreed / Quoted Rate */}
+              {!loadPricingCalc.matchedRule && (
+                <div>
+                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
+                    <DollarSign size={13} className="text-emerald-600" /> Agreed Rate / Quoted Price ($ AUD)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newLoadForm.rate}
+                    onChange={e => setNewLoadForm({ ...newLoadForm, rate: e.target.value })}
+                    placeholder="e.g. 1250.00"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-emerald-700"
+                  />
+                </div>
+              )}
+
+              {/* Notes */}
               <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Notes</label>
+                <label className="text-[12px] font-bold text-slate-700 block mb-1.5">Special Instructions / Notes</label>
                 <textarea
                   rows={2}
                   value={newLoadForm.notes}
                   onChange={e => setNewLoadForm({ ...newLoadForm, notes: e.target.value })}
-                  placeholder="Additional notes..."
-                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700 resize-none"
+                  placeholder="e.g. Customer PO number, site access gate code, delivery window..."
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-800 resize-none"
                 ></textarea>
               </div>
 
               {/* ───────── AUTO-PRICING CALCULATOR ───────── */}
               {loadPricingCalc.matchedRule ? (
-                <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-2.5 bg-indigo-600 text-white">
+                <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 overflow-hidden shadow-xs">
+                  <div className="flex items-center justify-between px-4 py-2 bg-indigo-600 text-white">
                     <div className="flex items-center gap-2">
-                      <Calculator size={14} strokeWidth={2.5} />
-                      <span className="text-[12px] font-bold">Auto-Calculated Pricing</span>
+                      <Calculator size={13} strokeWidth={2.5} />
+                      <span className="text-[12px] font-bold">Auto-Calculated Pricing Rule</span>
                     </div>
-                    <span className="text-[10px] font-semibold bg-white/20 rounded-full px-2 py-0.5">{loadPricingCalc.matchedRule.name}</span>
+                    <span className="text-[10px] font-bold bg-white/20 rounded-full px-2.5 py-0.5">{loadPricingCalc.matchedRule.name}</span>
                   </div>
                   <div className="px-4 py-3 space-y-1.5">
                     {/* Quantity */}
@@ -5151,7 +5345,7 @@ Exported On: ${new Date().toLocaleString()}`;
                         step="0.1"
                         value={loadPricingCalc.quantity}
                         onChange={e => recalcLoadPricing(loadPricingCalc.matchedRule, e.target.value)}
-                        className="w-24 border border-indigo-200 rounded-lg px-3 py-1.5 text-[13px] font-bold text-indigo-800 bg-white focus:outline-none focus:border-indigo-500 text-right"
+                        className="w-24 border border-indigo-200 rounded-lg px-3 py-1.5 text-[13px] font-bold text-indigo-800 bg-white focus:outline-none focus:border-indigo-500 text-right shadow-xs"
                       />
                     </div>
                     {/* Breakdown */}
@@ -5187,16 +5381,16 @@ Exported On: ${new Date().toLocaleString()}`;
                         <span>${loadPricingCalc.totalIncGST.toFixed(2)}</span>
                       </div>
                     </div>
-                    <p className="text-[10px] text-slate-400 pt-1">Pricing is auto-calculated from active rule and will be frozen with this load.</p>
+                    <p className="text-[10px] text-slate-400 pt-1">Pricing is auto-calculated and frozen to this load for invoicing.</p>
                   </div>
                 </div>
               ) : (
                 newLoadForm.origin && newLoadForm.destination ? (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 flex items-center gap-2.5">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 flex items-center gap-2.5">
                     <DollarSign size={14} className="text-slate-400 shrink-0" />
                     <div>
-                      <p className="text-[12px] font-semibold text-slate-600">No pricing rule matched</p>
-                      <p className="text-[11px] text-slate-400">No active pricing rule found for this route. Add one under Billing Rules → Pricing Rules.</p>
+                      <p className="text-[11px] font-bold text-slate-600">No automatic pricing rule matched for this lane</p>
+                      <p className="text-[10px] text-slate-400">You can enter an agreed rate above, or configure pricing under Customer Pricing Rules.</p>
                     </div>
                   </div>
                 ) : null
@@ -5204,18 +5398,45 @@ Exported On: ${new Date().toLocaleString()}`;
             </div>
 
             {/* Footer */}
-            <div className="px-7 py-5 flex justify-between items-center gap-3 border-t border-slate-100 shrink-0">
+            <div className="px-7 py-4 flex justify-between items-center gap-3 border-t border-slate-100 shrink-0 bg-slate-50/50">
               <div>
-                {loadPricingCalc.matchedRule && (
-                  <span className="text-[11px] text-indigo-600 font-semibold bg-indigo-50 border border-indigo-100 rounded-full px-2.5 py-1">
+                {loadPricingCalc.matchedRule ? (
+                  <span className="text-[11px] text-indigo-700 font-bold bg-indigo-50 border border-indigo-200 rounded-full px-3 py-1">
                     💰 ${loadPricingCalc.totalIncGST.toFixed(2)} Inc GST
                   </span>
+                ) : newLoadForm.rate ? (
+                  <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+                    💰 ${parseFloat(newLoadForm.rate).toFixed(2)} Quoted
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-slate-400 font-medium">Draft Load</span>
                 )}
               </div>
-              <div className="flex gap-3">
-                <button type="button" onClick={() => setShowCreateLoadModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
-                <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200 flex items-center gap-2">
-                  <Check size={14} strokeWidth={2.5} /> Create Load
+              <div className="flex items-center gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => !isCreatingLoad && setShowCreateLoadModal(false)} 
+                  disabled={isCreatingLoad}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer bg-white disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isCreatingLoad}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[12px] font-bold transition-all cursor-pointer shadow-md shadow-indigo-200 flex items-center gap-2 disabled:opacity-60"
+                >
+                  {isCreatingLoad ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Creating Load...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={14} strokeWidth={2.5} />
+                      Create Load
+                    </>
+                  )}
                 </button>
               </div>
             </div>
