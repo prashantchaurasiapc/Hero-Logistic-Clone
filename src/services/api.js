@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const LOCAL_API_URL = 'http://localhost:5000/api/v1';
-const LIVE_API_URL = 'https://hero-logistics-backend-production.up.railway.app/api/v1';
+const LIVE_API_URL = 'https://hero-logistic-backend-production.up.railway.app/api/v1';
 
 const getBaseUrl = () => {
   return import.meta.env.VITE_API_BASE_URL || LIVE_API_URL;
@@ -124,32 +124,6 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error?.config;
-
-    // Failover fallback to LOCAL_API_URL if live Railway server returns Network Error or 404/502/503
-    const isNetworkError = !error.response;
-    const isRailwayError = error.response?.status === 404 || error.response?.status === 502 || error.response?.status === 503;
-
-    if ((isNetworkError || isRailwayError) && originalRequest && !originalRequest._retry) {
-      originalRequest._retry = true;
-      originalRequest.baseURL = LOCAL_API_URL;
-
-      if (originalRequest.url) {
-        if (originalRequest.url.startsWith('http')) {
-          const pathOnly = originalRequest.url.replace(/^https?:\/\/[^\/]+(\/api\/v1)?/, '');
-          originalRequest.url = LOCAL_API_URL + (pathOnly.startsWith('/') ? pathOnly : '/' + pathOnly);
-        } else if (!originalRequest.url.startsWith(LOCAL_API_URL)) {
-          const cleanPath = originalRequest.url.replace('/api/v1', '');
-          originalRequest.url = LOCAL_API_URL + (cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath);
-        }
-      }
-
-      try {
-        return await axios(originalRequest);
-      } catch (fallbackErr) {
-        return Promise.reject(fallbackErr);
-      }
-    }
-
 
     if (error.response && error.response.status === 401) {
       // Skip interceptor loop for auth check and logout endpoints

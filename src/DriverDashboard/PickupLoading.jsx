@@ -32,6 +32,9 @@ export default function PickupLoading() {
   const [newModel, setNewModel] = useState('');
   const [newPlate, setNewPlate] = useState('');
   const [newDrop, setNewDrop] = useState('DROP 1');
+  // Phase 4: customer selection state for multi-customer loads
+  const [newCustomerId, setNewCustomerId] = useState('');
+  const [customers, setCustomers] = useState([]);
 
   const fileInputRef = useRef(null);
   const [activeSlotTarget, setActiveSlotTarget] = useState(null);
@@ -207,6 +210,23 @@ export default function PickupLoading() {
   useEffect(() => {
     fetchPickupLoad();
   }, []);
+
+  // Phase 4: Fetch customers for this load whenever loadInfo.dbId is set
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      if (!loadInfo?.dbId) return;
+      try {
+        const res = await api.get(`/driver-portal/pickup-load/customers?loadId=${loadInfo.dbId}`);
+        if (res.data?.success && Array.isArray(res.data.data?.customers)) {
+          setCustomers(res.data.data.customers);
+        }
+      } catch (err) {
+        // silently fail — customers list not critical
+        console.warn('Could not fetch pickup customers:', err?.message);
+      }
+    };
+    fetchCustomers();
+  }, [loadInfo?.dbId]);
 
 
   const triggerToast = (msg) => {
@@ -406,6 +426,9 @@ export default function PickupLoading() {
     e.preventDefault();
     if (!newModel || !newVin) return;
 
+    // Phase 4: find selected customer object for UI display
+    const selectedCustomer = customers.find(c => c.id === newCustomerId) || null;
+
     let addedDbItem = null;
     try {
       const res = await api.post('/driver-portal/pickup-load/add-item', {
@@ -413,7 +436,9 @@ export default function PickupLoading() {
         vin: newVin.toUpperCase(),
         makeModel: newModel,
         plate: newPlate.toUpperCase() || 'TEMP-99',
-        drop: newDrop
+        drop: newDrop,
+        // Phase 4: send customerId to backend
+        ...(newCustomerId && { customerId: newCustomerId })
       });
       addedDbItem = res.data?.data?.item;
     } catch (err) {
@@ -424,21 +449,27 @@ export default function PickupLoading() {
       id: addedDbItem?.id || Date.now(),
       dbId: addedDbItem?.id || null,
       drop: newDrop,
-      dropLoc: newDrop === 'DROP 1' ? 'Auto World Sydney' : newDrop === 'DROP 2' ? 'Newcastle Motors' : 'Brisbane Car Centre',
+      // Phase 6: use real customer name/address instead of hardcoded DROP values
+      dropLoc: selectedCustomer?.name || newDrop,
       vin: newVin.toUpperCase(),
       makeModel: newModel,
       color: 'White',
       plate: newPlate.toUpperCase() || 'TEMP-99',
       pickedUp: false,
       time: null,
-      photos: { current: 0, total: 4, percent: 0 }
+      photos: { current: 0, total: 4, percent: 0 },
+      // Phase 4: attach customer info to local state too
+      customerId: newCustomerId || null,
+      customerName: selectedCustomer?.name || null
     };
     setCars(prev => [...prev, newCarItem]);
     setAddCarModalOpen(false);
     setNewVin('');
     setNewModel('');
     setNewPlate('');
-    triggerToast(`Added ${newModel} to ${newDrop}!`);
+    setNewCustomerId('');
+    const customerLabel = selectedCustomer ? ` for ${selectedCustomer.name}` : '';
+    triggerToast(`Added ${newModel} to ${newDrop}${customerLabel}!`);
   };
 
   const handleEditCarSubmit = async (e) => {
@@ -813,112 +844,151 @@ export default function PickupLoading() {
               </div>
             </div>
 
-            {/* DROPS BREAKDOWN CARDS */}
+            {/* DROPS / CUSTOMER BREAKDOWN CARDS */}
             <div className="space-y-3.5">
               {cars.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 font-bold text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
                   No {getItemLabel(loadType, 2).toLowerCase()} assigned to pick up for this load.
                 </div>
               ) : (
-                Array.from(new Set(cars.map(c => c.drop || 'DROP 1'))).map((dropName) => {
-                  const dropCars = cars.filter(c => (c.drop || 'DROP 1') === dropName);
-                  if (dropCars.length === 0) return null;
-                  const dropLoc = dropCars[0]?.dropLoc || 'Delivery Location';
+                // Phase 5: Group items by customer (customerId) instead of DROP
+                (() => {
+                  // Build groups: keyed by customerId if set, else by drop label
+                  const groups = {};
+                  cars.forEach(car => {
+                    let key, label, isCustomerGroup;
+                    if (car.customerId && car.customerName) {
+                      key = `customer_${car.customerId}`;
+                      label = car.customerName;
+                      isCustomerGroup = true;
+                    } else {
+                      key = car.drop || 'DROP 1';
+                      label = car.drop || 'DROP 1';
+                      isCustomerGroup = false;
+                    }
+                    if (!groups[key]) groups[key] = { label, isCustomerGroup, cars: [] };
+                    groups[key].cars.push(car);
+                  });
 
-                  return (
-                    <div key={dropName} className="bg-slate-50/70 border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs">
-                      {/* Drop Header */}
-                      <div className="bg-slate-100/90 px-3.5 py-2 border-b border-slate-200/80 flex justify-between items-center text-xs font-bold">
-                        <div className="flex items-center gap-2 text-indigo-950">
-                          <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                          <span className="font-black text-xs">{dropName}</span>
-                          <span className="text-slate-400 font-normal">|</span>
-                          <span className="text-slate-600 text-[11px]">Deliver: {dropLoc}</span>
+                  return Object.entries(groups).map(([groupKey, group]) => {
+                    const dropCars = group.cars;
+                    if (dropCars.length === 0) return null;
+                    const dropLoc = group.isCustomerGroup
+                      ? dropCars[0]?.dropLoc || group.label
+                      : (dropCars[0]?.dropLoc || 'Delivery Location');
+
+                    return (
+                      <div key={groupKey} className="bg-slate-50/70 border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs">
+                        {/* Group Header */}
+                        <div className={`px-3.5 py-2 border-b border-slate-200/80 flex justify-between items-center text-xs font-bold ${
+                          group.isCustomerGroup ? 'bg-indigo-50/80' : 'bg-slate-100/90'
+                        }`}>
+                          <div className="flex items-center gap-2 text-indigo-950">
+                            {group.isCustomerGroup ? (
+                              <span className="text-indigo-600 text-sm">🏢</span>
+                            ) : (
+                              <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                            )}
+                            <span className="font-black text-xs">{group.label}</span>
+                            {group.isCustomerGroup && (
+                              <span className="bg-indigo-100 text-indigo-700 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">Customer</span>
+                            )}
+                            <span className="text-slate-400 font-normal">|</span>
+                            <span className="text-slate-600 text-[11px]">Deliver: {dropLoc}</span>
+                          </div>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                            group.isCustomerGroup
+                              ? 'bg-indigo-100 text-indigo-800'
+                              : 'bg-slate-200 text-slate-700'
+                          }`}>
+                            {dropCars.length} {getItemShortLabel(loadType, dropCars.length)}
+                          </span>
                         </div>
-                        <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full">
-                          {dropCars.length} {getItemShortLabel(loadType, dropCars.length)}
-                        </span>
-                      </div>
 
-                      {/* Cars / Freight Items List */}
-                      <div className="divide-y divide-slate-100 bg-white">
-                        {dropCars.map((car) => (
-                          <div 
-                            key={car.id} 
-                            className={`p-3 flex items-center justify-between gap-3 transition-colors ${
-                              car.pickedUp ? 'bg-emerald-50/30' : 'hover:bg-slate-50/50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              {/* Checkbox circle */}
-                              <button
-                                onClick={() => togglePickUp(car.id)}
-                                className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-xs cursor-pointer transition-all shrink-0 ${
-                                  car.pickedUp ? 'bg-[#10B981] text-white shadow-xs' : 'border-2 border-slate-300 bg-white text-transparent hover:border-slate-400'
-                                }`}
-                              >
-                                ✓
-                              </button>
+                        {/* Cars / Freight Items List */}
+                        <div className="divide-y divide-slate-100 bg-white">
+                          {dropCars.map((car) => (
+                            <div 
+                              key={car.id} 
+                              className={`p-3 flex items-center justify-between gap-3 transition-colors ${
+                                car.pickedUp ? 'bg-emerald-50/30' : 'hover:bg-slate-50/50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                {/* Checkbox circle */}
+                                <button
+                                  onClick={() => togglePickUp(car.id)}
+                                  className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-xs cursor-pointer transition-all shrink-0 ${
+                                    car.pickedUp ? 'bg-[#10B981] text-white shadow-xs' : 'border-2 border-slate-300 bg-white text-transparent hover:border-slate-400'
+                                  }`}
+                                >
+                                  ✓
+                                </button>
 
-                              <div className="min-w-0 text-xs">
-                                <div className="font-mono text-[10.5px] font-bold text-slate-500 truncate">
-                                  {isVehicleLoad(loadType) ? `VIN: ${car.vin}` : `Ref: ${car.vin}`}
-                                </div>
-                                <div className="font-extrabold text-slate-900 text-xs mt-0.5">
-                                  {car.makeModel || car.description} {car.plate ? <span className="text-slate-400 font-mono text-[10.5px] font-bold">({car.plate})</span> : null}
-                                </div>
-                                {!isVehicleLoad(loadType) && (
-                                  <div className="text-[10.5px] font-semibold text-slate-500 mt-0.5 flex flex-wrap gap-2">
-                                    {car.quantity ? <span>Qty: <strong>{car.quantity}</strong></span> : null}
-                                    {car.weightKg ? <span>Weight: <strong>{car.weightKg} kg</strong></span> : null}
-                                    {car.volumeM3 ? <span>Volume: <strong>{car.volumeM3} m³</strong></span> : null}
+                                <div className="min-w-0 text-xs">
+                                  <div className="font-mono text-[10.5px] font-bold text-slate-500 truncate">
+                                    {isVehicleLoad(loadType) ? `VIN: ${car.vin}` : `Ref: ${car.vin}`}
                                   </div>
+                                  <div className="font-extrabold text-slate-900 text-xs mt-0.5">
+                                    {car.makeModel || car.description} {car.plate ? <span className="text-slate-400 font-mono text-[10.5px] font-bold">({car.plate})</span> : null}
+                                  </div>
+                                  {/* Phase 5: show customer badge on items that have customer set */}
+                                  {car.customerName && !group.isCustomerGroup && (
+                                    <div className="text-[10px] text-indigo-600 font-bold mt-0.5">🏢 {car.customerName}</div>
+                                  )}
+                                  {!isVehicleLoad(loadType) && (
+                                    <div className="text-[10.5px] font-semibold text-slate-500 mt-0.5 flex flex-wrap gap-2">
+                                      {car.quantity ? <span>Qty: <strong>{car.quantity}</strong></span> : null}
+                                      {car.weightKg ? <span>Weight: <strong>{car.weightKg} kg</strong></span> : null}
+                                      {car.volumeM3 ? <span>Volume: <strong>{car.volumeM3} m³</strong></span> : null}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Status & Actions */}
+                              <div className="flex items-center gap-2.5 shrink-0">
+                                {car.pickedUp ? (
+                                  <span className="bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] text-[9.5px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                                    Picked Up {car.time || 'Completed'}
+                                  </span>
+                                ) : (
+                                  <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[9.5px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                                    Not Picked Up
+                                  </span>
                                 )}
+
+                                <button
+                                  onClick={() => { setSelectedCarForModal(car); setPhotoModalOpen(true); }}
+                                  className="text-indigo-500 hover:text-indigo-700 p-1 cursor-pointer rounded-md hover:bg-indigo-50"
+                                  title="Manage item photos"
+                                >
+                                  <FiCamera className="text-xs" />
+                                </button>
+
+                                <button
+                                  onClick={() => { setEditingCar(car); setEditCarModalOpen(true); }}
+                                  className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer rounded-md hover:bg-slate-100"
+                                  title="Edit item details"
+                                >
+                                  <FiEdit2 className="text-xs" />
+                                </button>
+
+                                <button
+                                  onClick={() => deleteCar(car.id)}
+                                  className="text-rose-400 hover:text-rose-600 p-1 cursor-pointer rounded-md hover:bg-rose-50"
+                                  title="Remove item"
+                                >
+                                  <FiTrash2 className="text-xs" />
+                                </button>
                               </div>
                             </div>
-
-                            {/* Status & Actions */}
-                            <div className="flex items-center gap-2.5 shrink-0">
-                              {car.pickedUp ? (
-                                <span className="bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] text-[9.5px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                                  Picked Up {car.time || 'Completed'}
-                                </span>
-                              ) : (
-                                <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[9.5px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                                  Not Picked Up
-                                </span>
-                              )}
-
-                              <button
-                                onClick={() => { setSelectedCarForModal(car); setPhotoModalOpen(true); }}
-                                className="text-indigo-500 hover:text-indigo-700 p-1 cursor-pointer rounded-md hover:bg-indigo-50"
-                                title="Manage item photos"
-                              >
-                                <FiCamera className="text-xs" />
-                              </button>
-
-                              <button
-                                onClick={() => { setEditingCar(car); setEditCarModalOpen(true); }}
-                                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer rounded-md hover:bg-slate-100"
-                                title="Edit item details"
-                              >
-                                <FiEdit2 className="text-xs" />
-                              </button>
-
-                              <button
-                                onClick={() => deleteCar(car.id)}
-                                className="text-rose-400 hover:text-rose-600 p-1 cursor-pointer rounded-md hover:bg-rose-50"
-                                title="Remove item"
-                              >
-                                <FiTrash2 className="text-xs" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  });
+                })()
               )}
             </div>
 
@@ -1098,6 +1168,26 @@ export default function PickupLoading() {
             </div>
 
             <div className="space-y-3 text-xs font-semibold">
+              {/* Phase 4: Customer Selector — shown when load has customers */}
+              <div>
+                <label className="text-slate-700 font-bold block mb-1 flex items-center gap-1">
+                  <span>🏢</span> Customer (for this item)
+                  {customers.length === 0 && (
+                    <span className="text-slate-400 font-normal text-[10px] ml-1">(no customers linked to load)</span>
+                  )}
+                </label>
+                <select
+                  value={newCustomerId}
+                  onChange={(e) => setNewCustomerId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
+                >
+                  <option value="">— Select Customer (Optional) —</option>
+                  {customers.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}{c.contactName ? ` — ${c.contactName}` : ''}</option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="text-slate-700 font-bold block mb-1">Target Drop Location</label>
                 <select
@@ -1105,10 +1195,10 @@ export default function PickupLoading() {
                   onChange={(e) => setNewDrop(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
                 >
-                  <option value="DROP 1">DROP 1 - Auto World Sydney</option>
-                  <option value="DROP 2">DROP 2 - Newcastle Motors</option>
-                  <option value="DROP 3">DROP 3 - Brisbane Car Centre</option>
-                  <option value="DROP 4">DROP 4 - Gold Coast Autos</option>
+                  <option value="DROP 1">DROP 1</option>
+                  <option value="DROP 2">DROP 2</option>
+                  <option value="DROP 3">DROP 3</option>
+                  <option value="DROP 4">DROP 4</option>
                 </select>
               </div>
 

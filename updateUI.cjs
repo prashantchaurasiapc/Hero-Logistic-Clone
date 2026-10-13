@@ -6,16 +6,16 @@ let content = fs.readFileSync(path, 'utf8');
 // 1. Update the tabs array
 content = content.replace(
   /\{\['Overview', 'Contacts', 'Billing Rules', 'Pricing', 'Transport Modules', 'Instructions', 'Documents', 'Activity', 'Financials'\]\.map\(tab => \(/g,
-  "{['Overview', 'Contacts', 'Billing Rules', 'Documents', 'Activity', 'Financials'].map(tab => ("
+  "{['Overview', 'Contacts', 'Billing Rules', 'Transport Modules', 'Instructions', 'Documents', 'Activity', 'Financials'].map(tab => ("
 );
 
 // 2. We need to find the start of {activeDetailsTab === 'Billing Rules' && (
 // and the end of {activeDetailsTab === 'Pricing' && ( ... )} block.
 
 const billingRulesStart = content.indexOf("{activeDetailsTab === 'Billing Rules' && (");
-const documentsStart = content.indexOf("{activeDetailsTab === 'Documents' && (");
+const transportModulesStart = content.indexOf("{activeDetailsTab === 'Transport Modules' && (");
 
-if (billingRulesStart > -1 && documentsStart > -1) {
+if (billingRulesStart > -1 && transportModulesStart > -1) {
   const newBillingRulesUI = `{activeDetailsTab === 'Billing Rules' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex justify-between items-center mb-6">
@@ -60,7 +60,7 @@ if (billingRulesStart > -1 && documentsStart > -1) {
                               {rule.method || 'Per Load'}
                             </span>
                           </td>
-                          <td className="py-4 px-6 font-black text-emerald-600">\${parseFloat(rule.baseRate || 0).toFixed(2)}</td>
+                          <td className="py-4 px-6 font-black text-emerald-600">${parseFloat(rule.baseRate || 0).toFixed(2)}</td>
                           <td className="py-4 px-6">
                             <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full text-[10px] font-black flex items-center gap-1 w-max border border-emerald-100">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -89,11 +89,7 @@ if (billingRulesStart > -1 && documentsStart > -1) {
 
         `;
 
-  content = content.substring(0, billingRulesStart) + newBillingRulesUI + content.substring(documentsStart);
-  
-  // also fix activeDetailsTab === 'Pricing' ? '6.5 - Customer Pricing' 
-  content = content.replace("activeDetailsTab === 'Pricing' ? '6.5 - Customer Pricing' :", "");
-
+  content = content.substring(0, billingRulesStart) + newBillingRulesUI + content.substring(transportModulesStart);
   fs.writeFileSync(path, content, 'utf8');
   console.log("Successfully replaced UI");
 } else {
