@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { createPortal } from 'react-dom';
 import {
   Users, UserCheck, UserPlus, UserMinus, Star, Search, Plus, Upload, Download, MoreVertical,
-  ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight, Printer, Zap, Loader2
+  ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight, Printer, Zap
 } from 'lucide-react';
 
 const mockCustomers = [];
@@ -12,7 +11,6 @@ const mockCustomers = [];
 const initialDocuments = [];
 
 export default function Customers() {
-  const navigate = useNavigate();
   const [customersList, setCustomersList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -99,7 +97,6 @@ export default function Customers() {
   });
 
   const [customerLoads, setCustomerLoads] = useState([]);
-  const [isCreatingLoad, setIsCreatingLoad] = useState(false);
   const [newLoadForm, setNewLoadForm] = useState({
     origin: '',
     destination: '',
@@ -107,9 +104,6 @@ export default function Customers() {
     weight: '',
     priority: 'Low',
     driverName: '',
-    rate: '',
-    pickupDate: new Date().toISOString().split('T')[0],
-    deliveryDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
     notes: ''
   });
 
@@ -1058,19 +1052,7 @@ Exported On: ${new Date().toLocaleString()}`;
         .then(res => {
           const data = res.data?.data || res.data || [];
           if (Array.isArray(data)) {
-            const mapped = data.map(l => {
-              const pickupStop = (l.stops || []).find(s => s.type === 'PICKUP') || l.stops?.[0];
-              const dropoffStop = (l.stops || []).find(s => s.type === 'DROPOFF') || l.stops?.[l.stops?.length - 1];
-              return {
-                ...l,
-                origin: l.origin || pickupStop?.address || pickupStop?.location || l.pickupLocation || 'N/A',
-                destination: l.destination || dropoffStop?.address || dropoffStop?.location || l.deliveryLocation || 'N/A',
-                driverName: l.driver?.user?.name || l.driver?.name || l.driverName || 'Unassigned',
-                pickupDate: l.pickupDate || (pickupStop?.scheduledDate ? new Date(pickupStop.scheduledDate).toLocaleDateString('en-GB') : (l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-GB') : 'Today')),
-                deliveryDate: l.deliveryDate || (dropoffStop?.scheduledDate ? new Date(dropoffStop.scheduledDate).toLocaleDateString('en-GB') : 'Tomorrow')
-              };
-            });
-            setCustomerLoads(mapped);
+            setCustomerLoads(data);
           }
         })
         .catch(err => {
@@ -1131,20 +1113,15 @@ Exported On: ${new Date().toLocaleString()}`;
 
   const handleCreateLoadSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (!newLoadForm.origin?.trim() || !newLoadForm.destination?.trim()) {
+    if (!newLoadForm.origin || !newLoadForm.destination) {
       alert('Please enter Origin and Destination');
       return;
     }
 
-    setIsCreatingLoad(true);
     const loadRef = `LD-${Math.floor(10000 + Math.random() * 90000)}`;
 
     // Build pricing snapshot from matched rule (frozen at creation time)
     const matchedRule = loadPricingCalc.matchedRule;
-    const finalRate = (loadPricingCalc.totalIncGST && loadPricingCalc.totalIncGST > 0)
-      ? loadPricingCalc.totalIncGST
-      : (parseFloat(newLoadForm.rate) || 0);
-
     const pricingSnapshot = matchedRule ? {
       pricingRuleId: matchedRule.id,
       pricingRuleName: matchedRule.name,
@@ -1162,122 +1139,49 @@ Exported On: ${new Date().toLocaleString()}`;
       snapshotDate: new Date().toISOString()
     } : null;
 
-    const payload = {
+    const newLoadObj = {
+      id: Date.now().toString(),
       loadRef,
       customerId: selectedCustomer?.id,
-      billedCustomerIds: selectedCustomer?.id ? [selectedCustomer.id] : [],
+      origin: newLoadForm.origin,
+      destination: newLoadForm.destination,
       type: newLoadForm.cargoType || 'General Freight',
+      weight: newLoadForm.weight || '5.0t',
+      priority: newLoadForm.priority || 'Low',
+      driverName: newLoadForm.driverName || 'Unassigned',
       status: 'PLANNED',
-      priority: (newLoadForm.priority || 'LOW').toUpperCase(),
-      pickupLocation: newLoadForm.origin.trim(),
-      deliveryLocation: newLoadForm.destination.trim(),
-      rate: finalRate > 0 ? finalRate : undefined,
-      driverName: newLoadForm.driverName?.trim() || undefined,
-      pickupDate: newLoadForm.pickupDate ? new Date(newLoadForm.pickupDate).toISOString() : new Date().toISOString(),
-      deliveryDate: newLoadForm.deliveryDate ? new Date(newLoadForm.deliveryDate).toISOString() : new Date(Date.now() + 86400000).toISOString(),
-      notes: newLoadForm.notes?.trim() || `Created via Customer Quick Load for ${selectedCustomer?.name || 'Customer'}`,
-      stops: [
-        {
-          type: 'PICKUP',
-          sequenceIndex: 0,
-          address: newLoadForm.origin.trim(),
-          scheduledDate: newLoadForm.pickupDate || new Date().toISOString().split('T')[0]
-        },
-        {
-          type: 'DROPOFF',
-          sequenceIndex: 1,
-          address: newLoadForm.destination.trim(),
-          scheduledDate: newLoadForm.deliveryDate || new Date(Date.now() + 86400000).toISOString().split('T')[0]
-        }
-      ],
-      items: [
-        {
-          stockRef: `ITM-${loadRef}`,
-          make: newLoadForm.cargoType || 'General Cargo',
-          quantity: parseInt(loadPricingCalc.quantity, 10) || 1,
-          weightKg: parseFloat(newLoadForm.weight) ? Math.round(parseFloat(newLoadForm.weight) * 1000) : 1000,
-          customerId: selectedCustomer?.id
-        }
-      ],
-      pricingSnapshot,
-      pricingStatus: pricingSnapshot ? 'AUTO_CALCULATED' : (finalRate > 0 ? 'MANUAL' : 'NOT_READY'),
-      billingStatus: 'NOT_READY'
+      pickupDate: new Date().toLocaleDateString('en-GB'),
+      deliveryDate: new Date(Date.now() + 86400000).toLocaleDateString('en-GB'),
+      pricingSnapshot
     };
 
-    let createdLoadId = null;
-    let finalRef = loadRef;
-
     try {
-      const res = await api.post('/company-admin/loads', payload);
+      const res = await api.post('/company-admin/loads', {
+        loadRef,
+        customerId: selectedCustomer?.id,
+        origin: newLoadForm.origin,
+        destination: newLoadForm.destination,
+        pickupLocation: newLoadForm.origin,
+        deliveryLocation: newLoadForm.destination,
+        type: newLoadForm.cargoType || 'General Freight',
+        status: 'PLANNED',
+        priority: (newLoadForm.priority || 'LOW').toUpperCase(),
+        notes: newLoadForm.notes,
+        pricingSnapshot,
+        pricingStatus: pricingSnapshot ? 'AUTO_CALCULATED' : 'NOT_READY',
+        billingStatus: 'NOT_READY'
+      });
       const createdData = res.data?.data || res.data;
       if (createdData && createdData.id) {
-        createdLoadId = createdData.id;
-        finalRef = createdData.loadRef || loadRef;
+        newLoadObj.id = createdData.id;
+        newLoadObj.loadRef = createdData.loadRef || loadRef;
       }
-      triggerToast(`✅ Load ${finalRef} created successfully for ${selectedCustomer?.name || 'Customer'}!`);
     } catch (err) {
-      console.warn('API save warning:', err);
-      triggerToast(`⚠️ Load saved locally: ${err.response?.data?.message || err.message}`);
+      console.warn('API save fallback to live state:', err);
     }
 
-    // Refresh live loads from backend
-    if (selectedCustomer?.id) {
-      try {
-        const freshRes = await api.get(`/loads?customerId=${selectedCustomer.id}`);
-        const freshData = freshRes.data?.data || freshRes.data || [];
-        if (Array.isArray(freshData) && freshData.length > 0) {
-          const mapped = freshData.map(l => {
-            const pickupStop = (l.stops || []).find(s => s.type === 'PICKUP') || l.stops?.[0];
-            const dropoffStop = (l.stops || []).find(s => s.type === 'DROPOFF') || l.stops?.[l.stops?.length - 1];
-            return {
-              ...l,
-              origin: l.origin || pickupStop?.address || pickupStop?.location || l.pickupLocation || 'N/A',
-              destination: l.destination || dropoffStop?.address || dropoffStop?.location || l.deliveryLocation || 'N/A',
-              driverName: l.driver?.user?.name || l.driver?.name || l.driverName || 'Unassigned',
-              pickupDate: l.pickupDate || (pickupStop?.scheduledDate ? new Date(pickupStop.scheduledDate).toLocaleDateString('en-GB') : 'Today'),
-              deliveryDate: l.deliveryDate || (dropoffStop?.scheduledDate ? new Date(dropoffStop.scheduledDate).toLocaleDateString('en-GB') : 'Tomorrow')
-            };
-          });
-          setCustomerLoads(mapped);
-        } else {
-          const optimisticLoad = {
-            id: createdLoadId || Date.now().toString(),
-            loadRef: finalRef,
-            customerId: selectedCustomer?.id,
-            origin: newLoadForm.origin,
-            destination: newLoadForm.destination,
-            type: newLoadForm.cargoType || 'General Freight',
-            weight: newLoadForm.weight || '5.0t',
-            priority: newLoadForm.priority || 'Low',
-            driverName: newLoadForm.driverName || 'Unassigned',
-            status: 'PLANNED',
-            pickupDate: newLoadForm.pickupDate ? new Date(newLoadForm.pickupDate).toLocaleDateString('en-GB') : 'Today',
-            deliveryDate: newLoadForm.deliveryDate ? new Date(newLoadForm.deliveryDate).toLocaleDateString('en-GB') : 'Tomorrow',
-            pricingSnapshot
-          };
-          setCustomerLoads(prev => [optimisticLoad, ...prev]);
-        }
-      } catch {
-        const optimisticLoad = {
-          id: createdLoadId || Date.now().toString(),
-          loadRef: finalRef,
-          customerId: selectedCustomer?.id,
-          origin: newLoadForm.origin,
-          destination: newLoadForm.destination,
-          type: newLoadForm.cargoType || 'General Freight',
-          weight: newLoadForm.weight || '5.0t',
-          priority: newLoadForm.priority || 'Low',
-          driverName: newLoadForm.driverName || 'Unassigned',
-          status: 'PLANNED',
-          pickupDate: newLoadForm.pickupDate ? new Date(newLoadForm.pickupDate).toLocaleDateString('en-GB') : 'Today',
-          deliveryDate: newLoadForm.deliveryDate ? new Date(newLoadForm.deliveryDate).toLocaleDateString('en-GB') : 'Tomorrow',
-          pricingSnapshot
-        };
-        setCustomerLoads(prev => [optimisticLoad, ...prev]);
-      }
-    }
+    setCustomerLoads(prev => [newLoadObj, ...prev]);
 
-    setIsCreatingLoad(false);
     setNewLoadForm({
       origin: '',
       destination: '',
@@ -1285,9 +1189,6 @@ Exported On: ${new Date().toLocaleString()}`;
       weight: '',
       priority: 'Low',
       driverName: '',
-      rate: '',
-      pickupDate: new Date().toISOString().split('T')[0],
-      deliveryDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
       notes: ''
     });
     setLoadPricingCalc({ matchedRule: null, quantity: 1, baseCharge: 0, fuelLevyAmount: 0, additionalCharges: 0, totalExGST: 0, gstAmount: 0, totalIncGST: 0 });
@@ -1995,7 +1896,7 @@ Exported On: ${new Date().toLocaleString()}`;
                     <Truck size={16} className="text-blue-600" />
                     <h3 className="text-sm font-black tracking-tight">Recent Loads</h3>
                   </div>
-                  <button onClick={() => navigate('/company-admin/loads', { state: { customerId: selectedCustomer?.id } })} className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+                  <button onClick={() => setActiveDetailsTab('Activity')} className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
                     View All Loads <ArrowRight size={12} />
                   </button>
                 </div>
@@ -2017,21 +1918,13 @@ Exported On: ${new Date().toLocaleString()}`;
                       {customerLoads.length === 0 ? (
                         <tr>
                           <td colSpan="8" className="py-8 px-5 text-center text-xs font-semibold text-slate-400">
-                            No recent loads recorded for this customer yet. Click "+ Create Load" above to add one.
+                            No recent loads recorded for this customer yet.
                           </td>
                         </tr>
                       ) : (
                         customerLoads.map((load, idx) => (
-                          <tr 
-                            key={load.id || idx} 
-                            onClick={() => navigate('/company-admin/loads', { state: { loadRef: load.loadRef } })} 
-                            className="hover:bg-indigo-50/40 transition-colors cursor-pointer"
-                            title="Click to view load details"
-                          >
-                            <td className="py-3 px-5 font-black text-blue-600 flex items-center gap-1.5">
-                              {load.loadRef}
-                              <ExternalLink size={11} className="text-blue-400 opacity-60" />
-                            </td>
+                          <tr key={load.id || idx} className="hover:bg-slate-50 transition-colors">
+                            <td className="py-3 px-5 font-black text-blue-600">{load.loadRef}</td>
                             <td className="py-3 px-5">
                               <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600">
                                 {load.status || 'PLANNED'}
@@ -5127,57 +5020,22 @@ Exported On: ${new Date().toLocaleString()}`;
 
       {/* Create New Load Modal */}
       {showCreateLoadModal && createPortal(
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => !isCreatingLoad && setShowCreateLoadModal(false)}>
-          <form onSubmit={handleCreateLoadSubmit} className="bg-white rounded-2xl w-full max-w-[620px] max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowCreateLoadModal(false)}>
+          <form onSubmit={handleCreateLoadSubmit} className="bg-white rounded-2xl w-full max-w-[600px] max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
             {/* Header */}
-            <div className="px-7 pt-6 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0 bg-slate-50/50">
+            <div className="px-7 pt-6 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
               <div>
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                    <Truck size={14} />
-                  </div>
-                  <h3 className="text-[18px] font-black text-slate-900 leading-tight">Create New Load</h3>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <span className="text-[11px] font-bold text-indigo-700 bg-indigo-100/70 border border-indigo-200/80 rounded-md px-2 py-0.5 flex items-center gap-1">
-                    <Star size={11} className="fill-amber-400 text-amber-500" />
-                    Customer: {selectedCustomer?.name || 'Selected Customer'}
-                  </span>
-                  <span className="text-[11px] font-semibold text-slate-400">• Saved to Database & Draft Queue</span>
-                </div>
+                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Create New Load</h3>
+                <p className="text-[13px] font-normal text-slate-400 mt-1 leading-snug">New loads will be created in the Draft queue.</p>
               </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  type="button" 
-                  onClick={() => { 
-                    setShowCreateLoadModal(false); 
-                    navigate('/company-admin/loads', { state: { openNewLoadModal: true, customerId: selectedCustomer?.id } }); 
-                  }} 
-                  className="text-[11px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
-                  title="Open full load builder console for multi-car or multi-stop loads"
-                >
-                  <Zap size={12} className="text-amber-500 fill-amber-500" />
-                  Full Load Builder ➔
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => !isCreatingLoad && setShowCreateLoadModal(false)} 
-                  disabled={isCreatingLoad}
-                  className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-40"
-                >
-                  <X size={18} strokeWidth={2} />
-                </button>
-              </div>
+              <button type="button" onClick={() => setShowCreateLoadModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
             </div>
 
             {/* Body */}
-            <div className="px-7 py-5 space-y-4 overflow-y-auto max-h-[calc(92vh-150px)]">
-              {/* Origin & Destination */}
-              <div className="grid grid-cols-2 gap-4">
+            <div className="px-7 py-5 space-y-5 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
-                    <MapPin size={13} className="text-emerald-600" /> Origin Address *
-                  </label>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Origin *</label>
                   <input
                     type="text"
                     value={newLoadForm.origin}
@@ -5187,15 +5045,13 @@ Exported On: ${new Date().toLocaleString()}`;
                       const rule = findMatchingPricingRule(selectedCustomer?.id, val, newLoadForm.destination);
                       recalcLoadPricing(rule, loadPricingCalc.quantity);
                     }}
-                    placeholder="e.g. Sydney Depot, NSW"
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-800"
+                    placeholder="e.g. Sydney Depot"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
                     required
                   />
                 </div>
                 <div>
-                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
-                    <MapPin size={13} className="text-rose-600" /> Destination Address *
-                  </label>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Destination *</label>
                   <input
                     type="text"
                     value={newLoadForm.destination}
@@ -5205,135 +5061,85 @@ Exported On: ${new Date().toLocaleString()}`;
                       const rule = findMatchingPricingRule(selectedCustomer?.id, newLoadForm.origin, val);
                       recalcLoadPricing(rule, loadPricingCalc.quantity);
                     }}
-                    placeholder="e.g. Melbourne Terminal, VIC"
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-800"
+                    placeholder="e.g. Canberra Branch"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
                     required
                   />
                 </div>
               </div>
 
-              {/* Pickup & Delivery Dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
-                    <Calendar size={13} className="text-slate-400" /> Scheduled Pickup Date
-                  </label>
-                  <input
-                    type="date"
-                    value={newLoadForm.pickupDate}
-                    onChange={e => setNewLoadForm({ ...newLoadForm, pickupDate: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-500 bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
-                    <Calendar size={13} className="text-slate-400" /> Scheduled Delivery Date
-                  </label>
-                  <input
-                    type="date"
-                    value={newLoadForm.deliveryDate}
-                    onChange={e => setNewLoadForm({ ...newLoadForm, deliveryDate: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-500 bg-white"
-                  />
-                </div>
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Cargo Type *</label>
+                <input
+                  type="text"
+                  value={newLoadForm.cargoType}
+                  onChange={e => setNewLoadForm({ ...newLoadForm, cargoType: e.target.value })}
+                  placeholder="e.g. Beverages, Electronics, Dry Goods"
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
+                  required
+                />
               </div>
 
-              {/* Cargo Type & Priority */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-2">
-                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
-                    <Package size={13} className="text-slate-400" /> Cargo Type *
-                  </label>
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Weight</label>
                   <input
                     type="text"
-                    value={newLoadForm.cargoType}
-                    onChange={e => setNewLoadForm({ ...newLoadForm, cargoType: e.target.value })}
-                    placeholder="e.g. Car Carrying, General Freight"
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-800"
-                    required
+                    value={newLoadForm.weight}
+                    onChange={e => setNewLoadForm({ ...newLoadForm, weight: e.target.value })}
+                    placeholder="e.g. 6.2t"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
                   />
                 </div>
                 <div>
-                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5">Priority</label>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Priority</label>
                   <div className="relative">
                     <select
                       value={newLoadForm.priority}
                       onChange={e => setNewLoadForm({ ...newLoadForm, priority: e.target.value })}
-                      className="appearance-none w-full border border-slate-200 rounded-xl pl-3.5 pr-8 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-500 bg-white cursor-pointer"
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
                     >
                       <option>Low</option>
                       <option>Medium</option>
                       <option>High</option>
                       <option>Urgent</option>
                     </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               </div>
 
-              {/* Weight & Driver Assignment */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5">Weight / Quantity</label>
-                  <input
-                    type="text"
-                    value={newLoadForm.weight}
-                    onChange={e => setNewLoadForm({ ...newLoadForm, weight: e.target.value })}
-                    placeholder="e.g. 5.5t or 3 units"
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-800"
-                  />
-                </div>
-                <div>
-                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5">Assign Driver (Optional)</label>
-                  <input
-                    type="text"
-                    value={newLoadForm.driverName}
-                    onChange={e => setNewLoadForm({ ...newLoadForm, driverName: e.target.value })}
-                    placeholder="e.g. John Doe (or unassigned)"
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-800"
-                  />
-                </div>
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Assign Driver</label>
+                <input
+                  type="text"
+                  value={newLoadForm.driverName}
+                  onChange={e => setNewLoadForm({ ...newLoadForm, driverName: e.target.value })}
+                  placeholder="Driver name (optional)"
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
+                />
               </div>
 
-              {/* Agreed / Quoted Rate */}
-              {!loadPricingCalc.matchedRule && (
-                <div>
-                  <label className="text-[12px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
-                    <DollarSign size={13} className="text-emerald-600" /> Agreed Rate / Quoted Price ($ AUD)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={newLoadForm.rate}
-                    onChange={e => setNewLoadForm({ ...newLoadForm, rate: e.target.value })}
-                    placeholder="e.g. 1250.00"
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-emerald-700"
-                  />
-                </div>
-              )}
-
-              {/* Notes */}
               <div>
-                <label className="text-[12px] font-bold text-slate-700 block mb-1.5">Special Instructions / Notes</label>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Notes</label>
                 <textarea
                   rows={2}
                   value={newLoadForm.notes}
                   onChange={e => setNewLoadForm({ ...newLoadForm, notes: e.target.value })}
-                  placeholder="e.g. Customer PO number, site access gate code, delivery window..."
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-800 resize-none"
+                  placeholder="Additional notes..."
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700 resize-none"
                 ></textarea>
               </div>
 
               {/* ───────── AUTO-PRICING CALCULATOR ───────── */}
               {loadPricingCalc.matchedRule ? (
-                <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 overflow-hidden shadow-xs">
-                  <div className="flex items-center justify-between px-4 py-2 bg-indigo-600 text-white">
+                <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-indigo-600 text-white">
                     <div className="flex items-center gap-2">
-                      <Calculator size={13} strokeWidth={2.5} />
-                      <span className="text-[12px] font-bold">Auto-Calculated Pricing Rule</span>
+                      <Calculator size={14} strokeWidth={2.5} />
+                      <span className="text-[12px] font-bold">Auto-Calculated Pricing</span>
                     </div>
-                    <span className="text-[10px] font-bold bg-white/20 rounded-full px-2.5 py-0.5">{loadPricingCalc.matchedRule.name}</span>
+                    <span className="text-[10px] font-semibold bg-white/20 rounded-full px-2 py-0.5">{loadPricingCalc.matchedRule.name}</span>
                   </div>
                   <div className="px-4 py-3 space-y-1.5">
                     {/* Quantity */}
@@ -5345,7 +5151,7 @@ Exported On: ${new Date().toLocaleString()}`;
                         step="0.1"
                         value={loadPricingCalc.quantity}
                         onChange={e => recalcLoadPricing(loadPricingCalc.matchedRule, e.target.value)}
-                        className="w-24 border border-indigo-200 rounded-lg px-3 py-1.5 text-[13px] font-bold text-indigo-800 bg-white focus:outline-none focus:border-indigo-500 text-right shadow-xs"
+                        className="w-24 border border-indigo-200 rounded-lg px-3 py-1.5 text-[13px] font-bold text-indigo-800 bg-white focus:outline-none focus:border-indigo-500 text-right"
                       />
                     </div>
                     {/* Breakdown */}
@@ -5381,16 +5187,16 @@ Exported On: ${new Date().toLocaleString()}`;
                         <span>${loadPricingCalc.totalIncGST.toFixed(2)}</span>
                       </div>
                     </div>
-                    <p className="text-[10px] text-slate-400 pt-1">Pricing is auto-calculated and frozen to this load for invoicing.</p>
+                    <p className="text-[10px] text-slate-400 pt-1">Pricing is auto-calculated from active rule and will be frozen with this load.</p>
                   </div>
                 </div>
               ) : (
                 newLoadForm.origin && newLoadForm.destination ? (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 flex items-center gap-2.5">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 flex items-center gap-2.5">
                     <DollarSign size={14} className="text-slate-400 shrink-0" />
                     <div>
-                      <p className="text-[11px] font-bold text-slate-600">No automatic pricing rule matched for this lane</p>
-                      <p className="text-[10px] text-slate-400">You can enter an agreed rate above, or configure pricing under Customer Pricing Rules.</p>
+                      <p className="text-[12px] font-semibold text-slate-600">No pricing rule matched</p>
+                      <p className="text-[11px] text-slate-400">No active pricing rule found for this route. Add one under Billing Rules → Pricing Rules.</p>
                     </div>
                   </div>
                 ) : null
@@ -5398,45 +5204,18 @@ Exported On: ${new Date().toLocaleString()}`;
             </div>
 
             {/* Footer */}
-            <div className="px-7 py-4 flex justify-between items-center gap-3 border-t border-slate-100 shrink-0 bg-slate-50/50">
+            <div className="px-7 py-5 flex justify-between items-center gap-3 border-t border-slate-100 shrink-0">
               <div>
-                {loadPricingCalc.matchedRule ? (
-                  <span className="text-[11px] text-indigo-700 font-bold bg-indigo-50 border border-indigo-200 rounded-full px-3 py-1">
+                {loadPricingCalc.matchedRule && (
+                  <span className="text-[11px] text-indigo-600 font-semibold bg-indigo-50 border border-indigo-100 rounded-full px-2.5 py-1">
                     💰 ${loadPricingCalc.totalIncGST.toFixed(2)} Inc GST
                   </span>
-                ) : newLoadForm.rate ? (
-                  <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
-                    💰 ${parseFloat(newLoadForm.rate).toFixed(2)} Quoted
-                  </span>
-                ) : (
-                  <span className="text-[11px] text-slate-400 font-medium">Draft Load</span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  type="button" 
-                  onClick={() => !isCreatingLoad && setShowCreateLoadModal(false)} 
-                  disabled={isCreatingLoad}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer bg-white disabled:opacity-40"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isCreatingLoad}
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[12px] font-bold transition-all cursor-pointer shadow-md shadow-indigo-200 flex items-center gap-2 disabled:opacity-60"
-                >
-                  {isCreatingLoad ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      Creating Load...
-                    </>
-                  ) : (
-                    <>
-                      <Check size={14} strokeWidth={2.5} />
-                      Create Load
-                    </>
-                  )}
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setShowCreateLoadModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+                <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200 flex items-center gap-2">
+                  <Check size={14} strokeWidth={2.5} /> Create Load
                 </button>
               </div>
             </div>
@@ -6413,6 +6192,528 @@ Exported On: ${new Date().toLocaleString()}`;
           </form>
         </div>,
         document.body
+      )}
+
+      {/* Add / Edit Surcharge Modal */}
+      {showAddSurchargeModal && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={() => { setShowAddSurchargeModal(false); setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' }); }}>
+          <form onSubmit={handleSaveBillingSurcharge} className="bg-white rounded-2xl w-full max-w-[520px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-xs">
+                  <Zap size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">{surchargeModalForm.id ? 'Edit Surcharge' : 'Add Fuel Levy / Surcharge'}</h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5 font-medium">Configure automatic surcharge rates &amp; levy percentages for {selectedCustomer?.name}</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => { setShowAddSurchargeModal(false); setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' }); }} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+
+            <div className="p-6 space-y-5 text-xs font-semibold text-slate-700 max-h-[75vh] overflow-y-auto">
+              {/* Quick Presets */}
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">Quick Presets</label>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Fuel Levy', calculation: '% of Base Rate', rate: '14.50', taxable: true })}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>⛽</span> Fuel Levy (14.5%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Tolls Charge', calculation: 'Flat Fee ($)', rate: '15.00', taxable: true })}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>🌉</span> Tolls ($15.00)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Waiting Time Charge', calculation: 'Per Hour', rate: '65.00', taxable: true })}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>⏱️</span> Waiting ($65/hr)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Tail Lift Service Fee', calculation: 'Flat Fee ($)', rate: '35.00', taxable: true })}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>🚚</span> Tail Lift ($35)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Dangerous Goods (DG) Surcharge', calculation: '% of Base Rate', rate: '10.00', taxable: true })}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>☣️</span> DG Fee (10%)
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Surcharge / Levy Name <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={surchargeModalForm.description}
+                  onChange={e => setSurchargeModalForm({ ...surchargeModalForm, description: e.target.value })}
+                  placeholder="e.g. Fuel Levy, Tolls, Tail Lift Fee, DG Surcharge"
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 bg-white transition-all shadow-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Calculation Method</label>
+                  <select
+                    value={surchargeModalForm.calculation}
+                    onChange={e => setSurchargeModalForm({ ...surchargeModalForm, calculation: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer transition-all shadow-xs"
+                  >
+                    <option value="% of Base Rate">% of Base Rate</option>
+                    <option value="Flat Fee ($)">Flat Fee ($)</option>
+                    <option value="Per Hour">Per Hour</option>
+                    <option value="Per KM Charge">Per KM Charge</option>
+                    <option value="Per Load">Per Load</option>
+                    <option value="Per Item">Per Item / Pallet</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Rate / Amount <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      min="0"
+                      value={surchargeModalForm.rate}
+                      onChange={e => setSurchargeModalForm({ ...surchargeModalForm, rate: e.target.value })}
+                      placeholder={surchargeModalForm.calculation?.includes('%') ? '14.50' : '25.00'}
+                      className="w-full border border-slate-200 rounded-xl p-2.5 pr-8 text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 bg-white transition-all shadow-xs"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
+                      {surchargeModalForm.calculation?.includes('%') ? '%' : '$'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tax Treatment Toggle */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Tax Treatment (GST)</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, taxable: true })}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      surchargeModalForm.taxable !== false
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-xs'
+                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    <CheckCircle2 size={14} className={surchargeModalForm.taxable !== false ? 'text-emerald-600' : 'text-slate-300'} />
+                    Subject to GST (+10%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, taxable: false })}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      surchargeModalForm.taxable === false
+                        ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-xs'
+                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    <CheckCircle2 size={14} className={surchargeModalForm.taxable === false ? 'text-amber-600' : 'text-slate-300'} />
+                    GST Free / Exempt
+                  </button>
+                </div>
+              </div>
+
+              {/* Optional Notes */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Notes / Conditions (Optional)</label>
+                <input
+                  type="text"
+                  value={surchargeModalForm.notes || ''}
+                  onChange={e => setSurchargeModalForm({ ...surchargeModalForm, notes: e.target.value })}
+                  placeholder="e.g. Applies after 30 mins free loading time or per DG load"
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-blue-500 bg-white shadow-xs"
+                />
+              </div>
+
+              {/* Live Summary Preview */}
+              {surchargeModalForm.description && surchargeModalForm.rate && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse shrink-0"></div>
+                    <div>
+                      <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                        {surchargeModalForm.description}
+                        <span className="text-[10px] font-bold text-blue-600 bg-blue-100/60 px-1.5 py-0.2 rounded">
+                          {surchargeModalForm.calculation}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
+                        Rate: <span className="font-bold text-slate-800">{surchargeModalForm.calculation?.includes('%') ? `${surchargeModalForm.rate}%` : `$${parseFloat(surchargeModalForm.rate || 0).toFixed(2)}`}</span>
+                        {' • '}
+                        {surchargeModalForm.taxable !== false ? 'Standard Taxable (+10% GST)' : 'GST Free'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => { setShowAddSurchargeModal(false); setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' }); }}
+                className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shadow-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md cursor-pointer flex items-center gap-1.5"
+              >
+                <Plus size={14} /> {surchargeModalForm.id ? 'Update Surcharge' : 'Add Surcharge'}
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
+
+      {/* Add Vehicle Type Modal */}
+      {showAddVehicleTypeModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddVehicleTypeModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[480px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900">Add Vehicle Type Pricing</h3>
+              <button onClick={() => setShowAddVehicleTypeModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700">
+              <div>
+                <label className="block text-slate-800 font-bold mb-1.5">Vehicle Type</label>
+                <select className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer">
+                  <option>Sedan / Hatchback</option>
+                  <option>SUV / Crossover</option>
+                  <option>4WD / Ute</option>
+                  <option>Van / Commercial</option>
+                  <option>Luxury / Performance</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Base Price (EX GST)</label>
+                  <input type="number" placeholder="450.00" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+                </div>
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Surcharge (%)</label>
+                  <input type="number" placeholder="15" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowAddVehicleTypeModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
+              <button onClick={() => { setShowAddVehicleTypeModal(false); triggerToast('Vehicle type pricing saved successfully!'); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">Save Rate</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Preview Pricing Matrix Modal */}
+      {showPricingMatrixModal && createPortal(
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-4xl rounded-2xl border border-slate-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 text-left">
+            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                  <Eye className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">Pricing Matrix Preview</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">{selectedCustomer?.name || 'Auto World Sydney'} • Standard National Template</p>
+                </div>
+              </div>
+              <button onClick={() => setShowPricingMatrixModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4 text-xs">
+              <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">BUSINESS TYPE</span>
+                  <span className="font-extrabold text-slate-900">{selectedNiche}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">ACTIVE TEMPLATE</span>
+                  <span className="font-extrabold text-blue-600">{selectedTemplate}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">FUEL LEVY</span>
+                  <span className="font-extrabold text-emerald-600">14.5% (Monthly Variable)</span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                <table className="w-full text-left text-xs whitespace-nowrap">
+                  <thead>
+                    <tr className="bg-slate-100/70 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                      <th className="py-2.5 px-3">ROUTE / LANE</th>
+                      <th className="py-2.5 px-3">TYPE</th>
+                      <th className="py-2.5 px-3 text-right">DISTANCE</th>
+                      <th className="py-2.5 px-3 text-right">BASE RATE</th>
+                      <th className="py-2.5 px-3 text-right">FUEL LEVY (14.5%)</th>
+                      <th className="py-2.5 px-3 text-right">GST (10%)</th>
+                      <th className="py-2.5 px-3 text-right">TOTAL ESTIMATE</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                    {lanePricingRules.map((rule, idx) => {
+                      const base = parseFloat((rule.baseRate || '1000').toString().replace(/,/g, '')) || 1000;
+                      const fuel = base * 0.145;
+                      const gst = (base + fuel) * 0.10;
+                      const total = base + fuel + gst;
+                      return (
+                        <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
+                          <td className="py-2.5 px-3 font-bold text-slate-900">{rule.from} ➔ {rule.to}</td>
+                          <td className="py-2.5 px-3">{rule.type}</td>
+                          <td className="py-2.5 px-3 text-right text-slate-500">{rule.distance} KM</td>
+                          <td className="py-2.5 px-3 text-right font-bold text-slate-900">${rule.baseRate}</td>
+                          <td className="py-2.5 px-3 text-right text-emerald-600">${fuel.toFixed(2)}</td>
+                          <td className="py-2.5 px-3 text-right text-slate-500">${gst.toFixed(2)}</td>
+                          <td className="py-2.5 px-3 text-right font-black text-blue-700">${total.toFixed(2)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+              <button 
+                onClick={() => {
+                  triggerToast('Printing pricing matrix...');
+                  window.print();
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print Matrix</span>
+              </button>
+              <button 
+                onClick={() => setShowPricingMatrixModal(false)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Pricing History Modal */}
+      {showPricingHistoryModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowPricingHistoryModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[650px] max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">Pricing Audit & Change Log</h3>
+                <p className="text-xs text-slate-500 mt-0.5 font-medium">Historical pricing revisions for {selectedCustomer?.name}</p>
+              </div>
+              <button onClick={() => setShowPricingHistoryModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-3 text-xs font-semibold text-slate-700">
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex justify-between items-center">
+                <div>
+                  <p className="font-extrabold text-slate-900">Standard National Template Applied</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Updated by System Admin</p>
+                </div>
+                <span className="text-[10px] text-slate-500 font-bold">15/08/2026 03:45 PM</span>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button onClick={() => setShowPricingHistoryModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Close</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Apply Template Modal */}
+      {showApplyTemplateModal && createPortal(
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 text-left">
+            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">Apply Pricing Template</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">Select pre-built rate card</p>
+                </div>
+              </div>
+              <button onClick={() => setShowApplyTemplateModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs font-medium">
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Select Template</label>
+                <select 
+                  value={selectedTemplate}
+                  onChange={(e) => setSelectedTemplate(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
+                >
+                  <option value="Standard National Template">Standard National Template (2025-2026)</option>
+                  <option value="Interstate Express Rate Matrix">Interstate Express Rate Matrix</option>
+                  <option value="Heavy Carrier Rate Card">Heavy Carrier Rate Card</option>
+                  <option value="Metro Delivery Rate">Metro Delivery Rate</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Effective Date Range</label>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="date"
+                    value={effectiveStartDate}
+                    onChange={(e) => setEffectiveStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer"
+                  />
+                  <span className="text-slate-400 font-bold">-</span>
+                  <input 
+                    type="date"
+                    value={effectiveEndDate}
+                    onChange={(e) => setEffectiveEndDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 space-y-1">
+                <span className="font-bold block">Notice:</span>
+                <span>Applying this template will update all base lane rates and surcharges for this customer.</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+              <button 
+                onClick={() => setShowApplyTemplateModal(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  let sampleRules = [];
+                  if (selectedTemplate.includes('Metro')) {
+                    sampleRules = [
+                      { id: Date.now() + 1, from: 'Sydney Metro East', to: 'Sydney Metro West', type: 'Intrastate', distance: '45', baseRate: '120.00', minCharge: '120.00' },
+                      { id: Date.now() + 2, from: 'Melbourne CBD', to: 'Dandenong Hub', type: 'Intrastate', distance: '35', baseRate: '110.00', minCharge: '110.00' }
+                    ];
+                  } else if (selectedTemplate.includes('Interstate')) {
+                    sampleRules = [
+                      { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Perth (WA)', type: 'Interstate', distance: '3931', baseRate: '1850.00', minCharge: '1850.00' },
+                      { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Townsville (QLD)', type: 'Intrastate', distance: '1336', baseRate: '890.00', minCharge: '890.00' }
+                    ];
+                  } else {
+                    sampleRules = [
+                      { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Melbourne (VIC)', type: 'Interstate', distance: '877', baseRate: '450.00', minCharge: '450.00' },
+                      { id: Date.now() + 2, from: 'Sydney (NSW)', to: 'Brisbane (QLD)', type: 'Interstate', distance: '925', baseRate: '620.00', minCharge: '620.00' },
+                      { id: Date.now() + 3, from: 'Melbourne (VIC)', to: 'Adelaide (SA)', type: 'Interstate', distance: '726', baseRate: '480.00', minCharge: '480.00' }
+                    ];
+                  }
+                  setLanePricingRules(sampleRules);
+                  triggerToast(`Applied template "${selectedTemplate}" successfully!`);
+                  setShowApplyTemplateModal(false);
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
+              >
+                Apply Template Now
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Import Pricing Modal */}
+      {showImportPricingModal && createPortal(
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 text-left">
+            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                  <Upload className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">Import Pricing File</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">Upload CSV / Excel price list</p>
+                </div>
+              </div>
+              <button onClick={() => setShowImportPricingModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-blue-400 transition-colors cursor-pointer bg-slate-50/50">
+                <Upload className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                <p className="font-bold text-slate-800">Click to upload CSV / Excel file</p>
+                <p className="text-[10px] text-slate-400 mt-1">Supports .csv, .xlsx, .xls (Max 10 MB)</p>
+              </div>
+
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-900">
+                <span className="font-bold block">File Template Ready:</span>
+                <span>Includes Origin, Destination, Base Rate, Min Charge columns.</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+              <button 
+                onClick={() => setShowImportPricingModal(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  const imported = [
+                    { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Newcastle (NSW)', type: 'Regional', distance: '162', baseRate: '280.00', minCharge: '280.00' },
+                    { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Gold Coast (QLD)', type: 'Metro', distance: '78', baseRate: '190.00', minCharge: '190.00' }
+                  ];
+                  setLanePricingRules([...lanePricingRules, ...imported]);
+                  triggerToast('Successfully imported 2 pricing rules from CSV!');
+                  setShowImportPricingModal(false);
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
+              >
+                Import Rates
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Toast Notification for Customer View */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-[999999] bg-slate-900 text-white px-4 py-3 rounded-xl text-xs font-bold shadow-2xl flex items-center gap-2.5 animate-in fade-in zoom-in-95 border border-slate-800">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
       )}
 
       </>
@@ -7826,365 +8127,6 @@ Exported On: ${new Date().toLocaleString()}`;
           <span>{toastMessage}</span>
         </div>
       )}
-
-      {/* Preview Pricing Matrix Modal */}
-      {showPricingMatrixModal && createPortal(
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-4xl rounded-2xl border border-slate-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 text-left">
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                  <Eye className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">Pricing Matrix Preview</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">{selectedCustomer?.name || 'Auto World Sydney'} • Standard National Template</p>
-                </div>
-              </div>
-              <button onClick={() => setShowPricingMatrixModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-4 text-xs">
-              <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block">BUSINESS TYPE</span>
-                  <span className="font-extrabold text-slate-900">{selectedNiche}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block">ACTIVE TEMPLATE</span>
-                  <span className="font-extrabold text-blue-600">{selectedTemplate}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block">FUEL LEVY</span>
-                  <span className="font-extrabold text-emerald-600">14.5% (Monthly Variable)</span>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                <table className="w-full text-left text-xs whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-slate-100/70 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
-                      <th className="py-2.5 px-3">ROUTE / LANE</th>
-                      <th className="py-2.5 px-3">TYPE</th>
-                      <th className="py-2.5 px-3 text-right">DISTANCE</th>
-                      <th className="py-2.5 px-3 text-right">BASE RATE</th>
-                      <th className="py-2.5 px-3 text-right">FUEL LEVY (14.5%)</th>
-                      <th className="py-2.5 px-3 text-right">GST (10%)</th>
-                      <th className="py-2.5 px-3 text-right">TOTAL ESTIMATE</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                    {lanePricingRules.map((rule, idx) => {
-                      const base = parseFloat(rule.baseRate.replace(/,/g, '')) || 1000;
-                      const fuel = base * 0.145;
-                      const gst = (base + fuel) * 0.10;
-                      const total = base + fuel + gst;
-                      return (
-                        <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                          <td className="py-2.5 px-3 font-bold text-slate-900">{rule.from} ➔ {rule.to}</td>
-                          <td className="py-2.5 px-3">{rule.type}</td>
-                          <td className="py-2.5 px-3 text-right text-slate-500">{rule.distance} KM</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-slate-900">${rule.baseRate}</td>
-                          <td className="py-2.5 px-3 text-right text-emerald-600">${fuel.toFixed(2)}</td>
-                          <td className="py-2.5 px-3 text-right text-slate-500">${gst.toFixed(2)}</td>
-                          <td className="py-2.5 px-3 text-right font-black text-blue-700">${total.toFixed(2)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
-              <button 
-                onClick={() => {
-                  triggerToast('Printing pricing matrix...');
-                  window.print();
-                }}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Matrix</span>
-              </button>
-              <button 
-                onClick={() => setShowPricingMatrixModal(false)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
-              >
-                Close Preview
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Apply Template Modal */}
-      {showApplyTemplateModal && createPortal(
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 text-left">
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                  <Activity className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">Apply Pricing Template</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">Select pre-built rate card</p>
-                </div>
-              </div>
-              <button onClick={() => setShowApplyTemplateModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4 text-xs font-medium">
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Select Template</label>
-                <select 
-                  value={selectedTemplate}
-                  onChange={(e) => setSelectedTemplate(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
-                >
-                  <option value="Standard National Template">Standard National Template (2025-2026)</option>
-                  <option value="Interstate Express Rate Matrix">Interstate Express Rate Matrix</option>
-                  <option value="Heavy Carrier Rate Card">Heavy Carrier Rate Card</option>
-                  <option value="Metro Delivery Rate">Metro Delivery Rate</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Effective Date Range</label>
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="date"
-                    value={effectiveStartDate}
-                    onChange={(e) => setEffectiveStartDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer"
-                  />
-                  <span className="text-slate-400 font-bold">-</span>
-                  <input 
-                    type="date"
-                    value={effectiveEndDate}
-                    onChange={(e) => setEffectiveEndDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 space-y-1">
-                <span className="font-bold block">Notice:</span>
-                <span>Applying this template will update all base lane rates and surcharges for this customer.</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
-              <button 
-                onClick={() => setShowApplyTemplateModal(false)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  let sampleRules = [];
-                  if (selectedTemplate.includes('Metro')) {
-                    sampleRules = [
-                      { id: Date.now() + 1, from: 'Sydney Metro East', to: 'Sydney Metro West', type: 'Intrastate', distance: '45', baseRate: '120.00', minCharge: '120.00' },
-                      { id: Date.now() + 2, from: 'Melbourne CBD', to: 'Dandenong Hub', type: 'Intrastate', distance: '35', baseRate: '110.00', minCharge: '110.00' }
-                    ];
-                  } else if (selectedTemplate.includes('Interstate')) {
-                    sampleRules = [
-                      { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Perth (WA)', type: 'Interstate', distance: '3931', baseRate: '1850.00', minCharge: '1850.00' },
-                      { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Townsville (QLD)', type: 'Intrastate', distance: '1336', baseRate: '890.00', minCharge: '890.00' }
-                    ];
-                  } else {
-                    sampleRules = [
-                      { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Melbourne (VIC)', type: 'Interstate', distance: '877', baseRate: '450.00', minCharge: '450.00' },
-                      { id: Date.now() + 2, from: 'Sydney (NSW)', to: 'Brisbane (QLD)', type: 'Interstate', distance: '925', baseRate: '620.00', minCharge: '620.00' },
-                      { id: Date.now() + 3, from: 'Melbourne (VIC)', to: 'Adelaide (SA)', type: 'Interstate', distance: '726', baseRate: '480.00', minCharge: '480.00' }
-                    ];
-                  }
-                  setLanePricingRules(sampleRules);
-                  triggerToast(`Applied template "${selectedTemplate}" successfully!`);
-                  setShowApplyTemplateModal(false);
-                }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
-              >
-                Apply Template Now
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Import Pricing Modal */}
-      {showImportPricingModal && createPortal(
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 text-left">
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                  <Upload className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">Import Pricing File</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">Upload CSV / Excel price list</p>
-                </div>
-              </div>
-              <button onClick={() => setShowImportPricingModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4 text-xs">
-              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-blue-400 transition-colors cursor-pointer bg-slate-50/50">
-                <Upload className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <p className="font-bold text-slate-800">Click to upload CSV / Excel file</p>
-                <p className="text-[10px] text-slate-400 mt-1">Supports .csv, .xlsx, .xls (Max 10 MB)</p>
-              </div>
-
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-900">
-                <span className="font-bold block">File Template Ready:</span>
-                <span>Includes Origin, Destination, Base Rate, Min Charge columns.</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
-              <button 
-                onClick={() => setShowImportPricingModal(false)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  const imported = [
-                    { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Newcastle (NSW)', type: 'Regional', distance: '162', baseRate: '280.00', minCharge: '280.00' },
-                    { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Gold Coast (QLD)', type: 'Metro', distance: '78', baseRate: '190.00', minCharge: '190.00' }
-                  ];
-                  setLanePricingRules([...lanePricingRules, ...imported]);
-                  triggerToast('Successfully imported 2 pricing rules from CSV!');
-                  setShowImportPricingModal(false);
-                }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
-              >
-                Import Rates
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Add Surcharge Modal */}
-      {showAddSurchargeModal && createPortal(
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 text-left">
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                  <Zap className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">Add Customer Surcharge</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">Configure additional fee for {selectedCustomer?.name}</p>
-                </div>
-              </div>
-              <button onClick={() => setShowAddSurchargeModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveSurcharge} className="p-5 space-y-4 text-xs font-medium">
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Surcharge Description / Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={surchargeModalForm.description}
-                  onChange={(e) => setSurchargeModalForm({ ...surchargeModalForm, description: e.target.value })}
-                  placeholder="e.g. Fuel Levy, Tolls Charge, Waiting Time"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Calculation Method</label>
-                  <select
-                    value={surchargeModalForm.calculation}
-                    onChange={(e) => setSurchargeModalForm({ ...surchargeModalForm, calculation: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
-                  >
-                    <option value="% of Base Rate">% of Base Rate</option>
-                    <option value="Flat Fee ($)">Flat Fee ($)</option>
-                    <option value="Per Hour ($)">Per Hour ($/hr)</option>
-                    <option value="Per Stop ($)">Per Stop ($/stop)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Rate / Value *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={surchargeModalForm.rate}
-                    onChange={(e) => setSurchargeModalForm({ ...surchargeModalForm, rate: e.target.value })}
-                    placeholder={surchargeModalForm.calculation.includes('%') ? 'e.g. 12.5' : 'e.g. 50.00'}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="taxableCheckbox"
-                  checked={surchargeModalForm.taxable !== false}
-                  onChange={(e) => setSurchargeModalForm({ ...surchargeModalForm, taxable: e.target.checked })}
-                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer"
-                />
-                <label htmlFor="taxableCheckbox" className="text-xs font-bold text-slate-800 cursor-pointer">
-                  Subject to GST (10%)
-                </label>
-              </div>
-
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-900 space-y-1">
-                <span className="font-bold block">Calculation Preview:</span>
-                <span>
-                  {surchargeModalForm.calculation.includes('%')
-                    ? `Adds ${surchargeModalForm.rate || '0'}% on top of base freight price.`
-                    : `Adds flat $${parseFloat(surchargeModalForm.rate || 0).toFixed(2)} fee to the customer invoice.`}
-                </span>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddSurchargeModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
-                >
-                  Save Surcharge
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
-
-
 
     </div>
   );
