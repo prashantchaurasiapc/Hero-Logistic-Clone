@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Search, Plus, X, CheckCircle, Check, Loader2 } from 'lucide-react';
 import api from '../../services/api';
 
 export default function SupportTickets() {
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState(location.state?.status || 'All');
+
+  useEffect(() => {
+    if (location.state?.status) {
+      setStatusFilter(location.state.status);
+    }
+  }, [location.state]);
 
   // Modals state
   const [showNewTicketModal, setShowNewTicketModal] = useState(false);

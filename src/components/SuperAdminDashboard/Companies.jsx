@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Search, Plus, Check, X, ShieldAlert, CheckCircle, ExternalLink,
   Settings, Download, FileText, Filter, ChevronDown, RefreshCw, AlertCircle, Loader2,
@@ -12,15 +12,23 @@ import CustomSelect from '../common/CustomSelect';
 
 export default function Companies() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'create'
   const [searchQuery, setSearchQuery] = useState('');
-  const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
+  const [advancedSearchOpen, setAdvancedSearchOpen] = useState(Boolean(location.state?.status));
   const [toast, setToast] = useState('');
 
   // Advanced filters
   const [minUsersFilter, setMinUsersFilter] = useState('');
   const [selectedPlanFilter, setSelectedPlanFilter] = useState('All Plans');
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState('All Statuses');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState(location.state?.status || 'All Statuses');
+
+  useEffect(() => {
+    if (location.state?.status) {
+      setSelectedStatusFilter(location.state.status);
+      setAdvancedSearchOpen(true);
+    }
+  }, [location.state]);
 
   // Table padding density state: 'COMPACT' | 'DEFAULT' | 'RELAXED'
   const [density, setDensity] = useState('DEFAULT');
@@ -770,6 +778,7 @@ export default function Companies() {
                 options={[
                   { label: 'All Statuses', value: 'All Statuses' },
                   { label: 'ACTIVE', value: 'ACTIVE' },
+                  { label: 'TRIAL', value: 'TRIAL' },
                   { label: 'HOLD', value: 'HOLD' }
                 ]}
                 placeholder="Select Status"

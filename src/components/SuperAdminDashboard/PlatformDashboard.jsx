@@ -38,14 +38,75 @@ export default function PlatformDashboard() {
   }, []);
 
   const kpis = [
-    { title: 'ACTIVE COMPANIES', value: dashboardData?.kpis?.activeCompanies ?? '0', desc: 'SaaS instances online', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
-    { title: 'TRIAL COMPANIES', value: dashboardData?.kpis?.trialCompanies ?? '0', desc: 'SaaS trial instances', status: 'Active', statusColor: 'text-emerald-500 bg-emerald-50' },
-    { title: 'PAID COMPANIES', value: dashboardData?.kpis?.paidCompanies ?? ((dashboardData?.kpis?.totalCompanies ?? 0) - (dashboardData?.kpis?.trialCompanies ?? 0)), desc: 'Subscribed paying contracts', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
-    { title: 'MONTHLY REVENUE', value: `$${(dashboardData?.kpis?.monthlyRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: 'Platform cash stream baseline', status: 'Stable', statusColor: 'text-emerald-500 bg-emerald-50' },
-    { title: 'FAILED PAYMENTS', value: dashboardData?.kpis?.failedPayments ?? '0', desc: 'Payment gateway errors', status: (dashboardData?.kpis?.failedPayments ?? 0) > 0 ? 'Alert' : '0 alerts', statusColor: (dashboardData?.kpis?.failedPayments ?? 0) > 0 ? 'text-rose-500 bg-rose-50' : 'text-slate-400 bg-slate-100' },
-    { title: 'SUPPORT TICKETS', value: dashboardData?.kpis?.openTickets ?? '0', desc: 'Requires administrative response', status: (dashboardData?.kpis?.openTickets ?? 0) > 0 ? 'Alert' : 'Clear', statusColor: (dashboardData?.kpis?.openTickets ?? 0) > 0 ? 'text-rose-500 bg-rose-50' : 'text-slate-400 bg-slate-100' },
-    { title: 'ACTIVE USERS', value: dashboardData?.kpis?.activeUsers ?? '0', desc: 'Active platform users pool', status: 'Stable', statusColor: 'text-emerald-500 bg-emerald-50' },
-    { title: 'MRR GROWTH', value: dashboardData?.kpis?.mrrGrowth || '0%', desc: 'Month-over-month growth', status: 'Live', statusColor: 'text-emerald-500 bg-emerald-50' },
+    { 
+      title: 'ACTIVE COMPANIES', 
+      value: dashboardData?.kpis?.activeCompanies ?? '0', 
+      desc: 'SaaS instances online', 
+      status: 'Stable', 
+      statusColor: 'text-slate-400 bg-slate-100',
+      path: '/admin/companies',
+      state: { status: 'ACTIVE' }
+    },
+    { 
+      title: 'TRIAL COMPANIES', 
+      value: dashboardData?.kpis?.trialCompanies ?? '0', 
+      desc: 'SaaS trial instances', 
+      status: 'Active', 
+      statusColor: 'text-emerald-500 bg-emerald-50',
+      path: '/admin/companies',
+      state: { status: 'TRIAL' }
+    },
+    { 
+      title: 'PAID COMPANIES', 
+      value: dashboardData?.kpis?.paidCompanies ?? ((dashboardData?.kpis?.totalCompanies ?? 0) - (dashboardData?.kpis?.trialCompanies ?? 0)), 
+      desc: 'Subscribed paying contracts', 
+      status: 'Stable', 
+      statusColor: 'text-slate-400 bg-slate-100',
+      path: '/admin/subscriptions',
+      state: { status: 'ACTIVE' }
+    },
+    { 
+      title: 'MONTHLY REVENUE', 
+      value: `$${(dashboardData?.kpis?.monthlyRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+      desc: 'Platform cash stream baseline', 
+      status: 'Stable', 
+      statusColor: 'text-emerald-500 bg-emerald-50',
+      path: '/admin/billing'
+    },
+    { 
+      title: 'FAILED PAYMENTS', 
+      value: dashboardData?.kpis?.failedPayments ?? '0', 
+      desc: 'Payment gateway errors', 
+      status: (dashboardData?.kpis?.failedPayments ?? 0) > 0 ? 'Alert' : '0 alerts', 
+      statusColor: (dashboardData?.kpis?.failedPayments ?? 0) > 0 ? 'text-rose-500 bg-rose-50' : 'text-slate-400 bg-slate-100',
+      path: '/admin/billing',
+      state: { tab: 'FAILED PAYMENTS' }
+    },
+    { 
+      title: 'SUPPORT TICKETS', 
+      value: dashboardData?.kpis?.openTickets ?? '0', 
+      desc: 'Requires administrative response', 
+      status: (dashboardData?.kpis?.openTickets ?? 0) > 0 ? 'Alert' : 'Clear', 
+      statusColor: (dashboardData?.kpis?.openTickets ?? 0) > 0 ? 'text-rose-500 bg-rose-50' : 'text-slate-400 bg-slate-100',
+      path: '/admin/support-tickets',
+      state: { status: 'OPEN' }
+    },
+    { 
+      title: 'ACTIVE USERS', 
+      value: dashboardData?.kpis?.activeUsers ?? '0', 
+      desc: 'Active platform users pool', 
+      status: 'Stable', 
+      statusColor: 'text-emerald-500 bg-emerald-50',
+      path: '/admin/users'
+    },
+    { 
+      title: 'MRR GROWTH', 
+      value: dashboardData?.kpis?.mrrGrowth || '0%', 
+      desc: 'Month-over-month growth', 
+      status: 'Live', 
+      statusColor: 'text-emerald-500 bg-emerald-50',
+      path: '/admin/system-analytics'
+    },
   ];
 
   // Map API chartData { name, value } → { name, mrr } for recharts Line
@@ -198,10 +259,14 @@ export default function PlatformDashboard() {
       {/* KPIs Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {kpis.map((kpi, idx) => (
-          <div key={idx} className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm flex flex-col justify-between min-h-[100px] hover:shadow-md transition-shadow">
+          <div 
+            key={idx} 
+            onClick={() => kpi.path && navigate(kpi.path, { state: kpi.state })}
+            className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm flex flex-col justify-between min-h-[100px] hover:shadow-md hover:border-slate-300 transition-all cursor-pointer select-none active:scale-[0.99] group"
+          >
             <div>
-              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide block">{kpi.title}</span>
-              <span className="text-[26px] font-black text-slate-900 block mt-2 leading-none">{kpi.value}</span>
+              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide block group-hover:text-slate-600 transition-colors">{kpi.title}</span>
+              <span className="text-[26px] font-black text-slate-900 block mt-2 leading-none group-hover:text-brand-600 transition-colors">{kpi.value}</span>
             </div>
             <div className="flex justify-between items-center mt-3">
               <span className="text-[11px] font-medium text-slate-400 leading-tight">{kpi.desc}</span>

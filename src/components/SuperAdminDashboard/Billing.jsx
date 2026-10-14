@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { jsPDF } from 'jspdf';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
@@ -20,7 +21,14 @@ import {
 import api from '../../services/api';
 
 export default function Billing() {
-  const [activeTab, setActiveTab] = useState('INVOICES');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'INVOICES');
+
+  useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab);
+    }
+  }, [location.state]);
   const [toast, setToast] = useState('');
   const [previewInvoice, setPreviewInvoice] = useState(null);
   const [regenerateInvoice, setRegenerateInvoice] = useState(null);
@@ -128,7 +136,10 @@ export default function Billing() {
       case 'PAYMENTS':
         return invoices.filter(inv => inv.status === 'Paid');
       case 'FAILED PAYMENTS':
-        return invoices.filter(inv => inv.status === 'Failed' || inv.status === 'Overdue' || inv.status === 'Unpaid');
+        return invoices.filter(inv => {
+          const s = String(inv.status || '').toUpperCase();
+          return s === 'FAILED' || s === 'OVERDUE' || s === 'UNPAID';
+        });
       case 'TAX / GST SUMMARY':
         return invoices;
       case 'INVOICES':
