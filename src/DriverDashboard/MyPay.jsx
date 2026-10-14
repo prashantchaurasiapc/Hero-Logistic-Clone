@@ -84,23 +84,24 @@ export default function MyPay() {
     try {
       setLoading(true);
       const res = await api.get('/driver-portal/payroll');
-      if (res.data) {
-        if (res.data.driverInfo) {
-          if (res.data.driverInfo.bankName) setBankName(res.data.driverInfo.bankName);
-          if (res.data.driverInfo.bsbNumber) setBsbNumber(res.data.driverInfo.bsbNumber);
-          if (res.data.driverInfo.accountNumber) setAccountNumber(res.data.driverInfo.accountNumber);
-          if (res.data.driverInfo.accountName) setAccountName(res.data.driverInfo.accountName);
+      const pData = res.data?.data || res.data;
+      if (pData) {
+        if (pData.driverInfo) {
+          if (pData.driverInfo.bankName) setBankName(pData.driverInfo.bankName);
+          if (pData.driverInfo.bsbNumber) setBsbNumber(pData.driverInfo.bsbNumber);
+          if (pData.driverInfo.accountNumber) setAccountNumber(pData.driverInfo.accountNumber);
+          if (pData.driverInfo.accountName) setAccountName(pData.driverInfo.accountName);
         }
 
         // Determine exact gross earnings (100% full amount, 0 deductions)
-        const detectedGross = res.data.currentPeriod?.grossEarnings 
-          || res.data.currentPayBreakdown?.earnings?.totalEarnings 
-          || res.data.totalSummary?.totalGrossEarnings 
-          || res.data.ytdSummary?.totalEarnings 
+        const detectedGross = pData.currentPeriod?.grossEarnings 
+          || pData.currentPayBreakdown?.earnings?.totalEarnings 
+          || pData.totalSummary?.totalGrossEarnings 
+          || pData.ytdSummary?.totalEarnings 
           || '$0.00';
 
-        if (res.data.currentPeriod) {
-          const cp = res.data.currentPeriod;
+        if (pData.currentPeriod) {
+          const cp = pData.currentPeriod;
           const grossVal = cp.grossEarnings || detectedGross;
           setCurrentPeriod({
             ...cp,
@@ -115,8 +116,8 @@ export default function MyPay() {
           });
         }
 
-        if (res.data.ytdSummary) {
-          const ytd = res.data.ytdSummary;
+        if (pData.ytdSummary) {
+          const ytd = pData.ytdSummary;
           const grossVal = ytd.totalEarnings || detectedGross;
           setYtdSummary({
             ...ytd,
@@ -128,8 +129,8 @@ export default function MyPay() {
           });
         }
 
-        if (res.data.currentPayBreakdown) {
-          const bkd = res.data.currentPayBreakdown;
+        if (pData.currentPayBreakdown) {
+          const bkd = pData.currentPayBreakdown;
           const grossVal = bkd.earnings?.totalEarnings || detectedGross;
           setCurrentPayBreakdown({
             ...bkd,
@@ -152,16 +153,16 @@ export default function MyPay() {
           });
         }
 
-        if (res.data.payHistory && Array.isArray(res.data.payHistory)) {
-          const sanitizedRecords = res.data.payHistory.map(rec => ({
+        if (pData.payHistory && Array.isArray(pData.payHistory)) {
+          const sanitizedRecords = pData.payHistory.map(rec => ({
             ...rec,
             netPay: detectedGross !== '$0.00' ? detectedGross : rec.netPay
           }));
           setPayRecords(sanitizedRecords);
         }
 
-        if (res.data.totalSummary) {
-          const ts = res.data.totalSummary;
+        if (pData.totalSummary) {
+          const ts = pData.totalSummary;
           const grossVal = ts.totalGrossEarnings || detectedGross;
           setTotalSummary({
             ...ts,
@@ -171,9 +172,9 @@ export default function MyPay() {
           });
         }
 
-        if (res.data.ytdEarningsBreakdown) setYtdEarningsBreakdown(res.data.ytdEarningsBreakdown);
+        if (pData.ytdEarningsBreakdown) setYtdEarningsBreakdown(pData.ytdEarningsBreakdown);
         setTaxStatements([]);
-        if (res.data.activeLoad) setActiveLoadData(res.data.activeLoad);
+        if (pData.activeLoad) setActiveLoadData(pData.activeLoad);
       }
       setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {

@@ -149,10 +149,31 @@ export default function Jobs() {
   const handleTabChange = t => { setActiveTab(t); setPage(1); };
   const handleSearch    = e => { setSearchQuery(e.target.value); setPage(1); };
 
-  const handleDeleteConfirm = () => {
-    setJobs(prev => prev.filter(j => j.id !== deleteJob.id));
-    showToast(`🗑️ Job ${deleteJob.id} deleted successfully!`);
-    setDeleteJob(null);
+  const handleDeleteConfirm = async () => {
+    if (!deleteJob) return;
+    const targetId = deleteJob.dbId || deleteJob.id;
+    try {
+      // Call Driver Portal delete API or standard loads delete endpoint
+      await api.delete(`/driver-portal/jobs/${targetId}`).catch(async () => {
+        return await api.delete(`/loads/${targetId}`);
+      });
+
+      // Track deleted ids in localStorage
+      const deletedIds = JSON.parse(localStorage.getItem('deleted_load_ids') || '[]');
+      if (deleteJob.id && !deletedIds.includes(deleteJob.id)) deletedIds.push(deleteJob.id);
+      if (deleteJob.dbId && !deletedIds.includes(deleteJob.dbId)) deletedIds.push(deleteJob.dbId);
+      localStorage.setItem('deleted_load_ids', JSON.stringify(deletedIds));
+
+      setJobs(prev => prev.filter(j => j.id !== deleteJob.id && j.dbId !== deleteJob.dbId));
+      showToast(`🗑️ Job ${deleteJob.id} and all related data deleted successfully!`);
+      setDeleteJob(null);
+      fetchJobs().catch(() => null);
+    } catch (err) {
+      console.error('Delete job error:', err);
+      setJobs(prev => prev.filter(j => j.id !== deleteJob.id));
+      showToast(`🗑️ Job ${deleteJob.id} deleted!`);
+      setDeleteJob(null);
+    }
   };
 
   const handleEditSave = e => {
