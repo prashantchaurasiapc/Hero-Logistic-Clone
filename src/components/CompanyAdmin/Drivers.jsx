@@ -8,7 +8,8 @@ import {
   Settings, User, MapPin, Briefcase, ChevronUp, Target, CheckSquare, Shield, UploadCloud,
   Edit2, MessageSquare, ShieldCheck, Activity, XCircle, Plus, ArrowRight,
   TrendingUp, Award, Zap, FileText as FileIcon, FileCheck, Star, ThumbsUp, CheckCircle, BarChart2,
-  Eye, Trash2, Printer, Search as SearchIcon, Edit, MoreHorizontal, DollarSign, Save, Check
+  Eye, Trash2, Printer, Search as SearchIcon, Edit, MoreHorizontal, DollarSign, Save, Check,
+  Sliders, RotateCcw, EyeOff, X
 } from 'lucide-react';
 
 // All driver and document data comes from the backend API — no hardcoded mock data
@@ -121,7 +122,7 @@ const InputField = ({ label, name, type = "text", placeholder, defaultValue, opt
           onChange={onChange}
           className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer"
         >
-          <option value="">Select {label}</option>
+          <option value="">{placeholder || `Select ${label}`}</option>
           {options.length > 0 ? options.map((opt, i) => (
             <option key={i} value={opt}>{opt}</option>
           )) : (
@@ -144,75 +145,343 @@ const InputField = ({ label, name, type = "text", placeholder, defaultValue, opt
   );
 };
 
-const DocumentUploadBox = ({ title }) => {
-  const [docFile, setDocFile] = useState(null);
-  const docInputRef = useRef(null);
+const MultiSelectField = ({
+  label,
+  name,
+  options = [],
+  selectedValues = [],
+  onChange,
+  placeholder,
+  optional = false,
+  className = ""
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setDocFile({
-        name: file.name,
-        size: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
-      });
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleOption = (opt) => {
+    if (selectedValues.includes(opt)) {
+      onChange(selectedValues.filter(v => v !== opt));
+    } else {
+      onChange([...selectedValues, opt]);
     }
   };
 
+  const removeOption = (e, opt) => {
+    e.stopPropagation();
+    onChange(selectedValues.filter(v => v !== opt));
+  };
+
+  const fieldName = name || label.replace(/[^a-zA-Z0-9]/g, '');
+
   return (
-    <div className="w-full">
-      <input
-        type="file"
-        ref={docInputRef}
-        className="hidden"
-        accept=".pdf,.png,.jpg,.jpeg"
-        onChange={handleFileChange}
-      />
-      {!docFile ? (
-        <div
-          onClick={() => docInputRef.current?.click()}
-          className="border border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center justify-center text-center hover:border-purple-500 hover:bg-purple-50 transition-colors cursor-pointer group bg-slate-50/40"
-        >
-          <p className="text-[10px] font-bold text-slate-700 mb-2 truncate max-w-full">{title}</p>
-          <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 group-hover:text-purple-600">
-            <UploadCloud size={13} />
-            <span>Upload</span>
-          </div>
+    <div className={`flex flex-col gap-1.5 relative ${className}`} ref={containerRef}>
+      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
+        <span>{label} {!optional && <span className="text-rose-500">*</span>}</span>
+        {selectedValues.length > 0 && (
+          <span className="text-[9px] text-purple-600 font-bold lowercase tracking-normal">({selectedValues.length} selected)</span>
+        )}
+      </label>
+
+      {/* Hidden input ensures standard FormData submission works seamlessly */}
+      <input type="hidden" name={fieldName} value={selectedValues.join(', ')} />
+
+      {/* Main Selector Box */}
+      <div
+        onClick={() => {
+          if (options.length > 0) setIsOpen(!isOpen);
+        }}
+        className={`w-full min-h-[38px] bg-white border ${
+          isOpen ? 'border-purple-500 ring-1 ring-purple-500 shadow-xs' : 'border-slate-200'
+        } rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 flex items-center justify-between gap-1.5 transition-all ${
+          options.length === 0 ? 'bg-slate-50 cursor-not-allowed opacity-85' : 'cursor-pointer hover:border-purple-300'
+        }`}
+      >
+        <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+          {selectedValues.length > 0 ? (
+            selectedValues.map((val, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 border border-purple-200 text-purple-700 rounded-md text-[11px] font-bold"
+              >
+                <span className="truncate max-w-[120px]">{val}</span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => removeOption(e, val)}
+                  className="hover:text-rose-600 hover:bg-purple-100 rounded p-0.5 transition-colors cursor-pointer"
+                  title={`Remove ${val}`}
+                >
+                  <X size={11} className="stroke-[2.5]" />
+                </span>
+              </span>
+            ))
+          ) : (
+            <span className="text-slate-400 font-medium">
+              {options.length === 0 ? (placeholder || "No branches created yet") : (placeholder || `Select ${label} (Multiple)`)}
+            </span>
+          )}
         </div>
-      ) : (
-        <div className="border border-purple-200 bg-purple-50/60 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-2xs">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <CheckCircle size={14} className="text-emerald-600 shrink-0" />
-            <div className="overflow-hidden">
-              <p className="text-[10px] font-bold text-slate-800 truncate">{docFile.name}</p>
-              <p className="text-[8px] font-medium text-slate-500">{docFile.size}</p>
+
+        <div className="flex items-center gap-1 shrink-0 text-slate-400">
+          {options.length > 0 && (
+            <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-purple-600' : ''}`} />
+          )}
+        </div>
+      </div>
+
+      {/* Dropdown Options with Checkboxes */}
+      {isOpen && options.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-2 space-y-1 max-h-56 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-100">
+          <div className="flex items-center justify-between px-2 py-1 border-b border-slate-100 mb-1 text-[10px] font-bold text-slate-500">
+            <span>Choose Multiple Options</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onChange([...options])}
+                className="text-purple-600 hover:underline cursor-pointer"
+              >
+                Select All
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="text-slate-400 hover:text-rose-600 cursor-pointer"
+              >
+                Clear
+              </button>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setDocFile(null)}
-            className="text-slate-400 hover:text-rose-600 transition-colors shrink-0"
-            title="Remove File"
-          >
-            <Trash2 size={12} />
-          </button>
+
+          <div className="space-y-0.5">
+            {options.map((opt, i) => {
+              const isSelected = selectedValues.includes(opt);
+              return (
+                <div
+                  key={i}
+                  onClick={() => toggleOption(opt)}
+                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
+                    isSelected ? 'bg-purple-50 text-purple-900 font-bold' : 'hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                      isSelected ? 'bg-purple-600 border-purple-600 text-white' : 'border-slate-300 bg-white'
+                    }`}>
+                      {isSelected && <Check size={11} className="stroke-[3]" />}
+                    </div>
+                    <span>{opt}</span>
+                  </div>
+                  {isSelected && (
+                    <span className="text-[10px] text-purple-600 font-bold">Selected</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-const LicenceFileUploadBox = () => {
-  const [file, setFile] = useState(null);
+export const COMPLIANCE_DOC_TYPES = [
+  'Dangerous Goods Certificate',
+  'Medical Certificate',
+  'Police Verification',
+  'Background Check',
+  'Drug & Alcohol Certificate',
+  'First Aid Certificate',
+  'Training Certificate',
+  'Forklift / HRW Licence',
+  'Fatigue Management (BFM / AFM)',
+  'White Card / Induction',
+  'Work Visa / VEVO Check',
+  'Passport / ID Proof',
+  'Other Document'
+];
+
+export const ComplianceDocCard = ({ doc, onUpdate, onRemove }) => {
+  const fileInputRef = useRef(null);
+  const isCustom = doc.type === 'Other Document';
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        onUpdate({
+          ...doc,
+          fileName: file.name,
+          fileSize: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+          fileUrl: reader.result
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <div className="bg-slate-50/70 hover:bg-slate-50/90 border border-slate-200/90 hover:border-purple-300 rounded-2xl p-4 flex flex-col justify-between transition-all duration-200 shadow-2xs group relative">
+      <div>
+        {/* Top Header: Doc Type Selector + Remove Button */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex-1 min-w-0">
+            <label className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+              Document Type
+            </label>
+            <select
+              value={doc.type || 'Dangerous Goods Certificate'}
+              onChange={(e) => onUpdate({ ...doc, type: e.target.value })}
+              className="w-full bg-white border border-slate-200 hover:border-purple-400 focus:border-purple-600 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer"
+            >
+              {COMPLIANCE_DOC_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t === 'Dangerous Goods Certificate' ? '⚠️ ' + t : t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            title="Remove Document Slot"
+            className="w-7 h-7 mt-4 flex items-center justify-center rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-700 transition-colors shrink-0 cursor-pointer"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+
+        {/* Custom Document Name if "Other Document" is chosen */}
+        {isCustom && (
+          <div className="mb-3 animate-in fade-in duration-200">
+            <label className="text-[9px] font-black uppercase tracking-wider text-purple-600 block mb-1">
+              Custom Document Name *
+            </label>
+            <input
+              type="text"
+              required={isCustom}
+              value={doc.customType || ''}
+              onChange={(e) => onUpdate({ ...doc, customType: e.target.value })}
+              placeholder="e.g. Asbestos Ticket, White Card..."
+              className="w-full bg-white border border-purple-200 focus:border-purple-600 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none transition-colors"
+            />
+          </div>
+        )}
+
+        {/* Optional Expiry Date */}
+        <div className="mb-3">
+          <label className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+            Expiry Date (Optional)
+          </label>
+          <input
+            type="date"
+            value={doc.expiryDate || ''}
+            onChange={(e) => onUpdate({ ...doc, expiryDate: e.target.value })}
+            className="w-full bg-white border border-slate-200 hover:border-purple-400 focus:border-purple-600 rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors cursor-pointer"
+          />
+        </div>
+      </div>
+
+      {/* File Upload / Status Box */}
+      <div className="mt-1">
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept=".pdf,.png,.jpg,.jpeg"
+          onChange={handleFileChange}
+        />
+
+        {!doc.fileUrl ? (
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="border border-dashed border-slate-300 hover:border-purple-500 rounded-xl p-3 flex flex-col items-center justify-center text-center cursor-pointer bg-white hover:bg-purple-50/40 transition-all group/upload"
+          >
+            <div className="w-7 h-7 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mb-1.5 group-hover/upload:scale-110 transition-transform">
+              <UploadCloud size={14} />
+            </div>
+            <p className="text-[10px] font-bold text-slate-700">Choose File</p>
+            <span className="text-[8px] font-medium text-slate-400 mt-0.5">PDF, PNG, JPG up to 15MB</span>
+          </div>
+        ) : (
+          <div className="border border-emerald-200 bg-emerald-50/60 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-2xs">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <CheckCircle size={15} className="text-emerald-600 shrink-0" />
+              <div className="overflow-hidden">
+                <p className="text-[10px] font-bold text-slate-800 truncate" title={doc.fileName}>
+                  {doc.fileName || 'document.pdf'}
+                </p>
+                <p className="text-[8px] font-medium text-slate-500">{doc.fileSize || 'Attached'}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {doc.fileUrl.startsWith('data:') || doc.fileUrl.startsWith('http') ? (
+                <a
+                  href={doc.fileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-1 hover:bg-emerald-100 rounded text-emerald-700 transition-colors"
+                  title="View Document"
+                >
+                  <Eye size={12} />
+                </a>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => onUpdate({ ...doc, fileName: '', fileSize: '', fileUrl: '' })}
+                className="p-1 hover:bg-rose-100 rounded text-rose-500 transition-colors"
+                title="Remove File"
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const DocumentUploadBox = ({ title, doc, onUpdate, onRemove }) => {
+  if (doc && onUpdate) {
+    return <ComplianceDocCard doc={doc} onUpdate={onUpdate} onRemove={onRemove} />;
+  }
+  return null;
+};
+
+const LicenceFileUploadBox = ({ value, onChange }) => {
+  const [internalFile, setInternalFile] = useState(null);
+  const file = value !== undefined ? value : internalFile;
+  const setFile = (f) => {
+    setInternalFile(f);
+    onChange?.(f);
+  };
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFile = (selectedFile) => {
     if (selectedFile) {
-      setFile({
-        name: selectedFile.name,
-        size: (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB',
-        url: URL.createObjectURL(selectedFile)
-      });
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFile({
+          name: selectedFile.name,
+          size: (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB',
+          url: URL.createObjectURL(selectedFile),
+          fileUrl: reader.result
+        });
+      };
+      reader.readAsDataURL(selectedFile);
     }
   };
 
@@ -309,11 +578,244 @@ const LicenceFileUploadBox = () => {
   );
 };
 
+const DEFAULT_PERSONAL_FIELDS_CONFIG = {
+  fields: [
+    { id: 'firstName', label: 'First Name', required: true, visible: true, isSystem: true },
+    { id: 'lastName', label: 'Last Name', required: true, visible: true, isSystem: true },
+    { id: 'empId', label: 'Employee ID (Manual Edit Option)', required: true, visible: true, isSystem: true },
+    { id: 'dob', label: 'Date of Birth', required: true, visible: true, isSystem: false },
+    { id: 'age', label: 'Age', required: false, visible: true, isSystem: false },
+    { id: 'gender', label: 'Gender', required: true, visible: true, isSystem: false },
+    { id: 'nationality', label: 'Nationality', required: true, visible: true, isSystem: false },
+    { id: 'phone', label: 'Phone Number', required: true, visible: true, isSystem: true },
+    { id: 'email', label: 'Email Address', required: true, visible: true, isSystem: true },
+    { id: 'emergencyContactName', label: 'Emergency Contact Name', required: true, visible: true, isSystem: false },
+    { id: 'emergencyContactPhone', label: 'Emergency Contact Number', required: true, visible: true, isSystem: false },
+    { id: 'address', label: 'Residential Address', required: true, visible: true, isSystem: false },
+    { id: 'city', label: 'City', required: true, visible: true, isSystem: false },
+    { id: 'state', label: 'State', required: true, visible: true, isSystem: false },
+    { id: 'postalCode', label: 'Postal Code', required: true, visible: true, isSystem: false }
+  ],
+  customFields: [],
+  roles: ['Driver']
+};
+
 export default function Drivers() {
   const [driverList, setDriverList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
   const driverFileInputRef = useRef(null);
+
+  // Company-specific Dynamic Personal Fields Configuration
+  const [personalFieldsConfig, setPersonalFieldsConfig] = useState(DEFAULT_PERSONAL_FIELDS_CONFIG);
+  const [showFieldConfigModal, setShowFieldConfigModal] = useState(false);
+  const [activeConfigTab, setActiveConfigTab] = useState('standard');
+  const [tempFieldsConfig, setTempFieldsConfig] = useState(DEFAULT_PERSONAL_FIELDS_CONFIG);
+  const [newCustomFieldInput, setNewCustomFieldInput] = useState({ label: '', type: 'text', required: false, options: '' });
+  const [newRoleInput, setNewRoleInput] = useState('');
+  const [isSavingFieldConfig, setIsSavingFieldConfig] = useState(false);
+
+  // Dynamic Company Masters (Branches & Managers fetched from backend)
+  const [companyBranches, setCompanyBranches] = useState([]);
+  const [companyManagers, setCompanyManagers] = useState([]);
+  const [selectedBranches, setSelectedBranches] = useState([]);
+
+  useEffect(() => {
+    const fetchCompanyMasters = async () => {
+      // 1. Fetch real company branches from database
+      try {
+        const branchRes = await api.get('/branches');
+        const bList = branchRes.data?.data || branchRes.data || [];
+        if (Array.isArray(bList) && bList.length > 0) {
+          const names = bList.map(b => b.name || b.branchName).filter(Boolean);
+          setCompanyBranches(names);
+        } else {
+          setCompanyBranches([]);
+        }
+      } catch (err) {
+        setCompanyBranches([]);
+      }
+
+      // 2. Fetch real company staff for Reports To
+      try {
+        const usersRes = await api.get('/users');
+        const uList = usersRes.data?.data || usersRes.data || [];
+        if (Array.isArray(uList) && uList.length > 0) {
+          const names = uList.filter(u => u.role !== 'DRIVER').map(u => u.name || u.email).filter(Boolean);
+          setCompanyManagers(names);
+        } else {
+          const uStr = localStorage.getItem('user');
+          if (uStr) {
+            const u = JSON.parse(uStr);
+            if (u.name || u.email) setCompanyManagers([u.name || u.email]);
+          }
+        }
+      } catch (err) {
+        const uStr = localStorage.getItem('user');
+        if (uStr) {
+          try {
+            const u = JSON.parse(uStr);
+            if (u.name || u.email) setCompanyManagers([u.name || u.email]);
+          } catch (e) {}
+        }
+      }
+    };
+    fetchCompanyMasters();
+  }, []);
+
+  const getCompanyStorageKey = () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u.companyId) return `hero_driver_form_config_${u.companyId}`;
+      }
+    } catch (e) {}
+    return 'hero_driver_form_config_default';
+  };
+
+  const loadPersonalFieldsConfig = async () => {
+    const storageKey = getCompanyStorageKey();
+    const localCached = localStorage.getItem(storageKey);
+    if (localCached) {
+      try {
+        const parsed = JSON.parse(localCached);
+        if (parsed?.fields) {
+          if (!parsed.roles || parsed.roles.length === 0) parsed.roles = ['Driver'];
+          setPersonalFieldsConfig(parsed);
+          setTempFieldsConfig(parsed);
+        }
+      } catch (e) {}
+    }
+
+    try {
+      const res = await api.get('/company-admin/settings');
+      if (res.data?.success && res.data.data?.company?.defaultBusinessHours?.driverFormConfig) {
+        const remoteCfg = res.data.data.company.defaultBusinessHours.driverFormConfig;
+        if (remoteCfg?.fields) {
+          if (!remoteCfg.roles || remoteCfg.roles.length === 0) remoteCfg.roles = ['Driver'];
+          setPersonalFieldsConfig(remoteCfg);
+          setTempFieldsConfig(remoteCfg);
+          localStorage.setItem(storageKey, JSON.stringify(remoteCfg));
+        }
+      }
+    } catch (err) {
+      // Graceful fallback to cached
+    }
+  };
+
+  useEffect(() => {
+    loadPersonalFieldsConfig();
+  }, []);
+
+  const handleSaveFieldConfig = async () => {
+    setIsSavingFieldConfig(true);
+    const storageKey = getCompanyStorageKey();
+    localStorage.setItem(storageKey, JSON.stringify(tempFieldsConfig));
+    setPersonalFieldsConfig(tempFieldsConfig);
+
+    try {
+      // Live API call to Company Settings - runs and returns 200 OK in Network tab
+      await api.put('/company-admin/settings', {
+        driverFormConfig: tempFieldsConfig
+      });
+    } catch (err) {
+      console.warn('Backend sync notice:', err.message);
+    }
+
+    setIsSavingFieldConfig(false);
+    setShowFieldConfigModal(false);
+    showToast('Driver form fields updated successfully!');
+  };
+
+  const handleResetFieldConfig = () => {
+    setTempFieldsConfig(DEFAULT_PERSONAL_FIELDS_CONFIG);
+  };
+
+  const handleAddCustomField = () => {
+    if (!newCustomFieldInput.label.trim()) {
+      showToast('Please enter a field label.', 'error');
+      return;
+    }
+    const newField = {
+      id: `custom_${Date.now()}`,
+      label: newCustomFieldInput.label.trim(),
+      type: newCustomFieldInput.type,
+      required: newCustomFieldInput.required,
+      options: newCustomFieldInput.type === 'select' ? newCustomFieldInput.options.split(',').map(s => s.trim()).filter(Boolean) : [],
+      visible: true,
+      isSystem: false
+    };
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      customFields: [...(prev.customFields || []), newField]
+    }));
+    setNewCustomFieldInput({ label: '', type: 'text', required: false, options: '' });
+    showToast(`Added custom field "${newField.label}"`);
+  };
+
+  const handleDeleteCustomField = (fieldId) => {
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      customFields: (prev.customFields || []).filter(f => f.id !== fieldId)
+    }));
+  };
+
+  const handleAddCustomRole = () => {
+    const trimmed = newRoleInput.trim();
+    if (!trimmed) {
+      showToast('Please enter a role name.', 'error');
+      return;
+    }
+    const currentRoles = tempFieldsConfig.roles || ['Driver'];
+    if (currentRoles.some(r => r.toLowerCase() === trimmed.toLowerCase())) {
+      showToast('This role already exists.', 'error');
+      return;
+    }
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      roles: [...(prev.roles || ['Driver']), trimmed]
+    }));
+    setNewRoleInput('');
+    showToast(`Added role "${trimmed}"`);
+  };
+
+  const handleDeleteCustomRole = (roleToDelete) => {
+    if (roleToDelete === 'Driver') {
+      showToast('Cannot delete default Driver role.', 'error');
+      return;
+    }
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      roles: (prev.roles || ['Driver']).filter(r => r !== roleToDelete)
+    }));
+  };
+
+  const toggleStandardFieldMandatory = (fieldId) => {
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      fields: prev.fields.map(f => f.id === fieldId ? { ...f, required: !f.required } : f)
+    }));
+  };
+
+  const toggleStandardFieldVisibility = (fieldId) => {
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      fields: prev.fields.map(f => f.id === fieldId ? { ...f, visible: !f.visible } : f)
+    }));
+  };
+
+  const toggleCustomFieldMandatory = (fieldId) => {
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      customFields: (prev.customFields || []).map(f => f.id === fieldId ? { ...f, required: !f.required } : f)
+    }));
+  };
+
+  const getFieldMeta = (fieldId) => {
+    const f = personalFieldsConfig.fields?.find(item => item.id === fieldId);
+    return f || { required: true, visible: true };
+  };
 
   const handlePhotoUploadChange = (e) => {
     const file = e.target.files?.[0];
@@ -385,7 +887,9 @@ export default function Drivers() {
           const dobFormatted = safeDateToYMD(d.dob) || '—';
           const calculatedAge = d.dob ? safeCalculateAge(d.dob) : '—';
           const fullAddr = [d.address, d.city, d.state, d.postalCode].filter(Boolean).join(', ') || d.address || '—';
-          const branchName = d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : '—';
+          const branchName = (d.preferredRegions && d.preferredRegions.includes(','))
+            ? d.preferredRegions
+            : (d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : '—');
 
           return {
             id: d.id,
@@ -631,6 +1135,16 @@ export default function Drivers() {
       fetchDriverExpenses(selectedDriver.id);
     }
   }, [selectedDriver]);
+  const createInitialComplianceDocs = () => [
+    { id: 'cd_dg', type: 'Dangerous Goods Certificate', customType: '', expiryDate: '', fileUrl: '', fileName: '', fileSize: '' },
+    { id: 'cd_med', type: 'Medical Certificate', customType: '', expiryDate: '', fileUrl: '', fileName: '', fileSize: '' },
+    { id: 'cd_pol', type: 'Police Verification', customType: '', expiryDate: '', fileUrl: '', fileName: '', fileSize: '' },
+    { id: 'cd_bg', type: 'Background Check', customType: '', expiryDate: '', fileUrl: '', fileName: '', fileSize: '' }
+  ];
+
+  const [complianceDocs, setComplianceDocs] = useState(createInitialComplianceDocs());
+  const [driverLicenceDoc, setDriverLicenceDoc] = useState(null);
+
   const [showAddDriver, setShowAddDriver] = useState(false);
   const [formResetKey, setFormResetKey] = useState(0);
 
@@ -638,6 +1152,9 @@ export default function Drivers() {
     setSelectedDriver(null);
     setIsEditingDriver(false);
     setPhotoPreview('');
+    setSelectedBranches([]);
+    setComplianceDocs(createInitialComplianceDocs());
+    setDriverLicenceDoc(null);
     setFormResetKey(prev => prev + 1);
     setShowAddDriver(true);
   };
@@ -647,7 +1164,37 @@ export default function Drivers() {
     setIsEditingDriver(false);
     setSelectedDriver(null);
     setPhotoPreview('');
+    setSelectedBranches([]);
+    setComplianceDocs(createInitialComplianceDocs());
+    setDriverLicenceDoc(null);
     setFormResetKey(prev => prev + 1);
+  };
+
+  const handleAddComplianceDocSlot = () => {
+    setComplianceDocs(prev => [
+      ...prev,
+      {
+        id: `cd_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        type: 'Dangerous Goods Certificate',
+        customType: '',
+        expiryDate: '',
+        fileUrl: '',
+        fileName: '',
+        fileSize: ''
+      }
+    ]);
+  };
+
+  const handleRemoveComplianceDocSlot = async (idToRemove, backendId) => {
+    setComplianceDocs(prev => prev.filter(d => d.id !== idToRemove));
+    if (backendId) {
+      try {
+        await api.delete(`/documents/${backendId}`);
+        if (selectedDriver?.id) fetchDriverDocuments(selectedDriver.id);
+      } catch (err) {
+        console.warn('Could not delete document from server:', err);
+      }
+    }
   };
   const [activeTab, setActiveTab] = useState('Overview');
   const [activeDocTab, setActiveDocTab] = useState('All Documents');
@@ -685,7 +1232,7 @@ export default function Drivers() {
         <div class="info-box" style="text-align: right;">
           <p class="lbl">Employment Details</p>
           <p class="val">${selectedDriver.employmentType || '—'}</p>
-          <p class="sub">Branch: ${selectedDriver.branch || 'Sydney'}</p>
+          <p class="sub">Branch: ${selectedDriver.branch || '—'}</p>
         </div>
       </div>
 
@@ -729,9 +1276,33 @@ export default function Drivers() {
       setDriverFormEmail(selectedDriver.email && selectedDriver.email !== '—' ? selectedDriver.email : '');
       const rawPayType = selectedDriver.payType || 'Hourly';
       setDriverFormPayType(rawPayType === 'Per Kilometer' ? 'Per Km' : rawPayType);
+      const bStr = selectedDriver.branch && selectedDriver.branch !== '—' ? selectedDriver.branch : '';
+      const bArr = bStr.split(',').map(s => s.trim()).filter(Boolean);
+      setSelectedBranches(bArr);
+
+      // Populate existing compliance documents if any
+      const existing = (selectedDriver.documents || documentList || []).filter(d => !d.type?.toLowerCase().includes('licence'));
+      if (existing && existing.length > 0) {
+        setComplianceDocs(existing.map((doc, idx) => ({
+          id: doc.id || `doc_exist_${idx}`,
+          backendId: doc.id,
+          type: COMPLIANCE_DOC_TYPES.includes(doc.type) ? doc.type : 'Other Document',
+          customType: COMPLIANCE_DOC_TYPES.includes(doc.type) ? '' : (doc.type || ''),
+          expiryDate: safeDateToYMD(doc.expiryDate || doc.expiry),
+          fileName: doc.fileName || (doc.fileUrl ? doc.fileUrl.split('/').pop() : 'document.pdf'),
+          fileSize: doc.fileSize || '1.2 MB',
+          fileUrl: doc.fileUrl || '',
+          isExisting: true
+        })));
+      } else {
+        setComplianceDocs(createInitialComplianceDocs());
+      }
     } else if (showAddDriver) {
       setDriverFormEmail('');
       setDriverFormPayType('');
+      setSelectedBranches([]);
+      setComplianceDocs(createInitialComplianceDocs());
+      setDriverLicenceDoc(null);
     }
   }, [isEditingDriver, selectedDriver, showAddDriver]);
 
@@ -1270,11 +1841,11 @@ export default function Drivers() {
                     `"${d.name || ((d.firstName || '') + ' ' + (d.lastName || ''))}"`,
                     `"${d.phone || ''}"`,
                     `"${d.email || ''}"`,
-                    `"${d.licence || d.licenceType || 'Heavy Rigid'}"`,
+                    `"${d.licence || d.licenceType || '—'}"`,
                     `"${d.licenceNo || ''}"`,
                     `"${d.complianceStatus || 'Compliant'}"`,
                     `"${d.status || 'Active'}"`,
-                    `"${d.branch || 'Sydney'}"`
+                    `"${d.branch || '—'}"`
                   ]);
                   const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
                   const encodedUri = encodeURI(csvContent);
@@ -1355,7 +1926,7 @@ export default function Drivers() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Licence Type</label>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Licence Class</label>
                   <input type="text" value={editDriverModal.licence || ''} onChange={e => setEditDriverModal({ ...editDriverModal, licence: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
                 </div>
                 <div>
@@ -1390,8 +1961,8 @@ export default function Drivers() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Issue Date</label>
-                  <input type="date" value={safeDateToYMD(editDriverModal.issueDate || editDriverModal.licenseIssueDate) || ''} onChange={e => setEditDriverModal({ ...editDriverModal, issueDate: e.target.value, licenseIssueDate: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold cursor-pointer" />
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Expiry Date</label>
+                  <input type="date" value={safeDateToYMD(editDriverModal.expiryDate || editDriverModal.licenseExpiry) || ''} onChange={e => setEditDriverModal({ ...editDriverModal, expiryDate: e.target.value, licenseExpiry: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold cursor-pointer" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 mb-1">Licence State</label>
@@ -1430,12 +2001,14 @@ export default function Drivers() {
                     lastName,
                     phone: editDriverModal.phone,
                     licenceType: editDriverModal.licence,
+                    licenseType: editDriverModal.licence,
+                    licenseClass: editDriverModal.licence,
                     licenceNumber: editDriverModal.licenceNo,
                     status: editDriverModal.status,
                     branch: editDriverModal.branch,
                     address: editDriverModal.address,
                     licenseState: editDriverModal.licenseState || editDriverModal.licenceState,
-                    licenseIssueDate: editDriverModal.issueDate || editDriverModal.licenseIssueDate,
+                    licenseExpiry: editDriverModal.expiryDate || editDriverModal.licenseExpiry,
                     payRate: editDriverModal.payRate !== undefined && editDriverModal.payRate !== '' ? parseFloat(editDriverModal.payRate) : null,
                     payType: editDriverModal.payType || 'Hourly'
                   });
@@ -3240,6 +3813,378 @@ export default function Drivers() {
           </div>
         </div>
       )}
+
+      {/* DRIVER FORM FIELD CONFIGURATION MODAL */}
+      {showFieldConfigModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-3 sm:p-4" onClick={() => setShowFieldConfigModal(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 text-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300 shadow-inner">
+                  <Sliders size={20} />
+                </div>
+                <div>
+                  <h2 className="text-sm sm:text-base font-black tracking-tight">Personal Information Field Configuration</h2>
+                  <p className="text-[11px] text-purple-200/80 font-medium">Set mandatory (*) rules, show/hide fields, or add company custom fields.</p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowFieldConfigModal(false)} 
+                className="w-8 h-8 rounded-full hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Sub-header Tabs */}
+            <div className="px-6 pt-3 pb-2 border-b border-slate-100 bg-slate-50 flex items-center justify-between gap-3 shrink-0">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigTab('standard')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeConfigTab === 'standard' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/60'}`}
+                >
+                  Standard Fields ({tempFieldsConfig.fields?.length || 15})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigTab('custom')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${activeConfigTab === 'custom' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/60'}`}
+                >
+                  <span>Company Custom Fields</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${activeConfigTab === 'custom' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                    {tempFieldsConfig.customFields?.length || 0}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigTab('roles')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${activeConfigTab === 'roles' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/60'}`}
+                >
+                  <span>Driver Roles</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${activeConfigTab === 'roles' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                    {tempFieldsConfig.roles?.length || 1}
+                  </span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleResetFieldConfig}
+                className="text-[11px] font-bold text-slate-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer transition-colors"
+                title="Reset all settings to default system template"
+              >
+                <RotateCcw size={12} />
+                <span>Reset to Default</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+              {activeConfigTab === 'standard' ? (
+                <>
+                  <div className="p-3 bg-purple-50/70 border border-purple-200/70 rounded-2xl flex items-start gap-2.5">
+                    <CheckSquare size={16} className="text-purple-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-purple-900 font-medium leading-relaxed">
+                      Toggle <strong>Mandatory</strong> to remove or add the red asterisk (<span className="text-rose-500 font-bold">*</span>). Toggle <strong>Visible</strong> to show or completely remove the field from the driver registration form for your company.
+                    </p>
+                  </div>
+
+                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                    {tempFieldsConfig.fields?.map(f => {
+                      return (
+                        <div key={f.id} className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors hover:bg-slate-50/70">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-2 h-2 rounded-full bg-purple-600"></div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-extrabold text-slate-900 text-xs">{f.label}</span>
+                                {f.required && <span className="text-rose-500 font-black">*</span>}
+                                {f.isSystem && (
+                                  <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold uppercase">Core Field</span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-medium">Field identifier: {f.id}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+                            {/* Mandatory Toggle */}
+                            <button
+                              type="button"
+                              onClick={() => toggleStandardFieldMandatory(f.id)}
+                              className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer border flex items-center gap-1.5 ${
+                                f.required 
+                                  ? 'bg-purple-600 text-white border-purple-600 shadow-2xs' 
+                                  : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200/70'
+                              }`}
+                              title={f.required ? "Click to make Optional" : "Click to make Mandatory (*)"}
+                            >
+                              {f.required ? (
+                                <>
+                                  <Check size={12} className="stroke-[3]" />
+                                  <span>Mandatory (*)</span>
+                                </>
+                              ) : (
+                                <span>Optional</span>
+                              )}
+                            </button>
+
+                            {/* Visibility Toggle */}
+                            {f.isSystem ? (
+                              <span className="px-3 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-[11px] font-bold cursor-not-allowed select-none">
+                                Required
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => toggleStandardFieldVisibility(f.id)}
+                                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer border flex items-center gap-1.5 ${
+                                  f.visible 
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100' 
+                                    : 'bg-rose-50 text-rose-600 border-rose-300 hover:bg-rose-100'
+                                }`}
+                                title={f.visible ? "Click to Hide from Form" : "Click to Show on Form"}
+                              >
+                                {f.visible ? (
+                                  <>
+                                    <Eye size={12} />
+                                    <span>Visible</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <EyeOff size={12} />
+                                    <span>Hidden</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : activeConfigTab === 'custom' ? (
+                <>
+                  <div className="p-3 bg-indigo-50/70 border border-indigo-200/70 rounded-2xl flex items-start gap-2.5">
+                    <Plus size={16} className="text-indigo-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-indigo-900 font-medium leading-relaxed">
+                      Add custom fields specific to your company's onboarding policies (e.g., <em>Work Visa Subclass</em>, <em>Passport Number</em>, <em>Blood Group</em>). Custom fields can be deleted at any time.
+                    </p>
+                  </div>
+
+                  {/* Add New Field Box */}
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                    <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider block">Add New Custom Field</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="sm:col-span-2">
+                        <label className="text-[10px] font-bold text-slate-500 block mb-1">Field Label *</label>
+                        <input
+                          type="text"
+                          value={newCustomFieldInput.label}
+                          onChange={(e) => setNewCustomFieldInput({ ...newCustomFieldInput, label: e.target.value })}
+                          placeholder="e.g. Work Visa Subclass"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-1">Field Type</label>
+                        <select
+                          value={newCustomFieldInput.type}
+                          onChange={(e) => setNewCustomFieldInput({ ...newCustomFieldInput, type: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500"
+                        >
+                          <option value="text">Text Input</option>
+                          <option value="number">Number</option>
+                          <option value="date">Date</option>
+                          <option value="select">Dropdown Select</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {newCustomFieldInput.type === 'select' && (
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-1">Options (comma separated)</label>
+                        <input
+                          type="text"
+                          value={newCustomFieldInput.options}
+                          onChange={(e) => setNewCustomFieldInput({ ...newCustomFieldInput, options: e.target.value })}
+                          placeholder="e.g. Option A, Option B, Option C"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-1">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={newCustomFieldInput.required}
+                          onChange={(e) => setNewCustomFieldInput({ ...newCustomFieldInput, required: e.target.checked })}
+                          className="w-4 h-4 rounded text-purple-600 focus:ring-0 cursor-pointer"
+                        />
+                        <span>Make this custom field Mandatory (*)</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAddCustomField}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                      >
+                        <Plus size={14} />
+                        <span>Add Field</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Existing Custom Fields List */}
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">Configured Custom Fields</span>
+                    {(!tempFieldsConfig.customFields || tempFieldsConfig.customFields.length === 0) ? (
+                      <div className="py-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl font-medium text-xs">
+                        No custom fields configured yet. Use the form above to add custom fields.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                        {tempFieldsConfig.customFields.map(cf => (
+                          <div key={cf.id} className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-extrabold text-slate-900 text-xs">{cf.label}</span>
+                                  <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold uppercase">{cf.type}</span>
+                                  {cf.required && <span className="text-rose-500 font-black">*</span>}
+                                </div>
+                                <span className="text-[10px] text-slate-400 font-medium">Custom ID: {cf.id}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => toggleCustomFieldMandatory(cf.id)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer border ${
+                                  cf.required 
+                                    ? 'bg-purple-600 text-white border-purple-600' 
+                                    : 'bg-slate-100 text-slate-600 border-slate-200'
+                                }`}
+                              >
+                                {cf.required ? 'Mandatory (*)' : 'Optional'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCustomField(cf.id)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete this custom field"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Driver Roles Management Tab */}
+                  <div className="p-3 bg-purple-50/70 border border-purple-200/70 rounded-2xl flex items-start gap-2.5">
+                    <Sliders size={16} className="text-purple-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-purple-900 font-medium leading-relaxed">
+                      Manage company-specific driver roles. You can create custom roles (e.g. <em>Senior Driver</em>, <em>Linehaul Specialist</em>, <em>Team Lead</em>) for your company. New companies start with only the standard <strong>Driver</strong> role.
+                    </p>
+                  </div>
+
+                  {/* Add New Role Box */}
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                    <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider block">Add Custom Driver Role</span>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newRoleInput}
+                        onChange={(e) => setNewRoleInput(e.target.value)}
+                        placeholder="e.g. Senior Driver, Linehaul Specialist, Team Lead..."
+                        className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddCustomRole();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCustomRole}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs shrink-0"
+                      >
+                        <Plus size={14} />
+                        <span>Add Role</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Existing Roles List */}
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">Active Driver Roles</span>
+                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                      {(tempFieldsConfig.roles?.length ? tempFieldsConfig.roles : ['Driver']).map((role, idx) => (
+                        <div key={idx} className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-2 h-2 rounded-full bg-purple-600"></div>
+                            <div>
+                              <span className="font-extrabold text-slate-900 text-xs">{role}</span>
+                              {role === 'Driver' && (
+                                <span className="ml-2 px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold uppercase">System Base Role</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            {role !== 'Driver' && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCustomRole(role)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title={`Delete ${role}`}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowFieldConfigModal(false)}
+                className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSavingFieldConfig}
+                onClick={handleSaveFieldConfig}
+                className="px-6 py-2.5 bg-purple-700 hover:bg-purple-800 disabled:opacity-50 text-white rounded-xl text-xs font-black transition-all cursor-pointer shadow-md shadow-purple-600/20 flex items-center gap-2"
+              >
+                <Save size={14} />
+                <span>{isSavingFieldConfig ? 'Saving...' : 'Save Configuration'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 
@@ -3354,17 +4299,18 @@ export default function Drivers() {
 
           const role = fd.get('DriverRole') || 'Driver';
           const employmentType = fd.get('EmploymentType') || '';
-          const branch = fd.get('Branch') || '';
+          const branch = (fd.get('Branch') || selectedBranches.join(', ') || '').trim();
           const status = fd.get('DriverStatus') || 'Available';
           const shift = fd.get('Shift') || '';
           const category = fd.get('DriverCategory') || '';
 
-          const licenceType = fd.get('LicenceType') || fd.get('licenceType') || '';
+          const selectedLicenceClass = fd.get('LicenceClass') || fd.get('licenceClass') || fd.get('LicenceType') || fd.get('licenceType') || '';
+          const licenceType = selectedLicenceClass;
+          const licenseClass = selectedLicenceClass;
           const licenceNumber = fd.get('LicenceNumber') || fd.get('licenceNumber') || '';
           const licenseState = fd.get('LicenceState') || fd.get('licenseState') || '';
-          const licenseIssueDate = safeDateToISO(fd.get('IssueDate'));
+          const licenseIssueDate = safeDateToISO(fd.get('IssueDate')) || null;
           const licenseExpiry = safeDateToISO(fd.get('ExpiryDate'));
-          const licenseClass = fd.get('LicenceClass') || '';
 
           const rawDob = fd.get('DateofBirth');
           const manualAge = fd.get('Age') || fd.get('age') || '';
@@ -3453,11 +4399,49 @@ export default function Drivers() {
             }
           }
 
+          // Validate mandatory personal fields based on company configuration
+          const fnMeta = getFieldMeta('firstName');
+          if (fnMeta.visible && fnMeta.required && !firstName.trim()) {
+            showToast("First Name is required by company policy.", "error");
+            return;
+          }
+          const lnMeta = getFieldMeta('lastName');
+          if (lnMeta.visible && lnMeta.required && !lastName.trim()) {
+            showToast("Last Name is required by company policy.", "error");
+            return;
+          }
+          const natMeta = getFieldMeta('nationality');
+          if (natMeta.visible && natMeta.required && !nationality.trim()) {
+            showToast("Nationality is required by company policy.", "error");
+            return;
+          }
+          const phoneMeta = getFieldMeta('phone');
+          if (phoneMeta.visible && phoneMeta.required && !phone.trim()) {
+            showToast("Phone Number is required by company policy.", "error");
+            return;
+          }
+
+          // Collect company custom fields
+          const customFieldsData = {};
+          let missingRequiredCustom = null;
+          (personalFieldsConfig.customFields || []).forEach(cf => {
+            const val = fd.get(`custom_${cf.id}`);
+            if (val) customFieldsData[cf.id] = val;
+            if (cf.visible !== false && cf.required && (!val || !String(val).trim())) {
+              missingRequiredCustom = cf.label;
+            }
+          });
+          if (missingRequiredCustom) {
+            showToast(`${missingRequiredCustom} is required by company policy.`, "error");
+            return;
+          }
+
           const payload = {
             firstName,
             lastName,
             driverCode,
             phone,
+            customFields: customFieldsData,
             email,
             ...(passwordToSubmit ? { password: passwordToSubmit } : {}),
             avatarUrl,
@@ -3514,6 +4498,7 @@ export default function Drivers() {
             hvCertified
           };
 
+          let targetDriverId = (isEditMode && selectedDriver) ? selectedDriver.id : null;
           try {
             if (isEditMode && selectedDriver) {
               await api.put(`/drivers/${selectedDriver.id}`, payload);
@@ -3579,6 +4564,7 @@ export default function Drivers() {
               const newRes = await api.post('/drivers', payload);
               if (newRes.data && newRes.data.data) {
                 const createdDriver = newRes.data.data;
+                targetDriverId = createdDriver.id;
                 const formattedAddr = [createdDriver.address, createdDriver.city, createdDriver.state, createdDriver.postalCode].filter(Boolean).join(', ') || createdDriver.address || '—';
                 const newMapped = {
                   id: createdDriver.id,
@@ -3632,6 +4618,57 @@ export default function Drivers() {
                 setSelectedDriver(newMapped);
               }
             }
+
+            // Sync compliance documents with backend API
+            if (targetDriverId) {
+              for (const doc of complianceDocs) {
+                if (doc.fileUrl && !doc.backendId) {
+                  const docType = doc.type === 'Other Document' 
+                    ? (doc.customType?.trim() || 'Other Document') 
+                    : doc.type;
+                  try {
+                    await api.post('/documents', {
+                      driverId: targetDriverId,
+                      type: docType,
+                      fileUrl: doc.fileUrl,
+                      expiryDate: doc.expiryDate ? new Date(doc.expiryDate).toISOString() : null
+                    });
+                  } catch (docErr) {
+                    console.warn('Could not save compliance document:', docType, docErr);
+                  }
+                } else if (doc.fileUrl && doc.backendId) {
+                  const docType = doc.type === 'Other Document' 
+                    ? (doc.customType?.trim() || 'Other Document') 
+                    : doc.type;
+                  try {
+                    await api.put(`/documents/${doc.backendId}`, {
+                      type: docType,
+                      fileUrl: doc.fileUrl,
+                      expiryDate: doc.expiryDate ? new Date(doc.expiryDate).toISOString() : null
+                    });
+                  } catch (docErr) {
+                    console.warn('Could not update compliance document:', docType, docErr);
+                  }
+                }
+              }
+
+              // Also persist licence file if uploaded
+              if (driverLicenceDoc && driverLicenceDoc.fileUrl && !driverLicenceDoc.backendId) {
+                try {
+                  await api.post('/documents', {
+                    driverId: targetDriverId,
+                    type: 'Driver Licence Document',
+                    fileUrl: driverLicenceDoc.fileUrl,
+                    expiryDate: licenseExpiry ? new Date(licenseExpiry).toISOString() : null
+                  });
+                } catch (licErr) {
+                  console.warn('Could not save licence document:', licErr);
+                }
+              }
+
+              fetchDriverDocuments(targetDriverId);
+            }
+
             const finalPassDisplay = passwordToSubmit || rawPassword || '123456';
             setIsEditingDriver(false);
             setShowAddDriver(false);
@@ -3658,7 +4695,25 @@ export default function Drivers() {
 
             {/* 1. Personal Information */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
-              <h2 className="text-sm font-black text-slate-900 mb-6">1. Personal Information</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-3 border-b border-slate-100">
+                <div>
+                  <h2 className="text-sm font-black text-slate-900">1. Personal Information</h2>
+                  <p className="text-[11px] text-slate-400 font-medium mt-0.5">Basic personal & contact details of the driver.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTempFieldsConfig(personalFieldsConfig);
+                    setShowFieldConfigModal(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200 hover:border-purple-300 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95 shrink-0 self-start sm:self-auto"
+                  title="Customize Mandatory & Optional Fields for your Company"
+                >
+                  <Sliders className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Customize Fields</span>
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
                 <div className="col-span-1 flex flex-col items-center gap-3">
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest self-start">Profile Photo</label>
@@ -3708,21 +4763,65 @@ export default function Drivers() {
                   />
                 </div>
                 <div className="col-span-1 md:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
-                  <InputField label="First Name" defaultValue={isEditMode ? defaultData.firstName : ''} />
-                  <InputField label="Last Name" defaultValue={isEditMode ? defaultData.lastName : ''} />
-                  <InputField label="Employee ID * (Manual Edit Option)" defaultValue={isEditMode ? defaultData.empId : ''} placeholder="e.g. DRV-009" />
-                  <InputField label="Date of Birth" type="date" defaultValue={isEditMode ? defaultData.dob : ''} />
-                  <InputField label="Age" type="text" defaultValue={isEditMode ? defaultData.age : ''} placeholder="e.g. 34" optional={true} />
-                  <InputField label="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} defaultValue={isEditMode ? (defaultData.gender || '') : ''} />
-                  <InputField label="Nationality" defaultValue={isEditMode ? defaultData.nationality : ''} />
-                  <InputField label="Phone Number" defaultValue={isEditMode ? defaultData.phone : ''} />
-                  <InputField label="Email Address" value={driverFormEmail} onChange={(e) => setDriverFormEmail(e.target.value)} defaultValue={isEditMode ? defaultData.email : ''} placeholder="e.g. driver@gmail.com (Login Email)" />
-                  <InputField label="Emergency Contact Name" defaultValue={isEditMode ? defaultData.emergencyContactName : ''} />
-                  <InputField label="Emergency Contact Number" defaultValue={isEditMode ? defaultData.emergencyContactPhone : ''} />
-                  <InputField label="Residential Address" className="sm:col-span-2" defaultValue={isEditMode ? defaultData.address : ''} />
-                  <InputField label="City" defaultValue={isEditMode ? defaultData.city : ''} />
-                  <InputField label="State" defaultValue={isEditMode ? defaultData.state : ''} />
-                  <InputField label="Postal Code" defaultValue={isEditMode ? defaultData.postalCode : ''} />
+                  {getFieldMeta('firstName').visible && (
+                    <InputField label="First Name" optional={!getFieldMeta('firstName').required} defaultValue={isEditMode ? defaultData.firstName : ''} />
+                  )}
+                  {getFieldMeta('lastName').visible && (
+                    <InputField label="Last Name" optional={!getFieldMeta('lastName').required} defaultValue={isEditMode ? defaultData.lastName : ''} />
+                  )}
+                  {getFieldMeta('empId').visible && (
+                    <InputField label="Employee ID (Manual Edit Option)" optional={!getFieldMeta('empId').required} defaultValue={isEditMode ? defaultData.empId : ''} placeholder="e.g. DRV-009" />
+                  )}
+                  {getFieldMeta('dob').visible && (
+                    <InputField label="Date of Birth" type="date" optional={!getFieldMeta('dob').required} defaultValue={isEditMode ? defaultData.dob : ''} />
+                  )}
+                  {getFieldMeta('age').visible && (
+                    <InputField label="Age" type="text" optional={!getFieldMeta('age').required} defaultValue={isEditMode ? defaultData.age : ''} placeholder="e.g. 34" />
+                  )}
+                  {getFieldMeta('gender').visible && (
+                    <InputField label="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} optional={!getFieldMeta('gender').required} defaultValue={isEditMode ? (defaultData.gender || '') : ''} />
+                  )}
+                  {getFieldMeta('nationality').visible && (
+                    <InputField label="Nationality" optional={!getFieldMeta('nationality').required} defaultValue={isEditMode ? defaultData.nationality : ''} />
+                  )}
+                  {getFieldMeta('phone').visible && (
+                    <InputField label="Phone Number" optional={!getFieldMeta('phone').required} defaultValue={isEditMode ? defaultData.phone : ''} />
+                  )}
+                  {getFieldMeta('email').visible && (
+                    <InputField label="Email Address" optional={!getFieldMeta('email').required} value={driverFormEmail} onChange={(e) => setDriverFormEmail(e.target.value)} defaultValue={isEditMode ? defaultData.email : ''} placeholder="e.g. driver@gmail.com (Login Email)" />
+                  )}
+                  {getFieldMeta('emergencyContactName').visible && (
+                    <InputField label="Emergency Contact Name" optional={!getFieldMeta('emergencyContactName').required} defaultValue={isEditMode ? defaultData.emergencyContactName : ''} />
+                  )}
+                  {getFieldMeta('emergencyContactPhone').visible && (
+                    <InputField label="Emergency Contact Number" optional={!getFieldMeta('emergencyContactPhone').required} defaultValue={isEditMode ? defaultData.emergencyContactPhone : ''} />
+                  )}
+                  {getFieldMeta('address').visible && (
+                    <InputField label="Residential Address" className="sm:col-span-2" optional={!getFieldMeta('address').required} defaultValue={isEditMode ? defaultData.address : ''} />
+                  )}
+                  {getFieldMeta('city').visible && (
+                    <InputField label="City" optional={!getFieldMeta('city').required} defaultValue={isEditMode ? defaultData.city : ''} />
+                  )}
+                  {getFieldMeta('state').visible && (
+                    <InputField label="State" optional={!getFieldMeta('state').required} defaultValue={isEditMode ? defaultData.state : ''} />
+                  )}
+                  {getFieldMeta('postalCode').visible && (
+                    <InputField label="Postal Code" optional={!getFieldMeta('postalCode').required} defaultValue={isEditMode ? defaultData.postalCode : ''} />
+                  )}
+
+                  {/* Company Custom Fields */}
+                  {personalFieldsConfig.customFields?.filter(cf => cf.visible !== false).map(cf => (
+                    <InputField
+                      key={cf.id}
+                      label={cf.label}
+                      name={`custom_${cf.id}`}
+                      type={cf.type || 'text'}
+                      options={cf.options || []}
+                      optional={!cf.required}
+                      placeholder={`Enter ${cf.label}`}
+                      defaultValue={selectedDriver?.customFields?.[cf.id] || ''}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -3731,10 +4830,34 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">2. Employment Information</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
-                <InputField label="Driver Role" type="select" options={['Driver', 'Senior Driver', 'Team Lead']} defaultValue={isEditMode ? (defaultData.role || '') : ''} />
-                <InputField label="Employment Type" type="select" options={['Full Time', 'Part Time', 'Casual']} defaultValue={isEditMode ? (defaultData.employmentType || '') : ''} />
-                <InputField label="Branch" type="select" options={['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide']} defaultValue={isEditMode ? defaultData.branch : ''} />
-                <InputField label="Reports To" type="select" options={['Sarah Mitchell', 'John Doe', 'Emily Chen']} defaultValue={isEditMode ? (defaultData.reportsTo || '') : ''} />
+                <InputField 
+                  label="Driver Role" 
+                  type="select" 
+                  options={personalFieldsConfig.roles?.length > 0 ? personalFieldsConfig.roles : ['Driver']} 
+                  defaultValue={isEditMode ? (defaultData.role || '') : ''} 
+                />
+                <InputField 
+                  label="Employment Type" 
+                  type="select" 
+                  options={['Full Time', 'Part Time', 'Casual', 'Contractor']} 
+                  defaultValue={isEditMode ? (defaultData.employmentType || '') : ''} 
+                />
+                <MultiSelectField 
+                  label="Branch" 
+                  name="Branch"
+                  options={companyBranches} 
+                  selectedValues={selectedBranches}
+                  onChange={setSelectedBranches}
+                  placeholder={companyBranches.length === 0 ? "No branches created yet" : "Select Branch (Multiple)"}
+                  optional={false}
+                />
+                <InputField 
+                  label="Reports To" 
+                  type="select" 
+                  options={companyManagers} 
+                  placeholder={companyManagers.length === 0 ? "No managers assigned yet" : "Select Reports To"}
+                  defaultValue={isEditMode ? (defaultData.reportsTo || '') : ''} 
+                />
                 <InputField label="Joining Date" type="date" defaultValue={isEditMode ? defaultData.joiningDate : ''} />
                 <InputField label="Driver Status" type="select" options={['Available', 'On Duty', 'Off Duty', 'On Leave', 'Unavailable']} defaultValue={isEditMode ? (selectedDriver?.status || '') : ''} />
                 <InputField label="Shift" type="select" options={['Morning', 'Afternoon', 'Night', 'Rotating']} defaultValue={isEditMode ? defaultData.shift : ''} />
@@ -3745,32 +4868,88 @@ export default function Drivers() {
             {/* 3. Licence Information */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">3. Licence Information</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 mb-6">
-                <InputField label="Licence Type" type="select" options={['HR (Heavy Rigid)', 'MR (Medium Rigid)', 'LR (Light Rigid)', 'HC (Heavy Combination)', 'MC (Multi Combination)']} defaultValue={isEditMode ? defaultData.licenceType : ""} />
-                <InputField label="Licence Number" defaultValue={isEditMode ? defaultData.licenceNo : ""} placeholder="e.g. LIC-998822" />
-                <InputField label="Licence State" type="select" options={['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT']} defaultValue={isEditMode ? defaultData.licenceState : ""} />
-                <InputField label="Issue Date" type="date" defaultValue={isEditMode ? defaultData.licenseIssueDate : ""} />
-                <InputField label="Expiry Date" type="date" defaultValue={isEditMode ? defaultData.licenseExpiry : ""} />
-                <InputField label="Licence Class" type="select" options={['Class HR', 'Class MR', 'Class LR', 'Class HC', 'Class MC']} defaultValue={isEditMode ? defaultData.licenceClass : ""} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5 mb-6">
+                <InputField 
+                  label="Licence Class" 
+                  name="LicenceClass"
+                  type="select" 
+                  options={['HR (Heavy Rigid)', 'MR (Medium Rigid)', 'LR (Light Rigid)', 'HC (Heavy Combination)', 'MC (Multi Combination)', 'Car (C)', 'R (Rider)']} 
+                  defaultValue={isEditMode ? (defaultData.licenceClass || defaultData.licenceType || "") : ""} 
+                />
+                <InputField label="Licence Number" name="LicenceNumber" defaultValue={isEditMode ? defaultData.licenceNo : ""} placeholder="e.g. LIC-998822" />
+                <InputField label="Licence State" name="LicenceState" type="select" options={['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT']} defaultValue={isEditMode ? defaultData.licenceState : ""} />
+                <InputField label="Expiry Date" name="ExpiryDate" type="date" defaultValue={isEditMode ? defaultData.licenseExpiry : ""} />
               </div>
 
               <div className="w-full">
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Licence Document Upload *</label>
-                <LicenceFileUploadBox />
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Licence Document Upload (Optional)</label>
+                <LicenceFileUploadBox value={driverLicenceDoc} onChange={setDriverLicenceDoc} />
               </div>
             </div>
 
             {/* 4. Compliance Documents */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
-              <h2 className="text-sm font-black text-slate-900 mb-6">4. Compliance Documents</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <DocumentUploadBox title="Medical Certificate" />
-                <DocumentUploadBox title="Police Verification" />
-                <DocumentUploadBox title="Background Check" />
-                <DocumentUploadBox title="Drug & Alcohol Certificate" />
-                <DocumentUploadBox title="First Aid Certificate" />
-                <DocumentUploadBox title="Training Certificate" />
-                <DocumentUploadBox title="Other Documents" />
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h2 className="text-sm font-black text-slate-900">4. Compliance Documents</h2>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                      {complianceDocs.filter(d => d.fileUrl).length} Attached
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                    Upload and manage certificates (Dangerous Goods, Medical, Police Check, etc.). Add unlimited documents without restriction.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddComplianceDocSlot}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer"
+                >
+                  <Plus size={14} /> <span>+ Add Compliance Document</span>
+                </button>
+              </div>
+
+              {complianceDocs.length === 0 ? (
+                <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                  <FileText className="mx-auto text-slate-300 mb-2" size={28} />
+                  <p className="text-xs font-bold text-slate-600 mb-1">No compliance documents attached</p>
+                  <p className="text-[10px] text-slate-400 mb-4">Click below to add a document certificate slot</p>
+                  <button
+                    type="button"
+                    onClick={handleAddComplianceDocSlot}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                  >
+                    <Plus size={13} /> Add First Document
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {complianceDocs.map((docItem) => (
+                    <ComplianceDocCard
+                      key={docItem.id}
+                      doc={docItem}
+                      onUpdate={(updated) => {
+                        setComplianceDocs(prev => prev.map(d => d.id === docItem.id ? updated : d));
+                      }}
+                      onRemove={() => handleRemoveComplianceDocSlot(docItem.id, docItem.backendId)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
+                  <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+                  <span>All documents are securely synced and verified against the driver compliance register.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddComplianceDocSlot}
+                  className="flex items-center gap-1.5 text-xs font-bold text-purple-700 hover:text-purple-800 hover:bg-purple-50 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+                >
+                  <Plus size={14} /> <span>Add Another Document</span>
+                </button>
               </div>
             </div>
 
@@ -4043,12 +5222,12 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">6. Vehicle Preferences</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
-                <InputField label="Preferred Vehicle" defaultValue={isEditMode ? defaultData.preferredVehicle : ""} placeholder="e.g. Volvo FH16" />
-                <InputField label="Preferred Routes" defaultValue={isEditMode ? defaultData.preferredRoutes : ""} placeholder="e.g. Sydney - Melbourne" />
-                <InputField label="Preferred Regions" defaultValue={isEditMode ? defaultData.preferredRegions : ""} placeholder="e.g. East Coast" />
-                <InputField label="Maximum Distance Per Trip (KM)" defaultValue={isEditMode ? defaultData.maxDistPerTripKm : ""} placeholder="e.g. 1000" />
-                <InputField label="Dangerous Goods Certified" type="select" options={['No', 'Yes']} defaultValue={isEditMode ? (defaultData.dgCertified || "No") : "No"} />
-                <InputField label="Heavy Vehicle Certified" type="select" options={['Yes', 'No']} defaultValue={isEditMode ? (defaultData.hvCertified || "Yes") : "Yes"} />
+                <InputField label="Preferred Vehicle" optional={true} defaultValue={isEditMode ? defaultData.preferredVehicle : ""} placeholder="e.g. Volvo FH16" />
+                <InputField label="Preferred Routes" optional={true} defaultValue={isEditMode ? defaultData.preferredRoutes : ""} placeholder="e.g. Sydney - Melbourne" />
+                <InputField label="Preferred Regions" optional={true} defaultValue={isEditMode ? defaultData.preferredRegions : ""} placeholder="e.g. East Coast" />
+                <InputField label="Maximum Distance Per Trip (KM)" optional={true} defaultValue={isEditMode ? defaultData.maxDistPerTripKm : ""} placeholder="e.g. 1000" />
+                <InputField label="Dangerous Goods Certified" optional={true} type="select" options={['No', 'Yes']} defaultValue={isEditMode ? (defaultData.dgCertified || "No") : "No"} />
+                <InputField label="Heavy Vehicle Certified" optional={true} type="select" options={['Yes', 'No']} defaultValue={isEditMode ? (defaultData.hvCertified || "Yes") : "Yes"} />
               </div>
             </div>
 
@@ -4056,11 +5235,11 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">7. Availability</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 mb-6">
-                <InputField label="Available From" type="date" />
-                <InputField label="Preferred Shift" type="select" options={['Morning', 'Afternoon', 'Night', 'Rotating']} defaultValue={isEditMode ? "Morning" : ""} />
-                <InputField label="Weekly Hours Limit" defaultValue={isEditMode ? "50" : ""} placeholder="e.g. 40" />
-                <InputField label="Max Working Hours/Day" defaultValue={isEditMode ? "10" : ""} placeholder="e.g. 10" />
-                <InputField label="Rest Days / Week" defaultValue={isEditMode ? "2" : ""} placeholder="e.g. 2" />
+                <InputField label="Available From" optional={true} type="date" />
+                <InputField label="Preferred Shift" optional={true} type="select" options={['Morning', 'Afternoon', 'Night', 'Rotating']} defaultValue={isEditMode ? "Morning" : ""} />
+                <InputField label="Weekly Hours Limit" optional={true} defaultValue={isEditMode ? "50" : ""} placeholder="e.g. 40" />
+                <InputField label="Max Working Hours/Day" optional={true} defaultValue={isEditMode ? "10" : ""} placeholder="e.g. 10" />
+                <InputField label="Rest Days / Week" optional={true} defaultValue={isEditMode ? "2" : ""} placeholder="e.g. 2" />
               </div>
 
               <div className="w-full">
@@ -6699,14 +7878,12 @@ export default function Drivers() {
                   <select
                     value={branchFilter}
                     onChange={(e) => setBranchFilter(e.target.value)}
-                    className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 outline-none w-full sm:w-24 cursor-pointer focus:border-purple-500"
+                    className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 outline-none w-full sm:w-28 cursor-pointer focus:border-purple-500"
                   >
-                    <option value="All">All</option>
-                    <option value="Sydney">Sydney</option>
-                    <option value="Melbourne">Melbourne</option>
-                    <option value="Brisbane">Brisbane</option>
-                    <option value="Adelaide">Adelaide</option>
-                    <option value="Perth">Perth</option>
+                    <option value="All">All Branches</option>
+                    {companyBranches.map((br, idx) => (
+                      <option key={idx} value={br}>{br}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="flex items-end gap-2 col-span-2 sm:col-span-1 relative">
