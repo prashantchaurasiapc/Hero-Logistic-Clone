@@ -857,105 +857,109 @@ export default function Drivers() {
     }
   };
 
+  const mapSingleDriverFromApi = (d) => {
+    if (!d) return null;
+    const rawStatus = d.status || 'AVAILABLE';
+    let formattedStatus = 'Available';
+    if (rawStatus === 'ON_DUTY' || rawStatus === 'On Duty') formattedStatus = 'On Duty';
+    else if (rawStatus === 'OFF_DUTY' || rawStatus === 'Off Duty') formattedStatus = 'Off Duty';
+    else if (rawStatus === 'ON_LEAVE' || rawStatus === 'On Leave') formattedStatus = 'On Leave';
+    else if (rawStatus === 'UNAVAILABLE' || rawStatus === 'Unavailable') formattedStatus = 'Unavailable';
+    else if (rawStatus === 'AVAILABLE' || rawStatus === 'Available') formattedStatus = 'Available';
+    else formattedStatus = rawStatus;
+
+    const rawEmpType = d.employmentType;
+    let formattedEmp = '';
+    if (!rawEmpType) formattedEmp = '';
+    else if (rawEmpType === 'PART_TIME' || rawEmpType === 'Part Time') formattedEmp = 'Part Time';
+    else if (rawEmpType === 'CASUAL' || rawEmpType === 'Casual') formattedEmp = 'Casual';
+    else if (rawEmpType === 'CONTRACTOR' || rawEmpType === 'Contractor') formattedEmp = 'Contractor';
+    else if (rawEmpType === 'FULL_TIME' || rawEmpType === 'Full Time') formattedEmp = 'Full Time';
+    else formattedEmp = rawEmpType;
+
+    const nameFromFirstLast = `${d.firstName || ''} ${d.lastName || ''}`.trim();
+    const rawName = nameFromFirstLast || (d.name && !d.name.startsWith('DRV-') ? d.name : '');
+    const fullName = rawName || 'Unnamed Driver';
+    const dobFormatted = safeDateToYMD(d.dob) || '—';
+    const calculatedAge = d.dob ? safeCalculateAge(d.dob) : '—';
+    const fullAddr = [d.address, d.city, d.state, d.postalCode].filter(Boolean).join(', ') || d.address || '—';
+    const branchName = (d.preferredRegions && d.preferredRegions.includes(','))
+      ? d.preferredRegions
+      : (d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : '—');
+
+    return {
+      id: d.id,
+      driverCode: d.driverCode || '—',
+      firstName: d.firstName || '',
+      lastName: d.lastName || '',
+      name: fullName,
+      age: calculatedAge,
+      dob: dobFormatted,
+      gender: d.gender || '',
+      nationality: d.nationality || '',
+      emergencyContact: d.emergencyContact || '',
+      emergencyContactName: d.emergencyContact ? d.emergencyContact.split(' ')[0] : '',
+      emergencyContactPhone: d.emergencyContact ? d.emergencyContact.split(' ').slice(1).join(' ') : '',
+      phone: d.phone || '—',
+      email: d.email || '—',
+      address: fullAddr,
+      city: d.city || '',
+      state: d.state || '',
+      postalCode: d.postalCode || '',
+      licence: d.licenseType || d.licenceType || '',
+      licenceNo: d.licenseNumber || d.licenceNumber || '',
+      licenseState: d.licenseState || '',
+      licenseClass: d.licenseClass || '',
+      issueDate: safeDateToLocale(d.licenseIssueDate, 'en-AU', d.issueDate || ''),
+      licenseIssueDate: safeDateToYMD(d.licenseIssueDate),
+      licenseExpiry: safeDateToYMD(d.licenseExpiry),
+      employmentType: formattedEmp,
+      status: formattedStatus,
+      role: d.role || 'Driver',
+      category: d.category || '',
+      shift: d.shift || '',
+      branch: branchName,
+      payType: d.payType === 'Per Kilometer' ? 'Per Km' : (d.payType || ''),
+      payRate: d.payRate ? String(d.payRate) : '',
+      loadPaySchedule: d.loadPaySchedule || '',
+      bankName: d.bankName || '',
+      accountNumber: d.accountNumber || '',
+      routingNumber: d.routingNumber || '',
+      taxNumber: d.taxNumber || '',
+      superFund: d.superFund || '',
+      preferredVehicle: d.preferredVehicle || '',
+      preferredRoutes: d.preferredRoutes || '',
+      preferredRegions: d.preferredRegions || '',
+      maxDistPerTripKm: d.maxDistPerTripKm ? String(d.maxDistPerTripKm) : '',
+      dgCertified: d.dgCertified === true,
+      hvCertified: d.hvCertified === true,
+      assignmentId: '—',
+      assignmentType: 'Not assigned',
+      complianceStatus: d.complianceScore && d.complianceScore < 80 ? 'Action Required' : 'Compliant',
+      complianceScore: `${d.complianceScore || 100}%`,
+      avatar: formatAvatarUrl(d.avatarUrl, d.id),
+      notes: d.notes || '',
+      medicalExpiry: d.medicalExpiry || '',
+      medicalResult: d.medicalResult || '',
+      medicalRestrictions: d.medicalRestrictions || '',
+      fatigueCertExpiry: d.fatigueCertExpiry || '',
+      totalLoads: d.totalLoads || 0,
+      totalDistanceKm: d.totalDistanceKm || 0,
+      onTimeRate: d.onTimeRate || null,
+      incidents: d.incidents || 0,
+      accidents: d.accidents || 0,
+      currentVehicle: d.currentVehicle || null,
+      language: d.language || '',
+      documents: d.documents || []
+    };
+  };
+
   const fetchDrivers = async () => {
     setIsLoading(true);
     try {
       const res = await api.get('/drivers');
       if (res.data && res.data.success) {
-        const mapped = res.data.data.map(d => {
-          const rawStatus = d.status || 'AVAILABLE';
-          let formattedStatus = 'Available';
-          if (rawStatus === 'ON_DUTY' || rawStatus === 'On Duty') formattedStatus = 'On Duty';
-          else if (rawStatus === 'OFF_DUTY' || rawStatus === 'Off Duty') formattedStatus = 'Off Duty';
-          else if (rawStatus === 'ON_LEAVE' || rawStatus === 'On Leave') formattedStatus = 'On Leave';
-          else if (rawStatus === 'UNAVAILABLE' || rawStatus === 'Unavailable') formattedStatus = 'Unavailable';
-          else if (rawStatus === 'AVAILABLE' || rawStatus === 'Available') formattedStatus = 'Available';
-          else formattedStatus = rawStatus;
-
-          const rawEmpType = d.employmentType;
-          let formattedEmp = '';
-          if (!rawEmpType) formattedEmp = '';
-          else if (rawEmpType === 'PART_TIME' || rawEmpType === 'Part Time') formattedEmp = 'Part Time';
-          else if (rawEmpType === 'CASUAL' || rawEmpType === 'Casual') formattedEmp = 'Casual';
-          else if (rawEmpType === 'CONTRACTOR' || rawEmpType === 'Contractor') formattedEmp = 'Contractor';
-          else if (rawEmpType === 'FULL_TIME' || rawEmpType === 'Full Time') formattedEmp = 'Full Time';
-          else formattedEmp = rawEmpType;
-
-          const nameFromFirstLast = `${d.firstName || ''} ${d.lastName || ''}`.trim();
-          const rawName = nameFromFirstLast || (d.name && !d.name.startsWith('DRV-') ? d.name : '');
-          const fullName = rawName || 'Unnamed Driver';
-          const dobFormatted = safeDateToYMD(d.dob) || '—';
-          const calculatedAge = d.dob ? safeCalculateAge(d.dob) : '—';
-          const fullAddr = [d.address, d.city, d.state, d.postalCode].filter(Boolean).join(', ') || d.address || '—';
-          const branchName = (d.preferredRegions && d.preferredRegions.includes(','))
-            ? d.preferredRegions
-            : (d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : '—');
-
-          return {
-            id: d.id,
-            driverCode: d.driverCode || '—',
-            firstName: d.firstName || '',
-            lastName: d.lastName || '',
-            name: fullName,
-            age: calculatedAge,
-            dob: dobFormatted,
-            gender: d.gender || '',
-            nationality: d.nationality || '',
-            emergencyContact: d.emergencyContact || '',
-            emergencyContactName: d.emergencyContact ? d.emergencyContact.split(' ')[0] : '',
-            emergencyContactPhone: d.emergencyContact ? d.emergencyContact.split(' ').slice(1).join(' ') : '',
-            phone: d.phone || '—',
-            email: d.email || '—',
-            address: fullAddr,
-            city: d.city || '',
-            state: d.state || '',
-            postalCode: d.postalCode || '',
-            licence: d.licenseType || d.licenceType || '',
-            licenceNo: d.licenseNumber || d.licenceNumber || '',
-            licenseState: d.licenseState || '',
-            licenseClass: d.licenseClass || '',
-            issueDate: safeDateToLocale(d.licenseIssueDate, 'en-AU', d.issueDate || ''),
-            licenseIssueDate: safeDateToYMD(d.licenseIssueDate),
-            licenseExpiry: safeDateToYMD(d.licenseExpiry),
-            employmentType: formattedEmp,
-            status: formattedStatus,
-            role: d.role || 'Driver',
-            category: d.category || '',
-            shift: d.shift || '',
-            branch: branchName,
-            payType: d.payType === 'Per Kilometer' ? 'Per Km' : (d.payType || ''),
-            payRate: d.payRate ? String(d.payRate) : '',
-            loadPaySchedule: d.loadPaySchedule || '',
-            bankName: d.bankName || '',
-            accountNumber: d.accountNumber || '',
-            routingNumber: d.routingNumber || '',
-            taxNumber: d.taxNumber || '',
-            superFund: d.superFund || '',
-            preferredVehicle: d.preferredVehicle || '',
-            preferredRoutes: d.preferredRoutes || '',
-            preferredRegions: d.preferredRegions || '',
-            maxDistPerTripKm: d.maxDistPerTripKm ? String(d.maxDistPerTripKm) : '',
-            dgCertified: d.dgCertified === true,
-            hvCertified: d.hvCertified === true,
-            assignmentId: '—',
-            assignmentType: 'Not assigned',
-            complianceStatus: d.complianceScore && d.complianceScore < 80 ? 'Action Required' : 'Compliant',
-            complianceScore: `${d.complianceScore || 100}%`,
-            avatar: formatAvatarUrl(d.avatarUrl, d.id),
-            notes: d.notes || '',
-            medicalExpiry: d.medicalExpiry || '',
-            medicalResult: d.medicalResult || '',
-            medicalRestrictions: d.medicalRestrictions || '',
-            fatigueCertExpiry: d.fatigueCertExpiry || '',
-            totalLoads: d.totalLoads || 0,
-            totalDistanceKm: d.totalDistanceKm || 0,
-            onTimeRate: d.onTimeRate || null,
-            incidents: d.incidents || 0,
-            accidents: d.accidents || 0,
-            currentVehicle: d.currentVehicle || null,
-            language: d.language || '',
-          };
-        });
+        const mapped = res.data.data.map(mapSingleDriverFromApi);
         setDriverList(mapped);
         if (selectedDriver) {
           const fresh = mapped.find(m => m.id === selectedDriver.id);
@@ -973,6 +977,53 @@ export default function Drivers() {
     fetchDrivers();
   }, []);
 
+  const handleSelectDriverForView = async (driver) => {
+    setSelectedDriver(driver);
+    try {
+      const res = await api.get(`/drivers/${driver.id}`);
+      if (res.data && res.data.success && res.data.data) {
+        const fullDriver = mapSingleDriverFromApi(res.data.data);
+        setSelectedDriver(fullDriver);
+      }
+    } catch (err) {
+      console.warn('Could not fetch fresh single driver from API:', err);
+    }
+  };
+
+  const handleSelectDriverForEdit = async (driver) => {
+    setSelectedDriver(driver);
+    try {
+      const res = await api.get(`/drivers/${driver.id}`);
+      if (res.data && res.data.success && res.data.data) {
+        const fullDriver = mapSingleDriverFromApi(res.data.data);
+        setSelectedDriver(fullDriver);
+        setPhotoPreview(fullDriver.avatar || '');
+      } else {
+        setPhotoPreview(driver.avatar || '');
+      }
+    } catch (err) {
+      setPhotoPreview(driver.avatar || '');
+    }
+    setIsEditingDriver(true);
+  };
+
+  const handleDeleteDriver = async (driver) => {
+    if (window.confirm(`Are you sure you want to delete driver "${driver.name}"?`)) {
+      try {
+        await api.delete(`/drivers/${driver.id}`).catch(() => api.delete(`/company-admin/drivers/${driver.id}`));
+        showToast(`Driver record "${driver.name}" deleted successfully`);
+        if (selectedDriver && selectedDriver.id === driver.id) {
+          setSelectedDriver(null);
+        }
+      } catch (err) {
+        console.error('Error deleting driver:', err);
+        showToast('Failed to delete driver: ' + (err?.response?.data?.message || err.message), 'error');
+      } finally {
+        await fetchDrivers();
+      }
+    }
+  };
+
   const fetchDriverDocuments = async (driverId) => {
     if (!driverId) return;
     try {
@@ -987,10 +1038,12 @@ export default function Drivers() {
             number: doc.id.substring(0, 8).toUpperCase(),
             issue: safeDateToLocale(doc.createdAt, 'en-AU', 'N/A'),
             expiry: safeDateToLocale(doc.expiryDate, 'en-AU', 'N/A'),
+            expiryDate: safeDateToYMD(doc.expiryDate),
+            fileUrl: doc.fileUrl || '',
             status: (isValidExpiry && new Date(doc.expiryDate) < new Date()) ? 'Expired' : 'Valid',
             daysLeft: isValidExpiry ? Math.max(0, Math.ceil((new Date(doc.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))) + ' days' : '365 days',
-            notes: '',
-            fileName: doc.fileUrl ? doc.fileUrl.split('/').pop() : 'document.pdf',
+            notes: doc.notes || '',
+            fileName: doc.fileUrl ? (doc.fileUrl.startsWith('data:') ? `${doc.type || 'document'}.pdf` : doc.fileUrl.split('/').pop()) : 'document.pdf',
             fileSize: '1.2 MB'
           };
         });
@@ -998,6 +1051,44 @@ export default function Drivers() {
       }
     } catch (err) {
       console.error('Error fetching driver documents:', err);
+    }
+  };
+
+  const handleOpenViewDocModal = async (doc) => {
+    try {
+      const res = await api.get(`/documents/${doc.id}`);
+      if (res.data && res.data.success && res.data.data) {
+        const d = res.data.data;
+        setViewDocModal({
+          ...doc,
+          ...d,
+          fileUrl: d.fileUrl || doc.fileUrl,
+          expiry: safeDateToLocale(d.expiryDate, 'en-AU', doc.expiry)
+        });
+      } else {
+        setViewDocModal(doc);
+      }
+    } catch {
+      setViewDocModal(doc);
+    }
+  };
+
+  const handleOpenEditDocModal = async (doc) => {
+    try {
+      const res = await api.get(`/documents/${doc.id}`);
+      if (res.data && res.data.success && res.data.data) {
+        const d = res.data.data;
+        setEditDocModal({
+          ...doc,
+          ...d,
+          fileUrl: d.fileUrl || doc.fileUrl,
+          expiry: safeDateToYMD(d.expiryDate || doc.expiryDate)
+        });
+      } else {
+        setEditDocModal({ ...doc });
+      }
+    } catch {
+      setEditDocModal({ ...doc });
     }
   };
 
@@ -2075,8 +2166,31 @@ export default function Drivers() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
+                  {viewDocModal.fileUrl && (
+                    <a
+                      href={viewDocModal.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                    >
+                      <Eye size={13} /> <span>Open File</span>
+                    </a>
+                  )}
                   <button
-                    onClick={() => showToast(`Downloading ${viewDocModal.type} file...`)}
+                    onClick={() => {
+                      if (viewDocModal.fileUrl) {
+                        const link = document.createElement('a');
+                        link.href = viewDocModal.fileUrl;
+                        link.download = viewDocModal.fileName || `${(viewDocModal.type || 'document').toLowerCase().replace(/[^a-z0-9]/g, '_')}.pdf`;
+                        link.target = '_blank';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        showToast(`Downloading ${viewDocModal.type}...`);
+                        return;
+                      }
+                      showToast(`Downloading ${viewDocModal.type} file...`);
+                    }}
                     className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
                   >
                     <Download size={13} /> <span>Download</span>
@@ -2096,7 +2210,7 @@ export default function Drivers() {
               </button>
               <div className="flex items-center gap-2">
                 <button onClick={() => setViewDocModal(null)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Close</button>
-                <button onClick={() => { setEditDocModal({ ...viewDocModal }); setViewDocModal(null); }} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-purple-600/20 flex items-center gap-1.5">
+                <button onClick={() => { handleOpenEditDocModal(viewDocModal); setViewDocModal(null); }} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-purple-600/20 flex items-center gap-1.5">
                   <Edit size={14} /> <span>Edit Record</span>
                 </button>
               </div>
@@ -2122,14 +2236,16 @@ export default function Drivers() {
                 const expiryDate = (editDocModal.expiry && editDocModal.expiry !== 'N/A' && !isNaN(new Date(editDocModal.expiry).getTime())) ? new Date(editDocModal.expiry).toISOString() : null;
                 await api.put(`/documents/${editDocModal.id}`, {
                   type: editDocModal.type,
-                  expiryDate
+                  expiryDate,
+                  fileUrl: editDocModal.fileUrl || undefined,
+                  notes: editDocModal.notes
                 });
-                if (selectedDriver) fetchDriverDocuments(selectedDriver.id);
+                if (selectedDriver) await fetchDriverDocuments(selectedDriver.id);
                 setEditDocModal(null);
                 showToast(`Updated ${editDocModal.type} successfully`);
               } catch (err) {
                 console.error('Error updating document:', err);
-                alert('Failed to update document in database.');
+                showToast('Failed to update document: ' + (err?.response?.data?.message || err.message), 'error');
               }
             }} className="px-6 py-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
@@ -2166,11 +2282,33 @@ export default function Drivers() {
                 </div>
                 <div>
                   <label className="block text-slate-500 font-bold mb-1">Expiry Date</label>
-                  <input type="text" value={editDocModal.expiry || ''} onChange={(e) => setEditDocModal({ ...editDocModal, expiry: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                  <input type="date" value={editDocModal.expiry || ''} onChange={(e) => setEditDocModal({ ...editDocModal, expiry: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-slate-500 font-bold mb-1">Days Remaining Display</label>
-                  <input type="text" value={editDocModal.daysLeft || ''} onChange={(e) => setEditDocModal({ ...editDocModal, daysLeft: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                  <label className="block text-slate-500 font-bold mb-1">Replace / Upload File (PDF, PNG, JPG)</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setEditDocModal(prev => ({
+                            ...prev,
+                            fileUrl: reader.result,
+                            fileName: file.name,
+                            fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+                          }));
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
+                  />
+                  {editDocModal.fileName && (
+                    <p className="text-[11px] text-purple-600 mt-1 font-semibold truncate">Current file: {editDocModal.fileName}</p>
+                  )}
                 </div>
                 <div className="col-span-2">
                   <label className="block text-slate-500 font-bold mb-1">Notes / Remarks</label>
@@ -2244,20 +2382,34 @@ export default function Drivers() {
               const type = formData.get('type') || 'Custom Document';
               const rawExp = formData.get('expiry');
               const expiryDate = (rawExp && !isNaN(new Date(rawExp).getTime())) ? new Date(rawExp).toISOString() : null;
-              const fileUrl = formData.get('fileName') || 'uploaded_document.pdf';
+              const notes = formData.get('notes') || '';
+              
+              const fileInput = e.target.elements['docFile'];
+              let fileUrl = 'uploaded_document.pdf';
+              if (fileInput && fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                fileUrl = await new Promise((resolve) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result);
+                  reader.onerror = () => resolve(file.name);
+                  reader.readAsDataURL(file);
+                });
+              }
+
               try {
                 await api.post('/documents', {
                   type,
                   fileUrl,
                   expiryDate,
-                  driverId: selectedDriver ? selectedDriver.id : null
+                  driverId: selectedDriver ? selectedDriver.id : null,
+                  notes
                 });
-                if (selectedDriver) fetchDriverDocuments(selectedDriver.id);
+                if (selectedDriver) await fetchDriverDocuments(selectedDriver.id);
                 setAddDocModal(false);
                 showToast(`Added ${type} successfully`);
               } catch (err) {
                 console.error('Error adding document:', err);
-                alert('Failed to save document to database.');
+                showToast('Failed to save document: ' + (err?.response?.data?.message || err.message), 'error');
               }
             }} className="px-6 py-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
@@ -2297,8 +2449,13 @@ export default function Drivers() {
                   <input name="expiry" type="date" defaultValue="2026-12-31" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-semibold text-slate-900" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-slate-500 font-bold mb-1">Days Left (Display)</label>
-                  <input name="daysLeft" type="text" placeholder="e.g. 365 days" defaultValue="365 days" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-semibold text-slate-900" />
+                  <label className="block text-slate-500 font-bold mb-1">Attachment File (PDF, PNG, JPG)</label>
+                  <input
+                    name="docFile"
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
+                  />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-slate-500 font-bold mb-1">Notes / Remarks</label>
@@ -5362,7 +5519,7 @@ export default function Drivers() {
               <p className="text-xs text-slate-500 font-medium mt-1.5">View and manage driver information, documents, assignments and performance.</p>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-              <button onClick={() => setIsEditingDriver(true)} className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-slate-900 text-slate-900 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">
+              <button onClick={() => handleSelectDriverForEdit(selectedDriver)} className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-slate-900 text-slate-900 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">
                 <Edit2 size={14} /> <span>Edit Driver</span>
               </button>
               <button onClick={() => setShowMessageDriverModal(true)} className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">
@@ -5384,14 +5541,14 @@ export default function Drivers() {
                 </div>
                 <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-1 shadow-sm shrink-0">
                   <button
-                    onClick={() => currentDriverIndex > 0 && setSelectedDriver(driverList[currentDriverIndex - 1])}
+                    onClick={() => currentDriverIndex > 0 && handleSelectDriverForView(driverList[currentDriverIndex - 1])}
                     disabled={currentDriverIndex <= 0}
                     className={`p-1.5 rounded transition-colors ${currentDriverIndex > 0 ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-50 cursor-pointer' : 'text-slate-200 cursor-not-allowed'}`}
                   >
                     <ChevronLeft size={14} />
                   </button>
                   <button
-                    onClick={() => currentDriverIndex < driverList.length - 1 && setSelectedDriver(driverList[currentDriverIndex + 1])}
+                    onClick={() => currentDriverIndex < driverList.length - 1 && handleSelectDriverForView(driverList[currentDriverIndex + 1])}
                     disabled={currentDriverIndex >= driverList.length - 1}
                     className={`p-1.5 rounded transition-colors ${currentDriverIndex < driverList.length - 1 ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-50 cursor-pointer' : 'text-slate-200 cursor-not-allowed'}`}
                   >
@@ -5928,7 +6085,7 @@ export default function Drivers() {
                         </thead>
                         <tbody>
                           {filteredDocList.length > 0 ? filteredDocList.map((doc, idx) => (
-                            <tr key={doc.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                            <tr key={doc.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={() => handleOpenViewDocModal(doc)}>
                               <td className="px-4 py-3.5">
                                 <div className="flex items-center gap-2.5">
                                   <FileIcon size={14} className={doc.status === 'Expired' ? 'text-rose-500' : (doc.status === 'Expiring Soon' ? 'text-amber-500' : 'text-blue-500')} />
@@ -5978,14 +6135,14 @@ export default function Drivers() {
                                         className="fixed w-48 bg-white rounded-2xl shadow-2xl border border-slate-200 p-1.5 z-[9990] flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left animate-in fade-in zoom-in-95 duration-100 ring-1 ring-slate-900/10"
                                       >
                                         <button
-                                          onClick={(e) => { e.stopPropagation(); setViewDocModal(doc); setDocMenuIndex(null); }}
+                                          onClick={(e) => { e.stopPropagation(); handleOpenViewDocModal(doc); setDocMenuIndex(null); }}
                                           className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
                                         >
                                           <Eye size={14} className="text-purple-600" />
                                           <span>View Details</span>
                                         </button>
                                         <button
-                                          onClick={(e) => { e.stopPropagation(); setEditDocModal({ ...doc }); setDocMenuIndex(null); }}
+                                          onClick={(e) => { e.stopPropagation(); handleOpenEditDocModal(doc); setDocMenuIndex(null); }}
                                           className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
                                         >
                                           <Edit size={14} className="text-amber-600" />
@@ -7956,7 +8113,7 @@ export default function Drivers() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredDrivers.length > 0 ? filteredDrivers.map((driver, idx) => (
-                    <tr key={driver.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setSelectedDriver(driver)}>
+                    <tr key={driver.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => handleSelectDriverForView(driver)}>
                       <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="rounded border-slate-300 cursor-pointer" /></td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2.5">
@@ -8020,14 +8177,14 @@ export default function Drivers() {
                               <div className="fixed inset-0 z-[80]" onClick={(e) => { e.stopPropagation(); setDriverMenuIndex(null); }} />
                               <div className={`absolute right-2 ${idx >= filteredDrivers.length - 3 ? 'bottom-full mb-1' : 'top-full mt-1'} w-48 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-1.5 z-[90] flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left animate-in fade-in zoom-in-95 duration-100 ring-1 ring-slate-900/5`}>
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); setSelectedDriver(driver); setDriverMenuIndex(null); }}
+                                  onClick={(e) => { e.stopPropagation(); handleSelectDriverForView(driver); setDriverMenuIndex(null); }}
                                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
                                 >
                                   <Eye size={14} className="text-purple-600" />
                                   <span>View Details</span>
                                 </button>
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); setSelectedDriver(driver); setIsEditingDriver(true); setPhotoPreview(driver.avatar || ''); setDriverMenuIndex(null); }}
+                                  onClick={(e) => { e.stopPropagation(); handleSelectDriverForEdit(driver); setDriverMenuIndex(null); }}
                                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
                                 >
                                   <Edit size={14} className="text-amber-600" />
@@ -8035,25 +8192,10 @@ export default function Drivers() {
                                 </button>
                                 <div className="h-px bg-slate-100 my-0.5" />
                                 <button
-                                  onClick={async (e) => {
+                                  onClick={(e) => {
                                     e.stopPropagation();
-                                    if (window.confirm(`Are you sure you want to delete driver "${driver.name}"?`)) {
-                                      const deletedId = driver.id;
-                                      const deletedName = driver.name;
-
-                                      try {
-                                        await api.delete(`/drivers/${deletedId}`).catch(() => api.delete(`/company-admin/drivers/${deletedId}`));
-                                      } catch (err) {
-                                        console.warn('Driver API delete notice:', err);
-                                      } finally {
-                                        await fetchDrivers();
-                                        if (selectedDriver && selectedDriver.id === deletedId) {
-                                          setSelectedDriver(null);
-                                        }
-                                        setDriverMenuIndex(null);
-                                        showToast(`Driver record "${deletedName}" deleted successfully`);
-                                      }
-                                    }
+                                    handleDeleteDriver(driver);
+                                    setDriverMenuIndex(null);
                                   }}
                                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 transition-all text-left w-full cursor-pointer font-bold"
                                 >
