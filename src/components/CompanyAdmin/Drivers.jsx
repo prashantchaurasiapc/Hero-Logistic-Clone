@@ -319,15 +319,54 @@ export const ComplianceDocCard = ({ doc, onUpdate, onRemove }) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = () => {
+      reader.onload = async () => {
+        const fileUrl = reader.result;
         onUpdate({
           ...doc,
           fileName: file.name,
           fileSize: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
-          fileUrl: reader.result
+          fileUrl
         });
+
+        if (doc.backendId) {
+          try {
+            await api.put(`/documents/${doc.backendId}`, {
+              fileUrl,
+              type: doc.type === 'Other Document' ? (doc.customType || 'Other Document') : doc.type,
+              expiryDate: doc.expiryDate ? new Date(doc.expiryDate).toISOString() : null
+            });
+          } catch (syncErr) {
+            console.warn('Could not sync file upload to server:', syncErr);
+          }
+        }
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleTypeChange = async (newType) => {
+    onUpdate({ ...doc, type: newType });
+    if (doc.backendId) {
+      try {
+        await api.put(`/documents/${doc.backendId}`, {
+          type: newType === 'Other Document' ? (doc.customType || 'Other Document') : newType
+        });
+      } catch (err) {
+        console.warn('Could not sync doc type:', err);
+      }
+    }
+  };
+
+  const handleExpiryChange = async (newExpiry) => {
+    onUpdate({ ...doc, expiryDate: newExpiry });
+    if (doc.backendId) {
+      try {
+        await api.put(`/documents/${doc.backendId}`, {
+          expiryDate: newExpiry ? new Date(newExpiry).toISOString() : null
+        });
+      } catch (err) {
+        console.warn('Could not sync expiry date:', err);
+      }
     }
   };
 
@@ -342,7 +381,7 @@ export const ComplianceDocCard = ({ doc, onUpdate, onRemove }) => {
             </label>
             <select
               value={doc.type || 'Dangerous Goods Certificate'}
-              onChange={(e) => onUpdate({ ...doc, type: e.target.value })}
+              onChange={(e) => handleTypeChange(e.target.value)}
               className="w-full bg-white border border-slate-200 hover:border-purple-400 focus:border-purple-600 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer"
             >
               {COMPLIANCE_DOC_TYPES.map((t) => (
@@ -387,7 +426,7 @@ export const ComplianceDocCard = ({ doc, onUpdate, onRemove }) => {
           <input
             type="date"
             value={doc.expiryDate || ''}
-            onChange={(e) => onUpdate({ ...doc, expiryDate: e.target.value })}
+            onChange={(e) => handleExpiryChange(e.target.value)}
             className="w-full bg-white border border-slate-200 hover:border-purple-400 focus:border-purple-600 rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors cursor-pointer"
           />
         </div>
@@ -1261,30 +1300,60 @@ export default function Drivers() {
     setFormResetKey(prev => prev + 1);
   };
 
-  const handleAddComplianceDocSlot = () => {
-    setComplianceDocs(prev => [
-      ...prev,
-      {
-        id: `cd_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+  const handleAddComplianceDocSlot = async () => {
+    try {
+      const res = await api.post('/documents', {
         type: 'Dangerous Goods Certificate',
-        customType: '',
-        expiryDate: '',
-        fileUrl: '',
-        fileName: '',
-        fileSize: ''
-      }
-    ]);
+        fileUrl: 'pending_document.pdf',
+        driverId: selectedDriver?.id || null
+      });
+      const newDoc = res.data?.data;
+      const docId = newDoc?.id || `cd_${Date.now()}`;
+      setComplianceDocs(prev => [
+        ...prev,
+        {
+          id: docId,
+          backendId: newDoc?.id || null,
+          type: 'Dangerous Goods Certificate',
+          customType: '',
+          expiryDate: '',
+          fileUrl: '',
+          fileName: '',
+          fileSize: ''
+        }
+      ]);
+      showToast('New compliance document slot created');
+      if (selectedDriver?.id) fetchDriverDocuments(selectedDriver.id);
+    } catch (err) {
+      console.warn('Could not create document slot on server, adding locally:', err);
+      setComplianceDocs(prev => [
+        ...prev,
+        {
+          id: `cd_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          type: 'Dangerous Goods Certificate',
+          customType: '',
+          expiryDate: '',
+          fileUrl: '',
+          fileName: '',
+          fileSize: ''
+        }
+      ]);
+    }
   };
 
   const handleRemoveComplianceDocSlot = async (idToRemove, backendId) => {
     setComplianceDocs(prev => prev.filter(d => d.id !== idToRemove));
-    if (backendId) {
-      try {
-        await api.delete(`/documents/${backendId}`);
-        if (selectedDriver?.id) fetchDriverDocuments(selectedDriver.id);
-      } catch (err) {
-        console.warn('Could not delete document from server:', err);
+    const targetId = backendId || (idToRemove && !idToRemove.startsWith('cd_') ? idToRemove : null);
+    try {
+      if (targetId) {
+        await api.delete(`/documents/${targetId}`);
+      } else {
+        await api.delete(`/documents/${idToRemove}`).catch(() => {});
       }
+      showToast('Compliance document removed');
+      if (selectedDriver?.id) fetchDriverDocuments(selectedDriver.id);
+    } catch (err) {
+      console.warn('Could not delete document from server:', err);
     }
   };
   const [activeTab, setActiveTab] = useState('Overview');
