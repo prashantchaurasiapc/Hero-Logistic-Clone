@@ -83,18 +83,6 @@ export default function TrialCompanies() {
 
   // Open Login As Company Modal (No auto redirection, stays on page!)
   const handleOpenLoginModal = (trial) => {
-    const mockSession = {
-      token: `HERO-JWT-${trial.id.toUpperCase()}-${Date.now().toString().slice(-6)}`,
-      email: `${trial.admin.toLowerCase().replace(/\s/g, '')}@${trial.company.toLowerCase().replace(/[^a-z0-9]/gi, '')}.com`,
-      role: 'Company Admin',
-      name: trial.admin,
-      company: trial.company,
-      plan: trial.currentPlan || 'Enterprise Sandbox',
-      joinedAt: trial.startDate
-    };
-
-    localStorage.setItem('hero_session', JSON.stringify(mockSession));
-    window.dispatchEvent(new Event('storage'));
     setShowLoginModal(trial);
   };
 

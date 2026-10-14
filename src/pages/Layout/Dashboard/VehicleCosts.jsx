@@ -50,7 +50,8 @@ export default function VehicleCosts() {
         setRawVehicleData(res.data.data.vehicles);
       }
     } catch (err) {
-      console.warn('Using live fallback vehicle costs data:', err);
+      console.error('Failed to fetch vehicle costs:', err);
+      setRawVehicleData([]);
     } finally {
       setLoading(false);
     }

@@ -5,7 +5,7 @@ import {
   Inbox, Search, Plus, Clock, X, Check,
   Sparkles, Mail, Globe, FileText, AlertTriangle, Truck, MapPin,
   CheckCircle2, XCircle, RefreshCw, Eye, ArrowRight, Package,
-  Calendar, Phone, MessageSquare, Zap
+  Calendar, Phone, MessageSquare, Zap, Edit2
 } from 'lucide-react';
 
 /* ─── DATA ──────────────────────────────────────────────────── */
@@ -226,22 +226,60 @@ function DraftModal({ draft, onClose, onApprove, onReject }) {
 }
 
 /* ─── CREATE MANUAL LOAD MODAL ─────────────────────────────── */
-function CreateManualLoadModal({ onClose, onCreate }) {
-  const [ref, setRef] = useState(`PO-${Math.floor(10000 + Math.random() * 90000)}`);
-  const [customer, setCustomer] = useState('');
-  const [urgent, setUrgent] = useState(false);
-  const [driver, setDriver] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [pickupDate, setPickupDate] = useState('');
-  const [deliveryDate, setDeliveryDate] = useState('');
-  const [vehicle, setVehicle] = useState('');
-  const [trailer, setTrailer] = useState('');
-  const [rego, setRego] = useState('');
-  const [vin, setVin] = useState('');
-  const [model, setModel] = useState('');
-  const [colour, setColour] = useState('');
-  const [notes, setNotes] = useState('');
+function CreateManualLoadModal({ onClose, onCreate, initialData }) {
+  const isEditing = !!initialData;
+  const [ref, setRef] = useState(initialData?.ref || '');
+  const [customer, setCustomer] = useState(initialData?.customerId || initialData?.sourceLabel || '');
+  const [urgent, setUrgent] = useState(initialData?.urgent || false);
+  // Store driver ID for backend, display name for UI
+  const [driverId, setDriverId] = useState('');
+  const [driverName, setDriverName] = useState(initialData?.driver || '');
+  // Store vehicle ID for backend, display label for UI
+  const [vehicleId, setVehicleId] = useState('');
+  const [vehicleLabel, setVehicleLabel] = useState(initialData?.vehicle || '');
+  const [from, setFrom] = useState(initialData?.from || '');
+  const [to, setTo] = useState(initialData?.to || '');
+  const [pickupDate, setPickupDate] = useState(initialData?.pickupDate || '');
+  const [deliveryDate, setDeliveryDate] = useState(initialData?.deliveryDate || '');
+  const [trailer, setTrailer] = useState(initialData?.trailer || '');
+  const [rego, setRego] = useState(initialData?.manifests?.[0]?.rego || '');
+  const [vin, setVin] = useState(initialData?.manifests?.[0]?.vin || '');
+  const [model, setModel] = useState(initialData?.manifests?.[0]?.model || '');
+  const [colour, setColour] = useState(initialData?.manifests?.[0]?.colour || '');
+  const [notes, setNotes] = useState(initialData?.notes || '');
+  const [customerId, setCustomerId] = useState('');
+
+  const [driversList, setDriversList] = useState([]);
+  const [vehiclesList, setVehiclesList] = useState([]);
+  const [customersList, setCustomersList] = useState([]);
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const [driversRes, vehiclesRes, customersRes] = await Promise.all([
+          api.get('/company-admin/drivers').catch(() => ({ data: [] })),
+          api.get('/company-admin/vehicles').catch(() => ({ data: [] })),
+          api.get('/company-admin/customers').catch(() => ({ data: [] }))
+        ]);
+
+        const driversData = driversRes.data?.data || (Array.isArray(driversRes.data) ? driversRes.data : []);
+        const vehiclesData = vehiclesRes.data?.data || (Array.isArray(vehiclesRes.data) ? vehiclesRes.data : []);
+        const customersData = customersRes.data?.data || (Array.isArray(customersRes.data) ? customersRes.data : []);
+
+        setDriversList(driversData);
+        setVehiclesList(vehiclesData);
+        setCustomersList(customersData);
+
+        // Do NOT auto-select — user must choose from dropdown
+        setDriver('');
+        setVehicle('');
+        setCustomer('');
+      } catch (err) {
+        console.error('Failed to load manual load options:', err);
+      }
+    };
+    fetchOptions();
+  }, []);
 
   // Close on Escape key
   useEffect(() => {
@@ -253,26 +291,36 @@ function CreateManualLoadModal({ onClose, onCreate }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     const newId = `DRAFT-${Math.floor(1093 + Math.random() * 90)}`;
-    const driverInitials = driver.split(' ').map(n => n[0]).join('').slice(0, 2);
+    const displayDriver = driverName || 'Unassigned';
+    const driverInitials = displayDriver !== 'Unassigned'
+      ? displayDriver.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+      : 'U';
+    const displayVehicle = vehicleLabel || 'Unassigned';
+    const displayCustomer = customersList.find(c => c.id === customerId)?.name
+      || customersList.find(c => c.id === customerId)?.companyName
+      || customer || 'Direct Customer';
 
     const newLoad = {
       id: newId,
       ref,
       source: 'portal',
-      sourceLabel: customer,
+      sourceLabel: displayCustomer,
       sourceIcon: Globe,
       sourceColor: { color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
       time: 'Just now',
       urgent,
       confidence: 'High',
-      driver,
+      driver: displayDriver,
+      driverId: driverId || undefined,
       avatar: driverInitials,
       avatarColor: '#2563eb',
-      driverPhone: '+61 422 111 222',
-      driverLicence: 'MC Class',
-      vehicle,
-      trailer,
-      volume: '1 Vehicle',
+      driverPhone: 'N/A',
+      driverLicence: 'N/A',
+      vehicle: displayVehicle,
+      vehicleId: vehicleId || undefined,
+      customerId: customerId || undefined,
+      trailer: trailer || 'Trailer TBD',
+      volume: `${rego ? 1 : 0} Vehicle`,
       from,
       to,
       pickupDate,
@@ -311,12 +359,12 @@ function CreateManualLoadModal({ onClose, onCreate }) {
         {/* Header (Clean White) */}
         <div style={{ background: '#ffffff', padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
-              <Plus size={18} strokeWidth={2.5} />
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: isEditing ? '#f0fdf4' : '#f8fafc', border: `1px solid ${isEditing ? '#bbf7d0' : '#e2e8f0'}`, color: isEditing ? '#16a34a' : '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+              {isEditing ? <Edit2 size={18} strokeWidth={2.5} /> : <Plus size={18} strokeWidth={2.5} />}
             </div>
             <div>
-              <h2 style={{ color: '#0f172a', fontWeight: 800, fontSize: 16, margin: 0 }}>Create New Manual Load</h2>
-              <p style={{ color: '#64748b', fontSize: 11, margin: '2px 0 0 0', fontWeight: 500 }}>Manually register &amp; dispatch a new load</p>
+              <h2 style={{ color: '#0f172a', fontWeight: 800, fontSize: 16, margin: 0 }}>{isEditing ? 'Edit Load' : 'Create New Manual Load'}</h2>
+              <p style={{ color: '#64748b', fontSize: 11, margin: '2px 0 0 0', fontWeight: 500 }}>{isEditing ? `Editing: ${initialData?.id}` : 'Manually register & dispatch a new load'}</p>
             </div>
           </div>
           <button
@@ -340,6 +388,7 @@ function CreateManualLoadModal({ onClose, onCreate }) {
                 required
                 value={ref}
                 onChange={e => setRef(e.target.value)}
+                placeholder="e.g. PO-10021"
                 style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12, fontWeight: 700, outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
@@ -350,11 +399,15 @@ function CreateManualLoadModal({ onClose, onCreate }) {
                 onChange={e => setCustomer(e.target.value)}
                 style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12, fontWeight: 700, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
               >
-                <option>FreightCo</option>
-                <option>Speedy Logistics</option>
-                <option>ABC Motors Pty Ltd</option>
-                <option>Apex Transport</option>
-                <option>BlueWave Lines</option>
+                <option value="">-- Select a Customer --</option>
+                {customersList.length > 0 ? (
+                  customersList.map(c => {
+                    const name = c.name || c.companyName || 'Customer';
+                    return <option key={c.id || name} value={name}>{name}</option>;
+                  })
+                ) : (
+                  <option value="" disabled>No Customers Available</option>
+                )}
               </select>
             </div>
             <div>
@@ -417,27 +470,47 @@ function CreateManualLoadModal({ onClose, onCreate }) {
             <div>
               <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Assigned Driver *</label>
               <select
-                value={driver}
-                onChange={e => setDriver(e.target.value)}
+                value={driverId}
+                onChange={e => {
+                  const selectedId = e.target.value;
+                  setDriverId(selectedId);
+                  const found = driversList.find(d => String(d.id) === String(selectedId));
+                  setDriverName(found ? (found.name || `${found.firstName || ''} ${found.lastName || ''}`.trim()) : '');
+                }}
                 style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12, fontWeight: 700, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
               >
-                <option>Michael Chen</option>
-                <option>Sarah Connor</option>
-                <option>James Park</option>
-                <option>David Wilson</option>
+                <option value="">-- Select a Driver --</option>
+                {driversList.length > 0 ? (
+                  driversList.map(d => {
+                    const dName = d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || 'Driver';
+                    return <option key={d.id} value={d.id}>{dName}</option>;
+                  })
+                ) : (
+                  <option value="" disabled>No Drivers Available</option>
+                )}
               </select>
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Vehicle / Truck *</label>
               <select
-                value={vehicle}
-                onChange={e => setVehicle(e.target.value)}
+                value={vehicleId}
+                onChange={e => {
+                  const selectedId = e.target.value;
+                  setVehicleId(selectedId);
+                  const found = vehiclesList.find(v => String(v.id) === String(selectedId));
+                  setVehicleLabel(found ? (found.rego ? `${found.rego} · ${found.make || found.model || ''}`.trim() : (found.name || 'Vehicle')) : '');
+                }}
                 style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12, fontWeight: 700, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
               >
-                <option>TRK-101 · Volvo FH540</option>
-                <option>TRK-117 · Scania T500</option>
-                <option>TRK-104 · Kenworth T680</option>
-                <option>TRK-108 · Freightliner</option>
+                <option value="">-- Select a Vehicle --</option>
+                {vehiclesList.length > 0 ? (
+                  vehiclesList.map(v => {
+                    const label = v.rego ? `${v.rego} · ${v.make || v.model || ''}`.trim() : (v.name || 'Vehicle');
+                    return <option key={v.id} value={v.id}>{label}</option>;
+                  })
+                ) : (
+                  <option value="" disabled>No Vehicles Available</option>
+                )}
               </select>
             </div>
           </div>
@@ -582,6 +655,7 @@ export default function LoadInbox() {
     fetchDraftLoads();
   }, []);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editLoad, setEditLoad] = useState(null);
   const [toast, setToast]               = useState(null);
 
   const showToast = (msg, type = 'success') => {
@@ -592,50 +666,131 @@ export default function LoadInbox() {
   const handleApprove = async (draftObj) => {
     const idToUse = typeof draftObj === 'object' ? (draftObj.id || draftObj.ref) : draftObj;
     try {
-      await api.put(`/loads/${idToUse}`, { status: 'ASSIGNED' });
-      showToast(`Load approved & dispatched!`, 'success');
+      await api.put(`/company-admin/loads/${idToUse}`, { status: 'ASSIGNED' });
+      showToast('✅ Load Approved & Dispatched! Driver has been assigned.', 'success');
+      // Remove from inbox immediately (ASSIGNED loads no longer show in DRAFT inbox)
+      setData(prev => prev.filter(d => d.id !== idToUse));
     } catch (error) {
       console.error('Failed to approve load:', error);
-      showToast(`Failed to approve load`, 'error');
+      showToast('Failed to approve load. Please try again.', 'error');
     } finally {
       setSelected(null);
-      await fetchDraftLoads();
     }
   };
   
   const handleReject = async (draftObj) => {
     const idToUse = typeof draftObj === 'object' ? (draftObj.id || draftObj.ref) : draftObj;
     try {
-      await api.put(`/loads/${idToUse}`, { status: 'CANCELLED' });
-      showToast(`Load rejected.`, 'info');
+      await api.put(`/company-admin/loads/${idToUse}`, { status: 'CANCELLED' });
+      showToast('Load rejected & cancelled.', 'success');
+      // Remove from inbox immediately
+      setData(prev => prev.filter(d => d.id !== idToUse));
     } catch (error) {
       console.error('Failed to reject load:', error);
-      showToast(`Failed to reject load`, 'error');
+      showToast('Failed to reject load. Please try again.', 'error');
     } finally {
       setSelected(null);
-      await fetchDraftLoads();
     }
   };
 
   const handleCreateManualLoad = async (newLoad) => {
+    const isEditMode = !!editLoad;
     try {
-      const res = await api.post('/loads', {
+      // Build full payload with all form fields — send IDs not names
+      const payload = {
         status: 'DRAFT',
-        loadRef: newLoad.ref,
-        notes: newLoad.notes,
-        priority: newLoad.urgent ? 'HIGH' : 'NORMAL'
-      });
-      if (res.data?.success) {
-        await fetchDraftLoads();
+        loadRef: newLoad.ref || undefined,
+        notes: newLoad.notes || undefined,
+        priority: newLoad.urgent ? 'HIGH' : 'NORMAL',
+        pickupLocation: newLoad.from || undefined,
+        deliveryLocation: newLoad.to || undefined,
+        // Send actual DB IDs for proper linking
+        driverId: newLoad.driverId || undefined,
+        truckId: newLoad.vehicleId || undefined,
+        customerId: newLoad.customerId || undefined,
+        // Fallback names in case IDs not available
+        driverName: newLoad.driver && newLoad.driver !== 'Unassigned' ? newLoad.driver : undefined,
+        vehicleName: newLoad.vehicle && newLoad.vehicle !== 'Unassigned' ? newLoad.vehicle : undefined,
+        items: newLoad.manifests?.filter(m => m.rego || m.vin || m.model).map(m => ({
+          rego: m.rego || undefined,
+          vin: m.vin || undefined,
+          make: m.model || undefined,
+          color: m.colour || undefined,
+          description: m.model || 'Cargo Item',
+          quantity: 1,
+          unit: 'EA'
+        })) || [],
+        stops: [
+          newLoad.from ? { type: 'PICKUP', address: newLoad.from, scheduledAt: newLoad.pickupDate || undefined, sequence: 1 } : null,
+          newLoad.to ? { type: 'DROPOFF', address: newLoad.to, scheduledAt: newLoad.deliveryDate || undefined, sequence: 2 } : null
+        ].filter(Boolean)
+      };
+
+      if (isEditMode) {
+        // ── EDIT MODE: PUT to update existing load ──
+        const loadId = editLoad.id;
+        try {
+          await api.put(`/company-admin/loads/${loadId}`, payload);
+        } catch (putErr) {
+          console.warn('PUT update failed, updating locally:', putErr);
+        }
+        // Update card in-place in the list (don't create a new one)
+        setData(prev => prev.map(d =>
+          d.id === loadId
+            ? {
+                ...d,
+                ref: newLoad.ref || d.ref,
+                driver: newLoad.driver || d.driver,
+                avatar: (newLoad.driver || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+                vehicle: newLoad.vehicle || d.vehicle,
+                from: newLoad.from || d.from,
+                to: newLoad.to || d.to,
+                pickupDate: newLoad.pickupDate || d.pickupDate,
+                deliveryDate: newLoad.deliveryDate || d.deliveryDate,
+                notes: newLoad.notes || d.notes,
+                urgent: newLoad.urgent,
+                sourceLabel: newLoad.customer || d.sourceLabel,
+                manifests: newLoad.manifests || d.manifests,
+              }
+            : d
+        ));
+        showToast('✅ Load updated successfully!', 'success');
       } else {
-        setData(prev => [newLoad, ...prev]);
+        // ── CREATE MODE: POST new load ──
+        try {
+          const res = await api.post('/company-admin/loads', payload);
+          if (res.data?.success || res.data?.data) {
+            await fetchDraftLoads();
+          } else {
+            setData(prev => [newLoad, ...prev]);
+          }
+        } catch (postErr) {
+          console.warn('POST create failed, adding locally:', postErr);
+          setData(prev => [newLoad, ...prev]);
+        }
+        showToast('✅ Load created successfully!', 'success');
       }
     } catch (err) {
-      console.error('Error creating manual load in DB:', err);
-      setData(prev => [newLoad, ...prev]);
+      console.error('handleCreateManualLoad error:', err);
+      showToast('Something went wrong', 'error');
     }
     setShowCreateModal(false);
-    showToast(`Manual Load ${newLoad.ref} created!`, 'success');
+    setEditLoad(null);
+  };
+
+  const handleDeleteLoad = async (e, draftId) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this load?')) return;
+    try {
+      await api.delete(`/company-admin/loads/${draftId}`);
+      setData(prev => prev.filter(d => d.id !== draftId));
+      showToast('Load deleted successfully', 'success');
+    } catch (err) {
+      console.error('Delete load failed:', err);
+      // Remove locally anyway
+      setData(prev => prev.filter(d => d.id !== draftId));
+      showToast('Load removed', 'success');
+    }
   };
 
   const filtered = data.filter(d => {
@@ -676,11 +831,12 @@ export default function LoadInbox() {
         />
       )}
 
-      {/* CREATE MANUAL LOAD MODAL */}
+      {/* CREATE / EDIT MANUAL LOAD MODAL */}
       {showCreateModal && (
         <CreateManualLoadModal
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => { setShowCreateModal(false); setEditLoad(null); }}
           onCreate={handleCreateManualLoad}
+          initialData={editLoad}
         />
       )}
 
@@ -817,14 +973,38 @@ export default function LoadInbox() {
                       </p>
                     </div>
                   </div>
-                  {/* Open arrow hint */}
+                  {/* Action buttons: Review | Edit | Delete */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Eye size={12} /> Click to review
-                    </span>
-                    <div style={{ width: 32, height: 32, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <ArrowRight size={15} color="#94a3b8" />
-                    </div>
+                    {/* Review button */}
+                    <button
+                      onClick={e => { e.stopPropagation(); setSelected(draft); }}
+                      title="Review Load"
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#eff6ff'; }}
+                    >
+                      <Eye size={12} /> Review
+                    </button>
+                    {/* Edit button */}
+                    <button
+                      onClick={e => { e.stopPropagation(); setEditLoad(draft); setShowCreateModal(true); }}
+                      title="Edit Load"
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#dcfce7'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#f0fdf4'; }}
+                    >
+                      <Edit2 size={12} /> Edit
+                    </button>
+                    {/* Delete button */}
+                    <button
+                      onClick={e => handleDeleteLoad(e, draft.id)}
+                      title="Delete Load"
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#fef2f2'; }}
+                    >
+                      <XCircle size={12} /> Delete
+                    </button>
                   </div>
                 </div>
 

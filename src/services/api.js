@@ -1,13 +1,10 @@
 import axios from 'axios';
 
-const LIVE_API_URL = 'https://hero-logistics-backend-production.up.railway.app/api/v1';
+const LOCAL_API_URL = 'http://localhost:5000/api/v1';
+const LIVE_API_URL = 'https://hero-logistic-backend-production.up.railway.app/api/v1';
 
 const getBaseUrl = () => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envUrl) {
-    return envUrl;
-  }
-  return LIVE_API_URL;
+  return import.meta.env.VITE_API_BASE_URL || LIVE_API_URL;
 };
 
 const api = axios.create({
@@ -15,8 +12,12 @@ const api = axios.create({
   withCredentials: true, // Crucial for sending HttpOnly cookies
   headers: {
     'Content-Type': 'application/json',
+    'Bypass-Tunnel-Reminder': 'true',
+    'bypass-tunnel-reminder': 'true'
   },
 });
+
+
 
 
 export const getSuperAdminDashboard = () => {
@@ -116,16 +117,17 @@ api.interceptors.request.use(
   }
 );
 
-// Response Interceptor for handling 401 Unauthorized
+// Response Interceptor for handling network errors and 401 Unauthorized
 api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error?.config;
+
     if (error.response && error.response.status === 401) {
-      const originalRequest = error.config;
       // Skip interceptor loop for auth check and logout endpoints
-      if (originalRequest.url && (originalRequest.url.includes('/auth/me') || originalRequest.url.includes('/auth/logout') || originalRequest.url.includes('/auth/login'))) {
+      if (originalRequest?.url && (originalRequest.url.includes('/auth/me') || originalRequest.url.includes('/auth/logout') || originalRequest.url.includes('/auth/login'))) {
         return Promise.reject(error);
       }
       
@@ -135,6 +137,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 
 export { api };
 export default api;

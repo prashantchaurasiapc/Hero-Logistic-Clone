@@ -22,7 +22,8 @@ const SentInvoices = () => {
         setInvoices(res.data.data.invoices);
       }
     } catch (err) {
-      console.warn('Using live fallback invoices:', err);
+      console.error('Failed to fetch invoices:', err);
+      setInvoices([]);
     } finally {
       setLoading(false);
     }
@@ -622,7 +623,7 @@ const SentInvoices = () => {
 
           {/* Table Footer Pagination */}
           <div className="p-3.5 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-semibold">
-            <div>Showing 1 to {filteredInvoices.length} of 42 invoices</div>
+            <div>Showing {filteredInvoices.length === 0 ? 0 : 1} to {filteredInvoices.length} of {invoices.length} invoices</div>
 
             <div className="flex items-center gap-2">
               <button disabled className="px-2 py-1 text-slate-400 cursor-not-allowed">&lt;</button>

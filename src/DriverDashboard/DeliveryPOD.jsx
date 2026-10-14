@@ -40,28 +40,75 @@ export default function DeliveryPOD() {
   const [loadInfo, setLoadInfo] = useState(null);
   const [cars, setCars] = useState([]);
 
+  const loadType = loadInfo?.loadType || loadInfo?.cars?.[0]?.loadType || 'General Freight';
+
+  const isVehicleLoad = (lType = '') => {
+    const l = String(lType || '').toLowerCase();
+    return l.includes('car') || l.includes('vehicle') || l.includes('auto');
+  };
+
+  const getItemLabel = (lType = '', count = 1) => {
+    if (isVehicleLoad(lType)) return count === 1 ? 'Vehicle' : 'Vehicles';
+    const l = String(lType || '').toLowerCase();
+    if (l.includes('container')) return count === 1 ? 'Container' : 'Containers';
+    if (l.includes('pallet')) return count === 1 ? 'Pallet' : 'Pallets';
+    return count === 1 ? 'Freight Item' : 'Freight Items';
+  };
+
+  const getItemShortLabel = (lType = '', count = 1) => {
+    if (isVehicleLoad(lType)) return count === 1 ? 'Car' : 'Cars';
+    return count === 1 ? 'Item' : 'Items';
+  };
+
   const fetchDeliveryPOD = async () => {
     try {
       setLoading(true);
 
       // Check if Planning Board assigned an active load to current driver in local memory
-      const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
-      const userStr = localStorage.getItem('user');
-      const userObj = userStr ? JSON.parse(userStr) : {};
-      const currentDriverName = userObj.name || userObj.firstName || '';
-      const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
-      const assignedList = currentDriverName ? (savedMap[currentDriverName] || []).filter(item => !deletedIds.includes(item.id)) : [];
-      
-      const activeAssignedLoad = assignedList[0];
+      let activeAssignedLoad = null;
+      try {
+        const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+        const userStr = localStorage.getItem('user');
+        const userObj = userStr ? JSON.parse(userStr) : {};
+        const currentDriverName = userObj.name || userObj.firstName || '';
+        const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
+        const assignedList = currentDriverName ? (savedMap[currentDriverName] || []).filter(item => !deletedIds.includes(item.id)) : [];
+        activeAssignedLoad = assignedList[0];
+      } catch (err) {
+        console.warn('Error reading assigned driver loads from localStorage:', err);
+      }
 
       if (activeAssignedLoad) {
         const routeParts = activeAssignedLoad.route ? activeAssignedLoad.route.split(/\s*[\u2192\u2794\->]|\sto\s/i) : ['—', '—'];
         const originStr = routeParts[0]?.trim() || activeAssignedLoad.origin || '—';
         const destStr = routeParts[1]?.trim() || activeAssignedLoad.destination || '—';
+        const lType = activeAssignedLoad.loadType || activeAssignedLoad.type || 'General Freight';
+
+        const rawItems = Array.isArray(activeAssignedLoad.items) && activeAssignedLoad.items.length > 0
+          ? activeAssignedLoad.items
+          : (Array.isArray(activeAssignedLoad.cars) && activeAssignedLoad.cars.length > 0 ? activeAssignedLoad.cars : []);
+
+        const parsedItems = rawItems.map((it, idx) => ({
+          id: it.id || String(idx + 1),
+          dbId: it.id || String(idx + 1),
+          vin: it.vin || it.stockRef || `REF-${idx + 1}`,
+          makeModel: it.description || it.makeModel || `${it.make || ''} ${it.model || ''}`.trim() || 'Freight Item',
+          description: it.description || it.makeModel || 'Freight Item',
+          quantity: it.quantity || 1,
+          weightKg: it.weightKg || it.weight || 0,
+          volumeM3: it.volumeM3 || 0,
+          rego: it.rego || it.plate || '',
+          plate: it.plate || it.rego || '',
+          color: it.color || '',
+          delivered: ['DELIVERED', 'COMPLETED'].includes(it.status) || it.delivered || false,
+          deliveryNotes: it.deliveryNotes || '',
+          photos: it.photos || 0
+        }));
 
         setLoadInfo({
           id: activeAssignedLoad.id || activeAssignedLoad.loadNumber || '—',
           dbId: activeAssignedLoad.id,
+          loadType: lType,
           origin: originStr,
           destination: destStr,
           deliveryLocation: activeAssignedLoad.destination || `${destStr} Hub`,
@@ -69,22 +116,96 @@ export default function DeliveryPOD() {
           stopIndex: 1,
           totalStops: 1,
           eta: activeAssignedLoad.deliveryTime || '02:30 PM',
-          totalCars: (activeAssignedLoad.items || []).length,
-          deliveredCars: 0,
-          remainingCars: (activeAssignedLoad.items || []).length,
-          cars: activeAssignedLoad.items || []
+          totalCars: parsedItems.length,
+          deliveredCars: parsedItems.filter(i => i.delivered).length,
+          remainingCars: parsedItems.filter(i => !i.delivered).length,
+          cars: parsedItems
         });
-        setCars(activeAssignedLoad.items || []);
+        setCars(parsedItems);
         return;
       }
 
       const res = await api.get('/driver-portal/delivery-pod');
       if (res.data?.success && res.data.data?.load) {
         setLoadInfo(res.data.data.load);
-        setCars(res.data.data.load.cars || []);
+        setCars(res.data.data.load.cars || res.data.data.load.items || []);
       } else {
-        setLoadInfo(null);
-        setCars([]);
+        // Check if there is a last delivered load saved locally
+        let lastDelivered = null;
+        try {
+          const lastDelStr = localStorage.getItem('hero_last_delivered_load');
+          if (lastDelStr) lastDelivered = JSON.parse(lastDelStr);
+        } catch (e) {}
+
+        if (lastDelivered) {
+          setLoadInfo(lastDelivered);
+          setCars(lastDelivered.cars || lastDelivered.items || []);
+          return;
+        }
+
+        const dashRes = await api.get('/driver-portal/dashboard').catch(() => null);
+        const cl = dashRes?.data?.data?.currentLoad;
+        if (cl) {
+          const lType = cl.loadType || cl.type || 'General Freight';
+          const isDeliveredState = cl.status === 'DELIVERED' || cl.status === 'COMPLETED';
+          const rawItems = Array.isArray(cl.items) && cl.items.length > 0 ? cl.items : (Array.isArray(cl.cars) && cl.cars.length > 0 ? cl.cars : []);
+
+          const parsedItems = rawItems.length > 0
+            ? rawItems.map((it, idx) => ({
+                id: it.id || String(idx + 1),
+                dbId: it.id || String(idx + 1),
+                vin: it.vin || it.stockRef || `REF-${idx + 1}`,
+                makeModel: it.description || it.makeModel || `${it.make || ''} ${it.model || ''}`.trim() || 'Freight Item',
+                description: it.description || it.makeModel || 'Freight Item',
+                quantity: it.quantity || 1,
+                weightKg: it.weightKg || it.weight || 0,
+                volumeM3: it.volumeM3 || 0,
+                rego: it.rego || it.plate || '',
+                plate: it.plate || it.rego || '',
+                color: it.color || '',
+                delivered: isDeliveredState || ['DELIVERED', 'COMPLETED'].includes(it.status) || it.delivered || false,
+                deliveryNotes: it.deliveryNotes || '',
+                photos: it.photos || 0
+              }))
+            : [{
+                id: '1',
+                dbId: '1',
+                vin: cl.reference || cl.loadNumber || 'REF-1',
+                makeModel: lType,
+                description: lType,
+                quantity: 1,
+                weightKg: 0,
+                volumeM3: 0,
+                rego: '',
+                plate: '',
+                color: '',
+                delivered: isDeliveredState,
+                deliveryNotes: '',
+                photos: 0
+              }];
+
+          const loadObj = {
+            id: cl.reference || cl.loadNumber || cl.id,
+            dbId: cl.id,
+            loadType: lType,
+            origin: (cl.origin && cl.origin !== 'ggg') ? cl.origin : '—',
+            destination: (cl.destination && cl.destination !== 'Asdff') ? cl.destination : 'Central Warehouse',
+            deliveryLocation: cl.deliveryStop?.name || (cl.destination && cl.destination !== 'Asdff' ? cl.destination : 'Central Warehouse'),
+            address: cl.deliveryStop?.address || 'Central Warehouse, NSW',
+            stopIndex: 2,
+            totalStops: 2,
+            eta: cl.deliveryStop?.time || '02:30 PM',
+            totalCars: parsedItems.length,
+            deliveredCars: parsedItems.filter(i => i.delivered).length,
+            remainingCars: parsedItems.filter(i => !i.delivered).length,
+            cars: parsedItems
+          };
+          setLoadInfo(loadObj);
+          setCars(parsedItems);
+        } else {
+          setLoadInfo(null);
+          setCars([]);
+        }
       }
     } catch (error) {
       console.error('Fetch delivery details error:', error.message);
@@ -94,7 +215,6 @@ export default function DeliveryPOD() {
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     fetchDeliveryPOD();
@@ -138,7 +258,7 @@ export default function DeliveryPOD() {
   const deleteCar = async (id) => {
     const carToDelete = cars.find(c => c.id === id);
     setCars(cars.filter(c => c.id !== id));
-    triggerToast(`Vehicle ${carToDelete?.makeModel || ''} removed!`);
+    triggerToast(`${getItemShortLabel(loadType, 1)} ${carToDelete?.makeModel || ''} removed!`);
 
     try {
       if (carToDelete?.dbId) {
@@ -186,6 +306,31 @@ export default function DeliveryPOD() {
       triggerToast('⚠️ Please mark at least 1 car as Delivered before confirming.');
       return;
     }
+
+    // Save completed delivery state locally
+    const updatedLoadInfo = {
+      ...loadInfo,
+      status: 'DELIVERED',
+      deliveredCars: cars.length,
+      remainingCars: 0,
+      cars: cars.map(c => ({ ...c, delivered: true }))
+    };
+    try {
+      localStorage.setItem('hero_last_delivered_load', JSON.stringify(updatedLoadInfo));
+
+      // Record driver pay from completed load schedule
+      const earnedAmount = parseFloat(loadInfo?.driverPay || loadInfo?.amount || 0);
+      if (earnedAmount > 0) {
+        const completedEarnings = JSON.parse(localStorage.getItem('hero_driver_completed_earnings') || '[]');
+        completedEarnings.push({
+          loadId: loadInfo?.id || loadInfo?.dbId,
+          scheduleTitle: loadInfo?.loadScheduleTitle || `${loadInfo?.origin || 'Origin'} to ${loadInfo?.destination || 'Destination'}`,
+          driverPay: earnedAmount,
+          deliveredAt: new Date().toISOString()
+        });
+        localStorage.setItem('hero_driver_completed_earnings', JSON.stringify(completedEarnings));
+      }
+    } catch (e) {}
 
     try {
       await api.post('/driver-portal/delivery-pod/confirm-delivery', {
@@ -324,7 +469,7 @@ export default function DeliveryPOD() {
               Delivery & POD
             </h1>
             <p className="text-xs font-semibold text-slate-400 mt-0.5">
-              Scan or select cars to deliver at Step {loadInfo?.stopIndex || 1}: {loadInfo?.deliveryLocation || loadInfo?.pickupLocation || '—'}
+              Scan or select {getItemShortLabel(loadType, 2)} to deliver at Step {loadInfo?.stopIndex || 1}: {loadInfo?.deliveryLocation || loadInfo?.pickupLocation || '—'}
             </p>
           </div>
         </div>
@@ -334,7 +479,7 @@ export default function DeliveryPOD() {
           className="bg-[#6366F1] hover:bg-[#4F46E5] text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
         >
           <BsQrCodeScan className="text-base" />
-          <span>Scan VIN Barcode</span>
+          <span>Scan Barcode / Ref</span>
         </button>
       </div>
 
@@ -353,7 +498,7 @@ export default function DeliveryPOD() {
               </span>
             </div>
             <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-              Scan or select the cars to deliver at this step. Hero will only allow correct cars for this destination. Complete POD if required and confirm delivery.
+              Scan or select the {getItemShortLabel(loadType, 2).toLowerCase()} to deliver at this step. Hero will only allow correct items for this destination. Complete POD if required and confirm delivery.
             </p>
           </div>
 
@@ -363,11 +508,11 @@ export default function DeliveryPOD() {
             <div className="space-y-2 text-xs font-extrabold">
               <div className="flex items-center gap-2.5 text-[#10B981]">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]"></span>
-                <span>Correct Car (To Deliver)</span>
+                <span>Correct {getItemShortLabel(loadType, 1)} (To Deliver)</span>
               </div>
               <div className="flex items-center gap-2.5 text-[#EF4444]">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]"></span>
-                <span>Wrong Car</span>
+                <span>Wrong {getItemShortLabel(loadType, 1)}</span>
               </div>
               <div className="flex items-center gap-2.5 text-[#9CA3AF]">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#9CA3AF]"></span>
@@ -393,7 +538,7 @@ export default function DeliveryPOD() {
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">LOAD SUMMARY</div>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                <div className="text-[9px] text-slate-400 font-extrabold uppercase">TOTAL CARS</div>
+                <div className="text-[9px] text-slate-400 font-extrabold uppercase">TOTAL {getItemShortLabel(loadType, 2).toUpperCase()}</div>
                 <div className="text-lg font-black text-slate-900 mt-0.5">{loadInfo?.totalCars || cars.length}</div>
               </div>
               <div className="bg-[#D1FAE5] p-2.5 rounded-xl border border-[#A7F3D0]">
@@ -413,15 +558,15 @@ export default function DeliveryPOD() {
             <ul className="space-y-2 font-semibold">
               <li className="flex items-start gap-2">
                 <span className="text-indigo-600 shrink-0">📱</span>
-                <span>Scan VIN barcode or tap a car to mark as delivered.</span>
+                <span>Scan barcode/ref or tap an item to mark as delivered.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-indigo-600 shrink-0">ℹ️</span>
-                <span>Only cars assigned to this delivery location can be delivered here.</span>
+                <span>Only items assigned to this delivery location can be delivered here.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-rose-500 shrink-0">⚠️</span>
-                <span>Wrong cars are blocked from being delivered.</span>
+                <span>Wrong items are blocked from being delivered.</span>
               </li>
             </ul>
           </div>
@@ -477,8 +622,8 @@ export default function DeliveryPOD() {
                 </div>
                 <div className="h-5 w-px bg-slate-200"></div>
                 <div>
-                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">TOTAL CARS TO DELIVER</span>
-                  <span className="font-mono text-slate-900 font-extrabold">{cars.length} Cars</span>
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">TOTAL {getItemLabel(loadType, cars.length).toUpperCase()} TO DELIVER</span>
+                  <span className="font-mono text-slate-900 font-extrabold">{cars.length} {getItemShortLabel(loadType, cars.length)}</span>
                 </div>
               </div>
             </div>
@@ -487,18 +632,18 @@ export default function DeliveryPOD() {
             <div className="bg-[#F3E8FF] border border-[#E9D5FF] rounded-xl p-3 flex items-center gap-2.5 text-[#581C87] text-xs font-bold shadow-2xs">
               <BsQrCodeScan className="text-lg shrink-0 text-[#7E22CE]" />
               <div>
-                <span className="font-black text-slate-900 text-xs">Scan or select each car to deliver at this location.</span>
-                <div className="text-[#6B21A8] font-medium text-[11px]">Only correct cars for this destination are allowed.</div>
+                <span className="font-black text-slate-900 text-xs">Scan or select each {getItemShortLabel(loadType, 1).toLowerCase()} to deliver at this location.</span>
+                <div className="text-[#6B21A8] font-medium text-[11px]">Only correct items for this destination are allowed.</div>
               </div>
             </div>
           </div>
 
-          {/* Card 2: CARS TO DELIVER AT THIS LOCATION (3) */}
+          {/* Card 2: ITEMS TO DELIVER AT THIS LOCATION */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4.5 shadow-2xs space-y-3.5">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO DELIVER AT THIS LOCATION ({totalCarsCount})</h3>
-                <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Verify each vehicle before marking as delivered.</p>
+                <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">{getItemLabel(loadType, totalCarsCount).toUpperCase()} TO DELIVER AT THIS LOCATION ({totalCarsCount})</h3>
+                <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Verify each item before marking as delivered.</p>
               </div>
 
               <button
@@ -506,15 +651,15 @@ export default function DeliveryPOD() {
                 className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-extrabold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1"
               >
                 <BsQrCodeScan className="text-indigo-600" />
-                <span>Scan VIN</span>
+                <span>Scan Ref</span>
               </button>
             </div>
 
-            {/* Cars List */}
+            {/* Items List */}
             <div className="divide-y divide-slate-100 bg-white">
               {cars.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 font-bold text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  No cars assigned for delivery at this location.
+                  No {getItemShortLabel(loadType, 2).toLowerCase()} assigned for delivery at this location.
                 </div>
               ) : (
                 cars.map((car) => (
@@ -535,10 +680,24 @@ export default function DeliveryPOD() {
                       </button>
 
                       <div className="min-w-0 text-xs">
-                        <div className="font-mono text-[10.5px] font-bold text-slate-500 truncate">VIN: {car.vin}</div>
-                        <div className="font-extrabold text-slate-900 text-xs mt-0.5">
-                          {car.makeModel} {car.plate ? <span className="text-slate-400 font-mono text-[10.5px] font-bold">({car.plate})</span> : null}
-                        </div>
+                        {isVehicleLoad(loadType) ? (
+                          <>
+                            <div className="font-mono text-[10.5px] font-bold text-slate-500 truncate">VIN: {car.vin}</div>
+                            <div className="font-extrabold text-slate-900 text-xs mt-0.5">
+                              {car.makeModel} {car.plate ? <span className="text-slate-400 font-mono text-[10.5px] font-bold">({car.plate})</span> : null}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="font-extrabold text-slate-900 text-xs">{car.description || car.makeModel}</div>
+                            <div className="text-[11px] text-slate-500 font-medium mt-0.5 flex flex-wrap items-center gap-2">
+                              <span>Qty: <strong className="text-slate-700">{car.quantity || 1}</strong></span>
+                              {car.weightKg ? <span>• Wt: <strong className="text-slate-700">{car.weightKg} kg</strong></span> : null}
+                              {car.volumeM3 ? <span>• Vol: <strong className="text-slate-700">{car.volumeM3} m³</strong></span> : null}
+                              {car.vin ? <span>• Ref: <strong className="font-mono text-slate-700">{car.vin}</strong></span> : null}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -559,15 +718,15 @@ export default function DeliveryPOD() {
               )}
             </div>
 
-            {/* WRONG VEHICLE SCANNED ALERT BANNER */}
+            {/* WRONG ITEM SCANNED ALERT BANNER */}
             {wrongVehicleAlert && (
               <div className="bg-[#FEE2E2] border border-[#FCA5A5] rounded-xl p-3 flex items-start justify-between gap-3 text-rose-900 text-xs shadow-2xs">
                 <div className="flex items-start gap-2.5">
                   <FiAlertTriangle className="text-rose-600 text-base mt-0.5 shrink-0" />
                   <div>
-                    <div className="font-black text-rose-900 text-xs uppercase tracking-wide">WRONG VEHICLE SCANNED</div>
+                    <div className="font-black text-rose-900 text-xs uppercase tracking-wide">WRONG ITEM SCANNED</div>
                     <div className="text-rose-700 font-semibold text-[11px] mt-0.5">
-                      <strong className="font-mono font-bold">VIN: {scanVinInput || 'SCANNED_VIN'}</strong> is NOT assigned to this delivery location ({loadInfo?.deliveryLocation || 'Auto World Sydney'}). Please scan a correct vehicle.
+                      <strong className="font-mono font-bold">REF/VIN: {scanVinInput || 'SCANNED_REF'}</strong> is NOT assigned to this delivery location ({loadInfo?.deliveryLocation || 'Delivery Site'}). Please scan a correct item.
                     </div>
                   </div>
                 </div>
@@ -585,8 +744,8 @@ export default function DeliveryPOD() {
                   ✓
                 </div>
                 <div>
-                  <div className="font-black text-slate-900 text-xs">{deliveredCount} of {cars.length} Cars Delivered</div>
-                  <div className="text-slate-400 font-semibold text-[11px]">You must deliver all {cars.length} cars for this stop.</div>
+                  <div className="font-black text-slate-900 text-xs">{deliveredCount} of {cars.length} {getItemShortLabel(loadType, cars.length)} Delivered</div>
+                  <div className="text-slate-400 font-semibold text-[11px]">You must deliver all {cars.length} {getItemShortLabel(loadType, cars.length).toLowerCase()} for this stop.</div>
                 </div>
               </div>
 
@@ -633,7 +792,7 @@ export default function DeliveryPOD() {
                   <span className="p-1.5 bg-purple-100 text-purple-700 rounded-lg text-xs">📷</span>
                   <div>
                     <div className="font-extrabold text-slate-900">Delivery Photos</div>
-                    <div className="text-slate-400 font-medium text-[11px]">Take photos of vehicle condition on drop-off</div>
+                    <div className="text-slate-400 font-medium text-[11px]">Take photos of cargo condition on drop-off</div>
                   </div>
                 </div>
 
@@ -789,7 +948,7 @@ export default function DeliveryPOD() {
             <div className="space-y-1.5 font-bold text-[#047857]">
               <div className="flex items-center gap-2">
                 <span>✓</span>
-                <span>Deliver all assigned cars for this step.</span>
+                <span>Deliver all assigned {getItemShortLabel(loadType, 2).toLowerCase()} for this step.</span>
               </div>
               <div className="flex items-center gap-2">
                 <span>✓</span>
@@ -821,24 +980,24 @@ export default function DeliveryPOD() {
 
       </div>
 
-      {/* SCAN VIN MODAL */}
+      {/* SCAN BARCODE / REF MODAL */}
       {scanVinModalOpen && (
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-[160] flex items-center justify-center p-4">
           <form onSubmit={handleScanVinSubmit} className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <BsQrCodeScan className="text-indigo-600 text-lg" />
-                Scan VIN Barcode
+                Scan Barcode / Ref / VIN
               </h3>
               <button type="button" onClick={() => setScanVinModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
             </div>
 
             <div className="space-y-3 text-xs font-semibold">
-              <label className="text-slate-700 font-bold block">Enter or Scan Vehicle VIN:</label>
+              <label className="text-slate-700 font-bold block">Enter or Scan Barcode / Ref / VIN:</label>
               <input
                 type="text"
                 required
-                placeholder="e.g. 1HGCR2E33AA004352"
+                placeholder="e.g. PO-848483 or REF-1"
                 value={scanVinInput}
                 onChange={(e) => setScanVinInput(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-mono text-xs focus:outline-none focus:border-indigo-500 uppercase"
@@ -849,7 +1008,7 @@ export default function DeliveryPOD() {
               type="submit"
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md"
             >
-              Verify VIN & Mark Delivered
+              Verify & Mark Delivered
             </button>
           </form>
         </div>

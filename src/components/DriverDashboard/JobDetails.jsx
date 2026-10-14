@@ -115,13 +115,14 @@ export default function JobDetails() {
             date: 'Today',
             status: deliveryStop.status || 'UPCOMING'
           },
+          rawItems: loadData.items || loadData.cars || [],
           items: {
-            total: (loadData.items || []).length,
-            damaged: (loadData.items || []).filter(i => i.condition === 'DAMAGED').length,
+            total: (loadData.items || loadData.cars || []).length,
+            damaged: (loadData.items || loadData.cars || []).filter(i => i.condition === 'DAMAGED').length,
             photosRequired: 0,
-            photosTaken: (loadData.items || []).filter(i => i.photoUrl).length
+            photosTaken: (loadData.items || loadData.cars || []).filter(i => i.photoUrl).length
           },
-          totalVehicles: (loadData.items || []).length,
+          totalVehicles: (loadData.items || loadData.cars || []).length,
           documents: (loadData.documents || []).map(d => ({
             id: d.id,
             name: d.title || d.fileName || 'Document.pdf',
@@ -146,6 +147,19 @@ export default function JobDetails() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const isVehicleLoad = (lType = '') => {
+    const l = String(lType || '').toLowerCase();
+    return l.includes('car') || l.includes('vehicle') || l.includes('auto');
+  };
+
+  const getItemLabel = (lType = '', count = 1) => {
+    if (isVehicleLoad(lType)) return count === 1 ? 'Vehicle' : 'Vehicles';
+    const l = String(lType || '').toLowerCase();
+    if (l.includes('container')) return count === 1 ? 'Container' : 'Containers';
+    if (l.includes('pallet')) return count === 1 ? 'Pallet' : 'Pallets';
+    return count === 1 ? 'Item' : 'Items';
   };
 
   const meta = STATUS_META[job?.status] || STATUS_META.UPCOMING;
@@ -495,11 +509,11 @@ export default function JobDetails() {
               <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: '22px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
                   <h3 style={{ margin: 0, fontSize: 13, fontWeight: 900, color: '#0f172a', textTransform: 'uppercase', letterSpacing: 0.8 }}>Items Summary</h3>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: '#64748b' }}>{job.totalVehicles} Vehicles</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#64748b' }}>{job.totalVehicles} {getItemLabel(job.loadType, job.totalVehicles)}</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 18 }}>
                   {[
-                    { icon: FiTruck,        color: '#3b82f6', label: 'Total Vehicles',  value: job.items.total },
+                    { icon: FiTruck,        color: '#3b82f6', label: `Total ${getItemLabel(job.loadType, job.items.total)}`,  value: job.items.total },
                     { icon: FiAlertTriangle,color: '#ef4444', label: 'Damaged',          value: job.items.damaged },
                     { icon: FiCamera,       color: '#f59e0b', label: 'Photos Required',  value: job.items.photosRequired },
                     { icon: FiCamera,       color: '#10b981', label: 'Photos Taken',     value: job.items.photosTaken },
@@ -515,7 +529,7 @@ export default function JobDetails() {
                   onClick={() => setShowItemsModal(true)}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 800, color: '#1d4ed8', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
-                  View Items & Positions <FiArrowLeft style={{ transform: 'rotate(180deg)' }} size={14} />
+                  View Items Breakdown <FiArrowLeft style={{ transform: 'rotate(180deg)' }} size={14} />
                 </button>
               </div>
 
@@ -1080,20 +1094,31 @@ export default function JobDetails() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div style={{ background: '#fff', width: '100%', maxWidth: 550, borderRadius: 16, padding: 24, boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: '#0f172a' }}>Vehicles & Positions breakdown</h3>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: '#0f172a' }}>
+                {isVehicleLoad(job.loadType) ? 'Vehicles & Positions breakdown' : 'Freight Items Breakdown'}
+              </h3>
               <button onClick={() => setShowItemsModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><FiX size={18} /></button>
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 350, overflowY: 'auto', paddingRight: 4 }}>
-              {[
-                { pos: 'Top Deck 1', vin: 'VIN-8849120491', make: 'Toyota Hilux 2024', status: 'Loaded & Strapped' },
-                { pos: 'Top Deck 2', vin: 'VIN-9920194012', make: 'Ford Ranger XLT', status: 'Loaded & Strapped' },
-                { pos: 'Top Deck 3', vin: 'VIN-4481029411', make: 'Isuzu D-Max 2025', status: 'Loaded & Strapped' },
-                { pos: 'Lower Deck 1', vin: 'VIN-1120934812', make: 'Hyundai Tucson 2024', status: 'Loaded & Strapped' },
-                { pos: 'Lower Deck 2', vin: 'VIN-3391029384', make: 'Kia Sportage GT', status: 'Loaded & Strapped' },
-                { pos: 'Lower Deck 3', vin: 'VIN-7729104921', make: 'Mazda CX-5 GT', status: 'Loaded & Strapped' },
-              ].slice(0, job.items.total || 4).map(item => (
-                <div key={item.pos} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+              {(Array.isArray(job.rawItems) && job.rawItems.length > 0
+                ? job.rawItems.map((it, idx) => ({
+                    pos: it.position || `Item #${idx + 1}`,
+                    vin: it.vin || it.stockRef || `REF-${idx + 1}`,
+                    make: it.description || it.makeModel || `${it.make || ''} ${it.model || ''}`.trim() || 'Freight Item',
+                    status: it.status || 'Loaded'
+                  }))
+                : (isVehicleLoad(job.loadType)
+                    ? [
+                        { pos: 'Top Deck 1', vin: 'VIN-8849120491', make: 'Toyota Hilux 2024', status: 'Loaded & Strapped' },
+                        { pos: 'Top Deck 2', vin: 'VIN-9920194012', make: 'Ford Ranger XLT', status: 'Loaded & Strapped' },
+                      ]
+                    : [
+                        { pos: 'Bay 1', vin: 'PO-848483-1', make: job.loadType || 'General Freight', status: 'Loaded' }
+                      ]
+                  )
+              ).slice(0, Math.max(1, job.items.total)).map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <FiTruck color="#4F46E5" size={16} />
                     <div>

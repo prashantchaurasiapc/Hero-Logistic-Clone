@@ -41,7 +41,7 @@ function FieldLabel({ children, required }) {
 const inputCls = "w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs sm:text-[13px] font-bold text-slate-800 placeholder-slate-400 transition-colors shadow-xs";
 const selectCls = "w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs sm:text-[13px] font-bold text-slate-800 cursor-pointer transition-colors appearance-none shadow-xs";
 
-function AddressAutocomplete({ value, onChange, placeholder, className, autoFocus = false, savedLocations = [] }) {
+function AddressAutocomplete({ value, onChange, placeholder, className, autoFocus = false }) {
   const [inputValue, setInputValue] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -75,7 +75,7 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
 
     if (!query || query.trim().length < 2) {
       setSuggestions([]);
-      setIsOpen(savedLocations && savedLocations.length > 0);
+      setIsOpen(false);
       setLoading(false);
       setSearchedQuery('');
       return;
@@ -152,31 +152,18 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
     setSuggestions([]);
   };
 
-  const filteredSavedLocations = (savedLocations || []).filter(loc => {
-    if (!inputValue || inputValue.trim().length === 0) return true;
-    return loc.display.toLowerCase().includes(inputValue.toLowerCase()) ||
-           (loc.driverName && loc.driverName.toLowerCase().includes(inputValue.toLowerCase()));
-  });
-
-  const totalItemsCount = filteredSavedLocations.length + suggestions.length;
-
   const handleKeyDown = (e) => {
     if (!isOpen) return;
 
-    if (e.key === 'ArrowDown' && totalItemsCount > 0) {
+    if (e.key === 'ArrowDown' && suggestions.length > 0) {
       e.preventDefault();
-      setSelectedIndex(prev => (prev < totalItemsCount - 1 ? prev + 1 : 0));
-    } else if (e.key === 'ArrowUp' && totalItemsCount > 0) {
+      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp' && suggestions.length > 0) {
       e.preventDefault();
-      setSelectedIndex(prev => (prev > 0 ? prev - 1 : totalItemsCount - 1));
-    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : suggestions.length - 1));
+    } else if (e.key === 'Enter' && selectedIndex >= 0 && suggestions[selectedIndex]) {
       e.preventDefault();
-      if (selectedIndex < filteredSavedLocations.length) {
-        handleSelect(filteredSavedLocations[selectedIndex]);
-      } else {
-        const apiIdx = selectedIndex - filteredSavedLocations.length;
-        if (suggestions[apiIdx]) handleSelect(suggestions[apiIdx]);
-      }
+      handleSelect(suggestions[selectedIndex]);
     } else if (e.key === 'Escape') {
       setIsOpen(false);
     }
@@ -190,11 +177,13 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => {
-            setIsOpen(true);
+            if (inputValue && inputValue.trim().length >= 2 && suggestions.length > 0) {
+              setIsOpen(true);
+            }
           }}
           onKeyDown={handleKeyDown}
           className={className}
-          placeholder={placeholder}
+          placeholder={placeholder || "Type address or suburb (e.g. Sydney NSW)..."}
           autoFocus={autoFocus}
         />
         {loading && (
@@ -205,53 +194,8 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
         )}
       </div>
 
-      {isOpen && (filteredSavedLocations.length > 0 || suggestions.length > 0 || loading || searchedQuery.trim().length >= 2) && (
+      {isOpen && (suggestions.length > 0 || loading || searchedQuery.trim().length >= 2) && (
         <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-[9999] overflow-hidden max-h-72 overflow-y-auto">
-          {/* Driver Saved Locations at top of dropdown */}
-          {filteredSavedLocations.length > 0 && (
-            <div className="bg-purple-50/50 border-b border-purple-100 pb-1">
-              <div className="px-3.5 py-1.5 bg-purple-100/70 border-b border-purple-200/60 flex items-center justify-between">
-                <span className="text-[10px] font-black text-purple-900 uppercase tracking-wider flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-purple-600"></span> Driver Saved Locations
-                </span>
-                <span className="text-[9px] font-bold text-purple-700 bg-white px-1.5 py-0.2 rounded-md">
-                  {filteredSavedLocations.length} choice(s)
-                </span>
-              </div>
-              {filteredSavedLocations.map((item, idx) => {
-                const isSelected = idx === selectedIndex;
-                return (
-                  <button
-                    key={`saved-${idx}`}
-                    type="button"
-                    onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
-                    onMouseEnter={() => setSelectedIndex(idx)}
-                    className={`w-full text-left px-3.5 py-2.5 text-xs transition-colors flex items-start gap-2.5 border-b border-purple-100/50 last:border-0 ${
-                      isSelected ? 'bg-purple-200/80 text-purple-950 font-bold' : 'hover:bg-purple-100/60 text-slate-800 font-medium'
-                    }`}
-                  >
-                    <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${isSelected ? 'text-purple-700' : 'text-purple-600'}`} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate font-black text-slate-900 text-[12.5px]">{item.display}</p>
-                        <span className="shrink-0 px-2 py-0.5 bg-purple-600 text-white rounded text-[9px] font-black uppercase tracking-wider shadow-2xs">
-                          {item.type || 'Saved'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-bold text-purple-700">Driver: {item.driverName}</span>
-                        {item.amount && (
-                          <span className="text-[10px] font-extrabold text-emerald-600">Rate: ${item.amount}</span>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Address Search API Results */}
           {loading ? (
             <div className="p-4 text-center text-xs font-medium text-slate-400 flex items-center justify-center gap-2">
               <span className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></span>
@@ -259,20 +203,14 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
             </div>
           ) : suggestions.length > 0 ? (
             <div>
-              {filteredSavedLocations.length > 0 && (
-                <div className="px-3.5 py-1 bg-slate-50 border-b border-slate-100 text-[9.5px] font-black text-slate-400 uppercase tracking-wider">
-                  Address Search Results
-                </div>
-              )}
               {suggestions.map((item, idx) => {
-                const globalIdx = filteredSavedLocations.length + idx;
-                const isSelected = globalIdx === selectedIndex;
+                const isSelected = idx === selectedIndex;
                 return (
                   <button
                     key={`api-${idx}`}
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
-                    onMouseEnter={() => setSelectedIndex(globalIdx)}
+                    onMouseEnter={() => setSelectedIndex(idx)}
                     className={`w-full text-left px-3.5 py-2.5 text-xs transition-colors flex items-start gap-2.5 border-b border-slate-50 last:border-0 ${
                       isSelected ? 'bg-indigo-50 text-indigo-950 font-bold' : 'hover:bg-slate-50 text-slate-700 font-medium'
                     }`}
@@ -303,7 +241,7 @@ function AddressAutocomplete({ value, onChange, placeholder, className, autoFocu
   );
 }
 
-export default function CreateLoad({ onBack }) {
+export default function CreateLoad({ onBack, editMode = false, loadToEdit = null, initialCustomerId = null }) {
   const [dbDrivers, setDbDrivers] = useState([]);
   const [dbTrucks, setDbTrucks] = useState([]);
   const [dbCustomers, setDbCustomers] = useState([]);
@@ -365,6 +303,87 @@ export default function CreateLoad({ onBack }) {
 
     loadMasterData();
   }, []);
+
+  // Pre-populate customer if passed via initialCustomerId
+  useEffect(() => {
+    if (initialCustomerId) {
+      setFormData(prev => ({
+        ...prev,
+        customer: initialCustomerId,
+        billedCustomerIds: [initialCustomerId]
+      }));
+      setItems(prev => prev.map(item => ({ ...item, customer: item.customer || initialCustomerId })));
+    }
+  }, [initialCustomerId]);
+
+  // Pre-populate fields if editing an existing load
+  useEffect(() => {
+    if (editMode && loadToEdit) {
+      const loadIdToFetch = loadToEdit.rawId || loadToEdit.id;
+      api.get(`/company-admin/loads/${loadIdToFetch}`).then(res => {
+        const lData = res.data?.data || res.data;
+        if (lData) {
+          setFormData(prev => ({
+            ...prev,
+            customer: lData.customerId || lData.customer?.id || (typeof lData.customer === 'string' ? lData.customer : prev.customer),
+            loadType: lData.type || prev.loadType,
+            loadRef: lData.loadRef || lData.id || prev.loadRef,
+            priority: lData.priority ? lData.priority.charAt(0).toUpperCase() + lData.priority.slice(1).toLowerCase() : prev.priority,
+            loadDate: lData.loadDate ? lData.loadDate.split('T')[0] : (lData.createdAt ? lData.createdAt.split('T')[0] : prev.loadDate),
+            truck: lData.truckId || lData.truck?.id || prev.truck,
+            trailer: lData.trailerId || lData.trailer?.id || prev.trailer,
+            driver: lData.driverId || lData.driver?.id || prev.driver,
+            loadNotes: lData.notes ? lData.notes.replace(/\[(AGREED_RATE|DRIVER_PAY):[^\]]+\]/g, '').trim() : prev.loadNotes,
+            rate: lData.rate ? String(lData.rate) : prev.rate,
+            driverPay: lData.driverPay ? String(lData.driverPay) : prev.driverPay
+          }));
+
+          if (Array.isArray(lData.stops) && lData.stops.length > 0) {
+            setStops(lData.stops.map((s, idx) => ({
+              id: s.id || Date.now() + idx,
+              type: s.type === 'PICKUP' ? 'Pickup' : 'Drop-off',
+              address: s.address || '',
+              contactName: s.contactName || '',
+              contactPhone: s.contactPhone || '',
+              date: s.scheduledDate ? s.scheduledDate.split('T')[0] : (lData.loadDate ? lData.loadDate.split('T')[0] : ''),
+              time: s.scheduledTime || '',
+              instructions: s.instructions || ''
+            })));
+          }
+
+          if (Array.isArray(lData.items) && lData.items.length > 0) {
+            setItems(lData.items.map((i, idx) => {
+              let parsedNotes = {};
+              if (i.notes) {
+                try { parsedNotes = JSON.parse(i.notes); } catch (e) {}
+              }
+              return {
+                id: i.id || Date.now() + idx,
+                customer: i.customerId || parsedNotes.customer || '',
+                pickupStop: parsedNotes.pickupStop || '',
+                dropStop: parsedNotes.dropStop || '',
+                rcog: i.rego || parsedNotes.rcog || '',
+                vin: i.vin || parsedNotes.vin || '',
+                stockRec: i.stockRef || parsedNotes.stockRec || '',
+                make: i.make || parsedNotes.make || '',
+                model: i.model || parsedNotes.model || '',
+                year: i.year ? String(i.year) : (parsedNotes.year || ''),
+                colour: i.color || parsedNotes.colour || '',
+                weight: i.weightKg ? String(i.weightKg) : (parsedNotes.weight || ''),
+                quantity: i.quantity ? String(i.quantity) : '1',
+                itemDescription: i.description || parsedNotes.itemDescription || '',
+                pallets: i.pallets ? String(i.pallets) : (parsedNotes.pallets || ''),
+                cubicMetres: i.cubicMetres ? String(i.cubicMetres) : (parsedNotes.cubicMetres || ''),
+                fragile: i.fragile ? 'Yes' : (parsedNotes.fragile || 'No'),
+                stackable: i.stackable ? 'Yes' : (parsedNotes.stackable || 'No'),
+                specialHandling: i.specialHandling || parsedNotes.specialHandling || ''
+              };
+            }));
+          }
+        }
+      }).catch(err => console.error("Error populating load for edit:", err));
+    }
+  }, [editMode, loadToEdit]);
 
   const [stops, setStops] = useState([]);
 
@@ -463,6 +482,7 @@ export default function CreateLoad({ onBack }) {
 
   const [formData, setFormData] = useState({
     customer: '',
+    billedCustomerIds: [],
     loadType: 'General Freight',
     loadRef: `PO-${Math.floor(100000 + Math.random() * 900000)}`,
     priority: 'Normal',
@@ -475,7 +495,299 @@ export default function CreateLoad({ onBack }) {
     driverPay: '',
   });
 
+  const [selectedScheduleId, setSelectedScheduleId] = useState('');
+  const [matchedPricingRule, setMatchedPricingRule] = useState(null);
+  const [manuallyAppliedRule, setManuallyAppliedRule] = useState(null);
+  const [customerPricingRules, setCustomerPricingRules] = useState([]);
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+
+  const [multiCustomerPricingRules, setMultiCustomerPricingRules] = useState({});
+  const itemCustomersStr = items.map(i => i.customer).join(',');
+
+  // Fetch Pricing Profiles for all unique customers
+  useEffect(() => {
+    const uniqueCustomers = new Set();
+    if (formData.customer) uniqueCustomers.add(formData.customer);
+    items.forEach(item => {
+      if (item.customer) uniqueCustomers.add(item.customer);
+    });
+
+    const customersToFetch = Array.from(uniqueCustomers);
+
+    if (customersToFetch.length > 0) {
+      Promise.all(customersToFetch.map(custId => 
+        api.get(`/company-admin/customers/${custId}/pricing-profiles`)
+          .then(res => ({ custId, rules: res.data?.data || res.data || [] }))
+          .catch(err => {
+            console.error(`Failed to load pricing rules for ${custId}:`, err);
+            return { custId, rules: [] };
+          })
+      )).then(results => {
+        const rulesMap = {};
+        let defaultRules = [];
+        results.forEach(res => {
+          rulesMap[res.custId] = res.rules;
+          if (String(res.custId) === String(formData.customer)) {
+            defaultRules = res.rules;
+          }
+        });
+        setMultiCustomerPricingRules(rulesMap);
+        setCustomerPricingRules(defaultRules);
+      });
+    } else {
+      setMultiCustomerPricingRules({});
+      setCustomerPricingRules([]);
+    }
+  }, [formData.customer, itemCustomersStr]);
+
+  // Automatic Customer Pricing & Billing Rule Match
+  useEffect(() => {
+    if (!formData.customer) {
+      setMatchedPricingRule(null);
+      setManuallyAppliedRule(null);
+      return;
+    }
+
+    // If user manually applied a rule for this same customer, keep it — do not override
+    if (manuallyAppliedRule && String(manuallyAppliedRule.customerId) === String(formData.customer)) {
+      return;
+    }
+
+    const selectedCust = dbCustomers.find(c => String(c.id) === String(formData.customer));
+    const pickupStop = stops.find(s => (s.type || '').toLowerCase().includes('pick'));
+    const dropStop = stops.find(s => (s.type || '').toLowerCase().includes('drop'));
+
+    const pAddr = (pickupStop?.address || '').toLowerCase();
+    const dAddr = (dropStop?.address || '').toLowerCase();
+
+    // Use fetched customer rules
+    const custRules = customerPricingRules.filter(r => !r.isDefaultSample);
+
+    let foundRule = null;
+    if (custRules.length > 0) {
+      foundRule = custRules.find(r => {
+        const fromMatch = !r.from || (pAddr && pAddr.includes(r.from.toLowerCase()));
+        const toMatch = !r.to || (dAddr && dAddr.includes(r.to.toLowerCase()));
+        return fromMatch && toMatch;
+      }) || custRules[0];
+    }
+
+    if (foundRule) {
+      let base = parseFloat(foundRule.baseRate) || 0;
+      const count = items.length || 1;
+      const methodStr = (foundRule.method || '').toLowerCase();
+
+      if (methodStr.includes('item') || methodStr.includes('vehicle') || methodStr.includes('car') || methodStr.includes('pallet')) {
+        base = base * count;
+      }
+
+      const fuelPct = parseFloat(foundRule.fuelLevy) || 0;
+      const fuelAmt = fuelPct > 0 ? (base * fuelPct / 100) : 0;
+      const rateAmount = base + fuelAmt;
+
+      const methodLabel = foundRule.method || 'Per Load';
+      const ruleName = fuelPct > 0
+        ? `${foundRule.name || 'Saved Pricing Rule'} ($${base.toFixed(2)} + ${fuelPct}% Fuel Levy = $${rateAmount.toFixed(2)} ${methodLabel})`
+        : `${foundRule.name || 'Saved Pricing Rule'} ($${rateAmount.toFixed(2)} ${methodLabel})`;
+
+      setMatchedPricingRule({
+        customerName: selectedCust?.name || 'Selected Customer',
+        ruleName,
+        amount: rateAmount,
+        hasRule: true
+      });
+
+      if (!editMode) {
+        setFormData(prev => ({
+          ...prev,
+          rate: String(rateAmount)
+        }));
+      }
+    } else {
+      // No rule configured for this specific customer
+      setMatchedPricingRule({
+        customerName: selectedCust?.name || 'Selected Customer',
+        ruleName: `No Pricing Rule configured for ${selectedCust?.name || 'this customer'}. Enter Customer Charge manually.`,
+        amount: 0,
+        hasRule: false
+      });
+
+      if (!editMode) {
+        setFormData(prev => ({
+          ...prev,
+          rate: ''
+        }));
+      }
+    }
+  }, [formData.customer, stops, items.length, dbCustomers, editMode, customerPricingRules, manuallyAppliedRule]);
+
+  const [multiCustomerBreakdown, setMultiCustomerBreakdown] = useState([]);
+
+  // Multi-Customer Billing Breakdown Match
+  useEffect(() => {
+    const pickupStop = stops.find(s => (s.type || '').toLowerCase().includes('pick'));
+    const dropStop = stops.find(s => (s.type || '').toLowerCase().includes('drop'));
+    const pAddr = (pickupStop?.address || '').toLowerCase();
+    const dAddr = (dropStop?.address || '').toLowerCase();
+
+    // Group items by customer
+    const itemsByCust = {};
+    items.forEach((item, idx) => {
+      const custId = item.customer || formData.customer; // Fallback to primary
+      if (!custId) return;
+      if (!itemsByCust[custId]) itemsByCust[custId] = { count: 0, items: [] };
+      itemsByCust[custId].count += 1;
+      itemsByCust[custId].items.push(`Item ${idx + 1}`);
+    });
+
+    const breakdown = [];
+    let totalRevenue = 0;
+
+    Object.keys(itemsByCust).forEach(custId => {
+      const custInfo = dbCustomers.find(c => String(c.id) === String(custId));
+      const custName = custInfo?.name || `Customer #${custId}`;
+      const rules = (multiCustomerPricingRules[custId] || []).filter(r => !r.isDefaultSample);
+
+      let foundRule = null;
+      if (rules.length > 0) {
+        foundRule = rules.find(r => {
+          const fromMatch = !r.from || (pAddr && pAddr.includes(r.from.toLowerCase()));
+          const toMatch = !r.to || (dAddr && dAddr.includes(r.to.toLowerCase()));
+          return fromMatch && toMatch;
+        }) || rules[0];
+      }
+
+      const count = itemsByCust[custId].count;
+      let charge = 0;
+      let ruleDesc = 'No Pricing Rule (Enter Manually)';
+
+      if (foundRule) {
+        let base = parseFloat(foundRule.baseRate) || 0;
+        const methodStr = (foundRule.method || '').toLowerCase();
+
+        if (methodStr.includes('item') || methodStr.includes('vehicle') || methodStr.includes('car') || methodStr.includes('pallet')) {
+          base = base * count;
+        }
+
+        const fuelPct = parseFloat(foundRule.fuelLevy) || 0;
+        const fuelAmt = fuelPct > 0 ? (base * fuelPct / 100) : 0;
+        charge = base + fuelAmt;
+        totalRevenue += charge;
+
+        ruleDesc = fuelPct > 0 
+          ? `${foundRule.name || 'Lane Rate'} ($${base.toFixed(2)} + ${fuelPct}% Fuel Levy)`
+          : `${foundRule.name || 'Lane Rate'} ($${charge.toFixed(2)} ${foundRule.method || 'Per Load'})`;
+      }
+
+      breakdown.push({
+        customerId: custId,
+        customerName: custName,
+        itemNames: itemsByCust[custId].items.join(', '),
+        ruleDesc,
+        charge,
+        hasRule: !!foundRule,
+        route: `${pickupStop?.address?.split(',')[0] || 'Any'} → ${dropStop?.address?.split(',')[0] || 'Any'}`
+      });
+    });
+
+    setMultiCustomerBreakdown(breakdown);
+  }, [items, formData.customer, stops, dbCustomers, multiCustomerPricingRules]);
+
+  const handleApplyPricingRule = (rule) => {
+    let base = parseFloat(rule.baseRate) || 0;
+    const count = items.length || 1;
+    const methodStr = (rule.method || '').toLowerCase();
+    
+    if (methodStr.includes('item') || methodStr.includes('vehicle') || methodStr.includes('car') || methodStr.includes('pallet')) {
+      base = base * count;
+    }
+    
+    const fuelPct = parseFloat(rule.fuelLevy) || 0;
+    const fuelAmt = fuelPct > 0 ? (base * fuelPct / 100) : 0;
+    const rateAmount = base + fuelAmt;
+
+    // Apply Rate to Load Information & Customer Revenue ONLY - Route Stops are NOT modified
+    setFormData(prev => ({ ...prev, rate: String(rateAmount) }));
+
+    // Update the banner to reflect the manually selected rule
+    const methodLabel = rule.method || 'Per Load';
+    const ruleName = fuelPct > 0
+      ? `${rule.name || 'Pricing Rule'} ($${base.toFixed(2)} + ${fuelPct}% Fuel Levy = $${rateAmount.toFixed(2)} ${methodLabel})`
+      : `${rule.name || 'Pricing Rule'} ($${rateAmount.toFixed(2)} ${methodLabel})`;
+
+    const manualRule = {
+      customerId: formData.customer,
+      ruleName,
+      amount: rateAmount,
+      hasRule: true
+    };
+    setManuallyAppliedRule(manualRule);
+    setMatchedPricingRule(manualRule);
+
+    showSaveToast(`Applied ${rule.name || 'Pricing Rule'} - Rate set to $${rateAmount.toFixed(2)}`, 'success');
+  };
+
+  const getDriverSchedules = (driverId = null) => {
+    let globalSchedules = [];
+    try {
+      const savedStr = localStorage.getItem('hero_driver_load_schedules');
+      if (savedStr) {
+        const parsed = JSON.parse(savedStr);
+        if (Array.isArray(parsed)) {
+          globalSchedules = parsed;
+        }
+      }
+    } catch (e) {}
+
+    const combined = [];
+    globalSchedules.forEach((g, idx) => {
+      const titleName = g.title || g.name || `${g.origin || ''} → ${g.destination || ''}`.trim() || `Route Schedule #${idx + 1}`;
+      const amt = parseFloat(g.rate || g.amount || 0);
+      combined.push({
+        id: String(g.id || `g-${idx}`),
+        title: titleName,
+        origin: g.origin || '',
+        destination: g.destination || '',
+        amount: amt,
+        display: `${titleName} — $${amt.toFixed(2)}`,
+        isSelected: false
+      });
+    });
+
+    if (driverId) {
+      const drvObj = dbDrivers.find(d => String(d.id) === String(driverId));
+      let driverSpecific = [];
+      if (drvObj?.loadPaySchedule) {
+        try {
+          driverSpecific = typeof drvObj.loadPaySchedule === 'string' ? JSON.parse(drvObj.loadPaySchedule) : drvObj.loadPaySchedule;
+        } catch (err) {}
+      }
+      if (Array.isArray(driverSpecific) && driverSpecific.length > 0) {
+        driverSpecific.forEach((d, idx) => {
+          const titleName = d.title || d.name || (d.pickupLocation && d.deliveryLocation ? `${d.pickupLocation} → ${d.deliveryLocation}` : `Driver Schedule #${idx + 1}`);
+          const amt = parseFloat(d.amount || d.rate || 0);
+          const exists = combined.some(c => c.title.toLowerCase() === titleName.toLowerCase());
+          if (!exists) {
+            combined.push({
+              id: String(d.id || `d-${idx}`),
+              title: titleName,
+              origin: d.pickupLocation || '',
+              destination: d.deliveryLocation || '',
+              amount: amt,
+              display: `${titleName} — $${amt.toFixed(2)}`,
+              isSelected: Boolean(d.isSelected)
+            });
+          }
+        });
+      }
+    }
+
+    return combined;
+  };
+
   const [showAddStopModal, setShowAddStopModal] = useState(false);
+  const [editingStopId, setEditingStopId] = useState(null); // null = add mode, stopId = edit mode
   const [newStopForm, setNewStopForm] = useState({
     type: 'Pickup', address: '', addressDetails: null, contactName: '', contactPhone: '', date: '', time: '', instructions: ''
   });
@@ -535,11 +847,9 @@ export default function CreateLoad({ onBack }) {
 
   const openAddStopModal = (initialType = 'Pickup') => {
     const typeStr = (typeof initialType === 'string' && initialType) ? initialType : 'Pickup';
-    const savedForType = getDriverSavedLocations(formData.driver || null, typeStr);
-    const defaultAddress = savedForType.length > 0 ? savedForType[0].address : '';
     setNewStopForm({
       type: typeStr,
-      address: defaultAddress,
+      address: '',
       addressDetails: null,
       contactName: '',
       contactPhone: '',
@@ -552,8 +862,31 @@ export default function CreateLoad({ onBack }) {
 
   const handleSaveNewStop = () => {
     if (!newStopForm.address.trim()) { alert('Please enter an address.'); return; }
-    setStops(prev => [...prev, { id: Date.now(), ...newStopForm }]);
+    if (editingStopId !== null) {
+      // Edit mode: update existing stop
+      setStops(prev => prev.map(s => s.id === editingStopId ? { ...s, ...newStopForm } : s));
+    } else {
+      // Add mode: append new stop
+      setStops(prev => [...prev, { id: Date.now(), ...newStopForm }]);
+    }
     setShowAddStopModal(false);
+    setEditingStopId(null);
+  };
+
+  const openEditStopModal = (stop) => {
+    setEditingStopId(stop.id);
+    setNewStopForm({
+      type: stop.type || 'Pickup',
+      address: stop.address || '',
+      addressDetails: stop.addressDetails || null,
+      contactName: stop.contactName || '',
+      contactPhone: stop.contactPhone || '',
+      date: stop.date || '',
+      time: stop.time || '',
+      instructions: stop.instructions || ''
+    });
+    setShowAddStopModal(true);
+    setActiveStopMenu(null);
   };
 
   const handleImportDriverRoute = (targetDriverId = null) => {
@@ -651,13 +984,6 @@ export default function CreateLoad({ onBack }) {
   const [uploadedPhotos, setUploadedPhotos] = useState({}); // { 'itemId-category': [url1, url2] }
   const [activeUploadTarget, setActiveUploadTarget] = useState(null); // { itemId, category }
 
-  const DUMMY_PHOTOS = [
-    'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600',
-    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&q=80&w=600',
-    'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&q=80&w=600',
-    'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=600'
-  ];
-
   const fileInputRef = useRef(null);
 
   const getPhotoKey = (itemId, category) => `${String(itemId)}-${String(category)}`;
@@ -683,10 +1009,6 @@ export default function CreateLoad({ onBack }) {
         };
         reader.readAsDataURL(file);
       });
-    } else {
-      const existing = uploadedPhotos[key] || [];
-      const nextPhoto = DUMMY_PHOTOS[existing.length % DUMMY_PHOTOS.length];
-      setUploadedPhotos(prev => ({ ...prev, [key]: [...existing, nextPhoto] }));
     }
     e.target.value = '';
   };
@@ -699,10 +1021,7 @@ export default function CreateLoad({ onBack }) {
   };
 
   const handleAddDemoPhoto = (itemId, category) => {
-    const key = getPhotoKey(itemId, category);
-    const existing = uploadedPhotos[key] || [];
-    const nextPhoto = DUMMY_PHOTOS[existing.length % DUMMY_PHOTOS.length];
-    setUploadedPhotos(prev => ({ ...prev, [key]: [...existing, nextPhoto] }));
+    triggerDirectUpload(itemId, category);
   };
 
   const handleAddPhotos = (itemId, category) => {
@@ -741,6 +1060,12 @@ export default function CreateLoad({ onBack }) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i));
 
   const [submitting, setSubmitting] = useState(false);
+  const [saveToast, setSaveToast] = useState(null);
+
+  const showSaveToast = (msg, type = 'success') => {
+    setSaveToast({ msg, type });
+    setTimeout(() => setSaveToast(null), 3500);
+  };
 
   const saveLoadToDatabase = async (targetStatus = 'ACTIVE') => {
     if (!formData.loadRef.trim()) {
@@ -754,7 +1079,7 @@ export default function CreateLoad({ onBack }) {
         type: formData.loadType || 'General Freight',
         status: targetStatus,
         priority: (formData.priority || 'NORMAL').toUpperCase(),
-        notes: formData.loadNotes || `Created via Load Console`,
+        notes: formData.loadScheduleTitle ? `${formData.loadNotes || 'Created via Load Console'} [SCHEDULE:${formData.loadScheduleTitle}]` : (formData.loadNotes || `Created via Load Console`),
         loadDate: formData.loadDate ? new Date(formData.loadDate).toISOString() : new Date().toISOString(),
         customerId: formData.customer && formData.customer.length > 5 ? formData.customer : null,
         driverId: formData.driver && formData.driver.length > 5 ? formData.driver : null,
@@ -778,8 +1103,21 @@ export default function CreateLoad({ onBack }) {
           color: item.colour || item.color || null,
           quantity: parseInt(String(item.quantity || 1).replace(/[^0-9]/g, ''), 10) || 1,
           weightKg: item.weight ? parseInt(String(item.weight).replace(/[^0-9]/g, ''), 10) || 0 : 0,
+          customerId: (() => {
+            const resolved = dbCustomers.find(c => c.id === item.customer || c.name === item.customer);
+            if (resolved?.id) return resolved.id;
+            if (item.customer && item.customer.length > 5) return item.customer;
+            const primResolved = dbCustomers.find(c => c.id === formData.customer || c.name === formData.customer);
+            if (primResolved?.id) return primResolved.id;
+            return formData.customer && formData.customer.length > 5 ? formData.customer : null;
+          })(),
           notes: JSON.stringify(item)
         })),
+        // Phase 7A: send all selected billed customer IDs so backend can connect them to this load
+        billedCustomerIds: Array.isArray(formData.billedCustomerIds) && formData.billedCustomerIds.length > 0
+          ? formData.billedCustomerIds
+          : (formData.customer && formData.customer.length > 5 ? [formData.customer] : []),
+        billingSnapshots: multiCustomerBreakdown,
         ...(Object.keys(uploadedPhotos).length > 0 && {
           documents: {
             create: Object.entries(uploadedPhotos).flatMap(([key, photos]) => 
@@ -792,18 +1130,56 @@ export default function CreateLoad({ onBack }) {
         })
       };
 
-      const res = await api.post('/company-admin/loads', payload);
+      let res;
+      if (editMode && (loadToEdit?.rawId || loadToEdit?.id)) {
+        const targetId = loadToEdit.rawId || loadToEdit.id;
+        res = await api.put(`/company-admin/loads/${targetId}`, payload);
+      } else {
+        res = await api.post('/company-admin/loads', payload);
+      }
+
+      // Persist local driver assignment with load schedule title & pay rate
+      if (formData.driver) {
+        try {
+          const selectedDrv = dbDrivers.find(d => String(d.id) === String(formData.driver));
+          const drvName = selectedDrv ? (selectedDrv.name || `${selectedDrv.firstName || ''} ${selectedDrv.lastName || ''}`.trim()) : '';
+          if (drvName) {
+            const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+            const pickupStop = stops.find(s => (s.type || '').toLowerCase().includes('pickup')) || stops[0];
+            const dropStop = stops.find(s => (s.type || '').toLowerCase().includes('drop')) || stops[stops.length - 1];
+            const newAssignedLoad = {
+              id: formData.loadRef.trim(),
+              reference: formData.loadRef.trim(),
+              route: `${pickupStop?.address || 'Origin'} → ${dropStop?.address || 'Destination'}`,
+              origin: pickupStop?.address || 'Origin',
+              destination: dropStop?.address || 'Destination',
+              loadType: formData.loadType || 'General Freight',
+              driverPay: formData.driverPay ? parseFloat(formData.driverPay) : 0,
+              loadScheduleTitle: formData.loadScheduleTitle || '',
+              status: 'ASSIGNED',
+              items: items
+            };
+            const existingList = savedMap[drvName] || [];
+            const filtered = existingList.filter(l => l.id !== newAssignedLoad.id && l.reference !== newAssignedLoad.reference);
+            savedMap[drvName] = [newAssignedLoad, ...filtered];
+            localStorage.setItem('hero_assigned_driver_loads', JSON.stringify(savedMap));
+          }
+        } catch (e) {
+          console.warn('Error saving local driver assignment:', e);
+        }
+      }
+
       dispatcherRepository.syncWithBackend();
       if (res.data && res.data.success) {
-        alert(`🎉 Load ${formData.loadRef} saved to database as ${targetStatus}!`);
-        onBack();
+        showSaveToast(`Load ${formData.loadRef} ${editMode ? 'updated successfully!' : 'saved successfully!'}`, 'success');
+        setTimeout(() => onBack(), 1000);
       } else {
-        alert(res.data?.message || res.data?.error?.message || 'Error saving load. Please check inputs and database constraints.');
+        showSaveToast(res.data?.message || res.data?.error?.message || 'Error saving load. Please check inputs.', 'error');
       }
     } catch (err) {
-      console.error('Error creating load:', err);
+      console.error('Error creating/updating load:', err);
       dispatcherRepository.syncWithBackend();
-      alert(`❌ Failed to save Load ${formData.loadRef}. Error: ${err.response?.data?.error?.message || err.message}`);
+      showSaveToast(`Failed to ${editMode ? 'update' : 'save'} load. ${err.response?.data?.error?.message || err.message}`, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -811,13 +1187,23 @@ export default function CreateLoad({ onBack }) {
 
   const handleActivate = (e) => {
     if (e) e.preventDefault();
-    saveLoadToDatabase('ACTIVE');
+    saveLoadToDatabase(editMode ? (loadToEdit?.status || 'ACTIVE') : 'ACTIVE');
   };
 
   return (
     <div 
       className="flex-grow bg-[#F8FAFC] w-full overflow-y-auto min-h-0 flex flex-col font-sans text-left"
     >
+      {/* Save Toast Notification */}
+      {saveToast && (
+        <div className={`fixed bottom-5 right-5 z-[999999] flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl text-xs font-bold text-white ${
+          saveToast.type === 'error' ? 'bg-rose-600' : 'bg-slate-900'
+        }`}>
+          <Save className="w-4 h-4 shrink-0" />
+          {saveToast.msg}
+        </div>
+      )}
+
       <input
         type="file"
         ref={fileInputRef}
@@ -838,7 +1224,9 @@ export default function CreateLoad({ onBack }) {
           </button>
           <div>
             <div className="flex items-baseline gap-2">
-              <h1 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-tight">CREATE LOAD</h1>
+              <h1 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-tight">
+                {editMode ? 'EDIT LOAD' : 'CREATE LOAD'}
+              </h1>
               <span className="text-lg sm:text-[22px] font-bold text-amber-500 uppercase tracking-tight italic">CONSOLE</span>
             </div>
             <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
@@ -858,10 +1246,10 @@ export default function CreateLoad({ onBack }) {
           <button
             type="button"
             disabled={submitting}
-            onClick={() => saveLoadToDatabase('ACTIVE')}
+            onClick={() => saveLoadToDatabase(editMode ? (loadToEdit?.status || 'ACTIVE') : 'ACTIVE')}
             className="flex-1 sm:flex-none justify-center px-4 sm:px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black flex items-center gap-2 transition-colors shadow-xs uppercase tracking-wider disabled:opacity-50"
           >
-            <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {submitting ? 'ACTIVATING...' : 'ACTIVATE LOAD'}
+            <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {submitting ? 'SAVING...' : (editMode ? 'UPDATE LOAD' : 'ACTIVATE LOAD')}
           </button>
         </div>
       </div>
@@ -871,25 +1259,80 @@ export default function CreateLoad({ onBack }) {
 
         {/* ═══════ Section 1: Load Information ═══════ */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6">
-          <SectionHeader number="1" title="Load Information" colorCls="bg-indigo-600" />
+          <SectionHeader number="1" title="Load Information & Customer Revenue" subtitle="Customer Pricing (Inbound Revenue)" colorCls="bg-indigo-600" />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="col-span-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="col-span-1" onMouseLeave={() => setIsCustomerDropdownOpen(false)}>
               <FieldLabel>Booking Customer (Optional)</FieldLabel>
               <div className="relative">
-                <select
-                  value={formData.customer}
-                  onChange={e => setFormData({ ...formData, customer: e.target.value })}
-                  className={`${selectCls} pl-8 font-normal`}
+                <div 
+                  className={`${selectCls} pl-4 pr-8 font-normal flex items-center cursor-pointer min-h-[40px]`}
+                  onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
                 >
-                  <option value="">Select Customer...</option>
-                  {dbCustomers.map((c, idx) => (
-                    <option key={c.id || idx} value={c.id}>{c.name || `Customer #${idx + 1}`}</option>
-                  ))}
-                </select>
+                  <span className="truncate w-full block text-left">
+                    {formData.billedCustomerIds?.length > 0 
+                      ? formData.billedCustomerIds.map(id => dbCustomers.find(c => c.id === id)?.name || 'Unknown').join(', ') 
+                      : <span className="text-slate-400">Select Customer...</span>}
+                  </span>
+                </div>
+                <ChevronDown className={`absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-transform duration-200 pointer-events-none ${isCustomerDropdownOpen ? 'rotate-180' : ''}`} />
+                
+                {isCustomerDropdownOpen && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 max-h-72 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl custom-scrollbar p-2 flex flex-col gap-1 animate-fadeIn">
+                    <div className="sticky top-0 z-10 bg-white pb-1.5 pt-0.5 border-b border-slate-100" onClick={e => e.stopPropagation()}>
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                        <input
+                          type="text"
+                          value={customerSearchQuery}
+                          onChange={e => setCustomerSearchQuery(e.target.value)}
+                          placeholder="Search customer (e.g. Jess...)"
+                          className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-indigo-500 bg-slate-50/50"
+                          onClick={e => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
+                    {dbCustomers
+                      .filter(c => (c.name || '').toLowerCase().includes(customerSearchQuery.toLowerCase()))
+                      .map((c, idx) => {
+                        const isChecked = (formData.billedCustomerIds || []).includes(c.id);
+                        return (
+                          <label 
+                            key={c.id || idx} 
+                            className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors border border-transparent ${isChecked ? 'bg-indigo-50/80 border-indigo-100' : 'hover:bg-slate-50 hover:border-slate-100'}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={e => {
+                                let newBilled = [...(formData.billedCustomerIds || [])];
+                                if (e.target.checked) {
+                                  if (!newBilled.includes(c.id)) newBilled.push(c.id);
+                                } else {
+                                  newBilled = newBilled.filter(id => id !== c.id);
+                                }
+                                const newPrimary = newBilled.length > 0 ? newBilled[0] : '';
+                                setFormData({ ...formData, billedCustomerIds: newBilled, customer: newPrimary });
+                                setItems(prev => prev.map(item => ({ ...item, customer: item.customer || newPrimary })));
+                              }}
+                              className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer shadow-xs"
+                            />
+                            <div className="flex flex-col">
+                              <span className={`text-xs truncate ${isChecked ? 'font-black text-indigo-900' : 'font-bold text-slate-700'}`}>
+                                {c.name || `Customer #${idx + 1}`}
+                              </span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    {dbCustomers.filter(c => (c.name || '').toLowerCase().includes(customerSearchQuery.toLowerCase())).length === 0 && (
+                      <p className="text-center py-3 text-xs text-slate-400 font-medium">No matching customer found</p>
+                    )}
+                  </div>
+                )}
               </div>
               <p className="text-[10.5px] font-bold text-emerald-500 mt-1.5 leading-snug">
-                Fields below will change based on load type
+                Auto-finds Pricing Rule
               </p>
             </div>
 
@@ -957,7 +1400,79 @@ export default function CreateLoad({ onBack }) {
                 <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-0 pointer-events-none" />
               </div>
             </div>
+
+            <div className="col-span-1">
+              <FieldLabel required>Customer Charge ($)</FieldLabel>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.rate || ''}
+                  onChange={e => setFormData({ ...formData, rate: e.target.value })}
+                  className={`${inputCls} pl-8 font-bold text-emerald-700 bg-emerald-50/40 border-emerald-300 focus:border-emerald-500`}
+                  placeholder="Enter rate (e.g. 500.00)"
+                />
+              </div>
+            </div>
           </div>
+
+          {matchedPricingRule && matchedPricingRule.hasRule ? (
+            <div className="mt-4 p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-emerald-950 font-semibold shadow-2xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shrink-0"></span>
+                <span>⚡ Auto-Matched Customer Pricing Rule:</span>
+                <span className="bg-emerald-100 border border-emerald-200 text-emerald-950 px-2.5 py-0.5 rounded-md font-black flex items-center gap-1">
+                  <span>{matchedPricingRule.ruleName}</span>
+                </span>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-700 bg-white border border-emerald-200 px-2.5 py-0.5 rounded-full shrink-0">
+                Invoice automatically created on Load Save (${matchedPricingRule.amount.toFixed(2)})
+              </span>
+            </div>
+          ) : matchedPricingRule && !matchedPricingRule.hasRule ? (
+            <div className="mt-4 p-3 bg-amber-50/70 border border-amber-200 rounded-xl flex items-center gap-2 text-xs text-amber-900 font-semibold shadow-2xs">
+              <Info className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>{matchedPricingRule.ruleName}</span>
+            </div>
+          ) : null}
+
+          {/* Applicable Customer Pricing Rules UI */}
+          {formData.customer && (
+            <div className="mt-6 border-t border-slate-100 pt-5">
+              <h4 className="text-xs font-bold text-slate-800 mb-3 uppercase tracking-wider flex items-center gap-2">
+                <DollarSign size={14} className="text-emerald-600" /> Applicable Pricing Rules
+              </h4>
+              {customerPricingRules.filter(r => !r.isDefaultSample).length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {customerPricingRules.filter(r => !r.isDefaultSample).map(rule => (
+                    <div key={rule.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-emerald-300 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xs font-bold text-slate-900">{rule.name || 'Lane Rate'}</span>
+                        <span className="text-xs font-black text-emerald-700">${parseFloat(rule.baseRate).toFixed(2)}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 mb-3 space-y-1">
+                        <p><span className="font-semibold text-slate-600">Route:</span> {rule.from || 'Any'} → {rule.to || 'Any'}</p>
+                        <p><span className="font-semibold text-slate-600">Type:</span> {rule.type || 'General'}</p>
+                        <p><span className="font-semibold text-slate-600">Method:</span> {rule.method || 'Per Load'}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPricingRule(rule)}
+                        className="w-full py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                      >
+                        <CheckCircle size={12} /> Apply Rule
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-500 italic text-center">
+                  No pricing rules configured for this customer.
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ═══════ Section 2: Route Stops ═══════════ */}
@@ -1027,8 +1542,17 @@ export default function CreateLoad({ onBack }) {
                     </div>
                     <button
                       type="button"
+                      onClick={() => openEditStopModal(stop)}
+                      className="p-1 rounded-lg text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 transition-colors"
+                      title="Edit Stop Details"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => removeStop(stop.id)}
                       className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                      title="Delete Stop"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1237,7 +1761,15 @@ export default function CreateLoad({ onBack }) {
                         <MoreVertical className="w-4 h-4" />
                       </button>
                       {activeStopMenu === stop.id && (
-                        <div className="absolute right-0 top-8 z-50 bg-white border border-slate-200 rounded-xl shadow-lg py-1 min-w-[130px]">
+                        <div className="absolute right-0 top-8 z-50 bg-white border border-slate-200 rounded-xl shadow-lg py-1 min-w-[150px]">
+                          <button
+                            type="button"
+                            onClick={() => openEditStopModal(stop)}
+                            className="w-full flex items-center gap-2 px-3.5 py-2 text-[12px] font-bold text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            Edit Stop
+                          </button>
                           <button
                             type="button"
                             onClick={() => { removeStop(stop.id); setActiveStopMenu(null); }}
@@ -1322,11 +1854,14 @@ export default function CreateLoad({ onBack }) {
                       <div>
                         <FieldLabel required>Customer / Owner</FieldLabel>
                         <div className="relative">
-                          <select value={item.customer} onChange={e => updateItem(item.id, 'customer', e.target.value)}
-                            className={selectCls}>
+                          <select 
+                            value={(dbCustomers.find(c => c.id === item.customer || c.name === item.customer)?.id) || item.customer || ''} 
+                            onChange={e => updateItem(item.id, 'customer', e.target.value)}
+                            className={selectCls}
+                          >
                             <option value="">Select Customer...</option>
                             {dbCustomers.map((c, i) => (
-                              <option key={c.id || i} value={c.name || c.id}>{c.name || `Customer #${i + 1}`}</option>
+                              <option key={c.id || i} value={c.id}>{c.name || `Customer #${i + 1}`}</option>
                             ))}
                           </select>
                           <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -1859,7 +2394,7 @@ export default function CreateLoad({ onBack }) {
 
         {/* ═══════ Section 4: Assign Truck & Driver ══ */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6">
-          <SectionHeader number="4" title="Assign Truck & Driver" colorCls="bg-indigo-600" />
+          <SectionHeader number="4" title="Assign Resources & Driver Pay" subtitle="Driver Compensation & Payroll (Outbound Expense)" colorCls="bg-purple-700" />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
@@ -1918,24 +2453,33 @@ export default function CreateLoad({ onBack }) {
                   value={formData.driver}
                   onChange={e => {
                     const drvId = e.target.value;
-                    const drvObj = dbDrivers.find(d => String(d.id) === String(drvId));
-                    let sched = [];
-                    if (drvObj?.loadPaySchedule) {
-                      try {
-                        sched = typeof drvObj.loadPaySchedule === 'string' ? JSON.parse(drvObj.loadPaySchedule) : drvObj.loadPaySchedule;
-                      } catch (err) {}
+                    const schedules = getDriverSchedules(drvId);
+                    
+                    // Smart route auto-matching based on stops added in Section 2
+                    const pickupStop = stops.find(s => s.type === 'Pickup');
+                    const dropStop = stops.find(s => s.type === 'Drop-off');
+                    const pAddr = (pickupStop?.address || '').toLowerCase();
+                    const dAddr = (dropStop?.address || '').toLowerCase();
+
+                    let matchedSched = null;
+                    if (pAddr || dAddr) {
+                      matchedSched = schedules.find(s => {
+                        const titleLower = s.title.toLowerCase();
+                        const pLoc = (s.raw?.pickupLocation || '').toLowerCase();
+                        const dLoc = (s.raw?.deliveryLocation || '').toLowerCase();
+                        return (pAddr && (titleLower.includes(pAddr) || (pLoc && pAddr.includes(pLoc)))) ||
+                               (dAddr && (titleLower.includes(dAddr) || (dLoc && dAddr.includes(dLoc))));
+                      });
                     }
-                    const activeRoute = Array.isArray(sched) && sched.length > 0
-                      ? (sched.find(s => s.isSelected) || sched[0])
-                      : null;
-                    const defaultPay = activeRoute
-                      ? String(activeRoute.amount)
-                      : (drvObj?.payRate ? String(drvObj.payRate) : '');
-                    setSelectedPayChoice(activeRoute ? String(activeRoute.amount) : '');
+
+                    const activeSched = matchedSched || schedules.find(s => s.isSelected) || schedules[0];
+                    setSelectedScheduleId(activeSched ? activeSched.id : '');
+                    const defaultPay = activeSched ? String(activeSched.amount) : '';
                     setFormData(prev => ({
                       ...prev,
                       driver: drvId,
-                      driverPay: defaultPay
+                      driverPay: defaultPay,
+                      loadScheduleTitle: activeSched ? activeSched.title : ''
                     }));
                   }}
                   className={`${selectCls} pl-8`}
@@ -1950,18 +2494,160 @@ export default function CreateLoad({ onBack }) {
               </div>
             </div>
 
-            <div>
-              <FieldLabel>Load Notes (Driver View)</FieldLabel>
-              <input
-                type="text"
-                value={formData.loadNotes}
-                onChange={e => setFormData({ ...formData, loadNotes: e.target.value })}
-                className={inputCls}
-                placeholder="Notes visible to driver..."
-              />
+            {/* Dynamic Load Schedule Dropdown when Driver is selected */}
+            {formData.driver ? (
+              <div>
+                <FieldLabel required>Load Schedule (Driver Pay Rule)</FieldLabel>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-600" />
+                  <select
+                    value={selectedScheduleId}
+                    onChange={e => {
+                      const schedId = e.target.value;
+                      setSelectedScheduleId(schedId);
+                      if (schedId === 'custom') {
+                        setFormData(prev => ({ ...prev, driverPay: '', loadScheduleTitle: 'Custom Rate' }));
+                      } else {
+                        const schedules = getDriverSchedules(formData.driver);
+                        const chosen = schedules.find(s => String(s.id) === String(schedId));
+                        if (chosen) {
+                          setFormData(prev => ({
+                            ...prev,
+                            driverPay: String(chosen.amount),
+                            loadScheduleTitle: chosen.title
+                          }));
+                        }
+                      }
+                    }}
+                    className={`${selectCls} pl-8 bg-purple-50/70 border-purple-200 text-purple-900 font-bold focus:border-purple-500`}
+                  >
+                    <option value="">Select Load Schedule...</option>
+                    {getDriverSchedules(formData.driver).map(s => (
+                      <option key={s.id} value={s.id}>{s.display}</option>
+                    ))}
+                    <option value="custom">Custom Amount</option>
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-purple-600 pointer-events-none" />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <FieldLabel>Load Notes (Driver View)</FieldLabel>
+                <input
+                  type="text"
+                  value={formData.loadNotes}
+                  onChange={e => setFormData({ ...formData, loadNotes: e.target.value })}
+                  className={inputCls}
+                  placeholder="Notes visible to driver..."
+                />
+              </div>
+            )}
+
+            {/* Extra Driver Pay & Load Notes fields if Driver is selected */}
+            {formData.driver && (
+              <>
+                <div>
+                  <FieldLabel required={selectedScheduleId === 'custom'}>
+                    {selectedScheduleId === 'custom' ? 'Custom Amount ($)' : 'Driver Pay Amount ($)'}
+                  </FieldLabel>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.driverPay || ''}
+                      onChange={e => {
+                        setFormData({ ...formData, driverPay: e.target.value });
+                        if (selectedScheduleId !== 'custom') {
+                          setSelectedScheduleId('custom');
+                        }
+                      }}
+                      className={`${inputCls} pl-7 font-bold ${
+                        selectedScheduleId === 'custom'
+                          ? 'text-purple-900 bg-white border-purple-500 ring-2 ring-purple-100 placeholder:text-slate-300'
+                          : 'text-emerald-700 bg-emerald-50/40 border-emerald-200'
+                      }`}
+                      placeholder={selectedScheduleId === 'custom' ? "e.g. 1250.00" : "0.00"}
+                    />
+                  </div>
+                </div>
+
+                <div className="col-span-1 sm:col-span-2 lg:col-span-2">
+                  <FieldLabel>Load Notes (Driver View)</FieldLabel>
+                  <input
+                    type="text"
+                    value={formData.loadNotes}
+                    onChange={e => setFormData({ ...formData, loadNotes: e.target.value })}
+                    className={inputCls}
+                    placeholder="Notes visible to driver..."
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Dynamic Active Schedule Summary Banner */}
+          {formData.driver && (
+            <div className="mt-4 p-3 bg-purple-50/80 border border-purple-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-purple-900 font-semibold shadow-2xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse shrink-0"></span>
+                <span>Assigned Payment Rule:</span>
+                <span className="bg-purple-100 border border-purple-200 text-purple-950 px-2.5 py-0.5 rounded-md font-black flex items-center gap-1.5">
+                  <span>⚡ {(() => {
+                    if (selectedScheduleId === 'custom') {
+                      const val = parseFloat(formData.driverPay || 0);
+                      return val > 0 ? `Driver Pay: Custom — $${val.toFixed(2)} (Applies to this load only)` : 'Custom Amount Required';
+                    }
+                    const schedules = getDriverSchedules(formData.driver);
+                    const sel = schedules.find(s => String(s.id) === String(selectedScheduleId));
+                    if (sel) {
+                      return `${sel.title} — $${parseFloat(formData.driverPay || sel.amount || 0).toFixed(2)}`;
+                    }
+                    return formData.driverPay ? `Driver Pay: Custom — $${parseFloat(formData.driverPay).toFixed(2)} (Applies to this load only)` : 'Custom Amount Required';
+                  })()}</span>
+                </span>
+              </div>
+              <span className="text-[10px] font-bold text-purple-700 bg-white border border-purple-200 px-2.5 py-0.5 rounded-full shrink-0">
+                Payment calculated on Load Completion
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Split Billing Breakdown section */}
+        {false && multiCustomerBreakdown.length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6 mt-6">
+            <SectionHeader number="4" title="Split Billing Breakdown" colorCls="bg-emerald-600" />
+            <div className="space-y-4">
+              {multiCustomerBreakdown.map((b, idx) => (
+                <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-slate-100 bg-slate-50">
+                  <div>
+                    <h5 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                      <span className="text-xl">🧾</span> Invoice {idx + 1}: {b.customerName}
+                    </h5>
+                    <div className="text-xs text-slate-500 mt-1 flex flex-col gap-1">
+                      <p><span className="font-semibold text-slate-600">Route:</span> {b.route}</p>
+                      <p><span className="font-semibold text-slate-600">Items:</span> {b.itemNames}</p>
+                      <p><span className="font-semibold text-slate-600">Applicable Rule:</span> <span className={b.hasRule ? "text-emerald-600 font-semibold" : "text-amber-600 font-semibold"}>{b.ruleDesc}</span></p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Customer Charge</span>
+                    <span className={`text-xl font-black ${b.hasRule ? 'text-emerald-600' : 'text-slate-700'}`}>
+                      ${b.charge.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              <div className="pt-4 border-t border-slate-200 flex justify-between items-center px-2">
+                <span className="text-sm font-bold text-slate-600">Total Expected Revenue:</span>
+                <span className="text-2xl font-black text-indigo-700">
+                  ${multiCustomerBreakdown.reduce((sum, b) => sum + b.charge, 0).toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
       </form>
 
@@ -2274,7 +2960,7 @@ export default function CreateLoad({ onBack }) {
                   <MapPin className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900">Add New Stop</h3>
+                  <h3 className="text-base font-black text-slate-900">{editingStopId !== null ? 'Edit Stop' : 'Add New Stop'}</h3>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Route Stop Details</p>
                 </div>
               </div>
@@ -2457,7 +3143,7 @@ export default function CreateLoad({ onBack }) {
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() => setShowAddStopModal(false)}
+                onClick={() => { setShowAddStopModal(false); setEditingStopId(null); }}
                 className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 Cancel
@@ -2467,7 +3153,11 @@ export default function CreateLoad({ onBack }) {
                 onClick={handleSaveNewStop}
                 className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
               >
-                <Plus className="w-3.5 h-3.5" /> Add Stop to Route
+                {editingStopId !== null ? (
+                  <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Save Changes</>
+                ) : (
+                  <><Plus className="w-3.5 h-3.5" /> Add Stop to Route</>
+                )}
               </button>
             </div>
           </div>

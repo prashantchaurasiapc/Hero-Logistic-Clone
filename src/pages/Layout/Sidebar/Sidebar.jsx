@@ -115,7 +115,7 @@ const roleConfigs = {
       { icon: <FiDollarSign />, label: 'Finance', path: '/company-admin/finance' },
       { icon: <FiFileText />, label: 'Documents', path: '/company-admin/documents' },
       { icon: <FiBarChart2 />, label: 'Reports & Analytics', path: '/company-admin/reports' },
-      { icon: <FiMessageSquare />, label: 'Messages', path: '/company-admin/messages', badge: '8' },
+      { icon: <FiMessageSquare />, label: 'Messages', path: '/company-admin/messages' },
     ],
 
     subMenus: [

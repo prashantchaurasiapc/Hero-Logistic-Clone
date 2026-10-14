@@ -70,6 +70,14 @@ export default function Companies() {
   const [showSendNotificationModal, setShowSendNotificationModal] = useState(false);
   const [selectedActionCompany, setSelectedActionCompany] = useState(null);
 
+  // Edit Company modal states
+  const [editName, setEditName] = useState('');
+  const [editAdminEmail, setEditAdminEmail] = useState('');
+  const [editAdminPassword, setEditAdminPassword] = useState('');
+  const [editPlan, setEditPlan] = useState('');
+  const [editStatus, setEditStatus] = useState('ACTIVE');
+  const [editModalError, setEditModalError] = useState('');
+
   // Inspector state
   const [showInspector, setShowInspector] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState(null);
@@ -129,10 +137,13 @@ export default function Companies() {
       if (companiesRes.data.success) {
         const mappedData = companiesRes.data.data.map(company => {
           const activeSub = company.tenantSubscription;
+          const adminEmail = company.adminEmail || company.users?.find(u => u.role === 'COMPANY_ADMIN')?.email || '';
+          const displayManager = adminEmail || company.accountManager || 'N/A';
           return {
             dbId: company.id,
             id: company.tenantId || company.id, // Display ID
             name: company.name,
+            adminEmail: adminEmail,
             plan: activeSub?.plan?.name || 'No Plan',
             status: company.status,
             branches: company._count?.branches || 0,
@@ -144,7 +155,7 @@ export default function Companies() {
             lastLogin: company.lastLogin ? new Date(company.lastLogin).toLocaleString() : 'N/A',
             expiry: company.trialExpiry ? new Date(company.trialExpiry).toLocaleDateString() : (activeSub?.nextRenewal ? new Date(activeSub.nextRenewal).toLocaleDateString() : 'N/A'),
             created: new Date(company.createdAt).toLocaleDateString(),
-            manager: company.accountManager || 'N/A',
+            manager: displayManager,
             country: company.country || 'N/A'
           };
         });
@@ -163,6 +174,34 @@ export default function Companies() {
       showNotification('Failed to load tenants or plans data.');
     } finally {
       if (showTableLoading) setIsLoading(false);
+    }
+  };
+
+  const handleUpdateCompany = async (e) => {
+    e.preventDefault();
+    setEditModalError('');
+    try {
+      setIsSubmitting(true);
+      const targetId = selectedActionCompany.dbId || selectedActionCompany.id;
+      const res = await api.put(`/companys/${targetId}`, {
+        name: editName.trim(),
+        adminEmail: editAdminEmail.trim(),
+        adminPassword: editAdminPassword ? editAdminPassword.trim() : undefined,
+        planTier: editPlan,
+        status: editStatus
+      });
+      if (res.data?.success) {
+        showNotification(`Configurations saved for ${editName.trim()}`);
+        setShowEditCompanyModal(false);
+        fetchCompaniesAndPlans(false);
+      }
+    } catch (err) {
+      console.error('Error updating company:', err);
+      const errMsg = err.response?.data?.error?.message || 'Error updating company settings.';
+      setEditModalError(errMsg);
+      showNotification(errMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -969,6 +1008,12 @@ export default function Companies() {
                             <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
+                                setEditName(c.name);
+                                setEditAdminEmail(c.adminEmail || (c.manager !== 'N/A' ? c.manager : ''));
+                                setEditAdminPassword('');
+                                setEditPlan(c.plan !== 'No Plan' ? c.plan : (availablePlans[0]?.name || ''));
+                                setEditStatus(c.status || 'ACTIVE');
+                                setEditModalError('');
                                 setShowEditCompanyModal(true);
                                 setActiveActionsMenu(null);
                               }}
@@ -1230,55 +1275,94 @@ export default function Companies() {
       {/* Configure Tenant Workspace Settings Modal */}
       {showEditCompanyModal && selectedActionCompany && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
+          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[440px] max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl animate-fade-in text-left">
             <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
               <h3 className="text-sm font-black text-slate-800">Configure Tenant Workspace Settings</h3>
               <button onClick={() => setShowEditCompanyModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form className="p-6 space-y-5" onSubmit={async (e) => {
-              e.preventDefault();
-              try {
-                setIsSubmitting(true);
-                const name = e.target.elements.name.value;
-                const adminEmail = e.target.elements.manager.value;
-                const res = await api.put(`/companys/${selectedActionCompany.id}`, { name, adminEmail });
-                if (res.data?.success) {
-                  showNotification(`Configurations saved for ${name}`);
-                  setShowEditCompanyModal(false);
-                  fetchCompaniesAndPlans(false);
-                }
-              } catch (err) {
-                showNotification('Error updating company.');
-              } finally {
-                setIsSubmitting(false);
-              }
-            }}>
+
+            <form className="p-6 space-y-4" onSubmit={handleUpdateCompany}>
+              {editModalError && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3.5 rounded-2xl text-xs font-bold flex items-start gap-2.5 shadow-xs">
+                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <span className="leading-snug">{editModalError}</span>
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">COMPANY NAME</label>
-                <input name="name" type="text" defaultValue={selectedActionCompany.name} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                />
               </div>
+
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">ADMINISTRATOR EMAIL</label>
-                <input name="manager" type="text" defaultValue={selectedActionCompany.manager} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+                <input
+                  type="email"
+                  required
+                  value={editAdminEmail}
+                  onChange={(e) => setEditAdminEmail(e.target.value)}
+                  placeholder="e.g. admin@company.com"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                />
               </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">ADMINISTRATOR PASSWORD</label>
+                <input
+                  type="password"
+                  value={editAdminPassword}
+                  onChange={(e) => setEditAdminPassword(e.target.value)}
+                  placeholder="Leave blank to keep current password"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                />
+                <span className="text-[10px] text-slate-400 font-medium block">Enter a new password to update the admin user's credentials.</span>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SUBSCRIPTION TIER LEVEL</label>
-                <select name="plan" defaultValue={selectedActionCompany.plan + ' Tier'} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
-                  <option>Starter Tier</option>
-                  <option>Professional Tier</option>
-                  <option>Enterprise Tier</option>
-                </select>
+                <CustomSelect
+                  value={editPlan}
+                  onChange={(val) => setEditPlan(val)}
+                  options={availablePlans.map(plan => ({ label: plan.name, value: plan.name }))}
+                  placeholder="Select Subscription Plan"
+                />
               </div>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full mt-2 bg-[#FFB020] hover:bg-brand-600 disabled:opacity-50 text-black font-extrabold text-[13px] py-3.5 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <Check className="w-4 h-4" />}
-                <span>{isSubmitting ? 'Saving Configurations...' : 'Save Configurations'}</span>
-              </button>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">WORKSPACE STATUS</label>
+                <CustomSelect
+                  value={editStatus}
+                  onChange={(val) => setEditStatus(val)}
+                  options={[
+                    { label: 'ACTIVE', value: 'ACTIVE' },
+                    { label: 'PROVISIONING', value: 'PROVISIONING' },
+                    { label: 'TRIAL', value: 'TRIAL' },
+                    { label: 'HOLD', value: 'HOLD' },
+                    { label: 'SUSPENDED', value: 'SUSPENDED' },
+                    { label: 'CLOSED', value: 'CLOSED' }
+                  ]}
+                  placeholder="Select Workspace Status"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#FFB020] hover:bg-brand-600 disabled:opacity-50 text-black font-extrabold text-[13px] py-3.5 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : <Check className="w-4 h-4 text-black" />}
+                  <span>{isSubmitting ? 'Saving Configurations...' : 'Save Configurations'}</span>
+                </button>
+              </div>
             </form>
           </div>
         </div>

@@ -32,6 +32,9 @@ export default function PickupLoading() {
   const [newModel, setNewModel] = useState('');
   const [newPlate, setNewPlate] = useState('');
   const [newDrop, setNewDrop] = useState('DROP 1');
+  // Phase 4: customer selection for multi-customer loads
+  const [newCustomerId, setNewCustomerId] = useState('');
+  const [customers, setCustomers] = useState([]);
 
   const fileInputRef = useRef(null);
   const [activeSlotTarget, setActiveSlotTarget] = useState(null);
@@ -48,45 +51,152 @@ export default function PickupLoading() {
   const [loadInfo, setLoadInfo] = useState(null);
   const [cars, setCars] = useState([]);
 
+  const loadType = loadInfo?.loadType || loadInfo?.cars?.[0]?.loadType || 'General Freight';
+
+  const isVehicleLoad = (lType = '') => {
+    const l = String(lType || '').toLowerCase();
+    return l.includes('car') || l.includes('vehicle') || l.includes('auto');
+  };
+
+  const getItemLabel = (lType = '', count = 1) => {
+    if (isVehicleLoad(lType)) return count === 1 ? 'Vehicle' : 'Vehicles';
+    const l = String(lType || '').toLowerCase();
+    if (l.includes('container')) return count === 1 ? 'Container' : 'Containers';
+    if (l.includes('pallet')) return count === 1 ? 'Pallet' : 'Pallets';
+    return count === 1 ? 'Freight Item' : 'Freight Items';
+  };
+
+  const getItemShortLabel = (lType = '', count = 1) => {
+    if (isVehicleLoad(lType)) return count === 1 ? 'Car' : 'Cars';
+    return count === 1 ? 'Item' : 'Items';
+  };
+
   const fetchPickupLoad = async () => {
     try {
       setLoading(true);
 
       // Check if Planning Board assigned an active load to current driver in local memory
-      const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
-      const userStr = localStorage.getItem('user');
-      const userObj = userStr ? JSON.parse(userStr) : {};
-      const currentDriverName = userObj.name || userObj.firstName || '';
-      const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
-      const assignedList = currentDriverName ? (savedMap[currentDriverName] || []).filter(item => !deletedIds.includes(item.id)) : [];
-      
-      const activeAssignedLoad = assignedList[0];
+      let activeAssignedLoad = null;
+      try {
+        const savedMap = JSON.parse(localStorage.getItem('hero_assigned_driver_loads') || '{}');
+        const userStr = localStorage.getItem('user');
+        const userObj = userStr ? JSON.parse(userStr) : {};
+        const currentDriverName = userObj.name || userObj.firstName || '';
+        const deletedIds = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || localStorage.getItem('deleted_load_ids') || '[]');
+        const assignedList = currentDriverName ? (savedMap[currentDriverName] || []).filter(item => !deletedIds.includes(item.id)) : [];
+        activeAssignedLoad = assignedList[0];
+      } catch (err) {
+        console.warn('Error reading assigned driver loads from localStorage:', err);
+      }
 
       if (activeAssignedLoad) {
         const routeParts = activeAssignedLoad.route ? activeAssignedLoad.route.split(/\s*[\u2192\u2794\->]|\sto\s/i) : ['—', '—'];
         const originStr = routeParts[0]?.trim() || activeAssignedLoad.origin || '—';
         const destStr = routeParts[1]?.trim() || activeAssignedLoad.destination || '—';
+        const lType = activeAssignedLoad.loadType || activeAssignedLoad.type || 'General Freight';
+
+        const rawItems = Array.isArray(activeAssignedLoad.items) && activeAssignedLoad.items.length > 0
+          ? activeAssignedLoad.items
+          : (Array.isArray(activeAssignedLoad.cars) && activeAssignedLoad.cars.length > 0 ? activeAssignedLoad.cars : []);
+
+        const parsedList = rawItems.map((it, idx) => ({
+          id: it.id || String(idx + 1),
+          dbId: it.id || String(idx + 1),
+          drop: it.drop || 'DROP 1',
+          dropLoc: it.dropLoc || destStr || 'Delivery Depot',
+          vin: it.vin || it.stockRef || `REF-${idx + 1}`,
+          makeModel: it.description || it.makeModel || `${it.make || ''} ${it.model || ''}`.trim() || 'Freight Item',
+          description: it.description || it.makeModel || 'Freight Item',
+          quantity: it.quantity || 1,
+          weightKg: it.weightKg || it.weight || 0,
+          volumeM3: it.volumeM3 || 0,
+          plate: it.plate || it.rego || '',
+          color: it.color || '',
+          pickedUp: ['PICKED_UP', 'LOADED', 'DELIVERED', 'COMPLETED'].includes(it.status) || it.pickedUp || false,
+          time: it.time || '08:12 AM',
+          photos: it.photos || { current: 1, total: 1, percent: 100 }
+        }));
 
         setLoadInfo({
           id: activeAssignedLoad.id || activeAssignedLoad.loadNumber || '—',
           dbId: activeAssignedLoad.id,
+          loadType: lType,
           origin: originStr,
           destination: destStr,
           pickupTime: activeAssignedLoad.pickupTime || '08:00 AM',
           estFinish: activeAssignedLoad.deliveryTime || '04:30 PM',
-          cars: activeAssignedLoad.items || []
+          totalCars: parsedList.length,
+          cars: parsedList
         });
-        setCars(activeAssignedLoad.items || []);
+        setCars(parsedList);
         return;
       }
 
       const res = await api.get('/driver-portal/pickup-load');
       if (res.data?.success && res.data.data?.load) {
         setLoadInfo(res.data.data.load);
-        setCars(res.data.data.load.cars || []);
+        setCars(res.data.data.load.cars || res.data.data.load.items || []);
       } else {
-        setLoadInfo(null);
-        setCars([]);
+        const dashRes = await api.get('/driver-portal/dashboard').catch(() => null);
+        const cl = dashRes?.data?.data?.currentLoad;
+        if (cl && cl.status !== 'DELIVERED' && cl.status !== 'COMPLETED') {
+          const lType = cl.loadType || cl.type || 'General Freight';
+          const rawItems = Array.isArray(cl.items) && cl.items.length > 0 ? cl.items : (Array.isArray(cl.cars) && cl.cars.length > 0 ? cl.cars : []);
+          
+          const parsedList = rawItems.length > 0
+            ? rawItems.map((it, idx) => ({
+                id: it.id || String(idx + 1),
+                dbId: it.id || String(idx + 1),
+                drop: it.drop || 'DROP 1',
+                dropLoc: it.dropLoc || (cl.destination && cl.destination !== 'Asdff' ? cl.destination : 'Central Warehouse'),
+                vin: it.vin || it.stockRef || `REF-${idx + 1}`,
+                makeModel: it.description || it.makeModel || `${it.make || ''} ${it.model || ''}`.trim() || 'Freight Item',
+                description: it.description || it.makeModel || 'Freight Item',
+                quantity: it.quantity || 1,
+                weightKg: it.weightKg || it.weight || 0,
+                volumeM3: it.volumeM3 || 0,
+                color: it.color || '',
+                plate: it.plate || it.rego || '',
+                pickedUp: ['PICKED_UP', 'LOADED', 'DELIVERED', 'COMPLETED'].includes(it.status) || it.pickedUp || false,
+                time: it.time || '08:12 AM',
+                photos: it.photos || { current: 1, total: 1, percent: 100 }
+              }))
+            : [{
+                id: '1',
+                dbId: '1',
+                drop: 'DROP 1',
+                dropLoc: cl.destination && cl.destination !== 'Asdff' ? cl.destination : 'Central Warehouse',
+                vin: cl.reference || cl.loadNumber || 'REF-1',
+                makeModel: lType,
+                description: lType,
+                quantity: 1,
+                weightKg: 0,
+                volumeM3: 0,
+                color: '',
+                plate: '',
+                pickedUp: true,
+                time: '08:12 AM',
+                photos: { current: 1, total: 1, percent: 100 }
+              }];
+
+          const loadObj = {
+            id: cl.reference || cl.loadNumber || cl.id,
+            dbId: cl.id,
+            loadType: lType,
+            origin: (cl.origin && cl.origin !== 'ggg') ? cl.origin : '—',
+            destination: (cl.destination && cl.destination !== 'Asdff') ? cl.destination : 'Central Warehouse',
+            pickupTime: cl.pickupStop?.time || '08:00 AM',
+            estFinish: cl.deliveryStop?.time || '04:30 PM',
+            totalStops: cl.stops?.length || 2,
+            totalCars: parsedList.length,
+            cars: parsedList
+          };
+          setLoadInfo(loadObj);
+          setCars(parsedList);
+        } else {
+          setLoadInfo(null);
+          setCars([]);
+        }
       }
     } catch (error) {
       console.error('Fetch pickup load error:', error.message);
@@ -100,6 +210,22 @@ export default function PickupLoading() {
   useEffect(() => {
     fetchPickupLoad();
   }, []);
+
+  // Phase 4: fetch customers when loadInfo.dbId is available
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      if (!loadInfo?.dbId) return;
+      try {
+        const res = await api.get(`/driver-portal/pickup-load/customers?loadId=${loadInfo.dbId}`);
+        if (res.data?.success && Array.isArray(res.data.data?.customers)) {
+          setCustomers(res.data.data.customers);
+        }
+      } catch (err) {
+        console.warn('Could not fetch pickup customers:', err?.message);
+      }
+    };
+    fetchCustomers();
+  }, [loadInfo?.dbId]);
 
 
   const triggerToast = (msg) => {
@@ -299,6 +425,11 @@ export default function PickupLoading() {
     e.preventDefault();
     if (!newModel || !newVin) return;
 
+    // Phase 4: find selected customer for UI label
+    const selectedCustomer = customers.find(c => c.id === newCustomerId) || null;
+    // Phase 7: if customer selected, override drop to customer name for clean grouping
+    const effectiveDrop = selectedCustomer ? selectedCustomer.name : newDrop;
+
     let addedDbItem = null;
     try {
       const res = await api.post('/driver-portal/pickup-load/add-item', {
@@ -306,7 +437,9 @@ export default function PickupLoading() {
         vin: newVin.toUpperCase(),
         makeModel: newModel,
         plate: newPlate.toUpperCase() || 'TEMP-99',
-        drop: newDrop
+        drop: effectiveDrop,
+        // Phase 4: send customerId to backend
+        ...(newCustomerId && { customerId: newCustomerId })
       });
       addedDbItem = res.data?.data?.item;
     } catch (err) {
@@ -316,28 +449,45 @@ export default function PickupLoading() {
     const newCarItem = {
       id: addedDbItem?.id || Date.now(),
       dbId: addedDbItem?.id || null,
-      drop: newDrop,
-      dropLoc: newDrop === 'DROP 1' ? 'Auto World Sydney' : newDrop === 'DROP 2' ? 'Newcastle Motors' : 'Brisbane Car Centre',
+      drop: effectiveDrop,
+      // Phase 6: real customer name instead of hardcoded location
+      dropLoc: selectedCustomer?.name || effectiveDrop,
       vin: newVin.toUpperCase(),
       makeModel: newModel,
       color: 'White',
       plate: newPlate.toUpperCase() || 'TEMP-99',
       pickedUp: false,
       time: null,
-      photos: { current: 0, total: 4, percent: 0 }
+      photos: { current: 0, total: 4, percent: 0 },
+      // Phase 4: store customer info in state
+      customerId: newCustomerId || null,
+      customerName: selectedCustomer?.name || null
     };
     setCars(prev => [...prev, newCarItem]);
     setAddCarModalOpen(false);
     setNewVin('');
     setNewModel('');
     setNewPlate('');
-    triggerToast(`Added ${newModel} to ${newDrop}!`);
+    setNewCustomerId('');
+    // Fix: reset newDrop so next item defaults back to DROP 1 (not the last selected drop)
+    setNewDrop('DROP 1');
+    const customerLabel = selectedCustomer ? ` for ${selectedCustomer.name}` : '';
+    // Fix: was using newDrop (always 'DROP 1/2/3/4'), now uses effectiveDrop (customer name when selected)
+    triggerToast(`Added ${newModel} to ${effectiveDrop}${customerLabel}!`);
   };
+
 
   const handleEditCarSubmit = async (e) => {
     e.preventDefault();
     if (!editingCar) return;
-    setCars(cars.map(c => c.id === editingCar.id ? editingCar : c));
+    // Step 10 fix: also update customerName in local state when customer changes
+    const editedCustomer = customers.find(c => c.id === editingCar.customerId) || null;
+    const updatedCar = {
+      ...editingCar,
+      customerName: editedCustomer?.name || editingCar.customerName || null,
+      dropLoc: editedCustomer?.name || editingCar.dropLoc
+    };
+    setCars(cars.map(c => c.id === editingCar.id ? updatedCar : c));
     setEditCarModalOpen(false);
     triggerToast(`Updated ${editingCar.makeModel}!`);
 
@@ -347,7 +497,9 @@ export default function PickupLoading() {
           makeModel: editingCar.makeModel,
           vin: editingCar.vin,
           plate: editingCar.plate,
-          drop: editingCar.drop
+          drop: editingCar.drop,
+          // Step 10 fix: send customerId so DB record is also updated
+          ...(editingCar.customerId && { customerId: editingCar.customerId })
         });
       }
     } catch (err) {
@@ -481,7 +633,7 @@ export default function PickupLoading() {
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               Pickup & Loading
             </h1>
-            <p className="text-xs font-semibold text-slate-400 mt-0.5">Scan or select cars assigned to load {loadInfo?.id || loadInfo?.loadRef || '—'}</p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Scan or select {getItemLabel(loadType, 2).toLowerCase()} assigned to load {loadInfo?.id || loadInfo?.loadRef || '—'}</p>
           </div>
         </div>
 
@@ -491,7 +643,7 @@ export default function PickupLoading() {
             className="flex-1 sm:flex-initial bg-[#6366F1] hover:bg-[#4F46E5] text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <BsQrCodeScan className="text-base" />
-            <span>Scan VIN Barcode</span>
+            <span>{isVehicleLoad(loadType) ? 'Scan VIN Barcode' : 'Scan Barcode / Ref'}</span>
           </button>
 
           <button
@@ -499,7 +651,7 @@ export default function PickupLoading() {
             className="flex-1 sm:flex-initial bg-[#F59E0B] hover:bg-[#D97706] text-slate-900 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <FiPlus className="text-base text-slate-900" />
-            <span>Add Car to Load</span>
+            <span>Add {getItemShortLabel(loadType, 1)} to Load</span>
           </button>
         </div>
       </div>
@@ -513,13 +665,13 @@ export default function PickupLoading() {
           {/* Card 1: 15.6 Pickup & Loading */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-base font-black text-slate-900 tracking-tight">15.6 Pickup & Loading</span>
+              <span className="text-base font-black text-slate-900 tracking-tight">Pickup & Loading</span>
               <span className="bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE] text-[9.5px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 {driverMode.includes('Flexible') ? 'FLEXIBLE' : 'ASSIGNED'}
               </span>
             </div>
             <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-              Scan VIN barcodes or tap cars to mark as picked up. Take vehicle photos if required. You can add more cars to your load if you are picking up additional vehicles.
+              Scan barcodes or tap {getItemShortLabel(loadType, 2).toLowerCase()} to mark as picked up. Take photos if required. You can add more {getItemShortLabel(loadType, 2).toLowerCase()} to your load if picking up extra cargo.
             </p>
           </div>
 
@@ -533,7 +685,7 @@ export default function PickupLoading() {
               </div>
               <div className="flex items-center gap-2.5 text-[#EF4444]">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]"></span>
-                <span>Wrong Car</span>
+                <span>Unassigned Item</span>
               </div>
               <div className="flex items-center gap-2.5 text-[#9CA3AF]">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#9CA3AF]"></span>
@@ -559,7 +711,7 @@ export default function PickupLoading() {
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">LOAD SUMMARY</div>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                <div className="text-[9px] text-slate-400 font-extrabold uppercase">TOTAL</div>
+                <div className="text-[9px] text-slate-400 font-extrabold uppercase">TOTAL {getItemShortLabel(loadType, 2).toUpperCase()}</div>
                 <div className="text-lg font-black text-slate-900 mt-0.5">{loadInfo?.totalCars || cars.length}</div>
               </div>
               <div className="bg-[#D1FAE5] p-2.5 rounded-xl border border-[#A7F3D0]">
@@ -579,15 +731,15 @@ export default function PickupLoading() {
             <ul className="space-y-2 font-semibold">
               <li className="flex items-start gap-2">
                 <span className="text-indigo-600 shrink-0">📱</span>
-                <span>Scan VIN barcode or tap a car to mark as picked up.</span>
+                <span>Scan barcode or tap an item to mark as picked up.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-indigo-600 shrink-0">📋</span>
-                <span>Cars are grouped by delivery stop to help you load in the right order.</span>
+                <span>Items are grouped by delivery stop to help you load in the right order.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-rose-500 shrink-0">⚠️</span>
-                <span>Wrong cars are blocked from being picked up.</span>
+                <span>Unassigned items are flagged before pickup.</span>
               </li>
             </ul>
           </div>
@@ -601,7 +753,7 @@ export default function PickupLoading() {
                 <span>{driverMode}</span>
                 <span>✏️</span>
               </div>
-              <p className="text-[11px] text-slate-400 font-semibold mt-1.5">You can add, remove and edit cars and destinations.</p>
+              <p className="text-[11px] text-slate-400 font-semibold mt-1.5">You can add, remove and edit freight items and destinations.</p>
             </div>
             <button
               onClick={() => {
@@ -644,8 +796,8 @@ export default function PickupLoading() {
                 </div>
                 <div className="h-5 w-px bg-slate-200"></div>
                 <div>
-                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">TOTAL CARS</span>
-                  <span className="font-mono text-slate-900 font-extrabold">{cars.length} Cars</span>
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">TOTAL FREIGHT</span>
+                  <span className="font-mono text-slate-900 font-extrabold">{cars.length} {getItemShortLabel(loadType, cars.length)}</span>
                 </div>
               </div>
             </div>
@@ -654,8 +806,8 @@ export default function PickupLoading() {
             <div className="bg-[#F3E8FF] border border-[#E9D5FF] rounded-xl p-3 flex items-center gap-2.5 text-[#581C87] text-xs font-bold shadow-2xs">
               <BsQrCodeScan className="text-lg shrink-0 text-[#7E22CE]" />
               <div>
-                <span className="font-black text-slate-900 text-xs">Scan or select each car you have picked up.</span>
-                <div className="text-[#6B21A8] font-medium text-[11px]">All {cars.length} cars must be picked up before you can DISPATCH.</div>
+                <span className="font-black text-slate-900 text-xs">Scan or select each {getItemShortLabel(loadType, 1).toLowerCase()} you have picked up.</span>
+                <div className="text-[#6B21A8] font-medium text-[11px]">All {cars.length} {getItemLabel(loadType, cars.length).toLowerCase()} must be picked up before you can DISPATCH.</div>
               </div>
             </div>
 
@@ -665,7 +817,7 @@ export default function PickupLoading() {
                 <span className="p-1 bg-indigo-100 text-indigo-700 rounded-md shrink-0 font-bold">👤</span>
                 <div>
                   <div className="font-black text-slate-900">Flexible / Owner-Driver Mode</div>
-                  <div className="text-slate-400 font-semibold text-[10.5px] mt-0.5">You can add, remove and edit cars and delivery destinations.</div>
+                  <div className="text-slate-400 font-semibold text-[10.5px] mt-0.5">You can add, remove and edit items and delivery destinations.</div>
                 </div>
               </div>
 
@@ -679,12 +831,12 @@ export default function PickupLoading() {
             </div>
           </div>
 
-          {/* Section Header: CARS TO PICK UP */}
+          {/* Section Header: ITEMS TO PICK UP */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4.5 shadow-2xs space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO PICK UP ({cars.length})</h3>
-                <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Manage your load: add new cars from the yard or remove any that are not being taken.</p>
+                <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">{getItemLabel(loadType, cars.length).toUpperCase()} TO PICK UP ({cars.length})</h3>
+                <p className="text-[11px] text-slate-400 font-semibold mt-0.5">Manage your load: verify items from the yard or remove any that are not being taken.</p>
               </div>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -693,7 +845,7 @@ export default function PickupLoading() {
                   className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-extrabold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1"
                 >
                   <BsQrCodeScan className="text-indigo-600" />
-                  <span>Scan VIN</span>
+                  <span>{isVehicleLoad(loadType) ? 'Scan VIN' : 'Scan Ref'}</span>
                 </button>
 
                 <button
@@ -701,118 +853,142 @@ export default function PickupLoading() {
                   className="bg-[#F59E0B] hover:bg-[#D97706] text-slate-900 font-extrabold text-xs px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
                 >
                   <FiPlus className="text-slate-900" />
-                  <span>Add Car</span>
+                  <span>Add {getItemShortLabel(loadType, 1)}</span>
                 </button>
               </div>
             </div>
 
-            {/* DROPS BREAKDOWN CARDS */}
+            {/* DROPS / CUSTOMER BREAKDOWN CARDS */}
             <div className="space-y-3.5">
               {cars.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 font-bold text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  No vehicles assigned to pick up for this load.
+                  No {getItemLabel(loadType, 2).toLowerCase()} assigned to pick up for this load.
                 </div>
               ) : (
-                Array.from(new Set(cars.map(c => c.drop || 'DROP 1'))).map((dropName) => {
-                  const dropCars = cars.filter(c => (c.drop || 'DROP 1') === dropName);
-                  if (dropCars.length === 0) return null;
-                  const dropLoc = dropCars[0]?.dropLoc || 'Delivery Location';
+                // Phase 5: group by customer if customerId set, else by drop label
+                (() => {
+                  const groups = {};
+                  cars.forEach(car => {
+                    let key, label, isCustomerGroup;
+                    if (car.customerId && car.customerName) {
+                      key = `customer_${car.customerId}`;
+                      label = car.customerName;
+                      isCustomerGroup = true;
+                    } else {
+                      key = car.drop || 'DROP 1';
+                      label = car.drop || 'DROP 1';
+                      isCustomerGroup = false;
+                    }
+                    if (!groups[key]) groups[key] = { label, isCustomerGroup, cars: [] };
+                    groups[key].cars.push(car);
+                  });
 
-                  return (
-                    <div key={dropName} className="bg-slate-50/70 border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs">
-                      {/* Drop Header */}
-                      <div className="bg-slate-100/90 px-3.5 py-2 border-b border-slate-200/80 flex justify-between items-center text-xs font-bold">
-                        <div className="flex items-center gap-2 text-indigo-950">
-                          <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                          <span className="font-black text-xs">{dropName}</span>
-                          <span className="text-slate-400 font-normal">|</span>
-                          <span className="text-slate-600 text-[11px]">Deliver: {dropLoc}</span>
+                  return Object.entries(groups).map(([groupKey, group]) => {
+                    const dropCars = group.cars;
+                    if (dropCars.length === 0) return null;
+                    const dropLoc = group.isCustomerGroup
+                      ? dropCars[0]?.dropLoc || group.label
+                      : (dropCars[0]?.dropLoc || 'Delivery Location');
+
+                    return (
+                      <div key={groupKey} className="bg-slate-50/70 border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs">
+                        <div className={`px-3.5 py-2 border-b border-slate-200/80 flex justify-between items-center text-xs font-bold ${
+                          group.isCustomerGroup ? 'bg-indigo-50/80' : 'bg-slate-100/90'
+                        }`}>
+                          <div className="flex items-center gap-2 text-indigo-950">
+                            {group.isCustomerGroup
+                              ? <span className="text-indigo-600 text-sm">🏢</span>
+                              : <span className="w-2 h-2 rounded-full bg-indigo-600"></span>}
+                            <span className="font-black text-xs">{group.label}</span>
+                            {group.isCustomerGroup && (
+                              <span className="bg-indigo-100 text-indigo-700 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">Customer</span>
+                            )}
+                            <span className="text-slate-400 font-normal">|</span>
+                            <span className="text-slate-600 text-[11px]">Deliver: {dropLoc}</span>
+                          </div>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                            group.isCustomerGroup ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-200 text-slate-700'
+                          }`}>
+                            {dropCars.length} {getItemShortLabel(loadType, dropCars.length)}
+                          </span>
                         </div>
-                        <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full">
-                          {dropCars.length} {dropCars.length === 1 ? 'Car' : 'Cars'}
-                        </span>
-                      </div>
 
-                      {/* Cars List */}
-                      <div className="divide-y divide-slate-100 bg-white">
-                        {dropCars.map((car) => (
-                          <div 
-                            key={car.id} 
-                            className={`p-3 flex items-center justify-between gap-3 transition-colors ${
-                              car.pickedUp ? 'bg-emerald-50/30' : 'hover:bg-slate-50/50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              {/* Checkbox circle */}
-                              <button
-                                onClick={() => togglePickUp(car.id)}
-                                className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-xs cursor-pointer transition-all shrink-0 ${
-                                  car.pickedUp ? 'bg-[#10B981] text-white shadow-xs' : 'border-2 border-slate-300 bg-white text-transparent hover:border-slate-400'
-                                }`}
-                              >
-                                ✓
-                              </button>
+                        <div className="divide-y divide-slate-100 bg-white">
+                          {dropCars.map((car) => (
+                            <div
+                              key={car.id}
+                              className={`p-3 flex items-center justify-between gap-3 transition-colors ${
+                                car.pickedUp ? 'bg-emerald-50/30' : 'hover:bg-slate-50/50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <button
+                                  onClick={() => togglePickUp(car.id)}
+                                  className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-xs cursor-pointer transition-all shrink-0 ${
+                                    car.pickedUp ? 'bg-[#10B981] text-white shadow-xs' : 'border-2 border-slate-300 bg-white text-transparent hover:border-slate-400'
+                                  }`}
+                                >
+                                  ✓
+                                </button>
 
-                              <div className="min-w-0 text-xs">
-                                <div className="font-mono text-[10.5px] font-bold text-slate-500 truncate">VIN: {car.vin}</div>
-                                <div className="font-extrabold text-slate-900 text-xs mt-0.5">
-                                  {car.makeModel} {car.plate ? <span className="text-slate-400 font-mono text-[10.5px] font-bold">({car.plate})</span> : null}
+                                <div className="min-w-0 text-xs">
+                                  <div className="font-mono text-[10.5px] font-bold text-slate-500 truncate">
+                                    {isVehicleLoad(loadType) ? `VIN: ${car.vin}` : `Ref: ${car.vin}`}
+                                  </div>
+                                  <div className="font-extrabold text-slate-900 text-xs mt-0.5">
+                                    {car.makeModel || car.description} {car.plate ? <span className="text-slate-400 font-mono text-[10.5px] font-bold">({car.plate})</span> : null}
+                                  </div>
+                                  {car.customerName && !group.isCustomerGroup && (
+                                    <div className="text-[10px] text-indigo-600 font-bold mt-0.5">🏢 {car.customerName}</div>
+                                  )}
+                                  {!isVehicleLoad(loadType) && (
+                                    <div className="text-[10.5px] font-semibold text-slate-500 mt-0.5 flex flex-wrap gap-2">
+                                      {car.quantity ? <span>Qty: <strong>{car.quantity}</strong></span> : null}
+                                      {car.weightKg ? <span>Weight: <strong>{car.weightKg} kg</strong></span> : null}
+                                      {car.volumeM3 ? <span>Volume: <strong>{car.volumeM3} m³</strong></span> : null}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
+
+                              <div className="flex items-center gap-2.5 shrink-0">
+                                {car.pickedUp ? (
+                                  <span className="bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] text-[9.5px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                                    Picked Up {car.time || 'Completed'}
+                                  </span>
+                                ) : (
+                                  <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[9.5px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                                    Not Picked Up
+                                  </span>
+                                )}
+                                <button onClick={() => { setSelectedCarForModal(car); setPhotoModalOpen(true); }} className="text-indigo-500 hover:text-indigo-700 p-1 cursor-pointer rounded-md hover:bg-indigo-50" title="Manage item photos">
+                                  <FiCamera className="text-xs" />
+                                </button>
+                                <button onClick={() => { setEditingCar(car); setEditCarModalOpen(true); }} className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer rounded-md hover:bg-slate-100" title="Edit item details">
+                                  <FiEdit2 className="text-xs" />
+                                </button>
+                                <button onClick={() => deleteCar(car.id)} className="text-rose-400 hover:text-rose-600 p-1 cursor-pointer rounded-md hover:bg-rose-50" title="Remove item">
+                                  <FiTrash2 className="text-xs" />
+                                </button>
+                              </div>
                             </div>
-
-                            {/* Status & Actions */}
-                            <div className="flex items-center gap-2.5 shrink-0">
-                              {car.pickedUp ? (
-                                <span className="bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] text-[9.5px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                                  Picked Up {car.time || 'Completed'}
-                                </span>
-                              ) : (
-                                <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[9.5px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                                  Not Picked Up
-                                </span>
-                              )}
-
-                              <button
-                                onClick={() => { setSelectedCarForModal(car); setPhotoModalOpen(true); }}
-                                className="text-indigo-500 hover:text-indigo-700 p-1 cursor-pointer rounded-md hover:bg-indigo-50"
-                                title="Manage car photos"
-                              >
-                                <FiCamera className="text-xs" />
-                              </button>
-
-                              <button
-                                onClick={() => { setEditingCar(car); setEditCarModalOpen(true); }}
-                                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer rounded-md hover:bg-slate-100"
-                                title="Edit car details"
-                              >
-                                <FiEdit2 className="text-xs" />
-                              </button>
-
-                              <button
-                                onClick={() => deleteCar(car.id)}
-                                className="text-rose-400 hover:text-rose-600 p-1 cursor-pointer rounded-md hover:bg-rose-50"
-                                title="Remove car"
-                              >
-                                <FiTrash2 className="text-xs" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  });
+                })()
               )}
             </div>
 
-            {/* ADD CAR FROM YARD / POOL BAR */}
+
+            {/* ADD ITEM FROM YARD / POOL BAR */}
             <div className="bg-[#F3E8FF] border border-[#E9D5FF] rounded-xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-2.5">
-                <span className="p-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm shrink-0">🚗</span>
+                <span className="p-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm shrink-0">{isVehicleLoad(loadType) ? '🚗' : '📦'}</span>
                 <div>
-                  <div className="font-black text-slate-900 text-xs">Add Car from Yard / Pool</div>
-                  <div className="text-purple-700 text-[11px] font-medium">Scan a VIN to add a car that is not currently on your load.</div>
+                  <div className="font-black text-slate-900 text-xs">Add {getItemShortLabel(loadType, 1)} from Yard / Pool</div>
+                  <div className="text-purple-700 text-[11px] font-medium">Scan barcode or reference to add an item to your load.</div>
                 </div>
               </div>
 
@@ -821,7 +997,7 @@ export default function PickupLoading() {
                 className="bg-white hover:bg-purple-50 text-purple-900 border border-purple-300 font-extrabold text-xs px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs w-full sm:w-auto"
               >
                 <BsQrCodeScan className="text-purple-700" />
-                <span>Scan VIN to Add</span>
+                <span>{isVehicleLoad(loadType) ? 'Scan VIN to Add' : 'Scan Ref to Add'}</span>
               </button>
             </div>
 
@@ -831,9 +1007,9 @@ export default function PickupLoading() {
                 <div className="flex items-start gap-2.5">
                   <FiAlertTriangle className="text-rose-600 text-base mt-0.5 shrink-0" />
                   <div>
-                    <div className="font-black text-rose-900 text-xs uppercase tracking-wide">WRONG VEHICLE SCANNED</div>
+                    <div className="font-black text-rose-900 text-xs uppercase tracking-wide">UNASSIGNED ITEM SCANNED</div>
                     <div className="text-rose-700 font-semibold text-[11px] mt-0.5">
-                      <strong className="font-mono font-bold">VIN: {scanVinInput || 'SCANNED_VIN'}</strong> is NOT assigned to this pickup. Please scan a vehicle from the list above or add it to your load first.
+                      <strong className="font-mono font-bold">REF: {scanVinInput || 'SCANNED_REF'}</strong> is NOT assigned to this pickup. Please scan an item from the list above or add it to your load first.
                     </div>
                   </div>
                 </div>
@@ -852,8 +1028,8 @@ export default function PickupLoading() {
                     ✓
                   </div>
                   <div>
-                    <div className="font-black text-slate-900 text-xs">{pickedUpCount} of {cars.length} Cars Picked Up</div>
-                    <div className="text-slate-400 font-semibold text-[11px]">You must pick up all {cars.length} cars before you can DISPATCH.</div>
+                    <div className="font-black text-slate-900 text-xs">{pickedUpCount} of {cars.length} {getItemShortLabel(loadType, cars.length)} Picked Up</div>
+                    <div className="text-slate-400 font-semibold text-[11px]">You must pick up all {cars.length} {getItemShortLabel(loadType, cars.length).toLowerCase()} before you can DISPATCH.</div>
                   </div>
                 </div>
 
@@ -870,7 +1046,7 @@ export default function PickupLoading() {
 
                 <div className="flex items-center gap-2">
                   <FiCheckCircle className="text-base" />
-                  <span>Confirm All {cars.length} Cars Picked Up</span>
+                  <span>Confirm All {cars.length} {getItemShortLabel(loadType, cars.length)} Picked Up</span>
                 </div>
               </button>
               <p className="text-center text-[10px] text-slate-400 font-semibold">This will mark the pickup as completed.</p>
@@ -891,7 +1067,7 @@ export default function PickupLoading() {
                 <span className="w-4 h-4 rounded-full bg-[#10B981] text-white flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">✓</span>
                 <div>
                   <div className="font-extrabold text-slate-900">Picked Up</div>
-                  <div className="text-[11px] text-slate-400">All {cars.length} cars picked up at this location.</div>
+                  <div className="text-[11px] text-slate-400">All {cars.length} {getItemShortLabel(loadType, cars.length).toLowerCase()} picked up at this location.</div>
                 </div>
               </div>
 
@@ -907,7 +1083,7 @@ export default function PickupLoading() {
                 <span className="w-4 h-4 rounded-full border border-slate-300 text-slate-400 flex items-center justify-center font-bold text-[10px] mt-0.5 shrink-0">○</span>
                 <div>
                   <div className="font-extrabold text-slate-400">Delivered</div>
-                  <div className="text-[11px] text-slate-400">Deliver each car to the correct location.</div>
+                  <div className="text-[11px] text-slate-400">Deliver each {getItemShortLabel(loadType, 1).toLowerCase()} to the correct location.</div>
                 </div>
               </div>
             </div>
@@ -919,11 +1095,11 @@ export default function PickupLoading() {
             <div className="space-y-1.5 font-bold text-[#047857]">
               <div className="flex items-center gap-2">
                 <span>✓</span>
-                <span>All {cars.length} assigned cars must be picked up.</span>
+                <span>All {cars.length} assigned {getItemShortLabel(loadType, cars.length).toLowerCase()} must be picked up.</span>
               </div>
               <div className="flex items-center gap-2">
                 <span>✓</span>
-                <span>The correct cars only - wrong cars are blocked.</span>
+                <span>The correct {getItemShortLabel(loadType, 2).toLowerCase()} only - wrong items are blocked.</span>
               </div>
             </div>
           </div>
@@ -938,7 +1114,7 @@ export default function PickupLoading() {
                   setSelectedCarForModal(cars[0]);
                   setPhotoModalOpen(true);
                 } else {
-                  triggerToast('Please add a car first to attach photos.');
+                  triggerToast(`Please add ${getItemShortLabel(loadType, 1).toLowerCase()} first to attach photos.`);
                 }
               }}
               className="w-full bg-[#1E293B] hover:bg-[#0F172A] text-white font-extrabold text-xs py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
@@ -977,31 +1153,60 @@ export default function PickupLoading() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[150] flex items-center justify-center p-4">
           <form onSubmit={handleAddCarSubmit} className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-base">Add New Car to Load</h3>
+              <h3 className="font-black text-slate-900 text-base">Add New {getItemShortLabel(loadType, 1)} to Load</h3>
               <button type="button" onClick={() => setAddCarModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
             </div>
 
             <div className="space-y-3 text-xs font-semibold">
+              {/* Phase 4: Customer dropdown at top of modal */}
               <div>
-                <label className="text-slate-700 font-bold block mb-1">Target Drop Location</label>
+                <label className="text-slate-700 font-bold block mb-1 flex items-center gap-1">
+                  <span>🏢</span> Customer (for this item)
+                  {customers.length === 0 && (
+                    <span className="text-slate-400 font-normal text-[10px] ml-1">(no customers linked to load)</span>
+                  )}
+                </label>
                 <select
-                  value={newDrop}
-                  onChange={(e) => setNewDrop(e.target.value)}
+                  value={newCustomerId}
+                  onChange={(e) => setNewCustomerId(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
                 >
-                  <option value="DROP 1">DROP 1 - Auto World Sydney</option>
-                  <option value="DROP 2">DROP 2 - Newcastle Motors</option>
-                  <option value="DROP 3">DROP 3 - Brisbane Car Centre</option>
-                  <option value="DROP 4">DROP 4 - Gold Coast Autos</option>
+                  <option value="">— Select Customer (Optional) —</option>
+                  {customers.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}{c.contactName ? ` — ${c.contactName}` : ''}</option>
+                  ))}
                 </select>
               </div>
 
               <div>
-                <label className="text-slate-700 font-bold block mb-1">Make & Model</label>
+                <label className="text-slate-700 font-bold block mb-1">Target Drop Location</label>
+                {newCustomerId ? (
+                  // When customer is selected — auto-fill drop with customer name
+                  <div className="w-full bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-indigo-800 font-bold text-xs flex items-center gap-2">
+                    <span>🏢</span>
+                    <span>{customers.find(c => c.id === newCustomerId)?.name || 'Selected Customer'}</span>
+                    <span className="text-indigo-400 font-normal text-[10px] ml-auto">Auto-set from customer</span>
+                  </div>
+                ) : (
+                  <select
+                    value={newDrop}
+                    onChange={(e) => setNewDrop(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
+                  >
+                    <option value="DROP 1">DROP 1</option>
+                    <option value="DROP 2">DROP 2</option>
+                    <option value="DROP 3">DROP 3</option>
+                    <option value="DROP 4">DROP 4</option>
+                  </select>
+                )}
+              </div>
+
+              <div>
+                <label className="text-slate-700 font-bold block mb-1">Description / Item Name</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. BMW X5 2024"
+                  placeholder={isVehicleLoad(loadType) ? "e.g. BMW X5 2024" : "e.g. General Cargo Pallet #1"}
                   value={newModel}
                   onChange={(e) => setNewModel(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
@@ -1009,11 +1214,11 @@ export default function PickupLoading() {
               </div>
 
               <div>
-                <label className="text-slate-700 font-bold block mb-1">VIN Number</label>
+                <label className="text-slate-700 font-bold block mb-1">{isVehicleLoad(loadType) ? 'VIN Number' : 'Cargo Ref / Barcode'}</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. WBA1234567890XYZ"
+                  placeholder={isVehicleLoad(loadType) ? "e.g. WBA1234567890XYZ" : "e.g. PO-848483-01"}
                   value={newVin}
                   onChange={(e) => setNewVin(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium uppercase font-mono"
@@ -1021,7 +1226,7 @@ export default function PickupLoading() {
               </div>
 
               <div>
-                <label className="text-slate-700 font-bold block mb-1">Registration Plate (Optional)</label>
+                <label className="text-slate-700 font-bold block mb-1">Registration / Seal Plate (Optional)</label>
                 <input
                   type="text"
                   placeholder="e.g. NSW-889"
@@ -1036,7 +1241,7 @@ export default function PickupLoading() {
               type="submit"
               className="w-full bg-[#4338ca] hover:bg-[#3730a3] text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md mt-2"
             >
-              Add Car to Load
+              Add {getItemShortLabel(loadType, 1)} to Load
             </button>
           </form>
         </div>
@@ -1111,9 +1316,19 @@ export default function PickupLoading() {
             {/* ACTION BUTTON */}
             <button
               onClick={() => {
-                const targetId = scanVinInput ? parseInt(scanVinInput) : 3;
-                const matchedCar = cars.find(c => c.id === targetId) || cars.find(c => !c.pickedUp) || cars[0];
-                
+                // Fix: was using parseInt() which breaks UUID/Date.now IDs — use string match instead
+                const matchedCar = cars.find(c => String(c.id) === String(scanVinInput))
+                  || cars.find(c => !c.pickedUp)
+                  || cars[0];
+
+                // Fix: null guard — if cars list is empty, show toast instead of crash
+                if (!matchedCar) {
+                  triggerToast('No items in load to scan. Please add items first.');
+                  setScanVinModalOpen(false);
+                  setScanVinInput('');
+                  return;
+                }
+
                 setScanVinModalOpen(false);
                 togglePickUp(matchedCar.id);
                 triggerToast(`✅ VIN ${matchedCar.vin} Scanned! ${matchedCar.makeModel} marked as Picked Up.`);
@@ -1122,11 +1337,11 @@ export default function PickupLoading() {
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-3.5 rounded-xl transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
             >
               <FiCheckCircle className="text-base" />
-              <span>Simulate VIN Scan & Mark Picked Up</span>
+              <span>Simulate VIN Scan &amp; Mark Picked Up</span>
             </button>
 
             <p className="text-center text-[10px] text-slate-500 font-semibold">
-              Scanning automatically validates VIN against assigned load manifest LD-3987.
+              Scanning automatically validates VIN against your assigned load manifest.
             </p>
           </div>
         </div>
@@ -1241,15 +1456,15 @@ export default function PickupLoading() {
               <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1.5">
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Pickup Location</span>
-                  <span className="text-slate-900 font-black">ABC Car Yard, Melbourne</span>
+                  <span className="text-slate-900 font-black">{loadInfo?.origin || 'Not Set'}</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Total Assigned Load</span>
-                  <span className="text-slate-900 font-mono">8 Vehicles Total</span>
+                  <span className="text-slate-900 font-mono">{cars.length} {getItemLabel(loadType, cars.length)} Total</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Primary Drop</span>
-                  <span className="text-slate-900">Auto World Sydney</span>
+                  <span className="text-slate-900">{loadInfo?.destination || '—'}</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span className="text-slate-500">Dispatch Hotline</span>
@@ -1283,8 +1498,32 @@ export default function PickupLoading() {
             </div>
 
             <div className="space-y-3 text-xs font-semibold">
+              {/* Step 10 fix: Customer dropdown added to edit modal so driver can reassign items */}
               <div>
-                <label className="text-slate-700 font-bold block mb-1">Make & Model</label>
+                <label className="text-slate-700 font-bold block mb-1 flex items-center gap-1">
+                  <span>🏢</span> Customer Assignment
+                </label>
+                <select
+                  value={editingCar.customerId || ''}
+                  onChange={(e) => {
+                    const cust = customers.find(c => c.id === e.target.value) || null;
+                    setEditingCar({
+                      ...editingCar,
+                      customerId: e.target.value || null,
+                      customerName: cust?.name || null
+                    });
+                  }}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
+                >
+                  <option value="">— No Customer (use Drop location) —</option>
+                  {customers.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}{c.contactName ? ` — ${c.contactName}` : ''}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-700 font-bold block mb-1">Make &amp; Model</label>
                 <input
                   type="text"
                   value={editingCar.makeModel}

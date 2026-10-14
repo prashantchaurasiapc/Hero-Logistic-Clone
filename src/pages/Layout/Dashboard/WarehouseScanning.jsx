@@ -94,20 +94,9 @@ const WarehouseScanning = () => {
       setScannedItem(data);
       showToast(`✓ Decoder success: ${modalMode}. Item: ${data?.nameCategory || 'Scanned Item'} [${data?.code}]`);
     } catch (err) {
-      console.warn('Scan API returned error, falling back to simulation:', err);
-      // Fallback simulated scan item so scanning never fails/blocks testing
-      const fallbackItem = {
-        code: val,
-        identifier: val,
-        nameCategory: 'Simulated Cargo (Auto Created)',
-        zoneBinSlot: 'Receiving Area / Bay 1',
-        status: 'IN_STORAGE',
-        stockQty: '1 Unit',
-        weight: '280 kg',
-        dimensions: '1.2m x 1.2m x 1.2m'
-      };
-      setScannedItem(fallbackItem);
-      showToast(`✓ Simulated scan fallback: "${val}"`);
+      console.error('Scan error:', err);
+      setScannedItem(null);
+      showToast(`⚠️ Barcode "${val}" not found in database.`);
     }
     handleCloseModal();
   };
@@ -163,20 +152,9 @@ const WarehouseScanning = () => {
       setScannedItem(data);
       showToast(`✓ Direct Input Scan: "${data?.code}". Type: ${data?.nameCategory || 'Unknown'}`);
     } catch (err) {
-      console.warn('Scan API returned error, falling back to simulation:', err);
-      // Fallback simulated scan item so scanning never fails/blocks testing
-      const fallbackItem = {
-        code: val,
-        identifier: val,
-        nameCategory: 'Simulated Cargo (Auto Created)',
-        zoneBinSlot: 'Receiving Area / Bay 1',
-        status: 'IN_STORAGE',
-        stockQty: '1 Unit',
-        weight: '280 kg',
-        dimensions: '1.2m x 1.2m x 1.2m'
-      };
-      setScannedItem(fallbackItem);
-      showToast(`✓ Simulated scan fallback: "${val}"`);
+      console.error('Direct scan error:', err);
+      setScannedItem(null);
+      showToast(`⚠️ Barcode "${val}" not found in database.`);
     }
     setBarcodeValue('');
   };

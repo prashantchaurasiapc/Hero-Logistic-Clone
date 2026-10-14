@@ -3,7 +3,7 @@ import api from '../../services/api';
 import { createPortal } from 'react-dom';
 import {
   Users, UserCheck, UserPlus, UserMinus, Star, Search, Plus, Upload, Download, MoreVertical,
-  ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight, Printer
+  ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight, Printer, Zap
 } from 'lucide-react';
 
 const mockCustomers = [];
@@ -31,7 +31,6 @@ export default function Customers() {
         transportModules: Array.isArray(c.transportModules) ? c.transportModules : (c.transportModules ? JSON.parse(c.transportModules) : ['truck']),
         billingTerms: c.billingTerms || '14 Days EOM',
         billingType: 'EOM',
-        manager: c.manager || 'N/A',
         status: c.status === 'Inactive' || c.status === 'INACTIVE' ? 'Inactive' : 'Active'
       }));
       setCustomersList(mapped);
@@ -76,7 +75,7 @@ export default function Customers() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [activeActionMenu, setActiveActionMenu] = useState(null);
   const [activeDetailsTab, setActiveDetailsTab] = useState('Overview');
-  const [activePricingSubTab, setActivePricingSubTab] = useState('Lane Pricing');
+  const [activePricingSubTab, setActivePricingSubTab] = useState('Rate Cards & Charges');
   const [showPricingMatrixModal, setShowPricingMatrixModal] = useState(false);
   const [showApplyTemplateModal, setShowApplyTemplateModal] = useState(false);
   const [showImportPricingModal, setShowImportPricingModal] = useState(false);
@@ -116,7 +115,132 @@ export default function Customers() {
 
   const [selectedNiche, setSelectedNiche] = useState('Car Carrying');
   const [selectedTemplate, setSelectedTemplate] = useState('Standard National Template');
-  const [effectiveDateRange, setEffectiveDateRange] = useState('01/07/2025 - 30/06/2026');
+  const [effectiveStartDate, setEffectiveStartDate] = useState('2025-07-01');
+  const [effectiveEndDate, setEffectiveEndDate] = useState('2026-06-30');
+
+  const [billingRulesState, setBillingRulesState] = useState({
+    consolidateLoads: true,
+    reqPO: true,
+    reqPOD: true,
+    reqSig: false,
+    reqLoadNum: false,
+    reqPhotos: false,
+    reqConNote: false,
+    autoCreateDraft: true,
+    accountsApprovalReq: true,
+    autoSendInvoice: false
+  });
+
+  // Live Billing Rule form state (synced with DB)
+  const [billingRuleForm, setBillingRuleForm] = useState({
+    id: null,
+    invoiceTrigger: 'Delivery completed',
+    invoiceGrouping: 'Per load',
+    paymentTerms: 'Due immediately',
+    autoCreateInvoice: true,
+    autoSendInvoice: false,
+    podRequired: true,
+    customerPoRequired: false,
+    includeJobPhotos: false,
+    requireManualApproval: false,
+  });
+  const [billingRuleLoading, setBillingRuleLoading] = useState(false);
+  const [billingRuleSaving, setBillingRuleSaving] = useState(false);
+
+  const fetchBillingRule = async (customerId) => {
+    if (!customerId) return;
+    try {
+      setBillingRuleLoading(true);
+      const res = await api.get(`/company-admin/customers/${customerId}/billing-rules`);
+      const rules = res.data?.data || res.data || [];
+      if (Array.isArray(rules) && rules.length > 0) {
+        const rule = rules[0];
+        setBillingRuleForm({
+          id: rule.id,
+          invoiceTrigger: rule.invoiceTrigger || 'Delivery completed',
+          invoiceGrouping: rule.invoiceGrouping || 'Per load',
+          paymentTerms: rule.paymentTerms || 'Due immediately',
+          autoCreateInvoice: rule.autoCreateInvoice !== undefined ? rule.autoCreateInvoice : true,
+          autoSendInvoice: rule.autoSendInvoice !== undefined ? rule.autoSendInvoice : false,
+          podRequired: rule.podRequired !== undefined ? rule.podRequired : true,
+          customerPoRequired: rule.customerPoRequired !== undefined ? rule.customerPoRequired : false,
+          includeJobPhotos: rule.includeJobPhotos !== undefined ? rule.includeJobPhotos : false,
+          requireManualApproval: rule.requireManualApproval !== undefined ? rule.requireManualApproval : (rule.approvalRequired || false),
+        });
+      }
+    } catch (err) {
+      console.warn('Could not fetch billing rules:', err?.message);
+    } finally {
+      setBillingRuleLoading(false);
+    }
+  };
+
+  const handleSaveBillingRule = async () => {
+    if (!selectedCustomer) return;
+    try {
+      setBillingRuleSaving(true);
+      await api.post(`/company-admin/customers/${selectedCustomer.id}/billing-rules`, billingRuleForm);
+      triggerToast('Billing rules saved successfully!');
+    } catch (err) {
+      console.error('Failed to save billing rule:', err);
+      triggerToast('Error saving billing rules.');
+    } finally {
+      setBillingRuleSaving(false);
+    }
+  };
+
+  const [showBillingInvoicePreviewModal, setShowBillingInvoicePreviewModal] = useState(false);
+
+  const handleExportBillingRules = () => {
+    const customerName = selectedCustomer?.name || 'Customer';
+    const rulesExportData = {
+      customerName,
+      exportDate: new Date().toISOString(),
+      billingRules: {
+        invoiceTrigger: billingRuleForm.invoiceTrigger,
+        invoiceGrouping: billingRuleForm.invoiceGrouping,
+        paymentTerms: billingRuleForm.paymentTerms,
+        autoCreateInvoice: billingRuleForm.autoCreateInvoice,
+        autoSendInvoice: billingRuleForm.autoSendInvoice,
+        podRequired: billingRuleForm.podRequired,
+        customerPoRequired: billingRuleForm.customerPoRequired,
+        includeJobPhotos: billingRuleForm.includeJobPhotos,
+        requireManualApproval: billingRuleForm.requireManualApproval,
+      }
+    };
+
+    const blob = new Blob([JSON.stringify(rulesExportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `billing-rules-${customerName.toLowerCase().replace(/\s+/g, '-')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    triggerToast(`Exported Billing Rules for ${customerName} successfully!`, 'success');
+  };
+
+  const handleCopyBillingRules = () => {
+    const customerName = selectedCustomer?.name || 'Customer';
+    const rulesSummaryText = `HERO LOGISTICS - BILLING RULES SUMMARY
+Customer: ${customerName}
+Trigger: ${billingRuleForm.invoiceTrigger}
+Grouping: ${billingRuleForm.invoiceGrouping}
+Payment Terms: ${billingRuleForm.paymentTerms}
+Auto-Create Invoice: ${billingRuleForm.autoCreateInvoice ? 'YES' : 'NO'}
+Auto-Send Invoice: ${billingRuleForm.autoSendInvoice ? 'YES' : 'NO'}
+POD Required: ${billingRuleForm.podRequired ? 'YES' : 'NO'}
+Customer PO Required: ${billingRuleForm.customerPoRequired ? 'YES' : 'NO'}
+Include Job Photos: ${billingRuleForm.includeJobPhotos ? 'YES' : 'NO'}
+Manual Approval Required: ${billingRuleForm.requireManualApproval ? 'YES' : 'NO'}
+Exported On: ${new Date().toLocaleString()}`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(rulesSummaryText);
+    }
+    triggerToast(`Copied ${customerName}'s Billing Rules to clipboard!`, 'success');
+  };
 
   const [lanePricingRules, setLanePricingRules] = useState([]);
   const [selectedTemplateName, setSelectedTemplateName] = useState('Standard National Template (Default)');
@@ -128,6 +252,398 @@ export default function Customers() {
     baseRate: '',
     minCharge: ''
   });
+
+  // Billing Rules Tab — Pricing Rules & Surcharges State
+  const [customerPricingRulesMap, setCustomerPricingRulesMap] = useState({});
+  const [pricingRuleModalForm, setPricingRuleModalForm] = useState({ id: null, description: '', rate: '', unit: 'Per Km' });
+
+  const [fullPricingRuleForm, setFullPricingRuleForm] = useState({
+    id: null,
+    name: '',
+    niche: 'Car Carrying',
+    effectiveFrom: '',
+    effectiveTo: '',
+    status: 'Active',
+    from: '',
+    to: '',
+    zone: '',
+    method: 'Per Load',
+    baseRate: '',
+    minCharge: '',
+    fuelLevy: '',
+    extraPickupCharge: '',
+    extraDeliveryCharge: '',
+    waitingTimeCharge: '',
+    storageCharge: '',
+    tolls: '',
+    dgSurcharge: '',
+    afterHoursCharge: '',
+    weekendCharge: '',
+    cancellationFee: '',
+    redeliveryCharge: '',
+    otherCharges: '',
+    gstTreatment: 'Excluding GST (Add 10%)'
+  });
+
+  const EMPTY_PRICING_RULE_FORM = {
+    id: null, name: '', niche: 'Car Carrying', effectiveFrom: '', effectiveTo: '', status: 'Active',
+    from: '', to: '', zone: '', method: 'Per Load', baseRate: '', minCharge: '',
+    fuelLevy: '', extraPickupCharge: '', extraDeliveryCharge: '', waitingTimeCharge: '', storageCharge: '',
+    tolls: '', dgSurcharge: '', afterHoursCharge: '', weekendCharge: '', cancellationFee: '', redeliveryCharge: '',
+    otherCharges: '', gstTreatment: 'Excluding GST (Add 10%)'
+  };
+
+  // Auto-match active pricing rule for a customer + route
+  const findMatchingPricingRule = (customerId, origin, destination) => {
+    const rules = customerPricingRulesMap[customerId] || [];
+    const today = new Date();
+    return rules.find(r => {
+      if (r.status && r.status.toLowerCase() !== 'active') return false;
+      if (r.effectiveFrom && new Date(r.effectiveFrom) > today) return false;
+      if (r.effectiveTo && new Date(r.effectiveTo) < today) return false;
+      const originMatch = !r.from || !origin ||
+        r.from.toLowerCase().includes(origin.toLowerCase()) ||
+        origin.toLowerCase().includes(r.from.toLowerCase());
+      const destMatch = !r.to || !destination ||
+        r.to.toLowerCase().includes(destination.toLowerCase()) ||
+        destination.toLowerCase().includes(r.to.toLowerCase());
+      return originMatch && destMatch;
+    }) || null;
+  };
+
+  // Pricing calc state for Create Load modal
+  const [loadPricingCalc, setLoadPricingCalc] = useState({
+    matchedRule: null,
+    quantity: 1,
+    baseCharge: 0,
+    fuelLevyAmount: 0,
+    additionalCharges: 0,
+    totalExGST: 0,
+    gstAmount: 0,
+    totalIncGST: 0
+  });
+
+  const recalcLoadPricing = (rule, qty) => {
+    if (!rule) { setLoadPricingCalc(prev => ({ ...prev, matchedRule: null, quantity: qty, baseCharge: 0, fuelLevyAmount: 0, additionalCharges: 0, totalExGST: 0, gstAmount: 0, totalIncGST: 0 })); return; }
+    const base = parseFloat(rule.baseRate) || 0;
+    const q = parseFloat(qty) || 1;
+    const baseCharge = base * q;
+    const fuelLevyPct = parseFloat(rule.fuelLevy) || 0;
+    const fuelLevyAmount = (baseCharge * fuelLevyPct) / 100;
+    const additionalCharges =
+      (parseFloat(rule.extraPickupCharge) || 0) +
+      (parseFloat(rule.extraDeliveryCharge) || 0) +
+      (parseFloat(rule.waitingTimeCharge) || 0) +
+      (parseFloat(rule.storageCharge) || 0) +
+      (parseFloat(rule.tolls) || 0) +
+      (parseFloat(rule.dgSurcharge) || 0) +
+      (parseFloat(rule.afterHoursCharge) || 0) +
+      (parseFloat(rule.weekendCharge) || 0) +
+      (parseFloat(rule.redeliveryCharge) || 0) +
+      (parseFloat(rule.otherCharges) || 0);
+    const totalExGST = baseCharge + fuelLevyAmount + additionalCharges;
+    const gstApplicable = !rule.gstTreatment || rule.gstTreatment.toLowerCase().includes('excluding');
+    const gstAmount = gstApplicable ? totalExGST * 0.1 : 0;
+    const totalIncGST = totalExGST + gstAmount;
+    setLoadPricingCalc({ matchedRule: rule, quantity: q, baseCharge, fuelLevyAmount, additionalCharges, totalExGST, gstAmount, totalIncGST });
+  };
+
+  const handleSaveFullPricingRule = async (e) => {
+    if (e) e.preventDefault();
+    const rateVal = parseFloat(fullPricingRuleForm.baseRate) || 0;
+    
+    if (!selectedCustomer) {
+      triggerToast('Please select a customer first.');
+      return;
+    }
+    if (!fullPricingRuleForm.name) {
+      triggerToast('Pricing Rule Name is required.');
+      return;
+    }
+
+    const payload = {
+      id: fullPricingRuleForm.id,
+      name: fullPricingRuleForm.name,
+      transportNiche: fullPricingRuleForm.niche,
+      effectiveFrom: fullPricingRuleForm.effectiveFrom || null,
+      effectiveTo: fullPricingRuleForm.effectiveTo || null,
+      isActive: fullPricingRuleForm.status === 'Active',
+      from: fullPricingRuleForm.from,
+      to: fullPricingRuleForm.to,
+      zone: fullPricingRuleForm.zone,
+      method: fullPricingRuleForm.method,
+      baseRate: rateVal,
+      minCharge: parseFloat(fullPricingRuleForm.minCharge) || 0,
+      fuelLevy: parseFloat(fullPricingRuleForm.fuelLevy) || 0,
+      extraPickupCharge: parseFloat(fullPricingRuleForm.extraPickupCharge) || 0,
+      extraDeliveryCharge: parseFloat(fullPricingRuleForm.extraDeliveryCharge) || 0,
+      waitingTimeCharge: parseFloat(fullPricingRuleForm.waitingTimeCharge) || 0,
+      storageCharge: parseFloat(fullPricingRuleForm.storageCharge) || 0,
+      tolls: parseFloat(fullPricingRuleForm.tolls) || 0,
+      dgSurcharge: parseFloat(fullPricingRuleForm.dgSurcharge) || 0,
+      afterHoursCharge: parseFloat(fullPricingRuleForm.afterHoursCharge) || 0,
+      weekendCharge: parseFloat(fullPricingRuleForm.weekendCharge) || 0,
+      cancellationFee: parseFloat(fullPricingRuleForm.cancellationFee) || 0,
+      redeliveryCharge: parseFloat(fullPricingRuleForm.redeliveryCharge) || 0,
+      otherCharges: parseFloat(fullPricingRuleForm.otherCharges) || 0,
+      gstTreatment: fullPricingRuleForm.gstTreatment
+    };
+
+    try {
+      const res = await api.post(`/company-admin/customers/${selectedCustomer.id}/pricing-profiles`, payload);
+      const savedRule = res.data?.data || res.data;
+      
+      // Map back to full UI format for local state
+      const ruleObj = {
+        id: savedRule.id || `local-${Date.now()}`,
+        customerId: savedRule.customerId || selectedCustomer.id,
+        customerName: selectedCustomer.name,
+        name: savedRule.name || fullPricingRuleForm.name,
+        niche: savedRule.transportNiche || fullPricingRuleForm.niche,
+        effectiveFrom: savedRule.effectiveFrom || fullPricingRuleForm.effectiveFrom,
+        effectiveTo: savedRule.effectiveTo || fullPricingRuleForm.effectiveTo,
+        status: (savedRule.isActive !== undefined ? savedRule.isActive : true) ? 'Active' : 'Inactive',
+        from: savedRule.origin || fullPricingRuleForm.from,
+        to: savedRule.destination || fullPricingRuleForm.to,
+        zone: savedRule.zone || fullPricingRuleForm.zone,
+        method: savedRule.calculationMethod || fullPricingRuleForm.method,
+        baseRate: savedRule.baseRate ?? rateVal,
+        minCharge: savedRule.minimumCharge ?? payload.minCharge,
+        fuelLevy: savedRule.fuelLevyPercent ?? payload.fuelLevy,
+        extraPickupCharge: savedRule.extraPickupCharge ?? payload.extraPickupCharge,
+        extraDeliveryCharge: savedRule.extraDeliveryCharge ?? payload.extraDeliveryCharge,
+        waitingTimeCharge: savedRule.waitingTimeCharge ?? payload.waitingTimeCharge,
+        storageCharge: savedRule.storageCharge ?? payload.storageCharge,
+        tolls: savedRule.tollsCharge ?? payload.tolls,
+        dgSurcharge: savedRule.dgSurcharge ?? payload.dgSurcharge,
+        afterHoursCharge: savedRule.afterHoursSurcharge ?? payload.afterHoursCharge,
+        weekendCharge: savedRule.weekendCharge ?? payload.weekendCharge,
+        cancellationFee: savedRule.cancellationFee ?? payload.cancellationFee,
+        redeliveryCharge: savedRule.redeliveryCharge ?? payload.redeliveryCharge,
+        otherCharges: savedRule.otherCharges ?? payload.otherCharges,
+        gstTreatment: savedRule.gstTreatment || fullPricingRuleForm.gstTreatment,
+        description: savedRule.name || fullPricingRuleForm.name,
+        rate: savedRule.baseRate ?? rateVal,
+        unit: savedRule.calculationMethod || fullPricingRuleForm.method
+      };
+
+      setCustomerPricingRulesMap(prev => {
+        const list = prev[currentCustomerId] || [];
+        const exists = list.some(r => r.id === ruleObj.id);
+        return { ...prev, [currentCustomerId]: exists ? list.map(r => r.id === ruleObj.id ? ruleObj : r) : [ruleObj, ...list] };
+      });
+
+      setLanePricingRules(prev => {
+        const exists = prev.some(r => r.id === ruleObj.id);
+        return exists ? prev.map(r => r.id === ruleObj.id ? ruleObj : r) : [ruleObj, ...prev];
+      });
+
+      setShowAddPricingRuleModal(false);
+      triggerToast(`Pricing Rule "${ruleObj.name}" saved successfully!`);
+      setFullPricingRuleForm(EMPTY_PRICING_RULE_FORM);
+    } catch (err) {
+      console.error("Failed to save pricing rule:", err);
+      triggerToast('Error saving pricing rule. Please check if your live backend is deployed correctly.', 'error');
+    }
+  };
+
+  const [customerSurchargesMap, setCustomerSurchargesMap] = useState({});
+  const [hiddenSurchargesMap, setHiddenSurchargesMap] = useState({});
+  const [surchargeModalForm, setSurchargeModalForm] = useState({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' });
+
+  const currentCustomerId = selectedCustomer?.id || 'default';
+  const currentPricingRules = customerPricingRulesMap[currentCustomerId] || [];
+
+  const storedSurcharges = customerSurchargesMap[currentCustomerId] || [];
+  
+  // Extract active surcharges configured in currentPricingRules
+  const profileSurcharges = [];
+  currentPricingRules.forEach(rule => {
+    if (rule.fuelLevy && parseFloat(rule.fuelLevy) > 0) {
+      profileSurcharges.push({
+        id: `profile_fuel_${rule.id}`,
+        description: `Fuel Levy (${rule.name || rule.description || 'Standard'})`,
+        calculation: '% of Base Rate',
+        rate: rule.fuelLevy,
+        isFromRule: true
+      });
+    }
+    if (rule.extraPickupCharge && parseFloat(rule.extraPickupCharge) > 0) {
+      profileSurcharges.push({
+        id: `profile_pickup_${rule.id}`,
+        description: `Extra Pickup Charge`,
+        calculation: 'Flat Fee ($)',
+        rate: rule.extraPickupCharge,
+        isFromRule: true
+      });
+    }
+    if (rule.extraDeliveryCharge && parseFloat(rule.extraDeliveryCharge) > 0) {
+      profileSurcharges.push({
+        id: `profile_delivery_${rule.id}`,
+        description: `Extra Delivery Charge`,
+        calculation: 'Flat Fee ($)',
+        rate: rule.extraDeliveryCharge,
+        isFromRule: true
+      });
+    }
+    if (rule.waitingTimeCharge && parseFloat(rule.waitingTimeCharge) > 0) {
+      profileSurcharges.push({
+        id: `profile_waiting_${rule.id}`,
+        description: `Waiting Time Charge`,
+        calculation: 'Flat Fee ($)',
+        rate: rule.waitingTimeCharge,
+        isFromRule: true
+      });
+    }
+    if (rule.tolls && parseFloat(rule.tolls) > 0) {
+      profileSurcharges.push({
+        id: `profile_tolls_${rule.id}`,
+        description: `Tolls Charge`,
+        calculation: 'Flat Fee ($)',
+        rate: rule.tolls,
+        isFromRule: true
+      });
+    }
+    if (rule.dgSurcharge && parseFloat(rule.dgSurcharge) > 0) {
+      profileSurcharges.push({
+        id: `profile_dg_${rule.id}`,
+        description: `Dangerous Goods (DG) Surcharge`,
+        calculation: 'Flat Fee ($)',
+        rate: rule.dgSurcharge,
+        isFromRule: true
+      });
+    }
+  });
+
+  const hiddenSurcharges = hiddenSurchargesMap[currentCustomerId] || [];
+  const mergedSurcharges = storedSurcharges.filter(s => !hiddenSurcharges.includes(s.id));
+  profileSurcharges.forEach(ps => {
+    if (!hiddenSurcharges.includes(ps.id) && !mergedSurcharges.some(cs => cs.description === ps.description)) {
+      mergedSurcharges.push(ps);
+    }
+  });
+  const currentSurcharges = mergedSurcharges;
+
+  const handleSaveBillingPricingRule = (e) => {
+    if (e) e.preventDefault();
+    if (!pricingRuleModalForm.description.trim() || !pricingRuleModalForm.rate) {
+      triggerToast('Please provide a Description and Rate.');
+      return;
+    }
+    const newItem = {
+      id: pricingRuleModalForm.id || Date.now().toString(),
+      description: pricingRuleModalForm.description.trim(),
+      rate: parseFloat(pricingRuleModalForm.rate) || 0,
+      unit: pricingRuleModalForm.unit || 'Per Km'
+    };
+    setCustomerPricingRulesMap(prev => {
+      const list = prev[currentCustomerId] || [];
+      const exists = list.some(r => r.id === newItem.id);
+      const updated = exists ? list.map(r => r.id === newItem.id ? newItem : r) : [...list, newItem];
+      return { ...prev, [currentCustomerId]: updated };
+    });
+    setShowAddPricingRuleModal(false);
+    setPricingRuleModalForm({ id: null, description: '', rate: '', unit: 'Per Km' });
+    triggerToast('Pricing rule saved successfully!');
+  };
+
+  const handleDeleteBillingPricingRule = (ruleId) => {
+    setCustomerPricingRulesMap(prev => {
+      const list = prev[currentCustomerId] || [];
+      return { ...prev, [currentCustomerId]: list.filter(r => r.id !== ruleId) };
+    });
+    triggerToast('Pricing rule deleted.');
+  };
+
+  const handleSaveSurcharge = async (e) => {
+    if (e) e.preventDefault();
+    if (!surchargeModalForm.description.trim() || surchargeModalForm.rate === '' || surchargeModalForm.rate === null) {
+      triggerToast('Please provide a Description and Rate / Percentage.');
+      return;
+    }
+    const isEditingProfile = surchargeModalForm.id && surchargeModalForm.id.startsWith('profile_');
+    const targetId = isEditingProfile ? Date.now().toString() : (surchargeModalForm.id || Date.now().toString());
+
+    if (isEditingProfile) {
+      setHiddenSurchargesMap(prev => {
+        const list = prev[currentCustomerId] || [];
+        const updated = [...list, surchargeModalForm.id];
+        try {
+          localStorage.setItem(`hero_hidden_surcharges_${currentCustomerId}`, JSON.stringify(updated));
+        } catch (err) {}
+        return { ...prev, [currentCustomerId]: updated };
+      });
+    }
+
+    const newItem = {
+      id: targetId,
+      description: surchargeModalForm.description.trim(),
+      calculation: surchargeModalForm.calculation || '% of Base Rate',
+      rate: surchargeModalForm.rate.toString().trim(),
+      taxable: surchargeModalForm.taxable !== false,
+      notes: surchargeModalForm.notes ? surchargeModalForm.notes.trim() : ''
+    };
+    setCustomerSurchargesMap(prev => {
+      const list = prev[currentCustomerId] || [];
+      const exists = list.some(s => s.id === newItem.id);
+      const updated = exists ? list.map(s => s.id === newItem.id ? newItem : s) : [...list, newItem];
+      try {
+        localStorage.setItem(`hero_surcharges_${currentCustomerId}`, JSON.stringify(updated));
+      } catch (err) {}
+      return { ...prev, [currentCustomerId]: updated };
+    });
+
+    if (currentCustomerId && currentCustomerId !== 'default') {
+      try {
+        await api.post(`/company-admin/customers/${currentCustomerId}/surcharges`, newItem)
+          .catch(() => api.post(`/customers/${currentCustomerId}/surcharges`, newItem));
+      } catch (err) {}
+    }
+
+    setShowAddSurchargeModal(false);
+    setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' });
+    triggerToast(surchargeModalForm.id ? 'Surcharge updated successfully!' : 'Surcharge saved successfully!');
+  };
+  const handleSaveBillingSurcharge = handleSaveSurcharge;
+
+  const handleDeleteBillingSurcharge = async (surchargeId) => {
+    setHiddenSurchargesMap(prev => {
+      const list = prev[currentCustomerId] || [];
+      const updated = [...list, surchargeId];
+      try {
+        localStorage.setItem(`hero_hidden_surcharges_${currentCustomerId}`, JSON.stringify(updated));
+      } catch (err) {}
+      return { ...prev, [currentCustomerId]: updated };
+    });
+    setCustomerSurchargesMap(prev => {
+      const list = prev[currentCustomerId] || [];
+      const updated = list.filter(s => s.id !== surchargeId);
+      try {
+        localStorage.setItem(`hero_surcharges_${currentCustomerId}`, JSON.stringify(updated));
+      } catch (err) {}
+      return { ...prev, [currentCustomerId]: updated };
+    });
+
+    if (currentCustomerId && currentCustomerId !== 'default' && surchargeId) {
+      try {
+        await api.delete(`/company-admin/customers/${currentCustomerId}/surcharges/${surchargeId}`)
+          .catch(() => api.delete(`/customers/${currentCustomerId}/surcharges/${surchargeId}`));
+      } catch (err) {}
+    }
+    triggerToast('Surcharge deleted.');
+  };
+
+  const handleAddPresetSurcharge = (preset) => {
+    setSurchargeModalForm({
+      id: null,
+      description: preset.description,
+      calculation: preset.calculation,
+      rate: preset.rate.toString(),
+      taxable: true,
+      notes: preset.notes || ''
+    });
+    setShowAddSurchargeModal(true);
+  };
 
   const [rateCards, setRateCards] = useState([]);
   const [editingRateCard, setEditingRateCard] = useState(null);
@@ -353,14 +869,7 @@ export default function Customers() {
     billingTerms: '30 Days EOM',
     creditLimit: '250000',
     category: 'Strategic Account',
-    manager: '',
     status: 'Active'
-  });
-
-  const [assignManagerForm, setAssignManagerForm] = useState({
-    id: '',
-    name: '',
-    manager: ''
   });
 
   const [deleteCustomerForm, setDeleteCustomerForm] = useState({
@@ -378,20 +887,9 @@ export default function Customers() {
       billingTerms: customer.billingTerms && customer.billingTerms !== 'N/A' ? customer.billingTerms : '30 Days EOM',
       creditLimit: customer.creditLimit || '0.00',
       category: customer.category || 'Strategic Account',
-      manager: customer.manager && customer.manager !== 'N/A' ? customer.manager : '',
       status: customer.status || 'Active'
     });
     setShowEditCustomerModal(true);
-    setActiveActionMenu(null);
-  };
-
-  const openAssignManager = (customer) => {
-    setAssignManagerForm({
-      id: customer.id,
-      name: customer.name,
-      manager: customer.manager && customer.manager !== 'N/A' ? customer.manager : ''
-    });
-    setShowAssignManagerModal(true);
     setActiveActionMenu(null);
   };
 
@@ -420,25 +918,6 @@ export default function Customers() {
     } finally {
       setShowEditCustomerModal(false);
     }
-  };
-
-  const handleSaveAssignManager = (e) => {
-    if (e) e.preventDefault();
-    const updatedList = customersList.map(c => {
-      if (c.id === assignManagerForm.id) {
-        return { ...c, manager: assignManagerForm.manager };
-      }
-      return c;
-    });
-    setCustomersList(updatedList);
-
-    if (selectedCustomer && selectedCustomer.id === assignManagerForm.id) {
-      setSelectedCustomer({
-        ...selectedCustomer,
-        manager: assignManagerForm.manager
-      });
-    }
-    setShowAssignManagerModal(false);
   };
 
   const handleConfirmDelete = async (e) => {
@@ -510,7 +989,53 @@ export default function Customers() {
 
   useEffect(() => {
     if (selectedCustomer) {
-      setLanePricingRules(selectedCustomer.lanePricingRules || []);
+      api.get(`/company-admin/customers/${selectedCustomer.id}/pricing-profiles`)
+        .then(res => {
+          const rules = res.data?.data || res.data || [];
+          setLanePricingRules(rules);
+          
+          setCustomerPricingRulesMap(prev => ({
+            ...prev,
+            [selectedCustomer.id]: rules
+          }));
+        })
+        .catch(err => {
+          console.error("Error loading pricing profiles:", err);
+          setLanePricingRules(selectedCustomer.lanePricingRules || []);
+        });
+      try {
+        const saved = localStorage.getItem(`hero_surcharges_${selectedCustomer.id}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setCustomerSurchargesMap(prev => ({ ...prev, [selectedCustomer.id]: parsed }));
+          }
+        }
+        const savedHidden = localStorage.getItem(`hero_hidden_surcharges_${selectedCustomer.id}`);
+        if (savedHidden) {
+          setHiddenSurchargesMap(prev => ({ ...prev, [selectedCustomer.id]: JSON.parse(savedHidden) }));
+        }
+      } catch (e) {}
+
+      api.get(`/company-admin/customers/${selectedCustomer.id}/surcharges`)
+        .catch(() => api.get(`/customers/${selectedCustomer.id}/surcharges`))
+        .then(res => {
+          const apiSurcharges = res?.data?.data || res?.data || [];
+          if (Array.isArray(apiSurcharges) && apiSurcharges.length > 0) {
+            setCustomerSurchargesMap(prev => {
+              const currentList = prev[selectedCustomer.id] || [];
+              const merged = [...currentList];
+              apiSurcharges.forEach(as => {
+                if (!merged.some(m => m.description === as.description)) {
+                  merged.push(as);
+                }
+              });
+              return { ...prev, [selectedCustomer.id]: merged };
+            });
+          }
+        })
+        .catch(() => {});
+
       setCompanyInfo({
         tradingName: selectedCustomer.name || '',
         phone: selectedCustomer.contactPhone || 'N/A',
@@ -545,13 +1070,17 @@ export default function Customers() {
             if (Array.isArray(contactsData) && contactsData.length > 0) {
               setContacts(contactsData);
             } else {
-              // Fallback: build from contactName/email/phone on the customer record
-              const parts = (selectedCustomer.contactName || '').trim().split(' ');
-              const first = parts[0] || '';
-              const last = parts.slice(1).join(' ') || '';
-              if (first && first !== 'N/A') {
+              // Only build a contact from customer record if it has a real name (not default/empty)
+              const rawName = (selectedCustomer.contactName || '').trim();
+              const isRealName = rawName && rawName !== 'N/A' && rawName !== 'Primary Contact';
+              if (isRealName) {
+                const parts = rawName.split(' ');
+                const first = parts[0] || '';
+                const last = parts.slice(1).join(' ') || '';
+                const realEmail = (selectedCustomer.contactEmail || '').trim();
+                const isRealEmail = realEmail && realEmail !== 'contact@example.com' && realEmail !== 'N/A';
                 setContacts([
-                  { id: 1, firstName: first, lastName: last, role: 'Primary', phone: selectedCustomer.contactPhone || 'N/A', email: selectedCustomer.contactEmail || 'N/A', isPrimary: true }
+                  { id: 1, firstName: first, lastName: last, role: 'Primary', phone: selectedCustomer.contactPhone || '', email: isRealEmail ? realEmail : '', isPrimary: true }
                 ]);
               } else {
                 setContacts([]);
@@ -560,16 +1089,7 @@ export default function Customers() {
           })
           .catch(err => {
             console.warn('Contacts API fallback:', err);
-            const parts = (selectedCustomer.contactName || '').trim().split(' ');
-            const first = parts[0] || '';
-            const last = parts.slice(1).join(' ') || '';
-            if (first && first !== 'N/A') {
-              setContacts([
-                { id: 1, firstName: first, lastName: last, role: 'Primary', phone: selectedCustomer.contactPhone || 'N/A', email: selectedCustomer.contactEmail || 'N/A', isPrimary: true }
-              ]);
-            } else {
-              setContacts([]);
-            }
+            setContacts([]);
           });
       }
       api.get(`/customers/${selectedCustomer.id}/rate-cards`)
@@ -599,6 +1119,26 @@ export default function Customers() {
     }
 
     const loadRef = `LD-${Math.floor(10000 + Math.random() * 90000)}`;
+
+    // Build pricing snapshot from matched rule (frozen at creation time)
+    const matchedRule = loadPricingCalc.matchedRule;
+    const pricingSnapshot = matchedRule ? {
+      pricingRuleId: matchedRule.id,
+      pricingRuleName: matchedRule.name,
+      method: matchedRule.method,
+      baseRate: parseFloat(matchedRule.baseRate) || 0,
+      quantity: loadPricingCalc.quantity,
+      baseCharge: loadPricingCalc.baseCharge,
+      fuelLevyPercent: parseFloat(matchedRule.fuelLevy) || 0,
+      fuelLevyAmount: loadPricingCalc.fuelLevyAmount,
+      additionalCharges: loadPricingCalc.additionalCharges,
+      totalExGST: loadPricingCalc.totalExGST,
+      gstAmount: loadPricingCalc.gstAmount,
+      totalIncGST: loadPricingCalc.totalIncGST,
+      gstTreatment: matchedRule.gstTreatment,
+      snapshotDate: new Date().toISOString()
+    } : null;
+
     const newLoadObj = {
       id: Date.now().toString(),
       loadRef,
@@ -611,11 +1151,12 @@ export default function Customers() {
       driverName: newLoadForm.driverName || 'Unassigned',
       status: 'PLANNED',
       pickupDate: new Date().toLocaleDateString('en-GB'),
-      deliveryDate: new Date(Date.now() + 86400000).toLocaleDateString('en-GB')
+      deliveryDate: new Date(Date.now() + 86400000).toLocaleDateString('en-GB'),
+      pricingSnapshot
     };
 
     try {
-      const res = await api.post('/loads', {
+      const res = await api.post('/company-admin/loads', {
         loadRef,
         customerId: selectedCustomer?.id,
         origin: newLoadForm.origin,
@@ -625,7 +1166,10 @@ export default function Customers() {
         type: newLoadForm.cargoType || 'General Freight',
         status: 'PLANNED',
         priority: (newLoadForm.priority || 'LOW').toUpperCase(),
-        notes: newLoadForm.notes
+        notes: newLoadForm.notes,
+        pricingSnapshot,
+        pricingStatus: pricingSnapshot ? 'AUTO_CALCULATED' : 'NOT_READY',
+        billingStatus: 'NOT_READY'
       });
       const createdData = res.data?.data || res.data;
       if (createdData && createdData.id) {
@@ -647,6 +1191,7 @@ export default function Customers() {
       driverName: '',
       notes: ''
     });
+    setLoadPricingCalc({ matchedRule: null, quantity: 1, baseCharge: 0, fuelLevyAmount: 0, additionalCharges: 0, totalExGST: 0, gstAmount: 0, totalIncGST: 0 });
     setShowCreateLoadModal(false);
   };
 
@@ -725,15 +1270,13 @@ export default function Customers() {
     status: 'Active',
     category: 'Strategic Account',
     billingTerms: '14 Days EOM',
-    creditLimit: '250000',
-    manager: 'Sarah Mitchell'
+    creditLimit: '250000'
   });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All States');
   const [typeFilter, setTypeFilter] = useState('All Types');
   const [moduleFilter, setModuleFilter] = useState('All Mods');
-  const [managerFilter, setManagerFilter] = useState('All Managers');
 
   // More Filters panel state
   const [showMoreFilters, setShowMoreFilters] = useState(false);
@@ -763,7 +1306,6 @@ export default function Customers() {
     if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase()) && !c.abn.includes(searchQuery)) return false;
     if (statusFilter !== 'All States' && c.status !== statusFilter) return false;
     if (typeFilter !== 'All Types' && c.type !== typeFilter) return false;
-    if (managerFilter !== 'All Managers' && c.manager !== managerFilter) return false;
     if (moduleFilter !== 'All Mods') {
       const modMap = { 'Truck': 'truck', 'Box': 'box', 'Alert': 'alert' };
       const modKey = modMap[moduleFilter];
@@ -797,13 +1339,12 @@ export default function Customers() {
       name: newCustomerForm.name,
       abn: newCustomerForm.abn || 'N/A',
       type: newCustomerForm.type || 'Corporate',
-      contactName: 'Primary Contact',
-      contactEmail: 'contact@example.com',
-      contactPhone: 'N/A',
+      contactName: '',
+      contactEmail: '',
+      contactPhone: '',
       transportModules: ['truck'],
       billingTerms: newCustomerForm.billingTerms || '14 Days EOM',
       billingType: 'EOM',
-      manager: newCustomerForm.manager || 'Sarah Mitchell',
       status: newCustomerForm.status || 'Active'
     };
 
@@ -839,8 +1380,7 @@ export default function Customers() {
         status: 'Active',
         category: 'Strategic Account',
         billingTerms: '14 Days EOM',
-        creditLimit: '250000',
-        manager: 'Sarah Mitchell'
+        creditLimit: '250000'
       });
       setShowAddModal(false);
       triggerToast(`Customer "${newCustomerObj.name}" added successfully!`);
@@ -908,9 +1448,6 @@ export default function Customers() {
                   <button onClick={() => { setShowMoreActionsMenu(false); window.print(); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
                     <Printer size={14} className="text-slate-400" /> Print Customer Profile
                   </button>
-                  <button onClick={() => { setShowMoreActionsMenu(false); openAssignManager(selectedCustomer); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
-                    <UserCircle size={14} className="text-slate-400" /> Assign Account Manager
-                  </button>
                   <button onClick={() => { setShowMoreActionsMenu(false); alert(`Customer status updated for ${selectedCustomer.name}.`); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
                     <CheckCircle2 size={14} className="text-slate-400" /> Toggle Active / Inactive
                   </button>
@@ -968,19 +1505,6 @@ export default function Customers() {
           <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
           <div className="flex flex-row flex-nowrap items-center gap-8 shrink-0">
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-xs border border-indigo-100 shrink-0">
-                {selectedCustomer.manager && selectedCustomer.manager !== 'N/A' ? selectedCustomer.manager.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'NA'}
-              </div>
-              <div className="shrink-0">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Account Manager</p>
-                <p className="text-sm font-bold text-slate-900">{selectedCustomer.manager && selectedCustomer.manager !== 'N/A' ? selectedCustomer.manager : 'N/A'}</p>
-                <p className="text-[10px] text-slate-550 font-semibold">{selectedCustomer.contactEmail && selectedCustomer.contactEmail !== 'N/A' ? selectedCustomer.contactEmail : selectedCustomer.email && selectedCustomer.email !== 'N/A' ? selectedCustomer.email : 'N/A'}</p>
-              </div>
-            </div>
-
-            <div className="h-10 w-px bg-slate-100 shrink-0"></div>
-
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Billing Terms</p>
               <p className="text-sm font-black text-slate-900">{selectedCustomer.billingTerms && selectedCustomer.billingTerms !== 'N/A' ? selectedCustomer.billingTerms : 'N/A'}</p>
@@ -1032,7 +1556,12 @@ export default function Customers() {
           {['Overview', 'Contacts', 'Billing Rules', 'Pricing', 'Transport Modules', 'Instructions', 'Documents', 'Activity', 'Financials'].map(tab => (
             <button
               key={tab}
-              onClick={() => setActiveDetailsTab(tab)}
+              onClick={() => {
+                setActiveDetailsTab(tab);
+                if (tab === 'Billing Rules' && selectedCustomer?.id) {
+                  fetchBillingRule(selectedCustomer.id);
+                }
+              }}
               className={`flex items-center gap-1.5 px-4 pb-3 pt-1 text-[13px] font-medium whitespace-nowrap transition-all relative cursor-pointer border-b-2 ${activeDetailsTab === tab
                 ? 'text-indigo-600 border-indigo-600'
                 : 'text-slate-400 border-transparent hover:text-slate-600 hover:border-slate-300'
@@ -2571,188 +3100,151 @@ export default function Customers() {
 
         {activeDetailsTab === 'Billing Rules' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
-              <p className="text-xs text-slate-500 font-medium">Configure how this customer is billed. These rules are used automatically when creating invoices.</p>
-              <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-2 cursor-pointer bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors border border-blue-100 shadow-sm">
-                <Eye size={14} /> Preview Invoice Example
-              </button>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs text-slate-500 font-medium">Configure how Hero turns completed work into invoices for this customer. (Note: Pricing and rate calculation is managed under the Pricing tab).</p>
+              {billingRuleLoading && <span className="text-[10px] font-bold text-blue-500 animate-pulse">Loading rules...</span>}
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
               <div className="xl:col-span-3 flex flex-col gap-6">
-
-                {/* Top Row: 2 columns */}
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* 1. Pricing & Rate Structure */}
-                  <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                  {/* 1. Payment Terms & Invoicing */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col">
                     <div className="flex items-center gap-2 text-slate-800 mb-5 pb-4 border-b border-slate-50">
-                      <FileText size={18} className="text-blue-600" />
-                      <h3 className="text-sm font-black tracking-tight">1. Pricing & Rate Structure</h3>
+                      <DollarSign size={18} className="text-blue-600" />
+                      <h3 className="text-sm font-black tracking-tight">1. Payment Terms & Invoicing</h3>
                     </div>
-                    <div className="overflow-x-auto custom-scrollbar">
-                      <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[400px]">
-                        <thead>
-                          <tr className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
-                            <th className="py-2">DESCRIPTION</th>
-                            <th className="py-2 text-right">RATE (EX. GST)</th>
-                            <th className="py-2 pl-4">UNIT</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                          <tr>
-                            <td colSpan="3" className="py-6 text-center text-xs font-semibold text-slate-400 italic">
-                              No custom pricing rules configured yet.
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    <div className="space-y-4 flex-grow">
+                      
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Activity size={14} /> Invoice Trigger</div>
+                        <select
+                          value={billingRuleForm.invoiceTrigger}
+                          onChange={e => setBillingRuleForm(prev => ({ ...prev, invoiceTrigger: e.target.value }))}
+                          className="text-xs font-black text-slate-900 bg-transparent text-right outline-none cursor-pointer"
+                        >
+                          <option>Delivery completed</option>
+                          <option>All items delivered</option>
+                          <option>POD received</option>
+                          <option>Load completed</option>
+                          <option>Manually approved</option>
+                          <option>Scheduled billing cycle</option>
+                        </select>
+                      </div>
+
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Package size={14} /> Invoice Grouping</div>
+                        <select
+                          value={billingRuleForm.invoiceGrouping}
+                          onChange={e => setBillingRuleForm(prev => ({ ...prev, invoiceGrouping: e.target.value }))}
+                          className="text-xs font-black text-slate-900 bg-transparent text-right outline-none cursor-pointer"
+                        >
+                          <option>Per load</option>
+                          <option>Per item</option>
+                          <option>Per delivery</option>
+                          <option>Per customer</option>
+                          <option>Per PO number</option>
+                          <option>Daily</option>
+                          <option>Weekly</option>
+                          <option>Fortnightly</option>
+                          <option>Monthly</option>
+                        </select>
+                      </div>
+
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Calendar size={14} /> Payment Terms</div>
+                        <select
+                          value={billingRuleForm.paymentTerms}
+                          onChange={e => setBillingRuleForm(prev => ({ ...prev, paymentTerms: e.target.value }))}
+                          className="text-xs font-black text-slate-900 bg-transparent text-right outline-none cursor-pointer"
+                        >
+                          <option>Due immediately</option>
+                          <option>7 days</option>
+                          <option>14 days</option>
+                          <option>30 days</option>
+                          <option>45 days</option>
+                          <option>Custom</option>
+                        </select>
+                      </div>
+
+                      <div className="flex justify-between items-start border-t border-slate-50 pt-4 mt-2">
+                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Shield size={14} /> Auto-Create Invoice</div>
+                        <div
+                          className="flex items-center gap-2 cursor-pointer"
+                          onClick={() => setBillingRuleForm(prev => ({ ...prev, autoCreateInvoice: !prev.autoCreateInvoice }))}
+                        >
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${billingRuleForm.autoCreateInvoice ? 'text-blue-600' : 'text-slate-400'}`}>{billingRuleForm.autoCreateInvoice ? 'YES' : 'NO'}</span>
+                          {billingRuleForm.autoCreateInvoice
+                            ? <ToggleRight size={24} className="text-blue-600" />
+                            : <ToggleLeft size={24} className="text-slate-400" />}
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-start border-t border-slate-50 pt-4 mt-2">
+                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Mail size={14} /> Auto-Send Invoice</div>
+                        <div
+                          className="flex items-center gap-2 cursor-pointer"
+                          onClick={() => setBillingRuleForm(prev => ({ ...prev, autoSendInvoice: !prev.autoSendInvoice }))}
+                        >
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${billingRuleForm.autoSendInvoice ? 'text-blue-600' : 'text-slate-400'}`}>{billingRuleForm.autoSendInvoice ? 'YES' : 'NO'}</span>
+                          {billingRuleForm.autoSendInvoice
+                            ? <ToggleRight size={24} className="text-blue-600" />
+                            : <ToggleLeft size={24} className="text-slate-400" />}
+                        </div>
+                      </div>
+
                     </div>
-                    <button onClick={() => setShowAddPricingRuleModal(true)} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
-                      <Plus size={14} /> Add Pricing Rule
+                    <button onClick={handleSaveBillingRule} disabled={billingRuleSaving} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer mt-5 border-t border-slate-50 pt-4 disabled:opacity-60">
+                      {billingRuleSaving ? <span className="animate-spin">⏳</span> : <Edit size={12} />} {billingRuleSaving ? 'Saving...' : 'Save Payment Settings'}
                     </button>
                   </div>
 
-                  {/* 2. Fuel Levy & Surcharges */}
-                  <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                  {/* 2. Required Documents & References */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col">
                     <div className="flex items-center gap-2 text-slate-800 mb-5 pb-4 border-b border-slate-50">
                       <FileText size={18} className="text-blue-600" />
-                      <h3 className="text-sm font-black tracking-tight">2. Fuel Levy & Surcharges</h3>
+                      <h3 className="text-sm font-black tracking-tight">2. Required Docs & References</h3>
                     </div>
-                    <div className="overflow-x-auto custom-scrollbar">
-                      <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[400px]">
-                        <thead>
-                          <tr className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
-                            <th className="py-2">DESCRIPTION</th>
-                            <th className="py-2 text-center">CALCULATION</th>
-                            <th className="py-2 text-right">RATE / %</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                          <tr>
-                            <td colSpan="3" className="py-6 text-center text-xs font-semibold text-slate-400 italic">
-                              No surcharges configured yet.
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    <div className="space-y-4 flex-grow">
+                      {[
+                        { key: 'podRequired', label: 'POD Required', desc: 'Proof of Delivery must be captured before invoice is triggered.' },
+                        { key: 'customerPoRequired', label: 'Customer PO Required', desc: 'Load cannot be invoiced without a Purchase Order number.' },
+                        { key: 'includeJobPhotos', label: 'Include Job Photos', desc: 'Attach driver delivery photos to the generated invoice.' },
+                        { key: 'requireManualApproval', label: 'Require Manual Approval', desc: "Invoices stay in 'Draft' until manually approved by Accounts." },
+                      ].map(({ key, label, desc }) => (
+                        <div
+                          key={key}
+                          className="flex items-start gap-3 cursor-pointer select-none"
+                          onClick={() => setBillingRuleForm(prev => ({ ...prev, [key]: !prev[key] }))}
+                        >
+                          <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                            billingRuleForm[key] ? 'bg-blue-600 text-white' : 'border border-slate-300'
+                          }`}>
+                            {billingRuleForm[key] && <CheckCircle2 size={12} />}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">{label}</p>
+                            <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">{desc}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <button onClick={() => setShowAddSurchargeModal(true)} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
-                      <Plus size={14} /> Add Surcharge
+                    <button onClick={handleSaveBillingRule} disabled={billingRuleSaving} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer mt-5 border-t border-slate-50 pt-4 disabled:opacity-60">
+                      {billingRuleSaving ? <span className="animate-spin">⏳</span> : <Edit size={12} />} {billingRuleSaving ? 'Saving...' : 'Save Conditions'}
                     </button>
                   </div>
                 </div>
 
-                {/* Bottom Row: 3 columns */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* 3. Payment Terms & Invoicing */}
-                  <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col">
-                    <div className="flex items-center gap-2 text-slate-800 mb-5 pb-4 border-b border-slate-50">
-                      <DollarSign size={18} className="text-blue-600" />
-                      <h3 className="text-sm font-black tracking-tight">3. Payment Terms & Invoicing</h3>
-                    </div>
-                    <div className="space-y-4 flex-grow">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Calendar size={14} /> Payment Terms</div>
-                        <div className="text-xs font-black text-slate-900 text-right">30 Days End of<br />Month</div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Activity size={14} /> Invoice Frequency</div>
-                        <div className="text-xs font-black text-slate-900">Fortnightly</div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><ChevronRight size={14} /> Invoice Day</div>
-                        <div className="text-xs font-black text-slate-900">Monday</div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Calculator size={14} /> Rounding</div>
-                        <div className="text-xs font-black text-slate-900">Nearest $0.05</div>
-                      </div>
-                      <div className="flex justify-between items-start border-t border-slate-50 pt-4 mt-2">
-                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Lock size={14} /> Minimum Invoice<br />Amount</div>
-                        <div className="text-xs font-black text-slate-900">$0.00</div>
-                      </div>
-                      <div className="flex justify-between items-center border-t border-slate-50 pt-4 mt-2">
-                        <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Lock size={14} /> Auto Invoice<br />Generation</div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">ENABLED</span>
-                          <ToggleRight size={24} className="text-blue-600" />
-                        </div>
-                      </div>
-                    </div>
-                    <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer mt-5 border-t border-slate-50 pt-4">
-                      <Edit size={12} /> Edit Payment Terms
-                    </button>
-                  </div>
-
-                  {/* 4. Billing Rules & Conditions */}
-                  <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col">
-                    <div className="flex items-center gap-2 text-slate-800 mb-5 pb-4 border-b border-slate-50">
-                      <Shield size={18} className="text-blue-600" />
-                      <h3 className="text-sm font-black tracking-tight">4. Billing Rules & Conditions</h3>
-                    </div>
-                    <div className="space-y-4 flex-grow">
-                      <div className="flex items-start gap-3">
-                        <div className="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5"><CheckCircle2 size={12} /></div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Invoice per Load</p>
-                          <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">One invoice will be generated for each load.</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-4 h-4 rounded border border-slate-300 flex items-center justify-center shrink-0 mt-0.5"></div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Combine Loads</p>
-                          <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">Loads within the same period will be combined per invoice.</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5"><CheckCircle2 size={12} /></div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Include POD</p>
-                          <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">POD must be submitted before invoice is generated.</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5"><CheckCircle2 size={12} /></div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Time Charges</p>
-                          <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">Wait time charges apply after 30 minutes.</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5"><CheckCircle2 size={12} /></div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Tolls & Parking</p>
-                          <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">Billed at cost + 10% admin fee.</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5"><CheckCircle2 size={12} /></div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Damage Recovery</p>
-                          <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">Billed at actual cost with supporting documents.</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5"><CheckCircle2 size={12} /></div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Price Override</p>
-                          <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">Dispatch can override rates with approval.</p>
-                        </div>
-                      </div>
-                    </div>
-                    <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer mt-5 border-t border-slate-50 pt-4">
-                      <Edit size={12} /> Edit Conditions
-                    </button>
-                  </div>
-
-                  {/* 5. Invoicing Contacts */}
-                  <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col">
+                {/* Bottom Row: Invoicing Contacts */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* 3. Invoicing Contacts */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col md:col-span-2">
                     <div className="flex items-center gap-2 text-slate-800 mb-5 pb-4 border-b border-slate-50">
                       <Mail size={18} className="text-blue-600" />
-                      <h3 className="text-sm font-black tracking-tight">5. Invoicing Contacts</h3>
+                      <h3 className="text-sm font-black tracking-tight">3. Invoicing Contacts & Delivery Preference</h3>
                     </div>
-                    <div className="space-y-6 flex-grow">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Primary Accounts Contact</p>
                         {contacts[0] ? (
@@ -2774,45 +3266,38 @@ export default function Customers() {
                         ) : (
                           <p className="text-xs font-semibold text-slate-400 italic">No accounts contact assigned yet.</p>
                         )}
+                        <button onClick={() => { setActiveDetailsTab('Contacts'); setShowAddContactModal(true); }} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer mt-5">
+                          <Edit size={12} /> Edit Contacts
+                        </button>
                       </div>
 
-                      <div className="border-t border-slate-50 pt-5">
+                      <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Invoice Delivery Preference</p>
                         <div className="space-y-3">
                           <div className="flex items-center gap-3">
                             <div className="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm"><CheckCircle2 size={12} /></div>
                             <div>
                               <p className="text-xs font-bold text-slate-900">Email</p>
-                              <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">Send invoices to accounts email</p>
+                              <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">Send invoices to accounts email automatically.</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="w-4 h-4 rounded border border-slate-300 flex items-center justify-center shrink-0"></div>
-                            <div>
-                              <p className="text-xs font-bold text-slate-900">Portal</p>
-                              <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">Available in customer portal</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="w-4 h-4 rounded border border-slate-300 flex items-center justify-center shrink-0"></div>
-                            <div>
-                              <p className="text-xs font-bold text-slate-900">Mail</p>
-                              <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">Post invoices to billing address</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 pt-2">
                             <div className="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm"><CheckCircle2 size={12} /></div>
                             <div>
                               <p className="text-xs font-bold text-slate-900">PDF Attachment</p>
-                              <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">Attach PDF invoice to email</p>
+                              <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">Attach PDF invoice to email.</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-4 h-4 rounded border border-slate-300 flex items-center justify-center shrink-0"></div>
+                            <div>
+                              <p className="text-xs font-bold text-slate-900">Mail (Post)</p>
+                              <p className="text-[9px] font-semibold text-slate-500 leading-relaxed mt-0.5">Post physical invoices to billing address.</p>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer mt-5 border-t border-slate-50 pt-4">
-                      <Edit size={12} /> Edit Contacts
-                    </button>
                   </div>
                 </div>
 
@@ -2823,11 +3308,8 @@ export default function Customers() {
                     <h4 className="text-xs font-black text-indigo-900 mb-2">Important Notes</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <ul className="list-disc list-inside text-[10px] font-semibold text-indigo-800 leading-relaxed space-y-1">
-                        <li>These billing rules will be applied automatically when invoicing this customer.</li>
-                        <li>Changes to billing rules will only affect new invoices, not existing ones.</li>
-                      </ul>
-                      <ul className="list-disc list-inside text-[10px] font-semibold text-indigo-800 leading-relaxed space-y-1">
-                        <li>Dispatch can override rates at load level if permission is existing ones.</li>
+                        <li>These billing rules determine WHEN and HOW an invoice is generated.</li>
+                        <li>To change HOW MUCH to charge, please go to the Pricing tab.</li>
                       </ul>
                     </div>
                   </div>
@@ -2839,51 +3321,35 @@ export default function Customers() {
 
                 {/* Billing Summary */}
                 <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                  <h3 className="text-sm font-black text-slate-900 tracking-tight mb-5">Billing Summary</h3>
+                  <h3 className="text-sm font-black text-slate-900 tracking-tight mb-5">Rules Summary</h3>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-500 font-bold">Pricing Rules</span>
-                      <span className="font-black text-slate-900">0 Active</span>
+                      <span className="text-slate-500 font-bold">Trigger</span>
+                      <span className="font-black text-slate-900">{billingRuleForm.invoiceTrigger}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-500 font-bold">Surcharges</span>
-                      <span className="font-black text-slate-900">0 Active</span>
+                      <span className="text-slate-500 font-bold">Grouping</span>
+                      <span className="font-black text-slate-900">{billingRuleForm.invoiceGrouping}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Payment Terms</span>
-                      <span className="font-black text-slate-900">{selectedCustomer.billingTerms || '14 Days EOM'}</span>
+                      <span className="font-black text-slate-900">{billingRuleForm.paymentTerms}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-500 font-bold">Invoice Frequency</span>
-                      <span className="font-black text-slate-900">As Incurred</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-500 font-bold">Rounding</span>
-                      <span className="font-black text-slate-900">Nearest $0.05</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-500 font-bold">Minimum Invoice</span>
-                      <span className="font-black text-slate-900">$0.00</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-500 font-bold">Tax</span>
-                      <span className="font-black text-slate-900">GST 10%</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-500 font-bold">Currency</span>
-                      <span className="font-black text-slate-900">AUD</span>
-                    </div>
-                    <div className="flex justify-between items-start text-xs border-t border-slate-50 pt-3">
-                      <span className="text-slate-500 font-bold">Price<br />Override</span>
-                      <span className="font-black text-slate-900 text-right">Allowed (By<br />Dispatch)</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs border-t border-slate-50 pt-3">
                       <span className="text-slate-500 font-bold">Auto Invoice</span>
-                      <span className="font-black text-slate-900">Enabled</span>
+                      <span className={`font-black ${billingRuleForm.autoCreateInvoice ? 'text-emerald-600' : 'text-red-500'}`}>{billingRuleForm.autoCreateInvoice ? 'Enabled' : 'Disabled'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-500 font-bold">POD Required</span>
+                      <span className={`font-black ${billingRuleForm.podRequired ? 'text-slate-900' : 'text-slate-400'}`}>{billingRuleForm.podRequired ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-500 font-bold">Manual Approval</span>
+                      <span className={`font-black ${billingRuleForm.requireManualApproval ? 'text-amber-600' : 'text-slate-400'}`}>{billingRuleForm.requireManualApproval ? 'Required' : 'Not Required'}</span>
                     </div>
                   </div>
-                  <button className="w-full mt-6 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm">
-                    <Eye size={14} /> View Invoice Example
+                  <button onClick={handleSaveBillingRule} disabled={billingRuleSaving} className="w-full mt-6 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-60">
+                    {billingRuleSaving ? '⏳ Saving...' : <><Eye size={14} /> Save & Preview Rules</>}
                   </button>
                 </div>
 
@@ -2891,74 +3357,150 @@ export default function Customers() {
                 <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex-grow">
                   <h3 className="text-sm font-black text-slate-900 tracking-tight mb-4">Quick Actions</h3>
                   <div className="space-y-3">
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <Plus size={16} className="text-blue-600" />
-                        <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Add Pricing Rule</span>
-                      </div>
-                      <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
-                    </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <Plus size={16} className="text-blue-600" />
-                        <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Add Surcharge</span>
-                      </div>
-                      <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
-                    </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <Edit size={16} className="text-blue-600" />
-                        <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Edit Payment Terms</span>
-                      </div>
-                      <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
-                    </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
+                    <button onClick={() => setShowBillingInvoicePreviewModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
                       <div className="flex items-center gap-3">
                         <Eye size={16} className="text-blue-600" />
-                        <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Preview Invoice Example</span>
+                        <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Preview Invoice</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
+                    <button onClick={handleExportBillingRules} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
                       <div className="flex items-center gap-3">
                         <Download size={16} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Export Billing Rules</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
+                    <button onClick={handleCopyBillingRules} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
                       <div className="flex items-center gap-3">
                         <FileText size={16} className="text-blue-600" />
-                        <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Copy Rules to Another Customer</span>
-                      </div>
-                      <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
-                    </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <Activity size={16} className="text-blue-600" />
-                        <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Reset to Default Template</span>
+                        <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Copy Rules</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
                   </div>
                 </div>
               </div>
+
+              {/* Invoice Preview Modal */}
+              {showBillingInvoicePreviewModal && (
+                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+                    {/* Header */}
+                    <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <FileText size={18} className="text-blue-400" />
+                        <h3 className="text-sm font-black tracking-tight">Invoice Preview (Rule Test)</h3>
+                      </div>
+                      <button 
+                        onClick={() => setShowBillingInvoicePreviewModal(false)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+
+                    {/* Body */}
+                    <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+                      {/* Sample Invoice Paper */}
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-inner space-y-4">
+                        <div className="flex justify-between items-start border-b border-slate-200 pb-4">
+                          <div>
+                            <h2 className="text-lg font-black text-slate-900">HERO LOGISTICS PTY LTD</h2>
+                            <p className="text-[10px] text-slate-500 font-medium">ABN: 88 123 456 789 • Sydney NSW</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-[10px] font-black uppercase tracking-wider mb-1">DRAFT INVOICE</span>
+                            <p className="font-mono font-bold text-slate-800">INV-2026-99042</p>
+                            <p className="text-[10px] text-slate-500">Date: {new Date().toLocaleDateString('en-GB')}</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 text-[11px]">
+                          <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">BILLED TO</p>
+                            <p className="font-bold text-slate-900">{selectedCustomer?.name || 'Selected Customer'}</p>
+                            <p className="text-slate-600">{selectedCustomer?.address || '123 Logistics Way, Sydney NSW'}</p>
+                            <p className="text-slate-600">{selectedCustomer?.email || 'accounts@customer.com.au'}</p>
+                          </div>
+                          <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-1">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">APPLIED BILLING RULES</p>
+                            <p><span className="font-semibold text-slate-600">Payment Terms:</span> <strong className="text-slate-900">{billingRuleForm.paymentTerms}</strong></p>
+                            <p><span className="font-semibold text-slate-600">Trigger Mode:</span> <strong className="text-slate-900">{billingRuleForm.invoiceTrigger}</strong></p>
+                            <p><span className="font-semibold text-slate-600">POD Required:</span> <strong className={billingRuleForm.podRequired ? "text-emerald-700 font-bold" : "text-slate-600"}>{billingRuleForm.podRequired ? 'YES (Verified)' : 'NO'}</strong></p>
+                            <p><span className="font-semibold text-slate-600">PO Number Required:</span> <strong className={billingRuleForm.customerPoRequired ? "text-amber-700 font-bold" : "text-slate-600"}>{billingRuleForm.customerPoRequired ? 'YES (PO-99182)' : 'NO'}</strong></p>
+                          </div>
+                        </div>
+
+                        {/* Table */}
+                        <table className="w-full text-left text-xs border-collapse mt-2">
+                          <thead>
+                            <tr className="border-b border-slate-300 text-slate-500 font-bold text-[10px] uppercase">
+                              <th className="py-2">Description</th>
+                              <th className="py-2 text-center">Qty</th>
+                              <th className="py-2 text-right">Rate</th>
+                              <th className="py-2 text-right">Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200 font-medium text-slate-800">
+                            <tr>
+                              <td className="py-2.5">Interstate Freight - Sydney to Melbourne</td>
+                              <td className="py-2.5 text-center">1</td>
+                              <td className="py-2.5 text-right">$500.00</td>
+                              <td className="py-2.5 text-right font-bold">$500.00</td>
+                            </tr>
+                            <tr>
+                              <td className="py-2.5">Fuel Levy (7.0%)</td>
+                              <td className="py-2.5 text-center">1</td>
+                              <td className="py-2.5 text-right">$35.00</td>
+                              <td className="py-2.5 text-right font-bold">$35.00</td>
+                            </tr>
+                          </tbody>
+                        </table>
+
+                        {/* Totals */}
+                        <div className="border-t border-slate-300 pt-3 flex justify-end">
+                          <div className="w-48 space-y-1 text-right text-xs">
+                            <div className="flex justify-between text-slate-600">
+                              <span>Subtotal (Ex GST):</span>
+                              <span className="font-semibold">$535.00</span>
+                            </div>
+                            <div className="flex justify-between text-slate-600">
+                              <span>GST (10%):</span>
+                              <span className="font-semibold">$53.50</span>
+                            </div>
+                            <div className="flex justify-between text-slate-900 font-black text-sm border-t border-slate-300 pt-1">
+                              <span>Total Due:</span>
+                              <span className="text-indigo-600">$588.50</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+                      <span className="text-[11px] font-medium text-slate-500">Live preview generated using current billing rule settings</span>
+                      <button 
+                        onClick={() => setShowBillingInvoicePreviewModal(false)}
+                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                      >
+                        Close Preview
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {activeDetailsTab === 'Pricing' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+            <div className="mb-2">
               <p className="text-xs text-slate-500 font-medium">
                 Configure all rates, price lists and chargeable items for <span className="font-bold text-slate-800">{(!selectedCustomer?.name || selectedCustomer?.name === 'asdf') ? 'Auto World Sydney (Primary Customer)' : selectedCustomer.name}</span>. Prices are used when creating loads and generating invoices.
               </p>
-              <button 
-                onClick={() => setShowPricingMatrixModal(true)} 
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-2 cursor-pointer bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors border border-blue-100 shadow-sm shrink-0"
-              >
-                <Eye size={14} /> Preview Pricing Matrix
-              </button>
             </div>
 
             {/* Filter Bar */}
@@ -3005,25 +3547,29 @@ export default function Customers() {
                 </div>
                 <div className="flex-grow min-w-[200px]">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">EFFECTIVE DATE RANGE</label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      value={effectiveDateRange} 
-                      onChange={(e) => setEffectiveDateRange(e.target.value)}
-                      className="pl-3 pr-8 py-2.5 border border-slate-200 rounded-lg text-sm font-bold text-slate-900 bg-white focus:outline-none focus:border-blue-500 cursor-pointer w-full shadow-sm" 
-                    />
-                    <Calendar size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-grow">
+                      <input 
+                        type="date" 
+                        value={effectiveStartDate} 
+                        onChange={(e) => setEffectiveStartDate(e.target.value)}
+                        className="pl-3 pr-2 py-2.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 bg-white focus:outline-none focus:border-blue-500 cursor-pointer w-full shadow-sm" 
+                      />
+                    </div>
+                    <span className="text-slate-400 font-bold text-xs">-</span>
+                    <div className="relative flex-grow">
+                      <input 
+                        type="date" 
+                        value={effectiveEndDate} 
+                        onChange={(e) => setEffectiveEndDate(e.target.value)}
+                        className="pl-3 pr-2 py-2.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 bg-white focus:outline-none focus:border-blue-500 cursor-pointer w-full shadow-sm" 
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 mt-5">
-                <button onClick={() => setShowApplyTemplateModal(true)} className="px-5 py-2.5 bg-blue-50 border border-blue-100 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
-                  <Activity size={14} /> Apply Template
-                </button>
-                <button onClick={() => setShowImportPricingModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm">
-                  <Upload size={14} /> Import Pricing
-                </button>
                 <button onClick={() => setShowAddPricingRuleModal(true)} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
                   <Plus size={14} /> Add Pricing Rule
                 </button>
@@ -3033,13 +3579,13 @@ export default function Customers() {
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
               <div className="xl:col-span-3 flex flex-col gap-6">
 
-                {/* Inner Tabs & Lane Pricing Table */}
+                {/* Inner Tabs & Pricing Table */}
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                   <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto custom-scrollbar p-1">
                     {[
+                      'Rate Cards & Charges',
                       'Lane Pricing',
                       'Vehicle Type Pricing',
-                      'Rate Cards & Charges',
                       'Surcharges',
                       'Accessorial Charges',
                       'Discounts & Rebates',
@@ -3069,129 +3615,192 @@ export default function Customers() {
                         <h3 className="text-sm font-black text-slate-900 tracking-tight">{activePricingSubTab}</h3>
                         <p className="text-[10px] text-slate-500 font-bold mt-1">Configure pricing rates and rules for {selectedCustomer.name}.</p>
                       </div>
-                      {activePricingSubTab === 'Rate Cards & Charges' ? (
-                        <button onClick={() => { setEditingRateCard(null); setRateCardForm({ name: '', unit: 'Per Load', baseRate: '', category: 'General' }); setShowAddChargeModal(true); }} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
-                          <Plus size={14} /> Add Rate Card
-                        </button>
-                      ) : (
-                        <button onClick={() => setShowAddPricingRuleModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
-                          <Plus size={14} /> Add Pricing Rule
+                      {activePricingSubTab === 'Surcharges' && (
+                        <button
+                          onClick={() => {
+                            setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' });
+                            setShowAddSurchargeModal(true);
+                          }}
+                          className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Plus size={14} /> Add Surcharge
                         </button>
                       )}
                     </div>
 
-                    {activePricingSubTab === 'Rate Cards & Charges' ? (
-                      <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[700px]">
-                          <thead>
-                            <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50">
-                              <th className="py-3 px-4">CHARGE NAME</th>
-                              <th className="py-3 px-4">CATEGORY</th>
-                              <th className="py-3 px-4">UNIT</th>
-                              <th className="py-3 px-4 text-right">RATE (EX GST)</th>
-                              <th className="py-3 px-4 text-right">GST</th>
-                              <th className="py-3 px-4 text-right">ACTIONS</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                            {rateCards.length === 0 ? (
-                              <tr>
-                                <td colSpan="6" className="py-8 text-center text-xs font-semibold text-slate-400 italic">
-                                  No rate cards or charges configured yet for this customer. Click "+ Add Rate Card" to add charges.
-                                </td>
+                    {activePricingSubTab === 'Lane Pricing' ? (
+                      <div className="py-10 text-center text-slate-400 text-xs italic min-h-[300px] flex items-center justify-center">
+                        This tab is intentionally left empty.
+                      </div>
+                    ) : activePricingSubTab === 'Surcharges' ? (
+                      <div className="flex flex-col gap-6">
+                        {/* Surcharges Table */}
+                        <div className="overflow-x-auto custom-scrollbar">
+                          <table className="w-full text-left text-xs whitespace-nowrap min-w-[700px]">
+                            <thead>
+                              <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50">
+                                <th className="py-3 px-4">SURCHARGE / CHARGE NAME</th>
+                                <th className="py-3 px-4">CALCULATION METHOD</th>
+                                <th className="py-3 px-4 text-right">RATE / VALUE</th>
+                                <th className="py-3 px-4 text-center">GST STATUS</th>
+                                <th className="py-3 px-4 text-center">SOURCE / TYPE</th>
+                                <th className="py-3 px-4 text-right">ACTIONS</th>
                               </tr>
-                            ) : (
-                              rateCards.map((card) => (
-                                <tr key={card.id} className="hover:bg-slate-50 transition-colors">
-                                  <td className="py-3 px-4 font-bold text-slate-900">{card.name}</td>
-                                  <td className="py-3 px-4 text-slate-500">{card.category || 'General'}</td>
-                                  <td className="py-3 px-4 text-slate-500">{card.unit}</td>
-                                  <td className="py-3 px-4 text-right font-black text-slate-900">${card.baseRate}</td>
-                                  <td className="py-3 px-4 text-right text-slate-500">{card.gst || '10%'}</td>
-                                  <td className="py-3 px-4 text-right">
-                                    <div className="flex items-center justify-end gap-2">
-                                      <button onClick={() => openEditRateCard(card)} className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer" title="Edit Rate Card">
-                                        <Edit size={14} />
-                                      </button>
-                                      <button onClick={() => handleDeleteRateCard(card.id)} className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer" title="Delete Rate Card">
-                                        <Trash2 size={14} />
-                                      </button>
-                                    </div>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
+                              {currentSurcharges.length === 0 ? (
+                                <tr>
+                                  <td colSpan="6" className="py-10 text-center text-xs font-semibold text-slate-400 italic">
+                                    No surcharges added yet. Click "+ Add Surcharge" to configure rates.
                                   </td>
                                 </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
+                              ) : (
+                                currentSurcharges.map((sc, idx) => {
+                                  const isPercent = (sc.calculation || '').includes('%');
+                                  const rateNum = parseFloat(sc.rate) || 0;
+                                  return (
+                                    <tr key={sc.id || idx} className="hover:bg-slate-50 transition-colors">
+                                      <td className="py-3 px-4 font-bold text-slate-900 flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                        {sc.description}
+                                      </td>
+                                      <td className="py-3 px-4">
+                                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-extrabold text-[10px] rounded-md border border-slate-200">
+                                          {sc.calculation || '% of Base Rate'}
+                                        </span>
+                                      </td>
+                                      <td className="py-3 px-4 text-right font-black text-emerald-700 text-sm">
+                                        {isPercent ? `${rateNum}%` : `$${rateNum.toFixed(2)}`}
+                                      </td>
+                                      <td className="py-3 px-4 text-center">
+                                        <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md border ${
+                                          sc.taxable !== false
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                            : 'bg-slate-50 text-slate-500 border-slate-200'
+                                        }`}>
+                                          {sc.taxable !== false ? 'Taxable (10% GST)' : 'Exempt'}
+                                        </span>
+                                      </td>
+                                      <td className="py-3 px-4 text-center">
+                                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md border ${
+                                          sc.isFromRule
+                                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                            : 'bg-purple-50 text-purple-700 border-purple-200'
+                                        }`}>
+                                          {sc.isFromRule ? 'Contract Profile' : 'Custom Add-On'}
+                                        </span>
+                                      </td>
+                                      <td className="py-3 px-4 text-right flex items-center justify-end gap-1">
+                                        <button
+                                          onClick={() => {
+                                            setSurchargeModalForm({
+                                              id: sc.id,
+                                              description: sc.description,
+                                              calculation: sc.calculation || '% of Base Rate',
+                                              rate: sc.rate,
+                                              taxable: sc.taxable !== false,
+                                              notes: sc.notes || ''
+                                            });
+                                            setShowAddSurchargeModal(true);
+                                          }}
+                                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                          title="Edit Surcharge"
+                                        >
+                                          <Edit size={14} />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteBillingSurcharge(sc.id)}
+                                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                          title="Delete Surcharge"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[850px]">
-                          <thead>
-                            <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50">
-                              <th className="py-3 px-4">FROM</th>
-                              <th className="py-3 px-4">TO</th>
-                              <th className="py-3 px-4">ROUTE TYPE</th>
-                              <th className="py-3 px-4 text-right">DISTANCE (KM)</th>
-                              <th className="py-3 px-4 text-center">GST MODE</th>
-                              <th className="py-3 px-4 text-right">BASE RATE (EX GST)</th>
-                              <th className="py-3 px-4 text-right">GST (10%)</th>
-                              <th className="py-3 px-4 text-right">TOTAL (INC GST)</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                            {lanePricingRules.length === 0 ? (
-                              <tr>
-                                <td colSpan="8" className="py-8 text-center text-xs font-semibold text-slate-400 italic">
-                                  No lane prices configured yet for this customer. Click "+ Add Pricing Rule" or "Apply Template" above to add rates.
-                                </td>
-                              </tr>
-                            ) : (
-                              lanePricingRules.map((rule, idx) => {
-                                const inputVal = parseFloat(rule.baseRate) || 0;
-                                const isIncGst = rule.gstMode === 'INC_GST';
-                                let baseExGst = 0;
-                                let gstVal = 0;
-                                let totalIncGst = 0;
-
-                                if (isIncGst) {
-                                  totalIncGst = inputVal;
-                                  baseExGst = Math.round((inputVal / 1.10) * 100) / 100;
-                                  gstVal = Math.round((totalIncGst - baseExGst) * 100) / 100;
-                                } else {
-                                  baseExGst = inputVal;
-                                  gstVal = Math.round((baseExGst * 0.10) * 100) / 100;
-                                  totalIncGst = Math.round((baseExGst + gstVal) * 100) / 100;
-                                }
-
-                                return (
-                                  <tr key={rule.id || idx} className="hover:bg-slate-50 transition-colors">
-                                    <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-purple-500" /> {rule.from}</td>
-                                    <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-indigo-500" /> {rule.to}</td>
-                                    <td className="py-3 px-4">{rule.type || 'Interstate'}</td>
-                                    <td className="py-3 px-4 text-right font-medium">{rule.distance || '—'} KM</td>
-                                    <td className="py-3 px-4 text-center">
-                                      <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md border ${
-                                        isIncGst 
-                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                                          : 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                                      }`}>
-                                        {isIncGst ? 'Including GST' : 'Excluding GST'}
-                                      </span>
+                    ) : activePricingSubTab === 'Rate Cards & Charges' ? (
+                      <div className="flex flex-col gap-8">
+                        {/* Rates (Lane Pricing) Table */}
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-800 mb-3 uppercase tracking-wider flex items-center gap-2"><Map size={14} className="text-blue-600" /> Rates</h4>
+                          <div className="overflow-x-auto custom-scrollbar">
+                            <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[850px]">
+                              <thead>
+                                <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50">
+                                  <th className="py-3 px-4">FROM</th>
+                                  <th className="py-3 px-4">TO</th>
+                                  <th className="py-3 px-4">ROUTE TYPE</th>
+                                  <th className="py-3 px-4 text-right">DISTANCE (KM)</th>
+                                  <th className="py-3 px-4 text-center">GST MODE</th>
+                                  <th className="py-3 px-4 text-right">BASE RATE (EX GST)</th>
+                                  <th className="py-3 px-4 text-right">GST (10%)</th>
+                                  <th className="py-3 px-4 text-right">TOTAL (INC GST)</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
+                                {lanePricingRules.length === 0 ? (
+                                  <tr>
+                                    <td colSpan="8" className="py-8 text-center text-xs font-semibold text-slate-400 italic">
+                                      No rates configured yet for this customer. Click "+ Add Pricing Rule" above to add rates.
                                     </td>
-                                    <td className="py-3 px-4 text-right font-bold text-slate-800">${baseExGst.toFixed(2)}</td>
-                                    <td className="py-3 px-4 text-right font-medium text-indigo-600">
-                                      {isIncGst ? `$${gstVal.toFixed(2)} (Extracted)` : `+$${gstVal.toFixed(2)} (10%)`}
-                                    </td>
-                                    <td className="py-3 px-4 text-right font-black text-indigo-950">${totalIncGst.toFixed(2)}</td>
                                   </tr>
-                                );
-                              })
-                            )}
-                          </tbody>
-                        </table>
+                                ) : (
+                                  lanePricingRules.map((rule, idx) => {
+                                    const inputVal = parseFloat(rule.baseRate) || 0;
+                                    const isIncGst = rule.gstMode === 'INC_GST';
+                                    let baseExGst = 0;
+                                    let gstVal = 0;
+                                    let totalIncGst = 0;
+
+                                    if (isIncGst) {
+                                      totalIncGst = inputVal;
+                                      baseExGst = Math.round((inputVal / 1.10) * 100) / 100;
+                                      gstVal = Math.round((totalIncGst - baseExGst) * 100) / 100;
+                                    } else {
+                                      baseExGst = inputVal;
+                                      gstVal = Math.round((baseExGst * 0.10) * 100) / 100;
+                                      totalIncGst = Math.round((baseExGst + gstVal) * 100) / 100;
+                                    }
+
+                                    return (
+                                      <tr key={rule.id || idx} className="hover:bg-slate-50 transition-colors">
+                                        <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-purple-500" /> {rule.from}</td>
+                                        <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-indigo-500" /> {rule.to}</td>
+                                        <td className="py-3 px-4">{rule.type || 'Interstate'}</td>
+                                        <td className="py-3 px-4 text-right font-medium">{rule.distance || '—'} KM</td>
+                                        <td className="py-3 px-4 text-center">
+                                          <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md border ${
+                                            isIncGst 
+                                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                          }`}>
+                                            {isIncGst ? 'Including GST' : 'Excluding GST'}
+                                          </span>
+                                        </td>
+                                        <td className="py-3 px-4 text-right font-bold text-slate-800">${baseExGst.toFixed(2)}</td>
+                                        <td className="py-3 px-4 text-right font-medium text-indigo-600">
+                                          {isIncGst ? `$${gstVal.toFixed(2)} (Extracted)` : `+$${gstVal.toFixed(2)} (10%)`}
+                                        </td>
+                                        <td className="py-3 px-4 text-right font-black text-indigo-950">${totalIncGst.toFixed(2)}</td>
+                                      </tr>
+                                    );
+                                  })
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+
                       </div>
-                    )}
+                    ) : null}
+
                   </div>
                 </div>
 
@@ -3321,7 +3930,7 @@ export default function Customers() {
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Rate Cards / Charges</span>
-                      <span className="font-black text-slate-900">0 Active</span>
+                      <span className="font-black text-slate-900">{rateCards.length} Active</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Surcharges</span>
@@ -3382,7 +3991,7 @@ export default function Customers() {
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
-                    <button onClick={() => setShowAddSurchargeModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
+                    <button onClick={() => { setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' }); setShowAddSurchargeModal(true); }} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3">
                         <Plus size={14} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Add Surcharge</span>
@@ -4387,38 +4996,48 @@ export default function Customers() {
       {/* Create New Load Modal */}
       {showCreateLoadModal && createPortal(
         <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowCreateLoadModal(false)}>
-          <form onSubmit={handleCreateLoadSubmit} className="bg-white rounded-2xl w-full max-w-[460px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+          <form onSubmit={handleCreateLoadSubmit} className="bg-white rounded-2xl w-full max-w-[600px] max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
             {/* Header */}
-            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
+            <div className="px-7 pt-6 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
               <div>
                 <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Create New Load</h3>
-                <p className="text-[13px] font-normal text-slate-400 mt-2 leading-snug">New loads will be created in the Draft queue.</p>
+                <p className="text-[13px] font-normal text-slate-400 mt-1 leading-snug">New loads will be created in the Draft queue.</p>
               </div>
               <button type="button" onClick={() => setShowCreateLoadModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
             </div>
 
             {/* Body */}
-            <div className="px-7 py-6 space-y-6 overflow-y-auto">
+            <div className="px-7 py-5 space-y-5 overflow-y-auto">
               <div className="grid grid-cols-2 gap-5">
                 <div>
                   <label className="text-[13px] font-semibold text-slate-800 block mb-2">Origin *</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newLoadForm.origin}
-                    onChange={e => setNewLoadForm({ ...newLoadForm, origin: e.target.value })}
-                    placeholder="e.g. Sydney Depot" 
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" 
+                    onChange={e => {
+                      const val = e.target.value;
+                      setNewLoadForm({ ...newLoadForm, origin: val });
+                      const rule = findMatchingPricingRule(selectedCustomer?.id, val, newLoadForm.destination);
+                      recalcLoadPricing(rule, loadPricingCalc.quantity);
+                    }}
+                    placeholder="e.g. Sydney Depot"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
                     required
                   />
                 </div>
                 <div>
                   <label className="text-[13px] font-semibold text-slate-800 block mb-2">Destination *</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newLoadForm.destination}
-                    onChange={e => setNewLoadForm({ ...newLoadForm, destination: e.target.value })}
-                    placeholder="e.g. Canberra Branch" 
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" 
+                    onChange={e => {
+                      const val = e.target.value;
+                      setNewLoadForm({ ...newLoadForm, destination: val });
+                      const rule = findMatchingPricingRule(selectedCustomer?.id, newLoadForm.origin, val);
+                      recalcLoadPricing(rule, loadPricingCalc.quantity);
+                    }}
+                    placeholder="e.g. Canberra Branch"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
                     required
                   />
                 </div>
@@ -4426,12 +5045,12 @@ export default function Customers() {
 
               <div>
                 <label className="text-[13px] font-semibold text-slate-800 block mb-2">Cargo Type *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={newLoadForm.cargoType}
                   onChange={e => setNewLoadForm({ ...newLoadForm, cargoType: e.target.value })}
-                  placeholder="e.g. Beverages, Electronics, Dry Goods" 
-                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" 
+                  placeholder="e.g. Beverages, Electronics, Dry Goods"
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
                   required
                 />
               </div>
@@ -4439,18 +5058,18 @@ export default function Customers() {
               <div className="grid grid-cols-2 gap-5">
                 <div>
                   <label className="text-[13px] font-semibold text-slate-800 block mb-2">Weight</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newLoadForm.weight}
                     onChange={e => setNewLoadForm({ ...newLoadForm, weight: e.target.value })}
-                    placeholder="e.g. 6.2t" 
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" 
+                    placeholder="e.g. 6.2t"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
                   />
                 </div>
                 <div>
                   <label className="text-[13px] font-semibold text-slate-800 block mb-2">Priority</label>
                   <div className="relative">
-                    <select 
+                    <select
                       value={newLoadForm.priority}
                       onChange={e => setNewLoadForm({ ...newLoadForm, priority: e.target.value })}
                       className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
@@ -4467,31 +5086,113 @@ export default function Customers() {
 
               <div>
                 <label className="text-[13px] font-semibold text-slate-800 block mb-2">Assign Driver</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={newLoadForm.driverName}
                   onChange={e => setNewLoadForm({ ...newLoadForm, driverName: e.target.value })}
-                  placeholder="Driver name (optional)" 
-                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" 
+                  placeholder="Driver name (optional)"
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
                 />
               </div>
 
               <div>
                 <label className="text-[13px] font-semibold text-slate-800 block mb-2">Notes</label>
-                <textarea 
-                  rows={3} 
+                <textarea
+                  rows={2}
                   value={newLoadForm.notes}
                   onChange={e => setNewLoadForm({ ...newLoadForm, notes: e.target.value })}
-                  placeholder="Additional notes..." 
+                  placeholder="Additional notes..."
                   className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700 resize-none"
                 ></textarea>
               </div>
+
+              {/* ───────── AUTO-PRICING CALCULATOR ───────── */}
+              {loadPricingCalc.matchedRule ? (
+                <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-indigo-600 text-white">
+                    <div className="flex items-center gap-2">
+                      <Calculator size={14} strokeWidth={2.5} />
+                      <span className="text-[12px] font-bold">Auto-Calculated Pricing</span>
+                    </div>
+                    <span className="text-[10px] font-semibold bg-white/20 rounded-full px-2 py-0.5">{loadPricingCalc.matchedRule.name}</span>
+                  </div>
+                  <div className="px-4 py-3 space-y-1.5">
+                    {/* Quantity */}
+                    <div className="flex items-center justify-between">
+                      <label className="text-[12px] font-semibold text-slate-700">Quantity <span className="text-slate-400 font-normal">({loadPricingCalc.matchedRule.method})</span></label>
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={loadPricingCalc.quantity}
+                        onChange={e => recalcLoadPricing(loadPricingCalc.matchedRule, e.target.value)}
+                        className="w-24 border border-indigo-200 rounded-lg px-3 py-1.5 text-[13px] font-bold text-indigo-800 bg-white focus:outline-none focus:border-indigo-500 text-right"
+                      />
+                    </div>
+                    {/* Breakdown */}
+                    <div className="mt-2 pt-2 border-t border-indigo-100 space-y-1">
+                      <div className="flex justify-between text-[12px] text-slate-600">
+                        <span>Base Charge ({loadPricingCalc.matchedRule.method} × {loadPricingCalc.quantity})</span>
+                        <span className="font-semibold">${loadPricingCalc.baseCharge.toFixed(2)}</span>
+                      </div>
+                      {loadPricingCalc.fuelLevyAmount > 0 && (
+                        <div className="flex justify-between text-[12px] text-slate-600">
+                          <span>Fuel Levy ({parseFloat(loadPricingCalc.matchedRule.fuelLevy) || 0}%)</span>
+                          <span className="font-semibold text-amber-700">+${loadPricingCalc.fuelLevyAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {loadPricingCalc.additionalCharges > 0 && (
+                        <div className="flex justify-between text-[12px] text-slate-600">
+                          <span>Additional Surcharges</span>
+                          <span className="font-semibold text-rose-700">+${loadPricingCalc.additionalCharges.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-[12px] font-bold text-slate-800 pt-1 border-t border-indigo-100">
+                        <span>Total Ex GST</span>
+                        <span>${loadPricingCalc.totalExGST.toFixed(2)}</span>
+                      </div>
+                      {loadPricingCalc.gstAmount > 0 && (
+                        <div className="flex justify-between text-[12px] text-slate-600">
+                          <span>GST (10%)</span>
+                          <span className="font-semibold">+${loadPricingCalc.gstAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-[13px] font-extrabold text-indigo-700 pt-1.5 border-t border-indigo-200">
+                        <span>Total Inc GST</span>
+                        <span>${loadPricingCalc.totalIncGST.toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-400 pt-1">Pricing is auto-calculated from active rule and will be frozen with this load.</p>
+                  </div>
+                </div>
+              ) : (
+                newLoadForm.origin && newLoadForm.destination ? (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 flex items-center gap-2.5">
+                    <DollarSign size={14} className="text-slate-400 shrink-0" />
+                    <div>
+                      <p className="text-[12px] font-semibold text-slate-600">No pricing rule matched</p>
+                      <p className="text-[11px] text-slate-400">No active pricing rule found for this route. Add one under Billing Rules → Pricing Rules.</p>
+                    </div>
+                  </div>
+                ) : null
+              )}
             </div>
 
             {/* Footer */}
-            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
-              <button type="button" onClick={() => setShowCreateLoadModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
-              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
+            <div className="px-7 py-5 flex justify-between items-center gap-3 border-t border-slate-100 shrink-0">
+              <div>
+                {loadPricingCalc.matchedRule && (
+                  <span className="text-[11px] text-indigo-600 font-semibold bg-indigo-50 border border-indigo-100 rounded-full px-2.5 py-1">
+                    💰 ${loadPricingCalc.totalIncGST.toFixed(2)} Inc GST
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setShowCreateLoadModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+                <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200 flex items-center gap-2">
+                  <Check size={14} strokeWidth={2.5} /> Create Load
+                </button>
+              </div>
             </div>
           </form>
         </div>,
@@ -4558,7 +5259,7 @@ export default function Customers() {
                       })
                     ) : (
                       <>
-                        <option>Sarah Mitchell (Account Manager)</option>
+                        <option>Company Operations Admin</option>
                         <option>Mike Thompson (Admin)</option>
                       </>
                     )}
@@ -4698,89 +5399,12 @@ export default function Customers() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
-                <div className="relative">
-                  <select 
-                    value={editCustomerForm.manager} 
-                    onChange={e => setEditCustomerForm({ ...editCustomerForm, manager: e.target.value })}
-                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
-                  >
-                    {companyUsers.length > 0 ? (
-                      companyUsers.map(user => {
-                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
-                        return <option key={user.id} value={fullName}>{fullName}</option>;
-                      })
-                    ) : (
-                      <>
-                        <option value="Sarah Mitchell">Sarah Mitchell</option>
-                        <option value="Mike Thompson">Mike Thompson</option>
-                        <option value="John Davis">John Davis</option>
-                        <option value="Emily Rogers">Emily Rogers</option>
-                      </>
-                    )}
-                  </select>
-                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
             </div>
 
             {/* Footer */}
             <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
               <button type="button" onClick={() => setShowEditCustomerModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
               <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
-            </div>
-          </form>
-        </div>,
-        document.body
-      )}
-
-      {/* Assign Manager Modal */}
-      {showAssignManagerModal && createPortal(
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAssignManagerModal(false)}>
-          <form onSubmit={handleSaveAssignManager} className="bg-white rounded-2xl w-full max-w-[420px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
-            {/* Header */}
-            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
-              <div>
-                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Assign Account Manager</h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">Select a manager for {assignManagerForm.name}</p>
-              </div>
-              <button type="button" onClick={() => setShowAssignManagerModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
-            </div>
-
-            {/* Body */}
-            <div className="px-7 py-6 space-y-4">
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
-                <div className="relative">
-                  <select 
-                    value={assignManagerForm.manager} 
-                    onChange={e => setAssignManagerForm({ ...assignManagerForm, manager: e.target.value })}
-                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
-                  >
-                    {companyUsers.length > 0 ? (
-                      companyUsers.map(user => {
-                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
-                        return <option key={user.id} value={fullName}>{fullName}</option>;
-                      })
-                    ) : (
-                      <>
-                        <option value="Sarah Mitchell">Sarah Mitchell</option>
-                        <option value="Mike Thompson">Mike Thompson</option>
-                        <option value="John Davis">John Davis</option>
-                        <option value="Emily Rogers">Emily Rogers</option>
-                      </>
-                    )}
-                  </select>
-                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
-              <button type="button" onClick={() => setShowAssignManagerModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
-              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Assign</button>
             </div>
           </form>
         </div>,
@@ -4993,6 +5617,10 @@ export default function Customers() {
         </div>,
         document.body
       )}
+
+
+
+
 
       {/* Edit Company Information Modal */}
       {showEditCompanyInfoModal && createPortal(
@@ -5230,14 +5858,24 @@ export default function Customers() {
                 </div>
 
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Base Rate (EX GST) *</label>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">
+                    {rateCardForm.unit === 'Per KM' ? 'Rate Per KM ($/km, EX GST) *' :
+                     rateCardForm.unit === 'Per Hour' ? 'Hourly Rate ($/hr, EX GST) *' :
+                     rateCardForm.unit === 'Per Tonne' ? 'Rate Per Tonne ($/tonne, EX GST) *' :
+                     'Base Rate (EX GST) *'}
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     value={rateCardForm.baseRate}
                     onChange={e => setRateCardForm({ ...rateCardForm, baseRate: e.target.value })}
-                    placeholder="e.g. 450.00"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700"
+                    placeholder={
+                      rateCardForm.unit === 'Per KM' ? 'e.g. 2.50' :
+                      rateCardForm.unit === 'Per Hour' ? 'e.g. 85.00' :
+                      rateCardForm.unit === 'Per Tonne' ? 'e.g. 60.00' :
+                      'e.g. 450.00'
+                    }
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] font-bold focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-900 shadow-sm"
                     required
                   />
                 </div>
@@ -5273,24 +5911,24 @@ export default function Customers() {
         document.body
       )}
 
-      {/* Add Pricing Rule Modal */}
+      {/* Add Pricing Profile Modal */}
       {showAddPricingRuleModal && createPortal(
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[9999] p-4 sm:p-6" onClick={() => setShowAddPricingRuleModal(false)}>
           <form 
-            onSubmit={handleSavePricingRuleSubmit} 
-            className="bg-white rounded-3xl w-full max-w-[500px] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-100" 
+            onSubmit={handleSaveFullPricingRule} 
+            className="bg-white rounded-3xl w-full max-w-[800px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-100" 
             onClick={e => e.stopPropagation()} 
             style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}
           >
             {/* Fixed Header */}
-            <div className="px-6 py-4.5 flex items-center justify-between border-b border-slate-100 bg-white shrink-0">
+            <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 bg-white shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-2xs shrink-0">
                   <Calculator size={20} strokeWidth={2.2} />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">Add Lane Pricing Rule</h3>
-                  <p className="text-[11px] text-slate-500 font-medium">Configure route freight rates, distance & GST billing mode</p>
+                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">Add Pricing Rule</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Configure all charges and surcharges for {selectedCustomer?.name || 'this customer'}</p>
                 </div>
               </div>
               <button 
@@ -5303,173 +5941,211 @@ export default function Customers() {
             </div>
 
             {/* Scrollable Body Container */}
-            <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar text-left text-xs bg-slate-50/30">
-              {/* Pickup & Delivery */}
-              <div className="grid grid-cols-2 gap-3.5">
-                <div>
-                  <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center gap-1.5">
-                    <MapPin size={13} className="text-emerald-500 shrink-0" /> From (Pickup) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newPricingRule.from}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, from: e.target.value })}
-                    placeholder="e.g. Melbourne VIC"
-                    className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800 placeholder:text-slate-400 shadow-2xs"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center gap-1.5">
-                    <MapPin size={13} className="text-indigo-500 shrink-0" /> To (Delivery) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newPricingRule.to}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, to: e.target.value })}
-                    placeholder="e.g. Sydney NSW"
-                    className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800 placeholder:text-slate-400 shadow-2xs"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Route Type & Distance */}
-              <div className="grid grid-cols-2 gap-3.5">
-                <div>
-                  <label className="text-[12px] font-bold text-slate-800 block mb-1.5">Route Type</label>
-                  <div className="relative">
-                    <select
-                      value={newPricingRule.type}
-                      onChange={e => setNewPricingRule({ ...newPricingRule, type: e.target.value })}
-                      className="appearance-none w-full border border-slate-200 bg-white rounded-xl pl-3.5 pr-9 py-2.5 text-[13px] font-semibold text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer shadow-2xs"
-                    >
-                      <option value="Interstate">Interstate</option>
-                      <option value="Intrastate">Intrastate</option>
-                      <option value="Metro">Metro</option>
-                      <option value="Regional">Regional</option>
+            <div className="px-6 py-5 space-y-6 overflow-y-auto flex-1 custom-scrollbar text-left text-xs bg-slate-50/50">
+              
+              {/* SECTION: BASIC INFO */}
+              <div>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">1. Profile Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Pricing Profile Name <span className="text-rose-500">*</span></label>
+                    <input type="text" value={fullPricingRuleForm.name} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, name: e.target.value })} placeholder="e.g. ABC Sydney to Canberra Rate" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" required />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Niche</label>
+                    <select value={fullPricingRuleForm.niche} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, niche: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm">
+                      <option>Car Carrying</option>
+                      <option>General Freight</option>
+                      <option>Dangerous Goods</option>
                     </select>
-                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Effective From</label>
+                    <input type="date" value={fullPricingRuleForm.effectiveFrom} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, effectiveFrom: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Effective Until (Optional)</label>
+                    <input type="date" value={fullPricingRuleForm.effectiveTo} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, effectiveTo: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Status</label>
+                    <select value={fullPricingRuleForm.status} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, status: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm">
+                      <option>Active</option>
+                      <option>Inactive</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION: ROUTING & METHOD */}
+              <div>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">2. Core Rate Calculation</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Origin (Pickup Location)</label>
+                    <input type="text" value={fullPricingRuleForm.from} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, from: e.target.value })} placeholder="e.g. Sydney" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Destination (Delivery Location)</label>
+                    <input type="text" value={fullPricingRuleForm.to} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, to: e.target.value })} placeholder="e.g. Canberra" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Zone (if applicable)</label>
+                    <input type="text" value={fullPricingRuleForm.zone} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, zone: e.target.value })} placeholder="e.g. North Metro" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center justify-between">
-                    <span>Distance (KM)</span>
-                    <span className="text-[10px] text-slate-400 font-normal">Optional</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={newPricingRule.distance}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, distance: e.target.value })}
-                    placeholder="e.g. 878"
-                    className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[13px] font-medium focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-800 placeholder:text-slate-400 shadow-2xs"
-                  />
-                </div>
-              </div>
-
-              {/* Pricing GST Mode Selection */}
-              <div>
-                <label className="text-[12px] font-bold text-slate-800 block mb-1.5 flex items-center justify-between">
-                  <span>Pricing GST Billing Mode</span>
-                  <span className="text-[10px] font-black text-indigo-800 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-150 flex items-center gap-1.5 shadow-2xs">
-                    <Lock size={11} className="text-indigo-600 shrink-0" /> 10% Fixed GST (Non-Editable)
-                  </span>
-                </label>
-                <div className="grid grid-cols-2 gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200/80">
-                  <button
-                    type="button"
-                    onClick={() => setNewPricingRule({ ...newPricingRule, gstMode: 'EX_GST' })}
-                    className={`py-2 px-3 text-xs font-extrabold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      (newPricingRule.gstMode || 'EX_GST') === 'EX_GST'
-                        ? 'bg-white text-indigo-900 shadow-sm border border-slate-200/80'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${ (newPricingRule.gstMode || 'EX_GST') === 'EX_GST' ? 'bg-indigo-600' : 'bg-slate-300' }`}></span>
-                    Excluding GST
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewPricingRule({ ...newPricingRule, gstMode: 'INC_GST' })}
-                    className={`py-2 px-3 text-xs font-extrabold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      newPricingRule.gstMode === 'INC_GST'
-                        ? 'bg-white text-indigo-900 shadow-sm border border-slate-200/80'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${ newPricingRule.gstMode === 'INC_GST' ? 'bg-indigo-600' : 'bg-slate-300' }`}></span>
-                    Including GST
-                  </button>
-                </div>
-              </div>
-
-              {/* Base Rate Input Field */}
-              <div>
-                <label className="text-[12px] font-bold text-slate-800 block mb-1.5">
-                  {newPricingRule.gstMode === 'INC_GST' ? 'Total Customer Rate ($ INC GST)' : 'Base Customer Rate ($ EX GST)'} <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[13px]">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newPricingRule.baseRate}
-                    onChange={e => setNewPricingRule({ ...newPricingRule, baseRate: e.target.value, minCharge: e.target.value })}
-                    placeholder={newPricingRule.gstMode === 'INC_GST' ? 'e.g. 1100.00' : 'e.g. 1000.00'}
-                    className="w-full border border-slate-200 bg-white rounded-xl pl-8 pr-3.5 py-2.5 text-[13px] font-black focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-slate-900 shadow-2xs"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Dynamic Financial Calculation Breakdown */}
-              {(() => {
-                const inputVal = parseFloat(newPricingRule.baseRate) || 0;
-                const isIncGst = newPricingRule.gstMode === 'INC_GST';
-                
-                let baseExGst = 0;
-                let gstComponent = 0;
-                let totalIncGst = 0;
-
-                if (isIncGst) {
-                  totalIncGst = inputVal;
-                  baseExGst = Math.round((inputVal / 1.10) * 100) / 100;
-                  gstComponent = Math.round((totalIncGst - baseExGst) * 100) / 100;
-                } else {
-                  baseExGst = inputVal;
-                  gstComponent = Math.round((baseExGst * 0.10) * 100) / 100;
-                  totalIncGst = Math.round((baseExGst + gstComponent) * 100) / 100;
-                }
-
-                return (
-                  <div className="p-4 bg-gradient-to-br from-indigo-50/90 via-slate-50 to-indigo-50/40 border border-indigo-100 rounded-2xl space-y-2 text-xs shadow-2xs">
-                    <div className="flex justify-between items-center font-medium text-slate-600">
-                      <span className="flex items-center gap-1 text-slate-500">
-                        <DollarSign size={13} className="text-slate-400" /> Base Rate (Ex GST):
-                      </span>
-                      <span className="font-extrabold text-slate-800 text-[13px]">${baseExGst.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between items-center font-medium text-slate-600">
-                      <span className="flex items-center gap-1 text-slate-500">
-                        <DollarSign size={13} className="text-indigo-400" /> {isIncGst ? 'GST Component (10% Extracted):' : 'Statutory GST (10% Fixed):'}
-                      </span>
-                      <span className="font-extrabold text-indigo-700 text-[13px]">${gstComponent.toFixed(2)}</span>
-                    </div>
-                    <div className="pt-2 border-t border-indigo-100 flex justify-between items-center font-black text-slate-900 text-sm">
-                      <span className="text-slate-900 font-extrabold">Total Customer Charge (Inc GST):</span>
-                      <span className="text-indigo-900 font-black text-base">${totalIncGst.toFixed(2)}</span>
-                    </div>
-                    <div className="text-[10px] text-indigo-700/90 font-bold italic pt-1 flex items-center gap-1.5">
-                      <Lock size={11} className="text-indigo-600 shrink-0" />
-                      {isIncGst 
-                        ? '10% Fixed GST Component is extracted from total amount (AU Statutory Rate - Non-Editable).'
-                        : '10% Fixed Statutory GST is added to the base rate (AU Statutory Rate - Non-Editable).'}
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5 flex items-center gap-1.5"><Settings size={12} className="text-blue-500"/> Pricing Method <span className="text-rose-500">*</span></label>
+                    <select value={fullPricingRuleForm.method} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, method: e.target.value })} className="w-full border border-blue-200 bg-blue-50/40 rounded-xl px-3.5 py-2.5 text-[12px] font-black text-blue-700 focus:outline-none focus:border-blue-500 shadow-sm cursor-pointer" required>
+                      <option value="Per Load">Per Load</option>
+                      <option value="Per Item">Per Item</option>
+                      <option value="Per Vehicle">Per Vehicle</option>
+                      <option value="Per Pallet">Per Pallet</option>
+                      <option value="Per Tonne">Per Tonne</option>
+                      <option value="Per Kilometre">Per Kilometre</option>
+                      <option value="Per Hour">Per Hour</option>
+                      <option value="Per Day">Per Day</option>
+                      <option value="Per Stop">Per Stop</option>
+                      <option value="Fixed Route">Fixed Route</option>
+                      <option value="Distance Band">Distance Band</option>
+                      <option value="Combination">Combination</option>
+                    </select>
                   </div>
-                );
-              })()}
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">
+                      {fullPricingRuleForm.method === 'Per Item' ? 'Rate Per Item ($/item)' :
+                       fullPricingRuleForm.method === 'Per Vehicle' ? 'Rate Per Vehicle ($/vehicle)' :
+                       fullPricingRuleForm.method === 'Per Pallet' ? 'Rate Per Pallet ($/pallet)' :
+                       fullPricingRuleForm.method === 'Per Tonne' ? 'Rate Per Tonne ($/tonne)' :
+                       fullPricingRuleForm.method === 'Per Kilometre' ? 'Rate Per KM ($/km)' :
+                       fullPricingRuleForm.method === 'Per Hour' ? 'Hourly Rate ($/hr)' :
+                       fullPricingRuleForm.method === 'Per Day' ? 'Daily Rate ($/day)' :
+                       fullPricingRuleForm.method === 'Per Stop' ? 'Rate Per Stop ($/stop)' :
+                       fullPricingRuleForm.method === 'Distance Band' ? 'Band Base Rate ($)' :
+                       fullPricingRuleForm.method === 'Combination' ? 'Combination Base Rate ($)' :
+                       fullPricingRuleForm.method === 'Fixed Route' ? 'Fixed Lane Rate ($)' :
+                       'Customer Charge / Base Rate ($)'} <span className="text-rose-500">*</span>
+                    </label>
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      value={fullPricingRuleForm.baseRate} 
+                      onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, baseRate: e.target.value })} 
+                      placeholder={
+                        fullPricingRuleForm.method === 'Per Kilometre' ? 'e.g. 2.50' :
+                        fullPricingRuleForm.method === 'Per Hour' ? 'e.g. 85.00' :
+                        fullPricingRuleForm.method === 'Per Item' ? 'e.g. 150.00' :
+                        fullPricingRuleForm.method === 'Per Vehicle' ? 'e.g. 250.00' :
+                        fullPricingRuleForm.method === 'Per Pallet' ? 'e.g. 45.00' :
+                        'e.g. 500.00'
+                      } 
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-black focus:outline-none focus:border-indigo-500 shadow-sm" 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Minimum Charge ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.minCharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, minCharge: e.target.value })} placeholder="e.g. 100.00" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                </div>
+
+                {/* Live Formula Preview Card */}
+                <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+                    <span className="text-[11px] font-bold text-blue-900">
+                      Selected Method: <span className="underline font-black">{fullPricingRuleForm.method}</span>
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-semibold text-blue-700 bg-white/90 px-3 py-1 rounded-lg border border-blue-100 shadow-2xs">
+                    💡 Formula: <span className="font-bold text-indigo-900">
+                      {fullPricingRuleForm.method === 'Per Item' ? 'Rate Per Item × Total Items Count + Fuel Levy' :
+                       fullPricingRuleForm.method === 'Per Vehicle' ? 'Rate Per Vehicle × Vehicles Count + Fuel Levy' :
+                       fullPricingRuleForm.method === 'Per Pallet' ? 'Rate Per Pallet × Pallets Count + Fuel Levy' :
+                       fullPricingRuleForm.method === 'Per Tonne' ? 'Rate Per Tonne × Total Weight (Tons) + Fuel Levy' :
+                       fullPricingRuleForm.method === 'Per Kilometre' ? 'Rate Per KM × Total Trip Distance (KM) + Fuel Levy' :
+                       fullPricingRuleForm.method === 'Per Hour' ? 'Hourly Rate × Billable Hours + Fuel Levy' :
+                       fullPricingRuleForm.method === 'Per Day' ? 'Daily Rate × Number of Days + Fuel Levy' :
+                       fullPricingRuleForm.method === 'Per Stop' ? 'Rate Per Stop × Number of Stops + Fuel Levy' :
+                       fullPricingRuleForm.method === 'Distance Band' ? 'Matched Distance Tier Rate + Fuel Levy' :
+                       fullPricingRuleForm.method === 'Combination' ? 'Base Rate + (KM × $1.50) + (Items × $50) + Fuel Levy' :
+                       fullPricingRuleForm.method === 'Fixed Route' ? 'Fixed Lane Rate + Fuel Levy' :
+                       'Flat Charge Per Load + Fuel Levy'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION: SURCHARGES */}
+              <div>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">3. Surcharges & Accessorials</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Fuel Levy (%)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.fuelLevy} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, fuelLevy: e.target.value })} placeholder="e.g. 7" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-bold text-purple-700 focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Extra Pickup ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.extraPickupCharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, extraPickupCharge: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Extra Delivery ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.extraDeliveryCharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, extraDeliveryCharge: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Waiting Time ($/hr)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.waitingTimeCharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, waitingTimeCharge: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Storage Charge ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.storageCharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, storageCharge: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Tolls ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.tolls} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, tolls: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">DG Surcharge ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.dgSurcharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, dgSurcharge: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">After-Hours ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.afterHoursCharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, afterHoursCharge: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Weekend ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.weekendCharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, weekendCharge: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Cancellation ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.cancellationFee} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, cancellationFee: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Redelivery ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.redeliveryCharge} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, redeliveryCharge: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Other Charges ($)</label>
+                    <input type="number" step="0.01" value={fullPricingRuleForm.otherCharges} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, otherCharges: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                  </div>
+                </div>
+              </div>
+
+              {/* TAX TREATMENT */}
+              <div>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">4. Tax Treatment</h4>
+                <div className="w-1/2">
+                   <label className="text-[11px] font-bold text-slate-800 block mb-1.5">GST/Tax Treatment</label>
+                    <select value={fullPricingRuleForm.gstTreatment} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, gstTreatment: e.target.value })} className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm">
+                      <option>Excluding GST (Add 10%)</option>
+                      <option>Including GST</option>
+                      <option>GST Free</option>
+                    </select>
+                </div>
+              </div>
+
             </div>
 
             {/* Fixed Footer */}
@@ -5485,12 +6161,543 @@ export default function Customers() {
                 type="submit" 
                 className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-lg shadow-indigo-200 hover:shadow-indigo-300 flex items-center gap-1.5"
               >
-                <Check size={15} strokeWidth={2.5} /> Add Pricing Rule
+                <Check size={15} strokeWidth={2.5} /> Save Pricing Rule
               </button>
             </div>
           </form>
         </div>,
         document.body
+      )}
+
+      {/* Add / Edit Surcharge Modal */}
+      {showAddSurchargeModal && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={() => { setShowAddSurchargeModal(false); setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' }); }}>
+          <form onSubmit={handleSaveBillingSurcharge} className="bg-white rounded-2xl w-full max-w-[520px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-xs">
+                  <Zap size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">{surchargeModalForm.id ? 'Edit Surcharge' : 'Add Fuel Levy / Surcharge'}</h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5 font-medium">Configure automatic surcharge rates &amp; levy percentages for {selectedCustomer?.name}</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => { setShowAddSurchargeModal(false); setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' }); }} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+
+            <div className="p-6 space-y-5 text-xs font-semibold text-slate-700 max-h-[75vh] overflow-y-auto">
+              {/* Quick Presets */}
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Zap size={13} className="text-amber-500" /> Quick Presets
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Fuel Levy', calculation: '% of Base Rate', rate: '14.50', taxable: true })}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span>⛽</span> Fuel Levy (14.5%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Toll Recovery Fee', calculation: 'Flat Fee ($)', rate: '25.00', taxable: true })}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span>🛣️</span> Toll Charge ($25)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Waiting Time Charge', calculation: 'Per Hour', rate: '65.00', taxable: true })}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span>⏳</span> Waiting ($65/hr)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Tail Lift Service Fee', calculation: 'Flat Fee ($)', rate: '35.00', taxable: true })}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span>🚚</span> Tail Lift ($35)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Dangerous Goods (DG) Fee', calculation: '% of Base Rate', rate: '10.00', taxable: true })}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span>☣️</span> DG Surcharge (10%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'After Hours Surcharge', calculation: '% of Base Rate', rate: '15.00', taxable: true })}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border border-slate-200 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span>🌙</span> After Hours (15%)
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Surcharge / Levy Name <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={surchargeModalForm.description}
+                  onChange={e => setSurchargeModalForm({ ...surchargeModalForm, description: e.target.value })}
+                  placeholder="e.g. Fuel Levy, Tolls, Tail Lift Fee, DG Surcharge"
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 bg-white transition-all shadow-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Calculation Method</label>
+                  <select
+                    value={surchargeModalForm.calculation}
+                    onChange={e => setSurchargeModalForm({ ...surchargeModalForm, calculation: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer transition-all shadow-xs"
+                  >
+                    <option value="% of Base Rate">% of Base Rate</option>
+                    <option value="Flat Fee ($)">Flat Fee ($)</option>
+                    <option value="Per Hour">Per Hour</option>
+                    <option value="Per KM Charge">Per KM Charge</option>
+                    <option value="Per Load">Per Load</option>
+                    <option value="Per Item">Per Item / Pallet</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Rate / Amount <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      min="0"
+                      value={surchargeModalForm.rate}
+                      onChange={e => setSurchargeModalForm({ ...surchargeModalForm, rate: e.target.value })}
+                      placeholder={surchargeModalForm.calculation?.includes('%') ? '14.50' : '25.00'}
+                      className="w-full border border-slate-200 rounded-xl p-2.5 pr-8 text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 bg-white transition-all shadow-xs"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
+                      {surchargeModalForm.calculation?.includes('%') ? '%' : '$'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tax Treatment Toggle */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Tax Treatment (GST)</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, taxable: true })}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      surchargeModalForm.taxable !== false
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-xs'
+                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    <CheckCircle2 size={14} className={surchargeModalForm.taxable !== false ? 'text-emerald-600' : 'text-slate-300'} />
+                    Subject to GST (+10%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, taxable: false })}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      surchargeModalForm.taxable === false
+                        ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-xs'
+                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    <CheckCircle2 size={14} className={surchargeModalForm.taxable === false ? 'text-amber-600' : 'text-slate-300'} />
+                    GST Free / Exempt
+                  </button>
+                </div>
+              </div>
+
+              {/* Optional Notes */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Notes / Conditions (Optional)</label>
+                <input
+                  type="text"
+                  value={surchargeModalForm.notes || ''}
+                  onChange={e => setSurchargeModalForm({ ...surchargeModalForm, notes: e.target.value })}
+                  placeholder="e.g. Applies after 30 mins free loading time or per DG load"
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-blue-500 bg-white shadow-xs"
+                />
+              </div>
+
+              {/* Live Summary Preview */}
+              {surchargeModalForm.description && surchargeModalForm.rate && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse shrink-0"></div>
+                    <div>
+                      <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                        {surchargeModalForm.description}
+                        <span className="text-[10px] font-bold text-blue-600 bg-blue-100/60 px-1.5 py-0.2 rounded">
+                          {surchargeModalForm.calculation}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
+                        Rate: <span className="font-bold text-slate-800">{surchargeModalForm.calculation?.includes('%') ? `${surchargeModalForm.rate}%` : `$${parseFloat(surchargeModalForm.rate || 0).toFixed(2)}`}</span>
+                        {' • '}
+                        {surchargeModalForm.taxable !== false ? 'Standard Taxable (+10% GST)' : 'GST Free'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => { setShowAddSurchargeModal(false); setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' }); }}
+                className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shadow-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md cursor-pointer flex items-center gap-1.5"
+              >
+                <Plus size={14} /> {surchargeModalForm.id ? 'Update Surcharge' : 'Add Surcharge'}
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
+
+      {/* Add Vehicle Type Modal */}
+      {showAddVehicleTypeModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddVehicleTypeModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[480px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900">Add Vehicle Type Pricing</h3>
+              <button onClick={() => setShowAddVehicleTypeModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700">
+              <div>
+                <label className="block text-slate-800 font-bold mb-1.5">Vehicle Type</label>
+                <select className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer">
+                  <option>Sedan / Hatchback</option>
+                  <option>SUV / Crossover</option>
+                  <option>4WD / Ute</option>
+                  <option>Van / Commercial</option>
+                  <option>Luxury / Performance</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Base Price (EX GST)</label>
+                  <input type="number" placeholder="450.00" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+                </div>
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Surcharge (%)</label>
+                  <input type="number" placeholder="15" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowAddVehicleTypeModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
+              <button onClick={() => { setShowAddVehicleTypeModal(false); triggerToast('Vehicle type pricing saved successfully!'); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">Save Rate</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Preview Pricing Matrix Modal */}
+      {showPricingMatrixModal && createPortal(
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-4xl rounded-2xl border border-slate-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 text-left">
+            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                  <Eye className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">Pricing Matrix Preview</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">{selectedCustomer?.name || 'Auto World Sydney'} • Standard National Template</p>
+                </div>
+              </div>
+              <button onClick={() => setShowPricingMatrixModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4 text-xs">
+              <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">BUSINESS TYPE</span>
+                  <span className="font-extrabold text-slate-900">{selectedNiche}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">ACTIVE TEMPLATE</span>
+                  <span className="font-extrabold text-blue-600">{selectedTemplate}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">FUEL LEVY</span>
+                  <span className="font-extrabold text-emerald-600">14.5% (Monthly Variable)</span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                <table className="w-full text-left text-xs whitespace-nowrap">
+                  <thead>
+                    <tr className="bg-slate-100/70 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                      <th className="py-2.5 px-3">ROUTE / LANE</th>
+                      <th className="py-2.5 px-3">TYPE</th>
+                      <th className="py-2.5 px-3 text-right">DISTANCE</th>
+                      <th className="py-2.5 px-3 text-right">BASE RATE</th>
+                      <th className="py-2.5 px-3 text-right">FUEL LEVY (14.5%)</th>
+                      <th className="py-2.5 px-3 text-right">GST (10%)</th>
+                      <th className="py-2.5 px-3 text-right">TOTAL ESTIMATE</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                    {lanePricingRules.map((rule, idx) => {
+                      const base = parseFloat((rule.baseRate || '1000').toString().replace(/,/g, '')) || 1000;
+                      const fuel = base * 0.145;
+                      const gst = (base + fuel) * 0.10;
+                      const total = base + fuel + gst;
+                      return (
+                        <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
+                          <td className="py-2.5 px-3 font-bold text-slate-900">{rule.from} ➔ {rule.to}</td>
+                          <td className="py-2.5 px-3">{rule.type}</td>
+                          <td className="py-2.5 px-3 text-right text-slate-500">{rule.distance} KM</td>
+                          <td className="py-2.5 px-3 text-right font-bold text-slate-900">${rule.baseRate}</td>
+                          <td className="py-2.5 px-3 text-right text-emerald-600">${fuel.toFixed(2)}</td>
+                          <td className="py-2.5 px-3 text-right text-slate-500">${gst.toFixed(2)}</td>
+                          <td className="py-2.5 px-3 text-right font-black text-blue-700">${total.toFixed(2)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+              <button 
+                onClick={() => {
+                  triggerToast('Printing pricing matrix...');
+                  window.print();
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print Matrix</span>
+              </button>
+              <button 
+                onClick={() => setShowPricingMatrixModal(false)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Pricing History Modal */}
+      {showPricingHistoryModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowPricingHistoryModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[650px] max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">Pricing Audit & Change Log</h3>
+                <p className="text-xs text-slate-500 mt-0.5 font-medium">Historical pricing revisions for {selectedCustomer?.name}</p>
+              </div>
+              <button onClick={() => setShowPricingHistoryModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-3 text-xs font-semibold text-slate-700">
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex justify-between items-center">
+                <div>
+                  <p className="font-extrabold text-slate-900">Standard National Template Applied</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Updated by System Admin</p>
+                </div>
+                <span className="text-[10px] text-slate-500 font-bold">15/08/2026 03:45 PM</span>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button onClick={() => setShowPricingHistoryModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Close</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Apply Template Modal */}
+      {showApplyTemplateModal && createPortal(
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 text-left">
+            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">Apply Pricing Template</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">Select pre-built rate card</p>
+                </div>
+              </div>
+              <button onClick={() => setShowApplyTemplateModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs font-medium">
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Select Template</label>
+                <select 
+                  value={selectedTemplate}
+                  onChange={(e) => setSelectedTemplate(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
+                >
+                  <option value="Standard National Template">Standard National Template (2025-2026)</option>
+                  <option value="Interstate Express Rate Matrix">Interstate Express Rate Matrix</option>
+                  <option value="Heavy Carrier Rate Card">Heavy Carrier Rate Card</option>
+                  <option value="Metro Delivery Rate">Metro Delivery Rate</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Effective Date Range</label>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="date"
+                    value={effectiveStartDate}
+                    onChange={(e) => setEffectiveStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer"
+                  />
+                  <span className="text-slate-400 font-bold">-</span>
+                  <input 
+                    type="date"
+                    value={effectiveEndDate}
+                    onChange={(e) => setEffectiveEndDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 space-y-1">
+                <span className="font-bold block">Notice:</span>
+                <span>Applying this template will update all base lane rates and surcharges for this customer.</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+              <button 
+                onClick={() => setShowApplyTemplateModal(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  let sampleRules = [];
+                  if (selectedTemplate.includes('Metro')) {
+                    sampleRules = [
+                      { id: Date.now() + 1, from: 'Sydney Metro East', to: 'Sydney Metro West', type: 'Intrastate', distance: '45', baseRate: '120.00', minCharge: '120.00' },
+                      { id: Date.now() + 2, from: 'Melbourne CBD', to: 'Dandenong Hub', type: 'Intrastate', distance: '35', baseRate: '110.00', minCharge: '110.00' }
+                    ];
+                  } else if (selectedTemplate.includes('Interstate')) {
+                    sampleRules = [
+                      { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Perth (WA)', type: 'Interstate', distance: '3931', baseRate: '1850.00', minCharge: '1850.00' },
+                      { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Townsville (QLD)', type: 'Intrastate', distance: '1336', baseRate: '890.00', minCharge: '890.00' }
+                    ];
+                  } else {
+                    sampleRules = [
+                      { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Melbourne (VIC)', type: 'Interstate', distance: '877', baseRate: '450.00', minCharge: '450.00' },
+                      { id: Date.now() + 2, from: 'Sydney (NSW)', to: 'Brisbane (QLD)', type: 'Interstate', distance: '925', baseRate: '620.00', minCharge: '620.00' },
+                      { id: Date.now() + 3, from: 'Melbourne (VIC)', to: 'Adelaide (SA)', type: 'Interstate', distance: '726', baseRate: '480.00', minCharge: '480.00' }
+                    ];
+                  }
+                  setLanePricingRules(sampleRules);
+                  triggerToast(`Applied template "${selectedTemplate}" successfully!`);
+                  setShowApplyTemplateModal(false);
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
+              >
+                Apply Template Now
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Import Pricing Modal */}
+      {showImportPricingModal && createPortal(
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 text-left">
+            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                  <Upload className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">Import Pricing File</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">Upload CSV / Excel price list</p>
+                </div>
+              </div>
+              <button onClick={() => setShowImportPricingModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-blue-400 transition-colors cursor-pointer bg-slate-50/50">
+                <Upload className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                <p className="font-bold text-slate-800">Click to upload CSV / Excel file</p>
+                <p className="text-[10px] text-slate-400 mt-1">Supports .csv, .xlsx, .xls (Max 10 MB)</p>
+              </div>
+
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-900">
+                <span className="font-bold block">File Template Ready:</span>
+                <span>Includes Origin, Destination, Base Rate, Min Charge columns.</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+              <button 
+                onClick={() => setShowImportPricingModal(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  const imported = [
+                    { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Newcastle (NSW)', type: 'Regional', distance: '162', baseRate: '280.00', minCharge: '280.00' },
+                    { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Gold Coast (QLD)', type: 'Metro', distance: '78', baseRate: '190.00', minCharge: '190.00' }
+                  ];
+                  setLanePricingRules([...lanePricingRules, ...imported]);
+                  triggerToast('Successfully imported 2 pricing rules from CSV!');
+                  setShowImportPricingModal(false);
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
+              >
+                Import Rates
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Toast Notification for Customer View */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-[999999] bg-slate-900 text-white px-4 py-3 rounded-xl text-xs font-bold shadow-2xl flex items-center gap-2.5 animate-in fade-in zoom-in-95 border border-slate-800">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
       )}
 
       </>
@@ -5506,7 +6713,19 @@ export default function Customers() {
           <p className="text-sm text-slate-500 mt-0.5 font-medium">Manage your customers, contacts, billing rules and history.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-          <button onClick={() => setShowAddModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
+          <button onClick={() => {
+            setNewCustomerForm({
+              name: '',
+              abn: '',
+              acn: '',
+              type: 'Corporate',
+              status: 'Active',
+              category: 'Strategic Account',
+              billingTerms: '14 Days EOM',
+              creditLimit: '250000'
+            });
+            setShowAddModal(true);
+          }} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
             <Plus size={14} /> Add Customer
           </button>
           <button onClick={() => setShowImportModal(true)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex-grow sm:flex-grow-0 justify-center">
@@ -5656,21 +6875,12 @@ export default function Customers() {
                 </div>
               </div>
               <div className="xl:col-span-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Account Manager</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Transport Modules</label>
                 <div className="relative">
-                  <select value={managerFilter} onChange={e => setManagerFilter(e.target.value)} className="appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-500 cursor-pointer w-full">
-                    <option value="All Managers">All Managers</option>
-                    {companyUsers.length > 0 ? (
-                      companyUsers.map(user => {
-                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
-                        return <option key={user.id} value={fullName}>{fullName}</option>;
-                      })
-                    ) : (
-                      <>
-                        <option value="Sarah Mitchell">Sarah Mitchell</option>
-                        <option value="Mike Thompson">Mike Thompson</option>
-                      </>
-                    )}
+                  <select value={moduleFilter} onChange={e => setModuleFilter(e.target.value)} className="appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-500 cursor-pointer w-full">
+                    <option value="All Mods">All Mods</option>
+                    <option value="Truck">Truck</option>
+                    <option value="Box">Box</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -5719,13 +6929,13 @@ export default function Customers() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b border-slate-100 bg-slate-50/50 gap-3">
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{filteredCustomers.length} customers found</span>
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
+                <button className="px-3 py-1.5 bg-white border border-slate-200 text-[#475569] rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
                   <Package size={12} /> Columns
                 </button>
-                <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
+                <button className="px-3 py-1.5 bg-white border border-slate-200 text-[#475569] rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
                   <List size={12} /> Group By
                 </button>
-                <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
+                <button className="px-3 py-1.5 bg-white border border-slate-200 text-[#475569] rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
                   <ChevronDown size={12} /> Sort By: Created Date
                 </button>
               </div>
@@ -5741,7 +6951,6 @@ export default function Customers() {
                     <th className="py-3 px-4">CONTACT</th>
                     <th className="py-3 px-4">TRANSPORT MODULES</th>
                     <th className="py-3 px-4">BILLING TERMS</th>
-                    <th className="py-3 px-4">ACCOUNT MANAGER</th>
                     <th className="py-3 px-4">STATUS</th>
                     <th className="py-3 px-4 text-right">ACTIONS</th>
                   </tr>
@@ -5749,7 +6958,7 @@ export default function Customers() {
                 <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
                   {filteredCustomers.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-16 text-center">
+                      <td colSpan={7} className="py-16 text-center">
                         <div className="flex flex-col items-center justify-center">
                           <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
                             <Users size={24} className="text-slate-400" />
@@ -5814,11 +7023,6 @@ export default function Customers() {
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">{c.manager}</p>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
                           <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-md border ${c.status === 'Active' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
                             c.status === 'Inactive' ? 'bg-red-50 border-red-100 text-red-600' :
                               'bg-amber-50 border-amber-100 text-amber-600'
@@ -5837,9 +7041,6 @@ export default function Customers() {
                               </button>
                               <button onClick={() => openEditCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
                                 <Edit size={14} className="text-slate-400" /> Edit Customer
-                              </button>
-                              <button onClick={() => openAssignManager(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
-                                <UserCircle size={14} className="text-slate-400" /> Assign Manager
                               </button>
                               <div className="my-1 border-t border-slate-50"></div>
                               <button onClick={() => openDeleteCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer">
@@ -6087,29 +7288,6 @@ export default function Customers() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
-                <div className="relative">
-                  <select
-                    value={newCustomerForm.manager}
-                    onChange={e => setNewCustomerForm({ ...newCustomerForm, manager: e.target.value })}
-                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
-                  >
-                    {companyUsers.length > 0 ? (
-                      companyUsers.map(user => {
-                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
-                        return <option key={user.id} value={fullName}>{fullName}</option>;
-                      })
-                    ) : (
-                      <>
-                        <option value="Sarah Mitchell">Sarah Mitchell</option>
-                        <option value="Mike Thompson">Mike Thompson</option>
-                      </>
-                    )}
-                  </select>
-                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
             </div>
 
             {/* Sticky Footer */}
@@ -6242,89 +7420,12 @@ export default function Customers() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
-                <div className="relative">
-                  <select 
-                    value={editCustomerForm.manager} 
-                    onChange={e => setEditCustomerForm({ ...editCustomerForm, manager: e.target.value })}
-                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
-                  >
-                    {companyUsers.length > 0 ? (
-                      companyUsers.map(user => {
-                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
-                        return <option key={user.id} value={fullName}>{fullName}</option>;
-                      })
-                    ) : (
-                      <>
-                        <option value="Sarah Mitchell">Sarah Mitchell</option>
-                        <option value="Mike Thompson">Mike Thompson</option>
-                        <option value="John Davis">John Davis</option>
-                        <option value="Emily Rogers">Emily Rogers</option>
-                      </>
-                    )}
-                  </select>
-                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
             </div>
 
             {/* Footer */}
             <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
               <button type="button" onClick={() => setShowEditCustomerModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
               <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
-            </div>
-          </form>
-        </div>,
-        document.body
-      )}
-
-      {/* Assign Manager Modal (List View) */}
-      {showAssignManagerModal && createPortal(
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAssignManagerModal(false)}>
-          <form onSubmit={handleSaveAssignManager} className="bg-white rounded-2xl w-full max-w-[420px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
-            {/* Header */}
-            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
-              <div>
-                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Assign Account Manager</h3>
-                <p className="text-xs text-slate-500 mt-1 font-medium">Select a manager for {assignManagerForm.name}</p>
-              </div>
-              <button type="button" onClick={() => setShowAssignManagerModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
-            </div>
-
-            {/* Body */}
-            <div className="px-7 py-6 space-y-4">
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
-                <div className="relative">
-                  <select 
-                    value={assignManagerForm.manager} 
-                    onChange={e => setAssignManagerForm({ ...assignManagerForm, manager: e.target.value })}
-                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
-                  >
-                    {companyUsers.length > 0 ? (
-                      companyUsers.map(user => {
-                        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email;
-                        return <option key={user.id} value={fullName}>{fullName}</option>;
-                      })
-                    ) : (
-                      <>
-                        <option value="Sarah Mitchell">Sarah Mitchell</option>
-                        <option value="Mike Thompson">Mike Thompson</option>
-                        <option value="John Davis">John Davis</option>
-                        <option value="Emily Rogers">Emily Rogers</option>
-                      </>
-                    )}
-                  </select>
-                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
-              <button type="button" onClick={() => setShowAssignManagerModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
-              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Assign</button>
             </div>
           </form>
         </div>,
@@ -6389,7 +7490,7 @@ export default function Customers() {
                 <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Configured Rates ({lanePricingRules.length})</h4>
                 {lanePricingRules.length === 0 ? (
                   <div className="border border-slate-100 rounded-xl p-6 text-center text-slate-400 italic">
-                    No custom pricing rules added yet. Click "+ Add Pricing Rule" or "Apply Template" to configure rates.
+                    No custom pricing rules added yet. Click "+ Add Pricing Rule" to configure rates.
                   </div>
                 ) : (
                   <div className="border border-slate-100 rounded-xl overflow-hidden">
@@ -6427,104 +7528,6 @@ export default function Customers() {
         </div>,
         document.body
       )}
-
-      {/* Apply Template Modal */}
-      {showApplyTemplateModal && createPortal(
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowApplyTemplateModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-[480px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
-              <h3 className="text-base font-extrabold text-slate-900">Apply Pricing Template</h3>
-              <button onClick={() => setShowApplyTemplateModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
-            </div>
-            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700">
-              <div>
-                <label className="block text-slate-800 font-bold mb-2">Select Template</label>
-                <select 
-                  value={selectedTemplateName} 
-                  onChange={e => setSelectedTemplateName(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer"
-                >
-                  <option value="Standard National Template (Default)">Standard National Template (3 Lanes)</option>
-                  <option value="Metropolitan Express Rate Card">Metropolitan Express Rate Card (2 Metro Routes)</option>
-                  <option value="Regional & Interstate Schedule">Regional & Interstate Schedule (2 Routes)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-800 font-bold mb-2">Effective Date</label>
-                <input type="date" defaultValue="2025-07-01" className="w-full border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
-              </div>
-            </div>
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button onClick={() => setShowApplyTemplateModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
-              <button 
-                onClick={() => {
-                  let sampleRules = [];
-                  if (selectedTemplateName.includes('Metropolitan')) {
-                    sampleRules = [
-                      { id: Date.now() + 1, from: 'Sydney Metro East', to: 'Sydney Metro West', type: 'Intrastate', distance: '45', baseRate: '120.00', minCharge: '120.00' },
-                      { id: Date.now() + 2, from: 'Melbourne CBD', to: 'Dandenong Hub', type: 'Intrastate', distance: '35', baseRate: '110.00', minCharge: '110.00' }
-                    ];
-                  } else if (selectedTemplateName.includes('Regional')) {
-                    sampleRules = [
-                      { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Perth (WA)', type: 'Interstate', distance: '3931', baseRate: '1850.00', minCharge: '1850.00' },
-                      { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Townsville (QLD)', type: 'Intrastate', distance: '1336', baseRate: '890.00', minCharge: '890.00' }
-                    ];
-                  } else {
-                    sampleRules = [
-                      { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Melbourne (VIC)', type: 'Interstate', distance: '877', baseRate: '450.00', minCharge: '450.00' },
-                      { id: Date.now() + 2, from: 'Sydney (NSW)', to: 'Brisbane (QLD)', type: 'Interstate', distance: '925', baseRate: '620.00', minCharge: '620.00' },
-                      { id: Date.now() + 3, from: 'Melbourne (VIC)', to: 'Adelaide (SA)', type: 'Interstate', distance: '726', baseRate: '480.00', minCharge: '480.00' }
-                    ];
-                  }
-                  setLanePricingRules(sampleRules);
-                  setShowApplyTemplateModal(false);
-                }} 
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"
-              >
-                Apply Template
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Import Pricing Modal */}
-      {showImportPricingModal && createPortal(
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowImportPricingModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-[480px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
-              <h3 className="text-base font-extrabold text-slate-900">Import Rate Sheet (CSV/Excel)</h3>
-              <button onClick={() => setShowImportPricingModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
-            </div>
-            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700 text-center">
-              <div className="border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-2xl p-8 transition-colors cursor-pointer flex flex-col items-center justify-center bg-slate-50/50">
-                <Upload size={32} className="text-blue-500 mb-2" />
-                <p className="font-extrabold text-slate-800">Click or drag & drop rate file here</p>
-                <p className="text-[10px] text-slate-400 mt-1">Supports .csv, .xlsx, .xls (Max 10MB)</p>
-              </div>
-            </div>
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button onClick={() => setShowImportPricingModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
-              <button 
-                onClick={() => {
-                  const imported = [
-                    { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Newcastle (NSW)', type: 'Regional', distance: '162', baseRate: '280.00', minCharge: '280.00' },
-                    { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Gold Coast (QLD)', type: 'Metro', distance: '78', baseRate: '190.00', minCharge: '190.00' }
-                  ];
-                  setLanePricingRules([...lanePricingRules, ...imported]);
-                  setShowImportPricingModal(false);
-                }} 
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"
-              >
-                Import Rate Sheet
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
 
 
       {/* Add Vehicle Type Modal */}
@@ -6601,37 +7604,194 @@ export default function Customers() {
 
       {/* Add Surcharge Modal */}
       {showAddSurchargeModal && createPortal(
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddSurchargeModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-[480px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
-              <h3 className="text-base font-extrabold text-slate-900">Add Surcharge Rule</h3>
-              <button onClick={() => setShowAddSurchargeModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
-            </div>
-            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700">
-              <div>
-                <label className="block text-slate-800 font-bold mb-1.5">Surcharge Name</label>
-                <input type="text" placeholder="e.g. Fuel Levy / Security Surcharge" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" onClick={() => { setShowAddSurchargeModal(false); setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' }); }}>
+          <form onSubmit={handleSaveBillingSurcharge} className="bg-white rounded-2xl w-full max-w-[520px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-xs">
+                  <Zap size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">{surchargeModalForm.id ? 'Edit Surcharge' : 'Add Fuel Levy / Surcharge'}</h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5 font-medium">Configure automatic surcharge rates &amp; levy percentages</p>
+                </div>
               </div>
+              <button type="button" onClick={() => { setShowAddSurchargeModal(false); setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' }); }} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+
+            <div className="p-6 space-y-5 text-xs font-semibold text-slate-700 max-h-[75vh] overflow-y-auto">
+              {/* Quick Presets */}
+              <div>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">Quick Presets</label>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Fuel Levy', calculation: '% of Base Rate', rate: '14.50', taxable: true })}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>⛽</span> Fuel Levy (14.5%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Tolls Charge', calculation: 'Flat Fee ($)', rate: '15.00', taxable: true })}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>🌉</span> Tolls ($15.00)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Waiting Time Charge', calculation: 'Per Hour', rate: '65.00', taxable: true })}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>⏱️</span> Waiting ($65/hr)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Tail Lift Service Fee', calculation: 'Flat Fee ($)', rate: '35.00', taxable: true })}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>🚚</span> Tail Lift ($35)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, description: 'Dangerous Goods (DG) Surcharge', calculation: '% of Base Rate', rate: '10.00', taxable: true })}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200/60 text-[11px] font-bold text-slate-700 transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>☣️</span> DG Fee (10%)
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Surcharge / Levy Name <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={surchargeModalForm.description}
+                  onChange={e => setSurchargeModalForm({ ...surchargeModalForm, description: e.target.value })}
+                  placeholder="e.g. Fuel Levy, Tolls, Tail Lift Fee, DG Surcharge"
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 bg-white transition-all shadow-xs"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-800 font-bold mb-1.5">Calculation Method</label>
-                  <select className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer">
-                    <option>% of Base Rate</option>
-                    <option>Flat Fee ($)</option>
-                    <option>Per KM Charge</option>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Calculation Method</label>
+                  <select
+                    value={surchargeModalForm.calculation}
+                    onChange={e => setSurchargeModalForm({ ...surchargeModalForm, calculation: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer transition-all shadow-xs"
+                  >
+                    <option value="% of Base Rate">% of Base Rate</option>
+                    <option value="Flat Fee ($)">Flat Fee ($)</option>
+                    <option value="Per Hour">Per Hour</option>
+                    <option value="Per KM Charge">Per KM Charge</option>
+                    <option value="Per Load">Per Load</option>
+                    <option value="Per Item">Per Item / Pallet</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-800 font-bold mb-1.5">Rate / %</label>
-                  <input type="number" placeholder="13.3" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Rate / Amount <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      required
+                      step="0.01"
+                      min="0"
+                      value={surchargeModalForm.rate}
+                      onChange={e => setSurchargeModalForm({ ...surchargeModalForm, rate: e.target.value })}
+                      placeholder={surchargeModalForm.calculation?.includes('%') ? '14.50' : '25.00'}
+                      className="w-full border border-slate-200 rounded-xl p-2.5 pr-8 text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 bg-white transition-all shadow-xs"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
+                      {surchargeModalForm.calculation?.includes('%') ? '%' : '$'}
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              {/* Tax Treatment Toggle */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Tax Treatment (GST)</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, taxable: true })}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      surchargeModalForm.taxable !== false
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-xs'
+                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    <CheckCircle2 size={14} className={surchargeModalForm.taxable !== false ? 'text-emerald-600' : 'text-slate-300'} />
+                    Subject to GST (+10%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSurchargeModalForm({ ...surchargeModalForm, taxable: false })}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      surchargeModalForm.taxable === false
+                        ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-xs'
+                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    <CheckCircle2 size={14} className={surchargeModalForm.taxable === false ? 'text-amber-600' : 'text-slate-300'} />
+                    GST Free / Exempt
+                  </button>
+                </div>
+              </div>
+
+              {/* Optional Notes */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Notes / Conditions (Optional)</label>
+                <input
+                  type="text"
+                  value={surchargeModalForm.notes || ''}
+                  onChange={e => setSurchargeModalForm({ ...surchargeModalForm, notes: e.target.value })}
+                  placeholder="e.g. Applies after 30 mins free loading time or per DG load"
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-blue-500 bg-white shadow-xs"
+                />
+              </div>
+
+              {/* Live Summary Preview */}
+              {surchargeModalForm.description && surchargeModalForm.rate && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse shrink-0"></div>
+                    <div>
+                      <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                        {surchargeModalForm.description}
+                        <span className="text-[10px] font-bold text-blue-600 bg-blue-100/60 px-1.5 py-0.2 rounded">
+                          {surchargeModalForm.calculation}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
+                        Rate: <span className="font-bold text-slate-800">{surchargeModalForm.calculation?.includes('%') ? `${surchargeModalForm.rate}%` : `$${parseFloat(surchargeModalForm.rate || 0).toFixed(2)}`}</span>
+                        {' • '}
+                        {surchargeModalForm.taxable !== false ? 'Standard Taxable (+10% GST)' : 'GST Free'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
+
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button onClick={() => setShowAddSurchargeModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
-              <button onClick={() => { setShowAddSurchargeModal(false); alert('Surcharge rule saved successfully!'); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">Save Surcharge</button>
+              <button
+                type="button"
+                onClick={() => { setShowAddSurchargeModal(false); setSurchargeModalForm({ id: null, description: '', calculation: '% of Base Rate', rate: '', taxable: true, notes: '' }); }}
+                className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shadow-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow-md cursor-pointer flex items-center gap-1.5"
+              >
+                <Plus size={14} /> {surchargeModalForm.id ? 'Update Surcharge' : 'Add Surcharge'}
+              </button>
             </div>
-          </div>
+          </form>
         </div>,
         document.body
       )}
@@ -6951,228 +8111,6 @@ export default function Customers() {
           <span>{toastMessage}</span>
         </div>
       )}
-
-      {/* Preview Pricing Matrix Modal */}
-      {showPricingMatrixModal && createPortal(
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-4xl rounded-2xl border border-slate-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 text-left">
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                  <Eye className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">Pricing Matrix Preview</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">{selectedCustomer?.name || 'Auto World Sydney'} • Standard National Template</p>
-                </div>
-              </div>
-              <button onClick={() => setShowPricingMatrixModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-4 text-xs">
-              <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block">BUSINESS TYPE</span>
-                  <span className="font-extrabold text-slate-900">{selectedNiche}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block">ACTIVE TEMPLATE</span>
-                  <span className="font-extrabold text-blue-600">{selectedTemplate}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block">FUEL LEVY</span>
-                  <span className="font-extrabold text-emerald-600">14.5% (Monthly Variable)</span>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                <table className="w-full text-left text-xs whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-slate-100/70 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
-                      <th className="py-2.5 px-3">ROUTE / LANE</th>
-                      <th className="py-2.5 px-3">TYPE</th>
-                      <th className="py-2.5 px-3 text-right">DISTANCE</th>
-                      <th className="py-2.5 px-3 text-right">BASE RATE</th>
-                      <th className="py-2.5 px-3 text-right">FUEL LEVY (14.5%)</th>
-                      <th className="py-2.5 px-3 text-right">GST (10%)</th>
-                      <th className="py-2.5 px-3 text-right">TOTAL ESTIMATE</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                    {lanePricingRules.map((rule, idx) => {
-                      const base = parseFloat(rule.baseRate.replace(/,/g, '')) || 1000;
-                      const fuel = base * 0.145;
-                      const gst = (base + fuel) * 0.10;
-                      const total = base + fuel + gst;
-                      return (
-                        <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
-                          <td className="py-2.5 px-3 font-bold text-slate-900">{rule.from} ➔ {rule.to}</td>
-                          <td className="py-2.5 px-3">{rule.type}</td>
-                          <td className="py-2.5 px-3 text-right text-slate-500">{rule.distance} KM</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-slate-900">${rule.baseRate}</td>
-                          <td className="py-2.5 px-3 text-right text-emerald-600">${fuel.toFixed(2)}</td>
-                          <td className="py-2.5 px-3 text-right text-slate-500">${gst.toFixed(2)}</td>
-                          <td className="py-2.5 px-3 text-right font-black text-blue-700">${total.toFixed(2)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
-              <button 
-                onClick={() => {
-                  triggerToast('Printing pricing matrix...');
-                  window.print();
-                }}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Matrix</span>
-              </button>
-              <button 
-                onClick={() => setShowPricingMatrixModal(false)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
-              >
-                Close Preview
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Apply Template Modal */}
-      {showApplyTemplateModal && createPortal(
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 text-left">
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                  <Activity className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">Apply Pricing Template</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">Select pre-built rate card</p>
-                </div>
-              </div>
-              <button onClick={() => setShowApplyTemplateModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4 text-xs font-medium">
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Select Template</label>
-                <select 
-                  value={selectedTemplate}
-                  onChange={(e) => setSelectedTemplate(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
-                >
-                  <option value="Standard National Template">Standard National Template (2025-2026)</option>
-                  <option value="Interstate Express Rate Matrix">Interstate Express Rate Matrix</option>
-                  <option value="Heavy Carrier Rate Card">Heavy Carrier Rate Card</option>
-                  <option value="Metro Delivery Rate">Metro Delivery Rate</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Effective Date Range</label>
-                <input 
-                  type="text"
-                  value={effectiveDateRange}
-                  onChange={(e) => setEffectiveDateRange(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500 shadow-2xs"
-                />
-              </div>
-
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 space-y-1">
-                <span className="font-bold block">Notice:</span>
-                <span>Applying this template will update all base lane rates and surcharges for this customer.</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
-              <button 
-                onClick={() => setShowApplyTemplateModal(false)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  triggerToast(`Applied template "${selectedTemplate}" successfully!`);
-                  setShowApplyTemplateModal(false);
-                }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
-              >
-                Apply Template Now
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Import Pricing Modal */}
-      {showImportPricingModal && createPortal(
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[99999] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 text-left">
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                  <Upload className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">Import Pricing File</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">Upload CSV / Excel price list</p>
-                </div>
-              </div>
-              <button onClick={() => setShowImportPricingModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4 text-xs">
-              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-blue-400 transition-colors cursor-pointer bg-slate-50/50">
-                <Upload className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <p className="font-bold text-slate-800">Click to upload CSV / Excel file</p>
-                <p className="text-[10px] text-slate-400 mt-1">Supports .csv, .xlsx, .xls (Max 10 MB)</p>
-              </div>
-
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-900">
-                <span className="font-bold block">File Template Ready:</span>
-                <span>Includes Origin, Destination, Base Rate, Min Charge columns.</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
-              <button 
-                onClick={() => setShowImportPricingModal(false)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  triggerToast('Successfully imported 12 pricing rules from CSV!');
-                  setShowImportPricingModal(false);
-                }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs cursor-pointer"
-              >
-                Import Rates
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-
 
     </div>
   );

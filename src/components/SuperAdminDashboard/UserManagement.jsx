@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search, Check, X, Filter, Settings,
   UserCheck, Shield, Users, UserPlus, Key, Edit3, Trash2,
-  Eye, Lock, Unlock, Mail, Phone, Building, LogIn, EyeOff, Loader2
+  Eye, Lock, Unlock, Mail, Phone, Building, LogIn, EyeOff, Loader2, ChevronRight, ArrowLeft
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -453,7 +453,9 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* Header Area */}
+      {!(showAddUserModal || showEditUserModal) && (
+        <>
+          {/* Header Area */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-2">
         <div>
           <h1 className="text-xl sm:text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
@@ -953,6 +955,8 @@ export default function UserManagement() {
           </table>
         </div>
       </div>
+        </>
+      )}
 
       {/* ============================================================
          ADD & EDIT PLATFORM USER VIEW (Screenshot 1 Inline View Pattern)

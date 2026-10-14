@@ -257,7 +257,7 @@ function MapComponent({ stops = [] }) {
 
 
 // ─── Load Detail View ─────────────────────────────────────────────────────────
-function LoadDetail({ load, onBack }) {
+function LoadDetail({ load, onBack, onEdit }) {
   const [activeTab, setActiveTab] = useState('Overview');
   const [selectedStop, setSelectedStop] = useState(null);
   const [showStopModal, setShowStopModal] = useState(false);
@@ -435,6 +435,8 @@ function LoadDetail({ load, onBack }) {
               customer: lData.customer?.name || (typeof lData.customer === 'string' ? lData.customer : prev.customer),
               status: lData.status === 'IN_TRANSIT' ? 'ACTIVE' : lData.status === 'DELIVERED' ? 'COMPLETED' : (lData.status || prev.status),
               notes: lData.notes || prev.notes,
+              pricingSnapshot: lData.pricingSnapshot || null,
+              priceOverrideAudit: lData.priceOverrideAudit || null,
               createdAt: lData.createdAt ? new Date(lData.createdAt).toLocaleDateString('en-GB') : prev.createdAt,
               updatedAt: lData.updatedAt ? new Date(lData.updatedAt).toLocaleDateString('en-GB') : prev.updatedAt
             }));
@@ -627,14 +629,18 @@ function LoadDetail({ load, onBack }) {
         <div className="flex items-center gap-2 w-full sm:w-auto relative">
           <button 
             onClick={() => {
-              setEditFormData({
-                type: currentLoad.type,
-                customer: currentLoad.customer,
-                priority: currentLoad.priority,
-                status: currentLoad.status,
-                notes: currentLoad.notes
-              });
-              setShowEditLoadModal(true);
+              if (onEdit) {
+                onEdit(load);
+              } else {
+                setEditFormData({
+                  type: currentLoad.type,
+                  customer: currentLoad.customer,
+                  priority: currentLoad.priority,
+                  status: currentLoad.status,
+                  notes: currentLoad.notes
+                });
+                setShowEditLoadModal(true);
+              }
             }}
             className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
           >
@@ -881,14 +887,18 @@ function LoadDetail({ load, onBack }) {
                   <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Load Notes</h3>
                   <button 
                     onClick={() => {
-                      setEditFormData({
-                        type: currentLoad.type,
-                        customer: currentLoad.customer,
-                        priority: currentLoad.priority,
-                        status: currentLoad.status,
-                        notes: currentLoad.notes
-                      });
-                      setShowEditLoadModal(true);
+                      if (onEdit) {
+                        onEdit(load);
+                      } else {
+                        setEditFormData({
+                          type: currentLoad.type,
+                          customer: currentLoad.customer,
+                          priority: currentLoad.priority,
+                          status: currentLoad.status,
+                          notes: currentLoad.notes
+                        });
+                        setShowEditLoadModal(true);
+                      }
                     }}
                     className="text-[11px] font-bold text-indigo-600 hover:underline uppercase tracking-wider cursor-pointer"
                   >
@@ -1080,17 +1090,78 @@ function LoadDetail({ load, onBack }) {
                 </div>
               </div>
 
-              {/* Financial Overview */}
+              {/* Financial Overview & Pricing Snapshot */}
               <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4">Financial Overview</h3>
-                <div className="space-y-3.5">
+                <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4">Financial Overview & Pricing</h3>
+                
+                {/* Pricing Snapshot */}
+                {currentLoad.pricingSnapshot ? (
+                  <div className="mb-4 pb-4 border-b border-slate-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Customer Charge</span>
+                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-black rounded-full uppercase tracking-wider">{currentLoad.pricingSnapshot.pricingMethod}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-semibold">Rate Card</p>
+                        <p className="text-[11px] font-bold text-slate-700 truncate">{currentLoad.pricingSnapshot.rateCardName}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-semibold text-right">Base Charge</p>
+                        <p className="text-[11px] font-bold text-slate-700 text-right">${(currentLoad.pricingSnapshot.baseCharge || 0).toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-semibold">Fuel Levy ({currentLoad.pricingSnapshot.fuelLevyPercent || 0}%)</p>
+                        <p className="text-[11px] font-bold text-slate-700">${(currentLoad.pricingSnapshot.fuelLevyAmount || 0).toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-semibold text-right">Total (Ex GST)</p>
+                        <p className="text-[11px] font-bold text-slate-700 text-right">${(currentLoad.pricingSnapshot.totalExGst || 0).toFixed(2)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                       <span className="text-xs font-black text-slate-600">TOTAL DUE (INC GST)</span>
+                       <span className="text-sm font-black text-indigo-600">${(currentLoad.pricingSnapshot.totalIncGst || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-4 pb-4 border-b border-slate-100">
+                    <p className="text-xs text-slate-400 italic">No Pricing Snapshot generated for this load.</p>
+                  </div>
+                )}
+
+                {/* Override Audit Trail */}
+                {currentLoad.priceOverrideAudit && Array.isArray(currentLoad.priceOverrideAudit) && currentLoad.priceOverrideAudit.length > 0 && (
+                  <div className="mb-4 pb-4 border-b border-slate-100">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Price Override History</h4>
+                    <div className="space-y-2">
+                      {currentLoad.priceOverrideAudit.map((audit, idx) => (
+                        <div key={idx} className="bg-amber-50 border border-amber-200 p-2 rounded-lg">
+                           <div className="flex justify-between items-center">
+                              <span className="text-[10px] font-bold text-amber-800">{audit.changedBy}</span>
+                              <span className="text-[9px] text-amber-600">{new Date(audit.date).toLocaleDateString()}</span>
+                           </div>
+                           <p className="text-[10px] text-amber-700 mt-1">Changed from <strong>${parseFloat(audit.originalPrice).toFixed(2)}</strong> to <strong>${parseFloat(audit.newPrice).toFixed(2)}</strong></p>
+                           <p className="text-[9px] text-amber-600 mt-0.5 italic">"{audit.reason}"</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3.5 mt-5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-600 font-semibold">Invoices</span>
                     <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] font-black rounded-full uppercase tracking-wider">SEE GENERATED</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-600 font-semibold">Driver Pay</span>
-                    <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-[9px] font-black rounded-full uppercase tracking-wider">PENDING</span>
+                    <span className="text-xs font-bold text-slate-800">
+                      ${(() => {
+                        const match = (currentLoad.notes || '').match(/\[DRIVER_PAY:([0-9.]+)/);
+                        return match && match[1] ? parseFloat(match[1]).toFixed(2) : 'PENDING';
+                      })()}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-600 font-semibold">Expenses ({expensesList.length} items)</span>
@@ -1099,9 +1170,42 @@ function LoadDetail({ load, onBack }) {
                     </span>
                   </div>
                 </div>
-                <button className="w-full mt-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors">
-                  View Financials
-                </button>
+                
+                {/* Load Profitability */}
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                   <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Load Profitability (Est.)</h4>
+                   {(() => {
+                      const revenue = currentLoad.pricingSnapshot ? parseFloat(currentLoad.pricingSnapshot.totalExGst || 0) : 0;
+                      
+                      const dpMatch = (currentLoad.notes || '').match(/\[DRIVER_PAY:([0-9.]+)/);
+                      const driverCost = dpMatch && dpMatch[1] ? parseFloat(dpMatch[1]) : 0;
+                      
+                      const expensesCost = expensesList.reduce((sum, e) => sum + parseFloat((e.amount || '$0').toString().replace(/[^0-9.]/g, '') || 0), 0);
+                      
+                      const profit = revenue - driverCost - expensesCost;
+                      const profitMargin = revenue > 0 ? (profit / revenue) * 100 : 0;
+                      const isLoss = profit < 0;
+
+                      return (
+                         <div className="space-y-2">
+                            <div className="flex justify-between text-[11px] text-slate-500">
+                               <span>Revenue (Ex GST)</span>
+                               <span className="font-bold text-slate-700">${revenue.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-[11px] text-rose-500">
+                               <span>Total Costs (Driver + Expenses)</span>
+                               <span className="font-bold">-${(driverCost + expensesCost).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">
+                               <span className="text-xs font-black text-slate-700">CONTRIBUTION</span>
+                               <span className={`text-sm font-black ${isLoss ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                  ${profit.toFixed(2)} <span className="text-[10px] ml-1">({profitMargin.toFixed(1)}%)</span>
+                               </span>
+                            </div>
+                         </div>
+                      );
+                   })()}
+                </div>
               </div>
 
               {/* Quick Actions (Message, Expense, Document, Report) Card */}
@@ -1349,7 +1453,7 @@ function LoadDetail({ load, onBack }) {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {[
-                      { label: 'CUSTOMER BOOKING', value: currentLoad.customer },
+                      { label: 'CUSTOMER / OWNER', value: item.customer?.name || item.customerName || (typeof item.customer === 'string' && item.customer.length > 2 ? item.customer : null) || currentLoad.customer, color: (item.customer?.name || item.customerName) ? 'text-indigo-600 font-extrabold' : '' },
                       { label: 'STOCK REF / REGO', value: item.rego || item.stockRef || 'ITEM-001', color: 'text-indigo-600' },
                       { label: 'DESCRIPTION', value: item.model || item.name || 'Cargo Item' },
                       { label: 'QUANTITY', value: `${item.quantity || 1} Units` },
@@ -2008,12 +2112,14 @@ function LoadDetail({ load, onBack }) {
                   type,
                   desc,
                   amount,
-                  date
+                  date,
+                  driverId: activeDriver?.rawId || activeDriver?.id,
+                  vehicleId: activeTruck?.rawId || activeTruck?.id
                 });
                 const createdExp = res.data?.data || res.data;
                 if (createdExp) {
                   setExpensesList(prev => [createdExp, ...prev]);
-                  triggerToast("Expense saved successfully to database!", "success");
+                  triggerToast("Expense saved & assigned to driver!", "success");
                 }
               } catch (err) {
                 console.error("Error saving expense via API, using local fallback:", err);
@@ -2167,7 +2273,7 @@ function LoadDetail({ load, onBack }) {
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Bill To Customer</label>
                 <input 
                   type="text" 
-                  value={currentLoad?.customer?.name || (typeof currentLoad?.customer === 'string' ? currentLoad.customer : '') || 'General Customer'} 
+                  value={currentLoad?.billedCustomers?.length > 1 ? `Multiple Customers (${currentLoad.billedCustomers.length})` : (currentLoad?.customer?.name || (typeof currentLoad?.customer === 'string' ? currentLoad.customer : '') || 'General Customer')} 
                   className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none" 
                   readOnly 
                 />
@@ -2460,10 +2566,7 @@ function LoadDetail({ load, onBack }) {
                       </option>
                     ))
                   ) : (
-                    <>
-                      <option value="Mike Thompson">Mike Thompson (DRV001 - MC License)</option>
-                      <option value="Sarah Mitchell">Sarah Mitchell (DRV002 - HC License)</option>
-                    </>
+                    <option value="">No Drivers Available</option>
                   )}
                 </select>
               </div>
@@ -2483,10 +2586,7 @@ function LoadDetail({ load, onBack }) {
                         </option>
                       ))
                     ) : (
-                      <>
-                        <option value="TRK-101">TRK-101 | Volvo FH 540</option>
-                        <option value="TRK-220">TRK-220 | Scania T500</option>
-                      </>
+                      <option value="">No Vehicles Available</option>
                     )}
                   </select>
                 </div>
@@ -2607,6 +2707,7 @@ export default function Loads() {
   const [showCreateForm, setShowCreateForm] = useState(location.state?.openNewLoadModal || false);
   const [showAILoadBuilder, setShowAILoadBuilder] = useState(false);
   const [selectedLoad, setSelectedLoad] = useState(null);
+  const [editLoad, setEditLoad] = useState(null); // load to edit in CreateLoad form
 
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -2688,14 +2789,8 @@ export default function Loads() {
   };
 
   const openEditModal = (load) => {
-    setEditModalLoad(load);
-    setEditForm({
-      customer: load.customer || '',
-      type: load.type || 'General Freight',
-      priority: load.priority || 'Normal',
-      status: load.status || 'DRAFT',
-      notes: load.notes || ''
-    });
+    // Open the full CreateLoad form in edit mode instead of simple modal
+    setEditLoad(load);
   };
 
   const handleSaveEdit = async () => {
@@ -2872,12 +2967,28 @@ export default function Loads() {
     fetchLoads();
   }, [showCreateForm, showAILoadBuilder]);
 
+  if (editLoad) {
+    return (
+      <CreateLoad
+        editMode={true}
+        loadToEdit={editLoad}
+        onBack={() => { setEditLoad(null); fetchLoads(); }}
+      />
+    );
+  }
+
   if (selectedLoad) {
-    return <LoadDetail load={selectedLoad} onBack={() => { setSelectedLoad(null); fetchLoads(); }} />;
+    return (
+      <LoadDetail
+        load={selectedLoad}
+        onBack={() => { setSelectedLoad(null); fetchLoads(); }}
+        onEdit={(load) => { setSelectedLoad(null); setEditLoad(load); }}
+      />
+    );
   }
 
   if (showCreateForm) {
-    return <CreateLoad onBack={() => { setShowCreateForm(false); fetchLoads(); }} />;
+    return <CreateLoad onBack={() => { setShowCreateForm(false); fetchLoads(); }} initialCustomerId={location.state?.customerId} />;
   }
 
   if (showAILoadBuilder) {

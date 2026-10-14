@@ -83,99 +83,160 @@ export default function MyPay() {
   const fetchPayrollData = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/driver-portal/payroll');
-      const pData = res.data?.data || res.data;
-      if (pData) {
-        if (pData.driverInfo) {
-          if (pData.driverInfo.bankName) setBankName(pData.driverInfo.bankName);
-          if (pData.driverInfo.bsbNumber) setBsbNumber(pData.driverInfo.bsbNumber);
-          if (pData.driverInfo.accountNumber) setAccountNumber(pData.driverInfo.accountNumber);
-          if (pData.driverInfo.accountName) setAccountName(pData.driverInfo.accountName);
-        }
+      const res = await api.get('/driver-portal/payroll').catch(() => ({ data: null }));
+      const payload = res?.data?.data || res?.data || {};
 
-        // Determine exact gross earnings (100% full amount, 0 deductions)
-        const detectedGross = pData.currentPeriod?.grossEarnings 
-          || pData.currentPayBreakdown?.earnings?.totalEarnings 
-          || pData.totalSummary?.totalGrossEarnings 
-          || pData.ytdSummary?.totalEarnings 
-          || '$0.00';
+      let activeLoadObj = payload.activeLoad || null;
+      let rawGross = payload.currentPeriod?.grossEarnings || payload.currentPeriod?.netPay || null;
 
-        if (pData.currentPeriod) {
-          const cp = pData.currentPeriod;
-          const grossVal = cp.grossEarnings || detectedGross;
-          setCurrentPeriod({
-            ...cp,
-            grossEarnings: grossVal,
-            netPay: grossVal,
-            totalDeductions: '$0.00',
-            superannuation: '$0.00',
-            nextPayment: {
-              ...(cp.nextPayment || {}),
-              estimatedNetPay: grossVal
-            }
-          });
-        }
-
-        if (pData.ytdSummary) {
-          const ytd = pData.ytdSummary;
-          const grossVal = ytd.totalEarnings || detectedGross;
-          setYtdSummary({
-            ...ytd,
-            totalEarnings: grossVal,
-            netPayReceived: grossVal,
-            pendingPayments: grossVal,
-            totalDeductions: '$0.00',
-            totalSuperannuation: '$0.00'
-          });
-        }
-
-        if (pData.currentPayBreakdown) {
-          const bkd = pData.currentPayBreakdown;
-          const grossVal = bkd.earnings?.totalEarnings || detectedGross;
-          setCurrentPayBreakdown({
-            ...bkd,
-            earnings: {
-              ...(bkd.earnings || {}),
-              totalEarnings: grossVal
-            },
-            deductions: {
-              paygTax: '$0.00',
-              superannuation: '$0.00',
-              unionFees: '$0.00',
-              otherDeductions: '$0.00',
-              totalDeductions: '$0.00'
-            },
-            employerContributions: {
-              superannuationGuarantee: '$0.00'
-            },
-            estimatedNetPay: grossVal,
-            paySummaryTotalDeductions: '$0.00'
-          });
-        }
-
-        if (pData.payHistory && Array.isArray(pData.payHistory)) {
-          const sanitizedRecords = pData.payHistory.map(rec => ({
-            ...rec,
-            netPay: detectedGross !== '$0.00' ? detectedGross : rec.netPay
-          }));
-          setPayRecords(sanitizedRecords);
-        }
-
-        if (pData.totalSummary) {
-          const ts = pData.totalSummary;
-          const grossVal = ts.totalGrossEarnings || detectedGross;
-          setTotalSummary({
-            ...ts,
-            totalGrossEarnings: grossVal,
-            totalDeductions: '$0.00',
-            totalNetPaid: grossVal
-          });
-        }
-
-        if (pData.ytdEarningsBreakdown) setYtdEarningsBreakdown(pData.ytdEarningsBreakdown);
-        setTaxStatements([]);
-        if (pData.activeLoad) setActiveLoadData(pData.activeLoad);
+      if (!rawGross || rawGross === '$0.00') {
+        const detected = payload.currentPayBreakdown?.earnings?.totalEarnings 
+          || payload.totalSummary?.totalGrossEarnings 
+          || payload.ytdSummary?.totalEarnings;
+        if (detected && detected !== '$0.00') rawGross = detected;
       }
+
+      // Fallback 1: If activeLoad is missing, attempt to fetch active run load
+      if (!activeLoadObj) {
+        try {
+          const runRes = await api.get('/driver-portal/active-run').catch(() => null);
+          const rData = runRes?.data?.data?.run || runRes?.data?.run || runRes?.data?.data?.load || runRes?.data?.load;
+          if (rData) {
+            activeLoadObj = {
+              id: rData.loadNumber || rData.id,
+              poNumber: rData.loadNumber || rData.id,
+              origin: rData.origin || 'N/A',
+              destination: rData.destination || 'N/A',
+              startDate: rData.startDate || new Date().toLocaleDateString('en-US'),
+              estFinish: rData.estFinish || new Date(Date.now() + 2 * 86400000).toLocaleDateString('en-US'),
+              status: rData.status || 'IN TRANSIT'
+            };
+          }
+        } catch (e) {}
+      }
+
+      // Fallback 2: Try dashboard current load
+      if (!activeLoadObj) {
+        try {
+          const dashRes = await api.get('/driver-portal/dashboard').catch(() => null);
+          const cl = dashRes?.data?.data?.currentLoad || dashRes?.data?.currentLoad;
+          if (cl) {
+            activeLoadObj = {
+              id: cl.reference || cl.loadNumber || cl.id,
+              poNumber: cl.reference || cl.loadNumber || cl.id,
+              origin: cl.origin || 'N/A',
+              destination: cl.destination || 'N/A',
+              startDate: cl.startDate || new Date().toLocaleDateString('en-US'),
+              estFinish: cl.estFinish || new Date(Date.now() + 2 * 86400000).toLocaleDateString('en-US'),
+              status: cl.status || 'IN TRANSIT'
+            };
+            if (dashRes?.data?.data?.metrics?.payThisPeriod) {
+              const pVal = dashRes.data.data.metrics.payThisPeriod;
+              rawGross = `$${pVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Default active load if none found
+      if (!activeLoadObj) {
+        activeLoadObj = null;
+      }
+
+      if (!rawGross) {
+        rawGross = '$0.00';
+      }
+
+      setActiveLoadData(activeLoadObj);
+
+      const cp = payload.currentPeriod || {};
+      setCurrentPeriod({
+        netPay: cp.netPay || rawGross,
+        grossEarnings: cp.grossEarnings || rawGross,
+        totalDeductions: cp.totalDeductions || '$0.00',
+        superannuation: '$0.00',
+        payFrequency: cp.payFrequency || 'Fortnightly',
+        nextPayment: {
+          date: cp.nextPayment?.date || '—',
+          daysLeft: cp.nextPayment?.daysLeft ?? 0,
+          period: cp.nextPayment?.period || '—',
+          estimatedNetPay: cp.nextPayment?.estimatedNetPay || rawGross,
+          status: cp.nextPayment?.status || 'Scheduled'
+        }
+      });
+
+      const ytd = payload.ytdSummary || {};
+      setYtdSummary({
+        totalEarnings: ytd.totalEarnings || rawGross,
+        netPayReceived: ytd.netPayReceived || rawGross,
+        pendingPayments: ytd.pendingPayments && ytd.pendingPayments !== '$0.00' ? ytd.pendingPayments : '$0.00',
+        totalDeductions: '$0.00',
+        totalSuperannuation: '$0.00'
+      });
+
+      const bkd = payload.currentPayBreakdown || {};
+      setCurrentPayBreakdown({
+        earnings: {
+          basePay: bkd.earnings?.basePay || rawGross,
+          loadAllowance: bkd.earnings?.loadAllowance || '$0.00',
+          distanceAllowance: bkd.earnings?.distanceAllowance || '$0.00',
+          otherAllowances: '$0.00',
+          totalEarnings: bkd.earnings?.totalEarnings || rawGross
+        },
+        deductions: {
+          paygTax: '$0.00',
+          superannuation: '$0.00',
+          unionFees: '$0.00',
+          otherDeductions: '$0.00',
+          totalDeductions: '$0.00'
+        },
+        employerContributions: {
+          superannuationGuarantee: '$0.00'
+        },
+        estimatedNetPay: rawGross,
+        paySummaryTotalDeductions: '$0.00'
+      });
+
+      let records = [];
+      if (payload.payHistory && Array.isArray(payload.payHistory) && payload.payHistory.length > 0) {
+        records = payload.payHistory.map(rec => ({
+          ...rec,
+          netPay: rec.netPay && rec.netPay !== '$0.00' ? rec.netPay : rawGross
+        }));
+      }
+      setPayRecords(records);
+
+      const ts = payload.totalSummary || {};
+      setTotalSummary({
+        totalGrossEarnings: ts.totalGrossEarnings || rawGross,
+        totalDeductions: '$0.00',
+        totalNetPaid: ts.totalNetPaid || rawGross
+      });
+
+      if (payload.ytdEarningsBreakdown) {
+        setYtdEarningsBreakdown(payload.ytdEarningsBreakdown);
+      } else {
+        setYtdEarningsBreakdown({
+          total: rawGross,
+          items: [
+            { name: 'Base Pay', amount: rawGross },
+            { name: 'Load Allowances', amount: '$0.00' },
+            { name: 'Distance Allowances', amount: '$0.00' },
+            { name: 'Other Allowances', amount: '$0.00' },
+            { name: 'Bonuses', amount: '$0.00' }
+          ]
+        });
+      }
+
+      setTaxStatements([]);
+
+      if (payload.driverInfo) {
+        if (payload.driverInfo.bankName) setBankName(payload.driverInfo.bankName);
+        if (payload.driverInfo.bsbNumber) setBsbNumber(payload.driverInfo.bsbNumber);
+        if (payload.driverInfo.accountNumber) setAccountNumber(payload.driverInfo.accountNumber);
+        if (payload.driverInfo.accountName) setAccountName(payload.driverInfo.accountName);
+      }
+
       setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {
       console.error('Failed to fetch payroll data:', err);

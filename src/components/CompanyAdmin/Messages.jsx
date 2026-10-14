@@ -220,18 +220,9 @@ export default function Messages() {
   const [activeChatInput, setActiveChatInput] = useState('');
   const [loadingComms, setLoadingComms] = useState(false);
 
-  // Default Initial Contacts for Interactive Messaging
-  const defaultContactsList = [
-    { id: 1, name: 'Nilesh Chand', role: 'Driver - ANSH 1', initials: 'NC', avatarBg: 'bg-indigo-100 text-indigo-800 border border-indigo-200', avatarImg: null, preview: 'On my way to Sydney depot', time: '10:08 AM', badge: 1, online: true, type: 'Direct' },
-    { id: 2, name: 'Shavneel Prasad', role: 'Driver - ANSH 2', initials: 'SP', avatarBg: 'bg-emerald-100 text-[#16A34A] border border-[#86EFAC]', avatarImg: null, preview: 'POD uploaded for load LD-1057', time: '09:45 AM', badge: null, online: true, type: 'Direct' },
-    { id: 3, name: 'Dispatch Team', role: 'Sydney Operations', initials: 'DT', avatarBg: 'bg-amber-100 text-amber-800 border border-amber-200', avatarImg: null, preview: 'Route optimization updated', time: 'Yesterday', badge: 2, online: true, type: 'Teams' },
-    { id: 4, name: 'Warehouse Melbourne', role: 'Depot Team', initials: 'WM', avatarBg: 'bg-purple-100 text-purple-800 border border-purple-200', avatarImg: null, preview: 'Stock arrival confirmed for Bay 4', time: '23 May', badge: null, online: false, type: 'Groups' }
-  ];
-
-  const defaultCustomerList = [
-    { id: 1, name: 'ABC Logistics', initials: 'AB', avatarBg: 'bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]', email: 'operations@abclogistics.com.au', phone: '+61 2 9876 5432', address: '12 Logistics Way, Sydney NSW', type: 'Emails', status: 'Active', preview: 'ETA inquiry for Shipment LD-9021', time: '10:15 AM', badge: 1 },
-    { id: 2, name: 'Global Retail Solutions', initials: 'GR', avatarBg: 'bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC]', email: 'contact@globalretail.com.au', phone: '+61 3 9123 4567', address: '45 Retail Blvd, Melbourne VIC', type: 'SMS', status: 'Active', preview: 'Weekly schedule confirmed', time: 'Yesterday', badge: null }
-  ];
+  // Default Initial Contacts (Empty by default for clean tenant isolation)
+  const defaultContactsList = [];
+  const defaultCustomerList = [];
 
   const fetchMessagesData = useCallback(async () => {
     setLoadingComms(true);
@@ -267,6 +258,8 @@ export default function Messages() {
       setContactsList(users);
       if (users.length > 0) {
         setActiveContactId(prev => prev || users[0].id);
+      } else {
+        setActiveContactId(null);
       }
 
       let customers = [];
@@ -327,22 +320,9 @@ export default function Messages() {
     let currentList = contactsList;
     let targetId = activeContactId;
 
-    if (currentList.length === 0) {
-      let fallbackList = defaultContactsList;
-      if (user?.role === 'SALES' || user?.role === 'SALES_REP') {
-        fallbackList = fallbackList.filter(u => {
-          const r = (u.role || '').toUpperCase();
-          if (r.includes('DRIVER') || r.includes('DISPATCH') || r.includes('WAREHOUSE') || r.includes('DEPOT')) return false;
-          return r.includes('SALES') || r.includes('ADMIN') || r.includes('CUSTOMER');
-        });
-      }
-      currentList = fallbackList;
-      setContactsList(fallbackList);
-      targetId = fallbackList[0]?.id;
-      setActiveContactId(targetId);
-    } else if (!targetId) {
-      targetId = currentList[0].id;
-      setActiveContactId(targetId);
+    if (currentList.length === 0 || !targetId) {
+      showToast('Please select or create a contact to message');
+      return;
     }
 
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -3278,7 +3258,7 @@ export default function Messages() {
                 </div>
 
                 <div className="space-y-1.5">
-                  {contactsList.slice(0, 6).length > 0 ? contactsList.slice(0, 6).map((item) => {
+                  {conversationsList.filter(c => c.badge || c.unreadCount > 0).slice(0, 6).length > 0 ? conversationsList.filter(c => c.badge || c.unreadCount > 0).slice(0, 6).map((item) => {
                     const isSelected = activeContactId === item.id;
                     return (
                       <div
@@ -3294,13 +3274,13 @@ export default function Messages() {
                               className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5 shadow-2xs"
                             />
                           ) : (
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-black text-[10.5px] mt-0.5 shadow-2xs ${item.avatarBg}`}>
-                              {item.initials}
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-black text-[10.5px] mt-0.5 shadow-2xs ${item.avatarBg || 'bg-slate-100 text-slate-700'}`}>
+                              {item.initials || 'C'}
                             </div>
                           )}
                           <div className="truncate min-w-0">
                             <h3 className="text-[11px] font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors leading-tight truncate">{item.name}</h3>
-                            <p className="text-[9.5px] text-slate-400 font-bold leading-tight truncate mt-0.5">{item.role}</p>
+                            <p className="text-[9.5px] text-slate-400 font-bold leading-tight truncate mt-0.5">{item.role || 'Conversation'}</p>
                             <p className="text-[10px] text-slate-600 font-semibold leading-snug truncate mt-0.5">{item.preview}</p>
                           </div>
                         </div>
@@ -3347,7 +3327,7 @@ export default function Messages() {
                 </div>
 
                 <div className="space-y-1.5">
-                  {contactsList.length > 0 ? contactsList.map((item) => (
+                  {conversationsList.length > 0 ? conversationsList.slice(0, 6).map((item) => (
                     <div
                       key={item.id}
                       onClick={() => { setActiveContactId(item.id); setSelectedCategory('Conversations'); }}
@@ -3361,8 +3341,8 @@ export default function Messages() {
                             className="w-7 h-7 rounded-full object-cover shrink-0 shadow-2xs"
                           />
                         ) : (
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-extrabold text-[10px] shadow-2xs ${item.avatarBg}`}>
-                            {item.initials}
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-extrabold text-[10px] shadow-2xs ${item.avatarBg || 'bg-slate-100 text-slate-700'}`}>
+                            {item.initials || 'C'}
                           </div>
                         )}
                         <div className="truncate min-w-0">
