@@ -4576,11 +4576,11 @@ export default function Drivers() {
           const payType = driverFormPayType;
           const payRate = fd.get('PayRate') || (isEditMode ? selectedDriver?.payRate : null);
           const loadPaySchedule = selectedDriver?.loadPaySchedule || null;
-          const bankName = fd.get('BankName') || '';
-          const accountNumber = fd.get('AccountNumber') || '';
-          const routingNumber = fd.get('BSBRouting') || '';
-          const taxNumber = fd.get('TaxNumber') || '';
-          const superFund = fd.get('SuperannuationFund') || '';
+          const bankName = fd.get('BankName') || fd.get('bankName') || '';
+          const accountNumber = fd.get('AccountNumber') || fd.get('accountNumber') || '';
+          const routingNumber = fd.get('BSBRouting') || fd.get('routingNumber') || fd.get('BSB') || '';
+          const taxNumber = fd.get('TaxNumber') || fd.get('taxNumber') || '';
+          const superFund = fd.get('SuperannuationFund') || fd.get('superFund') || '';
 
           const preferredVehicle = fd.get('PreferredVehicle') || '';
           const preferredRoutes = fd.get('PreferredRoutes') || '';
