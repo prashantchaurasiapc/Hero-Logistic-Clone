@@ -8,10 +8,16 @@ export default function SupportTickets() {
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState(location.state?.status || 'All');
+  const [highlightSection, setHighlightSection] = useState(location.state?.highlight || null);
 
   useEffect(() => {
     if (location.state?.status) {
       setStatusFilter(location.state.status);
+    }
+    if (location.state?.highlight) {
+      setHighlightSection(location.state.highlight);
+      const timer = setTimeout(() => setHighlightSection(null), 4500);
+      return () => clearTimeout(timer);
     }
   }, [location.state]);
 
@@ -272,7 +278,7 @@ export default function SupportTickets() {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between h-32">
+        <div className={`bg-white border rounded-2xl p-5 shadow-xs flex flex-col justify-between h-32 transition-all duration-700 ${highlightSection === 'open-tickets' ? 'border-amber-400 ring-2 ring-amber-400/40 bg-amber-50/20 shadow-md scale-[1.01]' : 'border-slate-100'}`}>
           <div>
             <span className="text-[10px] font-black text-slate-400 tracking-wider uppercase">OPEN TICKETS</span>
             <span className="text-2xl font-black text-slate-900 block mt-2">{openTickets}</span>
@@ -322,10 +328,17 @@ export default function SupportTickets() {
       </div>
 
       {/* Main Support Registry Grid */}
-      <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-xs w-full">
+      <div className={`bg-white border rounded-2xl p-6 shadow-xs w-full transition-all duration-700 ${highlightSection === 'open-tickets' ? 'border-amber-400 ring-2 ring-amber-400/30 shadow-md' : 'border-slate-100'}`}>
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
           <div>
-            <h2 className="text-lg font-black text-slate-800 mb-1">Support Ticket Queue</h2>
+            <h2 className="text-lg font-black text-slate-800 mb-1 flex items-center gap-2">
+              Support Ticket Queue
+              {highlightSection === 'open-tickets' && (
+                <span className="text-[10px] font-extrabold text-amber-700 bg-amber-100 border border-amber-200 px-2.5 py-0.5 rounded-full animate-pulse">
+                  Filtered: Open Tickets
+                </span>
+              )}
+            </h2>
             <p className="text-xs font-semibold text-slate-400">Manage Inbound platform support requests.</p>
           </div>
 

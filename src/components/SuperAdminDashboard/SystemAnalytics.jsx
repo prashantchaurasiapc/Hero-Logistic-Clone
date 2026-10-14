@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { jsPDF } from 'jspdf';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
@@ -17,6 +18,9 @@ import {
 import api from '../../services/api';
 
 export default function SystemAnalytics() {
+  const location = useLocation();
+  const [highlightSection, setHighlightSection] = useState(null);
+
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFormat, setExportFormat] = useState('csv');
   const [exportScope, setExportScope] = useState('Platform Financials & MRR');
@@ -80,6 +84,15 @@ export default function SystemAnalytics() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (location.state?.highlight) {
+      setHighlightSection(location.state.highlight);
+      const timer = setTimeout(() => {
+        setHighlightSection(null);
+      }, 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -234,18 +247,33 @@ export default function SystemAnalytics() {
           <div className="col-span-full py-10 flex justify-center items-center text-slate-400 gap-2">
             <Loader2 className="w-5 h-5 animate-spin" /> Loading metrics...
           </div>
-        ) : metrics.map((m, idx) => (
-          <div key={idx} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between h-32">
-            <div>
-              <span className="text-[10px] font-black text-slate-400 tracking-wider uppercase">{m.name}</span>
-              <span className="text-2xl font-black text-slate-900 block mt-2">{m.value}</span>
+        ) : metrics.map((m, idx) => {
+          const isHighlighted = highlightSection === 'mrr-growth' && m.name === 'MRR GROWTH';
+          return (
+            <div 
+              key={idx} 
+              className={`bg-white border rounded-2xl p-5 shadow-xs flex flex-col justify-between h-32 transition-all duration-300 relative ${
+                isHighlighted 
+                  ? 'border-emerald-400 ring-2 ring-emerald-400/40 bg-emerald-50/20 shadow-md scale-[1.02]' 
+                  : 'border-slate-100'
+              }`}
+            >
+              {isHighlighted && (
+                <span className="absolute -top-2.5 right-3 bg-emerald-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs animate-pulse">
+                  Selected from Dashboard
+                </span>
+              )}
+              <div>
+                <span className="text-[10px] font-black text-slate-400 tracking-wider uppercase">{m.name}</span>
+                <span className="text-2xl font-black text-slate-900 block mt-2">{m.value}</span>
+              </div>
+              <div className="flex justify-between items-center text-[10px] font-bold mt-2">
+                <span className="text-slate-400">{m.desc}</span>
+                <span className={m.isPositive ? 'text-emerald-500 font-extrabold' : 'text-slate-400'}>{m.change}</span>
+              </div>
             </div>
-            <div className="flex justify-between items-center text-[10px] font-bold mt-2">
-              <span className="text-slate-400">{m.desc}</span>
-              <span className={m.isPositive ? 'text-emerald-500 font-extrabold' : 'text-slate-400'}>{m.change}</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* First Charts Row */}

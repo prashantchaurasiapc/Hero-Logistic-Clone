@@ -965,6 +965,20 @@ export default function Drivers() {
       accountNumber: d.accountNumber || '',
       routingNumber: d.routingNumber || '',
       taxNumber: d.taxNumber || '',
+      tfnStatus: d.tfnStatus || (d.taxNumber ? 'Provided' : ''),
+      taxFreeThreshold: d.taxFreeThreshold !== undefined ? d.taxFreeThreshold : true,
+      studyLoanDebt: d.studyLoanDebt !== undefined ? d.studyLoanDebt : false,
+      taxDeclReceived: d.taxDeclReceived !== undefined ? d.taxDeclReceived : true,
+      residencyStatus: d.residencyStatus || 'Australian Resident',
+      paygCalcMethod: d.paygCalcMethod || 'ATO Scale',
+      effectiveFrom: d.effectiveFrom ? safeDateToYMD(d.effectiveFrom) : '',
+      effectiveTo: d.effectiveTo ? safeDateToYMD(d.effectiveTo) : '',
+      ordinaryHoursPerDay: d.ordinaryHoursPerDay !== undefined ? d.ordinaryHoursPerDay : 7.6,
+      overtimeStartsAfter: d.overtimeStartsAfter !== undefined ? d.overtimeStartsAfter : 7.6,
+      overtimeRate: d.overtimeRate !== undefined ? d.overtimeRate : null,
+      overtimeMultiplier: d.overtimeMultiplier !== undefined ? d.overtimeMultiplier : 1.5,
+      superPercentage: d.superPercentage !== undefined ? d.superPercentage : 12.0,
+      defaultBreakMinutes: d.defaultBreakMinutes !== undefined ? d.defaultBreakMinutes : 30,
       superFund: d.superFund || '',
       preferredVehicle: d.preferredVehicle || '',
       preferredRoutes: d.preferredRoutes || '',
@@ -4783,7 +4797,10 @@ export default function Drivers() {
                   taxDeclReceived,
                   residencyStatus,
                   paygCalcMethod,
-                  defaultBreakMinutes
+                  defaultBreakMinutes,
+                  taxNumber,
+                  accountNumber,
+                  routingNumber
                 };
               });
             } else {
@@ -4830,8 +4847,8 @@ export default function Drivers() {
                   overtimeRate: createdDriver.overtimeRate || overtimeRate,
                   overtimeMultiplier: createdDriver.overtimeMultiplier || overtimeMultiplier,
                   superPercentage: createdDriver.superPercentage || superPercentage,
-                  effectiveFrom: createdDriver.effectiveFrom || effectiveFrom,
-                  effectiveTo: createdDriver.effectiveTo || effectiveTo,
+                  effectiveFrom: createdDriver.effectiveFrom ? safeDateToYMD(createdDriver.effectiveFrom) : (effectiveFrom || ''),
+                  effectiveTo: createdDriver.effectiveTo ? safeDateToYMD(createdDriver.effectiveTo) : (effectiveTo || ''),
                   taxFreeThreshold: createdDriver.taxFreeThreshold ?? taxFreeThreshold,
                   studyLoanDebt: createdDriver.studyLoanDebt ?? studyLoanDebt,
                   taxDeclReceived: createdDriver.taxDeclReceived ?? taxDeclReceived,
@@ -4839,6 +4856,11 @@ export default function Drivers() {
                   paygCalcMethod: createdDriver.paygCalcMethod || paygCalcMethod,
                   defaultBreakMinutes: createdDriver.defaultBreakMinutes || defaultBreakMinutes,
                   loadPaySchedule: createdDriver.loadPaySchedule || loadPaySchedule,
+                  bankName: createdDriver.bankName || bankName,
+                  accountNumber: createdDriver.accountNumber || accountNumber,
+                  routingNumber: createdDriver.routingNumber || routingNumber,
+                  taxNumber: createdDriver.taxNumber || taxNumber,
+                  superFund: createdDriver.superFund || superFund,
                   avatar: formatAvatarUrl(createdDriver.avatarUrl || avatarUrl, createdDriver.id)
                 };
                 setSelectedDriver(newMapped);
@@ -5330,7 +5352,7 @@ export default function Drivers() {
                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
                             TFN Status
                           </label>
-                          <select name="tfnStatus" defaultValue={isEditMode ? (defaultData.tfnStatus || "") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                          <select name="tfnStatus" defaultValue={isEditMode ? (defaultData.tfnStatus || (defaultData.taxNumber ? "Provided" : "")) : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
                             <option value="">Select TFN Status</option>
                             <option value="Provided">Provided</option>
                             <option value="Exempt">Exempt</option>
@@ -5343,7 +5365,7 @@ export default function Drivers() {
                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
                             Tax-Free Threshold Claimed
                           </label>
-                          <select name="taxFreeThreshold" defaultValue={isEditMode ? (defaultData.taxFreeThreshold ? "Yes" : "No") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                          <select name="taxFreeThreshold" defaultValue={isEditMode ? (defaultData.taxFreeThreshold === false ? "No" : "Yes") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
                             <option value="">Select Option</option>
                             <option value="Yes">Yes</option>
                             <option value="No">No</option>
@@ -5354,7 +5376,7 @@ export default function Drivers() {
                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
                             Study Loan Debt (HELP / HECS)
                           </label>
-                          <select name="studyLoanDebt" defaultValue={isEditMode ? (defaultData.studyLoanDebt ? "Yes" : "No") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                          <select name="studyLoanDebt" defaultValue={isEditMode ? (defaultData.studyLoanDebt === true ? "Yes" : "No") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
                             <option value="">Select Option</option>
                             <option value="No">No</option>
                             <option value="Yes">Yes</option>
@@ -5365,7 +5387,7 @@ export default function Drivers() {
                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
                             Tax Declaration Received
                           </label>
-                          <select name="taxDeclReceived" defaultValue={isEditMode ? (defaultData.taxDeclReceived ? "Yes" : "No") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                          <select name="taxDeclReceived" defaultValue={isEditMode ? (defaultData.taxDeclReceived === false ? "No" : "Yes") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
                             <option value="">Select Option</option>
                             <option value="Yes">Yes</option>
                             <option value="No">No</option>
@@ -5376,7 +5398,7 @@ export default function Drivers() {
                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
                             Residency Status
                           </label>
-                          <select name="residencyStatus" defaultValue={isEditMode ? (defaultData.residencyStatus || "") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                          <select name="residencyStatus" defaultValue={isEditMode ? (defaultData.residencyStatus || "Australian Resident") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
                             <option value="">Select Residency Status</option>
                             <option value="Australian Resident">Australian Resident</option>
                             <option value="Working Holiday Maker">Working Holiday Maker</option>
@@ -5388,7 +5410,7 @@ export default function Drivers() {
                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
                             PAYG Calculation Method
                           </label>
-                          <select name="paygCalcMethod" defaultValue={isEditMode ? (defaultData.paygCalcMethod || "") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                          <select name="paygCalcMethod" defaultValue={isEditMode ? (defaultData.paygCalcMethod || "ATO Scale") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
                             <option value="">Select Calc Method</option>
                             <option value="ATO Scale">ATO Standard Withholding Scale</option>
                             <option value="Approved Integration">Approved Payroll Integration</option>

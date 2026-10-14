@@ -22,11 +22,17 @@ export default function Companies() {
   const [minUsersFilter, setMinUsersFilter] = useState('');
   const [selectedPlanFilter, setSelectedPlanFilter] = useState('All Plans');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState(location.state?.status || 'All Statuses');
+  const [highlightSection, setHighlightSection] = useState(location.state?.highlight || null);
 
   useEffect(() => {
     if (location.state?.status) {
       setSelectedStatusFilter(location.state.status);
       setAdvancedSearchOpen(true);
+    }
+    if (location.state?.highlight) {
+      setHighlightSection(location.state.highlight);
+      const timer = setTimeout(() => setHighlightSection(null), 4500);
+      return () => clearTimeout(timer);
     }
   }, [location.state]);
 
@@ -432,7 +438,7 @@ export default function Companies() {
         </div>
 
         {/* Card 2 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
+        <div className={`bg-white border rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px] transition-all duration-700 ${highlightSection === 'active-companies' ? 'border-emerald-400 ring-2 ring-emerald-400/40 bg-emerald-50/20 shadow-md scale-[1.01]' : 'border-slate-100'}`}>
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">ACTIVE COMPANIES</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.filter(c => c.status === 'ACTIVE').length}</span>
@@ -440,7 +446,7 @@ export default function Companies() {
         </div>
 
         {/* Card 3 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
+        <div className={`bg-white border rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px] transition-all duration-700 ${highlightSection === 'trial-companies' ? 'border-emerald-400 ring-2 ring-emerald-400/40 bg-emerald-50/20 shadow-md scale-[1.01]' : 'border-slate-100'}`}>
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TRIAL COMPANIES</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.filter(c => c.status === 'TRIAL').length}</span>

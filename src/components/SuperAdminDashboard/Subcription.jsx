@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   CreditCard, Calendar, RefreshCw, ShieldAlert, ArrowUpRight, Search,
   Check, Edit2, Download, Filter, ChevronDown, DollarSign, Users, AlertCircle, FileText, X, CheckCircle, ArrowDownRight, Send, Layers, PauseCircle, Loader2
@@ -8,11 +8,24 @@ import api from '../../services/api';
 
 export default function Subscriptions() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchCompany, setSearchCompany] = useState('');
   const [searchSubId, setSearchSubId] = useState('');
   const [selectedPlanFilter, setSelectedPlanFilter] = useState('All Plans');
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState('All Statuses');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState(location.state?.status || 'All Statuses');
+  const [highlightSection, setHighlightSection] = useState(location.state?.highlight || null);
   const [toast, setToast] = useState('');
+
+  useEffect(() => {
+    if (location.state?.status) {
+      setSelectedStatusFilter(location.state.status);
+    }
+    if (location.state?.highlight) {
+      setHighlightSection(location.state.highlight);
+      const timer = setTimeout(() => setHighlightSection(null), 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   // Dropdown states
   const [activeActionsMenu, setActiveActionsMenu] = useState(null); // ID of subscription whose menu is open
@@ -408,7 +421,15 @@ export default function Subscriptions() {
       </div>
 
       {/* Subscription licensing table */}
-      <div className="bg-white border border-slate-100 rounded-3xl shadow-xs overflow-hidden">
+      <div className={`bg-white border rounded-3xl shadow-xs overflow-hidden transition-all duration-700 ${highlightSection === 'paid-companies' ? 'border-emerald-400 ring-2 ring-emerald-400/40 shadow-md' : 'border-slate-100'}`}>
+        {highlightSection === 'paid-companies' && (
+          <div className="bg-emerald-50 border-b border-emerald-200 text-emerald-800 text-xs font-bold px-5 py-2.5 flex items-center justify-between animate-fadeIn">
+            <span>✨ Showing Subscribed Paying Contracts from Dashboard</span>
+            <button onClick={() => { setHighlightSection(null); setSelectedStatusFilter('All Statuses'); }} className="text-emerald-700 hover:text-emerald-900 underline text-[11px] cursor-pointer">
+              Clear Filter
+            </button>
+          </div>
+        )}
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left border-collapse text-xs font-bold text-slate-700 min-w-[1000px] whitespace-nowrap">
             <thead>
