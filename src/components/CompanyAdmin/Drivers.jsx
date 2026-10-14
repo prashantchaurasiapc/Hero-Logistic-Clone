@@ -4906,7 +4906,7 @@ export default function Drivers() {
                   onClick={handleAddComplianceDocSlot}
                   className="flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer"
                 >
-                  <Plus size={14} /> <span>+ Add Compliance Document</span>
+                  <Plus size={14} /> <span>Add Compliance Document</span>
                 </button>
               </div>
 
@@ -4938,18 +4938,9 @@ export default function Drivers() {
                 </div>
               )}
 
-              <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
-                  <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
-                  <span>All documents are securely synced and verified against the driver compliance register.</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddComplianceDocSlot}
-                  className="flex items-center gap-1.5 text-xs font-bold text-purple-700 hover:text-purple-800 hover:bg-purple-50 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
-                >
-                  <Plus size={14} /> <span>Add Another Document</span>
-                </button>
+              <div className="mt-5 pt-4 border-t border-slate-100 flex items-center gap-2 text-[10px] text-slate-500 font-medium">
+                <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+                <span>All documents are securely synced and verified against the driver compliance register.</span>
               </div>
             </div>
 
