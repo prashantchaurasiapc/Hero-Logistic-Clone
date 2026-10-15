@@ -4465,7 +4465,12 @@ export default function Drivers() {
       licenseExpiry: selectedDriver?.licenseExpiry || '',
       licenceClass: selectedDriver?.licenseClass || '',
       branch: selectedDriver?.branch && selectedDriver?.branch !== '—' ? selectedDriver.branch : '',
-      employmentType: selectedDriver?.employmentType && selectedDriver?.employmentType !== '—' ? selectedDriver.employmentType : '',
+      employmentType: (() => {
+        const raw = selectedDriver?.employmentType;
+        if (!raw || raw === '—') return 'FULL_TIME';
+        const norm = String(raw).toUpperCase().replace(/[\s-]/g, '_');
+        return ['FULL_TIME', 'PART_TIME', 'CASUAL'].includes(norm) ? norm : (norm.includes('CAS') ? 'CASUAL' : norm.includes('PART') ? 'PART_TIME' : 'FULL_TIME');
+      })(),
       payType: selectedDriver?.payType || 'Hourly',
       payRate: selectedDriver?.payRate || '',
       loadPaySchedule: selectedDriver?.loadPaySchedule || '',
@@ -4522,7 +4527,9 @@ export default function Drivers() {
           e.preventDefault();
           if (isSubmittingDriver) return;
           setIsSubmittingDriver(true);
-          const fd = new FormData(e.target);
+
+          try {
+            const fd = new FormData(e.target);
           const firstName = fd.get('FirstName') || fd.get('firstName') || '';
           const lastName = fd.get('LastName') || fd.get('lastName') || '';
           const rawDriverCode = fd.has('EmployeeIDManualEditOption') ? fd.get('EmployeeIDManualEditOption') : fd.get('driverCode');
@@ -4621,14 +4628,14 @@ export default function Drivers() {
           const rawStudy = fd.get('studyLoanDebt');
           const studyLoanDebt = rawStudy ? rawStudy === 'Yes' : false;
           const rawTaxDecl = fd.get('taxDeclReceived');
-          const taxDeclReceived = rawTaxDecl ? rawTaxDecl === 'Yes' : true;
-          const residencyStatus = fd.get('residencyStatus') || 'Australian Resident';
-          const paygCalcMethod = fd.get('paygCalcMethod') || 'ATO Scale';
-          const formEmploymentType = fd.get('employmentType') || employmentType || 'FULL_TIME';
-          const defaultBreakMinutes = fd.get('defaultBreakMinutes') ? parseInt(fd.get('defaultBreakMinutes'), 10) : 30;
-          const tfnStatus = fd.get('tfnStatus') || 'Provided';
+          const taxDeclReceived = rawTaxDecl ? rawTaxDecl === 'Yes' : (isEditMode && defaultData.taxDeclReceived !== undefined ? defaultData.taxDeclReceived : true);
+          const residencyStatus = fd.get('residencyStatus') || (isEditMode ? defaultData.residencyStatus : '') || 'Australian Resident';
+          const paygCalcMethod = fd.get('paygCalcMethod') || (isEditMode ? defaultData.paygCalcMethod : '') || 'ATO Scale';
+          const formEmploymentType = fd.get('employmentType') || (isEditMode ? defaultData.employmentType : '') || employmentType || 'FULL_TIME';
+          const defaultBreakMinutes = fd.get('defaultBreakMinutes') ? parseInt(fd.get('defaultBreakMinutes'), 10) : (isEditMode && defaultData.defaultBreakMinutes ? defaultData.defaultBreakMinutes : 30);
+          const tfnStatus = fd.get('tfnStatus') || (isEditMode ? defaultData.tfnStatus : '') || 'Provided';
 
-          if (driverFormPayType === 'Hourly') {
+          if (driverFormPayType === 'Hourly' && !isEditMode) {
             if (!fd.get('employmentType')) {
               showToast("Please select an Employment Type in Payroll Information.", "error");
               return;
@@ -4764,8 +4771,7 @@ export default function Drivers() {
           };
 
           let targetDriverId = (isEditMode && selectedDriver) ? selectedDriver.id : null;
-          try {
-            if (isEditMode && selectedDriver) {
+          if (isEditMode && selectedDriver) {
               await api.put(`/drivers/${selectedDriver.id}`, payload);
               const updatedName = `${firstName} ${lastName}`.trim() || driverCode || selectedDriver.name;
               const dobYMD = safeDateToYMD(dob) || selectedDriver.dob;
