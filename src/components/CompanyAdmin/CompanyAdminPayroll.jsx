@@ -124,14 +124,35 @@ export default function CompanyAdminPayroll() {
       const res = await api.get('/company-admin/payroll/driver-load-schedules');
       const data = res.data?.data || res.data || {};
       apiSchedules = Array.isArray(data.schedules) ? data.schedules : (Array.isArray(data) ? data : []);
-      if (data.stats) {
-        setScheduleStats(data.stats);
-      }
     } catch (err) {
       console.warn('Driver load schedule API warning:', err?.message);
     }
 
-    const finalSchedules = apiSchedules;
+    // Filter out unwanted legacy mock/seed data (SCHED-101 .. SCHED-104) so newly created companies start 100% clean
+    const cleanSchedules = apiSchedules.filter(s => !['SCHED-101', 'SCHED-102', 'SCHED-103', 'SCHED-104'].includes(s.id));
+
+    // Fallback to company-scoped local storage if API returned empty but company created custom rates in this session
+    let finalSchedules = cleanSchedules;
+    if (finalSchedules.length === 0) {
+      try {
+        const u = JSON.parse(localStorage.getItem('user') || '{}');
+        const cId = u.companyId || u.company?.id || localStorage.getItem('companyId') || 'default';
+        const localData = localStorage.getItem(`hero_driver_load_schedules_${cId}`);
+        if (localData) {
+          const parsed = JSON.parse(localData);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            finalSchedules = parsed.filter(s => !['SCHED-101', 'SCHED-102', 'SCHED-103', 'SCHED-104'].includes(s.id));
+          }
+        }
+      } catch (e) {}
+    }
+
+    setScheduleStats({
+      totalCount: finalSchedules.length,
+      activeCount: finalSchedules.filter(s => s.status === 'Active' || s.status === 'ACTIVE').length,
+      avgRate: finalSchedules.length > 0 ? Math.round((finalSchedules.reduce((acc, curr) => acc + (parseFloat(curr.rate) || 0), 0) / finalSchedules.length) * 100) / 100 : 0
+    });
+
     setSchedules(finalSchedules);
   }, []);
 
@@ -189,6 +210,9 @@ export default function CompanyAdminPayroll() {
     setSchedules(prev => {
       const updated = [newSch, ...prev.filter(s => s.id !== newSch.id)];
       try {
+        const u = JSON.parse(localStorage.getItem('user') || '{}');
+        const cId = u.companyId || u.company?.id || localStorage.getItem('companyId') || 'default';
+        localStorage.setItem(`hero_driver_load_schedules_${cId}`, JSON.stringify(updated));
         localStorage.setItem('hero_driver_load_schedules', JSON.stringify(updated));
       } catch (e) {}
       return updated;
@@ -240,6 +264,9 @@ export default function CompanyAdminPayroll() {
     setSchedules(prev => {
       const newList = prev.map(s => s.id === selectedSchedule.id ? updated : s);
       try {
+        const u = JSON.parse(localStorage.getItem('user') || '{}');
+        const cId = u.companyId || u.company?.id || localStorage.getItem('companyId') || 'default';
+        localStorage.setItem(`hero_driver_load_schedules_${cId}`, JSON.stringify(newList));
         localStorage.setItem('hero_driver_load_schedules', JSON.stringify(newList));
       } catch (e) {}
       return newList;
@@ -264,6 +291,9 @@ export default function CompanyAdminPayroll() {
     setSchedules(prev => {
       const newList = prev.filter(s => s.id !== selectedSchedule.id);
       try {
+        const u = JSON.parse(localStorage.getItem('user') || '{}');
+        const cId = u.companyId || u.company?.id || localStorage.getItem('companyId') || 'default';
+        localStorage.setItem(`hero_driver_load_schedules_${cId}`, JSON.stringify(newList));
         localStorage.setItem('hero_driver_load_schedules', JSON.stringify(newList));
       } catch (e) {}
       return newList;

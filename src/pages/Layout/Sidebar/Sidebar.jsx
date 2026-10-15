@@ -16,6 +16,7 @@ import {
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
 import { useTheme } from '../../../context/ThemeProvider';
+import { hasMenuAccess } from '../../../utils/permissionChecker';
 
 /* ============================================================
    ROLE CONFIGS - Add/remove menu items here for each role
@@ -189,6 +190,7 @@ const roleConfigs = {
       { icon: <FiHome />, label: 'Driver Dashboard', path: '/driver/dashboard' },
       { icon: <FiClock />, label: 'Start Work / Finish Work', path: '/driver/safety-checklist' },
       { icon: <FiGrid />, label: 'Assigned Jobs', path: '/driver/assigned-jobs' },
+      { icon: <FiPlus />, label: 'Create Draft Load', path: '/driver/create-draft-load' },
       { icon: <BsQrCodeScan />, label: 'Pickup & Loading', path: '/driver/pickup-loading' },
       { icon: <FiNavigation />, label: 'Dispatch & Active Run', path: '/driver/active-run' },
       { icon: <FiCheckCircle />, label: 'Delivery & POD', path: '/driver/delivery-pod' },
@@ -355,14 +357,62 @@ const Sidebar = ({ role, isOpen, onClose }) => {
   };
 
   const [openSubMenus, setOpenSubMenus] = useState({});
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const s = localStorage.getItem('hero_session');
+      return s ? JSON.parse(s) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const handlePermChange = () => {
+      try {
+        const s = localStorage.getItem('hero_session');
+        setCurrentUser(s ? JSON.parse(s) : null);
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener('hero:permissions_updated', handlePermChange);
+    window.addEventListener('storage', handlePermChange);
+    return () => {
+      window.removeEventListener('hero:permissions_updated', handlePermChange);
+      window.removeEventListener('storage', handlePermChange);
+    };
+  }, []);
+
+  // Filter menu items based on active user's permissions
+  const visibleMenuItems = (config?.menuItems || []).filter(item => {
+    if (item.items && item.items.length > 0) {
+      return item.items.some(sub => hasMenuAccess(currentUser, sub.label, sub.path));
+    }
+    return hasMenuAccess(currentUser, item.label, item.path);
+  }).map(item => {
+    if (item.items && item.items.length > 0) {
+      return {
+        ...item,
+        items: item.items.filter(sub => hasMenuAccess(currentUser, sub.label, sub.path))
+      };
+    }
+    return item;
+  });
+
+  const visibleSubMenus = (config?.subMenus || []).map(sub => ({
+    ...sub,
+    items: (sub.items || []).filter(item => hasMenuAccess(currentUser, item.label, item.path))
+  })).filter(sub => sub.items.length > 0);
+
+  const visibleExtraItems = (config?.extraItems || []).filter(item => hasMenuAccess(currentUser, item.label, item.path));
 
   // Auto-expand submenus when a child link is active
   useEffect(() => {
     const updated = { ...openSubMenus };
     let changed = false;
 
-    if (config?.menuItems) {
-      config.menuItems.forEach((item, index) => {
+    if (visibleMenuItems) {
+      visibleMenuItems.forEach((item, index) => {
         if (item.items) {
           const key = item.key || `menu-${index}`;
           const hasActiveChild = item.items.some(sub => isPathActive(sub.path));
@@ -374,8 +424,8 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       });
     }
 
-    if (config?.subMenus) {
-      config.subMenus.forEach(sub => {
+    if (visibleSubMenus) {
+      visibleSubMenus.forEach(sub => {
         const hasActiveChild = sub.items.some(item => isPathActive(item.path));
         if (hasActiveChild && !updated[sub.key]) {
           updated[sub.key] = true;
@@ -387,7 +437,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
     if (changed) {
       setOpenSubMenus(updated);
     }
-  }, [location.pathname, role]);
+  }, [location.pathname, role, currentUser]);
 
   const handleNavClick = () => {
     if (onClose) onClose();
@@ -470,7 +520,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
 
       <nav className="sidebar-nav">
         <ul>
-          {config.menuItems.map((item, index) => {
+          {visibleMenuItems.map((item, index) => {
             const itemKey = item.key || `menu-${index}`;
             const hasItems = Boolean(item.items && item.items.length > 0);
 
@@ -527,7 +577,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
           })}
 
           {/* Submenus (Company Admin / Warehouse Tools) */}
-          {config.subMenus?.map((sub) => {
+          {visibleSubMenus?.map((sub) => {
             const hasActiveChild = sub.items.some(item => isPathActive(item.path));
             return (
               <React.Fragment key={sub.key}>
@@ -567,7 +617,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
           })}
 
           {/* Extra items after submenus (Company Admin) */}
-          {config.extraItems?.map((item, index) => {
+          {visibleExtraItems?.map((item, index) => {
             const extraActive = isPathActive(item.path);
             return (
               <li key={`extra-${index}`}>

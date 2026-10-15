@@ -2820,7 +2820,7 @@ export default function Loads() {
   };
 
   const handleExport = () => {
-    const listToExport = (filtered && filtered.length > 0) ? filtered : (loadsList && loadsList.length > 0 ? loadsList : LOADS);
+    const listToExport = (filtered && filtered.length > 0) ? filtered : (loadsList && loadsList.length > 0 ? loadsList : []);
     if (!listToExport || listToExport.length === 0) {
       triggerToast('No loads available to export.', 'warning');
       return;

@@ -55,9 +55,16 @@ const ROLE_MODULES_MAP = {
   'Driver': [
     { menu: 'Messages', actions: ['Show', 'View', 'Create', 'Manage'] },
     { menu: 'Assigned Jobs', actions: ['Show', 'View', 'Manage'] },
-    { menu: 'Timesheets / Clock In-Out', actions: ['Show', 'View', 'Manage'] },
+    { menu: 'Create / Edit Loads', actions: ['Show', 'View', 'Create', 'Edit'] },
     { menu: 'Delivery & POD', actions: ['Show', 'View', 'Create', 'Upload', 'Manage'] },
+    { menu: 'Timesheets / Clock In-Out', actions: ['Show', 'View', 'Manage'] },
     { menu: 'Add Expense', actions: ['Show', 'View', 'Create'] },
+    { menu: 'Pickup & Loading', actions: ['Show', 'View', 'Manage'] },
+    { menu: 'Dispatch & Active Run', actions: ['Show', 'View', 'Manage'] },
+    { menu: 'Trailer Swap', actions: ['Show', 'View', 'Manage'] },
+    { menu: 'Documents & Compliance', actions: ['Show', 'View', 'Upload'] },
+    { menu: 'Payroll & Pay History', actions: ['Show', 'View'] },
+    { menu: 'Offline Sync', actions: ['Show', 'View', 'Manage'] },
   ],
   'Warehouse Manager': [
     { menu: 'Find Stock', actions: ['Show', 'View', 'Manage'] },
@@ -130,9 +137,10 @@ const getMergedPerms = (roleName, dbPermissions) => {
   modules.forEach(m => {
     permMap[m.menu] = {};
     m.actions.forEach(a => {
+      const isDriverLoadAction = roleName === 'Driver' && m.menu === 'Create / Edit Loads';
       if (!hasDbData) {
-        // No DB data at all → default everything to TRUE (fully enabled)
-        permMap[m.menu][a] = true;
+        // Driver Load creation defaults to FALSE unless explicitly granted; others default to TRUE
+        permMap[m.menu][a] = isDriverLoadAction ? false : true;
       } else {
         // DB has data → check if this specific action was saved
         const dbMenuActions = dbPermissions[m.menu];
@@ -140,8 +148,8 @@ const getMergedPerms = (roleName, dbPermissions) => {
           // Explicitly saved in DB → use exact DB value
           permMap[m.menu][a] = Boolean(dbMenuActions[a]);
         } else {
-          // Not saved in DB for this specific action → default to TRUE
-          permMap[m.menu][a] = true;
+          // Not saved in DB for this specific action → default to FALSE for Driver loads, TRUE for others
+          permMap[m.menu][a] = isDriverLoadAction ? false : true;
         }
       }
     });
@@ -281,6 +289,22 @@ export default function RolesPermissions() {
           ...prev,
           [activeModalRole.id]: merged
         }));
+
+        // Broadcast and cache permissions to local session so sidebar updates immediately
+        try {
+          const roleSlug = activeModalRole.roleKey || activeModalRole.slug || activeModalRole.name.toUpperCase().replace(/\s+/g, '_');
+          localStorage.setItem(`hero_role_perms_${roleSlug}`, JSON.stringify(merged));
+          localStorage.setItem(`hero_role_perms_${activeModalRole.name.toUpperCase().replace(/\s+/g, '_')}`, JSON.stringify(merged));
+
+          const session = JSON.parse(localStorage.getItem('hero_session') || '{}');
+          if (session && (session.role === activeModalRole.name || session.role === roleSlug || (session.role || '').toUpperCase().includes(roleSlug))) {
+            session.permissions = merged;
+            localStorage.setItem('hero_session', JSON.stringify(session));
+          }
+          window.dispatchEvent(new Event('hero:permissions_updated'));
+        } catch (storageErr) {
+          console.warn('Session permission cache notice:', storageErr);
+        }
 
         triggerToast(`Permissions updated for ${activeModalRole.name}!`);
         setActiveModalRole(null);

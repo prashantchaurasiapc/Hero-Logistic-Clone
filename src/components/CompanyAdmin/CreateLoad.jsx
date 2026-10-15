@@ -385,7 +385,10 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
     }
   }, [editMode, loadToEdit]);
 
-  const [stops, setStops] = useState([]);
+  const [stops, setStops] = useState([
+    { id: 1, type: 'Pickup', address: '', contactName: '', contactPhone: '', date: '', time: '', instructions: '' },
+    { id: 2, type: 'Drop-off', address: '', contactName: '', contactPhone: '', date: '', time: '', instructions: '' }
+  ]);
 
   // ── Drag & Drop state & handlers for Route Stops ─────────────────────────
   const [draggedStopIndex, setDraggedStopIndex] = useState(null);
@@ -518,8 +521,26 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
     if (customersToFetch.length > 0) {
       Promise.all(customersToFetch.map(custId => 
         api.get(`/company-admin/customers/${custId}/pricing-profiles`)
-          .then(res => ({ custId, rules: res.data?.data || res.data || [] }))
+          .then(res => {
+            const rules = res.data?.data || res.data || [];
+            if (Array.isArray(rules) && rules.length > 0) return { custId, rules };
+            try {
+              const saved = localStorage.getItem(`hero_pricing_profiles_${custId}`);
+              if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) return { custId, rules: parsed };
+              }
+            } catch (e) {}
+            return { custId, rules };
+          })
           .catch(err => {
+            try {
+              const saved = localStorage.getItem(`hero_pricing_profiles_${custId}`);
+              if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) return { custId, rules: parsed };
+              }
+            } catch (e) {}
             console.error(`Failed to load pricing rules for ${custId}:`, err);
             return { custId, rules: [] };
           })
@@ -558,19 +579,46 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
     const pickupStop = stops.find(s => (s.type || '').toLowerCase().includes('pick'));
     const dropStop = stops.find(s => (s.type || '').toLowerCase().includes('drop'));
 
-    const pAddr = (pickupStop?.address || '').toLowerCase();
-    const dAddr = (dropStop?.address || '').toLowerCase();
+    const pAddr = (pickupStop?.address || '').toLowerCase().trim();
+    const dAddr = (dropStop?.address || '').toLowerCase().trim();
 
     // Use fetched customer rules
     const custRules = customerPricingRules.filter(r => !r.isDefaultSample);
 
     let foundRule = null;
     if (custRules.length > 0) {
-      foundRule = custRules.find(r => {
-        const fromMatch = !r.from || (pAddr && pAddr.includes(r.from.toLowerCase()));
-        const toMatch = !r.to || (dAddr && dAddr.includes(r.to.toLowerCase()));
-        return fromMatch && toMatch;
-      }) || custRules[0];
+      if (pAddr && dAddr) {
+        // Priority 1: Exact origin + destination match (both specified and both match)
+        foundRule = custRules.find(r => {
+          if (!r.from || !r.to) return false;
+          const f = r.from.toLowerCase().trim();
+          const t = r.to.toLowerCase().trim();
+          return (pAddr.includes(f) || f.includes(pAddr)) && (dAddr.includes(t) || t.includes(dAddr));
+        });
+
+        // Priority 2: Origin match (open destination) or Destination match (open origin)
+        if (!foundRule) {
+          foundRule = custRules.find(r => {
+            if (r.from && (!r.to || r.to.trim() === '')) return pAddr.includes(r.from.toLowerCase().trim());
+            if ((!r.from || r.from.trim() === '') && r.to) return dAddr.includes(r.to.toLowerCase().trim());
+            return false;
+          });
+        }
+
+        // Priority 3: General customer flat profile (no route constraints)
+        if (!foundRule) {
+          foundRule = custRules.find(r => (!r.from || r.from.trim() === '') && (!r.to || r.to.trim() === ''));
+        }
+      } else if (pAddr) {
+        // Only pickup known so far
+        foundRule = custRules.find(r => r.from && pAddr.includes(r.from.toLowerCase().trim()));
+      } else if (dAddr) {
+        // Only dropoff known so far
+        foundRule = custRules.find(r => r.to && dAddr.includes(r.to.toLowerCase().trim()));
+      } else {
+        // No stops entered yet — only use generic flat profile if one exists
+        foundRule = custRules.find(r => (!r.from || r.from.trim() === '') && (!r.to || r.to.trim() === ''));
+      }
     }
 
     if (foundRule) {
@@ -587,9 +635,10 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
       const rateAmount = base + fuelAmt;
 
       const methodLabel = foundRule.method || 'Per Load';
+      const routeInfo = (foundRule.from && foundRule.to) ? ` [${foundRule.from} → ${foundRule.to}]` : '';
       const ruleName = fuelPct > 0
-        ? `${foundRule.name || 'Saved Pricing Rule'} ($${base.toFixed(2)} + ${fuelPct}% Fuel Levy = $${rateAmount.toFixed(2)} ${methodLabel})`
-        : `${foundRule.name || 'Saved Pricing Rule'} ($${rateAmount.toFixed(2)} ${methodLabel})`;
+        ? `${foundRule.name || 'Saved Pricing Rule'}${routeInfo} ($${base.toFixed(2)} + ${fuelPct}% Fuel Levy = $${rateAmount.toFixed(2)} ${methodLabel})`
+        : `${foundRule.name || 'Saved Pricing Rule'}${routeInfo} ($${rateAmount.toFixed(2)} ${methodLabel})`;
 
       setMatchedPricingRule({
         customerName: selectedCust?.name || 'Selected Customer',
@@ -605,10 +654,14 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
         }));
       }
     } else {
-      // No rule configured for this specific customer
+      // No rule configured for this specific customer + route
+      const noRuleMsg = (pAddr && dAddr)
+        ? `No Pricing Rule configured for route (${pAddr.split(',')[0]} → ${dAddr.split(',')[0]}). Enter Customer Charge manually.`
+        : `No Pricing Rule configured for ${selectedCust?.name || 'this customer'}. Enter Customer Charge manually.`;
+
       setMatchedPricingRule({
         customerName: selectedCust?.name || 'Selected Customer',
-        ruleName: `No Pricing Rule configured for ${selectedCust?.name || 'this customer'}. Enter Customer Charge manually.`,
+        ruleName: noRuleMsg,
         amount: 0,
         hasRule: false
       });
@@ -731,11 +784,13 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
   const getDriverSchedules = (driverId = null) => {
     let globalSchedules = [];
     try {
-      const savedStr = localStorage.getItem('hero_driver_load_schedules');
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      const cId = u.companyId || u.company?.id || localStorage.getItem('companyId') || 'default';
+      const savedStr = localStorage.getItem(`hero_driver_load_schedules_${cId}`) || localStorage.getItem('hero_driver_load_schedules');
       if (savedStr) {
         const parsed = JSON.parse(savedStr);
         if (Array.isArray(parsed)) {
-          globalSchedules = parsed;
+          globalSchedules = parsed.filter(s => !['SCHED-101', 'SCHED-102', 'SCHED-103', 'SCHED-104'].includes(s.id));
         }
       }
     } catch (e) {}

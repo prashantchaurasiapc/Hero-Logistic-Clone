@@ -11,6 +11,7 @@ import {
   FiMoreVertical, FiEye, FiEdit2, FiTrash2,
   FiTrendingUp,
 } from 'react-icons/fi';
+import { hasActionPermission, hasMenuAccess } from '../../utils/permissionChecker';
 
 const STATUS_META = {
   UPCOMING:    { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },
@@ -23,6 +24,18 @@ const PAGE_SIZE = 5;
 
 export default function Jobs() {
   const navigate = useNavigate();
+  const sessionUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('hero_session') || '{}');
+    } catch {
+      return {};
+    }
+  })();
+  const canCreateLoads = hasActionPermission(sessionUser, 'Create / Edit Loads', 'Create') ||
+    hasMenuAccess(sessionUser, 'Create Draft Load', '/driver/create-draft-load');
+  const canEditLoads = hasActionPermission(sessionUser, 'Create / Edit Loads', 'Edit');
+  const canDeleteLoads = hasActionPermission(sessionUser, 'Create / Edit Loads', 'Delete');
+
   const [jobs, setJobs]                 = useState([]);
   const [loading, setLoading]           = useState(true);
   const [activeTab, setActiveTab]       = useState('ALL');
@@ -226,12 +239,14 @@ export default function Jobs() {
             <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px' }}>Assigned Jobs</h1>
             <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b', fontWeight: 600 }}>Overview of your assigned freight loads</p>
           </div>
-          <button
-            onClick={() => setNewLoadOpen(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: '#ffcc00', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 900, color: '#000', cursor: 'pointer', boxShadow: '0 2px 10px rgba(255,204,0,0.35)' }}
-          >
-            <FiPlus size={15} /> + New Load
-          </button>
+          {canCreateLoads && (
+            <button
+              onClick={() => setNewLoadOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: '#ffcc00', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 900, color: '#000', cursor: 'pointer', boxShadow: '0 2px 10px rgba(255,204,0,0.35)' }}
+            >
+              <FiPlus size={15} /> + New Load
+            </button>
+          )}
         </div>
 
         {/* ── KPI CARDS ROW (horizontal, like Command Centre) ── */}
@@ -407,18 +422,22 @@ export default function Jobs() {
                               onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                               <FiEye size={14} color="#3b82f6" /> View / Pickup Load
                             </button>
-                            <button onClick={e => { e.stopPropagation(); setOpenDropdown(null); setEditJob({ ...job }); }}
-                              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', background: 'none', border: 'none', borderTop: '1px solid #f1f5f9', fontSize: 13, fontWeight: 700, color: '#0f172a', cursor: 'pointer', textAlign: 'left' }}
-                              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                              onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-                              <FiEdit2 size={14} color="#f59e0b" /> Edit
-                            </button>
-                            <button onClick={e => { e.stopPropagation(); setOpenDropdown(null); setDeleteJob(job); }}
-                              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', background: 'none', border: 'none', borderTop: '1px solid #f1f5f9', fontSize: 13, fontWeight: 700, color: '#ef4444', cursor: 'pointer', textAlign: 'left' }}
-                              onMouseEnter={e => e.currentTarget.style.background = '#fff5f5'}
-                              onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-                              <FiTrash2 size={14} color="#ef4444" /> Delete
-                            </button>
+                            {canEditLoads && (
+                              <button onClick={e => { e.stopPropagation(); setOpenDropdown(null); setEditJob({ ...job }); }}
+                                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', background: 'none', border: 'none', borderTop: '1px solid #f1f5f9', fontSize: 13, fontWeight: 700, color: '#0f172a', cursor: 'pointer', textAlign: 'left' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                                <FiEdit2 size={14} color="#f59e0b" /> Edit
+                              </button>
+                            )}
+                            {canDeleteLoads && (
+                              <button onClick={e => { e.stopPropagation(); setOpenDropdown(null); setDeleteJob(job); }}
+                                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', background: 'none', border: 'none', borderTop: '1px solid #f1f5f9', fontSize: 13, fontWeight: 700, color: '#ef4444', cursor: 'pointer', textAlign: 'left' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#fff5f5'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                                <FiTrash2 size={14} color="#ef4444" /> Delete
+                              </button>
+                            )}
                           </div>
                         )}
                       </td>

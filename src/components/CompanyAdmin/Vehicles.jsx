@@ -338,6 +338,7 @@ const Vehicles = () => {
 
   // Add/Edit Modals state
   const [showAddModal, setShowAddModal] = React.useState(false);
+  const [regoInput, setRegoInput] = React.useState('');
   const [managingVehicle, setManagingVehicle] = React.useState(null);
   const [newVehicle, setNewVehicle] = React.useState({
     id: '', reg: '', branch: 'SYDNEY', driver: '', type: 'HEAVY TRUCK', payload: 'PAYLOAD: 20T', status: 'ACTIVE'
@@ -697,7 +698,7 @@ const Vehicles = () => {
     try {
       const photoVal = fd.get('photoUrl') || null;
       const payload = {
-        rego: (fd.get('reg') || '').toUpperCase(),
+        rego: (regoInput || fd.get('reg') || fd.get('regSection2') || '').toUpperCase().trim(),
         make: fd.get('make') || '',
         model: fd.get('model') || '',
         year: fd.get('year') ? parseInt(fd.get('year')) : undefined,
@@ -720,6 +721,7 @@ const Vehicles = () => {
       await api.post('/vehicles', payload);
       fetchVehicles();
       setShowAddModal(false);
+      setRegoInput('');
       showToast('Vehicle added successfully!');
     } catch (err) {
       console.error('Error creating vehicle:', err);
@@ -3697,7 +3699,7 @@ const Vehicles = () => {
               <p className="text-xs text-gray-500 font-medium">Create a new vehicle profile by entering all required information.</p>
             </div>
             <div className="flex items-center gap-3">
-              <button type="button" onClick={() => setShowAddModal(false)} className="px-5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm">
+              <button type="button" onClick={() => { setShowAddModal(false); setRegoInput(''); }} className="px-5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm">
                 Cancel
               </button>
               <button type="button" className="px-5 py-2 bg-white border border-purple-200 hover:bg-purple-50 text-purple-700 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm">
@@ -3763,8 +3765,18 @@ const Vehicles = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION NO *</label>
-                  <input name="reg" type="text" placeholder="e.g. NSW - YXZ 123" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest">REGISTRATION NO *</label>
+                    <span className="text-[8px] font-extrabold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 uppercase tracking-wider">Plate / Rego</span>
+                  </div>
+                  <input 
+                    name="reg" 
+                    type="text" 
+                    value={regoInput}
+                    onChange={(e) => setRegoInput(e.target.value.toUpperCase())}
+                    placeholder="e.g. NSW - YXZ 123" 
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-bold uppercase focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VIN NUMBER *</label>
@@ -3820,8 +3832,21 @@ const Vehicles = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION NUMBER *</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest">REGISTRATION NUMBER *</label>
+                    <span className="text-[8px] font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 uppercase tracking-wider flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Auto-Synced
+                    </span>
+                  </div>
+                  <input 
+                    name="regSection2" 
+                    type="text" 
+                    value={regoInput}
+                    onChange={(e) => setRegoInput(e.target.value.toUpperCase())}
+                    placeholder="e.g. NSW - YXZ 123" 
+                    className="w-full px-3 py-2 border border-emerald-200 bg-emerald-50/20 rounded-lg text-[13px] font-bold uppercase focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION STATE *</label>
@@ -3974,6 +3999,7 @@ const Vehicles = () => {
               if (e.currentTarget.dataset.mouseDown === 'true') {
                 e.currentTarget.dataset.mouseDown = 'false';
                 setShowAddModal(true);
+                setRegoInput('');
               }
             }}
             className="border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm cursor-pointer whitespace-nowrap flex-grow sm:flex-grow-0 justify-center"

@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMyExpenses, createExpense } from '../../services/driverApi';
 import api from '../../services/api';
 import {
   FiCheckCircle, FiClock, FiPlus, FiUpload, FiRefreshCw,
@@ -14,10 +13,12 @@ import { BsQrCodeScan, BsFuelPump } from 'react-icons/bs';
 export default function AddExpense() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const modalFileInputRef = useRef(null);
 
   // Tab & Filter States
   const [activeTab, setActiveTab] = useState('Fuel & Expenses'); // 'Fuel & Expenses', 'Summary', 'Receipts', 'Analytics'
   const [toastMsg, setToastMsg] = useState('');
+  const [toastType, setToastType] = useState('success'); // 'success' | 'error'
   const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [tipDismissed, setTipDismissed] = useState(false);
@@ -25,6 +26,7 @@ export default function AddExpense() {
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFileBase64, setSelectedFileBase64] = useState('');
 
   // Modals
   const [addExpenseModalOpen, setAddExpenseModalOpen] = useState(false);
@@ -40,176 +42,266 @@ export default function AddExpense() {
   const [formVendor, setFormVendor] = useState('');
   const [formAmount, setFormAmount] = useState('');
   const [formLitres, setFormLitres] = useState('');
+  const [formPricePerLitre, setFormPricePerLitre] = useState('');
   const [formOdometer, setFormOdometer] = useState('');
   const [formNotes, setFormNotes] = useState('');
-  const [formReceiptAdded, setFormReceiptAdded] = useState(false);
+  const [formReceiptBase64, setFormReceiptBase64] = useState('');
+  const [formReceiptFileName, setFormReceiptFileName] = useState('');
 
   // Additional Data States
   const [runData, setRunData] = useState(null);
+  const [driverVehicle, setDriverVehicle] = useState('Unassigned');
+  const [driverTrailer, setDriverTrailer] = useState('Unassigned');
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   // Odometer State
   const [odometerVal, setOdometerVal] = useState('0');
 
-  // Expense Items Data
+  // Expense Items Data (Real DB Records)
   const [expenses, setExpenses] = useState([]);
-
-  // Receipts Thumbnails Data
-  const [receipts, setReceipts] = useState([]);
 
   useEffect(() => {
     fetchData();
   }, []);
 
+  const triggerToast = (msg, type = 'success') => {
+    setToastMsg(msg);
+    setToastType(type);
+    setTimeout(() => setToastMsg(''), 4000);
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [runRes, expensesRes] = await Promise.all([
-        api.get('/driver-portal/active-run').catch(() => ({ data: {} })),
-        api.get('/driver-portal/expenses').catch(() => ({ data: { expenses: [] } }))
+      setFetchError(false);
+
+      const [expensesRes, runRes, dashRes] = await Promise.all([
+        api.get('/driver-portal/expenses'),
+        api.get('/driver-portal/active-run').catch(() => ({ data: { run: null, currentLoad: null } })),
+        api.get('/driver-portal/dashboard').catch(() => ({ data: {} }))
       ]);
-      const data = runRes.data || {};
-      
-      let lastDelivered = null;
-      try {
-        const lastDelStr = localStorage.getItem('hero_last_delivered_load');
-        if (lastDelStr) lastDelivered = JSON.parse(lastDelStr);
-      } catch (e) {}
 
-      const currentLoad = data.currentLoad || (lastDelivered ? {
-        loadNumber: lastDelivered.id,
-        origin: lastDelivered.origin,
-        destination: lastDelivered.destination,
-        status: 'DELIVERED'
-      } : null);
+      const runPayload = runRes.data?.data || runRes.data || {};
+      const dashPayload = dashRes.data?.data || dashRes.data || {};
 
-      setRunData({
-        id: currentLoad?.loadNumber || currentLoad?.id || 'No Active Load',
-        origin: currentLoad?.origin || currentLoad?.pickupStop?.name || 'Origin',
-        destination: currentLoad?.destination || currentLoad?.deliveryStop?.name || 'Destination',
-        status: currentLoad?.status || 'Assigned',
-        vehicle: {
-          truck: data.driverInfo?.vehicle?.rego || 'Unassigned',
-          trailer: 'Unassigned',
-          trailerType: 'Trailer',
-          loadType: currentLoad?.loadType || 'General Freight',
-          estRangeKm: data.metrics?.estRangeKm || 0
-        },
-        stopsCount: 2,
-        estFinish: 'TBA'
-      });
-      
-      const formattedExpenses = ((expensesRes.data && expensesRes.data.expenses) || []).map(e => ({
-        id: e.id,
-        category: e.type,
-        categoryColor: e.type === 'Fuel' ? 'purple' : e.type === 'Maintenance' ? 'emerald' : e.type === 'Tyres' ? 'amber' : e.type === 'Tolls' ? 'blue' : 'slate',
-        icon: e.type === 'Fuel' ? '⛽' : e.type === 'Maintenance' ? '🔧' : e.type === 'Tyres' ? '🛞' : e.type === 'Tolls' ? '🛣️' : '🧽',
-        vendor: e.vendorName,
-        details: e.type === 'Fuel' && e.litres ? `${e.odometer || 0} km • ${e.litres} L @ $${e.pricePerLitre || 2.05}/L` : e.description,
-        date: new Date(e.date).toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-        amount: e.amount,
-        litres: e.litres || 0,
-        status: e.status === 'PENDING' ? 'Pending' : e.status === 'REJECTED' ? 'Rejected' : 'Approved'
-      }));
-      setExpenses(formattedExpenses);
+      // 1. Resolve Driver Vehicle Info from Dashboard / Profile
+      const vehicleInfo = dashPayload.driverInfo?.vehicle || runPayload.vehicle || {};
+      const rawTruck = vehicleInfo.rego || vehicleInfo.plate || vehicleInfo.truck;
+      const truckName = (rawTruck && rawTruck !== 'No Vehicle Assigned' && rawTruck !== 'Unassigned') ? rawTruck : 'Unassigned';
+      setDriverVehicle(truckName);
 
-      const formattedReceipts = formattedExpenses.map((e, index) => {
-        const dateParts = e.date.split(', ');
-        const datePart = dateParts[0]; // e.g. 29 May 2025
-        const timePart = dateParts[1] || '00:00 AM';
+      const rawTrailer = vehicleInfo.trailer;
+      const trailerName = (rawTrailer && rawTrailer !== 'Unassigned' && rawTrailer !== 'No Vehicle Assigned') ? rawTrailer : 'Unassigned';
+      setDriverTrailer(trailerName);
+
+      if (vehicleInfo.odometer && vehicleInfo.odometer > 0) {
+        setOdometerVal(String(vehicleInfo.odometer));
+      }
+
+      // 2. Resolve Active Load (Strictly from real DB response)
+      const activeLoad = runPayload.run || runPayload.currentLoad || dashPayload.currentLoad || null;
+
+      if (activeLoad && (activeLoad.id || activeLoad.loadRef || activeLoad.loadNumber)) {
+        const loadId = activeLoad.loadRef || activeLoad.loadNumber || activeLoad.id;
+        const origin = activeLoad.origin || activeLoad.pickupLocation || activeLoad.pickupAddress || activeLoad.stops?.[0]?.address || 'Not specified';
+        const destination = activeLoad.destination || activeLoad.deliveryLocation || activeLoad.deliveryAddress || activeLoad.stops?.[activeLoad.stops?.length - 1]?.address || 'Not specified';
+        
+        let loadStatus = activeLoad.status || 'In Transit';
+        if (loadStatus === 'IN_TRANSIT' || loadStatus === 'DISPATCHED' || loadStatus === 'IN_PROGRESS') loadStatus = 'In Transit';
+        else if (loadStatus === 'ASSIGNED') loadStatus = 'Assigned';
+
+        const distanceKm = activeLoad.distance ? parseInt(String(activeLoad.distance).replace(/\D/g, '')) : (vehicleInfo.estRangeKm || null);
+
+        setRunData({
+          id: loadId,
+          origin,
+          destination,
+          status: loadStatus,
+          vehicle: {
+            truck: truckName,
+            trailer: trailerName,
+            trailerType: activeLoad.loadType || activeLoad.type || 'General Freight',
+            estRangeKm: distanceKm
+          },
+          stopsCount: activeLoad.stopsCount || activeLoad.stops?.length || 0,
+          estFinish: activeLoad.estFinish || activeLoad.deliveryTime || 'TBA'
+        });
+      } else {
+        setRunData(null);
+      }
+
+      // 3. Resolve Real Expenses from Database
+      const rawExpenses = expensesRes.data?.data?.expenses 
+        || expensesRes.data?.expenses 
+        || (Array.isArray(expensesRes.data?.data) ? expensesRes.data.data : [])
+        || (Array.isArray(expensesRes.data) ? expensesRes.data : []);
+
+      const formattedExpenses = (Array.isArray(rawExpenses) ? rawExpenses : []).map((e, index) => {
+        const cat = e.type || e.category || 'Other';
+        const numAmt = parseFloat(e.amount) || 0;
+        const numLitres = (e.litres !== null && e.litres !== undefined && e.litres !== '') ? parseFloat(e.litres) : null;
+        const numPrice = (e.pricePerLitre !== null && e.pricePerLitre !== undefined && e.pricePerLitre !== '') ? parseFloat(e.pricePerLitre) : null;
+        const odo = e.odometer;
+
+        let details = e.description || `${cat} expense`;
+        if (cat === 'Fuel' && numLitres) {
+          details = `${numLitres} L` + (numPrice ? ` @ $${numPrice.toFixed(2)}/L` : '') + (odo ? ` • ${odo} km` : '');
+        }
+
+        let dateDisplay = 'Recent';
+        if (e.date) {
+          const parsedDate = new Date(e.date);
+          if (!isNaN(parsedDate.getTime())) {
+            dateDisplay = parsedDate.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+          } else {
+            dateDisplay = String(e.date);
+          }
+        }
+
         return {
-          id: e.id || index,
-          date: datePart,
-          time: timePart,
-          vendor: e.vendor || 'Unknown Vendor',
-          amount: `$${e.amount.toFixed(2)}`
+          id: e.id || `exp-${index}`,
+          category: cat,
+          categoryColor: cat === 'Fuel' ? 'purple' : cat === 'Maintenance' ? 'emerald' : cat === 'Tyres' ? 'amber' : cat === 'Tolls' ? 'blue' : 'slate',
+          icon: cat === 'Fuel' ? '⛽' : cat === 'Maintenance' ? '🔧' : cat === 'Tyres' ? '🛞' : cat === 'Tolls' ? '🛣️' : '🧽',
+          vendor: e.vendorName || e.vendor || 'Unknown Vendor',
+          details,
+          date: dateDisplay,
+          amount: numAmt,
+          litres: numLitres,
+          pricePerLitre: numPrice,
+          odometer: odo,
+          status: (e.status === 'APPROVED' || e.status === 'Approved') ? 'Approved' : (e.status === 'REJECTED' || e.status === 'Rejected') ? 'Rejected' : 'Pending',
+          receiptUrl: e.receiptUrl || null
         };
       });
-      setReceipts(formattedReceipts);
+
+      setExpenses(formattedExpenses);
     } catch (error) {
-      console.error('Error fetching expenses/active run:', error);
-      triggerToast('Failed to load expenses data.');
+      console.error('Error fetching driver expenses/active run:', error);
+      setFetchError(true);
+      triggerToast('Unable to load expenses from server. Please retry.', 'error');
     } finally {
       setSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       setLoading(false);
     }
   };
 
-  const triggerToast = (msg) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 3500);
-  };
-
+  // Convert picked file to base64 data URL
   const handleFilePicked = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
-      triggerToast(`Selected file: ${e.target.files[0].name}`);
+      const file = e.target.files[0];
+      setSelectedFile(file);
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        setSelectedFileBase64(reader.result);
+      };
+      reader.readAsDataURL(file);
+      triggerToast(`Selected file: ${file.name}`);
     }
   };
 
-  const handleUploadSubmit = () => {
-    const now = new Date();
-    setReceipts([
-      { 
-        id: Date.now(), 
-        date: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }), 
-        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
-        vendor: selectedFile ? fileName : 'Uploaded Receipt', 
-        amount: '$0.00' 
-      },
-      ...receipts
-    ]);
-    setSelectedFile(null);
-    setUploadReceiptModalOpen(false);
-    triggerToast('Receipt file uploaded & attached successfully!');
+  // Modal file picker for Add Expense form
+  const handleModalReceiptPicked = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setFormReceiptFileName(file.name);
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFormReceiptBase64(reader.result);
+      };
+      reader.readAsDataURL(file);
+      triggerToast(`Receipt attached: ${file.name}`);
+    }
   };
 
+  // Submit standalone receipt upload
+  const handleUploadSubmit = async () => {
+    if (!selectedFile) {
+      triggerToast('Please select a receipt file first.', 'error');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await api.post('/driver-portal/expenses', {
+        type: 'Other',
+        vendorName: selectedFile.name.replace(/\.[^/.]+$/, ''),
+        amount: 0.01, // Minimal placeholder amount for receipt document archive
+        description: `Receipt Document: ${selectedFile.name}`,
+        receiptUrl: selectedFileBase64 || null,
+        loadId: runData?.id || null
+      });
+
+      setSelectedFile(null);
+      setSelectedFileBase64('');
+      setUploadReceiptModalOpen(false);
+      triggerToast('Receipt document saved successfully!');
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to upload receipt:', err);
+      triggerToast(err.response?.data?.message || 'Failed to upload receipt. Please try again.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Submit Add Expense form to real database API
   const handleAddExpenseSubmit = async (e) => {
     e.preventDefault();
-    if (!formVendor || !formAmount) return;
+    const numAmount = parseFloat(formAmount);
 
-    const numAmount = parseFloat(formAmount) || 0;
-    try {
-      await api.post('/driver-portal/expenses', {
-        type: formCategory,
-        vendorName: formVendor,
-        amount: numAmount,
-        litres: formLitres,
-        pricePerLitre: 2.05,
-        odometer: formOdometer,
-        description: formNotes,
-        loadId: runData?.id
-      });
-    } catch (err) {
-      console.error('API expense add error:', err);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      triggerToast('Please enter a valid expense amount greater than $0.00', 'error');
+      return;
     }
 
-    // Local state fallback update
-    const newExpenseObj = {
-      id: Date.now(),
-      category: formCategory,
-      vendor: formVendor,
-      amount: numAmount,
-      litres: formLitres || '0',
-      pricePerLitre: 2.05,
-      date: new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }),
-      receipt: formReceiptAdded,
-      status: 'APPROVED'
-    };
+    if (!formVendor || formVendor.trim() === '') {
+      triggerToast('Please enter a vendor or station name.', 'error');
+      return;
+    }
 
-    setExpenses(prev => [newExpenseObj, ...prev]);
-    setAddExpenseModalOpen(false);
-    setFormVendor('');
-    setFormAmount('');
-    setFormLitres('');
-    setFormNotes('');
-    setFormReceiptAdded(false);
-    triggerToast(`✓ Added ${formCategory} expense of $${numAmount.toFixed(2)} for ${formVendor}!`);
-    
-    fetchData().catch(() => null);
+    const numLitres = formLitres ? parseFloat(formLitres) : null;
+    const numPrice = formPricePerLitre ? parseFloat(formPricePerLitre) : null;
+    const numOdo = formOdometer ? parseInt(formOdometer) : (parseInt(odometerVal) || null);
+
+    try {
+      setIsSubmitting(true);
+      await api.post('/driver-portal/expenses', {
+        type: formCategory,
+        vendorName: formVendor.trim(),
+        amount: numAmount,
+        litres: numLitres,
+        pricePerLitre: numPrice,
+        odometer: numOdo,
+        description: formNotes.trim() || null,
+        receiptUrl: formReceiptBase64 || null,
+        loadId: runData?.id || null
+      });
+
+      setAddExpenseModalOpen(false);
+      setFormVendor('');
+      setFormAmount('');
+      setFormLitres('');
+      setFormPricePerLitre('');
+      setFormOdometer('');
+      setFormNotes('');
+      setFormReceiptBase64('');
+      setFormReceiptFileName('');
+
+      triggerToast(`✓ Added ${formCategory} expense of $${numAmount.toFixed(2)} for ${formVendor}!`);
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to save expense:', err);
+      triggerToast(err.response?.data?.message || 'Failed to save expense. Please check input and retry.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Calculations
+  // Real Dynamic Calculations
   const totalSpent = expenses.reduce((acc, curr) => acc + curr.amount, 0);
   const fuelSpent = expenses.filter(e => e.category === 'Fuel').reduce((acc, curr) => acc + curr.amount, 0);
   const maintSpent = expenses.filter(e => e.category === 'Maintenance').reduce((acc, curr) => acc + curr.amount, 0);
@@ -218,22 +310,57 @@ export default function AddExpense() {
   const otherSpent = expenses.filter(e => e.category === 'Other').reduce((acc, curr) => acc + curr.amount, 0);
 
   const totalLitres = expenses.filter(e => e.category === 'Fuel').reduce((acc, curr) => acc + (parseFloat(curr.litres) || 0), 0);
-  const totalDistance = runData?.vehicle?.estRangeKm || 1; // avoid division by zero
-  const avgEconomy = totalLitres > 0 ? (totalDistance / totalLitres).toFixed(2) : 0;
-  const costPerKm = (totalSpent / totalDistance).toFixed(2);
+  const totalDistance = runData?.vehicle?.estRangeKm;
+
+  // Economy & Cost/km only calculated if real distance is available
+  const avgEconomy = (totalDistance && totalDistance > 0 && totalLitres > 0)
+    ? (totalDistance / totalLitres).toFixed(2)
+    : null;
+
+  const costPerKm = (totalDistance && totalDistance > 0 && totalSpent > 0)
+    ? (totalSpent / totalDistance).toFixed(2)
+    : null;
 
   const filteredExpenses = filterCategory === 'ALL' 
     ? expenses 
     : expenses.filter(e => e.category.toUpperCase() === filterCategory.toUpperCase());
+
+  // Real receipts from saved expenses
+  const savedReceipts = expenses.filter(e => e.receiptUrl);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24 text-left">
       
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed top-5 right-5 z-[150] bg-slate-900 text-white font-extrabold text-xs px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-bounce border border-slate-700">
-          <FiCheckCircle className="text-[#ffcc00] text-base shrink-0" />
+        <div className={`fixed top-5 right-5 z-[150] text-white font-extrabold text-xs px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-bounce border ${
+          toastType === 'error' ? 'bg-rose-900 border-rose-700' : 'bg-slate-900 border-slate-700'
+        }`}>
+          {toastType === 'error' ? (
+            <FiAlertTriangle className="text-rose-400 text-base shrink-0" />
+          ) : (
+            <FiCheckCircle className="text-[#ffcc00] text-base shrink-0" />
+          )}
           <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {/* ERROR BANNER WITH RETRY */}
+      {fetchError && (
+        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between gap-3 text-rose-950 text-xs font-bold shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <FiAlertTriangle className="text-rose-600 text-lg shrink-0" />
+            <div>
+              <span className="font-black text-rose-900">Connection Error: </span>
+              <span className="text-rose-700 font-medium">Unable to fetch latest expenses or active load from server.</span>
+            </div>
+          </div>
+          <button
+            onClick={fetchData}
+            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
 
@@ -265,12 +392,18 @@ export default function AddExpense() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-lg font-black text-indigo-700 tracking-tight">Fuel & Expenses</span>
-              <span className="bg-purple-100 text-purple-800 border border-purple-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
-                Active Load
-              </span>
+              {runData ? (
+                <span className="bg-purple-100 text-purple-800 border border-purple-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                  Active Load
+                </span>
+              ) : (
+                <span className="bg-slate-100 text-slate-600 border border-slate-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                  Idle / Ready
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-600 font-semibold leading-relaxed">
-              Record fuel and other expenses. Snap receipts and track your costs in real time.
+              Record fuel and other operating expenses. Snap receipts and track your costs in real time.
             </p>
           </div>
 
@@ -307,18 +440,18 @@ export default function AddExpense() {
             <div className="space-y-2.5 font-semibold text-slate-700">
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Truck</div>
-                <div className="font-black text-slate-900 text-xs">{runData?.vehicle?.truck || 'Unassigned'}</div>
-                <div className="text-[11px] text-slate-500">--</div>
+                <div className="font-black text-slate-900 text-xs">{driverVehicle}</div>
+                <div className="text-[11px] text-slate-500">Assigned Vehicle</div>
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-slate-400 uppercase font-extrabold">Trailer</div>
-                <div className="font-black text-slate-900 text-xs">{runData?.vehicle?.trailer || 'Unassigned'}</div>
-                <div className="text-[11px] text-slate-500">Car Carrier (4 Level)</div>
+                <div className="font-black text-slate-900 text-xs">{driverTrailer}</div>
+                <div className="text-[11px] text-slate-500">{runData?.vehicle?.trailerType || 'Not assigned'}</div>
               </div>
               <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1">
                 <div className="text-[10px] text-indigo-500 uppercase font-extrabold">Active Load</div>
                 <div className="font-black text-indigo-900 text-xs">{runData?.id || 'No Active Load'}</div>
-                <div className="text-[11px] text-indigo-700">Car Carrier (4 Level)</div>
+                <div className="text-[11px] text-indigo-700">{runData ? (runData.status) : 'Idle between runs'}</div>
               </div>
             </div>
           </div>
@@ -343,7 +476,7 @@ export default function AddExpense() {
                 <span className="flex items-center gap-2">📊 View Reports</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
-              <button onClick={() => triggerToast('Synced with Fleet Server!')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
+              <button onClick={() => { fetchData(); triggerToast('Synced with Fleet Server!'); }} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200">
                 <span className="flex items-center gap-2">🔄 Sync Now</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
@@ -378,111 +511,163 @@ export default function AddExpense() {
         {/* ================= MIDDLE COLUMN: MAIN EXPENSES ENGINE (6 COLS) ================= */}
         <div className="lg:col-span-6 space-y-6">
           
-          {/* LOAD METADATA BANNER CARD */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <div>
-                <div className="text-2xl font-black text-indigo-700 tracking-tight">{runData?.id || 'No Active Load'}</div>
-                <div className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
-                  <span>{runData?.origin || '--'}</span>
-                  <span className="text-slate-400">➔</span>
-                  <span>{runData?.destination || '--'}</span>
+          {/* LOAD METADATA BANNER CARD (REAL LOAD OR CLEAN EMPTY STATE) */}
+          {runData ? (
+            <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
+              <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3">
+                <div className="min-w-0">
+                  <div className="text-2xl font-black text-indigo-700 tracking-tight">{runData.id}</div>
+                  <div className="text-sm sm:text-base font-black text-slate-900 flex items-center flex-wrap gap-2 mt-0.5">
+                    <span className="font-extrabold">{runData.origin}</span>
+                    <span className="text-slate-400">➔</span>
+                    <span className="font-extrabold text-indigo-900">{runData.destination}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 sm:gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-2.5 sm:p-3 rounded-2xl w-full xl:w-auto justify-between shrink-0">
+                  <div>
+                    <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Start Date</span>
+                    <span className="font-mono text-slate-900">Today</span>
+                  </div>
+                  <div className="h-6 w-px bg-slate-200"></div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
+                    <span className="font-mono text-slate-900">{runData.estFinish}</span>
+                  </div>
+                  <div className="h-6 w-px bg-slate-200"></div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Status</span>
+                    <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">{runData.status}</span>
+                  </div>
+                  <div className="h-6 w-px bg-slate-200"></div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Progress</span>
+                    <span className="font-mono text-slate-900">{runData.stopsCount} Stops</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 p-3 rounded-2xl w-full sm:w-auto justify-between sm:justify-start">
-                <div>
-                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Start Date</span>
-                  <span className="font-mono text-slate-900">Today</span>
+              {/* METRICS ROW PILLS */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1 border-t border-slate-100">
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Vehicle</span>
+                  <span className="font-bold text-slate-900">{runData.vehicle?.truck || 'Unassigned'}</span>
                 </div>
-                <div className="h-6 w-px bg-slate-200"></div>
-                <div>
-                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-                  <span className="font-mono text-slate-900">{runData?.estFinish || 'TBA'}</span>
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Odometer</span>
+                  <span className="font-bold text-slate-900 font-mono">{odometerVal !== '0' ? `${odometerVal} km` : 'Not recorded'}</span>
                 </div>
-                <div className="h-6 w-px bg-slate-200"></div>
-                <div>
-                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Status</span>
-                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full block text-center">{runData?.status || 'Assigned'}</span>
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Distance (Est.)</span>
+                  <span className="font-bold text-slate-900 font-mono">{runData.vehicle?.estRangeKm ? `${runData.vehicle.estRangeKm} km` : 'N/A'}</span>
                 </div>
-                <div className="h-6 w-px bg-slate-200"></div>
-                <div>
-                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Progress</span>
-                  <span className="font-mono text-slate-900">{runData?.stopsCount || 0} Stops</span>
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Load ID</span>
+                  <span className="font-bold text-indigo-700 font-mono">{runData.id}</span>
                 </div>
               </div>
-            </div>
 
-            {/* METRICS ROW PILLS */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1 border-t border-slate-100">
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Vehicle</span>
-                <span className="font-bold text-slate-900">{runData?.vehicle?.truck || 'Unassigned'}</span>
-              </div>
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Odometer</span>
-                <span className="font-bold text-slate-900 font-mono">{odometerVal} km</span>
-              </div>
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Distance (Est.)</span>
-                <span className="font-bold text-slate-900 font-mono">{runData?.vehicle?.estRangeKm || 0} km</span>
-              </div>
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                <span className="text-[9px] text-slate-400 font-extrabold uppercase block">Load ID</span>
-                <span className="font-bold text-indigo-700 font-mono">{runData?.id || '—'}</span>
+              {/* SUB NAV TABS */}
+              <div className="flex border-b border-slate-200 space-x-6 text-xs font-black pt-2">
+                {['Fuel & Expenses', 'Summary', 'Receipts', 'Analytics'].map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`pb-3 transition-colors cursor-pointer border-b-2 ${
+                      activeTab === tab 
+                        ? 'border-indigo-600 text-indigo-600' 
+                        : 'border-transparent text-slate-400 hover:text-slate-700'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
               </div>
             </div>
+          ) : (
+            /* CLEAN EMPTY STATE WHEN NO ACTIVE LOAD ASSIGNED */
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
+              <div className="p-6 text-center bg-slate-50/70 border border-slate-200 rounded-2xl space-y-2">
+                <span className="text-3xl block">🚛</span>
+                <h2 className="text-sm sm:text-base font-black text-slate-900">No active load currently assigned</h2>
+                <p className="text-xs text-slate-500 font-medium max-w-md mx-auto">
+                  You are not currently dispatched on an active run. Any expenses recorded will be saved to your driver profile and vehicle account.
+                </p>
+                <div className="pt-2">
+                  <button
+                    onClick={() => setAddExpenseModalOpen(true)}
+                    className="bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs px-4 py-2 rounded-xl shadow-xs transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <FiPlus /> + Add Vehicle Expense
+                  </button>
+                </div>
+              </div>
 
-            {/* SUB NAV TABS */}
-            <div className="flex border-b border-slate-200 space-x-6 text-xs font-black pt-2">
-              {['Fuel & Expenses', 'Summary', 'Receipts', 'Analytics'].map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`pb-3 transition-colors cursor-pointer border-b-2 ${
-                    activeTab === tab 
-                      ? 'border-indigo-600 text-indigo-600' 
-                      : 'border-transparent text-slate-400 hover:text-slate-700'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+              {/* SUB NAV TABS */}
+              <div className="flex border-b border-slate-200 space-x-6 text-xs font-black pt-2">
+                {['Fuel & Expenses', 'Summary', 'Receipts', 'Analytics'].map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`pb-3 transition-colors cursor-pointer border-b-2 ${
+                      activeTab === tab 
+                        ? 'border-indigo-600 text-indigo-600' 
+                        : 'border-transparent text-slate-400 hover:text-slate-700'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* KPI SUMMARY CARDS ROW (4 CARDS) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
               <div className="flex items-center gap-2 text-purple-700 font-black text-xs mb-1">
-                <span>⛽ Fuel Used Today</span>
+                <span>⛽ Fuel Used</span>
               </div>
-              <div className="text-2xl font-black text-slate-900">{totalLitres.toFixed(1)} L</div>
-              <div className="text-[10px] text-slate-400 font-bold mt-1">Today</div>
+              <div className="text-xl sm:text-2xl font-black text-slate-900 whitespace-nowrap">
+                {totalLitres > 0 ? totalLitres.toFixed(1) : '0'}{' '}
+                <span className="text-sm font-bold text-slate-500">L</span>
+              </div>
+              <div className="text-[10px] text-slate-400 font-bold mt-1">Recorded Fuel</div>
             </div>
 
             <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
               <div className="flex items-center gap-2 text-emerald-700 font-black text-xs mb-1">
                 <span>💰 Total Spent</span>
               </div>
-              <div className="text-2xl font-black text-emerald-700">${totalSpent.toFixed(2)}</div>
-              <div className="text-[10px] text-slate-400 font-bold mt-1">Today</div>
+              <div className="text-xl sm:text-2xl font-black text-emerald-700 whitespace-nowrap">
+                ${totalSpent.toFixed(2)}
+              </div>
+              <div className="text-[10px] text-slate-400 font-bold mt-1">All Categories</div>
             </div>
 
             <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
               <div className="flex items-center gap-2 text-amber-700 font-black text-xs mb-1">
                 <span>🚚 Avg. Economy</span>
               </div>
-              <div className="text-2xl font-black text-slate-900">{avgEconomy} <span className="text-xs font-normal text-slate-500">km/L</span></div>
-              <div className="text-[10px] text-slate-400 font-bold mt-1">Since Start</div>
+              <div className="text-xl sm:text-2xl font-black text-slate-900 whitespace-nowrap">
+                {avgEconomy ? `${avgEconomy}` : 'N/A'}{' '}
+                {avgEconomy && <span className="text-xs font-normal text-slate-500">km/L</span>}
+              </div>
+              <div className="text-[10px] text-slate-400 font-bold mt-1">
+                {avgEconomy ? 'Trip Calculated' : 'Requires trip km & fuel'}
+              </div>
             </div>
 
             <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
               <div className="flex items-center gap-2 text-blue-700 font-black text-xs mb-1">
                 <span>📈 Cost / km</span>
               </div>
-              <div className="text-2xl font-black text-slate-900">${costPerKm}</div>
-              <div className="text-[10px] text-slate-400 font-bold mt-1">Since Start</div>
+              <div className="text-xl sm:text-2xl font-black text-slate-900 whitespace-nowrap">
+                {costPerKm ? `$${costPerKm}` : 'N/A'}
+              </div>
+              <div className="text-[10px] text-slate-400 font-bold mt-1">
+                {costPerKm ? 'Per trip distance' : 'Requires trip km'}
+              </div>
             </div>
           </div>
 
@@ -515,40 +700,74 @@ export default function AddExpense() {
                   </div>
                 </div>
 
-                {/* EXPENSE CARDS LIST */}
-                <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
-                  {filteredExpenses.map((exp) => (
-                    <div key={exp.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <span className="p-2.5 bg-slate-100 text-slate-800 rounded-2xl text-base shrink-0 font-bold">
-                          {exp.icon}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-xs text-slate-900">{exp.category}</span>
-                            <span className="text-[10px] font-mono text-slate-400">• {exp.date}</span>
-                          </div>
-                          <div className="text-xs font-bold text-slate-800 truncate">{exp.vendor}</div>
-                          <div className="text-[11px] text-slate-500 font-medium truncate">{exp.details}</div>
-                        </div>
-                      </div>
-
-                      <div className="text-right shrink-0 flex items-center gap-3">
-                        <div>
-                          <div className="text-sm font-black text-slate-900">${exp.amount.toFixed(2)}</div>
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border block mt-0.5 ${
-                            exp.status === 'Approved' 
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}>
-                            {exp.status} {exp.status === 'Approved' ? '✓' : '⏳'}
-                          </span>
-                        </div>
-                        <FiChevronRight className="text-slate-400" />
-                      </div>
+                {/* EXPENSE CARDS LIST (EMPTY STATE OR REAL ITEMS) */}
+                {loading ? (
+                  <div className="p-12 text-center text-slate-400 text-xs font-bold space-y-2">
+                    <FiRefreshCw className="animate-spin text-2xl mx-auto text-indigo-600" />
+                    <div>Loading expenses from server...</div>
+                  </div>
+                ) : filteredExpenses.length === 0 ? (
+                  <div className="p-8 text-center bg-slate-50/50 rounded-2xl border border-slate-200 space-y-2">
+                    <span className="text-3xl block">🧾</span>
+                    <p className="text-sm font-bold text-slate-800">No expenses logged yet.</p>
+                    <p className="text-xs text-slate-500">Tap '+ Add Expense' to record fuel or tolls.</p>
+                    <div className="pt-2">
+                      <button
+                        onClick={() => setAddExpenseModalOpen(true)}
+                        className="bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs px-4 py-2 rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <FiPlus /> + Add Expense
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
+                    {filteredExpenses.map((exp) => (
+                      <div key={exp.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <span className="p-2.5 bg-slate-100 text-slate-800 rounded-2xl text-base shrink-0 font-bold">
+                            {exp.icon}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-xs text-slate-900">{exp.category}</span>
+                              <span className="text-[10px] font-mono text-slate-400">• {exp.date}</span>
+                            </div>
+                            <div className="text-xs font-bold text-slate-800 truncate">{exp.vendor}</div>
+                            <div className="text-[11px] text-slate-500 font-medium truncate">{exp.details}</div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0 flex items-center gap-3">
+                          <div>
+                            <div className="text-sm font-black text-slate-900">${exp.amount.toFixed(2)}</div>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border block mt-0.5 ${
+                              exp.status === 'Approved' 
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                : exp.status === 'Rejected'
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}>
+                              {exp.status} {exp.status === 'Approved' ? '✓' : exp.status === 'Rejected' ? '✕' : '⏳'}
+                            </span>
+                          </div>
+                          {exp.receiptUrl && (
+                            <button
+                              onClick={() => {
+                                setSelectedReceipt(exp);
+                                setViewReceiptModalOpen(true);
+                              }}
+                              title="View Attached Receipt"
+                              className="p-1.5 hover:bg-slate-100 rounded-lg text-indigo-600 cursor-pointer"
+                            >
+                              <FiEye />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* ADD EXPENSE QUICKLY CATEGORY TILES */}
@@ -589,39 +808,43 @@ export default function AddExpense() {
                     className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-xs px-3.5 py-2 rounded-xl border border-indigo-200 transition-all cursor-pointer flex items-center gap-1.5"
                   >
                     <FiPlus />
-                    <span>Add More</span>
+                    <span>Upload Receipt</span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                  {receipts.map((rec) => (
-                    <div 
-                      key={rec.id}
-                      onClick={() => { setSelectedReceipt(rec); setViewReceiptModalOpen(true); }}
-                      className="bg-slate-50 border border-slate-200 rounded-2xl p-3 cursor-pointer hover:bg-slate-100 transition-all space-y-2 text-center relative group"
-                    >
-                      <div className="w-full h-20 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 font-mono text-[10px] relative overflow-hidden">
-                        <FiFileText className="text-2xl text-slate-300 group-hover:scale-110 transition-transform" />
-                        <span className="absolute bottom-1 right-1 bg-slate-900 text-white text-[8px] font-black px-1.5 rounded">
-                          PDF/IMG
-                        </span>
+                {savedReceipts.length === 0 ? (
+                  <div className="p-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 space-y-2">
+                    <FiFileText className="text-3xl text-slate-300 mx-auto" />
+                    <p className="text-xs font-bold text-slate-600">No receipts attached yet.</p>
+                    <p className="text-[11px] text-slate-400">Attach receipts when logging an expense or upload receipt slips directly.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
+                    {savedReceipts.map((rec) => (
+                      <div 
+                        key={rec.id}
+                        onClick={() => { setSelectedReceipt(rec); setViewReceiptModalOpen(true); }}
+                        className="bg-slate-50 border border-slate-200 rounded-2xl p-3 cursor-pointer hover:bg-slate-100 transition-all space-y-2 text-center relative group"
+                      >
+                        <div className="w-full h-20 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 font-mono text-[10px] relative overflow-hidden">
+                          {rec.receiptUrl?.startsWith('data:image') || rec.receiptUrl?.startsWith('http') ? (
+                            <img src={rec.receiptUrl} alt="Receipt thumbnail" className="w-full h-full object-cover" />
+                          ) : (
+                            <FiFileText className="text-2xl text-slate-300 group-hover:scale-110 transition-transform" />
+                          )}
+                          <span className="absolute bottom-1 right-1 bg-slate-900 text-white text-[8px] font-black px-1.5 rounded">
+                            RECEIPT
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-black text-slate-900 truncate">{rec.vendor}</div>
+                          <div className="text-[9.5px] text-slate-400 font-bold">{rec.date}</div>
+                          <div className="text-[10.5px] font-black text-indigo-700 mt-0.5">${rec.amount.toFixed(2)}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-[11px] font-black text-slate-900 truncate">{rec.vendor}</div>
-                        <div className="text-[9.5px] text-slate-400 font-bold">{rec.date}</div>
-                        <div className="text-[10.5px] font-black text-indigo-700 mt-0.5">{rec.amount}</div>
-                      </div>
-                    </div>
-                  ))}
-
-                  <button
-                    onClick={() => setUploadReceiptModalOpen(true)}
-                    className="border-2 border-dashed border-slate-300 hover:border-indigo-400 bg-slate-50/50 hover:bg-indigo-50/30 rounded-2xl p-3 flex flex-col items-center justify-center text-slate-500 font-bold text-xs transition-all cursor-pointer space-y-1 h-36"
-                  >
-                    <FiPlus className="text-xl text-indigo-600" />
-                    <span>Add More</span>
-                  </button>
-                </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* TIP BANNER */}
                 {!tipDismissed && (
@@ -677,24 +900,40 @@ export default function AddExpense() {
           {activeTab === 'Receipts' && (
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
               <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 className="text-base font-black text-slate-900">Receipts Gallery ({receipts.length})</h3>
+                <h3 className="text-base font-black text-slate-900">Receipts Gallery ({savedReceipts.length})</h3>
                 <button onClick={() => setUploadReceiptModalOpen(true)} className="bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer">
                   + Upload Receipt
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {receipts.map(rec => (
-                  <div key={rec.id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2 text-xs text-center">
-                    <div className="w-full h-24 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 font-mono">
-                      [ RECEIPT SLIP ]
+              {savedReceipts.length === 0 ? (
+                <div className="p-12 text-center text-slate-400 text-xs font-bold space-y-2">
+                  <FiFileText className="text-3xl mx-auto text-slate-300" />
+                  <p>No receipts saved in database yet.</p>
+                  <p className="text-[11px] text-slate-400">Attach receipts when creating expenses to view them here.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {savedReceipts.map(rec => (
+                    <div 
+                      key={rec.id} 
+                      onClick={() => { setSelectedReceipt(rec); setViewReceiptModalOpen(true); }}
+                      className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2 text-xs text-center cursor-pointer hover:bg-slate-100 transition-colors"
+                    >
+                      <div className="w-full h-24 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 font-mono overflow-hidden">
+                        {rec.receiptUrl?.startsWith('data:image') || rec.receiptUrl?.startsWith('http') ? (
+                          <img src={rec.receiptUrl} alt="Receipt slip" className="w-full h-full object-contain" />
+                        ) : (
+                          <span>[ RECEIPT SLIP ]</span>
+                        )}
+                      </div>
+                      <div className="font-black text-slate-900">{rec.vendor}</div>
+                      <div className="text-[10px] text-slate-400 font-bold">{rec.date}</div>
+                      <div className="font-mono font-black text-indigo-700">${rec.amount.toFixed(2)}</div>
                     </div>
-                    <div className="font-black text-slate-900">{rec.vendor}</div>
-                    <div className="text-[10px] text-slate-400 font-bold">{rec.date} • {rec.time}</div>
-                    <div className="font-mono font-black text-indigo-700">{rec.amount}</div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -705,11 +944,15 @@ export default function AddExpense() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-2xl text-center">
                   <div className="text-xs text-indigo-600 font-bold uppercase">Estimated Trip Range</div>
-                  <div className="text-2xl font-black text-indigo-900 mt-1">{totalDistance} km</div>
+                  <div className="text-2xl font-black text-indigo-900 mt-1">
+                    {totalDistance ? `${totalDistance} km` : 'No Trip Assigned'}
+                  </div>
                 </div>
                 <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-center">
-                  <div className="text-xs text-emerald-600 font-bold uppercase">Cost Efficiency Score</div>
-                  <div className="text-2xl font-black text-emerald-900 mt-1">{avgEconomy > 1.5 ? '94% (Good)' : '72% (Avg)'}</div>
+                  <div className="text-xs text-emerald-600 font-bold uppercase">Cost Efficiency</div>
+                  <div className="text-2xl font-black text-emerald-900 mt-1">
+                    {avgEconomy ? `${avgEconomy} km/L` : 'Data Pending'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -720,10 +963,10 @@ export default function AddExpense() {
         {/* ================= RIGHT COLUMN: SIDEBAR PANELS (3 COLS) ================= */}
         <div className="lg:col-span-3 space-y-6">
           
-          {/* EXPENSE SUMMARY (SINCE START) */}
+          {/* EXPENSE SUMMARY */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">EXPENSE SUMMARY</div>
-            <div className="text-[11px] text-slate-400 font-bold mb-2">Since Start</div>
+            <div className="text-[11px] text-slate-400 font-bold mb-2">Total Logged</div>
             <div className="space-y-2.5 font-bold text-slate-700 border-b border-slate-100 pb-3">
               <div className="flex justify-between items-center">
                 <span className="flex items-center gap-2 text-purple-700">
@@ -767,62 +1010,52 @@ export default function AddExpense() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">RECENT EXPENSES</div>
             <div className="space-y-2.5">
-              {expenses.slice(0, 3).map(exp => (
-                <div key={exp.id} className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-200 rounded-2xl">
-                  <div className="min-w-0">
-                    <div className="font-black text-slate-900 truncate">{exp.vendor}</div>
-                    <div className="text-[10px] text-slate-400 font-bold">{exp.date}</div>
-                  </div>
-                  <span className="font-mono font-black text-slate-900 shrink-0 ml-2">${exp.amount.toFixed(2)}</span>
+              {expenses.length === 0 ? (
+                <div className="p-3 text-center bg-slate-50 border border-slate-200 rounded-2xl text-slate-400 font-bold text-[11px]">
+                  No expenses logged yet
                 </div>
-              ))}
+              ) : (
+                expenses.slice(0, 3).map(exp => (
+                  <div key={exp.id} className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-200 rounded-2xl">
+                    <div className="min-w-0">
+                      <div className="font-black text-slate-900 truncate">{exp.vendor}</div>
+                      <div className="text-[10px] text-slate-400 font-bold">{exp.date}</div>
+                    </div>
+                    <span className="font-mono font-black text-slate-900 shrink-0 ml-2">${exp.amount.toFixed(2)}</span>
+                  </div>
+                ))
+              )}
             </div>
-            <button 
-              onClick={() => triggerToast('Showing all expenses list')}
-              className="w-full text-center text-xs font-extrabold text-indigo-600 hover:text-indigo-800 pt-1 cursor-pointer block"
-            >
-              View All
-            </button>
           </div>
 
           {/* EXPENSE ALERTS */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="flex items-center justify-between">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">EXPENSE ALERTS</div>
-              <span className="w-5 h-5 rounded-full bg-rose-500 text-white font-black text-[10px] flex items-center justify-center">0</span>
+              <span className="w-5 h-5 rounded-full bg-emerald-500 text-white font-black text-[10px] flex items-center justify-center">✓</span>
             </div>
             <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl flex items-start gap-2.5 text-emerald-900">
               <FiCheckCircle className="text-emerald-600 text-base shrink-0 mt-0.5" />
               <div>
-                <div className="font-black text-xs">All Good</div>
-                <div className="text-[11px] text-emerald-700 font-medium mt-0.5">No pending alerts.</div>
+                <div className="font-black text-xs">All Clear</div>
+                <div className="text-[11px] text-emerald-700 font-medium mt-0.5">No expense issues or missing receipts flagged.</div>
               </div>
             </div>
-            <button 
-              onClick={() => setAlertsModalOpen(true)}
-              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-xl text-xs transition-all cursor-pointer shadow-xs"
-            >
-              View Alerts
-            </button>
           </div>
 
           {/* HELP & RESOURCES */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3 text-xs">
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">HELP & RESOURCES</div>
             <div className="space-y-2 font-semibold text-slate-700">
-              <button onClick={() => triggerToast('Opening Expense Recording Guide...')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-between cursor-pointer border border-slate-200">
+              <button onClick={() => triggerToast('Log receipts to ensure fleet reimbursement approval.')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-between cursor-pointer border border-slate-200">
                 <span className="flex items-center gap-2">📖 How to Record Expenses</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
-              <button onClick={() => triggerToast('Opening Expense Policy...')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-between cursor-pointer border border-slate-200">
+              <button onClick={() => triggerToast('Fleet policy: All fuel expenses require odometer & litres.')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-between cursor-pointer border border-slate-200">
                 <span className="flex items-center gap-2">🛡️ Expense Policy</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
-              <button onClick={() => triggerToast('Opening Fuel Card Guide...')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-between cursor-pointer border border-slate-200">
-                <span className="flex items-center gap-2">⛽ Fuel Card Guide</span>
-                <FiChevronRight className="text-slate-400" />
-              </button>
-              <button onClick={() => triggerToast('Connecting to Support...')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-between cursor-pointer border border-slate-200">
+              <button onClick={() => triggerToast('Support line available 24/7 for road emergencies.')} className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-between cursor-pointer border border-slate-200">
                 <span className="flex items-center gap-2">📞 Contact Support</span>
                 <FiChevronRight className="text-slate-400" />
               </button>
@@ -833,7 +1066,6 @@ export default function AddExpense() {
 
       </div>
 
-
       {/* ADD EXPENSE MODAL */}
       {addExpenseModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[150] flex items-center justify-center p-4">
@@ -843,12 +1075,18 @@ export default function AddExpense() {
                 <FiPlus className="text-indigo-600 text-lg" />
                 Add New Expense
               </h3>
-              <button type="button" onClick={() => setAddExpenseModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
+              <button 
+                type="button" 
+                onClick={() => setAddExpenseModalOpen(false)} 
+                className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="space-y-3 text-xs font-semibold">
               <div>
-                <label className="text-slate-700 font-bold block mb-1">Category</label>
+                <label className="text-slate-700 font-bold block mb-1">Category *</label>
                 <select
                   value={formCategory}
                   onChange={(e) => setFormCategory(e.target.value)}
@@ -863,11 +1101,11 @@ export default function AddExpense() {
               </div>
 
               <div>
-                <label className="text-slate-700 font-bold block mb-1">Vendor / Location</label>
+                <label className="text-slate-700 font-bold block mb-1">Vendor / Location *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. BP Service Centre - Yass NSW"
+                  placeholder="e.g. Shell Express, Citylink, Workshop"
                   value={formVendor}
                   onChange={(e) => setFormVendor(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
@@ -876,52 +1114,119 @@ export default function AddExpense() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-700 font-bold block mb-1">Amount ($ AUD)</label>
+                  <label className="text-slate-700 font-bold block mb-1">Amount ($ AUD) *</label>
                   <input
                     type="number"
                     step="0.01"
+                    min="0.01"
                     required
-                    placeholder="e.g. 139.40"
+                    placeholder="0.00"
                     value={formAmount}
                     onChange={(e) => setFormAmount(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-mono font-bold"
                   />
                 </div>
 
-                {formCategory === 'Fuel' && (
+                {formCategory === 'Fuel' ? (
                   <div>
                     <label className="text-slate-700 font-bold block mb-1">Litres (L)</label>
                     <input
                       type="number"
-                      placeholder="e.g. 68"
+                      step="0.1"
+                      placeholder="e.g. 80"
                       value={formLitres}
                       onChange={(e) => setFormLitres(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-mono font-bold"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-slate-700 font-bold block mb-1">Odometer (km)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 145000"
+                      value={formOdometer}
+                      onChange={(e) => setFormOdometer(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-mono font-bold"
                     />
                   </div>
                 )}
               </div>
 
+              {formCategory === 'Fuel' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-slate-700 font-bold block mb-1">Price / Litre ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="e.g. 2.10"
+                      value={formPricePerLitre}
+                      onChange={(e) => setFormPricePerLitre(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-700 font-bold block mb-1">Odometer (km)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 145000"
+                      value={formOdometer}
+                      onChange={(e) => setFormOdometer(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-mono font-bold"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="text-slate-700 font-bold block mb-1">Notes / Description</label>
+                <input
+                  type="text"
+                  placeholder="Optional notes or details"
+                  value={formNotes}
+                  onChange={(e) => setFormNotes(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 font-medium"
+                />
+              </div>
+
+              {/* Hidden file input for Add Expense */}
+              <input
+                type="file"
+                ref={modalFileInputRef}
+                accept="image/*,.pdf"
+                onChange={handleModalReceiptPicked}
+                className="hidden"
+              />
+
               <div>
                 <label className="text-slate-700 font-bold block mb-1">Receipt Attachment</label>
                 <button
                   type="button"
-                  onClick={() => setFormReceiptAdded(true)}
+                  onClick={() => modalFileInputRef.current?.click()}
                   className={`w-full p-3 rounded-xl border border-dashed flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    formReceiptAdded ? 'bg-emerald-50 border-emerald-300 text-emerald-700 font-bold' : 'bg-slate-50 border-slate-300 text-slate-600'
+                    formReceiptFileName ? 'bg-emerald-50 border-emerald-300 text-emerald-700 font-bold' : 'bg-slate-50 border-slate-300 text-slate-600'
                   }`}
                 >
                   <FiCamera className="text-base" />
-                  <span>{formReceiptAdded ? 'Receipt Attached ✓' : 'Snap / Upload Receipt Image'}</span>
+                  <span>{formReceiptFileName ? `Receipt: ${formReceiptFileName} ✓` : 'Snap / Upload Receipt Image'}</span>
                 </button>
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-[#ffcc00] hover:bg-[#e6b800] text-black font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md mt-2"
+              disabled={isSubmitting}
+              className="w-full bg-[#ffcc00] hover:bg-[#e6b800] disabled:bg-slate-300 text-black font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md mt-2 flex items-center justify-center gap-2"
             >
-              Log Expense Item
+              {isSubmitting ? (
+                <>
+                  <FiRefreshCw className="animate-spin text-sm" />
+                  <span>Saving to Database...</span>
+                </>
+              ) : (
+                <span>Log Expense Item</span>
+              )}
             </button>
           </form>
         </div>
@@ -958,7 +1263,7 @@ export default function AddExpense() {
                   <div className="text-xs font-black text-emerald-700 flex items-center justify-center gap-1">
                     <FiPaperclip /> {selectedFile.name}
                   </div>
-                  <div className="text-[10px] text-slate-500">{(selectedFile.size / 1024).toFixed(1)} KB • Ready to upload</div>
+                  <div className="text-[10px] text-slate-500">{(selectedFile.size / 1024).toFixed(1)} KB • Ready to save</div>
                 </div>
               ) : (
                 <>
@@ -970,9 +1275,17 @@ export default function AddExpense() {
 
             <button
               onClick={handleUploadSubmit}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md"
+              disabled={isSubmitting || !selectedFile}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
             >
-              {selectedFile ? `Upload "${selectedFile.name}"` : 'Upload Receipt File'}
+              {isSubmitting ? (
+                <>
+                  <FiRefreshCw className="animate-spin text-sm" />
+                  <span>Saving Receipt...</span>
+                </>
+              ) : (
+                <span>{selectedFile ? `Upload "${selectedFile.name}"` : 'Select a File to Upload'}</span>
+              )}
             </button>
           </div>
         </div>
@@ -993,7 +1306,7 @@ export default function AddExpense() {
               <div>
                 <label className="text-slate-700 font-bold block mb-1">Current Odometer (km)</label>
                 <input
-                  type="text"
+                  type="number"
                   value={odometerVal}
                   onChange={(e) => setOdometerVal(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-mono text-base font-black focus:outline-none focus:border-indigo-500"
@@ -1028,12 +1341,22 @@ export default function AddExpense() {
 
             <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2 text-xs">
               <div className="font-black text-slate-900 text-sm">{selectedReceipt.vendor}</div>
-              <div className="text-slate-600 font-semibold">{selectedReceipt.date} • {selectedReceipt.time}</div>
-              <div className="text-indigo-700 font-mono text-lg font-black">{selectedReceipt.amount}</div>
+              <div className="text-slate-600 font-semibold">{selectedReceipt.date}</div>
+              <div className="text-indigo-700 font-mono text-lg font-black">${selectedReceipt.amount?.toFixed(2)}</div>
+              {selectedReceipt.details && (
+                <div className="text-slate-500 font-medium">{selectedReceipt.details}</div>
+              )}
             </div>
 
-            <div className="border border-slate-200 bg-slate-100 rounded-2xl h-48 flex items-center justify-center text-slate-400 text-xs font-mono">
-              [ RECEIPT IMAGE PREVIEW ]
+            <div className="border border-slate-200 bg-slate-100 rounded-2xl h-56 flex items-center justify-center text-slate-400 text-xs font-mono overflow-hidden p-2">
+              {selectedReceipt.receiptUrl?.startsWith('data:image') || selectedReceipt.receiptUrl?.startsWith('http') ? (
+                <img src={selectedReceipt.receiptUrl} alt="Receipt Preview" className="max-h-full max-w-full object-contain rounded-xl" />
+              ) : (
+                <div className="text-center space-y-1">
+                  <FiFileText className="text-3xl mx-auto text-slate-400" />
+                  <div>Receipt document on file</div>
+                </div>
+              )}
             </div>
 
             <button
@@ -1046,36 +1369,6 @@ export default function AddExpense() {
         </div>
       )}
 
-      {/* EXPENSE ALERTS MODAL */}
-      {alertsModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[150] flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
-                <FiAlertTriangle className="text-rose-600 text-lg" />
-                Expense Alerts
-              </h3>
-              <button onClick={() => setAlertsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
-            </div>
-
-            <div className="bg-rose-50 border border-rose-200 p-4 rounded-2xl space-y-2 text-xs text-rose-900">
-              <div className="font-black text-sm">Receipt Missing: Tyre Power ($45.00)</div>
-              <div className="text-rose-700 font-medium">Please snap or upload the receipt photo so accounts can approve reimbursement.</div>
-            </div>
-
-            <button
-              onClick={() => {
-                setAlertsModalOpen(false);
-                setUploadReceiptModalOpen(true);
-              }}
-              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md"
-            >
-              Upload Missing Receipt Now
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* REPORTS SUMMARY MODAL */}
       {reportsModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[150] flex items-center justify-center p-4">
@@ -1083,7 +1376,7 @@ export default function AddExpense() {
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <FiBarChart2 className="text-indigo-600 text-lg" />
-                Trip Expense Analytics Report ({runData?.id || 'No Active Load'})
+                Trip Expense Analytics Report ({runData?.id || 'General Operating'})
               </h3>
               <button onClick={() => setReportsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">✕</button>
             </div>
@@ -1115,11 +1408,11 @@ export default function AddExpense() {
             <button
               onClick={() => {
                 setReportsModalOpen(false);
-                triggerToast('Expense PDF Report downloaded!');
+                triggerToast('Expense report generated!');
               }}
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-3 rounded-xl transition-all cursor-pointer shadow-md"
             >
-              Export PDF Report
+              Close Report
             </button>
           </div>
         </div>

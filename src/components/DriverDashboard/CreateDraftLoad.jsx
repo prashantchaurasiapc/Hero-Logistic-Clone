@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, Wifi, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, Wifi, CheckCircle2, AlertCircle, Lock, ArrowLeft } from 'lucide-react';
+import { hasMenuAccess, hasActionPermission } from '../../utils/permissionChecker';
 
 export default function CreateDraftLoad() {
+  const navigate = useNavigate();
   const [sosModalOpen, setSosModalOpen] = useState(false);
   const [hotlineOpen, setHotlineOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -17,6 +20,44 @@ export default function CreateDraftLoad() {
   // SOS states
   const [shareGps, setShareGps] = useState(true);
   const [autoNotify, setAutoNotify] = useState(true);
+
+  // Check if active user has permission to create/edit loads
+  const sessionUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('hero_session') || '{}');
+    } catch {
+      return {};
+    }
+  })();
+  const canCreateLoads = hasMenuAccess(sessionUser, 'Create Draft Load', '/driver/create-draft-load') ||
+    hasActionPermission(sessionUser, 'Create / Edit Loads', 'Create');
+
+  if (!canCreateLoads) {
+    return (
+      <div className="p-6 sm:p-10 bg-gray-50 min-h-screen flex items-center justify-center text-left">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200/80 p-8 shadow-sm text-center space-y-4">
+          <div className="w-14 h-14 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-center mx-auto text-amber-600">
+            <Lock className="w-7 h-7" />
+          </div>
+          <h2 className="text-lg font-black text-slate-900">Load Creation Restricted</h2>
+          <p className="text-xs text-slate-500 font-medium leading-relaxed">
+            Your driver account does not have permission to create or edit loads. This capability is typically reserved for Owner Drivers and Subcontractors.
+          </p>
+          <div className="p-3 bg-slate-50 border border-slate-200/60 rounded-xl text-left text-[11px] text-slate-600 font-semibold space-y-1">
+            <div className="font-bold text-slate-800">Need Access?</div>
+            <div>Ask your Company Administrator to enable <strong className="text-blue-600">Create / Edit Loads</strong> under Driver Roles & Permissions.</div>
+          </div>
+          <button
+            onClick={() => navigate('/driver/dashboard')}
+            className="w-full py-2.5 px-4 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Return to Driver Dashboard</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const triggerToast = (msg, type = 'success') => {
     setToastMsg(msg);

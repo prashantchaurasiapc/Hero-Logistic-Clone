@@ -65,10 +65,62 @@ export default function Companies() {
   const [showEditCompanyModal, setShowEditCompanyModal] = useState(false);
   const [showSuspendCompanyModal, setShowSuspendCompanyModal] = useState(false);
   const [showLoginAsModal, setShowLoginAsModal] = useState(false);
+  const [isLoggingInAs, setIsLoggingInAs] = useState(false);
   const [showChangeSubscriptionModal, setShowChangeSubscriptionModal] = useState(false);
   const [showManageFeaturesModal, setShowManageFeaturesModal] = useState(false);
   const [showSendNotificationModal, setShowSendNotificationModal] = useState(false);
   const [selectedActionCompany, setSelectedActionCompany] = useState(null);
+
+  const handleSimulateLogin = async () => {
+    if (!selectedActionCompany) return;
+    try {
+      setIsLoggingInAs(true);
+      const targetCompanyId = selectedActionCompany.dbId || selectedActionCompany.id;
+      const res = await api.post('/auth/impersonate', {
+        companyId: targetCompanyId,
+        reason: 'Super Admin Portal Inspection'
+      });
+
+      if (res.data?.success && res.data.data?.accessToken) {
+        const token = res.data.data.accessToken;
+        const targetUser = res.data.data.user;
+
+        // Clear previous tenant caches
+        try {
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('hero_') || key.startsWith('cache_') || key.startsWith('deleted_') || key.startsWith('active_')) {
+              localStorage.removeItem(key);
+            }
+          });
+        } catch (e) {}
+
+        localStorage.setItem('token', token);
+        localStorage.setItem('hero_session', JSON.stringify({
+          name: targetUser.name || `${selectedActionCompany.name} Admin`,
+          role: targetUser.role || 'COMPANY_ADMIN',
+          company: selectedActionCompany.name,
+          companyId: targetCompanyId,
+          email: targetUser.email,
+          isImpersonating: true,
+          originalRole: 'SUPER_ADMIN'
+        }));
+
+        showNotification(`Switched session to ${selectedActionCompany.name}`);
+        setShowLoginAsModal(false);
+
+        // Redirect directly to company admin command centre
+        window.location.href = '/company-admin/command-centre';
+      } else {
+        showNotification(res.data?.error?.message || 'Could not switch workspace session.');
+      }
+    } catch (err) {
+      console.error('Error simulating login session:', err);
+      const errMsg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to simulate admin session.';
+      showNotification(errMsg);
+    } finally {
+      setIsLoggingInAs(false);
+    }
+  };
 
   // Edit Company modal states
   const [editName, setEditName] = useState('');
@@ -1439,13 +1491,12 @@ export default function Companies() {
                 </select>
               </div>
               <button
-                onClick={() => {
-                  showNotification(`Logged in as admin of ${selectedActionCompany.name}`);
-                  setShowLoginAsModal(false);
-                }}
-                className="w-full bg-[#3B82F6] hover:bg-[#2563EB] text-white font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm"
+                onClick={handleSimulateLogin}
+                disabled={isLoggingInAs}
+                className="w-full bg-[#3B82F6] hover:bg-[#2563EB] disabled:opacity-50 text-white font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
               >
-                Login as Administrator
+                {isLoggingInAs && <Loader2 className="w-4 h-4 animate-spin text-white" />}
+                <span>{isLoggingInAs ? 'Switching Workspace...' : 'Login as Administrator'}</span>
               </button>
             </div>
           </div>

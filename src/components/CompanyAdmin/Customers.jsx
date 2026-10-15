@@ -6,6 +6,15 @@ import {
   ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight, Printer, Zap
 } from 'lucide-react';
 
+const FREIGHT_TYPE_OPTIONS = [
+  'General Freight',
+  'Dangerous Goods',
+  'Vehicle Transport',
+  'Refrigerated Freight',
+  'Heavy Haulage',
+  'Other'
+];
+
 const mockCustomers = [];
 
 const initialDocuments = [];
@@ -28,7 +37,9 @@ export default function Customers() {
         contactName: c.contactName || 'N/A',
         contactEmail: c.contactEmail || c.email || 'N/A',
         contactPhone: c.contactPhone || c.phone || 'N/A',
-        transportModules: Array.isArray(c.transportModules) ? c.transportModules : (c.transportModules ? JSON.parse(c.transportModules) : ['truck']),
+        transportModules: Array.isArray(c.transportModules)
+          ? c.transportModules
+          : (c.transportModules ? (() => { try { return JSON.parse(c.transportModules); } catch (e) { return [c.transportModules]; } })() : ['General Freight']),
         billingTerms: c.billingTerms || '14 Days EOM',
         billingType: 'EOM',
         status: c.status === 'Inactive' || c.status === 'INACTIVE' ? 'Inactive' : 'Active'
@@ -430,12 +441,17 @@ Exported On: ${new Date().toLocaleString()}`;
       setCustomerPricingRulesMap(prev => {
         const list = prev[currentCustomerId] || [];
         const exists = list.some(r => r.id === ruleObj.id);
-        return { ...prev, [currentCustomerId]: exists ? list.map(r => r.id === ruleObj.id ? ruleObj : r) : [ruleObj, ...list] };
+        const updated = exists ? list.map(r => r.id === ruleObj.id ? ruleObj : r) : [ruleObj, ...list];
+        try {
+          localStorage.setItem(`hero_pricing_profiles_${currentCustomerId}`, JSON.stringify(updated));
+        } catch (e) {}
+        return { ...prev, [currentCustomerId]: updated };
       });
 
       setLanePricingRules(prev => {
         const exists = prev.some(r => r.id === ruleObj.id);
-        return exists ? prev.map(r => r.id === ruleObj.id ? ruleObj : r) : [ruleObj, ...prev];
+        const updated = exists ? prev.map(r => r.id === ruleObj.id ? ruleObj : r) : [ruleObj, ...prev];
+        return updated;
       });
 
       setShowAddPricingRuleModal(false);
@@ -860,6 +876,7 @@ Exported On: ${new Date().toLocaleString()}`;
     setShowAddStaffFormTab(false);
   };
 
+  const [isEditFreightDropdownOpen, setIsEditFreightDropdownOpen] = useState(false);
   const [editCustomerForm, setEditCustomerForm] = useState({
     id: '',
     name: '',
@@ -869,6 +886,7 @@ Exported On: ${new Date().toLocaleString()}`;
     billingTerms: '30 Days EOM',
     creditLimit: '250000',
     category: 'Strategic Account',
+    transportModules: ['General Freight'],
     status: 'Active'
   });
 
@@ -878,17 +896,31 @@ Exported On: ${new Date().toLocaleString()}`;
   });
 
   const openEditCustomer = (customer) => {
+    let mods = ['General Freight'];
+    if (Array.isArray(customer?.transportModules)) {
+      mods = customer.transportModules.length > 0 ? customer.transportModules : ['General Freight'];
+    } else if (typeof customer?.transportModules === 'string') {
+      try {
+        const parsed = JSON.parse(customer.transportModules);
+        mods = Array.isArray(parsed) && parsed.length > 0 ? parsed : [customer.transportModules];
+      } catch (e) {
+        mods = [customer.transportModules];
+      }
+    }
+
     setEditCustomerForm({
-      id: customer.id,
-      name: customer.name || '',
-      abn: customer.abn && customer.abn !== 'N/A' ? customer.abn : '',
-      acn: customer.acn && customer.acn !== 'N/A' ? customer.acn : '',
-      type: customer.type || 'Corporate',
-      billingTerms: customer.billingTerms && customer.billingTerms !== 'N/A' ? customer.billingTerms : '30 Days EOM',
-      creditLimit: customer.creditLimit || '0.00',
-      category: customer.category || 'Strategic Account',
-      status: customer.status || 'Active'
+      id: customer?.id || '',
+      name: customer?.name || '',
+      abn: customer?.abn && customer.abn !== 'N/A' ? customer.abn : '',
+      acn: customer?.acn && customer.acn !== 'N/A' ? customer.acn : '',
+      type: customer?.type || 'Corporate',
+      billingTerms: customer?.billingTerms && customer.billingTerms !== 'N/A' ? customer.billingTerms : '30 Days EOM',
+      creditLimit: customer?.creditLimit || '0.00',
+      category: customer?.category || 'Strategic Account',
+      transportModules: mods,
+      status: customer?.status || 'Active'
     });
+    setIsEditFreightDropdownOpen(false);
     setShowEditCustomerModal(true);
     setActiveActionMenu(null);
   };
@@ -905,17 +937,45 @@ Exported On: ${new Date().toLocaleString()}`;
   const handleSaveEditCustomer = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/customers/${editCustomerForm.id}`, {
+      const rawModules = editCustomerForm.transportModules || ['General Freight'];
+      const stringifiedModules = typeof rawModules === 'string' ? rawModules : JSON.stringify(rawModules);
+      const arrayModules = Array.isArray(rawModules) ? rawModules : (() => { try { return JSON.parse(rawModules); } catch(e) { return [rawModules]; } })();
+
+      const payload = {
         name: editCustomerForm.name,
         abn: editCustomerForm.abn,
         type: editCustomerForm.type?.toUpperCase() === 'CORPORATE' ? 'CORPORATE' : 'BUSINESS',
         status: editCustomerForm.status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
-        billingTerms: editCustomerForm.billingTerms
-      });
-      await fetchCustomersFromApi();
+        billingTerms: editCustomerForm.billingTerms,
+        transportModules: stringifiedModules
+      };
+      await api.put(`/customers/${editCustomerForm.id}`, payload);
+
+      setCustomersList(prev => prev.map(c => c.id === editCustomerForm.id ? {
+        ...c,
+        ...payload,
+        transportModules: arrayModules,
+        status: editCustomerForm.status,
+        type: editCustomerForm.type
+      } : c));
+
+      if (selectedCustomer && selectedCustomer.id === editCustomerForm.id) {
+        setSelectedCustomer(prev => ({
+          ...prev,
+          ...payload,
+          transportModules: arrayModules,
+          status: editCustomerForm.status,
+          type: editCustomerForm.type
+        }));
+      }
+
+      await fetchPortalData();
+      triggerToast(`Customer "${editCustomerForm.name}" updated successfully!`);
     } catch (err) {
       console.error('Error updating customer via API:', err);
+      triggerToast('Error updating customer.', 'error');
     } finally {
+      setIsEditFreightDropdownOpen(false);
       setShowEditCustomerModal(false);
     }
   };
@@ -1111,6 +1171,96 @@ Exported On: ${new Date().toLocaleString()}`;
     }
   }, [selectedCustomer]);
 
+  const getCustomerDefaultOrigin = () => {
+    if (selectedCustomer?.city) return selectedCustomer.city;
+    if (selectedCustomer?.address) {
+      const parts = selectedCustomer.address.split(',');
+      return parts[0].trim();
+    }
+    if (customerBranches && customerBranches.length > 0 && customerBranches[0].address && customerBranches[0].address !== 'N/A' && customerBranches[0].address !== 'UNKNOWN ADDRESS') {
+      const parts = customerBranches[0].address.split('\n')[0].split(',');
+      return parts[0].trim();
+    }
+    if (companyInfo?.address && companyInfo.address !== 'N/A') {
+      const parts = companyInfo.address.split('\n')[0].split(',');
+      return parts[0].trim();
+    }
+    return 'Sydney';
+  };
+
+  const parseRouteFromTitle = (title, customerName) => {
+    if (!title || typeof title !== 'string') return null;
+    let cleaned = title.trim();
+    if (customerName && customerName.trim().length > 1) {
+      const cName = customerName.trim();
+      if (cleaned.toLowerCase().startsWith(cName.toLowerCase())) {
+        cleaned = cleaned.substring(cName.length).trim();
+      }
+    }
+    const routeRegex = /(?:^|:\s*|\b(?:rate|lane|for)\s+)?([A-Za-z\s]+?)\s*(?:->|—|–|-|\bto\b)\s*([A-Za-z\s]+?)(?:\s+(?:lane|route|corridor|rate|pricing|matrix|express|standard|freight))?$/i;
+    const match = cleaned.match(routeRegex);
+    if (match && match[1] && match[2]) {
+      let fromCandidate = match[1].replace(/^(?:rate|pricing|contract|customer|standard|general)\s+/i, '').trim();
+      let toCandidate = match[2].trim();
+      if (fromCandidate.length >= 2 && toCandidate.length >= 2) {
+        return { from: fromCandidate, to: toCandidate };
+      }
+    }
+    return null;
+  };
+
+  const getCustomerDefaultDestination = () => {
+    // 1. Check existing customer pricing rules
+    const existingRules = lanePricingRules.length > 0 
+      ? lanePricingRules 
+      : (customerPricingRulesMap[selectedCustomer?.id] || []);
+    
+    const originStr = getCustomerDefaultOrigin().toLowerCase();
+    const ruleWithDest = existingRules.find(r => {
+      const d = (r.to || r.destination || '').trim();
+      return d !== '' && !originStr.includes(d.toLowerCase());
+    });
+    if (ruleWithDest) {
+      return (ruleWithDest.to || ruleWithDest.destination).trim();
+    }
+
+    // 2. Check customer branches for delivery branch
+    if (customerBranches && customerBranches.length > 1) {
+      const otherBranch = customerBranches.find(b => {
+        const addr = (b.address || b.name || '').toLowerCase();
+        return addr && !addr.includes(originStr);
+      });
+      if (otherBranch) {
+        const bParts = (otherBranch.address || otherBranch.name || '').split('\n')[0].split(',');
+        return bParts[0].trim();
+      }
+    }
+
+    // 3. Freight corridor smart standard default based on origin
+    if (originStr.includes('sydney') || originStr.includes('nsw')) return 'Melbourne';
+    if (originStr.includes('melbourne') || originStr.includes('vic')) return 'Brisbane';
+    if (originStr.includes('brisbane') || originStr.includes('qld')) return 'Sydney';
+    if (originStr.includes('perth') || originStr.includes('wa')) return 'Adelaide';
+    if (originStr.includes('adelaide') || originStr.includes('sa')) return 'Melbourne';
+
+    return 'Melbourne';
+  };
+
+  const handleOpenAddPricingRuleModal = (initialFrom = '', initialTo = '') => {
+    const defaultOrigin = initialFrom || getCustomerDefaultOrigin();
+    const defaultDest = initialTo || getCustomerDefaultDestination();
+    const custName = selectedCustomer?.name || 'Customer';
+    const autoTitle = `${custName} ${defaultOrigin} to ${defaultDest} Rate`;
+
+    setFullPricingRuleForm({
+      ...EMPTY_PRICING_RULE_FORM,
+      from: defaultOrigin,
+      to: defaultDest,
+      name: autoTitle
+    });
+    setShowAddPricingRuleModal(true);
+  };
+
   const handleCreateLoadSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!newLoadForm.origin || !newLoadForm.destination) {
@@ -1262,6 +1412,7 @@ Exported On: ${new Date().toLocaleString()}`;
   const [showDocPreview, setShowDocPreview] = useState(true);
   const [docSearchQuery, setDocSearchQuery] = useState('');
 
+  const [isAddFreightDropdownOpen, setIsAddFreightDropdownOpen] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({
     name: '',
     abn: '',
@@ -1269,6 +1420,7 @@ Exported On: ${new Date().toLocaleString()}`;
     type: 'Corporate',
     status: 'Active',
     category: 'Strategic Account',
+    transportModules: ['General Freight'],
     billingTerms: '14 Days EOM',
     creditLimit: '250000'
   });
@@ -1334,6 +1486,12 @@ Exported On: ${new Date().toLocaleString()}`;
     e.preventDefault();
     if (!newCustomerForm.name) return;
 
+    const rawModules = (newCustomerForm.transportModules && newCustomerForm.transportModules.length > 0)
+      ? newCustomerForm.transportModules
+      : ['General Freight'];
+    const stringifiedModules = typeof rawModules === 'string' ? rawModules : JSON.stringify(rawModules);
+    const arrayModules = Array.isArray(rawModules) ? rawModules : (() => { try { return JSON.parse(rawModules); } catch(e) { return [rawModules]; } })();
+
     const newCustomerObj = {
       id: Date.now().toString(),
       name: newCustomerForm.name,
@@ -1342,7 +1500,7 @@ Exported On: ${new Date().toLocaleString()}`;
       contactName: '',
       contactEmail: '',
       contactPhone: '',
-      transportModules: ['truck'],
+      transportModules: arrayModules,
       billingTerms: newCustomerForm.billingTerms || '14 Days EOM',
       billingType: 'EOM',
       status: newCustomerForm.status || 'Active'
@@ -1354,19 +1512,28 @@ Exported On: ${new Date().toLocaleString()}`;
         abn: newCustomerForm.abn || null,
         type: newCustomerForm.type?.toUpperCase() === 'CORPORATE' ? 'CORPORATE' : 'BUSINESS',
         status: newCustomerForm.status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
-        billingTerms: newCustomerForm.billingTerms
+        billingTerms: newCustomerForm.billingTerms,
+        transportModules: stringifiedModules
       }).catch(() => api.post('/company-admin/customers', {
         name: newCustomerForm.name,
         abn: newCustomerForm.abn || null,
         type: newCustomerForm.type?.toUpperCase() === 'CORPORATE' ? 'CORPORATE' : 'BUSINESS',
         status: newCustomerForm.status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
-        billingTerms: newCustomerForm.billingTerms
+        billingTerms: newCustomerForm.billingTerms,
+        transportModules: stringifiedModules
       }));
 
       const created = res?.data?.data || res?.data;
       if (created && created.id) {
         newCustomerObj.id = created.id;
         newCustomerObj.name = created.name || newCustomerForm.name;
+        if (created.transportModules) {
+          try {
+            newCustomerObj.transportModules = Array.isArray(created.transportModules)
+              ? created.transportModules
+              : JSON.parse(created.transportModules);
+          } catch (e) {}
+        }
       }
     } catch (err) {
       console.warn('Customer API save fallback:', err);
@@ -1379,9 +1546,11 @@ Exported On: ${new Date().toLocaleString()}`;
         type: 'Corporate',
         status: 'Active',
         category: 'Strategic Account',
+        transportModules: ['General Freight'],
         billingTerms: '14 Days EOM',
         creditLimit: '250000'
       });
+      setIsAddFreightDropdownOpen(false);
       setShowAddModal(false);
       triggerToast(`Customer "${newCustomerObj.name}" added successfully!`);
     }
@@ -1651,7 +1820,7 @@ Exported On: ${new Date().toLocaleString()}`;
                     { label: 'Create Invoice', icon: Plus, action: () => setShowCreateInvoiceModal(true) },
                     { label: 'Send Message', icon: MessageSquare, action: () => setShowSendMessageModal(true) },
                     { label: 'View Invoices', icon: FileText, action: () => setActiveDetailsTab('Financials') },
-                    { label: 'Edit Customer', icon: Edit, action: () => setShowEditCustomerModal(true) },
+                    { label: 'Edit Customer', icon: Edit, action: () => openEditCustomer(selectedCustomer) },
                     { label: 'Add Contact', icon: UserPlus, action: () => setShowAddContactModal(true) },
                     { label: 'Upload Document', icon: Upload, action: () => setShowUploadDocumentModal(true) },
                     { label: 'More Actions', icon: MoreVertical }
@@ -1778,68 +1947,49 @@ Exported On: ${new Date().toLocaleString()}`;
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-2 text-slate-800">
                     <Truck size={16} className="text-blue-600" />
-                    <h3 className="text-sm font-black tracking-tight">Transport Modules</h3>
+                    <h3 className="text-sm font-black tracking-tight">Transport / Freight Modules</h3>
                   </div>
-                  <button onClick={() => setActiveDetailsTab('Transport Modules')} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
-                    Manage Modules
+                  <button onClick={() => openEditCustomer(selectedCustomer)} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+                    Manage Freight Types
                   </button>
                 </div>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 w-6 h-6 rounded bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200">
-                      <Car size={14} className="text-slate-600" />
-                    </div>
-                    <div className="flex-grow min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-black text-slate-900">Car Carrying</p>
-                        <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-wider">Enabled</span>
-                      </div>
-                      <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Special requirements and rules configured</p>
-                    </div>
-                    <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 shrink-0 cursor-pointer">View Details &rarr;</button>
-                  </div>
+                <div className="space-y-2.5 max-h-[320px] overflow-y-auto custom-scrollbar pr-1">
+                  {FREIGHT_TYPE_OPTIONS.map((opt) => {
+                    const isEnabled = selectedCustomer.transportModules && (
+                      Array.isArray(selectedCustomer.transportModules)
+                        ? selectedCustomer.transportModules.includes(opt)
+                        : (typeof selectedCustomer.transportModules === 'string' && selectedCustomer.transportModules.includes(opt))
+                    );
 
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 w-6 h-6 rounded bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200">
-                      <Package size={14} className="text-slate-600" />
-                    </div>
-                    <div className="flex-grow min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-black text-slate-900">General Freight</p>
-                        <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-wider">Enabled</span>
-                      </div>
-                      <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Standard rates and rules applied</p>
-                    </div>
-                    <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 shrink-0 cursor-pointer">View Details &rarr;</button>
-                  </div>
+                    const getIcon = (name) => {
+                      if (name.includes('Vehicle')) return <Car size={13} className={isEnabled ? "text-indigo-600" : "text-slate-400"} />;
+                      if (name.includes('Dangerous')) return <AlertCircle size={13} className={isEnabled ? "text-amber-600" : "text-slate-400"} />;
+                      if (name.includes('Heavy')) return <Truck size={13} className={isEnabled ? "text-blue-600" : "text-slate-400"} />;
+                      if (name.includes('Refrigerated')) return <Zap size={13} className={isEnabled ? "text-cyan-600" : "text-slate-400"} />;
+                      return <Package size={13} className={isEnabled ? "text-emerald-600" : "text-slate-400"} />;
+                    };
 
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 w-6 h-6 rounded bg-red-50 flex items-center justify-center shrink-0 border border-red-200">
-                      <AlertCircle size={14} className="text-red-500" />
-                    </div>
-                    <div className="flex-grow min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-black text-slate-400">Dangerous Goods</p>
-                        <span className="text-slate-400 text-[8px] uppercase font-black tracking-wider">Disabled</span>
+                    return (
+                      <div key={opt} className={`flex items-start gap-3 p-2 rounded-xl transition-all ${isEnabled ? 'bg-slate-50/80 border border-slate-100' : 'opacity-50'}`}>
+                        <div className={`mt-0.5 w-6 h-6 rounded flex items-center justify-center shrink-0 border ${isEnabled ? 'bg-white border-slate-200' : 'bg-slate-100 border-slate-200'}`}>
+                          {getIcon(opt)}
+                        </div>
+                        <div className="flex-grow min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className={`text-xs font-black ${isEnabled ? 'text-slate-900' : 'text-slate-400'}`}>{opt}</p>
+                            {isEnabled ? (
+                              <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-wider">Active</span>
+                            ) : (
+                              <span className="text-slate-400 text-[8px] uppercase font-semibold tracking-wider">Inactive</span>
+                            )}
+                          </div>
+                          <p className="text-[10px] font-semibold text-slate-500 mt-0.5">
+                            {isEnabled ? 'Configured and authorized for this customer' : 'Not assigned to this customer profile'}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Module not enabled for this customer</p>
-                    </div>
-                    <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 shrink-0 cursor-pointer">Enable Module</button>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 w-6 h-6 rounded bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200">
-                      <Building2 size={14} className="text-slate-600" />
-                    </div>
-                    <div className="flex-grow min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-black text-slate-900">Warehousing</p>
-                        <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-wider">Enabled</span>
-                      </div>
-                      <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Storage and handling configured</p>
-                    </div>
-                    <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 shrink-0 cursor-pointer">View Details &rarr;</button>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -3570,7 +3720,7 @@ Exported On: ${new Date().toLocaleString()}`;
               </div>
 
               <div className="flex items-center gap-3 mt-5">
-                <button onClick={() => setShowAddPricingRuleModal(true)} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
+                <button onClick={() => handleOpenAddPricingRuleModal()} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
                   <Plus size={14} /> Add Pricing Rule
                 </button>
               </div>
@@ -3747,7 +3897,13 @@ Exported On: ${new Date().toLocaleString()}`;
                                 {lanePricingRules.length === 0 ? (
                                   <tr>
                                     <td colSpan="8" className="py-8 text-center text-xs font-semibold text-slate-400 italic">
-                                      No rates configured yet for this customer. Click "+ Add Pricing Rule" above to add rates.
+                                      <div>No rates configured yet for this customer.</div>
+                                      <button
+                                        onClick={() => handleOpenAddPricingRuleModal()}
+                                        className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer not-italic"
+                                      >
+                                        <Plus size={13} /> Add First Pricing Rule
+                                      </button>
                                     </td>
                                   </tr>
                                 ) : (
@@ -3970,7 +4126,7 @@ Exported On: ${new Date().toLocaleString()}`;
                 <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex-grow">
                   <h3 className="text-sm font-black text-slate-900 tracking-tight mb-4">Quick Actions</h3>
                   <div className="space-y-2">
-                    <button onClick={() => setShowAddPricingRuleModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
+                    <button onClick={() => handleOpenAddPricingRuleModal()} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3">
                         <Plus size={14} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Add Lane Price</span>
@@ -5329,7 +5485,9 @@ Exported On: ${new Date().toLocaleString()}`;
               </div>
               <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Customer Type</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[13px] font-semibold text-slate-800 block">Customer Type</label>
+                  </div>
                   <div className="relative">
                     <select 
                       value={editCustomerForm.type} 
@@ -5341,9 +5499,12 @@ Exported On: ${new Date().toLocaleString()}`;
                     </select>
                     <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
+                  <p className="text-[10px] text-slate-400 font-medium mt-1">Corporate: Enterprise/Multi-branch • Business: SME</p>
                 </div>
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Status</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[13px] font-semibold text-slate-800 block">Status</label>
+                  </div>
                   <div className="relative">
                     <select 
                       value={editCustomerForm.status} 
@@ -5359,7 +5520,9 @@ Exported On: ${new Date().toLocaleString()}`;
                 </div>
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Category</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[13px] font-semibold text-slate-800 block">Account Category</label>
+                </div>
                 <div className="relative">
                   <select 
                     value={editCustomerForm.category} 
@@ -5370,6 +5533,100 @@ Exported On: ${new Date().toLocaleString()}`;
                     <option value="Standard Account">Standard Account</option>
                   </select>
                   <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+                <p className="text-[10px] text-slate-400 font-medium mt-1">Strategic: VIP & high priority queue • Standard: Book tariff</p>
+              </div>
+
+              {/* Transport / Freight Type Multi-Select Field */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[13px] font-semibold text-slate-800 block">Transport / Freight Type *</label>
+                  <span className="text-[11px] text-slate-400 font-medium">Select multiple</span>
+                </div>
+                <div className="relative">
+                  <div
+                    onClick={() => setIsEditFreightDropdownOpen(!isEditFreightDropdownOpen)}
+                    className="min-h-[42px] w-full border border-slate-200 rounded-lg p-2 text-[13px] font-medium text-slate-700 bg-white cursor-pointer hover:border-indigo-300 transition-all flex flex-wrap items-center gap-1.5 pr-8"
+                  >
+                    {(!editCustomerForm.transportModules || editCustomerForm.transportModules.length === 0) ? (
+                      <span className="text-slate-400 text-xs px-1">Select freight types...</span>
+                    ) : (
+                      editCustomerForm.transportModules.map((ft) => (
+                        <span
+                          key={ft}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {ft}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const updated = editCustomerForm.transportModules.filter(item => item !== ft);
+                              setEditCustomerForm({ ...editCustomerForm, transportModules: updated });
+                            }}
+                            className="hover:text-indigo-900 rounded-full hover:bg-indigo-100 p-0.5 transition-colors"
+                          >
+                            <X size={11} strokeWidth={2.5} />
+                          </button>
+                        </span>
+                      ))
+                    )}
+                    <ChevronDown size={15} className={`absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-transform duration-200 ${isEditFreightDropdownOpen ? 'rotate-180' : ''}`} />
+                  </div>
+
+                  {isEditFreightDropdownOpen && (
+                    <div
+                      className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-2 text-left animate-in fade-in duration-150 max-h-56 overflow-y-auto custom-scrollbar"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex justify-between items-center px-2 py-1 mb-1 border-b border-slate-100 text-[11px] text-slate-400 font-semibold">
+                        <span>Freight Options ({editCustomerForm.transportModules?.length || 0} selected)</span>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditCustomerForm({ ...editCustomerForm, transportModules: [...FREIGHT_TYPE_OPTIONS] })}
+                            className="text-indigo-600 hover:text-indigo-800 cursor-pointer font-bold"
+                          >
+                            All
+                          </button>
+                          <span>•</span>
+                          <button
+                            type="button"
+                            onClick={() => setEditCustomerForm({ ...editCustomerForm, transportModules: [] })}
+                            className="text-slate-500 hover:text-slate-700 cursor-pointer font-bold"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                      {FREIGHT_TYPE_OPTIONS.map((opt) => {
+                        const isSelected = editCustomerForm.transportModules?.includes(opt);
+                        return (
+                          <div
+                            key={opt}
+                            onClick={() => {
+                              const current = editCustomerForm.transportModules || [];
+                              const updated = isSelected ? current.filter(x => x !== opt) : [...current, opt];
+                              setEditCustomerForm({ ...editCustomerForm, transportModules: updated });
+                            }}
+                            className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50 text-indigo-900 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={!!isSelected}
+                                onChange={() => {}}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                              />
+                              <span>{opt}</span>
+                            </div>
+                            {isSelected && <Check size={13} className="text-indigo-600 stroke-[2.5]" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-5">
@@ -5948,8 +6205,36 @@ Exported On: ${new Date().toLocaleString()}`;
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">1. Profile Details</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Pricing Profile Name <span className="text-rose-500">*</span></label>
-                    <input type="text" value={fullPricingRuleForm.name} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, name: e.target.value })} placeholder="e.g. ABC Sydney to Canberra Rate" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" required />
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-bold text-slate-800">
+                        Pricing Profile Name <span className="text-rose-500">*</span>
+                      </label>
+                      <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+                        Auto-extracts route
+                      </span>
+                    </div>
+                    <input 
+                      type="text" 
+                      value={fullPricingRuleForm.name} 
+                      onChange={e => {
+                        const newName = e.target.value;
+                        const updates = { name: newName };
+                        const parsed = parseRouteFromTitle(newName, selectedCustomer?.name);
+                        if (parsed) {
+                          const defaultOrig = getCustomerDefaultOrigin();
+                          if (!fullPricingRuleForm.from || fullPricingRuleForm.from === defaultOrig) {
+                            updates.from = parsed.from;
+                          }
+                          if (!fullPricingRuleForm.to || fullPricingRuleForm.to === '') {
+                            updates.to = parsed.to;
+                          }
+                        }
+                        setFullPricingRuleForm(prev => ({ ...prev, ...updates }));
+                      }} 
+                      placeholder="e.g. Sydney to Canberra Rate" 
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" 
+                      required 
+                    />
                   </div>
                   <div>
                     <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Niche</label>
@@ -5979,15 +6264,113 @@ Exported On: ${new Date().toLocaleString()}`;
 
               {/* SECTION: ROUTING & METHOD */}
               <div>
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-200 pb-1">2. Core Rate Calculation</h4>
+                <div className="flex items-center justify-between mb-3 border-b border-slate-200 pb-1">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">2. Core Rate Calculation</h4>
+                  <span className="text-[10px] font-semibold text-slate-500 italic">
+                    Matched automatically on load pickup & destination
+                  </span>
+                </div>
+
+                {/* 1-Click Quick Route Corridors */}
+                <div className="mb-3.5 bg-indigo-50/40 p-2.5 rounded-xl border border-indigo-100/70">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-black uppercase text-indigo-900 tracking-wider flex items-center gap-1.5">
+                      <Zap size={12} className="text-amber-500 fill-amber-500" /> Quick Route Corridors
+                    </label>
+                    <span className="text-[10px] text-indigo-600 font-bold">1-Click Auto-Fill Route & Title</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: 'Sydney → Melbourne', from: 'Sydney', to: 'Melbourne' },
+                      { label: 'Melbourne → Brisbane', from: 'Melbourne', to: 'Brisbane' },
+                      { label: 'Sydney → Canberra', from: 'Sydney', to: 'Canberra' },
+                      { label: 'Melbourne → Adelaide', from: 'Melbourne', to: 'Adelaide' },
+                      { label: 'Brisbane → Sydney', from: 'Brisbane', to: 'Sydney' },
+                      { label: 'Perth → Adelaide', from: 'Perth', to: 'Adelaide' }
+                    ].map((c) => {
+                      const isSelected = (fullPricingRuleForm.from || '').toLowerCase() === c.from.toLowerCase() && 
+                                         (fullPricingRuleForm.to || '').toLowerCase() === c.to.toLowerCase();
+                      return (
+                        <button
+                          key={c.label}
+                          type="button"
+                          onClick={() => {
+                            const custName = selectedCustomer?.name || 'Customer';
+                            setFullPricingRuleForm(prev => ({
+                              ...prev,
+                              from: c.from,
+                              to: c.to,
+                              name: `${custName} ${c.from} to ${c.to} Rate`
+                            }));
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
+                            isSelected
+                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm font-black'
+                              : 'bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border-slate-200 hover:border-indigo-300'
+                          }`}
+                        >
+                          <span>{c.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Origin (Pickup Location)</label>
-                    <input type="text" value={fullPricingRuleForm.from} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, from: e.target.value })} placeholder="e.g. Sydney" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-bold text-slate-800">
+                        Origin (Pickup Location)
+                      </label>
+                      <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                        Pre-filled
+                      </span>
+                    </div>
+                    <input 
+                      type="text" 
+                      value={fullPricingRuleForm.from} 
+                      onChange={e => {
+                        const newFrom = e.target.value;
+                        setFullPricingRuleForm(prev => {
+                          const custName = selectedCustomer?.name || 'Customer';
+                          const isAutoName = !prev.name || prev.name.includes('Rate');
+                          const updatedName = (isAutoName && prev.to)
+                            ? `${custName} ${newFrom} to ${prev.to} Rate`
+                            : (isAutoName && newFrom ? `${custName} ${newFrom} Outbound Rate` : prev.name);
+                          return { ...prev, from: newFrom, name: updatedName };
+                        });
+                      }} 
+                      placeholder="e.g. Sydney" 
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" 
+                    />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Destination (Delivery Location)</label>
-                    <input type="text" value={fullPricingRuleForm.to} onChange={e => setFullPricingRuleForm({ ...fullPricingRuleForm, to: e.target.value })} placeholder="e.g. Canberra" className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" />
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-bold text-slate-800">
+                        Destination (Delivery Location)
+                      </label>
+                      <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                        Auto-filled
+                      </span>
+                    </div>
+                    <input 
+                      type="text" 
+                      value={fullPricingRuleForm.to} 
+                      onChange={e => {
+                        const newTo = e.target.value;
+                        setFullPricingRuleForm(prev => {
+                          const custName = selectedCustomer?.name || 'Customer';
+                          const isAutoName = !prev.name || prev.name.includes('Rate');
+                          const originPart = prev.from || getCustomerDefaultOrigin();
+                          const updatedName = (isAutoName && newTo)
+                            ? `${custName} ${originPart} to ${newTo} Rate`
+                            : prev.name;
+                          return { ...prev, to: newTo, name: updatedName };
+                        });
+                      }} 
+                      placeholder="e.g. Canberra" 
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-[12px] font-medium focus:outline-none focus:border-indigo-500 shadow-sm" 
+                    />
                   </div>
                   <div>
                     <label className="text-[11px] font-bold text-slate-800 block mb-1.5">Zone (if applicable)</label>
@@ -6998,21 +7381,22 @@ Exported On: ${new Date().toLocaleString()}`;
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="flex items-center gap-1.5">
-                            {c.transportModules?.includes('truck') && (
-                              <div className="w-7 h-7 rounded border border-slate-200 bg-slate-50 text-slate-600 flex items-center justify-center">
-                                <Truck size={12} />
-                              </div>
-                            )}
-                            {c.transportModules?.includes('box') && (
-                              <div className="w-7 h-7 rounded border border-slate-200 bg-slate-50 text-slate-600 flex items-center justify-center">
-                                <Package size={12} />
-                              </div>
-                            )}
-                            {c.transportModules?.includes('alert') && (
-                              <div className="w-7 h-7 rounded border border-slate-200 bg-slate-50 text-slate-600 flex items-center justify-center">
-                                <AlertCircle size={12} />
-                              </div>
+                          <div className="flex flex-wrap items-center gap-1 max-w-[220px]">
+                            {Array.isArray(c.transportModules) && c.transportModules.length > 0 ? (
+                              <>
+                                {c.transportModules.slice(0, 2).map((m, idx) => (
+                                  <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200" title={m}>
+                                    {m}
+                                  </span>
+                                ))}
+                                {c.transportModules.length > 2 && (
+                                  <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100" title={c.transportModules.slice(2).join(', ')}>
+                                    +{c.transportModules.length - 2}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 font-medium">General Freight</span>
                             )}
                           </div>
                         </td>
@@ -7219,7 +7603,9 @@ Exported On: ${new Date().toLocaleString()}`;
               </div>
               <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Customer Type</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[13px] font-semibold text-slate-800 block">Customer Type</label>
+                  </div>
                   <div className="relative">
                     <select
                       value={newCustomerForm.type}
@@ -7231,9 +7617,12 @@ Exported On: ${new Date().toLocaleString()}`;
                     </select>
                     <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
+                  <p className="text-[10px] text-slate-400 font-medium mt-1">Corporate: Enterprise/Multi-branch • Business: SME</p>
                 </div>
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Status</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[13px] font-semibold text-slate-800 block">Status</label>
+                  </div>
                   <div className="relative">
                     <select
                       value={newCustomerForm.status}
@@ -7248,7 +7637,9 @@ Exported On: ${new Date().toLocaleString()}`;
                 </div>
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Category</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[13px] font-semibold text-slate-800 block">Account Category</label>
+                </div>
                 <div className="relative">
                   <select
                     value={newCustomerForm.category}
@@ -7259,6 +7650,100 @@ Exported On: ${new Date().toLocaleString()}`;
                     <option value="Standard Account">Standard Account</option>
                   </select>
                   <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+                <p className="text-[10px] text-slate-400 font-medium mt-1">Strategic: VIP & high priority queue • Standard: Book tariff</p>
+              </div>
+
+              {/* Transport / Freight Type Multi-Select Field */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[13px] font-semibold text-slate-800 block">Transport / Freight Type *</label>
+                  <span className="text-[11px] text-slate-400 font-medium">Select multiple</span>
+                </div>
+                <div className="relative">
+                  <div
+                    onClick={() => setIsAddFreightDropdownOpen(!isAddFreightDropdownOpen)}
+                    className="min-h-[42px] w-full border border-slate-200 rounded-lg p-2 text-[13px] font-medium text-slate-700 bg-white cursor-pointer hover:border-indigo-300 transition-all flex flex-wrap items-center gap-1.5 pr-8"
+                  >
+                    {(!newCustomerForm.transportModules || newCustomerForm.transportModules.length === 0) ? (
+                      <span className="text-slate-400 text-xs px-1">Select freight types...</span>
+                    ) : (
+                      newCustomerForm.transportModules.map((ft) => (
+                        <span
+                          key={ft}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {ft}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const updated = newCustomerForm.transportModules.filter(item => item !== ft);
+                              setNewCustomerForm({ ...newCustomerForm, transportModules: updated });
+                            }}
+                            className="hover:text-indigo-900 rounded-full hover:bg-indigo-100 p-0.5 transition-colors"
+                          >
+                            <X size={11} strokeWidth={2.5} />
+                          </button>
+                        </span>
+                      ))
+                    )}
+                    <ChevronDown size={15} className={`absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-transform duration-200 ${isAddFreightDropdownOpen ? 'rotate-180' : ''}`} />
+                  </div>
+
+                  {isAddFreightDropdownOpen && (
+                    <div
+                      className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-2 text-left animate-in fade-in duration-150 max-h-56 overflow-y-auto custom-scrollbar"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex justify-between items-center px-2 py-1 mb-1 border-b border-slate-100 text-[11px] text-slate-400 font-semibold">
+                        <span>Freight Options ({newCustomerForm.transportModules?.length || 0} selected)</span>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setNewCustomerForm({ ...newCustomerForm, transportModules: [...FREIGHT_TYPE_OPTIONS] })}
+                            className="text-indigo-600 hover:text-indigo-800 cursor-pointer font-bold"
+                          >
+                            All
+                          </button>
+                          <span>•</span>
+                          <button
+                            type="button"
+                            onClick={() => setNewCustomerForm({ ...newCustomerForm, transportModules: [] })}
+                            className="text-slate-500 hover:text-slate-700 cursor-pointer font-bold"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                      {FREIGHT_TYPE_OPTIONS.map((opt) => {
+                        const isSelected = newCustomerForm.transportModules?.includes(opt);
+                        return (
+                          <div
+                            key={opt}
+                            onClick={() => {
+                              const current = newCustomerForm.transportModules || [];
+                              const updated = isSelected ? current.filter(x => x !== opt) : [...current, opt];
+                              setNewCustomerForm({ ...newCustomerForm, transportModules: updated });
+                            }}
+                            className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50 text-indigo-900 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={!!isSelected}
+                                onChange={() => {}}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                              />
+                              <span>{opt}</span>
+                            </div>
+                            {isSelected && <Check size={13} className="text-indigo-600 stroke-[2.5]" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-5">
@@ -7350,7 +7835,9 @@ Exported On: ${new Date().toLocaleString()}`;
               </div>
               <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Customer Type</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[13px] font-semibold text-slate-800 block">Customer Type</label>
+                  </div>
                   <div className="relative">
                     <select 
                       value={editCustomerForm.type} 
@@ -7362,9 +7849,12 @@ Exported On: ${new Date().toLocaleString()}`;
                     </select>
                     <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
+                  <p className="text-[10px] text-slate-400 font-medium mt-1">Corporate: Enterprise/Multi-branch • Business: SME</p>
                 </div>
                 <div>
-                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Status</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[13px] font-semibold text-slate-800 block">Status</label>
+                  </div>
                   <div className="relative">
                     <select 
                       value={editCustomerForm.status} 
@@ -7380,7 +7870,9 @@ Exported On: ${new Date().toLocaleString()}`;
                 </div>
               </div>
               <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Category</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[13px] font-semibold text-slate-800 block">Account Category</label>
+                </div>
                 <div className="relative">
                   <select 
                     value={editCustomerForm.category} 
@@ -7391,6 +7883,100 @@ Exported On: ${new Date().toLocaleString()}`;
                     <option value="Standard Account">Standard Account</option>
                   </select>
                   <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+                <p className="text-[10px] text-slate-400 font-medium mt-1">Strategic: VIP & high priority queue • Standard: Book tariff</p>
+              </div>
+
+              {/* Transport / Freight Type Multi-Select Field */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[13px] font-semibold text-slate-800 block">Transport / Freight Type *</label>
+                  <span className="text-[11px] text-slate-400 font-medium">Select multiple</span>
+                </div>
+                <div className="relative">
+                  <div
+                    onClick={() => setIsEditFreightDropdownOpen(!isEditFreightDropdownOpen)}
+                    className="min-h-[42px] w-full border border-slate-200 rounded-lg p-2 text-[13px] font-medium text-slate-700 bg-white cursor-pointer hover:border-indigo-300 transition-all flex flex-wrap items-center gap-1.5 pr-8"
+                  >
+                    {(!editCustomerForm.transportModules || editCustomerForm.transportModules.length === 0) ? (
+                      <span className="text-slate-400 text-xs px-1">Select freight types...</span>
+                    ) : (
+                      editCustomerForm.transportModules.map((ft) => (
+                        <span
+                          key={ft}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {ft}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const updated = editCustomerForm.transportModules.filter(item => item !== ft);
+                              setEditCustomerForm({ ...editCustomerForm, transportModules: updated });
+                            }}
+                            className="hover:text-indigo-900 rounded-full hover:bg-indigo-100 p-0.5 transition-colors"
+                          >
+                            <X size={11} strokeWidth={2.5} />
+                          </button>
+                        </span>
+                      ))
+                    )}
+                    <ChevronDown size={15} className={`absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-transform duration-200 ${isEditFreightDropdownOpen ? 'rotate-180' : ''}`} />
+                  </div>
+
+                  {isEditFreightDropdownOpen && (
+                    <div
+                      className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-2 text-left animate-in fade-in duration-150 max-h-56 overflow-y-auto custom-scrollbar"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex justify-between items-center px-2 py-1 mb-1 border-b border-slate-100 text-[11px] text-slate-400 font-semibold">
+                        <span>Freight Options ({editCustomerForm.transportModules?.length || 0} selected)</span>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditCustomerForm({ ...editCustomerForm, transportModules: [...FREIGHT_TYPE_OPTIONS] })}
+                            className="text-indigo-600 hover:text-indigo-800 cursor-pointer font-bold"
+                          >
+                            All
+                          </button>
+                          <span>•</span>
+                          <button
+                            type="button"
+                            onClick={() => setEditCustomerForm({ ...editCustomerForm, transportModules: [] })}
+                            className="text-slate-500 hover:text-slate-700 cursor-pointer font-bold"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                      {FREIGHT_TYPE_OPTIONS.map((opt) => {
+                        const isSelected = editCustomerForm.transportModules?.includes(opt);
+                        return (
+                          <div
+                            key={opt}
+                            onClick={() => {
+                              const current = editCustomerForm.transportModules || [];
+                              const updated = isSelected ? current.filter(x => x !== opt) : [...current, opt];
+                              setEditCustomerForm({ ...editCustomerForm, transportModules: updated });
+                            }}
+                            className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50 text-indigo-900 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={!!isSelected}
+                                onChange={() => {}}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                              />
+                              <span>{opt}</span>
+                            </div>
+                            {isSelected && <Check size={13} className="text-indigo-600 stroke-[2.5]" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-5">
