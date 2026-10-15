@@ -6321,92 +6321,159 @@ export default function Drivers() {
 
                     {/* Upcoming Expiry & Alerts */}
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                      <div className="flex justify-between items-center mb-5">
-                        <h2 className="text-sm font-black text-slate-900">Upcoming Expiry & Alerts</h2>
-                        <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors flex items-center">View All &rarr;</button>
-                      </div>
-                      <div className="space-y-4">
-                        {/* Alert 1 */}
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5 text-amber-500"><FileIcon size={14} /></div>
-                            <div>
-                              <h4 className="text-[11px] font-bold text-slate-800">Medical Certificate</h4>
-                              <p className="text-[10px] font-medium text-slate-500">Expires on 10/08/2025</p>
+                      {(() => {
+                        const complianceAlerts = [];
+                        const now = new Date();
+                        const seenTypes = new Set();
+
+                        (documentList || []).forEach(doc => {
+                          const rawExp = doc.expiryDate || doc.expiry;
+                          if (rawExp && rawExp !== 'N/A' && rawExp !== '—') {
+                            const d = new Date(rawExp);
+                            if (!isNaN(d.getTime())) {
+                              const diffDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
+                              const isExpired = diffDays < 0;
+                              const isUrgent = diffDays >= 0 && diffDays <= 30;
+                              const color = isExpired ? 'rose' : (isUrgent ? 'amber' : 'emerald');
+                              const badge = isExpired ? 'Expired' : `In ${diffDays} days`;
+                              const dateText = isExpired ? `Expired on ${safeDateToLocale(d, 'en-AU', rawExp)}` : `Expires on ${safeDateToLocale(d, 'en-AU', rawExp)}`;
+                              const typeLabel = doc.type || 'Document';
+                              seenTypes.add(typeLabel.toLowerCase());
+                              complianceAlerts.push({
+                                label: typeLabel,
+                                dateText,
+                                badge,
+                                color,
+                                diffDays
+                              });
+                            }
+                          }
+                        });
+
+                        if (selectedDriver?.licenseExpiry && !seenTypes.has('licence') && !seenTypes.has('driver licence')) {
+                          const d = new Date(selectedDriver.licenseExpiry);
+                          if (!isNaN(d.getTime())) {
+                            const diffDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
+                            const isExpired = diffDays < 0;
+                            const isUrgent = diffDays >= 0 && diffDays <= 30;
+                            complianceAlerts.push({
+                              label: selectedDriver.licence || selectedDriver.licenseClass || 'Driver Licence',
+                              dateText: isExpired ? `Expired on ${safeDateToLocale(d, 'en-AU')}` : `Expires on ${safeDateToLocale(d, 'en-AU')}`,
+                              badge: isExpired ? 'Expired' : `In ${diffDays} days`,
+                              color: isExpired ? 'rose' : (isUrgent ? 'amber' : 'emerald'),
+                              diffDays
+                            });
+                          }
+                        }
+
+                        if (selectedDriver?.medicalExpiry && !seenTypes.has('medical') && !seenTypes.has('medical certificate')) {
+                          const d = new Date(selectedDriver.medicalExpiry);
+                          if (!isNaN(d.getTime())) {
+                            const diffDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
+                            const isExpired = diffDays < 0;
+                            const isUrgent = diffDays >= 0 && diffDays <= 30;
+                            complianceAlerts.push({
+                              label: 'Medical Certificate',
+                              dateText: isExpired ? `Expired on ${safeDateToLocale(d, 'en-AU')}` : `Expires on ${safeDateToLocale(d, 'en-AU')}`,
+                              badge: isExpired ? 'Expired' : `In ${diffDays} days`,
+                              color: isExpired ? 'rose' : (isUrgent ? 'amber' : 'emerald'),
+                              diffDays
+                            });
+                          }
+                        }
+
+                        complianceAlerts.sort((a, b) => a.diffDays - b.diffDays);
+
+                        return (
+                          <>
+                            <div className="flex justify-between items-center mb-5">
+                              <h2 className="text-sm font-black text-slate-900">Upcoming Expiry & Alerts</h2>
+                              <span className="text-[10px] font-bold text-slate-400">{complianceAlerts.length} Active</span>
                             </div>
-                          </div>
-                          <span className="inline-flex px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded text-[9px] font-bold">In 28 days</span>
-                        </div>
-                        <div className="border-t border-slate-100"></div>
-                        {/* Alert 2 */}
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5 text-amber-500"><FileIcon size={14} /></div>
-                            <div>
-                              <h4 className="text-[11px] font-bold text-slate-800">MR Licence</h4>
-                              <p className="text-[10px] font-medium text-slate-500">Expires on 10/04/2026</p>
+                            <div className="space-y-4">
+                              {complianceAlerts.length === 0 ? (
+                                <div className="text-center py-6 text-slate-400">
+                                  <CheckCircle2 size={24} className="mx-auto mb-2 text-emerald-500 opacity-80" />
+                                  <p className="text-[11px] font-semibold text-slate-700">No Upcoming Expiries</p>
+                                  <p className="text-[10px] text-slate-400 mt-0.5">All driver compliance documents are up to date.</p>
+                                </div>
+                              ) : (
+                                complianceAlerts.map((alert, i) => {
+                                  const badgeClass = alert.color === 'rose'
+                                    ? 'bg-rose-50 text-rose-600 border-rose-200'
+                                    : (alert.color === 'amber'
+                                      ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                      : 'bg-emerald-50 text-emerald-600 border-emerald-200');
+                                  const iconColor = alert.color === 'rose'
+                                    ? 'text-rose-500'
+                                    : (alert.color === 'amber' ? 'text-amber-500' : 'text-emerald-500');
+
+                                  return (
+                                    <React.Fragment key={i}>
+                                      {i > 0 && <div className="border-t border-slate-100"></div>}
+                                      <div className="flex justify-between items-center">
+                                        <div className="flex items-start gap-3">
+                                          <div className={`mt-0.5 ${iconColor}`}><FileIcon size={14} /></div>
+                                          <div>
+                                            <h4 className="text-[11px] font-bold text-slate-800">{alert.label}</h4>
+                                            <p className="text-[10px] font-medium text-slate-500">{alert.dateText}</p>
+                                          </div>
+                                        </div>
+                                        <span className={`inline-flex px-1.5 py-0.5 border rounded text-[9px] font-bold ${badgeClass}`}>
+                                          {alert.badge}
+                                        </span>
+                                      </div>
+                                    </React.Fragment>
+                                  );
+                                })
+                              )}
                             </div>
-                          </div>
-                          <span className="inline-flex px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded text-[9px] font-bold">In 235 days</span>
-                        </div>
-                        <div className="border-t border-slate-100"></div>
-                        {/* Alert 3 */}
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5 text-emerald-500"><FileIcon size={14} /></div>
-                            <div>
-                              <h4 className="text-[11px] font-bold text-slate-800">HR Licence</h4>
-                              <p className="text-[10px] font-medium text-slate-500">Expires on 12/03/2028</p>
-                            </div>
-                          </div>
-                          <span className="inline-flex px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-[9px] font-bold">In 884 days</span>
-                        </div>
-                        <div className="border-t border-slate-100"></div>
-                        {/* Alert 4 */}
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5 text-rose-500"><Shield size={14} /></div>
-                            <div>
-                              <h4 className="text-[11px] font-bold text-slate-800">Road Ranger Accreditation</h4>
-                              <p className="text-[10px] font-medium text-slate-500">Expired on 01/09/2025</p>
-                            </div>
-                          </div>
-                          <span className="inline-flex px-1.5 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded text-[9px] font-bold">Expired</span>
-                        </div>
-                      </div>
+                          </>
+                        );
+                      })()}
                     </div>
 
                     {/* AI Insights */}
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                       <div className="p-4 border-b border-slate-100 flex items-center gap-2">
                         <Settings size={16} className="text-purple-600" />
-                        <h3 className="text-sm font-black text-slate-800">AI Insights <span className="bg-purple-100 text-purple-700 text-[9px] px-1.5 py-0.5 rounded ml-1 tracking-widest uppercase">BETA</span></h3>
+                        <h3 className="text-sm font-black text-slate-800">Compliance Insights <span className="bg-purple-100 text-purple-700 text-[9px] px-1.5 py-0.5 rounded ml-1 tracking-widest uppercase">LIVE</span></h3>
                       </div>
-                      <div className="p-4 space-y-5">
-                        <div className="flex gap-3">
-                          <div className="mt-0.5 text-purple-600"><AlertTriangle size={14} /></div>
-                          <div>
-                            <h4 className="text-[11px] font-bold text-slate-800">Road Ranger Accreditation has expired.</h4>
-                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">Recommend renewal.</p>
+                      <div className="p-4 space-y-4">
+                        {expiredCount > 0 && (
+                          <div className="flex gap-3">
+                            <div className="mt-0.5 text-rose-600"><AlertTriangle size={14} /></div>
+                            <div>
+                              <h4 className="text-[11px] font-bold text-slate-800">{expiredCount} document(s) expired.</h4>
+                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">Recommend immediate renewal.</p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="mt-0.5 text-purple-600"><FileIcon size={14} /></div>
-                          <div>
-                            <h4 className="text-[11px] font-bold text-slate-800">Medical Certificate will expire in 28 days.</h4>
-                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">Recommend booking.</p>
+                        )}
+                        {expiringCount > 0 && (
+                          <div className="flex gap-3">
+                            <div className="mt-0.5 text-amber-600"><FileIcon size={14} /></div>
+                            <div>
+                              <h4 className="text-[11px] font-bold text-slate-800">{expiringCount} document(s) expiring soon.</h4>
+                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">Recommend scheduling renewal.</p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="mt-0.5 text-purple-600"><CheckCircle size={14} /></div>
-                          <div>
-                            <h4 className="text-[11px] font-bold text-slate-800">All critical licences are valid.</h4>
-                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">Great job!</p>
+                        )}
+                        {totalDocsCount > 0 && expiredCount === 0 && expiringCount === 0 && (
+                          <div className="flex gap-3">
+                            <div className="mt-0.5 text-emerald-600"><CheckCircle size={14} /></div>
+                            <div>
+                              <h4 className="text-[11px] font-bold text-slate-800">All uploaded documents are valid.</h4>
+                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">Driver compliance status is 100%.</p>
+                            </div>
                           </div>
-                        </div>
-                        <button className="w-full flex items-center justify-center gap-2 py-2 mt-2 bg-purple-50 text-purple-700 rounded-lg text-[11px] font-bold hover:bg-purple-100 transition-colors cursor-pointer">
-                          <Zap size={14} /> View AI Insights
-                        </button>
+                        )}
+                        {totalDocsCount === 0 && (
+                          <div className="text-center py-4 text-slate-400">
+                            <CheckCircle2 size={20} className="mx-auto mb-1 text-slate-300" />
+                            <p className="text-[11px] font-semibold text-slate-600">No compliance documents attached.</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Upload licences or medical certificates above.</p>
+                          </div>
+                        )}
                       </div>
                     </div>
 
