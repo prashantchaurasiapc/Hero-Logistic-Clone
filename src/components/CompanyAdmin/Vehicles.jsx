@@ -3765,20 +3765,6 @@ const Vehicles = () => {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest">REGISTRATION NO *</label>
-                    <span className="text-[8px] font-extrabold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 uppercase tracking-wider">Plate / Rego</span>
-                  </div>
-                  <input 
-                    name="reg" 
-                    type="text" 
-                    value={regoInput}
-                    onChange={(e) => setRegoInput(e.target.value.toUpperCase())}
-                    placeholder="e.g. NSW - YXZ 123" 
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-bold uppercase focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
-                  />
-                </div>
-                <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VIN NUMBER *</label>
                   <input name="vin" type="text" placeholder="e.g. VIN12345" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
@@ -3786,17 +3772,15 @@ const Vehicles = () => {
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ENGINE NUMBER *</label>
                   <input name="engine" type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
-
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ODOMETER *</label>
                   <input name="odometer" type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
+
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY DEPOT *</label>
                   <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
-                <div></div>
-
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">CITY *</label>
                   <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
@@ -3805,6 +3789,7 @@ const Vehicles = () => {
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">STATE *</label>
                   <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
+
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">POSTAL CODE *</label>
                   <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
@@ -3834,18 +3819,15 @@ const Vehicles = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest">REGISTRATION NUMBER *</label>
-                    <span className="text-[8px] font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 uppercase tracking-wider flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                      Auto-Synced
-                    </span>
+                    <span className="text-[8px] font-extrabold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 uppercase tracking-wider">Plate / Rego</span>
                   </div>
                   <input 
-                    name="regSection2" 
+                    name="reg" 
                     type="text" 
                     value={regoInput}
                     onChange={(e) => setRegoInput(e.target.value.toUpperCase())}
                     placeholder="e.g. NSW - YXZ 123" 
-                    className="w-full px-3 py-2 border border-emerald-200 bg-emerald-50/20 rounded-lg text-[13px] font-bold uppercase focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-bold uppercase focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
                   />
                 </div>
                 <div>

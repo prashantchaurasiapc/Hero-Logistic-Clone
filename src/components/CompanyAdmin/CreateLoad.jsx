@@ -333,10 +333,30 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
             truck: lData.truckId || lData.truck?.id || prev.truck,
             trailer: lData.trailerId || lData.trailer?.id || prev.trailer,
             driver: lData.driverId || lData.driver?.id || prev.driver,
-            loadNotes: lData.notes ? lData.notes.replace(/\[(AGREED_RATE|DRIVER_PAY):[^\]]+\]/g, '').trim() : prev.loadNotes,
+            loadNotes: lData.notes ? lData.notes.replace(/\[(AGREED_RATE|DRIVER_PAY|SCHEDULE):[^\]]+\]/g, '').trim() : prev.loadNotes,
             rate: lData.rate ? String(lData.rate) : prev.rate,
-            driverPay: lData.driverPay ? String(lData.driverPay) : prev.driverPay
+            driverPay: (() => {
+              if (lData.driverPay) return String(lData.driverPay);
+              if (lData.notes && lData.notes.includes('[DRIVER_PAY:')) {
+                const match = lData.notes.match(/\[DRIVER_PAY:([0-9.]+)/);
+                if (match && match[1]) return match[1];
+              }
+              return prev.driverPay;
+            })(),
+            loadScheduleTitle: (() => {
+              if (lData.loadScheduleTitle) return lData.loadScheduleTitle;
+              if (lData.notes && lData.notes.includes('[SCHEDULE:')) {
+                const match = lData.notes.match(/\[SCHEDULE:([^\]]+)\]/);
+                if (match && match[1]) return match[1];
+              }
+              return prev.loadScheduleTitle || '';
+            })()
           }));
+
+          const editDriverPay = lData.driverPay || (lData.notes?.match(/\[DRIVER_PAY:([0-9.]+)/)?.[1]);
+          if (editDriverPay) {
+            setSelectedScheduleId('custom');
+          }
 
           if (Array.isArray(lData.stops) && lData.stops.length > 0) {
             setStops(lData.stops.map((s, idx) => ({
@@ -782,6 +802,106 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
   };
 
   const getDriverSchedules = (driverId = null) => {
+    const combined = [];
+
+    if (driverId) {
+      const drvObj = dbDrivers.find(d => String(d.id) === String(driverId));
+      if (drvObj) {
+        const driverName = drvObj.name || `${drvObj.firstName || ''} ${drvObj.lastName || ''}`.trim() || drvObj.driverCode || drvObj.userCode || 'Driver';
+        const rawPayRate = parseFloat(
+          drvObj.payRate || drvObj.PayRate || drvObj.hourlyRate || drvObj.rate || drvObj.baseRate || 0
+        );
+        const rawPayType = String(
+          drvObj.payType || drvObj.PayType || drvObj.paymentType || 'Hourly'
+        ).trim();
+
+        // 1. Primary Configured Pay Rate for this driver (Hourly, Per Load, Per Km, Daily)
+        if (!isNaN(rawPayRate) && rawPayRate > 0) {
+          const lowerType = rawPayType.toLowerCase();
+          let title = '';
+          let display = '';
+          let unit = '';
+
+          if (lowerType.includes('hour')) {
+            title = `Driver Hourly Rate (${driverName})`;
+            display = `Driver Hourly Rate — $${rawPayRate.toFixed(2)}/hr`;
+            unit = '/hr';
+          } else if (lowerType.includes('km') || lowerType.includes('kilo')) {
+            title = `Driver Per Km Rate (${driverName})`;
+            display = `Driver Per Km Rate — $${rawPayRate.toFixed(2)}/km`;
+            unit = '/km';
+          } else if (lowerType.includes('load')) {
+            title = `Driver Flat Load Rate (${driverName})`;
+            display = `Driver Flat Load Rate — $${rawPayRate.toFixed(2)}`;
+            unit = ' flat';
+          } else if (lowerType.includes('day') || lowerType.includes('daily')) {
+            title = `Driver Daily Rate (${driverName})`;
+            display = `Driver Daily Rate — $${rawPayRate.toFixed(2)}/day`;
+            unit = '/day';
+          } else {
+            title = `Driver Standard Rate (${rawPayType})`;
+            display = `Driver Standard Rate — $${rawPayRate.toFixed(2)}`;
+            unit = '';
+          }
+
+          combined.push({
+            id: `driver-primary-rate-${drvObj.id}`,
+            title,
+            display,
+            amount: rawPayRate,
+            unit,
+            payType: rawPayType,
+            isPrimary: true,
+            isSelected: true
+          });
+
+          // Overtime rate option if configured
+          const otRate = parseFloat(drvObj.overtimeRate || drvObj.OvertimeRate || 0);
+          if (lowerType.includes('hour') && !isNaN(otRate) && otRate > 0) {
+            combined.push({
+              id: `driver-ot-rate-${drvObj.id}`,
+              title: `Driver Overtime Rate (${driverName})`,
+              display: `Driver Overtime Rate — $${otRate.toFixed(2)}/hr`,
+              amount: otRate,
+              unit: '/hr',
+              payType: 'Overtime',
+              isPrimary: false,
+              isSelected: false
+            });
+          }
+        }
+
+        // 2. Named Route Schedules on Driver profile (loadPaySchedule)
+        let driverSpecific = [];
+        if (drvObj.loadPaySchedule) {
+          try {
+            driverSpecific = typeof drvObj.loadPaySchedule === 'string' ? JSON.parse(drvObj.loadPaySchedule) : drvObj.loadPaySchedule;
+          } catch (err) {}
+        }
+
+        if (Array.isArray(driverSpecific) && driverSpecific.length > 0) {
+          driverSpecific.forEach((d, idx) => {
+            const titleName = d.title || d.name || (d.pickupLocation && d.deliveryLocation ? `${d.pickupLocation} → ${d.deliveryLocation}` : `Driver Schedule #${idx + 1}`);
+            const amt = parseFloat(d.amount || d.rate || 0);
+            const exists = combined.some(c => c.title.toLowerCase() === titleName.toLowerCase());
+            if (!exists && amt > 0) {
+              combined.push({
+                id: String(d.id || `driver-route-${idx}`),
+                title: titleName,
+                origin: d.pickupLocation || '',
+                destination: d.deliveryLocation || '',
+                amount: amt,
+                display: `${titleName} — $${amt.toFixed(2)}`,
+                isSelected: Boolean(d.isSelected),
+                raw: d
+              });
+            }
+          });
+        }
+      }
+    }
+
+    // 3. Global company load schedules from localStorage
     let globalSchedules = [];
     try {
       const u = JSON.parse(localStorage.getItem('user') || '{}');
@@ -795,51 +915,50 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
       }
     } catch (e) {}
 
-    const combined = [];
     globalSchedules.forEach((g, idx) => {
-      const titleName = g.title || g.name || `${g.origin || ''} → ${g.destination || ''}`.trim() || `Route Schedule #${idx + 1}`;
+      const titleName = g.title || g.name || `${g.origin || ''} → ${g.destination || ''}`.trim() || `Company Route #${idx + 1}`;
       const amt = parseFloat(g.rate || g.amount || 0);
-      combined.push({
-        id: String(g.id || `g-${idx}`),
-        title: titleName,
-        origin: g.origin || '',
-        destination: g.destination || '',
-        amount: amt,
-        display: `${titleName} — $${amt.toFixed(2)}`,
-        isSelected: false
-      });
-    });
-
-    if (driverId) {
-      const drvObj = dbDrivers.find(d => String(d.id) === String(driverId));
-      let driverSpecific = [];
-      if (drvObj?.loadPaySchedule) {
-        try {
-          driverSpecific = typeof drvObj.loadPaySchedule === 'string' ? JSON.parse(drvObj.loadPaySchedule) : drvObj.loadPaySchedule;
-        } catch (err) {}
-      }
-      if (Array.isArray(driverSpecific) && driverSpecific.length > 0) {
-        driverSpecific.forEach((d, idx) => {
-          const titleName = d.title || d.name || (d.pickupLocation && d.deliveryLocation ? `${d.pickupLocation} → ${d.deliveryLocation}` : `Driver Schedule #${idx + 1}`);
-          const amt = parseFloat(d.amount || d.rate || 0);
-          const exists = combined.some(c => c.title.toLowerCase() === titleName.toLowerCase());
-          if (!exists) {
-            combined.push({
-              id: String(d.id || `d-${idx}`),
-              title: titleName,
-              origin: d.pickupLocation || '',
-              destination: d.deliveryLocation || '',
-              amount: amt,
-              display: `${titleName} — $${amt.toFixed(2)}`,
-              isSelected: Boolean(d.isSelected)
-            });
-          }
+      const exists = combined.some(c => c.title.toLowerCase() === titleName.toLowerCase());
+      if (!exists && amt > 0) {
+        combined.push({
+          id: String(g.id || `global-${idx}`),
+          title: titleName,
+          origin: g.origin || '',
+          destination: g.destination || '',
+          amount: amt,
+          display: `${titleName} — $${amt.toFixed(2)}`,
+          isSelected: false,
+          raw: g
         });
       }
-    }
+    });
 
     return combined;
   };
+
+  // Synchronize driver pay and schedule selection when driver is assigned
+  useEffect(() => {
+    if (formData.driver && dbDrivers.length > 0 && !selectedScheduleId) {
+      const schedules = getDriverSchedules(formData.driver);
+      if (formData.driverPay) {
+        const matched = schedules.find(s => String(s.amount) === String(formData.driverPay));
+        if (matched) {
+          setSelectedScheduleId(matched.id);
+        } else {
+          setSelectedScheduleId('custom');
+        }
+      } else if (schedules.length > 0) {
+        setSelectedScheduleId(schedules[0].id);
+        setFormData(prev => ({
+          ...prev,
+          driverPay: String(schedules[0].amount),
+          loadScheduleTitle: schedules[0].title
+        }));
+      } else {
+        setSelectedScheduleId('custom');
+      }
+    }
+  }, [formData.driver, dbDrivers.length]);
 
   const [showAddStopModal, setShowAddStopModal] = useState(false);
   const [editingStopId, setEditingStopId] = useState(null); // null = add mode, stopId = edit mode
@@ -1134,8 +1253,17 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
         type: formData.loadType || 'General Freight',
         status: targetStatus,
         priority: (formData.priority || 'NORMAL').toUpperCase(),
-        notes: formData.loadScheduleTitle ? `${formData.loadNotes || 'Created via Load Console'} [SCHEDULE:${formData.loadScheduleTitle}]` : (formData.loadNotes || `Created via Load Console`),
         loadDate: formData.loadDate ? new Date(formData.loadDate).toISOString() : new Date().toISOString(),
+        notes: (() => {
+          const cleanBase = (formData.loadNotes || 'Created via Load Console')
+            .replace(/\[(AGREED_RATE|DRIVER_PAY|SCHEDULE):[^\]]+\]/g, '')
+            .trim();
+          let n = cleanBase;
+          if (formData.rate) n += ` [AGREED_RATE:${formData.rate}]`;
+          if (formData.driverPay) n += ` [DRIVER_PAY:${formData.driverPay}]`;
+          if (formData.loadScheduleTitle) n += ` [SCHEDULE:${formData.loadScheduleTitle}]`;
+          return n;
+        })(),
         customerId: formData.customer && formData.customer.length > 5 ? formData.customer : null,
         driverId: formData.driver && formData.driver.length > 5 ? formData.driver : null,
         truckId: formData.truck && formData.truck.length > 5 ? formData.truck : null,
@@ -2519,23 +2647,41 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                     let matchedSched = null;
                     if (pAddr || dAddr) {
                       matchedSched = schedules.find(s => {
-                        const titleLower = s.title.toLowerCase();
-                        const pLoc = (s.raw?.pickupLocation || '').toLowerCase();
-                        const dLoc = (s.raw?.deliveryLocation || '').toLowerCase();
-                        return (pAddr && (titleLower.includes(pAddr) || (pLoc && pAddr.includes(pLoc)))) ||
-                               (dAddr && (titleLower.includes(dAddr) || (dLoc && dAddr.includes(dLoc))));
+                        const titleLower = (s.title || '').toLowerCase();
+                        const pLoc = (s.origin || s.raw?.pickupLocation || '').toLowerCase();
+                        const dLoc = (s.destination || s.raw?.deliveryLocation || '').toLowerCase();
+                        return (pAddr && pLoc && (pAddr.includes(pLoc) || pLoc.includes(pAddr))) ||
+                               (dAddr && dLoc && (dAddr.includes(dLoc) || dLoc.includes(dAddr)));
                       });
                     }
 
                     const activeSched = matchedSched || schedules.find(s => s.isSelected) || schedules[0];
-                    setSelectedScheduleId(activeSched ? activeSched.id : '');
-                    const defaultPay = activeSched ? String(activeSched.amount) : '';
-                    setFormData(prev => ({
-                      ...prev,
-                      driver: drvId,
-                      driverPay: defaultPay,
-                      loadScheduleTitle: activeSched ? activeSched.title : ''
-                    }));
+                    if (activeSched) {
+                      setSelectedScheduleId(activeSched.id);
+                      const defaultPay = String(activeSched.amount);
+                      setFormData(prev => ({
+                        ...prev,
+                        driver: drvId,
+                        driverPay: defaultPay,
+                        loadScheduleTitle: activeSched.title
+                      }));
+                    } else if (drvId) {
+                      setSelectedScheduleId('custom');
+                      setFormData(prev => ({
+                        ...prev,
+                        driver: drvId,
+                        driverPay: prev.driverPay || '',
+                        loadScheduleTitle: 'Custom Rate'
+                      }));
+                    } else {
+                      setSelectedScheduleId('');
+                      setFormData(prev => ({
+                        ...prev,
+                        driver: '',
+                        driverPay: '',
+                        loadScheduleTitle: ''
+                      }));
+                    }
                   }}
                   className={`${selectCls} pl-8`}
                 >
@@ -2561,7 +2707,10 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                       const schedId = e.target.value;
                       setSelectedScheduleId(schedId);
                       if (schedId === 'custom') {
-                        setFormData(prev => ({ ...prev, driverPay: '', loadScheduleTitle: 'Custom Rate' }));
+                        setFormData(prev => ({
+                          ...prev,
+                          loadScheduleTitle: 'Custom Rate'
+                        }));
                       } else {
                         const schedules = getDriverSchedules(formData.driver);
                         const chosen = schedules.find(s => String(s.id) === String(schedId));
@@ -2580,7 +2729,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                     {getDriverSchedules(formData.driver).map(s => (
                       <option key={s.id} value={s.id}>{s.display}</option>
                     ))}
-                    <option value="custom">Custom Amount</option>
+                    <option value="custom">⚡ Custom Amount</option>
                   </select>
                   <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-purple-600 pointer-events-none" />
                 </div>
@@ -2612,9 +2761,19 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                       step="0.01"
                       value={formData.driverPay || ''}
                       onChange={e => {
-                        setFormData({ ...formData, driverPay: e.target.value });
+                        const val = e.target.value;
+                        setFormData(prev => ({
+                          ...prev,
+                          driverPay: val,
+                          loadScheduleTitle: selectedScheduleId === 'custom' ? 'Custom Rate' : prev.loadScheduleTitle
+                        }));
                         if (selectedScheduleId !== 'custom') {
                           setSelectedScheduleId('custom');
+                          setFormData(prev => ({
+                            ...prev,
+                            driverPay: val,
+                            loadScheduleTitle: 'Custom Rate'
+                          }));
                         }
                       }}
                       className={`${inputCls} pl-7 font-bold ${
@@ -2656,7 +2815,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                     const schedules = getDriverSchedules(formData.driver);
                     const sel = schedules.find(s => String(s.id) === String(selectedScheduleId));
                     if (sel) {
-                      return `${sel.title} — $${parseFloat(formData.driverPay || sel.amount || 0).toFixed(2)}`;
+                      return `${sel.display}`;
                     }
                     return formData.driverPay ? `Driver Pay: Custom — $${parseFloat(formData.driverPay).toFixed(2)} (Applies to this load only)` : 'Custom Amount Required';
                   })()}</span>

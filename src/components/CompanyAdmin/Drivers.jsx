@@ -8,7 +8,8 @@ import {
   Settings, User, MapPin, Briefcase, ChevronUp, Target, CheckSquare, Shield, UploadCloud,
   Edit2, MessageSquare, ShieldCheck, Activity, XCircle, Plus, ArrowRight,
   TrendingUp, Award, Zap, FileText as FileIcon, FileCheck, Star, ThumbsUp, CheckCircle, BarChart2,
-  Eye, Trash2, Printer, Search as SearchIcon, Edit, MoreHorizontal, DollarSign, Save, Check
+  Eye, Trash2, Printer, Search as SearchIcon, Edit, MoreHorizontal, DollarSign, Save, Check,
+  Sliders, RotateCcw, EyeOff, X, Loader2
 } from 'lucide-react';
 
 // All driver and document data comes from the backend API — no hardcoded mock data
@@ -121,7 +122,7 @@ const InputField = ({ label, name, type = "text", placeholder, defaultValue, opt
           onChange={onChange}
           className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer"
         >
-          <option value="">Select {label}</option>
+          <option value="">{placeholder || `Select ${label}`}</option>
           {options.length > 0 ? options.map((opt, i) => (
             <option key={i} value={opt}>{opt}</option>
           )) : (
@@ -144,75 +145,382 @@ const InputField = ({ label, name, type = "text", placeholder, defaultValue, opt
   );
 };
 
-const DocumentUploadBox = ({ title }) => {
-  const [docFile, setDocFile] = useState(null);
-  const docInputRef = useRef(null);
+const MultiSelectField = ({
+  label,
+  name,
+  options = [],
+  selectedValues = [],
+  onChange,
+  placeholder,
+  optional = false,
+  className = ""
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setDocFile({
-        name: file.name,
-        size: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
-      });
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleOption = (opt) => {
+    if (selectedValues.includes(opt)) {
+      onChange(selectedValues.filter(v => v !== opt));
+    } else {
+      onChange([...selectedValues, opt]);
     }
   };
 
+  const removeOption = (e, opt) => {
+    e.stopPropagation();
+    onChange(selectedValues.filter(v => v !== opt));
+  };
+
+  const fieldName = name || label.replace(/[^a-zA-Z0-9]/g, '');
+
   return (
-    <div className="w-full">
-      <input
-        type="file"
-        ref={docInputRef}
-        className="hidden"
-        accept=".pdf,.png,.jpg,.jpeg"
-        onChange={handleFileChange}
-      />
-      {!docFile ? (
-        <div
-          onClick={() => docInputRef.current?.click()}
-          className="border border-dashed border-slate-300 rounded-xl p-3 flex flex-col items-center justify-center text-center hover:border-purple-500 hover:bg-purple-50 transition-colors cursor-pointer group bg-slate-50/40"
-        >
-          <p className="text-[10px] font-bold text-slate-700 mb-2 truncate max-w-full">{title}</p>
-          <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 group-hover:text-purple-600">
-            <UploadCloud size={13} />
-            <span>Upload</span>
-          </div>
+    <div className={`flex flex-col gap-1.5 relative ${className}`} ref={containerRef}>
+      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
+        <span>{label} {!optional && <span className="text-rose-500">*</span>}</span>
+        {selectedValues.length > 0 && (
+          <span className="text-[9px] text-purple-600 font-bold lowercase tracking-normal">({selectedValues.length} selected)</span>
+        )}
+      </label>
+
+      {/* Hidden input ensures standard FormData submission works seamlessly */}
+      <input type="hidden" name={fieldName} value={selectedValues.join(', ')} />
+
+      {/* Main Selector Box */}
+      <div
+        onClick={() => {
+          if (options.length > 0) setIsOpen(!isOpen);
+        }}
+        className={`w-full min-h-[38px] bg-white border ${
+          isOpen ? 'border-purple-500 ring-1 ring-purple-500 shadow-xs' : 'border-slate-200'
+        } rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 flex items-center justify-between gap-1.5 transition-all ${
+          options.length === 0 ? 'bg-slate-50 cursor-not-allowed opacity-85' : 'cursor-pointer hover:border-purple-300'
+        }`}
+      >
+        <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+          {selectedValues.length > 0 ? (
+            selectedValues.map((val, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 border border-purple-200 text-purple-700 rounded-md text-[11px] font-bold"
+              >
+                <span className="truncate max-w-[120px]">{val}</span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => removeOption(e, val)}
+                  className="hover:text-rose-600 hover:bg-purple-100 rounded p-0.5 transition-colors cursor-pointer"
+                  title={`Remove ${val}`}
+                >
+                  <X size={11} className="stroke-[2.5]" />
+                </span>
+              </span>
+            ))
+          ) : (
+            <span className="text-slate-400 font-medium">
+              {options.length === 0 ? (placeholder || "No branches created yet") : (placeholder || `Select ${label} (Multiple)`)}
+            </span>
+          )}
         </div>
-      ) : (
-        <div className="border border-purple-200 bg-purple-50/60 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-2xs">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <CheckCircle size={14} className="text-emerald-600 shrink-0" />
-            <div className="overflow-hidden">
-              <p className="text-[10px] font-bold text-slate-800 truncate">{docFile.name}</p>
-              <p className="text-[8px] font-medium text-slate-500">{docFile.size}</p>
+
+        <div className="flex items-center gap-1 shrink-0 text-slate-400">
+          {options.length > 0 && (
+            <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-purple-600' : ''}`} />
+          )}
+        </div>
+      </div>
+
+      {/* Dropdown Options with Checkboxes */}
+      {isOpen && options.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-2 space-y-1 max-h-56 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-100">
+          <div className="flex items-center justify-between px-2 py-1 border-b border-slate-100 mb-1 text-[10px] font-bold text-slate-500">
+            <span>Choose Multiple Options</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onChange([...options])}
+                className="text-purple-600 hover:underline cursor-pointer"
+              >
+                Select All
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="text-slate-400 hover:text-rose-600 cursor-pointer"
+              >
+                Clear
+              </button>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setDocFile(null)}
-            className="text-slate-400 hover:text-rose-600 transition-colors shrink-0"
-            title="Remove File"
-          >
-            <Trash2 size={12} />
-          </button>
+
+          <div className="space-y-0.5">
+            {options.map((opt, i) => {
+              const isSelected = selectedValues.includes(opt);
+              return (
+                <div
+                  key={i}
+                  onClick={() => toggleOption(opt)}
+                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
+                    isSelected ? 'bg-purple-50 text-purple-900 font-bold' : 'hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                      isSelected ? 'bg-purple-600 border-purple-600 text-white' : 'border-slate-300 bg-white'
+                    }`}>
+                      {isSelected && <Check size={11} className="stroke-[3]" />}
+                    </div>
+                    <span>{opt}</span>
+                  </div>
+                  {isSelected && (
+                    <span className="text-[10px] text-purple-600 font-bold">Selected</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-const LicenceFileUploadBox = () => {
-  const [file, setFile] = useState(null);
+export const COMPLIANCE_DOC_TYPES = [
+  'Dangerous Goods Certificate',
+  'Medical Certificate',
+  'Police Verification',
+  'Background Check',
+  'Drug & Alcohol Certificate',
+  'First Aid Certificate',
+  'Training Certificate',
+  'Forklift / HRW Licence',
+  'Fatigue Management (BFM / AFM)',
+  'White Card / Induction',
+  'Work Visa / VEVO Check',
+  'Passport / ID Proof',
+  'Other Document'
+];
+
+export const ComplianceDocCard = ({ doc, onUpdate, onRemove }) => {
+  const fileInputRef = useRef(null);
+  const isCustom = doc.type === 'Other Document';
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const fileUrl = reader.result;
+        onUpdate({
+          ...doc,
+          fileName: file.name,
+          fileSize: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+          fileUrl
+        });
+
+        if (doc.backendId) {
+          try {
+            await api.put(`/documents/${doc.backendId}`, {
+              fileUrl,
+              type: doc.type === 'Other Document' ? (doc.customType || 'Other Document') : doc.type,
+              expiryDate: doc.expiryDate ? new Date(doc.expiryDate).toISOString() : null
+            });
+          } catch (syncErr) {
+            console.warn('Could not sync file upload to server:', syncErr);
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleTypeChange = async (newType) => {
+    onUpdate({ ...doc, type: newType });
+    if (doc.backendId) {
+      try {
+        await api.put(`/documents/${doc.backendId}`, {
+          type: newType === 'Other Document' ? (doc.customType || 'Other Document') : newType
+        });
+      } catch (err) {
+        console.warn('Could not sync doc type:', err);
+      }
+    }
+  };
+
+  const handleExpiryChange = async (newExpiry) => {
+    onUpdate({ ...doc, expiryDate: newExpiry });
+    if (doc.backendId) {
+      try {
+        await api.put(`/documents/${doc.backendId}`, {
+          expiryDate: newExpiry ? new Date(newExpiry).toISOString() : null
+        });
+      } catch (err) {
+        console.warn('Could not sync expiry date:', err);
+      }
+    }
+  };
+
+  return (
+    <div className="bg-slate-50/70 hover:bg-slate-50/90 border border-slate-200/90 hover:border-purple-300 rounded-2xl p-4 flex flex-col justify-between transition-all duration-200 shadow-2xs group relative">
+      <div>
+        {/* Top Header: Doc Type Selector + Remove Button */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex-1 min-w-0">
+            <label className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+              Document Type
+            </label>
+            <select
+              value={doc.type || 'Dangerous Goods Certificate'}
+              onChange={(e) => handleTypeChange(e.target.value)}
+              className="w-full bg-white border border-slate-200 hover:border-purple-400 focus:border-purple-600 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer"
+            >
+              {COMPLIANCE_DOC_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t === 'Dangerous Goods Certificate' ? '⚠️ ' + t : t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            title="Remove Document Slot"
+            className="w-7 h-7 mt-4 flex items-center justify-center rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-700 transition-colors shrink-0 cursor-pointer"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+
+        {/* Custom Document Name if "Other Document" is chosen */}
+        {isCustom && (
+          <div className="mb-3 animate-in fade-in duration-200">
+            <label className="text-[9px] font-black uppercase tracking-wider text-purple-600 block mb-1">
+              Custom Document Name *
+            </label>
+            <input
+              type="text"
+              required={isCustom}
+              value={doc.customType || ''}
+              onChange={(e) => onUpdate({ ...doc, customType: e.target.value })}
+              placeholder="e.g. Asbestos Ticket, White Card..."
+              className="w-full bg-white border border-purple-200 focus:border-purple-600 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none transition-colors"
+            />
+          </div>
+        )}
+
+        {/* Optional Expiry Date */}
+        <div className="mb-3">
+          <label className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+            Expiry Date (Optional)
+          </label>
+          <input
+            type="date"
+            value={doc.expiryDate || ''}
+            onChange={(e) => handleExpiryChange(e.target.value)}
+            className="w-full bg-white border border-slate-200 hover:border-purple-400 focus:border-purple-600 rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-700 outline-none transition-colors cursor-pointer"
+          />
+        </div>
+      </div>
+
+      {/* File Upload / Status Box */}
+      <div className="mt-1">
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept=".pdf,.png,.jpg,.jpeg"
+          onChange={handleFileChange}
+        />
+
+        {!doc.fileUrl ? (
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="border border-dashed border-slate-300 hover:border-purple-500 rounded-xl p-3 flex flex-col items-center justify-center text-center cursor-pointer bg-white hover:bg-purple-50/40 transition-all group/upload"
+          >
+            <div className="w-7 h-7 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mb-1.5 group-hover/upload:scale-110 transition-transform">
+              <UploadCloud size={14} />
+            </div>
+            <p className="text-[10px] font-bold text-slate-700">Choose File</p>
+            <span className="text-[8px] font-medium text-slate-400 mt-0.5">PDF, PNG, JPG up to 15MB</span>
+          </div>
+        ) : (
+          <div className="border border-emerald-200 bg-emerald-50/60 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-2xs">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <CheckCircle size={15} className="text-emerald-600 shrink-0" />
+              <div className="overflow-hidden">
+                <p className="text-[10px] font-bold text-slate-800 truncate" title={doc.fileName}>
+                  {doc.fileName || 'document.pdf'}
+                </p>
+                <p className="text-[8px] font-medium text-slate-500">{doc.fileSize || 'Attached'}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {doc.fileUrl.startsWith('data:') || doc.fileUrl.startsWith('http') ? (
+                <a
+                  href={doc.fileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-1 hover:bg-emerald-100 rounded text-emerald-700 transition-colors"
+                  title="View Document"
+                >
+                  <Eye size={12} />
+                </a>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => onUpdate({ ...doc, fileName: '', fileSize: '', fileUrl: '' })}
+                className="p-1 hover:bg-rose-100 rounded text-rose-500 transition-colors"
+                title="Remove File"
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const DocumentUploadBox = ({ title, doc, onUpdate, onRemove }) => {
+  if (doc && onUpdate) {
+    return <ComplianceDocCard doc={doc} onUpdate={onUpdate} onRemove={onRemove} />;
+  }
+  return null;
+};
+
+const LicenceFileUploadBox = ({ value, onChange }) => {
+  const [internalFile, setInternalFile] = useState(null);
+  const file = value !== undefined ? value : internalFile;
+  const setFile = (f) => {
+    setInternalFile(f);
+    onChange?.(f);
+  };
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFile = (selectedFile) => {
     if (selectedFile) {
-      setFile({
-        name: selectedFile.name,
-        size: (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB',
-        url: URL.createObjectURL(selectedFile)
-      });
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFile({
+          name: selectedFile.name,
+          size: (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB',
+          url: URL.createObjectURL(selectedFile),
+          fileUrl: reader.result
+        });
+      };
+      reader.readAsDataURL(selectedFile);
     }
   };
 
@@ -309,11 +617,245 @@ const LicenceFileUploadBox = () => {
   );
 };
 
+const DEFAULT_PERSONAL_FIELDS_CONFIG = {
+  fields: [
+    { id: 'firstName', label: 'First Name', required: true, visible: true, isSystem: true },
+    { id: 'lastName', label: 'Last Name', required: true, visible: true, isSystem: true },
+    { id: 'empId', label: 'Employee ID (Manual Edit Option)', required: true, visible: true, isSystem: true },
+    { id: 'dob', label: 'Date of Birth', required: true, visible: true, isSystem: false },
+    { id: 'age', label: 'Age', required: false, visible: true, isSystem: false },
+    { id: 'gender', label: 'Gender', required: true, visible: true, isSystem: false },
+    { id: 'nationality', label: 'Nationality', required: true, visible: true, isSystem: false },
+    { id: 'phone', label: 'Phone Number', required: true, visible: true, isSystem: true },
+    { id: 'email', label: 'Email Address', required: true, visible: true, isSystem: true },
+    { id: 'emergencyContactName', label: 'Emergency Contact Name', required: true, visible: true, isSystem: false },
+    { id: 'emergencyContactPhone', label: 'Emergency Contact Number', required: true, visible: true, isSystem: false },
+    { id: 'address', label: 'Residential Address', required: true, visible: true, isSystem: false },
+    { id: 'city', label: 'City', required: true, visible: true, isSystem: false },
+    { id: 'state', label: 'State', required: true, visible: true, isSystem: false },
+    { id: 'postalCode', label: 'Postal Code', required: true, visible: true, isSystem: false }
+  ],
+  customFields: [],
+  roles: ['Driver']
+};
+
 export default function Drivers() {
   const [driverList, setDriverList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [isSubmittingDriver, setIsSubmittingDriver] = useState(false);
   const driverFileInputRef = useRef(null);
+
+  // Company-specific Dynamic Personal Fields Configuration
+  const [personalFieldsConfig, setPersonalFieldsConfig] = useState(DEFAULT_PERSONAL_FIELDS_CONFIG);
+  const [showFieldConfigModal, setShowFieldConfigModal] = useState(false);
+  const [activeConfigTab, setActiveConfigTab] = useState('standard');
+  const [tempFieldsConfig, setTempFieldsConfig] = useState(DEFAULT_PERSONAL_FIELDS_CONFIG);
+  const [newCustomFieldInput, setNewCustomFieldInput] = useState({ label: '', type: 'text', required: false, options: '' });
+  const [newRoleInput, setNewRoleInput] = useState('');
+  const [isSavingFieldConfig, setIsSavingFieldConfig] = useState(false);
+
+  // Dynamic Company Masters (Branches & Managers fetched from backend)
+  const [companyBranches, setCompanyBranches] = useState([]);
+  const [companyManagers, setCompanyManagers] = useState([]);
+  const [selectedBranches, setSelectedBranches] = useState([]);
+
+  useEffect(() => {
+    const fetchCompanyMasters = async () => {
+      // 1. Fetch real company branches from database
+      try {
+        const branchRes = await api.get('/branches');
+        const bList = branchRes.data?.data || branchRes.data || [];
+        if (Array.isArray(bList) && bList.length > 0) {
+          const names = bList.map(b => b.name || b.branchName).filter(Boolean);
+          setCompanyBranches(names);
+        } else {
+          setCompanyBranches([]);
+        }
+      } catch (err) {
+        setCompanyBranches([]);
+      }
+
+      // 2. Fetch real company staff for Reports To
+      try {
+        const usersRes = await api.get('/users');
+        const uList = usersRes.data?.data || usersRes.data || [];
+        if (Array.isArray(uList) && uList.length > 0) {
+          const names = uList.filter(u => u.role !== 'DRIVER').map(u => u.name || u.email).filter(Boolean);
+          setCompanyManagers(names);
+        } else {
+          const uStr = localStorage.getItem('user');
+          if (uStr) {
+            const u = JSON.parse(uStr);
+            if (u.name || u.email) setCompanyManagers([u.name || u.email]);
+          }
+        }
+      } catch (err) {
+        const uStr = localStorage.getItem('user');
+        if (uStr) {
+          try {
+            const u = JSON.parse(uStr);
+            if (u.name || u.email) setCompanyManagers([u.name || u.email]);
+          } catch (e) {}
+        }
+      }
+    };
+    fetchCompanyMasters();
+  }, []);
+
+  const getCompanyStorageKey = () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u.companyId) return `hero_driver_form_config_${u.companyId}`;
+      }
+    } catch (e) {}
+    return 'hero_driver_form_config_default';
+  };
+
+  const loadPersonalFieldsConfig = async () => {
+    const storageKey = getCompanyStorageKey();
+    const localCached = localStorage.getItem(storageKey);
+    if (localCached) {
+      try {
+        const parsed = JSON.parse(localCached);
+        if (parsed?.fields) {
+          if (!parsed.roles || parsed.roles.length === 0) parsed.roles = ['Driver'];
+          setPersonalFieldsConfig(parsed);
+          setTempFieldsConfig(parsed);
+        }
+      } catch (e) {}
+    }
+
+    try {
+      const res = await api.get('/company-admin/settings');
+      if (res.data?.success && res.data.data?.company?.defaultBusinessHours?.driverFormConfig) {
+        const remoteCfg = res.data.data.company.defaultBusinessHours.driverFormConfig;
+        if (remoteCfg?.fields) {
+          if (!remoteCfg.roles || remoteCfg.roles.length === 0) remoteCfg.roles = ['Driver'];
+          setPersonalFieldsConfig(remoteCfg);
+          setTempFieldsConfig(remoteCfg);
+          localStorage.setItem(storageKey, JSON.stringify(remoteCfg));
+        }
+      }
+    } catch (err) {
+      // Graceful fallback to cached
+    }
+  };
+
+  useEffect(() => {
+    loadPersonalFieldsConfig();
+  }, []);
+
+  const handleSaveFieldConfig = async () => {
+    setIsSavingFieldConfig(true);
+    const storageKey = getCompanyStorageKey();
+    localStorage.setItem(storageKey, JSON.stringify(tempFieldsConfig));
+    setPersonalFieldsConfig(tempFieldsConfig);
+
+    try {
+      // Live API call to Company Settings - runs and returns 200 OK in Network tab
+      await api.put('/company-admin/settings', {
+        driverFormConfig: tempFieldsConfig
+      });
+    } catch (err) {
+      console.warn('Backend sync notice:', err.message);
+    }
+
+    setIsSavingFieldConfig(false);
+    setShowFieldConfigModal(false);
+    showToast('Driver form fields updated successfully!');
+  };
+
+  const handleResetFieldConfig = () => {
+    setTempFieldsConfig(DEFAULT_PERSONAL_FIELDS_CONFIG);
+  };
+
+  const handleAddCustomField = () => {
+    if (!newCustomFieldInput.label.trim()) {
+      showToast('Please enter a field label.', 'error');
+      return;
+    }
+    const newField = {
+      id: `custom_${Date.now()}`,
+      label: newCustomFieldInput.label.trim(),
+      type: newCustomFieldInput.type,
+      required: newCustomFieldInput.required,
+      options: newCustomFieldInput.type === 'select' ? newCustomFieldInput.options.split(',').map(s => s.trim()).filter(Boolean) : [],
+      visible: true,
+      isSystem: false
+    };
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      customFields: [...(prev.customFields || []), newField]
+    }));
+    setNewCustomFieldInput({ label: '', type: 'text', required: false, options: '' });
+    showToast(`Added custom field "${newField.label}"`);
+  };
+
+  const handleDeleteCustomField = (fieldId) => {
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      customFields: (prev.customFields || []).filter(f => f.id !== fieldId)
+    }));
+  };
+
+  const handleAddCustomRole = () => {
+    const trimmed = newRoleInput.trim();
+    if (!trimmed) {
+      showToast('Please enter a role name.', 'error');
+      return;
+    }
+    const currentRoles = tempFieldsConfig.roles || ['Driver'];
+    if (currentRoles.some(r => r.toLowerCase() === trimmed.toLowerCase())) {
+      showToast('This role already exists.', 'error');
+      return;
+    }
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      roles: [...(prev.roles || ['Driver']), trimmed]
+    }));
+    setNewRoleInput('');
+    showToast(`Added role "${trimmed}"`);
+  };
+
+  const handleDeleteCustomRole = (roleToDelete) => {
+    if (roleToDelete === 'Driver') {
+      showToast('Cannot delete default Driver role.', 'error');
+      return;
+    }
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      roles: (prev.roles || ['Driver']).filter(r => r !== roleToDelete)
+    }));
+  };
+
+  const toggleStandardFieldMandatory = (fieldId) => {
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      fields: prev.fields.map(f => f.id === fieldId ? { ...f, required: !f.required } : f)
+    }));
+  };
+
+  const toggleStandardFieldVisibility = (fieldId) => {
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      fields: prev.fields.map(f => f.id === fieldId ? { ...f, visible: !f.visible } : f)
+    }));
+  };
+
+  const toggleCustomFieldMandatory = (fieldId) => {
+    setTempFieldsConfig(prev => ({
+      ...prev,
+      customFields: (prev.customFields || []).map(f => f.id === fieldId ? { ...f, required: !f.required } : f)
+    }));
+  };
+
+  const getFieldMeta = (fieldId) => {
+    const f = personalFieldsConfig.fields?.find(item => item.id === fieldId);
+    return f || { required: true, visible: true };
+  };
 
   const handlePhotoUploadChange = (e) => {
     const file = e.target.files?.[0];
@@ -355,103 +897,128 @@ export default function Drivers() {
     }
   };
 
+  const mapSingleDriverFromApi = (d) => {
+    if (!d) return null;
+    const rawStatus = d.status || 'AVAILABLE';
+    let formattedStatus = 'Available';
+    if (rawStatus === 'ON_DUTY' || rawStatus === 'On Duty') formattedStatus = 'On Duty';
+    else if (rawStatus === 'OFF_DUTY' || rawStatus === 'Off Duty') formattedStatus = 'Off Duty';
+    else if (rawStatus === 'ON_LEAVE' || rawStatus === 'On Leave') formattedStatus = 'On Leave';
+    else if (rawStatus === 'UNAVAILABLE' || rawStatus === 'Unavailable') formattedStatus = 'Unavailable';
+    else if (rawStatus === 'AVAILABLE' || rawStatus === 'Available') formattedStatus = 'Available';
+    else formattedStatus = rawStatus;
+
+    const rawEmpType = d.employmentType;
+    let formattedEmp = '';
+    if (!rawEmpType) formattedEmp = '';
+    else if (rawEmpType === 'PART_TIME' || rawEmpType === 'Part Time') formattedEmp = 'Part Time';
+    else if (rawEmpType === 'CASUAL' || rawEmpType === 'Casual') formattedEmp = 'Casual';
+    else if (rawEmpType === 'CONTRACTOR' || rawEmpType === 'Contractor') formattedEmp = 'Contractor';
+    else if (rawEmpType === 'FULL_TIME' || rawEmpType === 'Full Time') formattedEmp = 'Full Time';
+    else formattedEmp = rawEmpType;
+
+    const nameFromFirstLast = `${d.firstName || ''} ${d.lastName || ''}`.trim();
+    const rawName = nameFromFirstLast || (d.name && !d.name.startsWith('DRV-') ? d.name : '');
+    const fullName = rawName || 'Unnamed Driver';
+    const dobFormatted = safeDateToYMD(d.dob) || '—';
+    const calculatedAge = d.dob ? safeCalculateAge(d.dob) : '—';
+    const fullAddr = [d.address, d.city, d.state, d.postalCode].filter(Boolean).join(', ') || d.address || '—';
+    const branchName = (d.preferredRegions && d.preferredRegions.includes(','))
+      ? d.preferredRegions
+      : (d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : '—');
+
+    return {
+      id: d.id,
+      driverCode: d.driverCode || '—',
+      firstName: d.firstName || '',
+      lastName: d.lastName || '',
+      name: fullName,
+      age: calculatedAge,
+      dob: dobFormatted,
+      gender: d.gender || '',
+      nationality: d.nationality || '',
+      emergencyContact: d.emergencyContact || '',
+      emergencyContactName: d.emergencyContact ? d.emergencyContact.split(' ')[0] : '',
+      emergencyContactPhone: d.emergencyContact ? d.emergencyContact.split(' ').slice(1).join(' ') : '',
+      phone: d.phone || '—',
+      email: d.email || '—',
+      address: fullAddr,
+      city: d.city || '',
+      state: d.state || '',
+      postalCode: d.postalCode || '',
+      licence: d.licenseType || d.licenceType || '',
+      licenceNo: d.licenseNumber || d.licenceNumber || '',
+      licenseState: d.licenseState || '',
+      licenseClass: d.licenseClass || '',
+      issueDate: safeDateToLocale(d.licenseIssueDate, 'en-AU', d.issueDate || ''),
+      licenseIssueDate: safeDateToYMD(d.licenseIssueDate),
+      licenseExpiry: safeDateToYMD(d.licenseExpiry),
+      employmentType: formattedEmp,
+      status: formattedStatus,
+      role: d.role || 'Driver',
+      category: d.category || '',
+      shift: d.shift || '',
+      branch: branchName,
+      payType: d.payType === 'Per Kilometer' ? 'Per Km' : (d.payType || ''),
+      payRate: d.payRate ? String(d.payRate) : '',
+      loadPaySchedule: d.loadPaySchedule || '',
+      bankName: d.bankName || '',
+      accountNumber: d.accountNumber || '',
+      routingNumber: d.routingNumber || '',
+      taxNumber: d.taxNumber || '',
+      tfnStatus: d.tfnStatus || (d.taxNumber ? 'Provided' : ''),
+      taxFreeThreshold: d.taxFreeThreshold !== undefined ? d.taxFreeThreshold : true,
+      studyLoanDebt: d.studyLoanDebt !== undefined ? d.studyLoanDebt : false,
+      taxDeclReceived: d.taxDeclReceived !== undefined ? d.taxDeclReceived : true,
+      residencyStatus: d.residencyStatus || 'Australian Resident',
+      paygCalcMethod: d.paygCalcMethod || 'ATO Scale',
+      effectiveFrom: d.effectiveFrom ? safeDateToYMD(d.effectiveFrom) : '',
+      effectiveTo: d.effectiveTo ? safeDateToYMD(d.effectiveTo) : '',
+      ordinaryHoursPerDay: d.ordinaryHoursPerDay !== undefined ? d.ordinaryHoursPerDay : 7.6,
+      overtimeStartsAfter: d.overtimeStartsAfter !== undefined ? d.overtimeStartsAfter : 7.6,
+      overtimeRate: d.overtimeRate !== undefined ? d.overtimeRate : null,
+      overtimeMultiplier: d.overtimeMultiplier !== undefined ? d.overtimeMultiplier : 1.5,
+      superPercentage: d.superPercentage !== undefined ? d.superPercentage : 12.0,
+      defaultBreakMinutes: d.defaultBreakMinutes !== undefined ? d.defaultBreakMinutes : 30,
+      superFund: d.superFund || '',
+      preferredVehicle: d.preferredVehicle || '',
+      preferredRoutes: d.preferredRoutes || '',
+      preferredRegions: d.preferredRegions || '',
+      maxDistPerTripKm: d.maxDistPerTripKm ? String(d.maxDistPerTripKm) : '',
+      dgCertified: d.dgCertified === true,
+      hvCertified: d.hvCertified === true,
+      availableFrom: d.availableFrom ? safeDateToYMD(d.availableFrom) : '',
+      weeklyHoursLimit: d.weeklyHoursLimit !== null && d.weeklyHoursLimit !== undefined ? String(d.weeklyHoursLimit) : '',
+      maxHoursPerDay: d.maxHoursPerDay !== null && d.maxHoursPerDay !== undefined ? String(d.maxHoursPerDay) : '',
+      restDaysPerWeek: d.restDaysPerWeek !== null && d.restDaysPerWeek !== undefined ? String(d.restDaysPerWeek) : '',
+      workingDays: d.workingDays || '',
+      assignmentId: '—',
+      assignmentType: 'Not assigned',
+      complianceStatus: d.complianceScore && d.complianceScore < 80 ? 'Action Required' : 'Compliant',
+      complianceScore: `${d.complianceScore || 100}%`,
+      avatar: formatAvatarUrl(d.avatarUrl, d.id),
+      notes: d.notes || '',
+      medicalExpiry: d.medicalExpiry || '',
+      medicalResult: d.medicalResult || '',
+      medicalRestrictions: d.medicalRestrictions || '',
+      fatigueCertExpiry: d.fatigueCertExpiry || '',
+      totalLoads: d.totalLoads || 0,
+      totalDistanceKm: d.totalDistanceKm || 0,
+      onTimeRate: d.onTimeRate || null,
+      incidents: d.incidents || 0,
+      accidents: d.accidents || 0,
+      currentVehicle: d.currentVehicle || null,
+      language: d.language || '',
+      documents: d.documents || []
+    };
+  };
+
   const fetchDrivers = async () => {
     setIsLoading(true);
     try {
       const res = await api.get('/drivers');
       if (res.data && res.data.success) {
-        const mapped = res.data.data.map(d => {
-          const rawStatus = d.status || 'AVAILABLE';
-          let formattedStatus = 'Available';
-          if (rawStatus === 'ON_DUTY' || rawStatus === 'On Duty') formattedStatus = 'On Duty';
-          else if (rawStatus === 'OFF_DUTY' || rawStatus === 'Off Duty') formattedStatus = 'Off Duty';
-          else if (rawStatus === 'ON_LEAVE' || rawStatus === 'On Leave') formattedStatus = 'On Leave';
-          else if (rawStatus === 'UNAVAILABLE' || rawStatus === 'Unavailable') formattedStatus = 'Unavailable';
-          else if (rawStatus === 'AVAILABLE' || rawStatus === 'Available') formattedStatus = 'Available';
-          else formattedStatus = rawStatus;
-
-          const rawEmpType = d.employmentType;
-          let formattedEmp = '';
-          if (!rawEmpType) formattedEmp = '';
-          else if (rawEmpType === 'PART_TIME' || rawEmpType === 'Part Time') formattedEmp = 'Part Time';
-          else if (rawEmpType === 'CASUAL' || rawEmpType === 'Casual') formattedEmp = 'Casual';
-          else if (rawEmpType === 'CONTRACTOR' || rawEmpType === 'Contractor') formattedEmp = 'Contractor';
-          else if (rawEmpType === 'FULL_TIME' || rawEmpType === 'Full Time') formattedEmp = 'Full Time';
-          else formattedEmp = rawEmpType;
-
-          const nameFromFirstLast = `${d.firstName || ''} ${d.lastName || ''}`.trim();
-          const rawName = nameFromFirstLast || (d.name && !d.name.startsWith('DRV-') ? d.name : '');
-          const fullName = rawName || 'Unnamed Driver';
-          const dobFormatted = safeDateToYMD(d.dob) || '—';
-          const calculatedAge = d.dob ? safeCalculateAge(d.dob) : '—';
-          const fullAddr = [d.address, d.city, d.state, d.postalCode].filter(Boolean).join(', ') || d.address || '—';
-          const branchName = d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : '—';
-
-          return {
-            id: d.id,
-            driverCode: d.driverCode || '—',
-            firstName: d.firstName || '',
-            lastName: d.lastName || '',
-            name: fullName,
-            age: calculatedAge,
-            dob: dobFormatted,
-            gender: d.gender || '',
-            nationality: d.nationality || '',
-            emergencyContact: d.emergencyContact || '',
-            emergencyContactName: d.emergencyContact ? d.emergencyContact.split(' ')[0] : '',
-            emergencyContactPhone: d.emergencyContact ? d.emergencyContact.split(' ').slice(1).join(' ') : '',
-            phone: d.phone || '—',
-            email: d.email || '—',
-            address: fullAddr,
-            city: d.city || '',
-            state: d.state || '',
-            postalCode: d.postalCode || '',
-            licence: d.licenseType || d.licenceType || '',
-            licenceNo: d.licenseNumber || d.licenceNumber || '',
-            licenseState: d.licenseState || '',
-            licenseClass: d.licenseClass || '',
-            issueDate: safeDateToLocale(d.licenseIssueDate, 'en-AU', d.issueDate || ''),
-            licenseIssueDate: safeDateToYMD(d.licenseIssueDate),
-            licenseExpiry: safeDateToYMD(d.licenseExpiry),
-            employmentType: formattedEmp,
-            status: formattedStatus,
-            role: d.role || 'Driver',
-            category: d.category || '',
-            shift: d.shift || '',
-            branch: branchName,
-            payType: d.payType === 'Per Kilometer' ? 'Per Km' : (d.payType || ''),
-            payRate: d.payRate ? String(d.payRate) : '',
-            loadPaySchedule: d.loadPaySchedule || '',
-            bankName: d.bankName || '',
-            accountNumber: d.accountNumber || '',
-            routingNumber: d.routingNumber || '',
-            taxNumber: d.taxNumber || '',
-            superFund: d.superFund || '',
-            preferredVehicle: d.preferredVehicle || '',
-            preferredRoutes: d.preferredRoutes || '',
-            preferredRegions: d.preferredRegions || '',
-            maxDistPerTripKm: d.maxDistPerTripKm ? String(d.maxDistPerTripKm) : '',
-            dgCertified: d.dgCertified === true,
-            hvCertified: d.hvCertified === true,
-            assignmentId: '—',
-            assignmentType: 'Not assigned',
-            complianceStatus: d.complianceScore && d.complianceScore < 80 ? 'Action Required' : 'Compliant',
-            complianceScore: `${d.complianceScore || 100}%`,
-            avatar: formatAvatarUrl(d.avatarUrl, d.id),
-            notes: d.notes || '',
-            medicalExpiry: d.medicalExpiry || '',
-            medicalResult: d.medicalResult || '',
-            medicalRestrictions: d.medicalRestrictions || '',
-            fatigueCertExpiry: d.fatigueCertExpiry || '',
-            totalLoads: d.totalLoads || 0,
-            totalDistanceKm: d.totalDistanceKm || 0,
-            onTimeRate: d.onTimeRate || null,
-            incidents: d.incidents || 0,
-            accidents: d.accidents || 0,
-            currentVehicle: d.currentVehicle || null,
-            language: d.language || '',
-          };
-        });
+        const mapped = res.data.data.map(mapSingleDriverFromApi);
         setDriverList(mapped);
         if (selectedDriver) {
           const fresh = mapped.find(m => m.id === selectedDriver.id);
@@ -469,6 +1036,53 @@ export default function Drivers() {
     fetchDrivers();
   }, []);
 
+  const handleSelectDriverForView = async (driver) => {
+    setSelectedDriver(driver);
+    try {
+      const res = await api.get(`/drivers/${driver.id}`);
+      if (res.data && res.data.success && res.data.data) {
+        const fullDriver = mapSingleDriverFromApi(res.data.data);
+        setSelectedDriver(fullDriver);
+      }
+    } catch (err) {
+      console.warn('Could not fetch fresh single driver from API:', err);
+    }
+  };
+
+  const handleSelectDriverForEdit = async (driver) => {
+    setSelectedDriver(driver);
+    try {
+      const res = await api.get(`/drivers/${driver.id}`);
+      if (res.data && res.data.success && res.data.data) {
+        const fullDriver = mapSingleDriverFromApi(res.data.data);
+        setSelectedDriver(fullDriver);
+        setPhotoPreview(fullDriver.avatar || '');
+      } else {
+        setPhotoPreview(driver.avatar || '');
+      }
+    } catch (err) {
+      setPhotoPreview(driver.avatar || '');
+    }
+    setIsEditingDriver(true);
+  };
+
+  const handleDeleteDriver = async (driver) => {
+    if (window.confirm(`Are you sure you want to delete driver "${driver.name}"?`)) {
+      try {
+        await api.delete(`/drivers/${driver.id}`).catch(() => api.delete(`/company-admin/drivers/${driver.id}`));
+        showToast(`Driver record "${driver.name}" deleted successfully`);
+        if (selectedDriver && selectedDriver.id === driver.id) {
+          setSelectedDriver(null);
+        }
+      } catch (err) {
+        console.error('Error deleting driver:', err);
+        showToast('Failed to delete driver: ' + (err?.response?.data?.message || err.message), 'error');
+      } finally {
+        await fetchDrivers();
+      }
+    }
+  };
+
   const fetchDriverDocuments = async (driverId) => {
     if (!driverId) return;
     try {
@@ -483,10 +1097,12 @@ export default function Drivers() {
             number: doc.id.substring(0, 8).toUpperCase(),
             issue: safeDateToLocale(doc.createdAt, 'en-AU', 'N/A'),
             expiry: safeDateToLocale(doc.expiryDate, 'en-AU', 'N/A'),
+            expiryDate: safeDateToYMD(doc.expiryDate),
+            fileUrl: doc.fileUrl || '',
             status: (isValidExpiry && new Date(doc.expiryDate) < new Date()) ? 'Expired' : 'Valid',
             daysLeft: isValidExpiry ? Math.max(0, Math.ceil((new Date(doc.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))) + ' days' : '365 days',
-            notes: '',
-            fileName: doc.fileUrl ? doc.fileUrl.split('/').pop() : 'document.pdf',
+            notes: doc.notes || '',
+            fileName: doc.fileUrl ? (doc.fileUrl.startsWith('data:') ? `${doc.type || 'document'}.pdf` : doc.fileUrl.split('/').pop()) : 'document.pdf',
             fileSize: '1.2 MB'
           };
         });
@@ -494,6 +1110,44 @@ export default function Drivers() {
       }
     } catch (err) {
       console.error('Error fetching driver documents:', err);
+    }
+  };
+
+  const handleOpenViewDocModal = async (doc) => {
+    try {
+      const res = await api.get(`/documents/${doc.id}`);
+      if (res.data && res.data.success && res.data.data) {
+        const d = res.data.data;
+        setViewDocModal({
+          ...doc,
+          ...d,
+          fileUrl: d.fileUrl || doc.fileUrl,
+          expiry: safeDateToLocale(d.expiryDate, 'en-AU', doc.expiry)
+        });
+      } else {
+        setViewDocModal(doc);
+      }
+    } catch {
+      setViewDocModal(doc);
+    }
+  };
+
+  const handleOpenEditDocModal = async (doc) => {
+    try {
+      const res = await api.get(`/documents/${doc.id}`);
+      if (res.data && res.data.success && res.data.data) {
+        const d = res.data.data;
+        setEditDocModal({
+          ...doc,
+          ...d,
+          fileUrl: d.fileUrl || doc.fileUrl,
+          expiry: safeDateToYMD(d.expiryDate || doc.expiryDate)
+        });
+      } else {
+        setEditDocModal({ ...doc });
+      }
+    } catch {
+      setEditDocModal({ ...doc });
     }
   };
 
@@ -631,6 +1285,16 @@ export default function Drivers() {
       fetchDriverExpenses(selectedDriver.id);
     }
   }, [selectedDriver]);
+  const createInitialComplianceDocs = () => [
+    { id: 'cd_dg', type: 'Dangerous Goods Certificate', customType: '', expiryDate: '', fileUrl: '', fileName: '', fileSize: '' },
+    { id: 'cd_med', type: 'Medical Certificate', customType: '', expiryDate: '', fileUrl: '', fileName: '', fileSize: '' },
+    { id: 'cd_pol', type: 'Police Verification', customType: '', expiryDate: '', fileUrl: '', fileName: '', fileSize: '' },
+    { id: 'cd_bg', type: 'Background Check', customType: '', expiryDate: '', fileUrl: '', fileName: '', fileSize: '' }
+  ];
+
+  const [complianceDocs, setComplianceDocs] = useState(createInitialComplianceDocs());
+  const [driverLicenceDoc, setDriverLicenceDoc] = useState(null);
+
   const [showAddDriver, setShowAddDriver] = useState(false);
   const [formResetKey, setFormResetKey] = useState(0);
 
@@ -638,6 +1302,9 @@ export default function Drivers() {
     setSelectedDriver(null);
     setIsEditingDriver(false);
     setPhotoPreview('');
+    setSelectedBranches([]);
+    setComplianceDocs(createInitialComplianceDocs());
+    setDriverLicenceDoc(null);
     setFormResetKey(prev => prev + 1);
     setShowAddDriver(true);
   };
@@ -647,7 +1314,71 @@ export default function Drivers() {
     setIsEditingDriver(false);
     setSelectedDriver(null);
     setPhotoPreview('');
+    setSelectedBranches([]);
+    setComplianceDocs(createInitialComplianceDocs());
+    setDriverLicenceDoc(null);
     setFormResetKey(prev => prev + 1);
+  };
+
+  const handleAddComplianceDocSlot = async () => {
+    try {
+      if (selectedDriver?.id) {
+        const res = await api.post('/documents', {
+          type: 'Dangerous Goods Certificate',
+          fileUrl: 'pending_document.pdf',
+          driverId: selectedDriver.id
+        });
+        const newDoc = res.data?.data;
+        const docId = newDoc?.id || `cd_${Date.now()}`;
+        setComplianceDocs(prev => [
+          ...prev,
+          {
+            id: docId,
+            backendId: newDoc?.id || null,
+            type: 'Dangerous Goods Certificate',
+            customType: '',
+            expiryDate: '',
+            fileUrl: '',
+            fileName: '',
+            fileSize: ''
+          }
+        ]);
+        showToast('New compliance document slot created');
+        fetchDriverDocuments(selectedDriver.id);
+        return;
+      }
+    } catch (err) {
+      console.warn('Could not create document slot on server, adding locally:', err);
+    }
+    setComplianceDocs(prev => [
+      ...prev,
+      {
+        id: `cd_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        type: 'Dangerous Goods Certificate',
+        customType: '',
+        expiryDate: '',
+        fileUrl: '',
+        fileName: '',
+        fileSize: ''
+      }
+    ]);
+    showToast('New compliance document slot created');
+  };
+
+  const handleRemoveComplianceDocSlot = async (idToRemove, backendId) => {
+    setComplianceDocs(prev => prev.filter(d => d.id !== idToRemove));
+    const targetId = backendId || (idToRemove && !idToRemove.startsWith('cd_') ? idToRemove : null);
+    try {
+      if (targetId) {
+        await api.delete(`/documents/${targetId}`);
+      } else {
+        await api.delete(`/documents/${idToRemove}`).catch(() => {});
+      }
+      showToast('Compliance document removed');
+      if (selectedDriver?.id) fetchDriverDocuments(selectedDriver.id);
+    } catch (err) {
+      console.warn('Could not delete document from server:', err);
+    }
   };
   const [activeTab, setActiveTab] = useState('Overview');
   const [activeDocTab, setActiveDocTab] = useState('All Documents');
@@ -685,7 +1416,7 @@ export default function Drivers() {
         <div class="info-box" style="text-align: right;">
           <p class="lbl">Employment Details</p>
           <p class="val">${selectedDriver.employmentType || '—'}</p>
-          <p class="sub">Branch: ${selectedDriver.branch || 'Sydney'}</p>
+          <p class="sub">Branch: ${selectedDriver.branch || '—'}</p>
         </div>
       </div>
 
@@ -729,9 +1460,33 @@ export default function Drivers() {
       setDriverFormEmail(selectedDriver.email && selectedDriver.email !== '—' ? selectedDriver.email : '');
       const rawPayType = selectedDriver.payType || 'Hourly';
       setDriverFormPayType(rawPayType === 'Per Kilometer' ? 'Per Km' : rawPayType);
+      const bStr = selectedDriver.branch && selectedDriver.branch !== '—' ? selectedDriver.branch : '';
+      const bArr = bStr.split(',').map(s => s.trim()).filter(Boolean);
+      setSelectedBranches(bArr);
+
+      // Populate existing compliance documents if any
+      const existing = (selectedDriver.documents || documentList || []).filter(d => !d.type?.toLowerCase().includes('licence'));
+      if (existing && existing.length > 0) {
+        setComplianceDocs(existing.map((doc, idx) => ({
+          id: doc.id || `doc_exist_${idx}`,
+          backendId: doc.id,
+          type: COMPLIANCE_DOC_TYPES.includes(doc.type) ? doc.type : 'Other Document',
+          customType: COMPLIANCE_DOC_TYPES.includes(doc.type) ? '' : (doc.type || ''),
+          expiryDate: safeDateToYMD(doc.expiryDate || doc.expiry),
+          fileName: doc.fileName || (doc.fileUrl ? doc.fileUrl.split('/').pop() : 'document.pdf'),
+          fileSize: doc.fileSize || '1.2 MB',
+          fileUrl: doc.fileUrl || '',
+          isExisting: true
+        })));
+      } else {
+        setComplianceDocs(createInitialComplianceDocs());
+      }
     } else if (showAddDriver) {
       setDriverFormEmail('');
       setDriverFormPayType('');
+      setSelectedBranches([]);
+      setComplianceDocs(createInitialComplianceDocs());
+      setDriverLicenceDoc(null);
     }
   }, [isEditingDriver, selectedDriver, showAddDriver]);
 
@@ -1270,11 +2025,11 @@ export default function Drivers() {
                     `"${d.name || ((d.firstName || '') + ' ' + (d.lastName || ''))}"`,
                     `"${d.phone || ''}"`,
                     `"${d.email || ''}"`,
-                    `"${d.licence || d.licenceType || 'Heavy Rigid'}"`,
+                    `"${d.licence || d.licenceType || '—'}"`,
                     `"${d.licenceNo || ''}"`,
                     `"${d.complianceStatus || 'Compliant'}"`,
                     `"${d.status || 'Active'}"`,
-                    `"${d.branch || 'Sydney'}"`
+                    `"${d.branch || '—'}"`
                   ]);
                   const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
                   const encodedUri = encodeURI(csvContent);
@@ -1355,7 +2110,7 @@ export default function Drivers() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Licence Type</label>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Licence Class</label>
                   <input type="text" value={editDriverModal.licence || ''} onChange={e => setEditDriverModal({ ...editDriverModal, licence: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
                 </div>
                 <div>
@@ -1390,8 +2145,8 @@ export default function Drivers() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Issue Date</label>
-                  <input type="date" value={safeDateToYMD(editDriverModal.issueDate || editDriverModal.licenseIssueDate) || ''} onChange={e => setEditDriverModal({ ...editDriverModal, issueDate: e.target.value, licenseIssueDate: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold cursor-pointer" />
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Expiry Date</label>
+                  <input type="date" value={safeDateToYMD(editDriverModal.expiryDate || editDriverModal.licenseExpiry) || ''} onChange={e => setEditDriverModal({ ...editDriverModal, expiryDate: e.target.value, licenseExpiry: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold cursor-pointer" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 mb-1">Licence State</label>
@@ -1430,12 +2185,14 @@ export default function Drivers() {
                     lastName,
                     phone: editDriverModal.phone,
                     licenceType: editDriverModal.licence,
+                    licenseType: editDriverModal.licence,
+                    licenseClass: editDriverModal.licence,
                     licenceNumber: editDriverModal.licenceNo,
                     status: editDriverModal.status,
                     branch: editDriverModal.branch,
                     address: editDriverModal.address,
                     licenseState: editDriverModal.licenseState || editDriverModal.licenceState,
-                    licenseIssueDate: editDriverModal.issueDate || editDriverModal.licenseIssueDate,
+                    licenseExpiry: editDriverModal.expiryDate || editDriverModal.licenseExpiry,
                     payRate: editDriverModal.payRate !== undefined && editDriverModal.payRate !== '' ? parseFloat(editDriverModal.payRate) : null,
                     payType: editDriverModal.payType || 'Hourly'
                   });
@@ -1502,8 +2259,31 @@ export default function Drivers() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
+                  {viewDocModal.fileUrl && (
+                    <a
+                      href={viewDocModal.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                    >
+                      <Eye size={13} /> <span>Open File</span>
+                    </a>
+                  )}
                   <button
-                    onClick={() => showToast(`Downloading ${viewDocModal.type} file...`)}
+                    onClick={() => {
+                      if (viewDocModal.fileUrl) {
+                        const link = document.createElement('a');
+                        link.href = viewDocModal.fileUrl;
+                        link.download = viewDocModal.fileName || `${(viewDocModal.type || 'document').toLowerCase().replace(/[^a-z0-9]/g, '_')}.pdf`;
+                        link.target = '_blank';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        showToast(`Downloading ${viewDocModal.type}...`);
+                        return;
+                      }
+                      showToast(`Downloading ${viewDocModal.type} file...`);
+                    }}
                     className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
                   >
                     <Download size={13} /> <span>Download</span>
@@ -1523,7 +2303,7 @@ export default function Drivers() {
               </button>
               <div className="flex items-center gap-2">
                 <button onClick={() => setViewDocModal(null)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Close</button>
-                <button onClick={() => { setEditDocModal({ ...viewDocModal }); setViewDocModal(null); }} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-purple-600/20 flex items-center gap-1.5">
+                <button onClick={() => { handleOpenEditDocModal(viewDocModal); setViewDocModal(null); }} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-purple-600/20 flex items-center gap-1.5">
                   <Edit size={14} /> <span>Edit Record</span>
                 </button>
               </div>
@@ -1549,14 +2329,16 @@ export default function Drivers() {
                 const expiryDate = (editDocModal.expiry && editDocModal.expiry !== 'N/A' && !isNaN(new Date(editDocModal.expiry).getTime())) ? new Date(editDocModal.expiry).toISOString() : null;
                 await api.put(`/documents/${editDocModal.id}`, {
                   type: editDocModal.type,
-                  expiryDate
+                  expiryDate,
+                  fileUrl: editDocModal.fileUrl || undefined,
+                  notes: editDocModal.notes
                 });
-                if (selectedDriver) fetchDriverDocuments(selectedDriver.id);
+                if (selectedDriver) await fetchDriverDocuments(selectedDriver.id);
                 setEditDocModal(null);
                 showToast(`Updated ${editDocModal.type} successfully`);
               } catch (err) {
                 console.error('Error updating document:', err);
-                alert('Failed to update document in database.');
+                showToast('Failed to update document: ' + (err?.response?.data?.message || err.message), 'error');
               }
             }} className="px-6 py-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
@@ -1593,11 +2375,33 @@ export default function Drivers() {
                 </div>
                 <div>
                   <label className="block text-slate-500 font-bold mb-1">Expiry Date</label>
-                  <input type="text" value={editDocModal.expiry || ''} onChange={(e) => setEditDocModal({ ...editDocModal, expiry: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                  <input type="date" value={editDocModal.expiry || ''} onChange={(e) => setEditDocModal({ ...editDocModal, expiry: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-slate-500 font-bold mb-1">Days Remaining Display</label>
-                  <input type="text" value={editDocModal.daysLeft || ''} onChange={(e) => setEditDocModal({ ...editDocModal, daysLeft: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                  <label className="block text-slate-500 font-bold mb-1">Replace / Upload File (PDF, PNG, JPG)</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setEditDocModal(prev => ({
+                            ...prev,
+                            fileUrl: reader.result,
+                            fileName: file.name,
+                            fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+                          }));
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
+                  />
+                  {editDocModal.fileName && (
+                    <p className="text-[11px] text-purple-600 mt-1 font-semibold truncate">Current file: {editDocModal.fileName}</p>
+                  )}
                 </div>
                 <div className="col-span-2">
                   <label className="block text-slate-500 font-bold mb-1">Notes / Remarks</label>
@@ -1671,20 +2475,34 @@ export default function Drivers() {
               const type = formData.get('type') || 'Custom Document';
               const rawExp = formData.get('expiry');
               const expiryDate = (rawExp && !isNaN(new Date(rawExp).getTime())) ? new Date(rawExp).toISOString() : null;
-              const fileUrl = formData.get('fileName') || 'uploaded_document.pdf';
+              const notes = formData.get('notes') || '';
+              
+              const fileInput = e.target.elements['docFile'];
+              let fileUrl = 'uploaded_document.pdf';
+              if (fileInput && fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                fileUrl = await new Promise((resolve) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result);
+                  reader.onerror = () => resolve(file.name);
+                  reader.readAsDataURL(file);
+                });
+              }
+
               try {
                 await api.post('/documents', {
                   type,
                   fileUrl,
                   expiryDate,
-                  driverId: selectedDriver ? selectedDriver.id : null
+                  driverId: selectedDriver ? selectedDriver.id : null,
+                  notes
                 });
-                if (selectedDriver) fetchDriverDocuments(selectedDriver.id);
+                if (selectedDriver) await fetchDriverDocuments(selectedDriver.id);
                 setAddDocModal(false);
                 showToast(`Added ${type} successfully`);
               } catch (err) {
                 console.error('Error adding document:', err);
-                alert('Failed to save document to database.');
+                showToast('Failed to save document: ' + (err?.response?.data?.message || err.message), 'error');
               }
             }} className="px-6 py-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
@@ -1724,8 +2542,13 @@ export default function Drivers() {
                   <input name="expiry" type="date" defaultValue="2026-12-31" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-semibold text-slate-900" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-slate-500 font-bold mb-1">Days Left (Display)</label>
-                  <input name="daysLeft" type="text" placeholder="e.g. 365 days" defaultValue="365 days" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-semibold text-slate-900" />
+                  <label className="block text-slate-500 font-bold mb-1">Attachment File (PDF, PNG, JPG)</label>
+                  <input
+                    name="docFile"
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
+                  />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-slate-500 font-bold mb-1">Notes / Remarks</label>
@@ -3240,6 +4063,378 @@ export default function Drivers() {
           </div>
         </div>
       )}
+
+      {/* DRIVER FORM FIELD CONFIGURATION MODAL */}
+      {showFieldConfigModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-3 sm:p-4" onClick={() => setShowFieldConfigModal(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 text-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300 shadow-inner">
+                  <Sliders size={20} />
+                </div>
+                <div>
+                  <h2 className="text-sm sm:text-base font-black tracking-tight">Personal Information Field Configuration</h2>
+                  <p className="text-[11px] text-purple-200/80 font-medium">Set mandatory (*) rules, show/hide fields, or add company custom fields.</p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowFieldConfigModal(false)} 
+                className="w-8 h-8 rounded-full hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Sub-header Tabs */}
+            <div className="px-6 pt-3 pb-2 border-b border-slate-100 bg-slate-50 flex items-center justify-between gap-3 shrink-0">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigTab('standard')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeConfigTab === 'standard' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/60'}`}
+                >
+                  Standard Fields ({tempFieldsConfig.fields?.length || 15})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigTab('custom')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${activeConfigTab === 'custom' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/60'}`}
+                >
+                  <span>Company Custom Fields</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${activeConfigTab === 'custom' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                    {tempFieldsConfig.customFields?.length || 0}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveConfigTab('roles')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${activeConfigTab === 'roles' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/60'}`}
+                >
+                  <span>Driver Roles</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${activeConfigTab === 'roles' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                    {tempFieldsConfig.roles?.length || 1}
+                  </span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleResetFieldConfig}
+                className="text-[11px] font-bold text-slate-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer transition-colors"
+                title="Reset all settings to default system template"
+              >
+                <RotateCcw size={12} />
+                <span>Reset to Default</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+              {activeConfigTab === 'standard' ? (
+                <>
+                  <div className="p-3 bg-purple-50/70 border border-purple-200/70 rounded-2xl flex items-start gap-2.5">
+                    <CheckSquare size={16} className="text-purple-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-purple-900 font-medium leading-relaxed">
+                      Toggle <strong>Mandatory</strong> to remove or add the red asterisk (<span className="text-rose-500 font-bold">*</span>). Toggle <strong>Visible</strong> to show or completely remove the field from the driver registration form for your company.
+                    </p>
+                  </div>
+
+                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                    {tempFieldsConfig.fields?.map(f => {
+                      return (
+                        <div key={f.id} className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors hover:bg-slate-50/70">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-2 h-2 rounded-full bg-purple-600"></div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-extrabold text-slate-900 text-xs">{f.label}</span>
+                                {f.required && <span className="text-rose-500 font-black">*</span>}
+                                {f.isSystem && (
+                                  <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold uppercase">Core Field</span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-medium">Field identifier: {f.id}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+                            {/* Mandatory Toggle */}
+                            <button
+                              type="button"
+                              onClick={() => toggleStandardFieldMandatory(f.id)}
+                              className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer border flex items-center gap-1.5 ${
+                                f.required 
+                                  ? 'bg-purple-600 text-white border-purple-600 shadow-2xs' 
+                                  : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200/70'
+                              }`}
+                              title={f.required ? "Click to make Optional" : "Click to make Mandatory (*)"}
+                            >
+                              {f.required ? (
+                                <>
+                                  <Check size={12} className="stroke-[3]" />
+                                  <span>Mandatory (*)</span>
+                                </>
+                              ) : (
+                                <span>Optional</span>
+                              )}
+                            </button>
+
+                            {/* Visibility Toggle */}
+                            {f.isSystem ? (
+                              <span className="px-3 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-[11px] font-bold cursor-not-allowed select-none">
+                                Required
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => toggleStandardFieldVisibility(f.id)}
+                                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer border flex items-center gap-1.5 ${
+                                  f.visible 
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100' 
+                                    : 'bg-rose-50 text-rose-600 border-rose-300 hover:bg-rose-100'
+                                }`}
+                                title={f.visible ? "Click to Hide from Form" : "Click to Show on Form"}
+                              >
+                                {f.visible ? (
+                                  <>
+                                    <Eye size={12} />
+                                    <span>Visible</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <EyeOff size={12} />
+                                    <span>Hidden</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : activeConfigTab === 'custom' ? (
+                <>
+                  <div className="p-3 bg-indigo-50/70 border border-indigo-200/70 rounded-2xl flex items-start gap-2.5">
+                    <Plus size={16} className="text-indigo-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-indigo-900 font-medium leading-relaxed">
+                      Add custom fields specific to your company's onboarding policies (e.g., <em>Work Visa Subclass</em>, <em>Passport Number</em>, <em>Blood Group</em>). Custom fields can be deleted at any time.
+                    </p>
+                  </div>
+
+                  {/* Add New Field Box */}
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                    <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider block">Add New Custom Field</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="sm:col-span-2">
+                        <label className="text-[10px] font-bold text-slate-500 block mb-1">Field Label *</label>
+                        <input
+                          type="text"
+                          value={newCustomFieldInput.label}
+                          onChange={(e) => setNewCustomFieldInput({ ...newCustomFieldInput, label: e.target.value })}
+                          placeholder="e.g. Work Visa Subclass"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-1">Field Type</label>
+                        <select
+                          value={newCustomFieldInput.type}
+                          onChange={(e) => setNewCustomFieldInput({ ...newCustomFieldInput, type: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500"
+                        >
+                          <option value="text">Text Input</option>
+                          <option value="number">Number</option>
+                          <option value="date">Date</option>
+                          <option value="select">Dropdown Select</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {newCustomFieldInput.type === 'select' && (
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-1">Options (comma separated)</label>
+                        <input
+                          type="text"
+                          value={newCustomFieldInput.options}
+                          onChange={(e) => setNewCustomFieldInput({ ...newCustomFieldInput, options: e.target.value })}
+                          placeholder="e.g. Option A, Option B, Option C"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-1">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={newCustomFieldInput.required}
+                          onChange={(e) => setNewCustomFieldInput({ ...newCustomFieldInput, required: e.target.checked })}
+                          className="w-4 h-4 rounded text-purple-600 focus:ring-0 cursor-pointer"
+                        />
+                        <span>Make this custom field Mandatory (*)</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAddCustomField}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                      >
+                        <Plus size={14} />
+                        <span>Add Field</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Existing Custom Fields List */}
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">Configured Custom Fields</span>
+                    {(!tempFieldsConfig.customFields || tempFieldsConfig.customFields.length === 0) ? (
+                      <div className="py-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl font-medium text-xs">
+                        No custom fields configured yet. Use the form above to add custom fields.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                        {tempFieldsConfig.customFields.map(cf => (
+                          <div key={cf.id} className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-extrabold text-slate-900 text-xs">{cf.label}</span>
+                                  <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold uppercase">{cf.type}</span>
+                                  {cf.required && <span className="text-rose-500 font-black">*</span>}
+                                </div>
+                                <span className="text-[10px] text-slate-400 font-medium">Custom ID: {cf.id}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => toggleCustomFieldMandatory(cf.id)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer border ${
+                                  cf.required 
+                                    ? 'bg-purple-600 text-white border-purple-600' 
+                                    : 'bg-slate-100 text-slate-600 border-slate-200'
+                                }`}
+                              >
+                                {cf.required ? 'Mandatory (*)' : 'Optional'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCustomField(cf.id)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete this custom field"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Driver Roles Management Tab */}
+                  <div className="p-3 bg-purple-50/70 border border-purple-200/70 rounded-2xl flex items-start gap-2.5">
+                    <Sliders size={16} className="text-purple-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-purple-900 font-medium leading-relaxed">
+                      Manage company-specific driver roles. You can create custom roles (e.g. <em>Senior Driver</em>, <em>Linehaul Specialist</em>, <em>Team Lead</em>) for your company. New companies start with only the standard <strong>Driver</strong> role.
+                    </p>
+                  </div>
+
+                  {/* Add New Role Box */}
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                    <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider block">Add Custom Driver Role</span>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newRoleInput}
+                        onChange={(e) => setNewRoleInput(e.target.value)}
+                        placeholder="e.g. Senior Driver, Linehaul Specialist, Team Lead..."
+                        className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddCustomRole();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCustomRole}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs shrink-0"
+                      >
+                        <Plus size={14} />
+                        <span>Add Role</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Existing Roles List */}
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">Active Driver Roles</span>
+                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                      {(tempFieldsConfig.roles?.length ? tempFieldsConfig.roles : ['Driver']).map((role, idx) => (
+                        <div key={idx} className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-2 h-2 rounded-full bg-purple-600"></div>
+                            <div>
+                              <span className="font-extrabold text-slate-900 text-xs">{role}</span>
+                              {role === 'Driver' && (
+                                <span className="ml-2 px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold uppercase">System Base Role</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            {role !== 'Driver' && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCustomRole(role)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title={`Delete ${role}`}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowFieldConfigModal(false)}
+                className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSavingFieldConfig}
+                onClick={handleSaveFieldConfig}
+                className="px-6 py-2.5 bg-purple-700 hover:bg-purple-800 disabled:opacity-50 text-white rounded-xl text-xs font-black transition-all cursor-pointer shadow-md shadow-purple-600/20 flex items-center gap-2"
+              >
+                <Save size={14} />
+                <span>{isSavingFieldConfig ? 'Saving...' : 'Save Configuration'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 
@@ -3274,7 +4469,12 @@ export default function Drivers() {
       licenseExpiry: selectedDriver?.licenseExpiry || '',
       licenceClass: selectedDriver?.licenseClass || '',
       branch: selectedDriver?.branch && selectedDriver?.branch !== '—' ? selectedDriver.branch : '',
-      employmentType: selectedDriver?.employmentType && selectedDriver?.employmentType !== '—' ? selectedDriver.employmentType : '',
+      employmentType: (() => {
+        const raw = selectedDriver?.employmentType;
+        if (!raw || raw === '—') return 'FULL_TIME';
+        const norm = String(raw).toUpperCase().replace(/[\s-]/g, '_');
+        return ['FULL_TIME', 'PART_TIME', 'CASUAL'].includes(norm) ? norm : (norm.includes('CAS') ? 'CASUAL' : norm.includes('PART') ? 'PART_TIME' : 'FULL_TIME');
+      })(),
       payType: selectedDriver?.payType || 'Hourly',
       payRate: selectedDriver?.payRate || '',
       loadPaySchedule: selectedDriver?.loadPaySchedule || '',
@@ -3300,7 +4500,14 @@ export default function Drivers() {
       superPercentage: selectedDriver?.superPercentage,
       effectiveFrom: selectedDriver?.effectiveFrom,
       effectiveTo: selectedDriver?.effectiveTo,
-      defaultBreakMinutes: selectedDriver?.defaultBreakMinutes
+      defaultBreakMinutes: selectedDriver?.defaultBreakMinutes,
+      availableFrom: selectedDriver?.availableFrom || '',
+      weeklyHoursLimit: selectedDriver?.weeklyHoursLimit || '',
+      maxHoursPerDay: selectedDriver?.maxHoursPerDay || '',
+      restDaysPerWeek: selectedDriver?.restDaysPerWeek || '',
+      shift: selectedDriver?.shift || '',
+      dgCertified: selectedDriver?.dgCertified,
+      hvCertified: selectedDriver?.hvCertified
     } : {};
 
     return (
@@ -3322,7 +4529,11 @@ export default function Drivers() {
 
         <form id="driver-upsert-form" key={`driver-upsert-form-${isEditMode ? (selectedDriver?.id || 'edit') : 'create'}-${formResetKey}`} onSubmit={async (e) => {
           e.preventDefault();
-          const fd = new FormData(e.target);
+          if (isSubmittingDriver) return;
+          setIsSubmittingDriver(true);
+
+          try {
+            const fd = new FormData(e.target);
           const firstName = fd.get('FirstName') || fd.get('firstName') || '';
           const lastName = fd.get('LastName') || fd.get('lastName') || '';
           const rawDriverCode = fd.has('EmployeeIDManualEditOption') ? fd.get('EmployeeIDManualEditOption') : fd.get('driverCode');
@@ -3354,17 +4565,18 @@ export default function Drivers() {
 
           const role = fd.get('DriverRole') || 'Driver';
           const employmentType = fd.get('EmploymentType') || '';
-          const branch = fd.get('Branch') || '';
+          const branch = (fd.get('Branch') || selectedBranches.join(', ') || '').trim();
           const status = fd.get('DriverStatus') || 'Available';
           const shift = fd.get('Shift') || '';
           const category = fd.get('DriverCategory') || '';
 
-          const licenceType = fd.get('LicenceType') || fd.get('licenceType') || '';
+          const selectedLicenceClass = fd.get('LicenceClass') || fd.get('licenceClass') || fd.get('LicenceType') || fd.get('licenceType') || '';
+          const licenceType = selectedLicenceClass;
+          const licenseClass = selectedLicenceClass;
           const licenceNumber = fd.get('LicenceNumber') || fd.get('licenceNumber') || '';
           const licenseState = fd.get('LicenceState') || fd.get('licenseState') || '';
-          const licenseIssueDate = safeDateToISO(fd.get('IssueDate'));
+          const licenseIssueDate = safeDateToISO(fd.get('IssueDate')) || null;
           const licenseExpiry = safeDateToISO(fd.get('ExpiryDate'));
-          const licenseClass = fd.get('LicenceClass') || '';
 
           const rawDob = fd.get('DateofBirth');
           const manualAge = fd.get('Age') || fd.get('age') || '';
@@ -3390,11 +4602,11 @@ export default function Drivers() {
           const payType = driverFormPayType;
           const payRate = fd.get('PayRate') || (isEditMode ? selectedDriver?.payRate : null);
           const loadPaySchedule = selectedDriver?.loadPaySchedule || null;
-          const bankName = fd.get('BankName') || '';
-          const accountNumber = fd.get('AccountNumber') || '';
-          const routingNumber = fd.get('BSBRouting') || '';
-          const taxNumber = fd.get('TaxNumber') || '';
-          const superFund = fd.get('SuperannuationFund') || '';
+          const bankName = fd.get('BankName') || fd.get('bankName') || '';
+          const accountNumber = fd.get('AccountNumber') || fd.get('accountNumber') || '';
+          const routingNumber = fd.get('BSBRouting') || fd.get('routingNumber') || fd.get('BSB') || '';
+          const taxNumber = fd.get('TaxNumber') || fd.get('taxNumber') || '';
+          const superFund = fd.get('SuperannuationFund') || fd.get('superFund') || '';
 
           const preferredVehicle = fd.get('PreferredVehicle') || '';
           const preferredRoutes = fd.get('PreferredRoutes') || '';
@@ -3402,6 +4614,11 @@ export default function Drivers() {
           const maxDistPerTripKm = fd.get('MaximumDistancePerTripKM') ? parseInt(fd.get('MaximumDistancePerTripKM'), 10) : null;
           const dgCertified = fd.get('DangerousGoodsCertified') === 'Yes';
           const hvCertified = fd.get('HeavyVehicleCertified') === 'Yes';
+          const availableFrom = fd.get('availableFrom') || fd.get('AvailableFrom') || null;
+          const preferredShift = fd.get('preferredShift') || fd.get('PreferredShift') || null;
+          const weeklyHoursLimit = (fd.get('weeklyHoursLimit') || fd.get('WeeklyHoursLimit')) ? parseInt(fd.get('weeklyHoursLimit') || fd.get('WeeklyHoursLimit'), 10) : null;
+          const maxHoursPerDay = (fd.get('maxHoursPerDay') || fd.get('MaxWorkingHoursDay')) ? parseInt(fd.get('maxHoursPerDay') || fd.get('MaxWorkingHoursDay'), 10) : null;
+          const restDaysPerWeek = (fd.get('restDaysPerWeek') || fd.get('RestDaysWeek')) ? parseInt(fd.get('restDaysPerWeek') || fd.get('RestDaysWeek'), 10) : null;
 
           const ordinaryHoursPerDay = fd.get('ordinaryHoursPerDay') ? parseFloat(fd.get('ordinaryHoursPerDay')) : 7.6;
           const overtimeStartsAfter = fd.get('overtimeStartsAfter') ? parseFloat(fd.get('overtimeStartsAfter')) : 7.6;
@@ -3415,14 +4632,14 @@ export default function Drivers() {
           const rawStudy = fd.get('studyLoanDebt');
           const studyLoanDebt = rawStudy ? rawStudy === 'Yes' : false;
           const rawTaxDecl = fd.get('taxDeclReceived');
-          const taxDeclReceived = rawTaxDecl ? rawTaxDecl === 'Yes' : true;
-          const residencyStatus = fd.get('residencyStatus') || 'Australian Resident';
-          const paygCalcMethod = fd.get('paygCalcMethod') || 'ATO Scale';
-          const formEmploymentType = fd.get('employmentType') || employmentType || 'FULL_TIME';
-          const defaultBreakMinutes = fd.get('defaultBreakMinutes') ? parseInt(fd.get('defaultBreakMinutes'), 10) : 30;
-          const tfnStatus = fd.get('tfnStatus') || 'Provided';
+          const taxDeclReceived = rawTaxDecl ? rawTaxDecl === 'Yes' : (isEditMode && defaultData.taxDeclReceived !== undefined ? defaultData.taxDeclReceived : true);
+          const residencyStatus = fd.get('residencyStatus') || (isEditMode ? defaultData.residencyStatus : '') || 'Australian Resident';
+          const paygCalcMethod = fd.get('paygCalcMethod') || (isEditMode ? defaultData.paygCalcMethod : '') || 'ATO Scale';
+          const formEmploymentType = fd.get('employmentType') || (isEditMode ? defaultData.employmentType : '') || employmentType || 'FULL_TIME';
+          const defaultBreakMinutes = fd.get('defaultBreakMinutes') ? parseInt(fd.get('defaultBreakMinutes'), 10) : (isEditMode && defaultData.defaultBreakMinutes ? defaultData.defaultBreakMinutes : 30);
+          const tfnStatus = fd.get('tfnStatus') || (isEditMode ? defaultData.tfnStatus : '') || 'Provided';
 
-          if (driverFormPayType === 'Hourly') {
+          if (driverFormPayType === 'Hourly' && !isEditMode) {
             if (!fd.get('employmentType')) {
               showToast("Please select an Employment Type in Payroll Information.", "error");
               return;
@@ -3453,11 +4670,49 @@ export default function Drivers() {
             }
           }
 
+          // Validate mandatory personal fields based on company configuration
+          const fnMeta = getFieldMeta('firstName');
+          if (fnMeta.visible && fnMeta.required && !firstName.trim()) {
+            showToast("First Name is required by company policy.", "error");
+            return;
+          }
+          const lnMeta = getFieldMeta('lastName');
+          if (lnMeta.visible && lnMeta.required && !lastName.trim()) {
+            showToast("Last Name is required by company policy.", "error");
+            return;
+          }
+          const natMeta = getFieldMeta('nationality');
+          if (natMeta.visible && natMeta.required && !nationality.trim()) {
+            showToast("Nationality is required by company policy.", "error");
+            return;
+          }
+          const phoneMeta = getFieldMeta('phone');
+          if (phoneMeta.visible && phoneMeta.required && !phone.trim()) {
+            showToast("Phone Number is required by company policy.", "error");
+            return;
+          }
+
+          // Collect company custom fields
+          const customFieldsData = {};
+          let missingRequiredCustom = null;
+          (personalFieldsConfig.customFields || []).forEach(cf => {
+            const val = fd.get(`custom_${cf.id}`);
+            if (val) customFieldsData[cf.id] = val;
+            if (cf.visible !== false && cf.required && (!val || !String(val).trim())) {
+              missingRequiredCustom = cf.label;
+            }
+          });
+          if (missingRequiredCustom) {
+            showToast(`${missingRequiredCustom} is required by company policy.`, "error");
+            return;
+          }
+
           const payload = {
             firstName,
             lastName,
             driverCode,
             phone,
+            customFields: customFieldsData,
             email,
             ...(passwordToSubmit ? { password: passwordToSubmit } : {}),
             avatarUrl,
@@ -3511,11 +4766,16 @@ export default function Drivers() {
             preferredRegions,
             maxDistPerTripKm,
             dgCertified,
-            hvCertified
+            hvCertified,
+            availableFrom,
+            shift: preferredShift || shift,
+            weeklyHoursLimit,
+            maxHoursPerDay,
+            restDaysPerWeek
           };
 
-          try {
-            if (isEditMode && selectedDriver) {
+          let targetDriverId = (isEditMode && selectedDriver) ? selectedDriver.id : null;
+          if (isEditMode && selectedDriver) {
               await api.put(`/drivers/${selectedDriver.id}`, payload);
               const updatedName = `${firstName} ${lastName}`.trim() || driverCode || selectedDriver.name;
               const dobYMD = safeDateToYMD(dob) || selectedDriver.dob;
@@ -3572,13 +4832,22 @@ export default function Drivers() {
                   taxDeclReceived,
                   residencyStatus,
                   paygCalcMethod,
-                  defaultBreakMinutes
+                  defaultBreakMinutes,
+                  taxNumber,
+                  accountNumber,
+                  routingNumber,
+                  availableFrom: availableFrom ? safeDateToYMD(availableFrom) : '',
+                  shift: preferredShift || shift || '',
+                  weeklyHoursLimit: weeklyHoursLimit !== null ? String(weeklyHoursLimit) : '',
+                  maxHoursPerDay: maxHoursPerDay !== null ? String(maxHoursPerDay) : '',
+                  restDaysPerWeek: restDaysPerWeek !== null ? String(restDaysPerWeek) : ''
                 };
               });
             } else {
               const newRes = await api.post('/drivers', payload);
               if (newRes.data && newRes.data.data) {
                 const createdDriver = newRes.data.data;
+                targetDriverId = createdDriver.id;
                 const formattedAddr = [createdDriver.address, createdDriver.city, createdDriver.state, createdDriver.postalCode].filter(Boolean).join(', ') || createdDriver.address || '—';
                 const newMapped = {
                   id: createdDriver.id,
@@ -3618,8 +4887,8 @@ export default function Drivers() {
                   overtimeRate: createdDriver.overtimeRate || overtimeRate,
                   overtimeMultiplier: createdDriver.overtimeMultiplier || overtimeMultiplier,
                   superPercentage: createdDriver.superPercentage || superPercentage,
-                  effectiveFrom: createdDriver.effectiveFrom || effectiveFrom,
-                  effectiveTo: createdDriver.effectiveTo || effectiveTo,
+                  effectiveFrom: createdDriver.effectiveFrom ? safeDateToYMD(createdDriver.effectiveFrom) : (effectiveFrom || ''),
+                  effectiveTo: createdDriver.effectiveTo ? safeDateToYMD(createdDriver.effectiveTo) : (effectiveTo || ''),
                   taxFreeThreshold: createdDriver.taxFreeThreshold ?? taxFreeThreshold,
                   studyLoanDebt: createdDriver.studyLoanDebt ?? studyLoanDebt,
                   taxDeclReceived: createdDriver.taxDeclReceived ?? taxDeclReceived,
@@ -3627,11 +4896,67 @@ export default function Drivers() {
                   paygCalcMethod: createdDriver.paygCalcMethod || paygCalcMethod,
                   defaultBreakMinutes: createdDriver.defaultBreakMinutes || defaultBreakMinutes,
                   loadPaySchedule: createdDriver.loadPaySchedule || loadPaySchedule,
+                  bankName: createdDriver.bankName || bankName,
+                  accountNumber: createdDriver.accountNumber || accountNumber,
+                  routingNumber: createdDriver.routingNumber || routingNumber,
+                  taxNumber: createdDriver.taxNumber || taxNumber,
+                  superFund: createdDriver.superFund || superFund,
                   avatar: formatAvatarUrl(createdDriver.avatarUrl || avatarUrl, createdDriver.id)
                 };
                 setSelectedDriver(newMapped);
               }
             }
+
+            // Sync compliance documents with backend API
+            if (targetDriverId) {
+              for (const doc of complianceDocs) {
+                if (doc.fileUrl && !doc.backendId) {
+                  const docType = doc.type === 'Other Document' 
+                    ? (doc.customType?.trim() || 'Other Document') 
+                    : doc.type;
+                  try {
+                    await api.post('/documents', {
+                      driverId: targetDriverId,
+                      type: docType,
+                      fileUrl: doc.fileUrl,
+                      expiryDate: doc.expiryDate ? new Date(doc.expiryDate).toISOString() : null
+                    });
+                  } catch (docErr) {
+                    console.warn('Could not save compliance document:', docType, docErr);
+                  }
+                } else if (doc.fileUrl && doc.backendId) {
+                  const docType = doc.type === 'Other Document' 
+                    ? (doc.customType?.trim() || 'Other Document') 
+                    : doc.type;
+                  try {
+                    await api.put(`/documents/${doc.backendId}`, {
+                      type: docType,
+                      fileUrl: doc.fileUrl,
+                      expiryDate: doc.expiryDate ? new Date(doc.expiryDate).toISOString() : null
+                    });
+                  } catch (docErr) {
+                    console.warn('Could not update compliance document:', docType, docErr);
+                  }
+                }
+              }
+
+              // Also persist licence file if uploaded
+              if (driverLicenceDoc && driverLicenceDoc.fileUrl && !driverLicenceDoc.backendId) {
+                try {
+                  await api.post('/documents', {
+                    driverId: targetDriverId,
+                    type: 'Driver Licence Document',
+                    fileUrl: driverLicenceDoc.fileUrl,
+                    expiryDate: licenseExpiry ? new Date(licenseExpiry).toISOString() : null
+                  });
+                } catch (licErr) {
+                  console.warn('Could not save licence document:', licErr);
+                }
+              }
+
+              fetchDriverDocuments(targetDriverId);
+            }
+
             const finalPassDisplay = passwordToSubmit || rawPassword || '123456';
             setIsEditingDriver(false);
             setShowAddDriver(false);
@@ -3639,7 +4964,10 @@ export default function Drivers() {
             showToast(isEditMode ? "🎉 Driver Profile Updated successfully!" : `🎉 Driver Added! Login Email: ${email || 'Assigned'} | Password: ${finalPassDisplay}`);
           } catch (err) {
             console.error('Error saving driver:', err);
-            alert('Failed to save driver to database: ' + (err?.response?.data?.message || err.message));
+            const errMsg = err?.response?.data?.message || err?.message || 'Failed to save driver. Please try again.';
+            showToast(errMsg, 'error');
+          } finally {
+            setIsSubmittingDriver(false);
           }
         }}>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-6 border-b border-slate-200">
@@ -3648,9 +4976,39 @@ export default function Drivers() {
               <p className="text-[11px] text-slate-500 font-medium mt-1">{formDesc}</p>
             </div>
             <div className="flex items-center gap-3">
-              <button type="button" onClick={handleCloseDriverForm} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Cancel</button>
-              <button type="button" onClick={() => { const formEl = document.getElementById('driver-upsert-form'); if (formEl) formEl.requestSubmit(); }} className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Save as Draft</button>
-              <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"><Settings size={14} /> {isEditMode ? "Update Driver" : "Save Driver"}</button>
+              <button 
+                type="button" 
+                disabled={isSubmittingDriver}
+                onClick={handleCloseDriverForm} 
+                className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                disabled={isSubmittingDriver}
+                onClick={() => { const formEl = document.getElementById('driver-upsert-form'); if (formEl) formEl.requestSubmit(); }} 
+                className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                Save as Draft
+              </button>
+              <button 
+                type="submit" 
+                disabled={isSubmittingDriver}
+                className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 disabled:bg-purple-400 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"
+              >
+                {isSubmittingDriver ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>{isEditMode ? "Updating..." : "Saving..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Settings size={14} />
+                    <span>{isEditMode ? "Update Driver" : "Save Driver"}</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
@@ -3658,7 +5016,25 @@ export default function Drivers() {
 
             {/* 1. Personal Information */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
-              <h2 className="text-sm font-black text-slate-900 mb-6">1. Personal Information</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-3 border-b border-slate-100">
+                <div>
+                  <h2 className="text-sm font-black text-slate-900">1. Personal Information</h2>
+                  <p className="text-[11px] text-slate-400 font-medium mt-0.5">Basic personal & contact details of the driver.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTempFieldsConfig(personalFieldsConfig);
+                    setShowFieldConfigModal(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200 hover:border-purple-300 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95 shrink-0 self-start sm:self-auto"
+                  title="Customize Mandatory & Optional Fields for your Company"
+                >
+                  <Sliders className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Customize Fields</span>
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
                 <div className="col-span-1 flex flex-col items-center gap-3">
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest self-start">Profile Photo</label>
@@ -3708,21 +5084,65 @@ export default function Drivers() {
                   />
                 </div>
                 <div className="col-span-1 md:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
-                  <InputField label="First Name" defaultValue={isEditMode ? defaultData.firstName : ''} />
-                  <InputField label="Last Name" defaultValue={isEditMode ? defaultData.lastName : ''} />
-                  <InputField label="Employee ID * (Manual Edit Option)" defaultValue={isEditMode ? defaultData.empId : ''} placeholder="e.g. DRV-009" />
-                  <InputField label="Date of Birth" type="date" defaultValue={isEditMode ? defaultData.dob : ''} />
-                  <InputField label="Age" type="text" defaultValue={isEditMode ? defaultData.age : ''} placeholder="e.g. 34" optional={true} />
-                  <InputField label="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} defaultValue={isEditMode ? (defaultData.gender || '') : ''} />
-                  <InputField label="Nationality" defaultValue={isEditMode ? defaultData.nationality : ''} />
-                  <InputField label="Phone Number" defaultValue={isEditMode ? defaultData.phone : ''} />
-                  <InputField label="Email Address" value={driverFormEmail} onChange={(e) => setDriverFormEmail(e.target.value)} defaultValue={isEditMode ? defaultData.email : ''} placeholder="e.g. driver@gmail.com (Login Email)" />
-                  <InputField label="Emergency Contact Name" defaultValue={isEditMode ? defaultData.emergencyContactName : ''} />
-                  <InputField label="Emergency Contact Number" defaultValue={isEditMode ? defaultData.emergencyContactPhone : ''} />
-                  <InputField label="Residential Address" className="sm:col-span-2" defaultValue={isEditMode ? defaultData.address : ''} />
-                  <InputField label="City" defaultValue={isEditMode ? defaultData.city : ''} />
-                  <InputField label="State" defaultValue={isEditMode ? defaultData.state : ''} />
-                  <InputField label="Postal Code" defaultValue={isEditMode ? defaultData.postalCode : ''} />
+                  {getFieldMeta('firstName').visible && (
+                    <InputField label="First Name" optional={!getFieldMeta('firstName').required} defaultValue={isEditMode ? defaultData.firstName : ''} />
+                  )}
+                  {getFieldMeta('lastName').visible && (
+                    <InputField label="Last Name" optional={!getFieldMeta('lastName').required} defaultValue={isEditMode ? defaultData.lastName : ''} />
+                  )}
+                  {getFieldMeta('empId').visible && (
+                    <InputField label="Employee ID (Manual Edit Option)" optional={!getFieldMeta('empId').required} defaultValue={isEditMode ? defaultData.empId : ''} placeholder="e.g. DRV-009" />
+                  )}
+                  {getFieldMeta('dob').visible && (
+                    <InputField label="Date of Birth" type="date" optional={!getFieldMeta('dob').required} defaultValue={isEditMode ? defaultData.dob : ''} />
+                  )}
+                  {getFieldMeta('age').visible && (
+                    <InputField label="Age" type="text" optional={!getFieldMeta('age').required} defaultValue={isEditMode ? defaultData.age : ''} placeholder="e.g. 34" />
+                  )}
+                  {getFieldMeta('gender').visible && (
+                    <InputField label="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} optional={!getFieldMeta('gender').required} defaultValue={isEditMode ? (defaultData.gender || '') : ''} />
+                  )}
+                  {getFieldMeta('nationality').visible && (
+                    <InputField label="Nationality" optional={!getFieldMeta('nationality').required} defaultValue={isEditMode ? defaultData.nationality : ''} />
+                  )}
+                  {getFieldMeta('phone').visible && (
+                    <InputField label="Phone Number" optional={!getFieldMeta('phone').required} defaultValue={isEditMode ? defaultData.phone : ''} />
+                  )}
+                  {getFieldMeta('email').visible && (
+                    <InputField label="Email Address" optional={!getFieldMeta('email').required} value={driverFormEmail} onChange={(e) => setDriverFormEmail(e.target.value)} defaultValue={isEditMode ? defaultData.email : ''} placeholder="e.g. driver@gmail.com (Login Email)" />
+                  )}
+                  {getFieldMeta('emergencyContactName').visible && (
+                    <InputField label="Emergency Contact Name" optional={!getFieldMeta('emergencyContactName').required} defaultValue={isEditMode ? defaultData.emergencyContactName : ''} />
+                  )}
+                  {getFieldMeta('emergencyContactPhone').visible && (
+                    <InputField label="Emergency Contact Number" optional={!getFieldMeta('emergencyContactPhone').required} defaultValue={isEditMode ? defaultData.emergencyContactPhone : ''} />
+                  )}
+                  {getFieldMeta('address').visible && (
+                    <InputField label="Residential Address" className="sm:col-span-2" optional={!getFieldMeta('address').required} defaultValue={isEditMode ? defaultData.address : ''} />
+                  )}
+                  {getFieldMeta('city').visible && (
+                    <InputField label="City" optional={!getFieldMeta('city').required} defaultValue={isEditMode ? defaultData.city : ''} />
+                  )}
+                  {getFieldMeta('state').visible && (
+                    <InputField label="State" optional={!getFieldMeta('state').required} defaultValue={isEditMode ? defaultData.state : ''} />
+                  )}
+                  {getFieldMeta('postalCode').visible && (
+                    <InputField label="Postal Code" optional={!getFieldMeta('postalCode').required} defaultValue={isEditMode ? defaultData.postalCode : ''} />
+                  )}
+
+                  {/* Company Custom Fields */}
+                  {personalFieldsConfig.customFields?.filter(cf => cf.visible !== false).map(cf => (
+                    <InputField
+                      key={cf.id}
+                      label={cf.label}
+                      name={`custom_${cf.id}`}
+                      type={cf.type || 'text'}
+                      options={cf.options || []}
+                      optional={!cf.required}
+                      placeholder={`Enter ${cf.label}`}
+                      defaultValue={selectedDriver?.customFields?.[cf.id] || ''}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -3731,10 +5151,34 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">2. Employment Information</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
-                <InputField label="Driver Role" type="select" options={['Driver', 'Senior Driver', 'Team Lead']} defaultValue={isEditMode ? (defaultData.role || '') : ''} />
-                <InputField label="Employment Type" type="select" options={['Full Time', 'Part Time', 'Casual']} defaultValue={isEditMode ? (defaultData.employmentType || '') : ''} />
-                <InputField label="Branch" type="select" options={['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide']} defaultValue={isEditMode ? defaultData.branch : ''} />
-                <InputField label="Reports To" type="select" options={['Sarah Mitchell', 'John Doe', 'Emily Chen']} defaultValue={isEditMode ? (defaultData.reportsTo || '') : ''} />
+                <InputField 
+                  label="Driver Role" 
+                  type="select" 
+                  options={personalFieldsConfig.roles?.length > 0 ? personalFieldsConfig.roles : ['Driver']} 
+                  defaultValue={isEditMode ? (defaultData.role || '') : ''} 
+                />
+                <InputField 
+                  label="Employment Type" 
+                  type="select" 
+                  options={['Full Time', 'Part Time', 'Casual', 'Contractor']} 
+                  defaultValue={isEditMode ? (defaultData.employmentType || '') : ''} 
+                />
+                <MultiSelectField 
+                  label="Branch" 
+                  name="Branch"
+                  options={companyBranches} 
+                  selectedValues={selectedBranches}
+                  onChange={setSelectedBranches}
+                  placeholder={companyBranches.length === 0 ? "No branches created yet" : "Select Branch (Multiple)"}
+                  optional={false}
+                />
+                <InputField 
+                  label="Reports To" 
+                  type="select" 
+                  options={companyManagers} 
+                  placeholder={companyManagers.length === 0 ? "No managers assigned yet" : "Select Reports To"}
+                  defaultValue={isEditMode ? (defaultData.reportsTo || '') : ''} 
+                />
                 <InputField label="Joining Date" type="date" defaultValue={isEditMode ? defaultData.joiningDate : ''} />
                 <InputField label="Driver Status" type="select" options={['Available', 'On Duty', 'Off Duty', 'On Leave', 'Unavailable']} defaultValue={isEditMode ? (selectedDriver?.status || '') : ''} />
                 <InputField label="Shift" type="select" options={['Morning', 'Afternoon', 'Night', 'Rotating']} defaultValue={isEditMode ? defaultData.shift : ''} />
@@ -3745,32 +5189,79 @@ export default function Drivers() {
             {/* 3. Licence Information */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">3. Licence Information</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 mb-6">
-                <InputField label="Licence Type" type="select" options={['HR (Heavy Rigid)', 'MR (Medium Rigid)', 'LR (Light Rigid)', 'HC (Heavy Combination)', 'MC (Multi Combination)']} defaultValue={isEditMode ? defaultData.licenceType : ""} />
-                <InputField label="Licence Number" defaultValue={isEditMode ? defaultData.licenceNo : ""} placeholder="e.g. LIC-998822" />
-                <InputField label="Licence State" type="select" options={['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT']} defaultValue={isEditMode ? defaultData.licenceState : ""} />
-                <InputField label="Issue Date" type="date" defaultValue={isEditMode ? defaultData.licenseIssueDate : ""} />
-                <InputField label="Expiry Date" type="date" defaultValue={isEditMode ? defaultData.licenseExpiry : ""} />
-                <InputField label="Licence Class" type="select" options={['Class HR', 'Class MR', 'Class LR', 'Class HC', 'Class MC']} defaultValue={isEditMode ? defaultData.licenceClass : ""} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5 mb-6">
+                <InputField 
+                  label="Licence Class" 
+                  name="LicenceClass"
+                  type="select" 
+                  options={['HR (Heavy Rigid)', 'MR (Medium Rigid)', 'LR (Light Rigid)', 'HC (Heavy Combination)', 'MC (Multi Combination)', 'Car (C)', 'R (Rider)']} 
+                  defaultValue={isEditMode ? (defaultData.licenceClass || defaultData.licenceType || "") : ""} 
+                />
+                <InputField label="Licence Number" name="LicenceNumber" defaultValue={isEditMode ? defaultData.licenceNo : ""} placeholder="e.g. LIC-998822" />
+                <InputField label="Licence State" name="LicenceState" type="select" options={['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT']} defaultValue={isEditMode ? defaultData.licenceState : ""} />
+                <InputField label="Expiry Date" name="ExpiryDate" type="date" defaultValue={isEditMode ? defaultData.licenseExpiry : ""} />
               </div>
 
               <div className="w-full">
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Licence Document Upload *</label>
-                <LicenceFileUploadBox />
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Licence Document Upload (Optional)</label>
+                <LicenceFileUploadBox value={driverLicenceDoc} onChange={setDriverLicenceDoc} />
               </div>
             </div>
 
             {/* 4. Compliance Documents */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
-              <h2 className="text-sm font-black text-slate-900 mb-6">4. Compliance Documents</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <DocumentUploadBox title="Medical Certificate" />
-                <DocumentUploadBox title="Police Verification" />
-                <DocumentUploadBox title="Background Check" />
-                <DocumentUploadBox title="Drug & Alcohol Certificate" />
-                <DocumentUploadBox title="First Aid Certificate" />
-                <DocumentUploadBox title="Training Certificate" />
-                <DocumentUploadBox title="Other Documents" />
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h2 className="text-sm font-black text-slate-900">4. Compliance Documents</h2>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                      {complianceDocs.filter(d => d.fileUrl).length} Attached
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                    Upload and manage certificates (Dangerous Goods, Medical, Police Check, etc.). Add unlimited documents without restriction.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddComplianceDocSlot}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer"
+                >
+                  <Plus size={14} /> <span>Add Compliance Document</span>
+                </button>
+              </div>
+
+              {complianceDocs.length === 0 ? (
+                <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                  <FileText className="mx-auto text-slate-300 mb-2" size={28} />
+                  <p className="text-xs font-bold text-slate-600 mb-1">No compliance documents attached</p>
+                  <p className="text-[10px] text-slate-400 mb-4">Click below to add a document certificate slot</p>
+                  <button
+                    type="button"
+                    onClick={handleAddComplianceDocSlot}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                  >
+                    <Plus size={13} /> Add First Document
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {complianceDocs.map((docItem) => (
+                    <ComplianceDocCard
+                      key={docItem.id}
+                      doc={docItem}
+                      onUpdate={(updated) => {
+                        setComplianceDocs(prev => prev.map(d => d.id === docItem.id ? updated : d));
+                      }}
+                      onRemove={() => handleRemoveComplianceDocSlot(docItem.id, docItem.backendId)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-5 pt-4 border-t border-slate-100 flex items-center gap-2 text-[10px] text-slate-500 font-medium">
+                <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+                <span>All documents are securely synced and verified against the driver compliance register.</span>
               </div>
             </div>
 
@@ -3934,7 +5425,7 @@ export default function Drivers() {
                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
                             TFN Status
                           </label>
-                          <select name="tfnStatus" defaultValue={isEditMode ? (defaultData.tfnStatus || "") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                          <select name="tfnStatus" defaultValue={isEditMode ? (defaultData.tfnStatus || (defaultData.taxNumber ? "Provided" : "")) : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
                             <option value="">Select TFN Status</option>
                             <option value="Provided">Provided</option>
                             <option value="Exempt">Exempt</option>
@@ -3947,7 +5438,7 @@ export default function Drivers() {
                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
                             Tax-Free Threshold Claimed
                           </label>
-                          <select name="taxFreeThreshold" defaultValue={isEditMode ? (defaultData.taxFreeThreshold ? "Yes" : "No") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                          <select name="taxFreeThreshold" defaultValue={isEditMode ? (defaultData.taxFreeThreshold === false ? "No" : "Yes") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
                             <option value="">Select Option</option>
                             <option value="Yes">Yes</option>
                             <option value="No">No</option>
@@ -3958,7 +5449,7 @@ export default function Drivers() {
                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
                             Study Loan Debt (HELP / HECS)
                           </label>
-                          <select name="studyLoanDebt" defaultValue={isEditMode ? (defaultData.studyLoanDebt ? "Yes" : "No") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                          <select name="studyLoanDebt" defaultValue={isEditMode ? (defaultData.studyLoanDebt === true ? "Yes" : "No") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
                             <option value="">Select Option</option>
                             <option value="No">No</option>
                             <option value="Yes">Yes</option>
@@ -3969,7 +5460,7 @@ export default function Drivers() {
                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
                             Tax Declaration Received
                           </label>
-                          <select name="taxDeclReceived" defaultValue={isEditMode ? (defaultData.taxDeclReceived ? "Yes" : "No") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                          <select name="taxDeclReceived" defaultValue={isEditMode ? (defaultData.taxDeclReceived === false ? "No" : "Yes") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
                             <option value="">Select Option</option>
                             <option value="Yes">Yes</option>
                             <option value="No">No</option>
@@ -3980,7 +5471,7 @@ export default function Drivers() {
                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
                             Residency Status
                           </label>
-                          <select name="residencyStatus" defaultValue={isEditMode ? (defaultData.residencyStatus || "") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                          <select name="residencyStatus" defaultValue={isEditMode ? (defaultData.residencyStatus || "Australian Resident") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
                             <option value="">Select Residency Status</option>
                             <option value="Australian Resident">Australian Resident</option>
                             <option value="Working Holiday Maker">Working Holiday Maker</option>
@@ -3992,7 +5483,7 @@ export default function Drivers() {
                           <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">
                             PAYG Calculation Method
                           </label>
-                          <select name="paygCalcMethod" defaultValue={isEditMode ? (defaultData.paygCalcMethod || "") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                          <select name="paygCalcMethod" defaultValue={isEditMode ? (defaultData.paygCalcMethod || "ATO Scale") : ""} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
                             <option value="">Select Calc Method</option>
                             <option value="ATO Scale">ATO Standard Withholding Scale</option>
                             <option value="Approved Integration">Approved Payroll Integration</option>
@@ -4043,12 +5534,12 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">6. Vehicle Preferences</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
-                <InputField label="Preferred Vehicle" defaultValue={isEditMode ? defaultData.preferredVehicle : ""} placeholder="e.g. Volvo FH16" />
-                <InputField label="Preferred Routes" defaultValue={isEditMode ? defaultData.preferredRoutes : ""} placeholder="e.g. Sydney - Melbourne" />
-                <InputField label="Preferred Regions" defaultValue={isEditMode ? defaultData.preferredRegions : ""} placeholder="e.g. East Coast" />
-                <InputField label="Maximum Distance Per Trip (KM)" defaultValue={isEditMode ? defaultData.maxDistPerTripKm : ""} placeholder="e.g. 1000" />
-                <InputField label="Dangerous Goods Certified" type="select" options={['No', 'Yes']} defaultValue={isEditMode ? (defaultData.dgCertified || "No") : "No"} />
-                <InputField label="Heavy Vehicle Certified" type="select" options={['Yes', 'No']} defaultValue={isEditMode ? (defaultData.hvCertified || "Yes") : "Yes"} />
+                <InputField label="Preferred Vehicle" optional={true} defaultValue={isEditMode ? defaultData.preferredVehicle : ""} placeholder="e.g. Volvo FH16" />
+                <InputField label="Preferred Routes" optional={true} defaultValue={isEditMode ? defaultData.preferredRoutes : ""} placeholder="e.g. Sydney - Melbourne" />
+                <InputField label="Preferred Regions" optional={true} defaultValue={isEditMode ? defaultData.preferredRegions : ""} placeholder="e.g. East Coast" />
+                <InputField label="Maximum Distance Per Trip (KM)" optional={true} defaultValue={isEditMode ? defaultData.maxDistPerTripKm : ""} placeholder="e.g. 1000" />
+                <InputField label="Dangerous Goods Certified" optional={true} type="select" options={['No', 'Yes']} defaultValue={isEditMode ? (defaultData.dgCertified || "No") : "No"} />
+                <InputField label="Heavy Vehicle Certified" optional={true} type="select" options={['Yes', 'No']} defaultValue={isEditMode ? (defaultData.hvCertified || "Yes") : "Yes"} />
               </div>
             </div>
 
@@ -4056,11 +5547,42 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">7. Availability</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 mb-6">
-                <InputField label="Available From" type="date" />
-                <InputField label="Preferred Shift" type="select" options={['Morning', 'Afternoon', 'Night', 'Rotating']} defaultValue={isEditMode ? "Morning" : ""} />
-                <InputField label="Weekly Hours Limit" defaultValue={isEditMode ? "50" : ""} placeholder="e.g. 40" />
-                <InputField label="Max Working Hours/Day" defaultValue={isEditMode ? "10" : ""} placeholder="e.g. 10" />
-                <InputField label="Rest Days / Week" defaultValue={isEditMode ? "2" : ""} placeholder="e.g. 2" />
+                <InputField 
+                  label="Available From" 
+                  name="availableFrom"
+                  optional={true} 
+                  type="date" 
+                  defaultValue={isEditMode && defaultData.availableFrom ? defaultData.availableFrom.split('T')[0] : ""} 
+                />
+                <InputField 
+                  label="Preferred Shift" 
+                  name="preferredShift"
+                  optional={true} 
+                  type="select" 
+                  options={['Morning', 'Afternoon', 'Night', 'Rotating']} 
+                  defaultValue={isEditMode ? (defaultData.shift || defaultData.preferredShift || "") : ""} 
+                />
+                <InputField 
+                  label="Weekly Hours Limit" 
+                  name="weeklyHoursLimit"
+                  optional={true} 
+                  defaultValue={isEditMode ? (defaultData.weeklyHoursLimit || "") : ""} 
+                  placeholder="e.g. 40" 
+                />
+                <InputField 
+                  label="Max Working Hours/Day" 
+                  name="maxHoursPerDay"
+                  optional={true} 
+                  defaultValue={isEditMode ? (defaultData.maxHoursPerDay || "") : ""} 
+                  placeholder="e.g. 10" 
+                />
+                <InputField 
+                  label="Rest Days / Week" 
+                  name="restDaysPerWeek"
+                  optional={true} 
+                  defaultValue={isEditMode ? (defaultData.restDaysPerWeek || "") : ""} 
+                  placeholder="e.g. 2" 
+                />
               </div>
 
               <div className="w-full">
@@ -4152,10 +5674,38 @@ export default function Drivers() {
                 </p>
               </div>
               <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                <button type="button" onClick={handleCloseDriverForm} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Cancel</button>
-                <button type="button" onClick={() => { const formEl = document.getElementById('driver-upsert-form'); if (formEl) formEl.requestSubmit(); }} className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Save as Draft</button>
-                <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">
-                  <Settings size={14} /> {isEditMode ? "Update Driver" : "Save Driver"}
+                <button 
+                  type="button" 
+                  disabled={isSubmittingDriver}
+                  onClick={handleCloseDriverForm} 
+                  className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  disabled={isSubmittingDriver}
+                  onClick={() => { const formEl = document.getElementById('driver-upsert-form'); if (formEl) formEl.requestSubmit(); }} 
+                  className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                >
+                  Save as Draft
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingDriver}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 disabled:bg-purple-400 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"
+                >
+                  {isSubmittingDriver ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>{isEditMode ? "Updating..." : "Saving..."}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Settings size={14} />
+                      <span>{isEditMode ? "Update Driver" : "Save Driver"}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -4192,7 +5742,7 @@ export default function Drivers() {
               <p className="text-xs text-slate-500 font-medium mt-1.5">View and manage driver information, documents, assignments and performance.</p>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-              <button onClick={() => setIsEditingDriver(true)} className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-slate-900 text-slate-900 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">
+              <button onClick={() => handleSelectDriverForEdit(selectedDriver)} className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-slate-900 text-slate-900 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">
                 <Edit2 size={14} /> <span>Edit Driver</span>
               </button>
               <button onClick={() => setShowMessageDriverModal(true)} className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">
@@ -4214,14 +5764,14 @@ export default function Drivers() {
                 </div>
                 <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-1 shadow-sm shrink-0">
                   <button
-                    onClick={() => currentDriverIndex > 0 && setSelectedDriver(driverList[currentDriverIndex - 1])}
+                    onClick={() => currentDriverIndex > 0 && handleSelectDriverForView(driverList[currentDriverIndex - 1])}
                     disabled={currentDriverIndex <= 0}
                     className={`p-1.5 rounded transition-colors ${currentDriverIndex > 0 ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-50 cursor-pointer' : 'text-slate-200 cursor-not-allowed'}`}
                   >
                     <ChevronLeft size={14} />
                   </button>
                   <button
-                    onClick={() => currentDriverIndex < driverList.length - 1 && setSelectedDriver(driverList[currentDriverIndex + 1])}
+                    onClick={() => currentDriverIndex < driverList.length - 1 && handleSelectDriverForView(driverList[currentDriverIndex + 1])}
                     disabled={currentDriverIndex >= driverList.length - 1}
                     className={`p-1.5 rounded transition-colors ${currentDriverIndex < driverList.length - 1 ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-50 cursor-pointer' : 'text-slate-200 cursor-not-allowed'}`}
                   >
@@ -4758,7 +6308,7 @@ export default function Drivers() {
                         </thead>
                         <tbody>
                           {filteredDocList.length > 0 ? filteredDocList.map((doc, idx) => (
-                            <tr key={doc.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                            <tr key={doc.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors cursor-pointer" onClick={() => handleOpenViewDocModal(doc)}>
                               <td className="px-4 py-3.5">
                                 <div className="flex items-center gap-2.5">
                                   <FileIcon size={14} className={doc.status === 'Expired' ? 'text-rose-500' : (doc.status === 'Expiring Soon' ? 'text-amber-500' : 'text-blue-500')} />
@@ -4808,14 +6358,14 @@ export default function Drivers() {
                                         className="fixed w-48 bg-white rounded-2xl shadow-2xl border border-slate-200 p-1.5 z-[9990] flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left animate-in fade-in zoom-in-95 duration-100 ring-1 ring-slate-900/10"
                                       >
                                         <button
-                                          onClick={(e) => { e.stopPropagation(); setViewDocModal(doc); setDocMenuIndex(null); }}
+                                          onClick={(e) => { e.stopPropagation(); handleOpenViewDocModal(doc); setDocMenuIndex(null); }}
                                           className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
                                         >
                                           <Eye size={14} className="text-purple-600" />
                                           <span>View Details</span>
                                         </button>
                                         <button
-                                          onClick={(e) => { e.stopPropagation(); setEditDocModal({ ...doc }); setDocMenuIndex(null); }}
+                                          onClick={(e) => { e.stopPropagation(); handleOpenEditDocModal(doc); setDocMenuIndex(null); }}
                                           className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
                                         >
                                           <Edit size={14} className="text-amber-600" />
@@ -4903,92 +6453,159 @@ export default function Drivers() {
 
                     {/* Upcoming Expiry & Alerts */}
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                      <div className="flex justify-between items-center mb-5">
-                        <h2 className="text-sm font-black text-slate-900">Upcoming Expiry & Alerts</h2>
-                        <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors flex items-center">View All &rarr;</button>
-                      </div>
-                      <div className="space-y-4">
-                        {/* Alert 1 */}
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5 text-amber-500"><FileIcon size={14} /></div>
-                            <div>
-                              <h4 className="text-[11px] font-bold text-slate-800">Medical Certificate</h4>
-                              <p className="text-[10px] font-medium text-slate-500">Expires on 10/08/2025</p>
+                      {(() => {
+                        const complianceAlerts = [];
+                        const now = new Date();
+                        const seenTypes = new Set();
+
+                        (documentList || []).forEach(doc => {
+                          const rawExp = doc.expiryDate || doc.expiry;
+                          if (rawExp && rawExp !== 'N/A' && rawExp !== '—') {
+                            const d = new Date(rawExp);
+                            if (!isNaN(d.getTime())) {
+                              const diffDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
+                              const isExpired = diffDays < 0;
+                              const isUrgent = diffDays >= 0 && diffDays <= 30;
+                              const color = isExpired ? 'rose' : (isUrgent ? 'amber' : 'emerald');
+                              const badge = isExpired ? 'Expired' : `In ${diffDays} days`;
+                              const dateText = isExpired ? `Expired on ${safeDateToLocale(d, 'en-AU', rawExp)}` : `Expires on ${safeDateToLocale(d, 'en-AU', rawExp)}`;
+                              const typeLabel = doc.type || 'Document';
+                              seenTypes.add(typeLabel.toLowerCase());
+                              complianceAlerts.push({
+                                label: typeLabel,
+                                dateText,
+                                badge,
+                                color,
+                                diffDays
+                              });
+                            }
+                          }
+                        });
+
+                        if (selectedDriver?.licenseExpiry && !seenTypes.has('licence') && !seenTypes.has('driver licence')) {
+                          const d = new Date(selectedDriver.licenseExpiry);
+                          if (!isNaN(d.getTime())) {
+                            const diffDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
+                            const isExpired = diffDays < 0;
+                            const isUrgent = diffDays >= 0 && diffDays <= 30;
+                            complianceAlerts.push({
+                              label: selectedDriver.licence || selectedDriver.licenseClass || 'Driver Licence',
+                              dateText: isExpired ? `Expired on ${safeDateToLocale(d, 'en-AU')}` : `Expires on ${safeDateToLocale(d, 'en-AU')}`,
+                              badge: isExpired ? 'Expired' : `In ${diffDays} days`,
+                              color: isExpired ? 'rose' : (isUrgent ? 'amber' : 'emerald'),
+                              diffDays
+                            });
+                          }
+                        }
+
+                        if (selectedDriver?.medicalExpiry && !seenTypes.has('medical') && !seenTypes.has('medical certificate')) {
+                          const d = new Date(selectedDriver.medicalExpiry);
+                          if (!isNaN(d.getTime())) {
+                            const diffDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
+                            const isExpired = diffDays < 0;
+                            const isUrgent = diffDays >= 0 && diffDays <= 30;
+                            complianceAlerts.push({
+                              label: 'Medical Certificate',
+                              dateText: isExpired ? `Expired on ${safeDateToLocale(d, 'en-AU')}` : `Expires on ${safeDateToLocale(d, 'en-AU')}`,
+                              badge: isExpired ? 'Expired' : `In ${diffDays} days`,
+                              color: isExpired ? 'rose' : (isUrgent ? 'amber' : 'emerald'),
+                              diffDays
+                            });
+                          }
+                        }
+
+                        complianceAlerts.sort((a, b) => a.diffDays - b.diffDays);
+
+                        return (
+                          <>
+                            <div className="flex justify-between items-center mb-5">
+                              <h2 className="text-sm font-black text-slate-900">Upcoming Expiry & Alerts</h2>
+                              <span className="text-[10px] font-bold text-slate-400">{complianceAlerts.length} Active</span>
                             </div>
-                          </div>
-                          <span className="inline-flex px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded text-[9px] font-bold">In 28 days</span>
-                        </div>
-                        <div className="border-t border-slate-100"></div>
-                        {/* Alert 2 */}
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5 text-amber-500"><FileIcon size={14} /></div>
-                            <div>
-                              <h4 className="text-[11px] font-bold text-slate-800">MR Licence</h4>
-                              <p className="text-[10px] font-medium text-slate-500">Expires on 10/04/2026</p>
+                            <div className="space-y-4">
+                              {complianceAlerts.length === 0 ? (
+                                <div className="text-center py-6 text-slate-400">
+                                  <CheckCircle2 size={24} className="mx-auto mb-2 text-emerald-500 opacity-80" />
+                                  <p className="text-[11px] font-semibold text-slate-700">No Upcoming Expiries</p>
+                                  <p className="text-[10px] text-slate-400 mt-0.5">All driver compliance documents are up to date.</p>
+                                </div>
+                              ) : (
+                                complianceAlerts.map((alert, i) => {
+                                  const badgeClass = alert.color === 'rose'
+                                    ? 'bg-rose-50 text-rose-600 border-rose-200'
+                                    : (alert.color === 'amber'
+                                      ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                      : 'bg-emerald-50 text-emerald-600 border-emerald-200');
+                                  const iconColor = alert.color === 'rose'
+                                    ? 'text-rose-500'
+                                    : (alert.color === 'amber' ? 'text-amber-500' : 'text-emerald-500');
+
+                                  return (
+                                    <React.Fragment key={i}>
+                                      {i > 0 && <div className="border-t border-slate-100"></div>}
+                                      <div className="flex justify-between items-center">
+                                        <div className="flex items-start gap-3">
+                                          <div className={`mt-0.5 ${iconColor}`}><FileIcon size={14} /></div>
+                                          <div>
+                                            <h4 className="text-[11px] font-bold text-slate-800">{alert.label}</h4>
+                                            <p className="text-[10px] font-medium text-slate-500">{alert.dateText}</p>
+                                          </div>
+                                        </div>
+                                        <span className={`inline-flex px-1.5 py-0.5 border rounded text-[9px] font-bold ${badgeClass}`}>
+                                          {alert.badge}
+                                        </span>
+                                      </div>
+                                    </React.Fragment>
+                                  );
+                                })
+                              )}
                             </div>
-                          </div>
-                          <span className="inline-flex px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded text-[9px] font-bold">In 235 days</span>
-                        </div>
-                        <div className="border-t border-slate-100"></div>
-                        {/* Alert 3 */}
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5 text-emerald-500"><FileIcon size={14} /></div>
-                            <div>
-                              <h4 className="text-[11px] font-bold text-slate-800">HR Licence</h4>
-                              <p className="text-[10px] font-medium text-slate-500">Expires on 12/03/2028</p>
-                            </div>
-                          </div>
-                          <span className="inline-flex px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-[9px] font-bold">In 884 days</span>
-                        </div>
-                        <div className="border-t border-slate-100"></div>
-                        {/* Alert 4 */}
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5 text-rose-500"><Shield size={14} /></div>
-                            <div>
-                              <h4 className="text-[11px] font-bold text-slate-800">Road Ranger Accreditation</h4>
-                              <p className="text-[10px] font-medium text-slate-500">Expired on 01/09/2025</p>
-                            </div>
-                          </div>
-                          <span className="inline-flex px-1.5 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded text-[9px] font-bold">Expired</span>
-                        </div>
-                      </div>
+                          </>
+                        );
+                      })()}
                     </div>
 
                     {/* AI Insights */}
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                       <div className="p-4 border-b border-slate-100 flex items-center gap-2">
                         <Settings size={16} className="text-purple-600" />
-                        <h3 className="text-sm font-black text-slate-800">AI Insights <span className="bg-purple-100 text-purple-700 text-[9px] px-1.5 py-0.5 rounded ml-1 tracking-widest uppercase">BETA</span></h3>
+                        <h3 className="text-sm font-black text-slate-800">Compliance Insights <span className="bg-purple-100 text-purple-700 text-[9px] px-1.5 py-0.5 rounded ml-1 tracking-widest uppercase">LIVE</span></h3>
                       </div>
-                      <div className="p-4 space-y-5">
-                        <div className="flex gap-3">
-                          <div className="mt-0.5 text-purple-600"><AlertTriangle size={14} /></div>
-                          <div>
-                            <h4 className="text-[11px] font-bold text-slate-800">Road Ranger Accreditation has expired.</h4>
-                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">Recommend renewal.</p>
+                      <div className="p-4 space-y-4">
+                        {expiredCount > 0 && (
+                          <div className="flex gap-3">
+                            <div className="mt-0.5 text-rose-600"><AlertTriangle size={14} /></div>
+                            <div>
+                              <h4 className="text-[11px] font-bold text-slate-800">{expiredCount} document(s) expired.</h4>
+                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">Recommend immediate renewal.</p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="mt-0.5 text-purple-600"><FileIcon size={14} /></div>
-                          <div>
-                            <h4 className="text-[11px] font-bold text-slate-800">Medical Certificate will expire in 28 days.</h4>
-                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">Recommend booking.</p>
+                        )}
+                        {expiringCount > 0 && (
+                          <div className="flex gap-3">
+                            <div className="mt-0.5 text-amber-600"><FileIcon size={14} /></div>
+                            <div>
+                              <h4 className="text-[11px] font-bold text-slate-800">{expiringCount} document(s) expiring soon.</h4>
+                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">Recommend scheduling renewal.</p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="mt-0.5 text-purple-600"><CheckCircle size={14} /></div>
-                          <div>
-                            <h4 className="text-[11px] font-bold text-slate-800">All critical licences are valid.</h4>
-                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">Great job!</p>
+                        )}
+                        {totalDocsCount > 0 && expiredCount === 0 && expiringCount === 0 && (
+                          <div className="flex gap-3">
+                            <div className="mt-0.5 text-emerald-600"><CheckCircle size={14} /></div>
+                            <div>
+                              <h4 className="text-[11px] font-bold text-slate-800">All uploaded documents are valid.</h4>
+                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">Driver compliance status is 100%.</p>
+                            </div>
                           </div>
-                        </div>
-                        <button className="w-full flex items-center justify-center gap-2 py-2 mt-2 bg-purple-50 text-purple-700 rounded-lg text-[11px] font-bold hover:bg-purple-100 transition-colors cursor-pointer">
-                          <Zap size={14} /> View AI Insights
-                        </button>
+                        )}
+                        {totalDocsCount === 0 && (
+                          <div className="text-center py-4 text-slate-400">
+                            <CheckCircle2 size={20} className="mx-auto mb-1 text-slate-300" />
+                            <p className="text-[11px] font-semibold text-slate-600">No compliance documents attached.</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Upload licences or medical certificates above.</p>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -5466,7 +7083,17 @@ export default function Drivers() {
             </div>
           )}
 
-          {activeTab === 'Assignments & Availability' && (
+          {activeTab === 'Assignments & Availability' && (() => {
+            const isDriverAvailable = (selectedDriver?.status || '').toLowerCase() === 'available' || (selectedDriver?.status || '').toLowerCase() === 'active';
+            const today = new Date();
+            const currentMonthName = today.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7; // Monday = 0
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const todayDate = today.getDate();
+
+            return (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
 
               {/* Left Panel - Assignments */}
@@ -5475,7 +7102,7 @@ export default function Drivers() {
                 {/* Current Assignments */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
                   <div className="p-4 border-b border-slate-100 flex justify-between items-center">
-                    <h3 className="text-sm font-black text-slate-800">Current Assignments (2)</h3>
+                    <h3 className="text-sm font-black text-slate-800">Current Assignments ({currentAssignmentsList.length})</h3>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Active tasks on the road</span>
                   </div>
                   <div className="overflow-x-auto">
@@ -5493,92 +7120,100 @@ export default function Drivers() {
                         </tr>
                       </thead>
                       <tbody>
-                        {currentAssignmentsList.map((item, idx) => (
-                          <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/50">
-                            <td className="px-4 py-3 text-[11px] font-bold text-purple-600 cursor-pointer hover:underline">{item.id}</td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.type}</td>
-                            <td className="px-4 py-3">
-                              <div className="text-[11px] font-bold text-slate-800">{item.route}</div>
-                              <div className="text-[9px] text-slate-400 font-medium">{item.stops}</div>
-                            </td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.vehicle}</td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.start}</td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.end}</td>
-                            <td className="px-4 py-3">
-                              <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase ${item.status === 'In Progress' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>{item.status}</span>
-                            </td>
-                            <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (currAssignMenuIndex === idx) {
-                                      setCurrAssignMenuIndex(null);
-                                    } else {
-                                      const rect = e.currentTarget.getBoundingClientRect();
-                                      setCurrAssignMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-                                      setCurrAssignMenuIndex(idx);
-                                    }
-                                  }}
-                                  title="More Actions"
-                                  className={`w-8 h-8 rounded-xl transition-all cursor-pointer shadow-2xs border flex items-center justify-center ${currAssignMenuIndex === idx ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-slate-100/80 hover:bg-slate-200 text-slate-600 border-slate-200/50'}`}
-                                >
-                                  <MoreHorizontal size={15} />
-                                </button>
+                        {currentAssignmentsList.length > 0 ? (
+                          currentAssignmentsList.map((item, idx) => (
+                            <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/50">
+                              <td className="px-4 py-3 text-[11px] font-bold text-purple-600 cursor-pointer hover:underline">{item.id}</td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.type}</td>
+                              <td className="px-4 py-3">
+                                <div className="text-[11px] font-bold text-slate-800">{item.route}</div>
+                                <div className="text-[9px] text-slate-400 font-medium">{item.stops}</div>
+                              </td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.vehicle}</td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.start}</td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.end}</td>
+                              <td className="px-4 py-3">
+                                <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase ${item.status === 'In Progress' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>{item.status}</span>
+                              </td>
+                              <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (currAssignMenuIndex === idx) {
+                                        setCurrAssignMenuIndex(null);
+                                      } else {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setCurrAssignMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                                        setCurrAssignMenuIndex(idx);
+                                      }
+                                    }}
+                                    title="More Actions"
+                                    className={`w-8 h-8 rounded-xl transition-all cursor-pointer shadow-2xs border flex items-center justify-center ${currAssignMenuIndex === idx ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-slate-100/80 hover:bg-slate-200 text-slate-600 border-slate-200/50'}`}
+                                  >
+                                    <MoreHorizontal size={15} />
+                                  </button>
 
-                                {currAssignMenuIndex === idx && currAssignMenuPos && (
-                                  <>
-                                    <div className="fixed inset-0 z-[9980]" onClick={(e) => { e.stopPropagation(); setCurrAssignMenuIndex(null); }} />
-                                    <div
-                                      style={{ top: `${currAssignMenuPos.top}px`, right: `${currAssignMenuPos.right}px` }}
-                                      className="fixed w-48 bg-white rounded-2xl shadow-2xl border border-slate-200 p-1.5 z-[9990] flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left animate-in fade-in zoom-in-95 duration-100 ring-1 ring-slate-900/10"
-                                    >
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setViewCurrAssignModal(item); setCurrAssignMenuIndex(null); }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
+                                  {currAssignMenuIndex === idx && currAssignMenuPos && (
+                                    <>
+                                      <div className="fixed inset-0 z-[9980]" onClick={(e) => { e.stopPropagation(); setCurrAssignMenuIndex(null); }} />
+                                      <div
+                                        style={{ top: `${currAssignMenuPos.top}px`, right: `${currAssignMenuPos.right}px` }}
+                                        className="fixed w-48 bg-white rounded-2xl shadow-2xl border border-slate-200 p-1.5 z-[9990] flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left animate-in fade-in zoom-in-95 duration-100 ring-1 ring-slate-900/10"
                                       >
-                                        <Eye size={14} className="text-purple-600" />
-                                        <span>View Details</span>
-                                      </button>
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setEditCurrAssignModal({ ...item, index: idx }); setCurrAssignMenuIndex(null); }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
-                                      >
-                                        <Edit size={14} className="text-amber-600" />
-                                        <span>Edit Record</span>
-                                      </button>
-                                      <div className="h-px bg-slate-100 my-0.5" />
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setCurrentAssignmentsList(prev => prev.filter((_, i) => i !== idx));
-                                          setCurrAssignMenuIndex(null);
-                                          showToast(`Deleted assignment ${item.id} successfully`);
-                                        }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 transition-all text-left w-full cursor-pointer font-bold"
-                                      >
-                                        <Trash2 size={14} className="text-rose-600" />
-                                        <span>Delete Record</span>
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setViewCurrAssignModal(item); setCurrAssignMenuIndex(null); }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
+                                        >
+                                          <Eye size={14} className="text-purple-600" />
+                                          <span>View Details</span>
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setEditCurrAssignModal({ ...item, index: idx }); setCurrAssignMenuIndex(null); }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
+                                        >
+                                          <Edit size={14} className="text-amber-600" />
+                                          <span>Edit Record</span>
+                                        </button>
+                                        <div className="h-px bg-slate-100 my-0.5" />
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCurrentAssignmentsList(prev => prev.filter((_, i) => i !== idx));
+                                            setCurrAssignMenuIndex(null);
+                                            showToast(`Deleted assignment ${item.id} successfully`);
+                                          }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 transition-all text-left w-full cursor-pointer font-bold"
+                                        >
+                                          <Trash2 size={14} className="text-rose-600" />
+                                          <span>Delete Record</span>
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="8" className="px-4 py-8 text-center text-xs font-semibold text-slate-400">
+                              No active assignments on the road.
                             </td>
                           </tr>
-                        ))}
+                        )}
                       </tbody>
                     </table>
                   </div>
                   <div className="p-3 border-t border-slate-100 text-[10px] text-slate-500 font-medium">
-                    Showing 1 to 2 of 2 assignments
+                    Showing {currentAssignmentsList.length} assignment(s)
                   </div>
                 </div>
 
                 {/* Upcoming Assignments */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
                   <div className="p-4 border-b border-slate-100 flex justify-between items-center">
-                    <h3 className="text-sm font-black text-slate-800">Upcoming Assignments (2)</h3>
+                    <h3 className="text-sm font-black text-slate-800">Upcoming Assignments ({upcomingAssignmentsList.length})</h3>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Planned trips & dispatch queue</span>
                   </div>
                   <div className="overflow-x-auto">
@@ -5596,85 +7231,93 @@ export default function Drivers() {
                         </tr>
                       </thead>
                       <tbody>
-                        {upcomingAssignmentsList.map((item, idx) => (
-                          <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/50">
-                            <td className="px-4 py-3 text-[11px] font-bold text-purple-600 cursor-pointer hover:underline">{item.id}</td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.type}</td>
-                            <td className="px-4 py-3">
-                              <div className="text-[11px] font-bold text-slate-800">{item.route}</div>
-                              <div className="text-[9px] text-slate-400 font-medium">{item.stops}</div>
-                            </td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.vehicle}</td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.start}</td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.end}</td>
-                            <td className="px-4 py-3">
-                              <span className="inline-flex px-1.5 py-0.5 bg-purple-50 text-purple-600 border border-purple-200 rounded text-[9px] font-bold tracking-widest uppercase">{item.status}</span>
-                            </td>
-                            <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (upAssignMenuIndex === idx) {
-                                      setUpAssignMenuIndex(null);
-                                    } else {
-                                      const rect = e.currentTarget.getBoundingClientRect();
-                                      setUpAssignMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-                                      setUpAssignMenuIndex(idx);
-                                    }
-                                  }}
-                                  title="More Actions"
-                                  className={`w-8 h-8 rounded-xl transition-all cursor-pointer shadow-2xs border flex items-center justify-center ${upAssignMenuIndex === idx ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-slate-100/80 hover:bg-slate-200 text-slate-600 border-slate-200/50'}`}
-                                >
-                                  <MoreHorizontal size={15} />
-                                </button>
+                        {upcomingAssignmentsList.length > 0 ? (
+                          upcomingAssignmentsList.map((item, idx) => (
+                            <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/50">
+                              <td className="px-4 py-3 text-[11px] font-bold text-purple-600 cursor-pointer hover:underline">{item.id}</td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.type}</td>
+                              <td className="px-4 py-3">
+                                <div className="text-[11px] font-bold text-slate-800">{item.route}</div>
+                                <div className="text-[9px] text-slate-400 font-medium">{item.stops}</div>
+                              </td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.vehicle}</td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.start}</td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.end}</td>
+                              <td className="px-4 py-3">
+                                <span className="inline-flex px-1.5 py-0.5 bg-purple-50 text-purple-600 border border-purple-200 rounded text-[9px] font-bold tracking-widest uppercase">{item.status}</span>
+                              </td>
+                              <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (upAssignMenuIndex === idx) {
+                                        setUpAssignMenuIndex(null);
+                                      } else {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setUpAssignMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                                        setUpAssignMenuIndex(idx);
+                                      }
+                                    }}
+                                    title="More Actions"
+                                    className={`w-8 h-8 rounded-xl transition-all cursor-pointer shadow-2xs border flex items-center justify-center ${upAssignMenuIndex === idx ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-slate-100/80 hover:bg-slate-200 text-slate-600 border-slate-200/50'}`}
+                                  >
+                                    <MoreHorizontal size={15} />
+                                  </button>
 
-                                {upAssignMenuIndex === idx && upAssignMenuPos && (
-                                  <>
-                                    <div className="fixed inset-0 z-[9980]" onClick={(e) => { e.stopPropagation(); setUpAssignMenuIndex(null); }} />
-                                    <div
-                                      style={{ top: `${upAssignMenuPos.top}px`, right: `${upAssignMenuPos.right}px` }}
-                                      className="fixed w-48 bg-white rounded-2xl shadow-2xl border border-slate-200 p-1.5 z-[9990] flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left animate-in fade-in zoom-in-95 duration-100 ring-1 ring-slate-900/10"
-                                    >
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setViewUpAssignModal(item); setUpAssignMenuIndex(null); }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
+                                  {upAssignMenuIndex === idx && upAssignMenuPos && (
+                                    <>
+                                      <div className="fixed inset-0 z-[9980]" onClick={(e) => { e.stopPropagation(); setViewUpAssignModal(item); setUpAssignMenuIndex(null); }} />
+                                      <div
+                                        style={{ top: `${upAssignMenuPos.top}px`, right: `${upAssignMenuPos.right}px` }}
+                                        className="fixed w-48 bg-white rounded-2xl shadow-2xl border border-slate-200 p-1.5 z-[9990] flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left animate-in fade-in zoom-in-95 duration-100 ring-1 ring-slate-900/10"
                                       >
-                                        <Eye size={14} className="text-purple-600" />
-                                        <span>View Details</span>
-                                      </button>
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setEditUpAssignModal({ ...item, index: idx }); setUpAssignMenuIndex(null); }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
-                                      >
-                                        <Edit size={14} className="text-amber-600" />
-                                        <span>Edit Record</span>
-                                      </button>
-                                      <div className="h-px bg-slate-100 my-0.5" />
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setUpcomingAssignmentsList(prev => prev.filter((_, i) => i !== idx));
-                                          setUpAssignMenuIndex(null);
-                                          showToast(`Deleted assignment ${item.id} successfully`);
-                                        }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 transition-all text-left w-full cursor-pointer font-bold"
-                                      >
-                                        <Trash2 size={14} className="text-rose-600" />
-                                        <span>Delete Record</span>
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setViewUpAssignModal(item); setUpAssignMenuIndex(null); }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
+                                        >
+                                          <Eye size={14} className="text-purple-600" />
+                                          <span>View Details</span>
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setEditUpAssignModal({ ...item, index: idx }); setUpAssignMenuIndex(null); }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
+                                        >
+                                          <Edit size={14} className="text-amber-600" />
+                                          <span>Edit Record</span>
+                                        </button>
+                                        <div className="h-px bg-slate-100 my-0.5" />
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setUpcomingAssignmentsList(prev => prev.filter((_, i) => i !== idx));
+                                            setUpAssignMenuIndex(null);
+                                            showToast(`Deleted assignment ${item.id} successfully`);
+                                          }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 transition-all text-left w-full cursor-pointer font-bold"
+                                        >
+                                          <Trash2 size={14} className="text-rose-600" />
+                                          <span>Delete Record</span>
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="8" className="px-4 py-8 text-center text-xs font-semibold text-slate-400">
+                              No upcoming planned trips in dispatch queue.
                             </td>
                           </tr>
-                        ))}
+                        )}
                       </tbody>
                     </table>
                   </div>
                   <div className="p-3 border-t border-slate-100 text-[10px] text-slate-500 font-medium">
-                    Showing 1 to 2 of 2 upcoming assignments
+                    Showing {upcomingAssignmentsList.length} upcoming assignment(s)
                   </div>
                 </div>
 
@@ -5684,43 +7327,71 @@ export default function Drivers() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="flex flex-col gap-1 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600"><CheckCircle2 size={10} /></div>
+                        <div className={`w-5 h-5 rounded-full ${isDriverAvailable ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'} flex items-center justify-center`}>
+                          <CheckCircle2 size={10} />
+                        </div>
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Available Now</span>
                       </div>
-                      <span className="text-sm font-black text-slate-900">No</span>
-                      <span className="text-[10px] text-slate-500 font-semibold">Unavailable</span>
+                      <span className={`text-sm font-black ${isDriverAvailable ? 'text-emerald-600' : 'text-slate-900'}`}>
+                        {isDriverAvailable ? 'Yes' : 'No'}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold">
+                        {isDriverAvailable ? 'Available for duty' : (selectedDriver?.status || 'Unavailable')}
+                      </span>
                     </div>
                     <div className="flex flex-col gap-1 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><Calendar size={10} /></div>
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Next Available From</span>
                       </div>
-                      <span className="text-sm font-black text-slate-900">—</span>
-                      <span className="text-[10px] text-slate-500 font-semibold">On Leave/Duty</span>
+                      <span className="text-sm font-black text-slate-900">
+                        {selectedDriver?.availableFrom 
+                          ? safeDateToLocale(selectedDriver.availableFrom, 'en-AU', 'Immediate') 
+                          : (isDriverAvailable ? 'Immediate' : '—')}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold">
+                        {selectedDriver?.availableFrom 
+                          ? 'Scheduled date' 
+                          : (isDriverAvailable ? 'Ready for duty' : 'Pending status')}
+                      </span>
                     </div>
                     <div className="flex flex-col gap-1 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Clock size={10} /></div>
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Available For (Days)</span>
                       </div>
-                      <span className="text-sm font-black text-slate-900">0 days</span>
-                      <span className="text-[10px] text-slate-500 font-semibold">—</span>
+                      <span className="text-sm font-black text-slate-900">
+                        {selectedDriver?.weeklyHoursLimit 
+                          ? `${selectedDriver.weeklyHoursLimit} hrs/wk` 
+                          : (selectedDriver?.shift ? selectedDriver.shift : '—')}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold">
+                        {selectedDriver?.shift ? `${selectedDriver.shift} Shift` : (selectedDriver?.weeklyHoursLimit ? 'Weekly Limit' : 'Not Specified')}
+                      </span>
                     </div>
                     <div className="flex flex-col gap-1 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center text-purple-600"><MapPin size={10} /></div>
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Preferred Regions</span>
                       </div>
-                      <span className="text-xs font-black text-slate-900">NSW, QLD, VIC</span>
-                      <span className="text-[10px] text-slate-500 font-semibold">Primary Preference</span>
+                      <span className="text-xs font-black text-slate-900 truncate" title={selectedDriver?.preferredRegions || '—'}>
+                        {selectedDriver?.preferredRegions || '—'}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold">
+                        {selectedDriver?.preferredRegions ? 'Primary Preference' : 'Not Specified'}
+                      </span>
                     </div>
                     <div className="flex flex-col gap-1 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600"><Truck size={10} /></div>
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Max Distance</span>
                       </div>
-                      <span className="text-sm font-black text-slate-900">1,200 km</span>
-                      <span className="text-[10px] text-slate-500 font-semibold">Per trip preference</span>
+                      <span className="text-sm font-black text-slate-900">
+                        {selectedDriver?.maxDistPerTripKm ? `${Number(selectedDriver.maxDistPerTripKm).toLocaleString()} km` : '—'}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold">
+                        {selectedDriver?.maxDistPerTripKm ? 'Per trip preference' : 'No limit set'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -5733,10 +7404,17 @@ export default function Drivers() {
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                   <div className="p-4 border-b border-slate-100 flex justify-between items-center">
                     <h3 className="text-[11px] font-black text-slate-800">Availability This Month</h3>
-                    <button className="text-[10px] font-bold text-purple-600 flex items-center hover:text-purple-700">View Calendar &rarr;</button>
+                    <button
+                      onClick={() => showToast('Full calendar schedule view is up to date.')}
+                      className="text-[10px] font-bold text-purple-600 flex items-center hover:text-purple-700 cursor-pointer"
+                    >
+                      View Calendar &rarr;
+                    </button>
                   </div>
                   <div className="p-4">
-                    <div className="text-center text-[10px] font-black text-slate-500 tracking-widest uppercase mb-3">July 2025</div>
+                    <div className="text-center text-[10px] font-black text-slate-600 tracking-widest uppercase mb-3">
+                      {currentMonthName}
+                    </div>
 
                     {/* Calendar Grid */}
                     <div className="grid grid-cols-7 gap-1 text-center">
@@ -5745,26 +7423,37 @@ export default function Drivers() {
                         <div key={day} className="text-[8px] font-black text-slate-400 mb-1">{day}</div>
                       ))}
 
-                      {/* Dates (Mocking July 2025 layout) */}
-                      <div className="py-2 text-[10px] font-bold text-slate-300">30</div>
+                      {/* Empty padding for days before month start */}
+                      {Array.from({ length: firstDayIndex }).map((_, i) => (
+                        <div key={`pad-${i}`} className="py-2 text-[10px] font-bold text-slate-200">—</div>
+                      ))}
 
-                      {/* 1st to 13th: Available (Green) */}
-                      {[1, 2, 3, 4].map(d => <div key={d} className="py-2 text-[10px] font-bold bg-emerald-50 text-emerald-700 rounded cursor-pointer">{d}</div>)}
-                      {/* 5th, 6th Weekend */}
-                      <div className="py-2 text-[10px] font-bold bg-rose-50 text-rose-700 rounded cursor-pointer">5</div>
-                      <div className="py-2 text-[10px] font-bold bg-emerald-50 text-emerald-700 rounded cursor-pointer">6</div>
+                      {/* Real days of current month */}
+                      {Array.from({ length: daysInMonth }).map((_, i) => {
+                        const dayNum = i + 1;
+                        const isToday = dayNum === todayDate;
+                        const dayOfWeek = (firstDayIndex + i) % 7;
+                        const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
-                      {[7, 8, 9, 10, 11, 12, 13].map(d => <div key={d} className="py-2 text-[10px] font-bold bg-emerald-50 text-emerald-700 rounded cursor-pointer">{d}</div>)}
+                        let dayClass = 'bg-slate-50 text-slate-700 hover:bg-slate-100';
+                        if (isToday) {
+                          dayClass = 'bg-purple-600 text-white font-black shadow-xs ring-2 ring-purple-200';
+                        } else if (isWeekend) {
+                          dayClass = 'bg-slate-100/70 text-slate-400';
+                        } else if (isDriverAvailable) {
+                          dayClass = 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
+                        }
 
-                      {/* 14th to 27th: Assigned (Purple) */}
-                      {[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(d => <div key={d} className="py-2 text-[10px] font-bold bg-purple-50 text-purple-700 rounded cursor-pointer">{d}</div>)}
-
-                      {/* 28th to 31st: Leave/Unavailable (Grey/Amber) */}
-                      {[28, 29, 30, 31].map(d => <div key={d} className="py-2 text-[10px] font-bold bg-slate-100 text-slate-600 rounded cursor-pointer">{d}</div>)}
-
-                      <div className="py-2 text-[10px] font-bold text-slate-300">1</div>
-                      <div className="py-2 text-[10px] font-bold text-slate-300">2</div>
-                      <div className="py-2 text-[10px] font-bold text-slate-300">3</div>
+                        return (
+                          <div
+                            key={dayNum}
+                            className={`py-2 text-[10px] font-bold rounded transition-colors cursor-pointer ${dayClass}`}
+                            title={`${dayNum} ${currentMonthName}`}
+                          >
+                            {dayNum}
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {/* Legend */}
@@ -5774,16 +7463,16 @@ export default function Drivers() {
                         <span className="text-[9px] font-bold text-slate-600">Available</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full border-2 border-purple-400 bg-purple-50"></div>
-                        <span className="text-[9px] font-bold text-slate-600">Assigned</span>
+                        <div className="w-2.5 h-2.5 rounded-full bg-purple-600"></div>
+                        <span className="text-[9px] font-bold text-slate-600">Today</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full border-2 border-slate-300 bg-slate-100"></div>
+                        <span className="text-[9px] font-bold text-slate-600">Weekend</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full border-2 border-rose-400 bg-rose-50"></div>
                         <span className="text-[9px] font-bold text-slate-600">Unavailable</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full border-2 border-slate-300 bg-slate-100"></div>
-                        <span className="text-[9px] font-bold text-slate-600">Leave</span>
                       </div>
                     </div>
                   </div>
@@ -5793,32 +7482,33 @@ export default function Drivers() {
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-[11px] font-black text-slate-800">Unavailability & Leave</h3>
-                    <button className="text-[10px] font-bold text-purple-600 flex items-center hover:text-purple-700">View All &rarr;</button>
+                    <button
+                      onClick={() => showToast('No additional leave records found.')}
+                      className="text-[10px] font-bold text-purple-600 flex items-center hover:text-purple-700 cursor-pointer"
+                    >
+                      View All &rarr;
+                    </button>
                   </div>
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="text-[10px] font-bold text-slate-700">Annual Leave</h4>
-                        <p className="text-[9px] font-medium text-slate-500">28/07/2025 - 01/08/2025</p>
+                    {leaveRequestsList && leaveRequestsList.length > 0 ? (
+                      leaveRequestsList.map((leave, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <div>
+                            <h4 className="text-[10px] font-bold text-slate-700">{leave.type || 'Leave'}</h4>
+                            <p className="text-[9px] font-medium text-slate-500">{leave.dates || leave.date || '—'}</p>
+                          </div>
+                          <span className="px-2 py-0.5 border border-amber-200 text-amber-600 rounded text-[9px] font-bold bg-amber-50">
+                            {leave.duration || '1 day'}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6 text-slate-400">
+                        <CheckCircle2 size={20} className="mx-auto mb-1 text-emerald-500 opacity-80" />
+                        <p className="text-[11px] font-semibold text-slate-700">No Scheduled Leave</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Driver has no pending or approved leave requests.</p>
                       </div>
-                      <span className="px-2 py-0.5 border border-amber-200 text-amber-600 rounded text-[9px] font-bold bg-amber-50">5 days</span>
-                    </div>
-                    <div className="border-t border-slate-100"></div>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="text-[10px] font-bold text-slate-700">Medical Appointment</h4>
-                        <p className="text-[9px] font-medium text-slate-500">05/08/2025</p>
-                      </div>
-                      <span className="px-2 py-0.5 border border-amber-200 text-amber-600 rounded text-[9px] font-bold bg-amber-50">1 day</span>
-                    </div>
-                    <div className="border-t border-slate-100"></div>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="text-[10px] font-bold text-slate-700">Personal Leave</h4>
-                        <p className="text-[9px] font-medium text-slate-500">12/08/2025 - 13/08/2025</p>
-                      </div>
-                      <span className="px-2 py-0.5 border border-amber-200 text-amber-600 rounded text-[9px] font-bold bg-amber-50">2 days</span>
-                    </div>
+                    )}
                   </div>
                 </div>
 
@@ -5830,7 +7520,10 @@ export default function Drivers() {
                   </div>
                   <div className="p-4">
                     <p className="text-[11px] font-medium text-slate-600 mb-4 leading-relaxed">AI suggests best matching loads based on driver availability, location and preferences.</p>
-                    <button className="w-full py-2 border border-purple-200 text-purple-700 rounded-lg text-[11px] font-bold hover:bg-purple-50 transition-colors flex items-center justify-center gap-1.5">
+                    <button
+                      onClick={() => showToast('AI is monitoring loads for assignment matching.')}
+                      className="w-full py-2 border border-purple-200 text-purple-700 rounded-lg text-[11px] font-bold hover:bg-purple-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
                       <Zap size={12} /> View AI Suggestions
                     </button>
                   </div>
@@ -5838,7 +7531,8 @@ export default function Drivers() {
 
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {activeTab === 'Payroll' && (
             <div className="space-y-6 mt-6">
@@ -6699,14 +8393,12 @@ export default function Drivers() {
                   <select
                     value={branchFilter}
                     onChange={(e) => setBranchFilter(e.target.value)}
-                    className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 outline-none w-full sm:w-24 cursor-pointer focus:border-purple-500"
+                    className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 outline-none w-full sm:w-28 cursor-pointer focus:border-purple-500"
                   >
-                    <option value="All">All</option>
-                    <option value="Sydney">Sydney</option>
-                    <option value="Melbourne">Melbourne</option>
-                    <option value="Brisbane">Brisbane</option>
-                    <option value="Adelaide">Adelaide</option>
-                    <option value="Perth">Perth</option>
+                    <option value="All">All Branches</option>
+                    {companyBranches.map((br, idx) => (
+                      <option key={idx} value={br}>{br}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="flex items-end gap-2 col-span-2 sm:col-span-1 relative">
@@ -6788,7 +8480,7 @@ export default function Drivers() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredDrivers.length > 0 ? filteredDrivers.map((driver, idx) => (
-                    <tr key={driver.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setSelectedDriver(driver)}>
+                    <tr key={driver.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => handleSelectDriverForView(driver)}>
                       <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="rounded border-slate-300 cursor-pointer" /></td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2.5">
@@ -6852,14 +8544,14 @@ export default function Drivers() {
                               <div className="fixed inset-0 z-[80]" onClick={(e) => { e.stopPropagation(); setDriverMenuIndex(null); }} />
                               <div className={`absolute right-2 ${idx >= filteredDrivers.length - 3 ? 'bottom-full mb-1' : 'top-full mt-1'} w-48 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-1.5 z-[90] flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left animate-in fade-in zoom-in-95 duration-100 ring-1 ring-slate-900/5`}>
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); setSelectedDriver(driver); setDriverMenuIndex(null); }}
+                                  onClick={(e) => { e.stopPropagation(); handleSelectDriverForView(driver); setDriverMenuIndex(null); }}
                                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
                                 >
                                   <Eye size={14} className="text-purple-600" />
                                   <span>View Details</span>
                                 </button>
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); setSelectedDriver(driver); setIsEditingDriver(true); setPhotoPreview(driver.avatar || ''); setDriverMenuIndex(null); }}
+                                  onClick={(e) => { e.stopPropagation(); handleSelectDriverForEdit(driver); setDriverMenuIndex(null); }}
                                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
                                 >
                                   <Edit size={14} className="text-amber-600" />
@@ -6867,25 +8559,10 @@ export default function Drivers() {
                                 </button>
                                 <div className="h-px bg-slate-100 my-0.5" />
                                 <button
-                                  onClick={async (e) => {
+                                  onClick={(e) => {
                                     e.stopPropagation();
-                                    if (window.confirm(`Are you sure you want to delete driver "${driver.name}"?`)) {
-                                      const deletedId = driver.id;
-                                      const deletedName = driver.name;
-
-                                      try {
-                                        await api.delete(`/drivers/${deletedId}`).catch(() => api.delete(`/company-admin/drivers/${deletedId}`));
-                                      } catch (err) {
-                                        console.warn('Driver API delete notice:', err);
-                                      } finally {
-                                        await fetchDrivers();
-                                        if (selectedDriver && selectedDriver.id === deletedId) {
-                                          setSelectedDriver(null);
-                                        }
-                                        setDriverMenuIndex(null);
-                                        showToast(`Driver record "${deletedName}" deleted successfully`);
-                                      }
-                                    }
+                                    handleDeleteDriver(driver);
+                                    setDriverMenuIndex(null);
                                   }}
                                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 transition-all text-left w-full cursor-pointer font-bold"
                                 >

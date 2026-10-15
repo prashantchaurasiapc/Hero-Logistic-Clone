@@ -335,7 +335,12 @@ export default function RolesPermissions() {
 
 
   const filteredRoles = roles.filter(r => {
-    if (isCompanyAdmin && r.name.toLowerCase() === 'sales') return false;
+    if (isCompanyAdmin && (
+      r.roleKey === 'SUPER_ADMIN' ||
+      r.name.toLowerCase() === 'super admin' ||
+      r.roleKey === 'SALES' ||
+      r.name.toLowerCase() === 'sales'
+    )) return false;
     return r.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
@@ -366,7 +371,7 @@ export default function RolesPermissions() {
 
         <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 text-purple-700 font-extrabold text-xs px-3.5 py-1.5 rounded-full whitespace-nowrap shadow-2xs">
           <Shield className="w-3.5 h-3.5" />
-          <span>{isCompanyAdmin ? '8 Company Roles (Child)' : '9 Fixed Platform Roles (Master)'}</span>
+          <span>{isCompanyAdmin ? `${filteredRoles.length} Company Roles (Child)` : '9 Fixed Platform Roles (Master)'}</span>
         </div>
       </div>
 
@@ -429,7 +434,7 @@ export default function RolesPermissions() {
                   const pills = getGrantedPills(role);
                   const displayPills = pills.slice(0, 15);
                   const remainingCount = pills.length - displayPills.length;
-                  const isLockedRole = isCompanyAdmin && role.name === 'Company Admin';
+                  const isLockedRole = isCompanyAdmin && (role.name === 'Company Admin' || role.roleKey === 'COMPANY_ADMIN');
 
                   return (
                     <tr key={role.id} className="hover:bg-slate-50/60 transition-colors">
@@ -536,7 +541,10 @@ export default function RolesPermissions() {
                   Role: <span className="font-extrabold">{activeModalRole.name}</span>
                 </div>
                 <div className="text-[10.5px] font-semibold text-slate-500 mt-0.5">
-                  Master Setting: Disabling a menu/action here locks it globally for all Company Admins.
+                  {isCompanyAdmin
+                    ? `Company Setting: Customize permissions for your company's ${activeModalRole.name} team. Menus disabled by Platform Super Admin are locked.`
+                    : 'Master Setting: Disabling a menu/action here locks it globally for all Company Admins.'
+                  }
                 </div>
               </div>
 

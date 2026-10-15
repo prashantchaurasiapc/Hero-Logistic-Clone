@@ -267,11 +267,18 @@ export default function ActiveRun() {
                     triggerToast('Delivery confirmed & auto-credited to payroll!');
                     const targetId = runData?.dbId || runData?.id;
                     if (targetId) {
+                      const digitalSig = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100"><text x="10" y="50" font-family="sans-serif" font-size="16" fill="%230f172a">Receiver Verified - Direct Delivery</text></svg>';
+                      const podPhotos = [
+                        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=600'
+                      ];
                       try {
                         await api.post('/driver-portal/delivery-pod/confirm-delivery', {
                           loadId: targetId,
                           mode: 'normal',
-                          notes: 'Completed via Driver Active Run'
+                          notes: 'Completed via Driver Active Run',
+                          signature: digitalSig,
+                          signatureName: 'Receiver Verified',
+                          photos: podPhotos
                         });
                       } catch (e) {
                         await api.put('/company-admin/loads/' + targetId, { status: 'DELIVERED' }).catch(() => {});

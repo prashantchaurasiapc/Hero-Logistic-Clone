@@ -194,8 +194,6 @@ export default function CompanyAdminDocuments() {
     {
       cat: 'Company Documents',
       label: 'Company Documents',
-      sub: '0',
-      sub2: '—',
       icon: Building,
       color: 'blue',
       active: activeCategory === 'Company Documents',
@@ -205,8 +203,6 @@ export default function CompanyAdminDocuments() {
     {
       cat: 'Driver Documents',
       label: 'Driver Documents',
-      sub: '0',
-      sub2: '—',
       icon: UserCheck,
       color: 'purple',
       active: activeCategory === 'Driver Documents',
@@ -216,8 +212,6 @@ export default function CompanyAdminDocuments() {
     {
       cat: 'Vehicle Documents',
       label: 'Vehicle Documents',
-      sub: '0',
-      sub2: '—',
       icon: Truck,
       color: 'emerald',
       active: activeCategory === 'Vehicle Documents',
@@ -227,8 +221,6 @@ export default function CompanyAdminDocuments() {
     {
       cat: 'Customer Documents',
       label: 'Customer Documents',
-      sub: '0',
-      sub2: '—',
       icon: Users,
       color: 'amber',
       active: activeCategory === 'Customer Documents',
@@ -322,9 +314,11 @@ export default function CompanyAdminDocuments() {
                   <Icon size={14} />
                 </div>
               </div>
-              <p className="text-base sm:text-lg font-black text-slate-900 leading-tight">{card.sub}</p>
+              <p className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                {statsLoading ? '...' : (count !== '—' ? count : 0)}
+              </p>
               <span className={`text-[10px] font-bold mt-0.5 block ${c.sub}`}>
-                {statsLoading ? '...' : `${count} document${count !== 1 ? 's' : ''}`} · {card.sub2}
+                {statsLoading ? '...' : `${count !== '—' ? count : 0} Document${count === 1 ? '' : 's'}`}
               </span>
             </div>
           );

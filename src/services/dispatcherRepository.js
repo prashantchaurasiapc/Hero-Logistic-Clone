@@ -31,16 +31,16 @@ function mapLoadToFrontend(l) {
   return {
     id: l.loadRef || l.id,
     dbId: l.id,
-    customer: l.customer?.name || 'Customer Ltd',
+    customer: l.customer?.name || '—',
     routeFrom,
     routeTo,
     status,
-    date: l.loadDate ? l.loadDate.split('T')[0] : '25 May 2026',
-    vehicle: l.truck ? `${l.truck.make} ${l.truck.model}` : 'Volvo FH16 750',
-    depot: 'Sydney Depot',
-    driver: l.driver ? `${l.driver.firstName} ${l.driver.lastName}` : 'John Doe',
-    itemsCount: 8,
-    passengers: 1,
+    date: l.loadDate ? l.loadDate.split('T')[0] : '—',
+    vehicle: l.truck ? `${l.truck.make || ''} ${l.truck.model || ''}`.trim() : 'Unassigned',
+    depot: l.depot || l.branch || '—',
+    driver: l.driver ? `${l.driver.firstName || ''} ${l.driver.lastName || ''}`.trim() : 'Unassigned',
+    itemsCount: l.itemsCount || 0,
+    passengers: l.passengers || 0,
     tabCategory
   };
 }

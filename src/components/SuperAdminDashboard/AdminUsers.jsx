@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Plus, Search, Mail, Phone, Building2, Shield,
   Check, X, UserPlus, Edit3, Trash2, Eye, EyeOff,
@@ -42,8 +42,18 @@ const mapRoleToApi = (roleLabel) => {
 
 export default function AdminUsers() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [highlightSection, setHighlightSection] = useState(location.state?.highlight || null);
   const [users, setUsers]     = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (location.state?.highlight) {
+      setHighlightSection(location.state.highlight);
+      const timer = setTimeout(() => setHighlightSection(null), 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
   const [search, setSearch]   = useState('');
   const [roleFilter, setRoleFilter] = useState('All Roles');
   const [showAddModal, setShowAddModal]   = useState(false);
@@ -231,8 +241,18 @@ export default function AdminUsers() {
         </select>
       </div>
 
+      {/* ─── HIGHLIGHT BANNER ─── */}
+      {highlightSection === 'active-users' && (
+        <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-between animate-fadeIn">
+          <span>✨ Showing Active Platform Users Pool from Dashboard</span>
+          <button onClick={() => setHighlightSection(null)} className="text-emerald-700 hover:text-emerald-900 underline text-[11px] cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* ─── CARD GRID ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-2 rounded-2xl transition-all duration-700 ${highlightSection === 'active-users' ? 'ring-2 ring-emerald-400/40 bg-emerald-50/10' : ''}`}>
         {isLoading ? (
           <div className="col-span-full py-12 text-center text-slate-400 font-semibold flex justify-center items-center gap-2">
             <Loader2 className="w-5 h-5 animate-spin" /> Loading users...

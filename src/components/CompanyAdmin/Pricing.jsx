@@ -35,6 +35,26 @@ export default function StandalonePricing() {
   const [editingLane, setEditingLane] = useState(null);
   const [editingVehicle, setEditingVehicle] = useState(null);
 
+  // Customer Rate Card Modal State
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customerProfiles, setCustomerProfiles] = useState([]);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [showAddProfileForm, setShowAddProfileForm] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    from: '',
+    to: '',
+    method: 'Per Load',
+    baseRate: '',
+    minCharge: '',
+    fuelLevy: '14.5',
+    transportNiche: 'General Freight',
+    extraPickupCharge: '',
+    extraDeliveryCharge: '',
+    waitingTimeCharge: ''
+  });
+
   // Inline fuel surcharge
   const [fuelInput, setFuelInput] = useState('');
   const [fuelDateInput, setFuelDateInput] = useState('');
@@ -50,6 +70,79 @@ export default function StandalonePricing() {
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
+  };
+
+  // ── Customer Rate Card Handlers ──────────────────────────────────────────
+  const handleOpenCustomerRateCard = async (customer) => {
+    setSelectedCustomer(customer);
+    setLoadingProfiles(true);
+    setShowAddProfileForm(false);
+    try {
+      const res = await api.get(`/company-admin/customers/${customer.id}/pricing-profiles`);
+      setCustomerProfiles(res.data?.data || res.data || []);
+    } catch (err) {
+      console.warn('Failed to fetch pricing profiles:', err);
+      setCustomerProfiles([]);
+    } finally {
+      setLoadingProfiles(false);
+    }
+  };
+
+  const handleSaveCustomerProfile = async (e) => {
+    e.preventDefault();
+    if (!selectedCustomer) return;
+    setSavingProfile(true);
+    try {
+      const payload = {
+        name: profileForm.name || `${profileForm.from || 'Any'} ➔ ${profileForm.to || 'Any'}`,
+        from: profileForm.from || undefined,
+        to: profileForm.to || undefined,
+        method: profileForm.method,
+        baseRate: parseFloat(profileForm.baseRate) || 0,
+        minCharge: parseFloat(profileForm.minCharge) || 0,
+        fuelLevy: parseFloat(profileForm.fuelLevy) || 14.5,
+        transportNiche: profileForm.transportNiche,
+        extraPickupCharge: parseFloat(profileForm.extraPickupCharge) || 0,
+        extraDeliveryCharge: parseFloat(profileForm.extraDeliveryCharge) || 0,
+        waitingTimeCharge: parseFloat(profileForm.waitingTimeCharge) || 0,
+        isActive: true
+      };
+      await api.post(`/company-admin/customers/${selectedCustomer.id}/pricing-profiles`, payload);
+      showToast(`Rate profile saved for ${selectedCustomer.name}!`);
+      const res = await api.get(`/company-admin/customers/${selectedCustomer.id}/pricing-profiles`);
+      setCustomerProfiles(res.data?.data || res.data || []);
+      setShowAddProfileForm(false);
+      setProfileForm({
+        name: '', from: '', to: '', method: 'Per Load', baseRate: '',
+        minCharge: '', fuelLevy: '14.5', transportNiche: 'General Freight',
+        extraPickupCharge: '', extraDeliveryCharge: '', waitingTimeCharge: ''
+      });
+      fetchStats();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to save rate profile', 'error');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleDeleteProfile = async (profileId) => {
+    if (!window.confirm('Delete this contract rate rule? This cannot be undone.')) return;
+    try {
+      try {
+        await api.delete(`/company-admin/customers/${selectedCustomer.id}/surcharges/${profileId}`);
+      } catch (firstErr) {
+        if (firstErr.response?.status === 404) {
+          await api.delete(`/company-admin/customers/${selectedCustomer.id}/pricing-profiles/${profileId}`);
+        } else {
+          throw firstErr;
+        }
+      }
+      showToast('Rate rule deleted successfully');
+      setCustomerProfiles(prev => prev.filter(p => p.id !== profileId));
+      fetchStats();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to delete rule', 'error');
+    }
   };
 
   // ── Fetch stats (KPI cards) ──────────────────────────────────────────────
@@ -96,7 +189,12 @@ export default function StandalonePricing() {
       setLoading(true);
       setError(null);
       try {
-        await Promise.all([fetchStats(), fetchTabData('Lane Pricing', true)]);
+        await Promise.all([
+          fetchStats(),
+          fetchTabData('Lane Pricing', true),
+          fetchTabData('Customer Special Rates', true),
+          fetchTabData('Vehicle Type Rates', true)
+        ]);
       } catch (e) {
         setError('Failed to load pricing data.');
       } finally {
@@ -375,8 +473,10 @@ export default function StandalonePricing() {
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Active Freight Lanes</span>
                 <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center"><MapPin size={16} /></div>
               </div>
-              <p className="text-2xl font-black text-slate-900">0 Lanes</p>
-              <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 mt-1">—</span>
+              <p className="text-2xl font-black text-slate-900">{stats?.activeLanes ?? lanes.length} Lanes</p>
+              <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 mt-1">
+                {(stats?.activeLanes ?? lanes.length) > 0 ? 'Active route schedules' : 'No lanes defined'}
+              </span>
             </div>
 
             <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
@@ -384,8 +484,10 @@ export default function StandalonePricing() {
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Vehicle Type Matrix</span>
                 <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center"><Truck size={16} /></div>
               </div>
-              <p className="text-2xl font-black text-slate-900">0 Classes</p>
-              <span className="text-[10px] font-bold text-slate-400 mt-1">—</span>
+              <p className="text-2xl font-black text-slate-900">{stats?.vehicleClasses ?? vehicleRates.length} Classes</p>
+              <span className="text-[10px] font-bold text-slate-400 mt-1">
+                {(stats?.vehicleClasses ?? vehicleRates.length) > 0 ? 'Fleet category matrix' : 'No classes defined'}
+              </span>
             </div>
 
             <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
@@ -393,8 +495,10 @@ export default function StandalonePricing() {
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Fuel Surcharge Rate</span>
                 <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center"><TrendingUp size={16} /></div>
               </div>
-              <p className="text-2xl font-black text-slate-900">0.0%</p>
-              <span className="text-[10px] font-bold text-slate-400 mt-1">—</span>
+              <p className="text-2xl font-black text-slate-900">{fmtPct(currentFuelRate)}</p>
+              <span className="text-[10px] font-bold text-slate-400 mt-1">
+                {fuelData?.effectiveDate ? `Effective ${new Date(fuelData.effectiveDate).toLocaleDateString()}` : 'Standard National Levy'}
+              </span>
             </div>
 
             <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
@@ -402,8 +506,10 @@ export default function StandalonePricing() {
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Customer Rate Cards</span>
                 <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><FileText size={16} /></div>
               </div>
-              <p className="text-2xl font-black text-slate-900">0 Accounts</p>
-              <span className="text-[10px] font-bold text-slate-400 mt-1">—</span>
+              <p className="text-2xl font-black text-slate-900">{stats?.customerAccounts ?? customerRates.length} Accounts</p>
+              <span className="text-[10px] font-bold text-slate-400 mt-1">
+                {(stats?.customerAccounts ?? customerRates.length) > 0 ? 'Linked contract customers' : 'No customer rates'}
+              </span>
             </div>
           </>
         )}
@@ -618,8 +724,12 @@ export default function StandalonePricing() {
                         }`}>{row.status}</span>
                       </td>
                       <td className="py-4 px-4 sm:px-6 text-right">
-                        <button onClick={() => showToast(`View rate card for ${row.name}`)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-900">
-                          <Eye size={14} />
+                        <button
+                          onClick={() => handleOpenCustomerRateCard(row)}
+                          className="p-1.5 hover:bg-emerald-50 rounded-lg text-slate-500 hover:text-emerald-700 cursor-pointer transition-colors"
+                          title={`View & Manage Rate Card for ${row.name}`}
+                        >
+                          <Eye size={15} />
                         </button>
                       </td>
                     </tr>
@@ -948,6 +1058,289 @@ export default function StandalonePricing() {
                 </label>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* ═══ CUSTOMER RATE CARD MODAL ══════════════════════════════════════ */}
+      {selectedCustomer && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl border border-slate-200 overflow-hidden text-left my-auto animate-fade-in flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <FileText size={16} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 leading-tight">
+                    Customer Rate Card — {selectedCustomer.name}
+                  </h3>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 mt-0.5 flex-wrap">
+                    <span>ABN: {selectedCustomer.abn || '—'}</span>
+                    <span>•</span>
+                    <span className="text-indigo-600">{selectedCustomer.type || 'Business'}</span>
+                    <span>•</span>
+                    <span>Terms: {selectedCustomer.billingTerms || '14 Days EOM'}</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedCustomer(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 custom-scrollbar">
+
+              {/* Action Bar */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                    Contract Rate Rules ({customerProfiles.length})
+                  </h4>
+                  <p className="text-[11px] text-slate-400 font-medium">Special rates applied when calculating loads for this customer.</p>
+                </div>
+                <button
+                  onClick={() => setShowAddProfileForm(!showAddProfileForm)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer shrink-0 ${
+                    showAddProfileForm
+                      ? 'bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
+                >
+                  {showAddProfileForm ? <X size={14} /> : <Plus size={14} />}
+                  <span>{showAddProfileForm ? 'Close Form' : '+ Add Special Rate'}</span>
+                </button>
+              </div>
+
+              {/* Form to Add Special Rate */}
+              {showAddProfileForm && (
+                <form onSubmit={handleSaveCustomerProfile} className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 sm:p-5 space-y-3.5 text-xs mb-4">
+                  <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                    <span className="font-extrabold text-slate-800 text-xs">New Special Rate Rule</span>
+                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-black">Contract Override</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-600 block mb-1">Rule / Profile Name *</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Sydney Metro Pallet Rate"
+                        value={profileForm.name}
+                        onChange={e => setProfileForm({ ...profileForm, name: e.target.value })}
+                        className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-emerald-500 shadow-2xs"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-600 block mb-1">Transport Niche</label>
+                      <select
+                        value={profileForm.transportNiche}
+                        onChange={e => setProfileForm({ ...profileForm, transportNiche: e.target.value })}
+                        className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-emerald-500 shadow-2xs cursor-pointer"
+                      >
+                        <option value="General Freight">General Freight</option>
+                        <option value="Interstate Linehaul">Interstate Linehaul</option>
+                        <option value="Car Carrying">Car Carrying</option>
+                        <option value="Refrigerated">Refrigerated</option>
+                        <option value="Container Drayage">Container Drayage</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-600 block mb-1">Origin (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Sydney, NSW (leave empty for Any)"
+                        value={profileForm.from}
+                        onChange={e => setProfileForm({ ...profileForm, from: e.target.value })}
+                        className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-emerald-500 shadow-2xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-600 block mb-1">Destination (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Melbourne, VIC (leave empty for Any)"
+                        value={profileForm.to}
+                        onChange={e => setProfileForm({ ...profileForm, to: e.target.value })}
+                        className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-emerald-500 shadow-2xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <div>
+                      <label className="font-bold text-slate-600 block mb-1">Calculation Method</label>
+                      <select
+                        value={profileForm.method}
+                        onChange={e => setProfileForm({ ...profileForm, method: e.target.value })}
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-emerald-500 shadow-2xs cursor-pointer"
+                      >
+                        <option value="Per Load">Per Load</option>
+                        <option value="Per Pallet">Per Pallet</option>
+                        <option value="Per km">Per km</option>
+                        <option value="Hourly">Hourly</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-600 block mb-1">Base Rate ($) *</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="450.00"
+                        value={profileForm.baseRate}
+                        onChange={e => setProfileForm({ ...profileForm, baseRate: e.target.value })}
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-extrabold text-slate-900 outline-none focus:border-emerald-500 shadow-2xs"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-600 block mb-1">Min Charge ($)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="250.00"
+                        value={profileForm.minCharge}
+                        onChange={e => setProfileForm({ ...profileForm, minCharge: e.target.value })}
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-emerald-500 shadow-2xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="font-bold text-slate-600 block mb-1">Fuel Levy (%)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder="14.5"
+                        value={profileForm.fuelLevy}
+                        onChange={e => setProfileForm({ ...profileForm, fuelLevy: e.target.value })}
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-emerald-500 shadow-2xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-600 block mb-1">Extra Stop / Toll ($)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="50.00"
+                        value={profileForm.extraDeliveryCharge}
+                        onChange={e => setProfileForm({ ...profileForm, extraDeliveryCharge: e.target.value })}
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-emerald-500 shadow-2xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/60">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddProfileForm(false)}
+                      className="px-4 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={savingProfile}
+                      className="px-5 py-1.5 bg-emerald-600 text-white rounded-xl font-extrabold text-xs shadow-xs hover:bg-emerald-700 flex items-center gap-1.5 disabled:opacity-60 transition-colors cursor-pointer"
+                    >
+                      {savingProfile ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                      Save Rate Rule
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Profiles Table */}
+              {loadingProfiles ? (
+                <div className="py-12 text-center text-slate-400 font-bold text-xs flex items-center justify-center gap-2">
+                  <Loader2 size={18} className="animate-spin text-emerald-600" />
+                  <span>Loading customer rate card profiles...</span>
+                </div>
+              ) : customerProfiles.length === 0 ? (
+                <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-200 p-8 text-center">
+                  <FileText size={32} className="text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs font-bold text-slate-700">No Special Rates Defined Yet</p>
+                  <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
+                    This customer currently inherits standard lane pricing and vehicle matrix rates. Click "+ Add Special Rate" to set negotiated contract pricing.
+                  </p>
+                  <button
+                    onClick={() => setShowAddProfileForm(true)}
+                    className="mt-3 px-4 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer"
+                  >
+                    Create First Rate Rule
+                  </button>
+                </div>
+              ) : (
+                <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
+                    <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-100">
+                      <tr>
+                        <th className="py-3 px-4">Profile Name</th>
+                        <th className="py-3 px-4">Route / Zone</th>
+                        <th className="py-3 px-4">Method</th>
+                        <th className="py-3 px-4">Base Rate</th>
+                        <th className="py-3 px-4">Min Charge</th>
+                        <th className="py-3 px-4">Fuel Levy</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
+                      {customerProfiles.map(p => (
+                        <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3.5 px-4 font-bold text-slate-900">{p.name}</td>
+                          <td className="py-3.5 px-4 text-slate-600">
+                            {p.from || p.to ? `${p.from || 'Any'} ➔ ${p.to || 'Any'}` : 'All Lanes'}
+                          </td>
+                          <td className="py-3.5 px-4 text-indigo-600 font-bold">{p.method || 'Per Load'}</td>
+                          <td className="py-3.5 px-4 font-mono font-black text-emerald-700">{fmt(p.baseRate)}</td>
+                          <td className="py-3.5 px-4 font-mono text-slate-600">{p.minCharge ? fmt(p.minCharge) : '—'}</td>
+                          <td className="py-3.5 px-4 font-bold text-amber-700">{fmtPct(p.fuelLevy)}</td>
+                          <td className="py-3.5 px-4">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {p.status || 'Active'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              onClick={() => handleDeleteProfile(p.id)}
+                              className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Rule"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-400">
+                Hero Logistics Contract Rate Engine
+              </span>
+              <button
+                onClick={() => setSelectedCustomer(null)}
+                className="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs rounded-xl shadow-2xs transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+
           </div>
         </div>
       )}

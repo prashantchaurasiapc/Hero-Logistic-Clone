@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { jsPDF } from 'jspdf';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
@@ -20,7 +21,20 @@ import {
 import api from '../../services/api';
 
 export default function Billing() {
-  const [activeTab, setActiveTab] = useState('INVOICES');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'INVOICES');
+  const [highlightSection, setHighlightSection] = useState(location.state?.highlight || null);
+
+  useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab);
+    }
+    if (location.state?.highlight) {
+      setHighlightSection(location.state.highlight);
+      const timer = setTimeout(() => setHighlightSection(null), 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
   const [toast, setToast] = useState('');
   const [previewInvoice, setPreviewInvoice] = useState(null);
   const [regenerateInvoice, setRegenerateInvoice] = useState(null);
@@ -128,7 +142,10 @@ export default function Billing() {
       case 'PAYMENTS':
         return invoices.filter(inv => inv.status === 'Paid');
       case 'FAILED PAYMENTS':
-        return invoices.filter(inv => inv.status === 'Failed' || inv.status === 'Overdue' || inv.status === 'Unpaid');
+        return invoices.filter(inv => {
+          const s = String(inv.status || '').toUpperCase();
+          return s === 'FAILED' || s === 'OVERDUE' || s === 'UNPAID';
+        });
       case 'TAX / GST SUMMARY':
         return invoices;
       case 'INVOICES':
@@ -363,7 +380,7 @@ export default function Billing() {
       </div>
 
       {/* Monthly Revenue Trend Line Chart */}
-      <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-xs w-full">
+      <div className={`bg-white border rounded-2xl p-6 shadow-xs w-full transition-all duration-700 ${highlightSection === 'monthly-revenue' ? 'border-indigo-400 ring-2 ring-indigo-400/40 shadow-md bg-indigo-50/10' : 'border-slate-100'}`}>
         <h2 className="text-sm font-black text-slate-800 mb-6">Monthly Revenue Trend (USD)</h2>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -402,7 +419,7 @@ export default function Billing() {
       </div>
 
       {/* Main Data Table */}
-      <div className="bg-white border border-slate-100 rounded-2xl lg:p-6 p-4 shadow-xs w-full">
+      <div className={`bg-white border rounded-2xl lg:p-6 p-4 shadow-xs w-full transition-all duration-700 ${highlightSection === 'failed-payments' ? 'border-rose-400 ring-2 ring-rose-400/40 bg-rose-50/10 shadow-md' : 'border-slate-100'}`}>
         <div className="overflow-x-auto lg:overflow-visible custom-scrollbar">
           <table className="w-full text-left border-collapse block lg:table">
             <thead className="hidden lg:table-header-group">
