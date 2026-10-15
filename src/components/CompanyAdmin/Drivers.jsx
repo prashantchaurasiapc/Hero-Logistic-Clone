@@ -9,7 +9,7 @@ import {
   Edit2, MessageSquare, ShieldCheck, Activity, XCircle, Plus, ArrowRight,
   TrendingUp, Award, Zap, FileText as FileIcon, FileCheck, Star, ThumbsUp, CheckCircle, BarChart2,
   Eye, Trash2, Printer, Search as SearchIcon, Edit, MoreHorizontal, DollarSign, Save, Check,
-  Sliders, RotateCcw, EyeOff, X
+  Sliders, RotateCcw, EyeOff, X, Loader2
 } from 'lucide-react';
 
 // All driver and document data comes from the backend API — no hardcoded mock data
@@ -643,6 +643,7 @@ export default function Drivers() {
   const [driverList, setDriverList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [isSubmittingDriver, setIsSubmittingDriver] = useState(false);
   const driverFileInputRef = useRef(null);
 
   // Company-specific Dynamic Personal Fields Configuration
@@ -4519,6 +4520,8 @@ export default function Drivers() {
 
         <form id="driver-upsert-form" key={`driver-upsert-form-${isEditMode ? (selectedDriver?.id || 'edit') : 'create'}-${formResetKey}`} onSubmit={async (e) => {
           e.preventDefault();
+          if (isSubmittingDriver) return;
+          setIsSubmittingDriver(true);
           const fd = new FormData(e.target);
           const firstName = fd.get('FirstName') || fd.get('firstName') || '';
           const lastName = fd.get('LastName') || fd.get('lastName') || '';
@@ -4951,7 +4954,10 @@ export default function Drivers() {
             showToast(isEditMode ? "🎉 Driver Profile Updated successfully!" : `🎉 Driver Added! Login Email: ${email || 'Assigned'} | Password: ${finalPassDisplay}`);
           } catch (err) {
             console.error('Error saving driver:', err);
-            alert('Failed to save driver to database: ' + (err?.response?.data?.message || err.message));
+            const errMsg = err?.response?.data?.message || err?.message || 'Failed to save driver. Please try again.';
+            showToast(errMsg, 'error');
+          } finally {
+            setIsSubmittingDriver(false);
           }
         }}>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-6 border-b border-slate-200">
@@ -4960,9 +4966,39 @@ export default function Drivers() {
               <p className="text-[11px] text-slate-500 font-medium mt-1">{formDesc}</p>
             </div>
             <div className="flex items-center gap-3">
-              <button type="button" onClick={handleCloseDriverForm} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Cancel</button>
-              <button type="button" onClick={() => { const formEl = document.getElementById('driver-upsert-form'); if (formEl) formEl.requestSubmit(); }} className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Save as Draft</button>
-              <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"><Settings size={14} /> {isEditMode ? "Update Driver" : "Save Driver"}</button>
+              <button 
+                type="button" 
+                disabled={isSubmittingDriver}
+                onClick={handleCloseDriverForm} 
+                className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                disabled={isSubmittingDriver}
+                onClick={() => { const formEl = document.getElementById('driver-upsert-form'); if (formEl) formEl.requestSubmit(); }} 
+                className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                Save as Draft
+              </button>
+              <button 
+                type="submit" 
+                disabled={isSubmittingDriver}
+                className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 disabled:bg-purple-400 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"
+              >
+                {isSubmittingDriver ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>{isEditMode ? "Updating..." : "Saving..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Settings size={14} />
+                    <span>{isEditMode ? "Update Driver" : "Save Driver"}</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
@@ -5628,10 +5664,38 @@ export default function Drivers() {
                 </p>
               </div>
               <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                <button type="button" onClick={handleCloseDriverForm} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Cancel</button>
-                <button type="button" onClick={() => { const formEl = document.getElementById('driver-upsert-form'); if (formEl) formEl.requestSubmit(); }} className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">Save as Draft</button>
-                <button type="submit" className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">
-                  <Settings size={14} /> {isEditMode ? "Update Driver" : "Save Driver"}
+                <button 
+                  type="button" 
+                  disabled={isSubmittingDriver}
+                  onClick={handleCloseDriverForm} 
+                  className="px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  disabled={isSubmittingDriver}
+                  onClick={() => { const formEl = document.getElementById('driver-upsert-form'); if (formEl) formEl.requestSubmit(); }} 
+                  className="px-5 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                >
+                  Save as Draft
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingDriver}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-purple-700 hover:bg-purple-800 disabled:bg-purple-400 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"
+                >
+                  {isSubmittingDriver ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>{isEditMode ? "Updating..." : "Saving..."}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Settings size={14} />
+                      <span>{isEditMode ? "Update Driver" : "Save Driver"}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
