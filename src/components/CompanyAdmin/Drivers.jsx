@@ -6951,7 +6951,17 @@ export default function Drivers() {
             </div>
           )}
 
-          {activeTab === 'Assignments & Availability' && (
+          {activeTab === 'Assignments & Availability' && (() => {
+            const isDriverAvailable = (selectedDriver?.status || '').toLowerCase() === 'available' || (selectedDriver?.status || '').toLowerCase() === 'active';
+            const today = new Date();
+            const currentMonthName = today.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7; // Monday = 0
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const todayDate = today.getDate();
+
+            return (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
 
               {/* Left Panel - Assignments */}
@@ -6960,7 +6970,7 @@ export default function Drivers() {
                 {/* Current Assignments */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
                   <div className="p-4 border-b border-slate-100 flex justify-between items-center">
-                    <h3 className="text-sm font-black text-slate-800">Current Assignments (2)</h3>
+                    <h3 className="text-sm font-black text-slate-800">Current Assignments ({currentAssignmentsList.length})</h3>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Active tasks on the road</span>
                   </div>
                   <div className="overflow-x-auto">
@@ -6978,92 +6988,100 @@ export default function Drivers() {
                         </tr>
                       </thead>
                       <tbody>
-                        {currentAssignmentsList.map((item, idx) => (
-                          <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/50">
-                            <td className="px-4 py-3 text-[11px] font-bold text-purple-600 cursor-pointer hover:underline">{item.id}</td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.type}</td>
-                            <td className="px-4 py-3">
-                              <div className="text-[11px] font-bold text-slate-800">{item.route}</div>
-                              <div className="text-[9px] text-slate-400 font-medium">{item.stops}</div>
-                            </td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.vehicle}</td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.start}</td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.end}</td>
-                            <td className="px-4 py-3">
-                              <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase ${item.status === 'In Progress' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>{item.status}</span>
-                            </td>
-                            <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (currAssignMenuIndex === idx) {
-                                      setCurrAssignMenuIndex(null);
-                                    } else {
-                                      const rect = e.currentTarget.getBoundingClientRect();
-                                      setCurrAssignMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-                                      setCurrAssignMenuIndex(idx);
-                                    }
-                                  }}
-                                  title="More Actions"
-                                  className={`w-8 h-8 rounded-xl transition-all cursor-pointer shadow-2xs border flex items-center justify-center ${currAssignMenuIndex === idx ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-slate-100/80 hover:bg-slate-200 text-slate-600 border-slate-200/50'}`}
-                                >
-                                  <MoreHorizontal size={15} />
-                                </button>
+                        {currentAssignmentsList.length > 0 ? (
+                          currentAssignmentsList.map((item, idx) => (
+                            <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/50">
+                              <td className="px-4 py-3 text-[11px] font-bold text-purple-600 cursor-pointer hover:underline">{item.id}</td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.type}</td>
+                              <td className="px-4 py-3">
+                                <div className="text-[11px] font-bold text-slate-800">{item.route}</div>
+                                <div className="text-[9px] text-slate-400 font-medium">{item.stops}</div>
+                              </td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.vehicle}</td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.start}</td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.end}</td>
+                              <td className="px-4 py-3">
+                                <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase ${item.status === 'In Progress' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>{item.status}</span>
+                              </td>
+                              <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (currAssignMenuIndex === idx) {
+                                        setCurrAssignMenuIndex(null);
+                                      } else {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setCurrAssignMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                                        setCurrAssignMenuIndex(idx);
+                                      }
+                                    }}
+                                    title="More Actions"
+                                    className={`w-8 h-8 rounded-xl transition-all cursor-pointer shadow-2xs border flex items-center justify-center ${currAssignMenuIndex === idx ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-slate-100/80 hover:bg-slate-200 text-slate-600 border-slate-200/50'}`}
+                                  >
+                                    <MoreHorizontal size={15} />
+                                  </button>
 
-                                {currAssignMenuIndex === idx && currAssignMenuPos && (
-                                  <>
-                                    <div className="fixed inset-0 z-[9980]" onClick={(e) => { e.stopPropagation(); setCurrAssignMenuIndex(null); }} />
-                                    <div
-                                      style={{ top: `${currAssignMenuPos.top}px`, right: `${currAssignMenuPos.right}px` }}
-                                      className="fixed w-48 bg-white rounded-2xl shadow-2xl border border-slate-200 p-1.5 z-[9990] flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left animate-in fade-in zoom-in-95 duration-100 ring-1 ring-slate-900/10"
-                                    >
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setViewCurrAssignModal(item); setCurrAssignMenuIndex(null); }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
+                                  {currAssignMenuIndex === idx && currAssignMenuPos && (
+                                    <>
+                                      <div className="fixed inset-0 z-[9980]" onClick={(e) => { e.stopPropagation(); setCurrAssignMenuIndex(null); }} />
+                                      <div
+                                        style={{ top: `${currAssignMenuPos.top}px`, right: `${currAssignMenuPos.right}px` }}
+                                        className="fixed w-48 bg-white rounded-2xl shadow-2xl border border-slate-200 p-1.5 z-[9990] flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left animate-in fade-in zoom-in-95 duration-100 ring-1 ring-slate-900/10"
                                       >
-                                        <Eye size={14} className="text-purple-600" />
-                                        <span>View Details</span>
-                                      </button>
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setEditCurrAssignModal({ ...item, index: idx }); setCurrAssignMenuIndex(null); }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
-                                      >
-                                        <Edit size={14} className="text-amber-600" />
-                                        <span>Edit Record</span>
-                                      </button>
-                                      <div className="h-px bg-slate-100 my-0.5" />
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setCurrentAssignmentsList(prev => prev.filter((_, i) => i !== idx));
-                                          setCurrAssignMenuIndex(null);
-                                          showToast(`Deleted assignment ${item.id} successfully`);
-                                        }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 transition-all text-left w-full cursor-pointer font-bold"
-                                      >
-                                        <Trash2 size={14} className="text-rose-600" />
-                                        <span>Delete Record</span>
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setViewCurrAssignModal(item); setCurrAssignMenuIndex(null); }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
+                                        >
+                                          <Eye size={14} className="text-purple-600" />
+                                          <span>View Details</span>
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setEditCurrAssignModal({ ...item, index: idx }); setCurrAssignMenuIndex(null); }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
+                                        >
+                                          <Edit size={14} className="text-amber-600" />
+                                          <span>Edit Record</span>
+                                        </button>
+                                        <div className="h-px bg-slate-100 my-0.5" />
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCurrentAssignmentsList(prev => prev.filter((_, i) => i !== idx));
+                                            setCurrAssignMenuIndex(null);
+                                            showToast(`Deleted assignment ${item.id} successfully`);
+                                          }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 transition-all text-left w-full cursor-pointer font-bold"
+                                        >
+                                          <Trash2 size={14} className="text-rose-600" />
+                                          <span>Delete Record</span>
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="8" className="px-4 py-8 text-center text-xs font-semibold text-slate-400">
+                              No active assignments on the road.
                             </td>
                           </tr>
-                        ))}
+                        )}
                       </tbody>
                     </table>
                   </div>
                   <div className="p-3 border-t border-slate-100 text-[10px] text-slate-500 font-medium">
-                    Showing 1 to 2 of 2 assignments
+                    Showing {currentAssignmentsList.length} assignment(s)
                   </div>
                 </div>
 
                 {/* Upcoming Assignments */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
                   <div className="p-4 border-b border-slate-100 flex justify-between items-center">
-                    <h3 className="text-sm font-black text-slate-800">Upcoming Assignments (2)</h3>
+                    <h3 className="text-sm font-black text-slate-800">Upcoming Assignments ({upcomingAssignmentsList.length})</h3>
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Planned trips & dispatch queue</span>
                   </div>
                   <div className="overflow-x-auto">
@@ -7081,85 +7099,93 @@ export default function Drivers() {
                         </tr>
                       </thead>
                       <tbody>
-                        {upcomingAssignmentsList.map((item, idx) => (
-                          <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/50">
-                            <td className="px-4 py-3 text-[11px] font-bold text-purple-600 cursor-pointer hover:underline">{item.id}</td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.type}</td>
-                            <td className="px-4 py-3">
-                              <div className="text-[11px] font-bold text-slate-800">{item.route}</div>
-                              <div className="text-[9px] text-slate-400 font-medium">{item.stops}</div>
-                            </td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.vehicle}</td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.start}</td>
-                            <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.end}</td>
-                            <td className="px-4 py-3">
-                              <span className="inline-flex px-1.5 py-0.5 bg-purple-50 text-purple-600 border border-purple-200 rounded text-[9px] font-bold tracking-widest uppercase">{item.status}</span>
-                            </td>
-                            <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (upAssignMenuIndex === idx) {
-                                      setUpAssignMenuIndex(null);
-                                    } else {
-                                      const rect = e.currentTarget.getBoundingClientRect();
-                                      setUpAssignMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-                                      setUpAssignMenuIndex(idx);
-                                    }
-                                  }}
-                                  title="More Actions"
-                                  className={`w-8 h-8 rounded-xl transition-all cursor-pointer shadow-2xs border flex items-center justify-center ${upAssignMenuIndex === idx ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-slate-100/80 hover:bg-slate-200 text-slate-600 border-slate-200/50'}`}
-                                >
-                                  <MoreHorizontal size={15} />
-                                </button>
+                        {upcomingAssignmentsList.length > 0 ? (
+                          upcomingAssignmentsList.map((item, idx) => (
+                            <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/50">
+                              <td className="px-4 py-3 text-[11px] font-bold text-purple-600 cursor-pointer hover:underline">{item.id}</td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.type}</td>
+                              <td className="px-4 py-3">
+                                <div className="text-[11px] font-bold text-slate-800">{item.route}</div>
+                                <div className="text-[9px] text-slate-400 font-medium">{item.stops}</div>
+                              </td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.vehicle}</td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.start}</td>
+                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-600">{item.end}</td>
+                              <td className="px-4 py-3">
+                                <span className="inline-flex px-1.5 py-0.5 bg-purple-50 text-purple-600 border border-purple-200 rounded text-[9px] font-bold tracking-widest uppercase">{item.status}</span>
+                              </td>
+                              <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (upAssignMenuIndex === idx) {
+                                        setUpAssignMenuIndex(null);
+                                      } else {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setUpAssignMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                                        setUpAssignMenuIndex(idx);
+                                      }
+                                    }}
+                                    title="More Actions"
+                                    className={`w-8 h-8 rounded-xl transition-all cursor-pointer shadow-2xs border flex items-center justify-center ${upAssignMenuIndex === idx ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-slate-100/80 hover:bg-slate-200 text-slate-600 border-slate-200/50'}`}
+                                  >
+                                    <MoreHorizontal size={15} />
+                                  </button>
 
-                                {upAssignMenuIndex === idx && upAssignMenuPos && (
-                                  <>
-                                    <div className="fixed inset-0 z-[9980]" onClick={(e) => { e.stopPropagation(); setUpAssignMenuIndex(null); }} />
-                                    <div
-                                      style={{ top: `${upAssignMenuPos.top}px`, right: `${upAssignMenuPos.right}px` }}
-                                      className="fixed w-48 bg-white rounded-2xl shadow-2xl border border-slate-200 p-1.5 z-[9990] flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left animate-in fade-in zoom-in-95 duration-100 ring-1 ring-slate-900/10"
-                                    >
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setViewUpAssignModal(item); setUpAssignMenuIndex(null); }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
+                                  {upAssignMenuIndex === idx && upAssignMenuPos && (
+                                    <>
+                                      <div className="fixed inset-0 z-[9980]" onClick={(e) => { e.stopPropagation(); setViewUpAssignModal(item); setUpAssignMenuIndex(null); }} />
+                                      <div
+                                        style={{ top: `${upAssignMenuPos.top}px`, right: `${upAssignMenuPos.right}px` }}
+                                        className="fixed w-48 bg-white rounded-2xl shadow-2xl border border-slate-200 p-1.5 z-[9990] flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left animate-in fade-in zoom-in-95 duration-100 ring-1 ring-slate-900/10"
                                       >
-                                        <Eye size={14} className="text-purple-600" />
-                                        <span>View Details</span>
-                                      </button>
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setEditUpAssignModal({ ...item, index: idx }); setUpAssignMenuIndex(null); }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
-                                      >
-                                        <Edit size={14} className="text-amber-600" />
-                                        <span>Edit Record</span>
-                                      </button>
-                                      <div className="h-px bg-slate-100 my-0.5" />
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setUpcomingAssignmentsList(prev => prev.filter((_, i) => i !== idx));
-                                          setUpAssignMenuIndex(null);
-                                          showToast(`Deleted assignment ${item.id} successfully`);
-                                        }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 transition-all text-left w-full cursor-pointer font-bold"
-                                      >
-                                        <Trash2 size={14} className="text-rose-600" />
-                                        <span>Delete Record</span>
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setViewUpAssignModal(item); setUpAssignMenuIndex(null); }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
+                                        >
+                                          <Eye size={14} className="text-purple-600" />
+                                          <span>View Details</span>
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setEditUpAssignModal({ ...item, index: idx }); setUpAssignMenuIndex(null); }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 hover:text-purple-700 transition-all text-left w-full cursor-pointer font-bold"
+                                        >
+                                          <Edit size={14} className="text-amber-600" />
+                                          <span>Edit Record</span>
+                                        </button>
+                                        <div className="h-px bg-slate-100 my-0.5" />
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setUpcomingAssignmentsList(prev => prev.filter((_, i) => i !== idx));
+                                            setUpAssignMenuIndex(null);
+                                            showToast(`Deleted assignment ${item.id} successfully`);
+                                          }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 transition-all text-left w-full cursor-pointer font-bold"
+                                        >
+                                          <Trash2 size={14} className="text-rose-600" />
+                                          <span>Delete Record</span>
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="8" className="px-4 py-8 text-center text-xs font-semibold text-slate-400">
+                              No upcoming planned trips in dispatch queue.
                             </td>
                           </tr>
-                        ))}
+                        )}
                       </tbody>
                     </table>
                   </div>
                   <div className="p-3 border-t border-slate-100 text-[10px] text-slate-500 font-medium">
-                    Showing 1 to 2 of 2 upcoming assignments
+                    Showing {upcomingAssignmentsList.length} upcoming assignment(s)
                   </div>
                 </div>
 
@@ -7169,43 +7195,59 @@ export default function Drivers() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="flex flex-col gap-1 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600"><CheckCircle2 size={10} /></div>
+                        <div className={`w-5 h-5 rounded-full ${isDriverAvailable ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'} flex items-center justify-center`}>
+                          <CheckCircle2 size={10} />
+                        </div>
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Available Now</span>
                       </div>
-                      <span className="text-sm font-black text-slate-900">No</span>
-                      <span className="text-[10px] text-slate-500 font-semibold">Unavailable</span>
+                      <span className={`text-sm font-black ${isDriverAvailable ? 'text-emerald-600' : 'text-slate-900'}`}>
+                        {isDriverAvailable ? 'Yes' : 'No'}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold">
+                        {isDriverAvailable ? 'Available for duty' : (selectedDriver?.status || 'Unavailable')}
+                      </span>
                     </div>
                     <div className="flex flex-col gap-1 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><Calendar size={10} /></div>
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Next Available From</span>
                       </div>
-                      <span className="text-sm font-black text-slate-900">—</span>
-                      <span className="text-[10px] text-slate-500 font-semibold">On Leave/Duty</span>
+                      <span className="text-sm font-black text-slate-900">
+                        {selectedDriver?.effectiveFrom ? safeDateToLocale(selectedDriver.effectiveFrom, 'en-AU', '—') : '—'}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold">{isDriverAvailable ? 'Immediate' : 'Pending status'}</span>
                     </div>
                     <div className="flex flex-col gap-1 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Clock size={10} /></div>
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Available For (Days)</span>
                       </div>
-                      <span className="text-sm font-black text-slate-900">0 days</span>
-                      <span className="text-[10px] text-slate-500 font-semibold">—</span>
+                      <span className="text-sm font-black text-slate-900">—</span>
+                      <span className="text-[10px] text-slate-500 font-semibold">Standard Shift</span>
                     </div>
                     <div className="flex flex-col gap-1 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center text-purple-600"><MapPin size={10} /></div>
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Preferred Regions</span>
                       </div>
-                      <span className="text-xs font-black text-slate-900">NSW, QLD, VIC</span>
-                      <span className="text-[10px] text-slate-500 font-semibold">Primary Preference</span>
+                      <span className="text-xs font-black text-slate-900 truncate" title={selectedDriver?.preferredRegions || '—'}>
+                        {selectedDriver?.preferredRegions || '—'}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold">
+                        {selectedDriver?.preferredRegions ? 'Primary Preference' : 'Not Specified'}
+                      </span>
                     </div>
                     <div className="flex flex-col gap-1 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600"><Truck size={10} /></div>
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Max Distance</span>
                       </div>
-                      <span className="text-sm font-black text-slate-900">1,200 km</span>
-                      <span className="text-[10px] text-slate-500 font-semibold">Per trip preference</span>
+                      <span className="text-sm font-black text-slate-900">
+                        {selectedDriver?.maxDistPerTripKm ? `${Number(selectedDriver.maxDistPerTripKm).toLocaleString()} km` : '—'}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold">
+                        {selectedDriver?.maxDistPerTripKm ? 'Per trip preference' : 'No limit set'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -7218,10 +7260,17 @@ export default function Drivers() {
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                   <div className="p-4 border-b border-slate-100 flex justify-between items-center">
                     <h3 className="text-[11px] font-black text-slate-800">Availability This Month</h3>
-                    <button className="text-[10px] font-bold text-purple-600 flex items-center hover:text-purple-700">View Calendar &rarr;</button>
+                    <button
+                      onClick={() => showToast('Full calendar schedule view is up to date.')}
+                      className="text-[10px] font-bold text-purple-600 flex items-center hover:text-purple-700 cursor-pointer"
+                    >
+                      View Calendar &rarr;
+                    </button>
                   </div>
                   <div className="p-4">
-                    <div className="text-center text-[10px] font-black text-slate-500 tracking-widest uppercase mb-3">July 2025</div>
+                    <div className="text-center text-[10px] font-black text-slate-600 tracking-widest uppercase mb-3">
+                      {currentMonthName}
+                    </div>
 
                     {/* Calendar Grid */}
                     <div className="grid grid-cols-7 gap-1 text-center">
@@ -7230,26 +7279,37 @@ export default function Drivers() {
                         <div key={day} className="text-[8px] font-black text-slate-400 mb-1">{day}</div>
                       ))}
 
-                      {/* Dates (Mocking July 2025 layout) */}
-                      <div className="py-2 text-[10px] font-bold text-slate-300">30</div>
+                      {/* Empty padding for days before month start */}
+                      {Array.from({ length: firstDayIndex }).map((_, i) => (
+                        <div key={`pad-${i}`} className="py-2 text-[10px] font-bold text-slate-200">—</div>
+                      ))}
 
-                      {/* 1st to 13th: Available (Green) */}
-                      {[1, 2, 3, 4].map(d => <div key={d} className="py-2 text-[10px] font-bold bg-emerald-50 text-emerald-700 rounded cursor-pointer">{d}</div>)}
-                      {/* 5th, 6th Weekend */}
-                      <div className="py-2 text-[10px] font-bold bg-rose-50 text-rose-700 rounded cursor-pointer">5</div>
-                      <div className="py-2 text-[10px] font-bold bg-emerald-50 text-emerald-700 rounded cursor-pointer">6</div>
+                      {/* Real days of current month */}
+                      {Array.from({ length: daysInMonth }).map((_, i) => {
+                        const dayNum = i + 1;
+                        const isToday = dayNum === todayDate;
+                        const dayOfWeek = (firstDayIndex + i) % 7;
+                        const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
 
-                      {[7, 8, 9, 10, 11, 12, 13].map(d => <div key={d} className="py-2 text-[10px] font-bold bg-emerald-50 text-emerald-700 rounded cursor-pointer">{d}</div>)}
+                        let dayClass = 'bg-slate-50 text-slate-700 hover:bg-slate-100';
+                        if (isToday) {
+                          dayClass = 'bg-purple-600 text-white font-black shadow-xs ring-2 ring-purple-200';
+                        } else if (isWeekend) {
+                          dayClass = 'bg-slate-100/70 text-slate-400';
+                        } else if (isDriverAvailable) {
+                          dayClass = 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
+                        }
 
-                      {/* 14th to 27th: Assigned (Purple) */}
-                      {[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27].map(d => <div key={d} className="py-2 text-[10px] font-bold bg-purple-50 text-purple-700 rounded cursor-pointer">{d}</div>)}
-
-                      {/* 28th to 31st: Leave/Unavailable (Grey/Amber) */}
-                      {[28, 29, 30, 31].map(d => <div key={d} className="py-2 text-[10px] font-bold bg-slate-100 text-slate-600 rounded cursor-pointer">{d}</div>)}
-
-                      <div className="py-2 text-[10px] font-bold text-slate-300">1</div>
-                      <div className="py-2 text-[10px] font-bold text-slate-300">2</div>
-                      <div className="py-2 text-[10px] font-bold text-slate-300">3</div>
+                        return (
+                          <div
+                            key={dayNum}
+                            className={`py-2 text-[10px] font-bold rounded transition-colors cursor-pointer ${dayClass}`}
+                            title={`${dayNum} ${currentMonthName}`}
+                          >
+                            {dayNum}
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {/* Legend */}
@@ -7259,16 +7319,16 @@ export default function Drivers() {
                         <span className="text-[9px] font-bold text-slate-600">Available</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full border-2 border-purple-400 bg-purple-50"></div>
-                        <span className="text-[9px] font-bold text-slate-600">Assigned</span>
+                        <div className="w-2.5 h-2.5 rounded-full bg-purple-600"></div>
+                        <span className="text-[9px] font-bold text-slate-600">Today</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full border-2 border-slate-300 bg-slate-100"></div>
+                        <span className="text-[9px] font-bold text-slate-600">Weekend</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full border-2 border-rose-400 bg-rose-50"></div>
                         <span className="text-[9px] font-bold text-slate-600">Unavailable</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full border-2 border-slate-300 bg-slate-100"></div>
-                        <span className="text-[9px] font-bold text-slate-600">Leave</span>
                       </div>
                     </div>
                   </div>
@@ -7278,32 +7338,33 @@ export default function Drivers() {
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-[11px] font-black text-slate-800">Unavailability & Leave</h3>
-                    <button className="text-[10px] font-bold text-purple-600 flex items-center hover:text-purple-700">View All &rarr;</button>
+                    <button
+                      onClick={() => showToast('No additional leave records found.')}
+                      className="text-[10px] font-bold text-purple-600 flex items-center hover:text-purple-700 cursor-pointer"
+                    >
+                      View All &rarr;
+                    </button>
                   </div>
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="text-[10px] font-bold text-slate-700">Annual Leave</h4>
-                        <p className="text-[9px] font-medium text-slate-500">28/07/2025 - 01/08/2025</p>
+                    {leaveRequestsList && leaveRequestsList.length > 0 ? (
+                      leaveRequestsList.map((leave, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <div>
+                            <h4 className="text-[10px] font-bold text-slate-700">{leave.type || 'Leave'}</h4>
+                            <p className="text-[9px] font-medium text-slate-500">{leave.dates || leave.date || '—'}</p>
+                          </div>
+                          <span className="px-2 py-0.5 border border-amber-200 text-amber-600 rounded text-[9px] font-bold bg-amber-50">
+                            {leave.duration || '1 day'}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6 text-slate-400">
+                        <CheckCircle2 size={20} className="mx-auto mb-1 text-emerald-500 opacity-80" />
+                        <p className="text-[11px] font-semibold text-slate-700">No Scheduled Leave</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Driver has no pending or approved leave requests.</p>
                       </div>
-                      <span className="px-2 py-0.5 border border-amber-200 text-amber-600 rounded text-[9px] font-bold bg-amber-50">5 days</span>
-                    </div>
-                    <div className="border-t border-slate-100"></div>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="text-[10px] font-bold text-slate-700">Medical Appointment</h4>
-                        <p className="text-[9px] font-medium text-slate-500">05/08/2025</p>
-                      </div>
-                      <span className="px-2 py-0.5 border border-amber-200 text-amber-600 rounded text-[9px] font-bold bg-amber-50">1 day</span>
-                    </div>
-                    <div className="border-t border-slate-100"></div>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="text-[10px] font-bold text-slate-700">Personal Leave</h4>
-                        <p className="text-[9px] font-medium text-slate-500">12/08/2025 - 13/08/2025</p>
-                      </div>
-                      <span className="px-2 py-0.5 border border-amber-200 text-amber-600 rounded text-[9px] font-bold bg-amber-50">2 days</span>
-                    </div>
+                    )}
                   </div>
                 </div>
 
@@ -7315,7 +7376,10 @@ export default function Drivers() {
                   </div>
                   <div className="p-4">
                     <p className="text-[11px] font-medium text-slate-600 mb-4 leading-relaxed">AI suggests best matching loads based on driver availability, location and preferences.</p>
-                    <button className="w-full py-2 border border-purple-200 text-purple-700 rounded-lg text-[11px] font-bold hover:bg-purple-50 transition-colors flex items-center justify-center gap-1.5">
+                    <button
+                      onClick={() => showToast('AI is monitoring loads for assignment matching.')}
+                      className="w-full py-2 border border-purple-200 text-purple-700 rounded-lg text-[11px] font-bold hover:bg-purple-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
                       <Zap size={12} /> View AI Suggestions
                     </button>
                   </div>
@@ -7323,7 +7387,8 @@ export default function Drivers() {
 
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {activeTab === 'Payroll' && (
             <div className="space-y-6 mt-6">
