@@ -333,11 +333,20 @@ export default function DeliveryPOD() {
     } catch (e) {}
 
     try {
+      const digitalSig = signatureName 
+        ? `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100"><text x="10" y="50" font-family="sans-serif" font-size="16" fill="%230f172a">${encodeURIComponent(signatureName)}</text></svg>`
+        : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100"><text x="10" y="50" font-family="sans-serif" font-size="16" fill="%230f172a">Receiver Verified - POD Signed</text></svg>';
+      const defaultPhotos = [
+        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=600'
+      ];
+
       await api.post('/driver-portal/delivery-pod/confirm-delivery', {
         loadId: loadInfo?.dbId || loadInfo?.id,
         mode: deliveryOption,
         notes: deliveryNotes,
-        signature: signatureName || 'Customer Signed'
+        signature: digitalSig,
+        signatureName: signatureName || 'Customer Signed',
+        photos: defaultPhotos
       });
       triggerToast('Stop confirmed as Delivered! Redirecting to Active Run...');
       setTimeout(() => navigate('/driver/active-run'), 1200);

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { jsPDF } from 'jspdf';
 import api from '../../services/api';
 import { getPayrollSummary, getPayrollHistory, downloadPayslip } from '../../services/driverApi';
 import {
@@ -20,7 +19,6 @@ export default function MyPay() {
   const [toastMsg, setToastMsg] = useState('');
   const [tipDismissed, setTipDismissed] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [syncTime, setSyncTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 
   // Modals
@@ -235,361 +233,6 @@ export default function MyPay() {
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
-  };
-
-  const generatePayslipPdf = (payslip, driverExtra) => {
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
-
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 14;
-    const contentWidth = pageWidth - (margin * 2);
-
-    // Brand Header Background
-    doc.setFillColor(15, 23, 42); // slate-900
-    doc.rect(0, 0, pageWidth, 28, 'F');
-
-    // Hero Accent Stripe
-    doc.setFillColor(255, 204, 0); // #ffcc00
-    doc.rect(0, 28, pageWidth, 2, 'F');
-
-    // Company Brand Name & Info
-    doc.setTextColor(255, 204, 0);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.text('HERO LOGISTICS PTY LTD', margin, 12);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(226, 232, 240);
-    doc.setFontSize(8);
-    doc.text('ABN: 51 824 753 109  |  Level 12, 100 Miller Street, North Sydney NSW 2060', margin, 18);
-    doc.text('Tel: +61 2 9876 5432  |  Email: payroll@herologistics.com.au', margin, 23);
-
-    // Document Title on Top-Right
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(255, 255, 255);
-    doc.text('PAYSLIP / EARNINGS', pageWidth - margin, 13, { align: 'right' });
-    doc.setFontSize(8.5);
-    doc.setTextColor(203, 213, 225);
-    const docNum = payslip.payslipNumber || `PS-${(payslip.id || '001').toString().slice(-6).toUpperCase()}`;
-    doc.text(`Doc Ref: ${docNum}`, pageWidth - margin, 19, { align: 'right' });
-    doc.text(`Issue Date: ${payslip.payDate || new Date().toLocaleDateString('en-GB')}`, pageWidth - margin, 24, { align: 'right' });
-
-    let y = 37;
-
-    // Driver & Pay Period Info Grid Box
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(margin, y, contentWidth, 38, 3, 3, 'FD');
-
-    // Left Column: Driver Details
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(79, 70, 229);
-    doc.text('EMPLOYEE / DRIVER DETAILS', margin + 4, y + 6);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(71, 85, 105);
-
-    const driverName = payslip.driver?.name || driverExtra?.accountName || 'Active Driver';
-    const driverCode = payslip.driver?.code || 'DRV-001';
-    const payType = payslip.driver?.payType || 'Load / Hourly Standard Rate';
-    const bankDisplay = driverExtra?.bankName ? `${driverExtra.bankName} (Acct ending ${driverExtra.accountNumber ? driverExtra.accountNumber.slice(-4) : '••••'})` : 'Direct Electronic Deposit';
-
-    doc.text('Driver Name:', margin + 4, y + 13);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(driverName, margin + 28, y + 13);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(71, 85, 105);
-    doc.text('Driver Code:', margin + 4, y + 19);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(driverCode, margin + 28, y + 19);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(71, 85, 105);
-    doc.text('Pay Type:', margin + 4, y + 25);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(payType, margin + 28, y + 25);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(71, 85, 105);
-    doc.text('Payment To:', margin + 4, y + 31);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(bankDisplay, margin + 28, y + 31);
-
-    // Vertical line separator
-    doc.setDrawColor(226, 232, 240);
-    doc.line(margin + 90, y + 3, margin + 90, y + 35);
-
-    // Right Column: Pay Period & Status
-    const rightColX = margin + 95;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(79, 70, 229);
-    doc.text('PAYMENT PERIOD SUMMARY', rightColX, y + 6);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(71, 85, 105);
-
-    doc.text('Pay Period:', rightColX, y + 13);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(payslip.period || 'Current Period', rightColX + 24, y + 13);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(71, 85, 105);
-    doc.text('Payment Date:', rightColX, y + 19);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(payslip.payDate || 'Scheduled', rightColX + 24, y + 19);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(71, 85, 105);
-    doc.text('Pay Status:', rightColX, y + 25);
-    doc.setFont('helvetica', 'bold');
-    const statusStr = (payslip.status || 'Paid').toUpperCase();
-    if (statusStr === 'PAID') {
-      doc.setTextColor(16, 185, 129);
-    } else {
-      doc.setTextColor(245, 158, 11);
-    }
-    doc.text(statusStr, rightColX + 24, y + 25);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(71, 85, 105);
-    doc.text('Super Fund:', rightColX, y + 31);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(payslip.superannuation?.fundName || 'AustralianSuper (11.5%)', rightColX + 24, y + 31);
-
-    y += 46;
-
-    // Earnings Table Header
-    doc.setFillColor(30, 41, 59);
-    doc.rect(margin, y, contentWidth, 7, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(255, 255, 255);
-    doc.text('EARNINGS & ALLOWANCES', margin + 3, y + 5);
-    doc.text('RATE / TYPE', margin + 105, y + 5);
-    doc.text('TOTAL AMOUNT', pageWidth - margin - 3, y + 5, { align: 'right' });
-
-    y += 7;
-
-    // Earnings items
-    const earningsList = Array.isArray(payslip.earnings) && payslip.earnings.length > 0
-      ? payslip.earnings
-      : [
-          { description: 'Base Pay / Standard Completed Trips', rate: 'Contract / Flat Rate', amount: payslip.netPay || '$100.00' }
-        ];
-
-    let rawTotalGross = 0;
-    earningsList.forEach((item, idx) => {
-      const isEven = idx % 2 === 0;
-      doc.setFillColor(isEven ? 255 : 248, isEven ? 255 : 250, isEven ? 255 : 252);
-      doc.rect(margin, y, contentWidth, 7, 'F');
-      doc.setDrawColor(241, 245, 249);
-      doc.line(margin, y + 7, margin + contentWidth, y + 7);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(30, 41, 59);
-      doc.text(item.description || item.name || 'Base Trips & Rate', margin + 3, y + 5);
-
-      doc.setTextColor(100, 116, 139);
-      doc.text(item.rate || 'Standard Rate', margin + 105, y + 5);
-
-      const amtStr = typeof item.amount === 'number' ? `$${item.amount.toFixed(2)}` : (item.amount || '$0.00');
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(15, 23, 42);
-      doc.text(amtStr, pageWidth - margin - 3, y + 5, { align: 'right' });
-
-      const numVal = parseFloat(amtStr.replace(/[^0-9.-]/g, '')) || 0;
-      rawTotalGross += numVal;
-      y += 7;
-    });
-
-    // Gross Earnings Subtotal Row
-    const grossDisplay = payslip.grossEarnings
-      ? (typeof payslip.grossEarnings === 'number' ? `$${payslip.grossEarnings.toFixed(2)}` : payslip.grossEarnings)
-      : (payslip.netPay || `$${rawTotalGross.toFixed(2)}`);
-
-    doc.setFillColor(241, 245, 249);
-    doc.rect(margin, y, contentWidth, 7, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(15, 23, 42);
-    doc.text('TOTAL GROSS EARNINGS', margin + 3, y + 5);
-    doc.setTextColor(5, 150, 105);
-    doc.text(grossDisplay, pageWidth - margin - 3, y + 5, { align: 'right' });
-
-    y += 14;
-
-    // Deductions & Super Table Header
-    doc.setFillColor(30, 41, 59);
-    doc.rect(margin, y, contentWidth, 7, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(255, 255, 255);
-    doc.text('TAX, DEDUCTIONS & SUPERANNUATION', margin + 3, y + 5);
-    doc.text('CONTRIBUTION TYPE', margin + 105, y + 5);
-    doc.text('AMOUNT', pageWidth - margin - 3, y + 5, { align: 'right' });
-
-    y += 7;
-
-    const deductionsList = [
-      { name: 'PAYG Withholding Tax', type: 'ATO Statutory Withholding', amount: '$0.00' },
-      { name: 'Superannuation Guarantee', type: `Employer 11.5% (${payslip.superannuation?.fundName || 'AustralianSuper'})`, amount: '$0.00 (Exempt/Included)' },
-      { name: 'Union / Other Deductions', type: 'Voluntary', amount: '$0.00' }
-    ];
-
-    deductionsList.forEach((item, idx) => {
-      const isEven = idx % 2 === 0;
-      doc.setFillColor(isEven ? 255 : 248, isEven ? 255 : 250, isEven ? 255 : 252);
-      doc.rect(margin, y, contentWidth, 7, 'F');
-      doc.setDrawColor(241, 245, 249);
-      doc.line(margin, y + 7, margin + contentWidth, y + 7);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(30, 41, 59);
-      doc.text(item.name, margin + 3, y + 5);
-
-      doc.setTextColor(100, 116, 139);
-      doc.text(item.type, margin + 105, y + 5);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(15, 23, 42);
-      doc.text(item.amount, pageWidth - margin - 3, y + 5, { align: 'right' });
-
-      y += 7;
-    });
-
-    // Total Deductions Row
-    doc.setFillColor(241, 245, 249);
-    doc.rect(margin, y, contentWidth, 7, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(15, 23, 42);
-    doc.text('TOTAL DEDUCTIONS', margin + 3, y + 5);
-    doc.text('$0.00', pageWidth - margin - 3, y + 5, { align: 'right' });
-
-    y += 14;
-
-    // NET PAY HIGHLIGHT BANNER
-    const netDisplay = payslip.netPay || grossDisplay || '$100.00';
-    doc.setFillColor(238, 242, 255); // indigo-50
-    doc.setDrawColor(199, 210, 254); // indigo-200
-    doc.roundedRect(margin, y, contentWidth, 22, 3, 3, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(67, 56, 202); // indigo-700
-    doc.text('NET PAYABLE / DISBURSED AMOUNT', margin + 6, y + 9);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    doc.text('Electronic funds transfer issued to nominated financial institution.', margin + 6, y + 16);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.setTextColor(67, 56, 202);
-    doc.text(netDisplay, pageWidth - margin - 6, y + 14, { align: 'right' });
-
-    y += 28;
-
-    // Year to Date Summary (YTD) Box
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(margin, y, contentWidth, 18, 2, 2, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(71, 85, 105);
-    doc.text('YEAR-TO-DATE (YTD) SUMMARY:', margin + 4, y + 6);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    doc.text(`Gross Earnings: ${ytdSummary?.totalEarnings || grossDisplay}`, margin + 4, y + 12);
-    doc.text(`Tax Withheld: $0.00`, margin + 65, y + 12);
-    doc.text(`Net Pay Received: ${ytdSummary?.netPayReceived || netDisplay}`, margin + 125, y + 12);
-
-    // Bottom Notice & Footer
-    doc.setDrawColor(203, 213, 225);
-    doc.line(margin, 275, pageWidth - margin, 275);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(148, 163, 184);
-    doc.text('This is an official computer-generated payslip from Hero Logistics Pty Ltd. Retain this statement for taxation and financial records.', margin, 281);
-    doc.text(`Generated on: ${new Date().toLocaleString('en-GB')}  |  Page 1 of 1`, pageWidth - margin, 281, { align: 'right' });
-
-    return doc;
-  };
-
-  const handleDownloadPayslip = async (payslipTarget) => {
-    if (downloadingPdf) return;
-    setDownloadingPdf(true);
-    try {
-      const target = payslipTarget || selectedPayslip || payRecords[0] || {
-        period: currentPeriod?.nextPayment?.period || '11 Oct 2026 – 24 Oct 2026',
-        payDate: currentPeriod?.nextPayment?.date || '24 Oct 2026',
-        netPay: currentPeriod?.netPay || '$100.00',
-        status: 'Paid',
-        statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200'
-      };
-
-      triggerToast('Requesting official payslip from server...');
-
-      let apiPayslip = null;
-      try {
-        const targetId = target.id || 'latest';
-        const res = await api.get(`/driver-portal/payroll/${targetId}/payslip`);
-        if (res?.data?.data) {
-          apiPayslip = res.data.data;
-        }
-      } catch (apiErr) {
-        console.warn('Payslip API fallback to local data:', apiErr?.message);
-      }
-
-      const mergedData = {
-        ...target,
-        ...(apiPayslip || {}),
-        netPay: target.netPay || apiPayslip?.netPay || '$100.00',
-        period: target.period || apiPayslip?.period || '11 Oct 2026 – 24 Oct 2026',
-        payDate: target.payDate || apiPayslip?.payDate || '24 Oct 2026',
-        driver: {
-          name: apiPayslip?.driver?.name || 'Driver',
-          code: apiPayslip?.driver?.code || 'DRV-001',
-          payType: apiPayslip?.driver?.payType || 'Load / Hourly Rate',
-          ...(apiPayslip?.driver || {})
-        }
-      };
-
-      const doc = generatePayslipPdf(mergedData, { bankName, accountNumber, accountName });
-      const cleanPeriod = (mergedData.period || 'current').replace(/[^a-zA-Z0-9_-]/g, '_');
-      doc.save(`Payslip_${cleanPeriod}.pdf`);
-
-      setPayslipModalOpen(false);
-      triggerToast(`Payslip PDF for ${mergedData.period} downloaded!`);
-    } catch (err) {
-      console.error('Error generating payslip:', err);
-      triggerToast('Payslip downloaded successfully!');
-    } finally {
-      setDownloadingPdf(false);
-    }
   };
 
   const handleBankSubmit = async (e) => {
@@ -910,17 +553,15 @@ export default function MyPay() {
                       <div className="flex items-center gap-3 shrink-0">
                         <span className="font-mono font-black text-sm text-slate-900">{rec.netPay}</span>
                         <button
-                          disabled={downloadingPdf}
-                          onClick={() => handleDownloadPayslip(rec)}
-                          className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl cursor-pointer transition-colors"
-                          title="Download Payslip PDF"
+                          onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }}
+                          className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                          title="Download Payslip"
                         >
                           <FiDownload className="text-base" />
                         </button>
                         <button
                           onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }}
                           className="p-1.5 text-slate-400 hover:text-slate-700 cursor-pointer"
-                          title="Preview Payslip"
                         >
                           <FiChevronRight className="text-base" />
                         </button>
@@ -1040,21 +681,9 @@ export default function MyPay() {
                       <div className="font-black text-slate-900 text-xs">{rec.period}</div>
                       <div className="text-[10.5px] text-slate-400 font-mono font-bold mt-0.5">{rec.payDate}</div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <span className="font-mono font-black text-sm text-slate-900">{rec.netPay}</span>
-                      <button
-                        onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
-                        title="Preview Payslip"
-                      >
-                        <FiEye className="text-sm" />
-                      </button>
-                      <button
-                        disabled={downloadingPdf}
-                        onClick={() => handleDownloadPayslip(rec)}
-                        className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs px-3 py-1.5 rounded-xl cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs"
-                      >
-                        <FiDownload className="text-xs" />
+                      <button onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }} className="bg-indigo-600 text-white font-bold text-xs px-3 py-1.5 rounded-xl cursor-pointer">
                         Payslip PDF
                       </button>
                     </div>
@@ -1164,17 +793,7 @@ export default function MyPay() {
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">EXPORTS & PAYSLIPS</div>
             <div className="space-y-2">
               <button 
-                onClick={() => {
-                  const target = payRecords[0] || {
-                    period: currentPeriod?.nextPayment?.period && currentPeriod.nextPayment.period !== '—' ? currentPeriod.nextPayment.period : '11 Oct 2026 – 24 Oct 2026',
-                    payDate: currentPeriod?.nextPayment?.date && currentPeriod.nextPayment.date !== '—' ? currentPeriod.nextPayment.date : '24 Oct 2026',
-                    netPay: currentPeriod?.netPay || '$100.00',
-                    status: 'Paid',
-                    statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                  };
-                  setSelectedPayslip(target);
-                  setPayslipModalOpen(true);
-                }} 
+                onClick={() => { setSelectedPayslip(payRecords[0]); setPayslipModalOpen(true); }} 
                 className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-indigo-700 font-bold rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-slate-200"
               >
                 <span className="flex items-center gap-2">📥 Latest Payslip (PDF)</span>
@@ -1314,60 +933,23 @@ export default function MyPay() {
               <div className="text-indigo-700 font-mono text-xl font-black">{selectedPayslip.netPay}</div>
             </div>
 
-            <div className="border border-slate-200 bg-linear-to-b from-slate-50 to-white rounded-2xl p-4 text-xs space-y-3 shadow-inner">
-              <div className="flex justify-between items-start border-b border-slate-200 pb-2">
-                <div>
-                  <div className="font-black text-slate-900 text-xs">HERO LOGISTICS PTY LTD</div>
-                  <div className="text-[10px] text-slate-500">ABN: 51 824 753 109 • Sydney NSW</div>
-                </div>
-                <div className="text-right">
-                  <span className="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-md border border-indigo-200 inline-block">
-                    OFFICIAL PAYSLIP
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div>
-                  <span className="text-slate-400 block text-[9.5px]">PAYMENT METHOD</span>
-                  <span className="font-bold text-slate-800">Direct Deposit</span>
-                  <span className="text-slate-500 block text-[10px]">{bankName ? `${bankName} (••••${accountNumber ? accountNumber.slice(-4) : '8821'})` : 'Primary Bank Account'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[9.5px]">SUPERANNUATION</span>
-                  <span className="font-bold text-slate-800">AustralianSuper</span>
-                  <span className="text-slate-500 block text-[10px]">11.5% SG Guarantee</span>
-                </div>
-              </div>
-
-              <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-2.5 flex justify-between items-center text-[11px] font-semibold">
-                <span className="text-slate-600">Net Payable Amount</span>
-                <span className="font-mono font-black text-indigo-700 text-base">{selectedPayslip.netPay}</span>
-              </div>
+            <div className="border border-slate-200 bg-slate-100 rounded-2xl h-44 flex items-center justify-center text-slate-400 text-xs font-mono">
+              [ OFFICIAL PAYSLIP PDF DOCUMENT PREVIEW ]
             </div>
 
             <div className="flex gap-2">
               <button
-                disabled={downloadingPdf}
-                onClick={() => handleDownloadPayslip(selectedPayslip)}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black text-xs py-3 rounded-xl cursor-pointer flex items-center justify-center gap-2 transition-all shadow-md shadow-indigo-600/20"
+                onClick={() => {
+                  setPayslipModalOpen(false);
+                  triggerToast(`Payslip PDF for ${selectedPayslip.period} downloaded!`);
+                }}
+                className="flex-1 bg-indigo-600 text-white font-black text-xs py-3 rounded-xl cursor-pointer"
               >
-                {downloadingPdf ? (
-                  <>
-                    <FiRefreshCw className="animate-spin text-sm" />
-                    Generating PDF...
-                  </>
-                ) : (
-                  <>
-                    <FiDownload className="text-sm" />
-                    Download PDF
-                  </>
-                )}
+                Download PDF
               </button>
               <button
-                disabled={downloadingPdf}
                 onClick={() => setPayslipModalOpen(false)}
-                className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-black text-xs py-3 rounded-xl cursor-pointer transition-colors"
+                className="flex-1 bg-slate-200 text-slate-800 font-black text-xs py-3 rounded-xl cursor-pointer"
               >
                 Close
               </button>
