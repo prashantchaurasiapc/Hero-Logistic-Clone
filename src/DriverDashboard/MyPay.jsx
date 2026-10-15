@@ -910,15 +910,17 @@ export default function MyPay() {
                       <div className="flex items-center gap-3 shrink-0">
                         <span className="font-mono font-black text-sm text-slate-900">{rec.netPay}</span>
                         <button
-                          onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }}
-                          className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl cursor-pointer"
-                          title="Download Payslip"
+                          disabled={downloadingPdf}
+                          onClick={() => handleDownloadPayslip(rec)}
+                          className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl cursor-pointer transition-colors"
+                          title="Download Payslip PDF"
                         >
                           <FiDownload className="text-base" />
                         </button>
                         <button
                           onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }}
                           className="p-1.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                          title="Preview Payslip"
                         >
                           <FiChevronRight className="text-base" />
                         </button>
@@ -1038,9 +1040,21 @@ export default function MyPay() {
                       <div className="font-black text-slate-900 text-xs">{rec.period}</div>
                       <div className="text-[10.5px] text-slate-400 font-mono font-bold mt-0.5">{rec.payDate}</div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <span className="font-mono font-black text-sm text-slate-900">{rec.netPay}</span>
-                      <button onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }} className="bg-indigo-600 text-white font-bold text-xs px-3 py-1.5 rounded-xl cursor-pointer">
+                      <button
+                        onClick={() => { setSelectedPayslip(rec); setPayslipModalOpen(true); }}
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
+                        title="Preview Payslip"
+                      >
+                        <FiEye className="text-sm" />
+                      </button>
+                      <button
+                        disabled={downloadingPdf}
+                        onClick={() => handleDownloadPayslip(rec)}
+                        className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs px-3 py-1.5 rounded-xl cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs"
+                      >
+                        <FiDownload className="text-xs" />
                         Payslip PDF
                       </button>
                     </div>
