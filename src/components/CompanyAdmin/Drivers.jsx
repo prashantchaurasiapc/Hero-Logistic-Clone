@@ -986,6 +986,11 @@ export default function Drivers() {
       maxDistPerTripKm: d.maxDistPerTripKm ? String(d.maxDistPerTripKm) : '',
       dgCertified: d.dgCertified === true,
       hvCertified: d.hvCertified === true,
+      availableFrom: d.availableFrom ? safeDateToYMD(d.availableFrom) : '',
+      weeklyHoursLimit: d.weeklyHoursLimit !== null && d.weeklyHoursLimit !== undefined ? String(d.weeklyHoursLimit) : '',
+      maxHoursPerDay: d.maxHoursPerDay !== null && d.maxHoursPerDay !== undefined ? String(d.maxHoursPerDay) : '',
+      restDaysPerWeek: d.restDaysPerWeek !== null && d.restDaysPerWeek !== undefined ? String(d.restDaysPerWeek) : '',
+      workingDays: d.workingDays || '',
       assignmentId: '—',
       assignmentType: 'Not assigned',
       complianceStatus: d.complianceScore && d.complianceScore < 80 ? 'Action Required' : 'Compliant',
@@ -4485,7 +4490,14 @@ export default function Drivers() {
       superPercentage: selectedDriver?.superPercentage,
       effectiveFrom: selectedDriver?.effectiveFrom,
       effectiveTo: selectedDriver?.effectiveTo,
-      defaultBreakMinutes: selectedDriver?.defaultBreakMinutes
+      defaultBreakMinutes: selectedDriver?.defaultBreakMinutes,
+      availableFrom: selectedDriver?.availableFrom || '',
+      weeklyHoursLimit: selectedDriver?.weeklyHoursLimit || '',
+      maxHoursPerDay: selectedDriver?.maxHoursPerDay || '',
+      restDaysPerWeek: selectedDriver?.restDaysPerWeek || '',
+      shift: selectedDriver?.shift || '',
+      dgCertified: selectedDriver?.dgCertified,
+      hvCertified: selectedDriver?.hvCertified
     } : {};
 
     return (
@@ -4588,6 +4600,11 @@ export default function Drivers() {
           const maxDistPerTripKm = fd.get('MaximumDistancePerTripKM') ? parseInt(fd.get('MaximumDistancePerTripKM'), 10) : null;
           const dgCertified = fd.get('DangerousGoodsCertified') === 'Yes';
           const hvCertified = fd.get('HeavyVehicleCertified') === 'Yes';
+          const availableFrom = fd.get('availableFrom') || fd.get('AvailableFrom') || null;
+          const preferredShift = fd.get('preferredShift') || fd.get('PreferredShift') || null;
+          const weeklyHoursLimit = (fd.get('weeklyHoursLimit') || fd.get('WeeklyHoursLimit')) ? parseInt(fd.get('weeklyHoursLimit') || fd.get('WeeklyHoursLimit'), 10) : null;
+          const maxHoursPerDay = (fd.get('maxHoursPerDay') || fd.get('MaxWorkingHoursDay')) ? parseInt(fd.get('maxHoursPerDay') || fd.get('MaxWorkingHoursDay'), 10) : null;
+          const restDaysPerWeek = (fd.get('restDaysPerWeek') || fd.get('RestDaysWeek')) ? parseInt(fd.get('restDaysPerWeek') || fd.get('RestDaysWeek'), 10) : null;
 
           const ordinaryHoursPerDay = fd.get('ordinaryHoursPerDay') ? parseFloat(fd.get('ordinaryHoursPerDay')) : 7.6;
           const overtimeStartsAfter = fd.get('overtimeStartsAfter') ? parseFloat(fd.get('overtimeStartsAfter')) : 7.6;
@@ -4735,7 +4752,12 @@ export default function Drivers() {
             preferredRegions,
             maxDistPerTripKm,
             dgCertified,
-            hvCertified
+            hvCertified,
+            availableFrom,
+            shift: preferredShift || shift,
+            weeklyHoursLimit,
+            maxHoursPerDay,
+            restDaysPerWeek
           };
 
           let targetDriverId = (isEditMode && selectedDriver) ? selectedDriver.id : null;
@@ -4800,7 +4822,12 @@ export default function Drivers() {
                   defaultBreakMinutes,
                   taxNumber,
                   accountNumber,
-                  routingNumber
+                  routingNumber,
+                  availableFrom: availableFrom ? safeDateToYMD(availableFrom) : '',
+                  shift: preferredShift || shift || '',
+                  weeklyHoursLimit: weeklyHoursLimit !== null ? String(weeklyHoursLimit) : '',
+                  maxHoursPerDay: maxHoursPerDay !== null ? String(maxHoursPerDay) : '',
+                  restDaysPerWeek: restDaysPerWeek !== null ? String(restDaysPerWeek) : ''
                 };
               });
             } else {
@@ -5474,11 +5501,42 @@ export default function Drivers() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">7. Availability</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 mb-6">
-                <InputField label="Available From" optional={true} type="date" />
-                <InputField label="Preferred Shift" optional={true} type="select" options={['Morning', 'Afternoon', 'Night', 'Rotating']} defaultValue={isEditMode ? "Morning" : ""} />
-                <InputField label="Weekly Hours Limit" optional={true} defaultValue={isEditMode ? "50" : ""} placeholder="e.g. 40" />
-                <InputField label="Max Working Hours/Day" optional={true} defaultValue={isEditMode ? "10" : ""} placeholder="e.g. 10" />
-                <InputField label="Rest Days / Week" optional={true} defaultValue={isEditMode ? "2" : ""} placeholder="e.g. 2" />
+                <InputField 
+                  label="Available From" 
+                  name="availableFrom"
+                  optional={true} 
+                  type="date" 
+                  defaultValue={isEditMode && defaultData.availableFrom ? defaultData.availableFrom.split('T')[0] : ""} 
+                />
+                <InputField 
+                  label="Preferred Shift" 
+                  name="preferredShift"
+                  optional={true} 
+                  type="select" 
+                  options={['Morning', 'Afternoon', 'Night', 'Rotating']} 
+                  defaultValue={isEditMode ? (defaultData.shift || defaultData.preferredShift || "") : ""} 
+                />
+                <InputField 
+                  label="Weekly Hours Limit" 
+                  name="weeklyHoursLimit"
+                  optional={true} 
+                  defaultValue={isEditMode ? (defaultData.weeklyHoursLimit || "") : ""} 
+                  placeholder="e.g. 40" 
+                />
+                <InputField 
+                  label="Max Working Hours/Day" 
+                  name="maxHoursPerDay"
+                  optional={true} 
+                  defaultValue={isEditMode ? (defaultData.maxHoursPerDay || "") : ""} 
+                  placeholder="e.g. 10" 
+                />
+                <InputField 
+                  label="Rest Days / Week" 
+                  name="restDaysPerWeek"
+                  optional={true} 
+                  defaultValue={isEditMode ? (defaultData.restDaysPerWeek || "") : ""} 
+                  placeholder="e.g. 2" 
+                />
               </div>
 
               <div className="w-full">
@@ -7213,17 +7271,29 @@ export default function Drivers() {
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Next Available From</span>
                       </div>
                       <span className="text-sm font-black text-slate-900">
-                        {selectedDriver?.effectiveFrom ? safeDateToLocale(selectedDriver.effectiveFrom, 'en-AU', '—') : '—'}
+                        {selectedDriver?.availableFrom 
+                          ? safeDateToLocale(selectedDriver.availableFrom, 'en-AU', 'Immediate') 
+                          : (isDriverAvailable ? 'Immediate' : '—')}
                       </span>
-                      <span className="text-[10px] text-slate-500 font-semibold">{isDriverAvailable ? 'Immediate' : 'Pending status'}</span>
+                      <span className="text-[10px] text-slate-500 font-semibold">
+                        {selectedDriver?.availableFrom 
+                          ? 'Scheduled date' 
+                          : (isDriverAvailable ? 'Ready for duty' : 'Pending status')}
+                      </span>
                     </div>
                     <div className="flex flex-col gap-1 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Clock size={10} /></div>
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Available For (Days)</span>
                       </div>
-                      <span className="text-sm font-black text-slate-900">—</span>
-                      <span className="text-[10px] text-slate-500 font-semibold">Standard Shift</span>
+                      <span className="text-sm font-black text-slate-900">
+                        {selectedDriver?.weeklyHoursLimit 
+                          ? `${selectedDriver.weeklyHoursLimit} hrs/wk` 
+                          : (selectedDriver?.shift ? selectedDriver.shift : '—')}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold">
+                        {selectedDriver?.shift ? `${selectedDriver.shift} Shift` : (selectedDriver?.weeklyHoursLimit ? 'Weekly Limit' : 'Not Specified')}
+                      </span>
                     </div>
                     <div className="flex flex-col gap-1 border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                       <div className="flex items-center gap-2 mb-1">
