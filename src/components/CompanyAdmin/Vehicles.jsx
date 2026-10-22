@@ -2364,31 +2364,6 @@ const Vehicles = () => {
                       className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-purple-400 shadow-xs w-48 text-slate-800"
                     />
                   </div>
-
-                  {/* Take Photo Quick Button */}
-                  <button
-                    onClick={() => {
-                      setShowUploadDocModal(true);
-                      if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-                        setTimeout(() => mobileCameraInputRef.current?.click(), 300);
-                      } else {
-                        startDesktopCamera();
-                      }
-                    }}
-                    className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-100 hover:bg-purple-200 text-purple-800 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer border border-purple-200 group"
-                    title="Take Photo of Document with Camera"
-                  >
-                     <Camera size={15} className="text-purple-700 group-hover:scale-110 transition-transform" /> Take Photo
-                  </button>
-
-                  {/* Upload New Document Button */}
-                  <button
-                    onClick={() => setShowUploadDocModal(true)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
-                    title="Upload New Document"
-                  >
-                     <Plus size={15} /> Upload Doc
-                  </button>
                </div>
             </div>
 
