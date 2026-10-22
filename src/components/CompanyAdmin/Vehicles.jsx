@@ -2302,8 +2302,8 @@ const Vehicles = () => {
             )}
 
             {/* Subtabs Filter & Controls */}
-            <div className="flex justify-between items-center overflow-x-auto gap-4 pb-2">
-               <div className="flex gap-2 shrink-0">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2">
+               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
                   {['All', 'Truck Documents', 'Trailer Documents', 'Compliance & Licences', 'Insurance', 'Certificates', 'Other'].map((subtab) => {
                     const count = subtab === 'All' 
                       ? documentsList.length 
@@ -2313,7 +2313,7 @@ const Vehicles = () => {
                       <button
                         key={subtab}
                         onClick={() => { setDocSubTab(subtab); setDocPage(1); }}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 cursor-pointer transition-all flex items-center gap-2 ${
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 cursor-pointer transition-all flex items-center gap-2 ${
                           isActive 
                             ? 'bg-purple-700 text-white shadow-sm border border-purple-700' 
                             : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
@@ -2327,12 +2327,12 @@ const Vehicles = () => {
                     );
                   })}
                </div>
-               <div className="flex items-center gap-3 shrink-0">
+               <div className="flex flex-wrap items-center gap-2.5">
                   {/* Status Filter Dropdown */}
                   <div className="relative">
                     <button 
                       onClick={() => setShowDocFilterDropdown(prev => !prev)}
-                      className={`flex items-center gap-2 px-4 py-2 bg-white border rounded-xl text-xs font-bold shadow-xs hover:bg-slate-50 cursor-pointer ${docFilterStatus !== 'All' ? 'border-purple-500 text-purple-700 bg-purple-50/50' : 'border-slate-200 text-slate-700'}`}
+                      className={`flex items-center gap-2 px-3.5 py-2 bg-white border rounded-xl text-xs font-bold shadow-xs hover:bg-slate-50 cursor-pointer ${docFilterStatus !== 'All' ? 'border-purple-500 text-purple-700 bg-purple-50/50' : 'border-slate-200 text-slate-700'}`}
                     >
                        <Filter size={14} /> 
                        <span>{docFilterStatus === 'All' ? 'Filter Status' : docFilterStatus}</span>
@@ -2361,11 +2361,10 @@ const Vehicles = () => {
                       value={docSearchQuery}
                       onChange={e => { setDocSearchQuery(e.target.value); setDocPage(1); }}
                       placeholder="Search documents..."
-                      className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-purple-400 shadow-xs w-52 text-slate-800"
+                      className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-purple-400 shadow-xs w-48 text-slate-800"
                     />
                   </div>
 
-                  {/* Upload New Document Button */}
                   {/* Take Photo Quick Button */}
                   <button
                     onClick={() => {
@@ -2398,19 +2397,42 @@ const Vehicles = () => {
                
                {/* Left Column: Documents List */}
                <div className="lg:col-span-8 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
-                  <div className="p-6 pb-4 border-b border-slate-100 flex items-center justify-between">
+                  <div className="p-6 pb-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                      <div className="flex items-center gap-3">
                         <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">DOCUMENTS & COMPLIANCE LIST</h3>
                         <span className="px-2.5 py-0.5 bg-purple-700 text-white rounded-md text-[11px] font-bold">{filteredDocuments.length}</span>
                      </div>
-                     {(docSubTab !== 'All' || docSearchQuery || docFilterStatus !== 'All') && (
+                     <div className="flex items-center gap-2">
                         <button
-                          onClick={() => { setDocSubTab('All'); setDocSearchQuery(''); setDocFilterStatus('All'); }}
-                          className="text-xs text-purple-600 hover:underline font-bold cursor-pointer"
+                          onClick={() => {
+                            setShowUploadDocModal(true);
+                            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                              setTimeout(() => mobileCameraInputRef.current?.click(), 300);
+                            } else {
+                              startDesktopCamera();
+                            }
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-bold border border-purple-200 transition-colors cursor-pointer"
+                          title="Take Photo of Document with Camera"
                         >
-                          Clear Filters
+                           <Camera size={14} className="text-purple-600" /> Take Photo
                         </button>
-                     )}
+                        <button
+                          onClick={() => setShowUploadDocModal(true)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                          title="Upload New Document"
+                        >
+                           <Plus size={14} /> Upload Doc
+                        </button>
+                        {(docSubTab !== 'All' || docSearchQuery || docFilterStatus !== 'All') && (
+                           <button
+                             onClick={() => { setDocSubTab('All'); setDocSearchQuery(''); setDocFilterStatus('All'); }}
+                             className="text-xs text-purple-600 hover:underline font-bold cursor-pointer ml-1"
+                           >
+                             Clear Filters
+                           </button>
+                        )}
+                     </div>
                   </div>
 
                   <div className="overflow-x-auto min-w-0">
@@ -2596,15 +2618,15 @@ const Vehicles = () => {
                         <div className="flex flex-col gap-3 text-xs font-bold w-full">
                            <div className="flex items-center gap-2 justify-between">
                               <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> <span className="text-slate-700">{documentsList.filter(d => d.status === 'Valid').length}</span> <span className="text-slate-900">Valid</span></div>
-                              <span className="text-slate-500 font-medium">({Math.round((documentsList.filter(d => d.status === 'Valid').length / documentsList.length) * 100)}%)</span>
+                              <span className="text-slate-500 font-medium">({documentsList.length > 0 ? Math.round((documentsList.filter(d => d.status === 'Valid').length / documentsList.length) * 100) : 0}%)</span>
                            </div>
                            <div className="flex items-center gap-2 justify-between">
                               <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div> <span className="text-slate-700">{documentsList.filter(d => d.status === 'Expiring Soon').length}</span> <span className="text-slate-900">Expiring Soon</span></div>
-                              <span className="text-slate-500 font-medium">({Math.round((documentsList.filter(d => d.status === 'Expiring Soon').length / documentsList.length) * 100)}%)</span>
+                              <span className="text-slate-500 font-medium">({documentsList.length > 0 ? Math.round((documentsList.filter(d => d.status === 'Expiring Soon').length / documentsList.length) * 100) : 0}%)</span>
                            </div>
                            <div className="flex items-center gap-2 justify-between">
                               <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div> <span className="text-slate-700">{documentsList.filter(d => d.status === 'Overdue').length}</span> <span className="text-slate-900">Overdue</span></div>
-                              <span className="text-slate-500 font-medium">({Math.round((documentsList.filter(d => d.status === 'Overdue').length / documentsList.length) * 100)}%)</span>
+                              <span className="text-slate-500 font-medium">({documentsList.length > 0 ? Math.round((documentsList.filter(d => d.status === 'Overdue').length / documentsList.length) * 100) : 0}%)</span>
                            </div>
                         </div>
                      </div>
