@@ -386,6 +386,20 @@ const Vehicles = () => {
   const [sortBy, setSortBy] = React.useState('id');
   const [viewMode, setViewMode] = React.useState('list'); // 'list' | 'grid'
   const [editVehicleModal, setEditVehicleModal] = React.useState(null);
+  const [editVehiclePhoto, setEditVehiclePhoto] = React.useState('');
+
+  const handleOpenEditVehicle = (veh) => {
+    if (!veh) return;
+    const currentYear = (veh.year && veh.year !== '—')
+      ? veh.year
+      : (localStorage.getItem(`hero_veh_year_${veh.reg || veh.rego || veh.id}`) || '');
+    setRegoInput(veh.reg && !veh.reg.startsWith('VEH-') ? veh.reg : (veh.rego && !veh.rego.startsWith('VEH-') ? veh.rego : ''));
+    setEditVehiclePhoto(veh.img || veh.photoUrl || '');
+    setEditVehicleModal({
+      ...veh,
+      year: currentYear
+    });
+  };
   const [showVehiclesFilterDrawer, setShowVehiclesFilterDrawer] = React.useState(false);
   const filterBtnRef = React.useRef(null);
   const [filterBtnRect, setFilterBtnRect] = React.useState(null);
@@ -756,6 +770,98 @@ const Vehicles = () => {
     }, 50);
   };
 
+  const handleEditVehicleSubmit = async (e, action = 'STAY') => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    const formEl = document.getElementById('vehicle-full-form');
+    const fd = new FormData(formEl || e.target);
+    
+    try {
+      const photoVal = editVehiclePhoto || fd.get('photoUrl') || editVehicleModal.img || editVehicleModal.photoUrl || null;
+      const yearRaw = fd.get('year');
+      const yearVal = yearRaw ? parseInt(String(yearRaw).replace(/[^0-9]/g, '')) : undefined;
+      const regVal = (regoInput || fd.get('reg') || editVehicleModal.reg || editVehicleModal.rego || '').toUpperCase().trim();
+      
+      const origMech = (fd.get('primaryMechanic') || editVehicleModal.primaryMechanic || '').replace(/\|\s*Year:[^|]*/gi, '').replace(/Year:[^|]*/gi, '').trim();
+      const origNotes = (fd.get('notes') || editVehicleModal.notes || '').replace(/\|\s*Year:[^|]*/gi, '').replace(/Year:[^|]*/gi, '').split('Photo:')[0].trim();
+      const yearTag = yearVal ? `Year:${yearVal}` : '';
+
+      const primaryMechanicWithYear = [origMech, yearTag].filter(Boolean).join(' | ');
+      const notesWithYear = [origNotes, yearTag].filter(Boolean).join(' | ');
+
+      const vKey = regVal || editVehicleModal.id;
+      if (yearVal && vKey) {
+        localStorage.setItem(`hero_veh_year_${vKey}`, String(yearVal));
+      }
+
+      const payload = {
+        rego: regVal,
+        make: fd.get('make') || editVehicleModal.make || '',
+        model: fd.get('model') || editVehicleModal.model || '',
+        year: yearVal,
+        status: fd.get('status') || editVehicleModal.status || 'ACTIVE',
+        category: fd.get('type') || editVehicleModal.type || 'TRUCK',
+        type: fd.get('type') || editVehicleModal.type || 'TRUCK',
+        regType: fd.get('regType') || fd.get('type') || editVehicleModal.regType || '',
+        regState: fd.get('regState') || editVehicleModal.regState || '',
+        color: fd.get('color') || editVehicleModal.color || '',
+        vin: fd.get('vin') || editVehicleModal.vin || '',
+        engineNumber: fd.get('engine') || editVehicleModal.engineNumber || '',
+        odometerKm: fd.get('odometer') ? parseInt(String(fd.get('odometer')).replace(/[^0-9]/g, '')) : (editVehicleModal.odometerKm || 0),
+        fuelType: fd.get('fuelType') || editVehicleModal.fuelType || 'Diesel',
+        primaryMechanic: primaryMechanicWithYear,
+        preferredRoutes: fd.get('preferredRoutes') || editVehicleModal.preferredRoutes || '',
+        preferredRegions: fd.get('preferredRegions') || editVehicleModal.preferredRegions || '',
+        maxDistPerTripKm: fd.get('maxDist') ? parseInt(fd.get('maxDist')) : undefined,
+        dgCertified: fd.get('dgCertified') === 'Yes',
+        hvCertified: fd.get('hvCertified') === 'Yes',
+        photoUrl: photoVal,
+        notes: notesWithYear
+      };
+
+      await api.put(`/vehicles/${editVehicleModal.id}`, payload);
+      
+      const updatedVehicleObj = {
+        ...editVehicleModal,
+        reg: payload.rego,
+        rego: payload.rego,
+        make: payload.make,
+        model: payload.model,
+        year: yearVal ? String(yearVal) : '—',
+        status: payload.status,
+        type: payload.type,
+        category: payload.category,
+        color: payload.color,
+        vin: payload.vin,
+        engineNumber: payload.engineNumber,
+        odometerKm: payload.odometerKm,
+        odometer: payload.odometerKm ? `${payload.odometerKm.toLocaleString()} km` : '—',
+        primaryMechanic: origMech,
+        img: resolveVehiclePhoto(photoVal),
+        photoUrl: resolveVehiclePhoto(photoVal),
+        notes: origNotes
+      };
+
+      setVehicles(prev => prev.map(item => item.id === editVehicleModal.id ? { ...item, ...updatedVehicleObj } : item));
+      if (managingVehicle && managingVehicle.id === editVehicleModal.id) {
+        setManagingVehicle(updatedVehicleObj);
+      }
+      
+      await fetchVehicles();
+      setEditVehicleModal(null);
+      setEditVehiclePhoto('');
+      
+      if (action === 'EXIT') {
+        setManagingVehicle(null);
+        showToast('Vehicle updated and returned to fleet list!');
+      } else {
+        showToast('Vehicle updated successfully!');
+      }
+    } catch (err) {
+      console.error('Failed to update vehicle:', err);
+      showToast('Failed to update vehicle.', 'error');
+    }
+  };
+
   const handleAddVehicle = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -846,6 +952,488 @@ const Vehicles = () => {
 
     return matchesSearch && (vStatus === statusFilter || String(v.status || '').toUpperCase() === statusFilter);
   });
+
+  if (showAddModal || editVehicleModal) {
+    const isEdit = Boolean(editVehicleModal);
+    return (
+      <form 
+        id="vehicle-full-form"
+        key={isEdit ? (editVehicleModal.id || 'edit') : 'add-vehicle-form'}
+        onSubmit={isEdit ? (e) => handleEditVehicleSubmit(e, 'STAY') : handleAddVehicle} 
+        className="p-2 sm:p-6 text-left animate-in fade-in duration-200 font-sans min-h-screen bg-white"
+      >
+        <div className="max-w-[1200px] mx-auto space-y-6 pb-20">
+          
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5 mb-6">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 mb-2">
+                <span>Home</span>
+                <ChevronRight size={12} />
+                <span>Vehicles</span>
+                <ChevronRight size={12} />
+                <span>Vehicles List</span>
+                <ChevronRight size={12} />
+                <span className="text-gray-900 font-bold">{isEdit ? 'Edit Vehicle' : 'Add Vehicle'}</span>
+                <div className="ml-auto flex items-center gap-1.5 text-gray-500 text-xs">
+                  <Shield size={12}/> <span className="hidden sm:inline">Guide & Compliance</span>
+                </div>
+              </div>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">
+                {isEdit 
+                  ? `Edit Vehicle – ${editVehicleModal.reg || editVehicleModal.rego || editVehicleModal.id} (${editVehicleModal.make || 'Vehicle'})`
+                  : 'Add New Vehicle'}
+              </h2>
+              <p className="text-xs text-gray-500 font-medium">
+                {isEdit 
+                  ? 'Update vehicle specifications, compliance documents, and operational details.'
+                  : 'Create a new vehicle profile by entering all required information.'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button 
+                type="button" 
+                onClick={() => { 
+                  if (isEdit) {
+                    setEditVehicleModal(null);
+                    setEditVehiclePhoto('');
+                  } else {
+                    setShowAddModal(false); 
+                    setRegoInput(''); 
+                  }
+                }} 
+                className="px-5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm"
+              >
+                Cancel
+              </button>
+              {isEdit ? (
+                <>
+                  <button 
+                    type="button" 
+                    onClick={(e) => handleEditVehicleSubmit(e, 'EXIT')} 
+                    className="flex items-center justify-center gap-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm"
+                  >
+                    <Check size={14} strokeWidth={2.5} /> Save & Exit
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="flex items-center justify-center gap-2 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm min-w-[140px]"
+                  >
+                    <Save size={14} strokeWidth={2.5} /> Save Changes
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="px-5 py-2 bg-white border border-purple-200 hover:bg-purple-50 text-purple-700 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm">
+                    Save as Draft
+                  </button>
+                  <button type="submit" className="flex items-center justify-center gap-2 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm min-w-[140px]">
+                    <Save size={14} strokeWidth={2.5} /> Save Vehicle
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* 1. Vehicle Information */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="text-[13px] font-black text-gray-900">1. Vehicle Information</h3>
+            </div>
+            <div className="p-6 flex flex-col md:flex-row gap-8">
+              {/* Photo Upload */}
+              <VehiclePhotoUploadSection 
+                value={isEdit ? (editVehicleModal.img || editVehicleModal.photoUrl || '') : undefined}
+                onChange={(url) => setEditVehiclePhoto(url)}
+              />
+
+              {/* Vehicle Fields */}
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MAKE *</label>
+                  <input 
+                    name="make" 
+                    type="text" 
+                    defaultValue={isEdit ? (editVehicleModal.make || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MODEL *</label>
+                  <input 
+                    name="model" 
+                    type="text" 
+                    defaultValue={isEdit ? (editVehicleModal.model || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VEHICLE ID * (MANUAL EDIT OPTION)</label>
+                  <input 
+                    name="id" 
+                    type="text" 
+                    placeholder="e.g. VEH009" 
+                    defaultValue={isEdit ? (editVehicleModal.displayId || editVehicleModal.id || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-bold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">YEAR *</label>
+                  <div className="relative">
+                    <input 
+                      name="year" 
+                      type="number" 
+                      placeholder="YYYY" 
+                      defaultValue={isEdit ? (editVehicleModal.year === '—' ? '' : (editVehicleModal.year || '')) : ''}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">COLOR *</label>
+                  <select 
+                    name="color" 
+                    defaultValue={isEdit ? (editVehicleModal.color || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
+                  >
+                    <option value="">Select Color</option>
+                    <option value="White">White</option>
+                    <option value="Red">Red</option>
+                    <option value="Blue">Blue</option>
+                    <option value="Black">Black</option>
+                    <option value="Silver">Silver</option>
+                    <option value="Grey">Grey</option>
+                    <option value="Yellow">Yellow</option>
+                    <option value="Green">Green</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">TYPE *</label>
+                  <select 
+                    name="type" 
+                    defaultValue={isEdit ? (editVehicleModal.type || editVehicleModal.category || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
+                  >
+                    <option value="">Select Type</option>
+                    <option value="Prime Mover">Prime Mover</option>
+                    <option value="Car Carrier">Car Carrier</option>
+                    <option value="Heavy Rigid (HR)">Heavy Rigid (HR)</option>
+                    <option value="General Freight">General Freight</option>
+                    <option value="TRUCK">TRUCK</option>
+                    <option value="Trailer">Trailer</option>
+                    <option value="Car Trailer">Car Trailer</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VIN NUMBER *</label>
+                  <input 
+                    name="vin" 
+                    type="text" 
+                    placeholder="e.g. VIN12345" 
+                    defaultValue={isEdit ? (editVehicleModal.vin && !editVehicleModal.vin.startsWith('VIN-') ? editVehicleModal.vin : '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ENGINE NUMBER *</label>
+                  <input 
+                    name="engine" 
+                    type="text" 
+                    defaultValue={isEdit ? (editVehicleModal.engineNumber || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ODOMETER *</label>
+                  <input 
+                    name="odometer" 
+                    type="text" 
+                    defaultValue={isEdit ? (editVehicleModal.odometer || editVehicleModal.odometerKm || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY DEPOT *</label>
+                  <input 
+                    name="primaryDepot" 
+                    type="text" 
+                    defaultValue={isEdit ? (editVehicleModal.branch || editVehicleModal.depot || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">CITY</label>
+                  <input 
+                    name="city" 
+                    type="text" 
+                    defaultValue={isEdit ? (editVehicleModal.city || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">STATE</label>
+                  <input 
+                    name="state" 
+                    type="text" 
+                    defaultValue={isEdit ? (editVehicleModal.regState || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">STATUS</label>
+                  <select 
+                    name="status" 
+                    defaultValue={isEdit ? (editVehicleModal.status || 'ACTIVE') : 'ACTIVE'} 
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
+                  >
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="IDLE">IDLE</option>
+                    <option value="MAINTENANCE">MAINTENANCE</option>
+                    <option value="OUT OF SERVICE">OUT OF SERVICE</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">POSTAL CODE</label>
+                  <input 
+                    name="postalCode" 
+                    type="text" 
+                    defaultValue={isEdit ? (editVehicleModal.postalCode || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Registration Information */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="text-[13px] font-black text-gray-900">2. Registration Information</h3>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION TYPE *</label>
+                  <select 
+                    name="regType" 
+                    defaultValue={isEdit ? (editVehicleModal.regType || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
+                  >
+                    <option value="">Select Registration Type</option>
+                    <option value="Heavy Vehicle Registration">Heavy Vehicle Registration</option>
+                    <option value="Light Vehicle Registration">Light Vehicle Registration</option>
+                    <option value="Commercial Registration">Commercial Registration</option>
+                    <option value="Standard Registration">Standard Registration</option>
+                    <option value="Conditional Registration">Conditional Registration</option>
+                  </select>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest">REGISTRATION NUMBER *</label>
+                    <span className="text-[8px] font-extrabold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 uppercase tracking-wider">Plate / Rego</span>
+                  </div>
+                  <input 
+                    name="reg" 
+                    type="text" 
+                    value={regoInput}
+                    onChange={(e) => setRegoInput(e.target.value.toUpperCase())}
+                    placeholder="e.g. NSW - YXZ 123" 
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-bold uppercase focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION STATE *</label>
+                  <select 
+                    name="regState" 
+                    defaultValue={isEdit ? (editVehicleModal.regState || '') : ''}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
+                  >
+                    <option value="">Select State</option>
+                    <option value="NSW">NSW</option>
+                    <option value="VIC">VIC</option>
+                    <option value="QLD">QLD</option>
+                    <option value="SA">SA</option>
+                    <option value="WA">WA</option>
+                    <option value="TAS">TAS</option>
+                    <option value="ACT">ACT</option>
+                    <option value="NT">NT</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ISSUE DATE</label>
+                  <div className="relative">
+                    <input 
+                      name="issueDate" 
+                      type="date" 
+                      defaultValue={isEdit ? (editVehicleModal.regIssueDate ? editVehicleModal.regIssueDate.split('T')[0] : '') : ''}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">EXPIRY DATE</label>
+                  <div className="relative">
+                    <input 
+                      name="expiryDate" 
+                      type="date" 
+                      defaultValue={isEdit ? (editVehicleModal.regExpiryDate ? editVehicleModal.regExpiryDate.split('T')[0] : '') : ''}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">FUEL TYPE</label>
+                  <select 
+                    name="fuelType" 
+                    defaultValue={isEdit ? (editVehicleModal.fuelType || 'Diesel') : 'Diesel'}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
+                  >
+                    <option value="Diesel">Diesel</option>
+                    <option value="Petrol">Petrol</option>
+                    <option value="Electric">Electric</option>
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="LPG">LPG</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION DOCUMENT UPLOAD</label>
+                <VehicleLicenceFileUploadBox />
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Compliance Documents */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="text-[13px] font-black text-gray-900">3. Compliance Documents</h3>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  'Safety Inspection',
+                  'Insurance Policy',
+                  'Roadworthy Certificate',
+                  'Emissions Compliance',
+                  'Heavy Vehicle Permit',
+                  'Weight Bridge Certificate',
+                  'Other Documents'
+                ].map(doc => (
+                  <VehicleDocUploadBox key={doc} title={doc} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Maintenance Preferences */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="text-[13px] font-black text-gray-900">4. Maintenance Preferences</h3>
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY MECHANIC</label>
+                <input 
+                  name="primaryMechanic" 
+                  type="text" 
+                  placeholder="e.g. Volvo Workshop / Main Depot" 
+                  defaultValue={isEdit ? (editVehicleModal.primaryMechanic || '') : ''}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED ROUTES</label>
+                <input 
+                  name="preferredRoutes" 
+                  type="text" 
+                  placeholder="e.g. Sydney - Melbourne" 
+                  defaultValue={isEdit ? (editVehicleModal.preferredRoutes || '') : ''}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED REGIONS</label>
+                <input 
+                  name="preferredRegions" 
+                  type="text" 
+                  placeholder="e.g. East Coast" 
+                  defaultValue={isEdit ? (editVehicleModal.preferredRegions || '') : ''}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                />
+              </div>
+              
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MAXIMUM DISTANCE PER TRIP (KM)</label>
+                <input 
+                  name="maxDist" 
+                  type="number" 
+                  placeholder="e.g. 1000" 
+                  defaultValue={isEdit ? (editVehicleModal.maxDistPerTripKm || '') : ''}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">DANGEROUS GOODS CERTIFIED</label>
+                <select 
+                  name="dgCertified" 
+                  defaultValue={isEdit ? (editVehicleModal.dgCertified ? 'Yes' : 'No') : 'No'}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
+                >
+                  <option value="No">No</option>
+                  <option value="Yes">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">HEAVY VEHICLE CERTIFIED</label>
+                <select 
+                  name="hvCertified" 
+                  defaultValue={isEdit ? (editVehicleModal.hvCertified ? 'Yes' : 'No') : 'Yes'}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
+                >
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Notes & Comments */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="text-[13px] font-black text-gray-900">5. Notes & Comments</h3>
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VEHICLE NOTES</label>
+                <textarea 
+                  name="notes" 
+                  rows="4" 
+                  defaultValue={isEdit ? (editVehicleModal.notes ? editVehicleModal.notes.split('Photo:')[0].replace(/\|\s*Year:[^|]*/gi, '').replace(/Year:[^|]*/gi, '').trim() : '') : ''}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none"
+                ></textarea>
+              </div>
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">INTERNAL COMMENTS</label>
+                <textarea 
+                  name="comments" 
+                  rows="4" 
+                  defaultValue={isEdit ? (editVehicleModal.comments || '') : ''}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </form>
+    );
+  }
 
   if (managingVehicle) {
     return (
@@ -965,15 +1553,7 @@ const Vehicles = () => {
                     <ChevronLeft size={16} /> Back to Vehicles
                   </button>
                   <button 
-                    onClick={() => {
-                      const currentYear = (managingVehicle.year && managingVehicle.year !== '—')
-                        ? managingVehicle.year
-                        : (localStorage.getItem(`hero_veh_year_${managingVehicle.reg || managingVehicle.rego || managingVehicle.id}`) || '');
-                      setEditVehicleModal({
-                        ...managingVehicle,
-                        year: currentYear
-                      });
-                    }}
+                    onClick={() => handleOpenEditVehicle(managingVehicle)}
                     className="px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-purple-50 shadow-sm transition-colors cursor-pointer"
                   >
                     <Edit size={16} /> Edit
@@ -3644,532 +4224,9 @@ const Vehicles = () => {
         </div>
       )}
 
-      {/* EDIT VEHICLE MODAL */}
-      {editVehicleModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4" onClick={closeEditModal}>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-                <Edit size={16} className="text-purple-600" /> Edit Vehicle – {editVehicleModal.make || 'Vehicle'} ({editVehicleModal.reg || editVehicleModal.rego || editVehicleModal.id?.slice(0, 8)})
-              </h3>
-              <button onClick={closeEditModal} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
             </div>
-            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Make / Model *</label>
-                  <input type="text" value={editVehicleModal.make || ''} onChange={e => setEditVehicleModal({...editVehicleModal, make: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Registration *</label>
-                  <input type="text" value={editVehicleModal.reg || ''} onChange={e => setEditVehicleModal({...editVehicleModal, reg: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Vehicle Type</label>
-                  <select 
-                    value={editVehicleModal.type || ''} 
-                    onChange={e => setEditVehicleModal({...editVehicleModal, type: e.target.value})} 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer"
-                  >
-                    <option value="">Select Type...</option>
-                    <option value="Prime Mover">Prime Mover</option>
-                    <option value="Car Carrier">Car Carrier</option>
-                    <option value="Heavy Rigid (HR)">Heavy Rigid (HR)</option>
-                    <option value="General Freight">General Freight</option>
-                    <option value="Trailer">Trailer</option>
-                    <option value="Car Trailer">Car Trailer</option>
-                    {editVehicleModal.type && !['Prime Mover', 'Car Carrier', 'Heavy Rigid (HR)', 'General Freight', 'Trailer', 'Car Trailer'].includes(editVehicleModal.type) && (
-                      <option value={editVehicleModal.type}>{editVehicleModal.type}</option>
-                    )}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Year</label>
-                  <input type="text" value={editVehicleModal.year === '—' ? '' : (editVehicleModal.year || '')} onChange={e => setEditVehicleModal({...editVehicleModal, year: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
-                  <select value={editVehicleModal.status || 'ACTIVE'} onChange={e => setEditVehicleModal({...editVehicleModal, status: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer">
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="MAINTENANCE">MAINTENANCE</option>
-                    <option value="OUT OF SERVICE">OUT OF SERVICE</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Branch / Depot</label>
-                  <input type="text" value={editVehicleModal.branch || ''} onChange={e => setEditVehicleModal({...editVehicleModal, branch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Current Driver</label>
-                  <input type="text" value={editVehicleModal.driver || ''} onChange={e => setEditVehicleModal({...editVehicleModal, driver: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Odometer</label>
-                  <input type="text" value={editVehicleModal.odometer || ''} onChange={e => setEditVehicleModal({...editVehicleModal, odometer: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">Vehicle Photo / Image URL</label>
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="text" 
-                    placeholder="https://..." 
-                    value={editVehicleModal.img || editVehicleModal.photoUrl || ''} 
-                    onChange={e => setEditVehicleModal({...editVehicleModal, img: e.target.value, photoUrl: e.target.value})} 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" 
-                  />
-                  <label className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg font-bold text-xs cursor-pointer shrink-0">
-                    Browse
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setEditVehicleModal(prev => ({ ...prev, img: reader.result, photoUrl: reader.result }));
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }} 
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
-              <button onClick={closeEditModal} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
-              <button onClick={async (e) => {
-                try {
-                  const photoStr = editVehicleModal.img || editVehicleModal.photoUrl || null;
-                  const yearVal = editVehicleModal.year && editVehicleModal.year !== '—'
-                    ? parseInt(String(editVehicleModal.year).replace(/[^0-9]/g, ''))
-                    : undefined;
-                  const yearTag = yearVal ? `Year:${yearVal}` : '';
-                  const cleanNotes = editVehicleModal.notes
-                    ? editVehicleModal.notes.split('Photo:')[0].replace(/\|\s*Year:[^|]*/gi, '').replace(/Year:[^|]*/gi, '').trim()
-                    : '';
-                  const notesWithYear = [cleanNotes, yearTag].filter(Boolean).join(' | ');
-                  const origMech = (editVehicleModal.primaryMechanic || '')
-                    .replace(/\|\s*Year:[^|]*/gi, '')
-                    .replace(/Year:[^|]*/gi, '')
-                    .trim();
-                  const mechWithYear = [origMech, yearTag].filter(Boolean).join(' | ');
-
-                  const vKey = editVehicleModal.reg || editVehicleModal.rego || editVehicleModal.id;
-                  if (yearVal && vKey) {
-                    localStorage.setItem(`hero_veh_year_${vKey}`, String(yearVal));
-                  }
-
-                  const payload = {
-                    rego: editVehicleModal.reg || editVehicleModal.rego,
-                    make: editVehicleModal.make,
-                    model: editVehicleModal.model,
-                    year: yearVal,
-                    status: editVehicleModal.status,
-                    type: editVehicleModal.type,
-                    regType: editVehicleModal.type,
-                    category: editVehicleModal.type,
-                    primaryMechanic: mechWithYear,
-                    odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g, '')) : undefined,
-                    photoUrl: photoStr,
-                    notes: notesWithYear
-                  };
-                  await api.put(`/vehicles/${editVehicleModal.id}`, payload);
-                  const updatedVehicleObj = {
-                    ...editVehicleModal,
-                    reg: payload.rego,
-                    rego: payload.rego,
-                    make: editVehicleModal.make,
-                    model: editVehicleModal.model || '',
-                    year: yearVal ? String(yearVal) : '—',
-                    primaryMechanic: origMech,
-                    img: resolveVehiclePhoto(editVehicleModal.img || editVehicleModal.photoUrl),
-                    photoUrl: resolveVehiclePhoto(editVehicleModal.img || editVehicleModal.photoUrl),
-                    name: editVehicleModal.make ? editVehicleModal.make : editVehicleModal.name,
-                    status: editVehicleModal.status || 'ACTIVE'
-                  };
-                  setVehicles(prev => prev.map(item => item.id === editVehicleModal.id ? { ...item, ...updatedVehicleObj } : item));
-                  if (managingVehicle && managingVehicle.id === editVehicleModal.id) {
-                    setManagingVehicle(updatedVehicleObj);
-                  }
-                  await fetchVehicles();
-                  closeEditModal(e);
-                  closeDetailsView(e);
-                  showToast('Vehicle updated and returned to list!');
-                } catch (err) {
-                  console.error('Failed to update vehicle:', err);
-                  showToast('Failed to update vehicle.', 'error');
-                }
-              }} className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 text-xs shadow-sm cursor-pointer flex items-center gap-1.5">
-                <Check size={14} /> Save & Exit
-              </button>
-              <button onClick={async (e) => {
-                try {
-                  const photoStr = editVehicleModal.img || editVehicleModal.photoUrl || null;
-                  const yearVal = editVehicleModal.year && editVehicleModal.year !== '—'
-                    ? parseInt(String(editVehicleModal.year).replace(/[^0-9]/g, ''))
-                    : undefined;
-                  const yearTag = yearVal ? `Year:${yearVal}` : '';
-                  const cleanNotes = editVehicleModal.notes
-                    ? editVehicleModal.notes.split('Photo:')[0].replace(/\|\s*Year:[^|]*/gi, '').replace(/Year:[^|]*/gi, '').trim()
-                    : '';
-                  const notesWithYear = [cleanNotes, yearTag].filter(Boolean).join(' | ');
-                  const origMech = (editVehicleModal.primaryMechanic || '')
-                    .replace(/\|\s*Year:[^|]*/gi, '')
-                    .replace(/Year:[^|]*/gi, '')
-                    .trim();
-                  const mechWithYear = [origMech, yearTag].filter(Boolean).join(' | ');
-
-                  const vKey = editVehicleModal.reg || editVehicleModal.rego || editVehicleModal.id;
-                  if (yearVal && vKey) {
-                    localStorage.setItem(`hero_veh_year_${vKey}`, String(yearVal));
-                  }
-
-                  const payload = {
-                    rego: editVehicleModal.reg || editVehicleModal.rego,
-                    make: editVehicleModal.make,
-                    model: editVehicleModal.model,
-                    year: yearVal,
-                    status: editVehicleModal.status,
-                    type: editVehicleModal.type,
-                    regType: editVehicleModal.type,
-                    category: editVehicleModal.type,
-                    primaryMechanic: mechWithYear,
-                    odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g, '')) : undefined,
-                    photoUrl: photoStr,
-                    notes: notesWithYear
-                  };
-                  await api.put(`/vehicles/${editVehicleModal.id}`, payload);
-                  const updatedVehicleObj = {
-                    ...editVehicleModal,
-                    reg: payload.rego,
-                    rego: payload.rego,
-                    make: editVehicleModal.make,
-                    model: editVehicleModal.model || '',
-                    year: yearVal ? String(yearVal) : '—',
-                    primaryMechanic: origMech,
-                    img: resolveVehiclePhoto(editVehicleModal.img || editVehicleModal.photoUrl),
-                    photoUrl: resolveVehiclePhoto(editVehicleModal.img || editVehicleModal.photoUrl),
-                    name: editVehicleModal.make ? editVehicleModal.make : editVehicleModal.name,
-                    status: editVehicleModal.status || 'ACTIVE'
-                  };
-                  setVehicles(prev => prev.map(item => item.id === editVehicleModal.id ? { ...item, ...updatedVehicleObj } : item));
-                  if (managingVehicle && managingVehicle.id === editVehicleModal.id) {
-                    setManagingVehicle(updatedVehicleObj);
-                  }
-                  await fetchVehicles();
-                  closeEditModal(e);
-                  showToast('Vehicle updated successfully!');
-                } catch (err) {
-                  console.error('Failed to update vehicle:', err);
-                  showToast('Failed to update vehicle.', 'error');
-                }
-              }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      </div>
     );
   }
-  if (showAddModal) {
-    return (
-      <form onSubmit={handleAddVehicle} className="p-2 sm:p-6 text-left animate-in fade-in duration-200 font-sans min-h-screen bg-white">
-        <div className="max-w-[1200px] mx-auto space-y-6 pb-20">
-          
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5 mb-6">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 mb-2">
-                <span>Home</span>
-                <ChevronRight size={12} />
-                <span>Vehicles</span>
-                <ChevronRight size={12} />
-                <span>Vehicles List</span>
-                <ChevronRight size={12} />
-                <span className="text-gray-900 font-bold">Add Vehicle</span>
-                <div className="ml-auto flex items-center gap-1.5 text-gray-500 text-xs">
-                  <Shield size={12}/> <span className="hidden sm:inline">Guide & Compliance</span>
-                </div>
-              </div>
-              <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">Add New Vehicle</h2>
-              <p className="text-xs text-gray-500 font-medium">Create a new vehicle profile by entering all required information.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button type="button" onClick={() => { setShowAddModal(false); setRegoInput(''); }} className="px-5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm">
-                Cancel
-              </button>
-              <button type="button" className="px-5 py-2 bg-white border border-purple-200 hover:bg-purple-50 text-purple-700 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm">
-                Save as Draft
-              </button>
-              <button type="submit" className="flex items-center justify-center gap-2 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm min-w-[140px]">
-                <Save size={14} strokeWidth={2.5} /> Save Vehicle
-              </button>
-            </div>
-          </div>
-
-          {/* 1. Vehicle Information */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-[13px] font-black text-gray-900">1. Vehicle Information</h3>
-            </div>
-            <div className="p-6 flex flex-col md:flex-row gap-8">
-              {/* Photo Upload */}
-              <VehiclePhotoUploadSection />
-
-              {/* Vehicle Fields */}
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MAKE *</label>
-                  <input name="make" type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MODEL *</label>
-                  <input name="model" type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VEHICLE ID * (MANUAL EDIT OPTION)</label>
-                  <input name="id" type="text" placeholder="e.g. VEH009" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-bold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                </div>
-                
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">YEAR *</label>
-                  <div className="relative">
-                    <input name="year" type="number" placeholder="YYYY" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">COLOR *</label>
-                  <select name="color" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option value="">Select Color</option>
-                    <option value="White">White</option>
-                    <option value="Red">Red</option>
-                    <option value="Blue">Blue</option>
-                    <option value="Black">Black</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">TYPE *</label>
-                  <select name="type" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option value="">Select Type</option>
-                    <option value="Prime Mover">Prime Mover</option>
-                    <option value="Car Carrier">Car Carrier</option>
-                    <option value="Heavy Rigid (HR)">Heavy Rigid (HR)</option>
-                    <option value="General Freight">General Freight</option>
-                    <option value="Trailer">Trailer</option>
-                    <option value="Car Trailer">Car Trailer</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VIN NUMBER *</label>
-                  <input name="vin" type="text" placeholder="e.g. VIN12345" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ENGINE NUMBER *</label>
-                  <input name="engine" type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ODOMETER *</label>
-                  <input name="odometer" type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                </div>
-
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY DEPOT *</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">CITY *</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">STATE *</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                </div>
-
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">POSTAL CODE *</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 2. Registration Information */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-[13px] font-black text-gray-900">2. Registration Information</h3>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION TYPE *</label>
-                  <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option value="">Select Registration Type</option>
-                    <option value="Heavy Vehicle Registration">Heavy Vehicle Registration</option>
-                    <option value="Light Vehicle Registration">Light Vehicle Registration</option>
-                    <option value="Commercial Registration">Commercial Registration</option>
-                    <option value="Standard Registration">Standard Registration</option>
-                    <option value="Conditional Registration">Conditional Registration</option>
-                  </select>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest">REGISTRATION NUMBER *</label>
-                    <span className="text-[8px] font-extrabold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 uppercase tracking-wider">Plate / Rego</span>
-                  </div>
-                  <input 
-                    name="reg" 
-                    type="text" 
-                    value={regoInput}
-                    onChange={(e) => setRegoInput(e.target.value.toUpperCase())}
-                    placeholder="e.g. NSW - YXZ 123" 
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-bold uppercase focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION STATE *</label>
-                  <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option value="">Select State</option>
-                    <option value="NSW">NSW</option>
-                    <option value="VIC">VIC</option>
-                    <option value="QLD">QLD</option>
-                    <option value="SA">SA</option>
-                    <option value="WA">WA</option>
-                    <option value="TAS">TAS</option>
-                    <option value="ACT">ACT</option>
-                    <option value="NT">NT</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ISSUE DATE *</label>
-                  <div className="relative">
-                    <input name="issueDate" type="date" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">EXPIRY DATE *</label>
-                  <div className="relative">
-                    <input name="expiryDate" type="date" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">FUEL TYPE</label>
-                  <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option value="">Select Fuel Type</option>
-                    <option value="Diesel">Diesel</option>
-                    <option value="Petrol">Petrol</option>
-                    <option value="Electric">Electric</option>
-                    <option value="Hybrid">Hybrid</option>
-                    <option value="LPG">LPG</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION DOCUMENT UPLOAD</label>
-                <VehicleLicenceFileUploadBox />
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Compliance Documents */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-[13px] font-black text-gray-900">3. Compliance Documents</h3>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  'Safety Inspection',
-                  'Insurance Policy',
-                  'Roadworthy Certificate',
-                  'Emissions Compliance',
-                  'Heavy Vehicle Permit',
-                  'Weight Bridge Certificate',
-                  'Other Documents'
-                ].map(doc => (
-                  <VehicleDocUploadBox key={doc} title={doc} />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* 4. Maintenance Preferences */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-[13px] font-black text-gray-900">4. Maintenance Preferences</h3>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY MECHANIC</label>
-                <input type="text" placeholder="e.g. Volvo FH16" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-              </div>
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED ROUTES</label>
-                <input type="text" placeholder="e.g. Sydney - Melbourne" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-              </div>
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED REGIONS</label>
-                <input type="text" placeholder="e.g. East Coast" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-              </div>
-              
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MAXIMUM DISTANCE PER TRIP (KM)</label>
-                <input type="text" placeholder="e.g. 1000" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
-              </div>
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">DANGEROUS GOODS CERTIFIED</label>
-                <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                  <option value="">Select Option</option>
-                  <option value="No">No</option>
-                  <option value="Yes">Yes</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">HEAVY VEHICLE CERTIFIED</label>
-                <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                  <option value="">Select Option</option>
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* 5. Notes & Comments */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-[13px] font-black text-gray-900">5. Notes & Comments</h3>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VEHICLE NOTES</label>
-                <textarea rows="4" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none"></textarea>
-              </div>
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">INTERNAL COMMENTS</label>
-                <textarea rows="4" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none"></textarea>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </form>
-    );
-  }
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto bg-white min-h-screen text-left font-sans flex flex-col gap-6">
        
@@ -4625,7 +4682,7 @@ const Vehicles = () => {
                                         e.stopPropagation(); 
                                         if (e.currentTarget.dataset.mouseDown === 'true') {
                                            e.currentTarget.dataset.mouseDown = 'false';
-                                           setEditVehicleModal(v); 
+                                           handleOpenEditVehicle(v); 
                                         }
                                      }} 
                                      title="Edit Vehicle" 
