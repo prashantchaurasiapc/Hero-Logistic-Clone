@@ -304,40 +304,70 @@ const Vehicles = () => {
     try {
       const res = await api.get('/vehicles');
       if (res.data && res.data.success) {
-        const mapped = res.data.data.map(v => ({
-          id: v.id,
-          displayId: v.rego || v.plate || (v.id && String(v.id).includes('-') ? v.id.split('-')[0].toUpperCase() : String(v.id)),
-          reg: v.rego || v.plate || '—',
-          branch: v.branch || 'N/A',
-          driver: v.driver ? `${v.driver.firstName || ''} ${v.driver.lastName || ''}`.trim() || v.driver.driverCode : '—',
-          driverId: v.driver?.driverCode || '',
-          driverImg: v.driver?.avatarUrl || '',
-          type: v.regType || v.category || v.type || 'Vehicle',
-          make: v.make ? `${v.make} ${v.model || ''}`.trim() : v.model || 'Unknown',
-          year: v.year ? String(v.year) : '—',
-          status: v.status || 'ACTIVE',
-          odometer: v.odometerKm ? `${v.odometerKm.toLocaleString()} km` : '—',
-          compliance: v.compliance || 'Compliant',
-          nextServiceDate: v.maintenanceDueKm ? `${v.maintenanceDueKm.toLocaleString()} km` : '—',
-          nextServiceDays: '',
-          img: resolveVehiclePhoto(v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '')),
-          photoUrl: resolveVehiclePhoto(v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '')),
-          color: v.color || '',
-          vin: v.vin || '',
-          engineNumber: v.engineNumber || '',
-          fuelType: v.fuelType || '',
-          regType: v.regType || '',
-          regState: v.regState || '',
-          regIssueDate: v.regIssueDate || '',
-          regExpiryDate: v.regExpiryDate || '',
-          primaryMechanic: v.primaryMechanic || '',
-          preferredRoutes: v.preferredRoutes || '',
-          preferredRegions: v.preferredRegions || '',
-          maxDistPerTripKm: v.maxDistPerTripKm || '',
-          dgCertified: v.dgCertified || false,
-          notes: v.notes || '',
-          _raw: v
-        }));
+        const mapped = res.data.data.map(v => {
+          let extractedYear = '—';
+          if (v.year && String(v.year) !== '0') {
+            extractedYear = String(v.year);
+          } else if (v.primaryMechanic && v.primaryMechanic.includes('Year:')) {
+            const m = v.primaryMechanic.match(/Year:\s*([0-9]{4})/i);
+            if (m && m[1]) extractedYear = m[1];
+          } else if (v.notes && v.notes.includes('Year:')) {
+            const m = v.notes.match(/Year:\s*([0-9]{4})/i);
+            if (m && m[1]) extractedYear = m[1];
+          } else {
+            const vKey = v.rego || v.plate || v.id;
+            if (vKey) {
+              const cached = localStorage.getItem(`hero_veh_year_${vKey}`);
+              if (cached) extractedYear = cached;
+            }
+          }
+          if (extractedYear !== '—') {
+            const vKey = v.rego || v.plate || v.id;
+            if (vKey) localStorage.setItem(`hero_veh_year_${vKey}`, extractedYear);
+          }
+
+          const cleanPrimaryMech = (v.primaryMechanic || '')
+            .replace(/\|\s*Year:[^|]*/gi, '')
+            .replace(/Year:[^|]*/gi, '')
+            .replace(/\|\s*Photo:[^|]*/gi, '')
+            .replace(/Photo:[^|]*/gi, '')
+            .trim();
+
+          return {
+            id: v.id,
+            displayId: v.rego || v.plate || (v.id && String(v.id).includes('-') ? v.id.split('-')[0].toUpperCase() : String(v.id)),
+            reg: v.rego || v.plate || '—',
+            branch: v.branch || 'N/A',
+            driver: v.driver ? `${v.driver.firstName || ''} ${v.driver.lastName || ''}`.trim() || v.driver.driverCode : '—',
+            driverId: v.driver?.driverCode || '',
+            driverImg: v.driver?.avatarUrl || '',
+            type: v.regType || v.category || v.type || 'Vehicle',
+            make: v.make ? `${v.make} ${v.model || ''}`.trim() : v.model || 'Unknown',
+            year: extractedYear,
+            status: v.status || 'ACTIVE',
+            odometer: v.odometerKm ? `${v.odometerKm.toLocaleString()} km` : '—',
+            compliance: v.compliance || 'Compliant',
+            nextServiceDate: v.maintenanceDueKm ? `${v.maintenanceDueKm.toLocaleString()} km` : '—',
+            nextServiceDays: '',
+            img: resolveVehiclePhoto(v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '')),
+            photoUrl: resolveVehiclePhoto(v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '')),
+            color: v.color || '',
+            vin: v.vin || '',
+            engineNumber: v.engineNumber || '',
+            fuelType: v.fuelType || '',
+            regType: v.regType || '',
+            regState: v.regState || '',
+            regIssueDate: v.regIssueDate || '',
+            regExpiryDate: v.regExpiryDate || '',
+            primaryMechanic: cleanPrimaryMech,
+            preferredRoutes: v.preferredRoutes || '',
+            preferredRegions: v.preferredRegions || '',
+            maxDistPerTripKm: v.maxDistPerTripKm || '',
+            dgCertified: v.dgCertified || false,
+            notes: v.notes || '',
+            _raw: v
+          };
+        });
         setVehicles(mapped);
       }
     } catch (err) {
@@ -731,11 +761,22 @@ const Vehicles = () => {
     const fd = new FormData(e.target);
     try {
       const photoVal = fd.get('photoUrl') || null;
+      const yearRaw = fd.get('year');
+      const yearVal = yearRaw ? parseInt(String(yearRaw).replace(/[^0-9]/g, '')) : undefined;
+      const regVal = (regoInput || fd.get('reg') || fd.get('regSection2') || '').toUpperCase().trim();
+      
+      const origMech = fd.get('primaryMechanic') || '';
+      const origNotes = fd.get('notes') || '';
+      const yearTag = yearVal ? `Year:${yearVal}` : '';
+
+      const primaryMechanicWithYear = [origMech, yearTag].filter(Boolean).join(' | ');
+      const notesWithYear = [origNotes, yearTag].filter(Boolean).join(' | ');
+
       const payload = {
-        rego: (regoInput || fd.get('reg') || fd.get('regSection2') || '').toUpperCase().trim(),
+        rego: regVal,
         make: fd.get('make') || '',
         model: fd.get('model') || '',
-        year: fd.get('year') ? parseInt(fd.get('year')) : undefined,
+        year: yearVal,
         category: fd.get('type') || 'TRUCK',
         color: fd.get('color') || '',
         vin: fd.get('vin') || '',
@@ -744,16 +785,21 @@ const Vehicles = () => {
         fuelType: fd.get('fuelType') || 'Diesel',
         regType: fd.get('regType') || '',
         regState: fd.get('regState') || '',
-        primaryMechanic: fd.get('primaryMechanic') || '',
+        primaryMechanic: primaryMechanicWithYear,
         preferredRoutes: fd.get('preferredRoutes') || '',
         preferredRegions: fd.get('preferredRegions') || '',
         maxDistPerTripKm: fd.get('maxDist') ? parseInt(fd.get('maxDist')) : undefined,
         dgCertified: fd.get('dgCertified') === 'Yes',
         photoUrl: photoVal,
-        notes: fd.get('notes') || ''
+        notes: notesWithYear
       };
+
+      if (yearVal && regVal) {
+        localStorage.setItem(`hero_veh_year_${regVal}`, String(yearVal));
+      }
+
       await api.post('/vehicles', payload);
-      fetchVehicles();
+      await fetchVehicles();
       setShowAddModal(false);
       setRegoInput('');
       showToast('Vehicle added successfully!');
@@ -919,7 +965,15 @@ const Vehicles = () => {
                     <ChevronLeft size={16} /> Back to Vehicles
                   </button>
                   <button 
-                    onClick={() => setEditVehicleModal(managingVehicle)}
+                    onClick={() => {
+                      const currentYear = (managingVehicle.year && managingVehicle.year !== '—')
+                        ? managingVehicle.year
+                        : (localStorage.getItem(`hero_veh_year_${managingVehicle.reg || managingVehicle.rego || managingVehicle.id}`) || '');
+                      setEditVehicleModal({
+                        ...managingVehicle,
+                        year: currentYear
+                      });
+                    }}
                     className="px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-purple-50 shadow-sm transition-colors cursor-pointer"
                   >
                     <Edit size={16} /> Edit
@@ -1024,7 +1078,7 @@ const Vehicles = () => {
                     </div>
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">Year</p>
-                       <p className="text-sm font-bold text-gray-900">{managingVehicle.year || '—'}</p>
+                       <p className="text-sm font-bold text-gray-900">{managingVehicle.year && managingVehicle.year !== '—' ? managingVehicle.year : (localStorage.getItem(`hero_veh_year_${managingVehicle.reg || managingVehicle.rego || managingVehicle.id}`) || '—')}</p>
                     </div>
                     <div>
                        <p className="text-[11px] font-semibold text-gray-500 mb-1">VIN / Chassis No.</p>
@@ -3633,7 +3687,7 @@ const Vehicles = () => {
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 mb-1">Year</label>
-                  <input type="text" value={editVehicleModal.year || ''} onChange={e => setEditVehicleModal({...editVehicleModal, year: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                  <input type="text" value={editVehicleModal.year === '—' ? '' : (editVehicleModal.year || '')} onChange={e => setEditVehicleModal({...editVehicleModal, year: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -3696,23 +3750,58 @@ const Vehicles = () => {
               <button onClick={async (e) => {
                 try {
                   const photoStr = editVehicleModal.img || editVehicleModal.photoUrl || null;
-                  const cleanNotes = editVehicleModal.notes ? editVehicleModal.notes.split('Photo:')[0].trim() : '';
+                  const yearVal = editVehicleModal.year && editVehicleModal.year !== '—'
+                    ? parseInt(String(editVehicleModal.year).replace(/[^0-9]/g, ''))
+                    : undefined;
+                  const yearTag = yearVal ? `Year:${yearVal}` : '';
+                  const cleanNotes = editVehicleModal.notes
+                    ? editVehicleModal.notes.split('Photo:')[0].replace(/\|\s*Year:[^|]*/gi, '').replace(/Year:[^|]*/gi, '').trim()
+                    : '';
+                  const notesWithYear = [cleanNotes, yearTag].filter(Boolean).join(' | ');
+                  const origMech = (editVehicleModal.primaryMechanic || '')
+                    .replace(/\|\s*Year:[^|]*/gi, '')
+                    .replace(/Year:[^|]*/gi, '')
+                    .trim();
+                  const mechWithYear = [origMech, yearTag].filter(Boolean).join(' | ');
+
+                  const vKey = editVehicleModal.reg || editVehicleModal.rego || editVehicleModal.id;
+                  if (yearVal && vKey) {
+                    localStorage.setItem(`hero_veh_year_${vKey}`, String(yearVal));
+                  }
 
                   const payload = {
                     rego: editVehicleModal.reg || editVehicleModal.rego,
                     make: editVehicleModal.make,
                     model: editVehicleModal.model,
-                    year: editVehicleModal.year ? parseInt(editVehicleModal.year) : undefined,
+                    year: yearVal,
                     status: editVehicleModal.status,
                     type: editVehicleModal.type,
                     regType: editVehicleModal.type,
                     category: editVehicleModal.type,
-                    odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
+                    primaryMechanic: mechWithYear,
+                    odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g, '')) : undefined,
                     photoUrl: photoStr,
-                    notes: cleanNotes
+                    notes: notesWithYear
                   };
                   await api.put(`/vehicles/${editVehicleModal.id}`, payload);
-                  fetchVehicles();
+                  const updatedVehicleObj = {
+                    ...editVehicleModal,
+                    reg: payload.rego,
+                    rego: payload.rego,
+                    make: editVehicleModal.make,
+                    model: editVehicleModal.model || '',
+                    year: yearVal ? String(yearVal) : '—',
+                    primaryMechanic: origMech,
+                    img: resolveVehiclePhoto(editVehicleModal.img || editVehicleModal.photoUrl),
+                    photoUrl: resolveVehiclePhoto(editVehicleModal.img || editVehicleModal.photoUrl),
+                    name: editVehicleModal.make ? editVehicleModal.make : editVehicleModal.name,
+                    status: editVehicleModal.status || 'ACTIVE'
+                  };
+                  setVehicles(prev => prev.map(item => item.id === editVehicleModal.id ? { ...item, ...updatedVehicleObj } : item));
+                  if (managingVehicle && managingVehicle.id === editVehicleModal.id) {
+                    setManagingVehicle(updatedVehicleObj);
+                  }
+                  await fetchVehicles();
                   closeEditModal(e);
                   closeDetailsView(e);
                   showToast('Vehicle updated and returned to list!');
@@ -3726,38 +3815,58 @@ const Vehicles = () => {
               <button onClick={async (e) => {
                 try {
                   const photoStr = editVehicleModal.img || editVehicleModal.photoUrl || null;
-                  const cleanNotes = editVehicleModal.notes ? editVehicleModal.notes.split('Photo:')[0].trim() : '';
+                  const yearVal = editVehicleModal.year && editVehicleModal.year !== '—'
+                    ? parseInt(String(editVehicleModal.year).replace(/[^0-9]/g, ''))
+                    : undefined;
+                  const yearTag = yearVal ? `Year:${yearVal}` : '';
+                  const cleanNotes = editVehicleModal.notes
+                    ? editVehicleModal.notes.split('Photo:')[0].replace(/\|\s*Year:[^|]*/gi, '').replace(/Year:[^|]*/gi, '').trim()
+                    : '';
+                  const notesWithYear = [cleanNotes, yearTag].filter(Boolean).join(' | ');
+                  const origMech = (editVehicleModal.primaryMechanic || '')
+                    .replace(/\|\s*Year:[^|]*/gi, '')
+                    .replace(/Year:[^|]*/gi, '')
+                    .trim();
+                  const mechWithYear = [origMech, yearTag].filter(Boolean).join(' | ');
+
+                  const vKey = editVehicleModal.reg || editVehicleModal.rego || editVehicleModal.id;
+                  if (yearVal && vKey) {
+                    localStorage.setItem(`hero_veh_year_${vKey}`, String(yearVal));
+                  }
 
                   const payload = {
                     rego: editVehicleModal.reg || editVehicleModal.rego,
                     make: editVehicleModal.make,
                     model: editVehicleModal.model,
-                    year: editVehicleModal.year ? parseInt(editVehicleModal.year) : undefined,
+                    year: yearVal,
                     status: editVehicleModal.status,
                     type: editVehicleModal.type,
                     regType: editVehicleModal.type,
                     category: editVehicleModal.type,
-                    odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
+                    primaryMechanic: mechWithYear,
+                    odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g, '')) : undefined,
                     photoUrl: photoStr,
-                    notes: cleanNotes
+                    notes: notesWithYear
                   };
                   await api.put(`/vehicles/${editVehicleModal.id}`, payload);
-                  fetchVehicles();
                   const updatedVehicleObj = {
                     ...editVehicleModal,
                     reg: payload.rego,
                     rego: payload.rego,
                     make: editVehicleModal.make,
                     model: editVehicleModal.model || '',
-                    year: payload.year ? String(payload.year) : editVehicleModal.year,
+                    year: yearVal ? String(yearVal) : '—',
+                    primaryMechanic: origMech,
                     img: resolveVehiclePhoto(editVehicleModal.img || editVehicleModal.photoUrl),
                     photoUrl: resolveVehiclePhoto(editVehicleModal.img || editVehicleModal.photoUrl),
                     name: editVehicleModal.make ? editVehicleModal.make : editVehicleModal.name,
                     status: editVehicleModal.status || 'ACTIVE'
                   };
+                  setVehicles(prev => prev.map(item => item.id === editVehicleModal.id ? { ...item, ...updatedVehicleObj } : item));
                   if (managingVehicle && managingVehicle.id === editVehicleModal.id) {
                     setManagingVehicle(updatedVehicleObj);
                   }
+                  await fetchVehicles();
                   closeEditModal(e);
                   showToast('Vehicle updated successfully!');
                 } catch (err) {
@@ -4659,90 +4768,6 @@ const Vehicles = () => {
       </div>
 
 
-
-      {/* EDIT VEHICLE MODAL */}
-      {editVehicleModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4" onClick={closeEditModal}>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-                <Edit size={16} className="text-purple-600" /> Edit Vehicle ({editVehicleModal.id})
-              </h3>
-              <button onClick={closeEditModal} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
-            </div>
-            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Make / Model *</label>
-                  <input type="text" value={editVehicleModal.make || ''} onChange={e => setEditVehicleModal({...editVehicleModal, make: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Registration *</label>
-                  <input type="text" value={editVehicleModal.reg || ''} onChange={e => setEditVehicleModal({...editVehicleModal, reg: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Vehicle Type</label>
-                  <input type="text" value={editVehicleModal.type || ''} onChange={e => setEditVehicleModal({...editVehicleModal, type: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Year</label>
-                  <input type="text" value={editVehicleModal.year || ''} onChange={e => setEditVehicleModal({...editVehicleModal, year: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
-                  <select value={editVehicleModal.status || 'ACTIVE'} onChange={e => setEditVehicleModal({...editVehicleModal, status: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer">
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="MAINTENANCE">MAINTENANCE</option>
-                    <option value="OUT OF SERVICE">OUT OF SERVICE</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Branch / Depot</label>
-                  <input type="text" value={editVehicleModal.branch || ''} onChange={e => setEditVehicleModal({...editVehicleModal, branch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Current Driver</label>
-                  <input type="text" value={editVehicleModal.driver || ''} onChange={e => setEditVehicleModal({...editVehicleModal, driver: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Odometer</label>
-                  <input type="text" value={editVehicleModal.odometer || ''} onChange={e => setEditVehicleModal({...editVehicleModal, odometer: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
-              <button onClick={closeEditModal} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
-              <button onClick={async (e) => {
-                try {
-                  await api.put(`/vehicles/${editVehicleModal.id}`, {
-                    rego: editVehicleModal.reg,
-                    make: editVehicleModal.make,
-                    model: editVehicleModal.model,
-                    year: editVehicleModal.year ? parseInt(editVehicleModal.year) : undefined,
-                    type: editVehicleModal.type,
-                    regType: editVehicleModal.type,
-                    category: editVehicleModal.type,
-                    status: editVehicleModal.status,
-                    photoUrl: editVehicleModal.img || editVehicleModal.photoUrl || undefined,
-                    odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
-                    notes: editVehicleModal.notes
-                  });
-                  fetchVehicles();
-                  if (managingVehicle && managingVehicle.id === editVehicleModal.id) setManagingVehicle(editVehicleModal);
-                  closeEditModal(e);
-                  showToast('Vehicle updated successfully!');
-                } catch (err) { showToast('Failed to update vehicle.', 'error'); }
-              }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ADD MAINTENANCE MODAL */}
       {showAddMaintenanceModal && (

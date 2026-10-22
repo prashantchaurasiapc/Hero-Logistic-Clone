@@ -145,7 +145,7 @@ export default function AssetDetails({ assetData, onBack }) {
     categoryBadge: cleanStr(assetData?.category, ['Equipment']),
     type: cleanStr(assetData?.type, ['General']),
     makeModel: cleanStr(assetData?.makeModel || assetData?.name, ['Asset', 'as']),
-    year: assetData?.year && String(assetData.year) !== '2024' ? String(assetData.year) : '—',
+    year: assetData?.year ? String(assetData.year) : '—',
     serialNo: assetData?.serialNo || assetData?.serialNumber || '—',
     serialNumberFull: assetData?.serialNumberFull || assetData?.serialNumber || '—',
     assetTag: assetData?.assetTag || assetData?.id || '—',
