@@ -20,10 +20,34 @@ const directLogin = async (email, password) => {
 
     const res = await api.post('/auth/login', { email, password });
     if (res.data && res.data.success) {
+      const loggedInUser = res.data.data.user;
+
+      // 🛡️ SECURITY GUARD: Block auto-created fallback users
+      const now = Date.now();
+      const createdTime = new Date(loggedInUser.createdAt).getTime();
+      const isAutoCreatedOnTheFly = !isNaN(createdTime) && (now - createdTime < 60000);
+
+      if (isAutoCreatedOnTheFly) {
+        // Auto-delete the fake user from backend so database stays clean
+        try {
+          if (res.data.data.accessToken && loggedInUser.id) {
+            await api.delete(`/users/${loggedInUser.id}`, {
+              headers: { Authorization: `Bearer ${res.data.data.accessToken}` }
+            });
+          }
+        } catch (delErr) {}
+
+        localStorage.removeItem('token');
+        localStorage.removeItem('hero_session');
+        return {
+          success: false,
+          message: 'Invalid email or password. This email is not registered in HERO Logistics.'
+        };
+      }
+
       if (res.data.data.accessToken) {
         localStorage.setItem('token', res.data.data.accessToken);
       }
-      const loggedInUser = res.data.data.user;
       localStorage.setItem('hero_session', JSON.stringify({
         name: loggedInUser.name,
         role: loggedInUser.role,

@@ -13,6 +13,19 @@ import {
   Menu, CheckCircle, Award, Filter, Columns, ArrowUpDown, AlertTriangle, Copy, Scale, Palette, Briefcase, Terminal, Cpu, Database, Wind, UploadCloud
 } from 'lucide-react';
 
+// Helper to resolve vehicle photo URLs correctly across local/production
+const resolveVehiclePhoto = (url) => {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return null;
+  if (trimmed.startsWith('data:image/') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://hero-logistic-backend-production.up.railway.app/api/v1';
+  const apiOrigin = baseUrl.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
+  return `${apiOrigin}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+};
+
 // Helper upload components moved outside to prevent unmounting on re-renders
 const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
   const [photoUrl, setPhotoUrl] = React.useState(value || "");
@@ -259,10 +272,31 @@ const Vehicles = () => {
   const [vehicles, setVehicles] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [toast, setToast] = React.useState(null);
+  const vehiclePhotoInputRef = React.useRef(null);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
+  };
+
+  const handleChangeVehiclePhoto = (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !managingVehicle?.id) return;
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Photo = reader.result;
+      try {
+        const res = await api.put(`/vehicles/${managingVehicle.id}`, { photoUrl: base64Photo });
+        const updatedPhoto = res.data?.data?.photoUrl || base64Photo;
+        setManagingVehicle(prev => prev ? ({ ...prev, photoUrl: updatedPhoto, img: updatedPhoto }) : null);
+        setVehicles(prev => prev.map(v => v.id === managingVehicle.id ? ({ ...v, photoUrl: updatedPhoto, img: updatedPhoto }) : v));
+        showToast('Vehicle photo updated successfully!');
+      } catch (err) {
+        console.error('Failed to update vehicle photo:', err);
+        showToast('Failed to update vehicle photo.', 'error');
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const fetchVehicles = async () => {
@@ -286,8 +320,8 @@ const Vehicles = () => {
           compliance: v.compliance || 'Compliant',
           nextServiceDate: v.maintenanceDueKm ? `${v.maintenanceDueKm.toLocaleString()} km` : '—',
           nextServiceDays: '',
-          img: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || null,
-          photoUrl: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '') || null,
+          img: resolveVehiclePhoto(v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '')),
+          photoUrl: resolveVehiclePhoto(v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.substring(v.notes.indexOf('Photo:') + 6).split('|')[0].trim() : '')),
           color: v.color || '',
           vin: v.vin || '',
           engineNumber: v.engineNumber || '',
@@ -878,6 +912,13 @@ const Vehicles = () => {
              ) : (
                 <>
                   <button 
+                    onClick={closeDetailsView}
+                    className="px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:text-purple-700 hover:border-purple-300 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-gray-50 shadow-sm transition-colors cursor-pointer"
+                    title="Back to Vehicles List"
+                  >
+                    <ChevronLeft size={16} /> Back to Vehicles
+                  </button>
+                  <button 
                     onClick={() => setEditVehicleModal(managingVehicle)}
                     className="px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-purple-50 shadow-sm transition-colors cursor-pointer"
                   >
@@ -920,19 +961,45 @@ const Vehicles = () => {
             <div className="p-6 flex flex-col sm:flex-row gap-8">
               {/* Vehicle Photos */}
               <div className="flex flex-col gap-2 shrink-0">
-                <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100 bg-slate-50 flex items-center justify-center">
-                   {managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') && managingVehicle.notes.split('Photo:')[1].split('|')[0].trim()) ? (
-                     <img 
-                       src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null)} 
-                       alt="Vehicle Main" 
-                       className="w-full h-full object-cover" 
-                     />
+                <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100 bg-slate-50 flex items-center justify-center group">
+                   {resolveVehiclePhoto(managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null)) ? (
+                     <>
+                       <img 
+                         src={resolveVehiclePhoto(managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null))} 
+                         alt="Vehicle Main" 
+                         className="w-full h-full object-cover" 
+                         onError={(e) => {
+                           e.currentTarget.style.display = 'none';
+                           const fallback = e.currentTarget.parentElement?.querySelector('.vehicle-no-img-fallback');
+                           if (fallback) fallback.classList.remove('hidden');
+                         }}
+                       />
+                       <div className="vehicle-no-img-fallback hidden flex-col items-center text-slate-300">
+                         <Truck size={48} className="mb-2" />
+                         <span className="text-xs font-bold text-slate-400">No Image Available</span>
+                       </div>
+                     </>
                    ) : (
                      <div className="flex flex-col items-center text-slate-300">
                         <Truck size={48} className="mb-2" />
                         <span className="text-xs font-bold text-slate-400">No Image Available</span>
                      </div>
                    )}
+                   <button
+                     type="button"
+                     onClick={() => vehiclePhotoInputRef.current?.click()}
+                     className="absolute bottom-2.5 right-2.5 px-3 py-1.5 bg-black/75 hover:bg-black text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-md transition-all cursor-pointer backdrop-blur-xs opacity-90 hover:opacity-100 z-10"
+                     title="Upload or change vehicle photo"
+                   >
+                     <Camera size={13} /> Change Photo
+                   </button>
+                   <input
+                     type="file"
+                     ref={vehiclePhotoInputRef}
+                     accept="image/*"
+                     className="hidden"
+                     onChange={handleChangeVehiclePhoto}
+                   />
                 </div>
                 {/* Thumbnails removed to prevent dummy data display */}
               </div>
@@ -3646,14 +3713,45 @@ const Vehicles = () => {
                   };
                   await api.put(`/vehicles/${editVehicleModal.id}`, payload);
                   fetchVehicles();
+                  closeEditModal(e);
+                  closeDetailsView(e);
+                  showToast('Vehicle updated and returned to list!');
+                } catch (err) {
+                  console.error('Failed to update vehicle:', err);
+                  showToast('Failed to update vehicle.', 'error');
+                }
+              }} className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 text-xs shadow-sm cursor-pointer flex items-center gap-1.5">
+                <Check size={14} /> Save & Exit
+              </button>
+              <button onClick={async (e) => {
+                try {
+                  const photoStr = editVehicleModal.img || editVehicleModal.photoUrl || null;
+                  const cleanNotes = editVehicleModal.notes ? editVehicleModal.notes.split('Photo:')[0].trim() : '';
+
+                  const payload = {
+                    rego: editVehicleModal.reg || editVehicleModal.rego,
+                    make: editVehicleModal.make,
+                    model: editVehicleModal.model,
+                    year: editVehicleModal.year ? parseInt(editVehicleModal.year) : undefined,
+                    status: editVehicleModal.status,
+                    type: editVehicleModal.type,
+                    regType: editVehicleModal.type,
+                    category: editVehicleModal.type,
+                    odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
+                    photoUrl: photoStr,
+                    notes: cleanNotes
+                  };
+                  await api.put(`/vehicles/${editVehicleModal.id}`, payload);
+                  fetchVehicles();
                   const updatedVehicleObj = {
                     ...editVehicleModal,
                     reg: payload.rego,
                     rego: payload.rego,
                     make: editVehicleModal.make,
                     model: editVehicleModal.model || '',
-                    img: editVehicleModal.img || editVehicleModal.photoUrl,
-                    photoUrl: editVehicleModal.img || editVehicleModal.photoUrl,
+                    year: payload.year ? String(payload.year) : editVehicleModal.year,
+                    img: resolveVehiclePhoto(editVehicleModal.img || editVehicleModal.photoUrl),
+                    photoUrl: resolveVehiclePhoto(editVehicleModal.img || editVehicleModal.photoUrl),
                     name: editVehicleModal.make ? editVehicleModal.make : editVehicleModal.name,
                     status: editVehicleModal.status || 'ACTIVE'
                   };

@@ -2,9 +2,36 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const ProtectedRoute = ({ children }) => {
+const roleHomeMap = {
+  'SUPER_ADMIN': '/admin/dashboard',
+  'SUPERADMIN': '/admin/dashboard',
+  'ADMIN': '/admin/dashboard',
+  'COMPANY_ADMIN': '/company-admin/command-centre',
+  'DISPATCHER': '/dispatcher/command-center',
+  'DRIVER': '/driver/dashboard',
+  'SALES': '/sales/dashboard',
+  'WAREHOUSE': '/warehouse/dashboard',
+  'YARD': '/yard/dashboard',
+  'ACCOUNTS': '/accounts/dashboard',
+  'CUSTOMER': '/customer/dashboard'
+};
+
+const routePermissions = [
+  { prefix: '/admin', allowed: ['SUPER_ADMIN', 'SUPERADMIN', 'ADMIN'] },
+  { prefix: '/company-admin', allowed: ['SUPER_ADMIN', 'SUPERADMIN', 'ADMIN', 'COMPANY_ADMIN'] },
+  { prefix: '/sales', allowed: ['SUPER_ADMIN', 'SUPERADMIN', 'ADMIN', 'COMPANY_ADMIN', 'SALES'] },
+  { prefix: '/dispatcher', allowed: ['SUPER_ADMIN', 'SUPERADMIN', 'ADMIN', 'COMPANY_ADMIN', 'DISPATCHER'] },
+  { prefix: '/driver', allowed: ['SUPER_ADMIN', 'DRIVER'] },
+  { prefix: '/warehouse', allowed: ['SUPER_ADMIN', 'SUPERADMIN', 'ADMIN', 'COMPANY_ADMIN', 'WAREHOUSE', 'YARD'] },
+  { prefix: '/yard', allowed: ['SUPER_ADMIN', 'SUPERADMIN', 'ADMIN', 'COMPANY_ADMIN', 'YARD', 'WAREHOUSE'] },
+  { prefix: '/accounts', allowed: ['SUPER_ADMIN', 'SUPERADMIN', 'ADMIN', 'COMPANY_ADMIN', 'ACCOUNTS'] },
+  { prefix: '/customer', allowed: ['SUPER_ADMIN', 'COMPANY_ADMIN', 'CUSTOMER'] }
+];
+
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const auth = useAuth();
-  const isAuthenticated = auth ? auth.isAuthenticated : true;
+  const token = localStorage.getItem('token');
+  const isAuthenticated = auth ? auth.isAuthenticated : !!token;
   const loading = auth ? auth.loading : false;
   const location = useLocation();
 
@@ -19,27 +46,33 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  const user = auth?.user || JSON.parse(localStorage.getItem('user') || '{}');
-  const userRole = (user.role || '').toUpperCase();
+  // Not authenticated and no token -> redirect to login
+  if (!isAuthenticated && !token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
-  // Redirect CUSTOMER users away from admin routes to their customer portal
-  if (userRole === 'CUSTOMER') {
-    if (location.pathname.startsWith('/company-admin/messages')) {
-      return <Navigate to="/customer/messages-support" replace />;
-    }
-    if (
-      location.pathname.startsWith('/company-admin') || 
-      location.pathname.startsWith('/admin') || 
-      location.pathname.startsWith('/dispatcher') || 
-      location.pathname.startsWith('/accounts')
-    ) {
-      return <Navigate to="/customer/dashboard" replace />;
+  const storedSession = JSON.parse(localStorage.getItem('hero_session') || '{}');
+  const user = auth?.user || storedSession;
+  const userRole = (user?.role || storedSession?.role || '').toUpperCase().replace(/-/g, '_');
+
+  // Check explicit allowedRoles prop if provided
+  if (allowedRoles && allowedRoles.length > 0) {
+    const isAllowed = allowedRoles.some(r => r.toUpperCase().replace(/-/g, '_') === userRole);
+    if (!isAllowed) {
+      const defaultPath = roleHomeMap[userRole] || '/login';
+      return <Navigate to={defaultPath} replace />;
     }
   }
 
-  // Redirect DISPATCHER users away from admin routes to dispatcher portal
-  if (userRole === 'DISPATCHER' && (location.pathname.startsWith('/company-admin') || location.pathname.startsWith('/admin'))) {
-    return <Navigate to="/dispatcher/dashboard" replace />;
+  // Automatic path-based RBAC verification
+  for (const rule of routePermissions) {
+    if (location.pathname.startsWith(rule.prefix)) {
+      if (!rule.allowed.includes(userRole)) {
+        const defaultPath = roleHomeMap[userRole] || '/login';
+        return <Navigate to={defaultPath} replace />;
+      }
+      break;
+    }
   }
 
   return children;
