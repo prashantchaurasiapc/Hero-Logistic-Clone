@@ -10,7 +10,6 @@ import {
   RefreshCcw, FileCheck, Layers, Package, Flag, Edit3, Trash2
 } from 'lucide-react';
 import L from 'leaflet';
-import CreateLoad from '../CompanyAdmin/CreateLoad';
 
 export default function DispatcherLoads() {
   const location = useLocation();
@@ -25,16 +24,17 @@ export default function DispatcherLoads() {
   const [selectedLoadId, setSelectedLoadId] = useState('LD-10583');
   const [activeDetailsTab, setActiveDetailsTab] = useState('Overview');
   const [showDetailsDrawer, setShowDetailsDrawer] = useState(true);
-  const [isFullPageDetailsView, setIsFullPageDetailsView] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
+  const [availableDrivers, setAvailableDrivers] = useState([]);
+  const [availableVehicles, setAvailableVehicles] = useState([]);
+  const [selectedAssignDriverId, setSelectedAssignDriverId] = useState('');
+  const [selectedAssignVehicleId, setSelectedAssignVehicleId] = useState('');
 
   // Dropdown 3-dot action menu state
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
 
-  // Full Page and Modal States
-  const [fullPageEditLoad, setFullPageEditLoad] = useState(null);
-  const [fullPageCreateLoad, setFullPageCreateLoad] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  // Modal States
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(isCreateLoadPage);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingLoad, setEditingLoad] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -42,7 +42,7 @@ export default function DispatcherLoads() {
 
   useEffect(() => {
     if (location.pathname.includes('create-load')) {
-      setFullPageCreateLoad(true);
+      setIsCreateModalOpen(true);
     }
   }, [location.pathname]);
 
@@ -114,10 +114,61 @@ export default function DispatcherLoads() {
         const deletedSet = getDeletedLoadIds();
         const filteredLoads = apiLoads.filter(item => !deletedSet.has(item.id) && !deletedSet.has(item.dbId));
         
-        setMasterLoads(filteredLoads);
-        if (filteredLoads.length > 0) {
-          setSelectedLoadId(filteredLoads[0].id);
+        // Strictly sanitize loads so DRAFT / unassigned loads never show fake random drivers or trucks
+        const sanitizedLoads = filteredLoads.map(item => {
+          const raw = item.rawLoad || {};
+          const isDraft = (item.status || raw.status || '').toUpperCase() === 'DRAFT';
+          const hasRealDriver = Boolean(raw.driverId || raw.driver);
+          const hasRealVehicle = Boolean(raw.truckId || raw.truck);
+
+          const realDriver = hasRealDriver 
+            ? (raw.driver ? `${raw.driver.firstName || ''} ${raw.driver.lastName || ''}`.trim() : item.driver)
+            : 'Unassigned';
+
+          const realVehicle = hasRealVehicle
+            ? (raw.truck ? `${raw.truck.make || ''} ${raw.truck.model || ''}`.trim() : item.vehicle)
+            : 'Unassigned';
+
+          return {
+            ...item,
+            status: isDraft ? 'Draft' : item.status,
+            statusStyle: isDraft ? 'bg-amber-50 text-amber-700 border-amber-300' : item.statusStyle,
+            accentColor: isDraft ? 'border-l-amber-400' : item.accentColor,
+            driver: realDriver,
+            driverRole: realDriver === 'Unassigned' ? 'Not Assigned' : item.driverRole,
+            driverStatus: realDriver === 'Unassigned' ? 'Unassigned' : item.driverStatus,
+            driverAvatar: realDriver === 'Unassigned' ? 'https://ui-avatars.com/api/?name=Unassigned&background=e2e8f0&color=0f172a' : item.driverAvatar,
+            vehicle: realVehicle,
+            trailer: hasRealVehicle ? item.trailer : 'None',
+            rego: hasRealVehicle ? item.rego : '—',
+            activeDotsCount: isDraft ? 0 : (item.activeDotsCount ?? 1),
+            progressStep: isDraft ? 'Draft' : item.progressStep
+          };
+        });
+
+        setMasterLoads(sanitizedLoads);
+        if (sanitizedLoads.length > 0) {
+          setSelectedLoadId(sanitizedLoads[0].id);
         }
+      }
+
+      // Populate available drivers and vehicles for assignment
+      if (Array.isArray(payload.drivers) && payload.drivers.length > 0) {
+        setAvailableDrivers(payload.drivers);
+      } else {
+        api.get('/company-admin/drivers').then(r => {
+          const list = r.data?.data || r.data;
+          if (Array.isArray(list)) setAvailableDrivers(list);
+        }).catch(() => {});
+      }
+
+      if (Array.isArray(payload.vehicles) && payload.vehicles.length > 0) {
+        setAvailableVehicles(payload.vehicles);
+      } else {
+        api.get('/company-admin/vehicles').then(r => {
+          const list = r.data?.data || r.data;
+          if (Array.isArray(list)) setAvailableVehicles(list);
+        }).catch(() => {});
       }
     } catch (error) {
       console.error('Error fetching active loads:', error);
@@ -223,9 +274,8 @@ export default function DispatcherLoads() {
   };
 
   const handleEditLoadClick = (load) => {
-    setFullPageEditLoad(load);
-    setIsEditModalOpen(false);
-    setIsViewModalOpen(false);
+    setEditingLoad({ ...load });
+    setIsEditModalOpen(true);
     setOpenActionMenuId(null);
   };
 
@@ -236,6 +286,95 @@ export default function DispatcherLoads() {
     setIsFullPageDetailsView(true);
     setOpenActionMenuId(null);
     triggerToast(`Opening Load Details page for ${load.id}`);
+  };
+
+  const handleActivateLoad = async (load) => {
+    const targetId = load.dbId || load.id;
+    try {
+      try {
+        await api.post(`/loads/${targetId}/activate`);
+      } catch (e1) {
+        try {
+          await api.post(`/loads/${targetId}/status-transitions`, { status: 'ACTIVE' });
+        } catch (e2) {
+          await api.put(`/company-admin/loads/${targetId}`, { status: 'ACTIVE' });
+        }
+      }
+      setMasterLoads(prev => prev.map(l => {
+        if (l.id === load.id || l.dbId === targetId) {
+          return {
+            ...l,
+            status: 'En Route',
+            statusStyle: 'bg-blue-50 text-blue-700 border-blue-200',
+            accentColor: 'border-l-blue-500',
+            activeDotsCount: 2,
+            progressStep: '2/6'
+          };
+        }
+        return l;
+      }));
+      triggerToast(`Load ${load.id} is now ACTIVE!`);
+    } catch (err) {
+      console.error('Error activating load:', err);
+      triggerToast('Error activating load. Please try again.');
+    }
+  };
+
+  const openAssignModal = () => {
+    const raw = activeLoadDetails.rawLoad || {};
+    setSelectedAssignDriverId(raw.driverId || '');
+    setSelectedAssignVehicleId(raw.truckId || '');
+    setIsTransferLoadModalOpen(true);
+  };
+
+  const handleConfirmAssignment = async () => {
+    if (!selectedAssignDriverId) {
+      alert('Please select a driver to assign.');
+      return;
+    }
+    const loadId = activeLoadDetails.dbId || activeLoadDetails.id;
+    try {
+      const chosenDrv = availableDrivers.find(d => String(d.id) === String(selectedAssignDriverId));
+      const chosenVeh = availableVehicles.find(v => String(v.id) === String(selectedAssignVehicleId));
+      const drvName = chosenDrv ? (chosenDrv.name || `${chosenDrv.firstName || ''} ${chosenDrv.lastName || ''}`.trim() || chosenDrv.driverCode) : 'Assigned Driver';
+      const vehName = chosenVeh ? `${chosenVeh.make || ''} ${chosenVeh.model || ''}`.trim() : 'Assigned Truck';
+      const regoName = chosenVeh?.rego || '—';
+
+      try {
+        await api.post(`/loads/${loadId}/assignments`, {
+          driverId: selectedAssignDriverId,
+          vehicleId: selectedAssignVehicleId || undefined
+        });
+      } catch (err1) {
+        await api.put(`/company-admin/loads/${loadId}`, {
+          driverId: selectedAssignDriverId,
+          truckId: selectedAssignVehicleId || undefined
+        });
+      }
+
+      setMasterLoads(prev => prev.map(l => {
+        if (l.id === activeLoadDetails.id || l.dbId === loadId) {
+          return {
+            ...l,
+            driver: drvName,
+            driverRole: 'Car Carrier',
+            driverStatus: 'On Duty',
+            driverAvatar: chosenDrv?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(drvName)}&background=e2e8f0&color=0f172a`,
+            vehicle: vehName,
+            rego: regoName,
+            status: l.status === 'Draft' ? 'Planned' : l.status,
+            activeDotsCount: l.activeDotsCount === 0 ? 1 : l.activeDotsCount
+          };
+        }
+        return l;
+      }));
+
+      setIsTransferLoadModalOpen(false);
+      triggerToast(`Load ${activeLoadDetails.id} assigned to ${drvName}!`);
+    } catch (err) {
+      console.error('Error assigning driver:', err);
+      triggerToast('Error assigning driver. Please try again.');
+    }
   };
 
   const handleEditLoadSave = async (e) => {
@@ -370,30 +509,6 @@ export default function DispatcherLoads() {
     };
   }, [selectedLoadId]);
 
-  if (fullPageEditLoad) {
-    return (
-      <CreateLoad
-        editMode={true}
-        loadToEdit={fullPageEditLoad}
-        onBack={() => {
-          setFullPageEditLoad(null);
-          fetchLoads();
-        }}
-      />
-    );
-  }
-
-  if (fullPageCreateLoad) {
-    return (
-      <CreateLoad
-        onBack={() => {
-          setFullPageCreateLoad(false);
-          fetchLoads();
-        }}
-      />
-    );
-  }
-
   return (
     <div className="w-full min-h-screen bg-[#F8FAFC] p-4 sm:p-5 space-y-3.5 text-left font-sans antialiased text-slate-800">
 
@@ -405,7 +520,278 @@ export default function DispatcherLoads() {
         </div>
       )}
 
+      {/* ============================================================
+         CREATE LOAD MODAL FORM
+         ============================================================ */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="flex justify-between items-center px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Create New Load</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Fill in details to dispatch a new active load</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
+            <form onSubmit={handleCreateLoadSubmit} className="p-5 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Customer</label>
+                  <input
+                    type="text"
+                    required
+                    value={newLoadForm.customer}
+                    onChange={(e) => setNewLoadForm({ ...newLoadForm, customer: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Status</label>
+                  <select
+                    value={newLoadForm.status}
+                    onChange={(e) => setNewLoadForm({ ...newLoadForm, status: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium cursor-pointer"
+                  >
+                    <option value="In Transit">In Transit</option>
+                    <option value="En Route">En Route</option>
+                    <option value="At Pickup">At Pickup</option>
+                    <option value="On Hold">On Hold</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Route Pickup (From)</label>
+                  <input
+                    type="text"
+                    required
+                    value={newLoadForm.routeFrom}
+                    onChange={(e) => setNewLoadForm({ ...newLoadForm, routeFrom: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Route Delivery (To)</label>
+                  <input
+                    type="text"
+                    required
+                    value={newLoadForm.routeTo}
+                    onChange={(e) => setNewLoadForm({ ...newLoadForm, routeTo: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Assigned Driver</label>
+                  <select
+                    value={newLoadForm.driver}
+                    onChange={(e) => setNewLoadForm({ ...newLoadForm, driver: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium cursor-pointer"
+                  >
+                    <option value="John Doe">John Doe</option>
+                    <option value="Chris Lee">Chris Lee</option>
+                    <option value="Michael Tan">Michael Tan</option>
+                    <option value="David Brown">David Brown</option>
+                    <option value="Ben Hall">Ben Hall</option>
+                    <option value="Sarah Connor">Sarah Connor</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Vehicle / Trailer</label>
+                  <input
+                    type="text"
+                    required
+                    value={newLoadForm.vehicle}
+                    onChange={(e) => setNewLoadForm({ ...newLoadForm, vehicle: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Required Date</label>
+                  <input
+                    type="text"
+                    value={newLoadForm.reqDate}
+                    onChange={(e) => setNewLoadForm({ ...newLoadForm, reqDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Required Time</label>
+                  <input
+                    type="text"
+                    value={newLoadForm.reqTime}
+                    onChange={(e) => setNewLoadForm({ ...newLoadForm, reqTime: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-xs cursor-pointer"
+                >
+                  Create Load
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
+         EDIT LOAD MODAL FORM
+         ============================================================ */}
+      {isEditModalOpen && editingLoad && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="flex justify-between items-center px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Edit Load ({editingLoad.id})</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Update operational dispatch information</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditLoadSave} className="p-5 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Customer</label>
+                  <input
+                    type="text"
+                    value={editingLoad.customer}
+                    onChange={(e) => setEditingLoad({ ...editingLoad, customer: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Status</label>
+                  <select
+                    value={editingLoad.status}
+                    onChange={(e) => setEditingLoad({
+                      ...editingLoad,
+                      status: e.target.value,
+                      statusStyle: e.target.value === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                        e.target.value === 'En Route' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          e.target.value === 'At Pickup' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            'bg-slate-100 text-slate-700 border-slate-200',
+                      accentColor: e.target.value === 'In Transit' ? 'border-l-emerald-500' :
+                        e.target.value === 'En Route' ? 'border-l-blue-500' :
+                          e.target.value === 'At Pickup' ? 'border-l-amber-500' : 'border-l-slate-400'
+                    })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium cursor-pointer"
+                  >
+                    <option value="In Transit">In Transit</option>
+                    <option value="En Route">En Route</option>
+                    <option value="At Pickup">At Pickup</option>
+                    <option value="At Delivery">At Delivery</option>
+                    <option value="On Hold">On Hold</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Route From</label>
+                  <input
+                    type="text"
+                    value={editingLoad.routeFrom}
+                    onChange={(e) => setEditingLoad({ ...editingLoad, routeFrom: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Route To</label>
+                  <input
+                    type="text"
+                    value={editingLoad.routeTo}
+                    onChange={(e) => setEditingLoad({ ...editingLoad, routeTo: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Driver</label>
+                  <input
+                    type="text"
+                    value={editingLoad.driver}
+                    onChange={(e) => setEditingLoad({ ...editingLoad, driver: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Vehicle / Trailer</label>
+                  <input
+                    type="text"
+                    value={editingLoad.vehicle}
+                    onChange={(e) => setEditingLoad({ ...editingLoad, vehicle: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-xs cursor-pointer"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ============================================================
          VIEW LOAD DETAILS MODAL
@@ -807,7 +1193,7 @@ export default function DispatcherLoads() {
           </div>
 
           <button
-            onClick={() => setFullPageCreateLoad(true)}
+            onClick={() => setIsCreateModalOpen(true)}
             className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center cursor-pointer active:scale-95 transition-transform"
           >
             <span>Create Load</span>
@@ -842,6 +1228,16 @@ export default function DispatcherLoads() {
             </div>
 
             <div className="flex items-center gap-2">
+              {(activeLoadDetails.status === 'Draft' || activeLoadDetails.status === 'DRAFT' || activeLoadDetails.status === 'Planned') && (
+                <button
+                  onClick={() => handleActivateLoad(activeLoadDetails)}
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                  title="Activate this load into live dispatch operations"
+                >
+                  <Zap size={14} className="fill-white" />
+                  <span>Activate Load</span>
+                </button>
+              )}
               <button
                 onClick={() => triggerToast('Opening Chain of Custody manifest...')}
                 className="px-3.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
@@ -890,17 +1286,24 @@ export default function DispatcherLoads() {
 
               {/* Progress Timeline */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
-                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Progress Timeline</h4>
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Progress Timeline</h4>
+                  {activeLoadDetails.activeDotsCount === 0 && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                      Draft — Awaiting Driver Assignment & Activation
+                    </span>
+                  )}
+                </div>
                 <div className="relative flex justify-between items-center py-4 px-2">
                   <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-200 z-0" />
                   <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 z-0 pointer-events-none">
                     <div
                       className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
-                      style={{ width: `${Math.max(0, Math.min(100, (((activeLoadDetails.activeDotsCount || 1) - 1) / 5) * 100))}%` }}
+                      style={{ width: `${Math.max(0, Math.min(100, (((activeLoadDetails.activeDotsCount || 0) - 1) / 5) * 100))}%` }}
                     />
                   </div>
                   {['Accepted', 'En Route', 'At Pickup', 'Loaded', 'In Transit', 'Delivered'].map((step, idx) => {
-                    const isPassed = idx + 1 <= activeLoadDetails.activeDotsCount;
+                    const isPassed = activeLoadDetails.activeDotsCount > 0 && idx + 1 <= activeLoadDetails.activeDotsCount;
                     return (
                       <div key={step} className="relative z-10 flex flex-col items-center gap-1.5">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${
@@ -936,20 +1339,83 @@ export default function DispatcherLoads() {
                 <div className="p-5">
                   {activeDetailsTab === 'Overview' && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Driver Card */}
                       <div className="p-4 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Driver</span>
-                        <div className="flex items-center gap-3">
-                          <img src={activeLoadDetails.driverAvatar} alt="" className="w-10 h-10 rounded-full border border-slate-200 object-cover" />
-                          <div>
-                            <div className="font-extrabold text-sm text-slate-900">{activeLoadDetails.driver}</div>
-                            <div className="text-xs text-slate-500 font-medium">{activeLoadDetails.driverRole}</div>
-                          </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Driver</span>
+                          <button
+                            onClick={openAssignModal}
+                            className="text-xs font-bold text-purple-600 hover:text-purple-800 cursor-pointer flex items-center gap-1"
+                          >
+                            <Edit3 size={12} />
+                            <span>{activeLoadDetails.driver === 'Unassigned' ? 'Assign' : 'Reassign'}</span>
+                          </button>
                         </div>
+                        {activeLoadDetails.driver === 'Unassigned' ? (
+                          <div className="flex items-center justify-between p-3 bg-amber-50/80 border border-amber-200 rounded-xl">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">
+                                <User size={16} />
+                              </div>
+                              <div>
+                                <div className="font-extrabold text-xs text-amber-900">No Driver Assigned</div>
+                                <div className="text-[10.5px] text-amber-700">Load is unassigned in draft</div>
+                              </div>
+                            </div>
+                            <button
+                              onClick={openAssignModal}
+                              className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                            >
+                              + Assign
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <img src={activeLoadDetails.driverAvatar} alt="" className="w-10 h-10 rounded-full border border-slate-200 object-cover" />
+                            <div>
+                              <div className="font-extrabold text-sm text-slate-900">{activeLoadDetails.driver}</div>
+                              <div className="text-xs text-slate-500 font-medium">{activeLoadDetails.driverRole}</div>
+                            </div>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Vehicle Card */}
                       <div className="p-4 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Vehicle</span>
-                        <div className="font-extrabold text-sm text-slate-900">{activeLoadDetails.vehicle}</div>
-                        <div className="text-xs text-slate-500 font-medium">Trailer: {activeLoadDetails.trailer} • Rego: {activeLoadDetails.rego}</div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Vehicle</span>
+                          <button
+                            onClick={openAssignModal}
+                            className="text-xs font-bold text-purple-600 hover:text-purple-800 cursor-pointer flex items-center gap-1"
+                          >
+                            <Edit3 size={12} />
+                            <span>{activeLoadDetails.vehicle === 'Unassigned' ? 'Assign' : 'Change'}</span>
+                          </button>
+                        </div>
+                        {activeLoadDetails.vehicle === 'Unassigned' ? (
+                          <div className="flex items-center justify-between p-3 bg-amber-50/80 border border-amber-200 rounded-xl">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">
+                                <Truck size={16} />
+                              </div>
+                              <div>
+                                <div className="font-extrabold text-xs text-amber-900">No Truck Assigned</div>
+                                <div className="text-[10.5px] text-amber-700">Assign vehicle when ready</div>
+                              </div>
+                            </div>
+                            <button
+                              onClick={openAssignModal}
+                              className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                            >
+                              + Assign
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="font-extrabold text-sm text-slate-900">{activeLoadDetails.vehicle}</div>
+                            <div className="text-xs text-slate-500 font-medium">Trailer: {activeLoadDetails.trailer} • Rego: {activeLoadDetails.rego}</div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -996,11 +1462,11 @@ export default function DispatcherLoads() {
                   </button>
 
                   <button
-                    onClick={() => setIsTransferLoadModalOpen(true)}
+                    onClick={openAssignModal}
                     className="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
                   >
                     <Truck className="w-4 h-4 text-sky-600" />
-                    <span>Transfer Load</span>
+                    <span>Assign / Transfer</span>
                   </button>
                 </div>
 
@@ -1163,6 +1629,20 @@ export default function DispatcherLoads() {
                       {/* Actions */}
                       <td className="py-3 px-2 text-right whitespace-nowrap relative">
                         <div className="flex items-center justify-end gap-1">
+                          {/* Quick Activate Button for Draft Loads */}
+                          {(item.status === 'Draft' || item.status === 'DRAFT') && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleActivateLoad(item);
+                              }}
+                              title="Activate Load"
+                              className="p-1.5 hover:bg-emerald-100 text-emerald-600 rounded-md transition-colors cursor-pointer"
+                            >
+                              <Zap className="w-4 h-4 fill-emerald-600" />
+                            </button>
+                          )}
+
                           {/* Eye Button: View Load Details */}
                           <button
                             onClick={(e) => {
@@ -1194,6 +1674,18 @@ export default function DispatcherLoads() {
                             onClick={(e) => e.stopPropagation()}
                             className="absolute right-2 top-10 z-30 w-36 bg-white rounded-xl border border-slate-200 shadow-xl py-1.5 text-xs text-left animate-in fade-in zoom-in-95"
                           >
+                            {(item.status === 'Draft' || item.status === 'DRAFT') && (
+                              <button
+                                onClick={() => {
+                                  setOpenActionMenuId(null);
+                                  handleActivateLoad(item);
+                                }}
+                                className="w-full px-3 py-1.5 hover:bg-emerald-50 text-emerald-700 font-bold flex items-center gap-2 cursor-pointer"
+                              >
+                                <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
+                                <span>Activate Load</span>
+                              </button>
+                            )}
                             <button
                               onClick={() => handleEditLoadClick(item)}
                               className="w-full px-3 py-1.5 hover:bg-slate-50 text-slate-700 font-semibold flex items-center gap-2 cursor-pointer"
@@ -1361,35 +1853,63 @@ export default function DispatcherLoads() {
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 text-left font-sans animate-scale-up" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <Truck className="text-sky-600" size={18} />
-                <h3 className="text-sm font-black text-slate-900">Transfer / Reassign Load {selectedLoadId}</h3>
+                <Truck className="text-purple-600" size={18} />
+                <h3 className="text-sm font-black text-slate-900">Assign Driver & Vehicle ({activeLoadDetails.id})</h3>
               </div>
               <button onClick={() => setIsTransferLoadModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
                 <X size={16} />
               </button>
             </div>
+
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Reassign to Driver</label>
-                <select className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800">
-                  <option>Mike Thompson (DRV-101)</option>
-                  <option>Sarah Mitchell (DRV-102)</option>
-                  <option>David Miller (DRV-103)</option>
+                <label className="block font-bold text-slate-700 mb-1">Select Driver <span className="text-rose-500">*</span></label>
+                <select 
+                  value={selectedAssignDriverId} 
+                  onChange={e => setSelectedAssignDriverId(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-purple-500"
+                >
+                  <option value="">-- Choose an Available Driver --</option>
+                  {availableDrivers.map(d => {
+                    const dName = d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || 'Driver';
+                    return (
+                      <option key={d.id} value={d.id}>
+                        {dName} {d.driverCode ? `(${d.driverCode})` : ''} {d.status ? `• ${d.status}` : ''}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Select Prime Mover / Truck (Optional)</label>
+                <select 
+                  value={selectedAssignVehicleId} 
+                  onChange={e => setSelectedAssignVehicleId(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-purple-500"
+                >
+                  <option value="">-- Choose Truck / Vehicle --</option>
+                  {availableVehicles.map(v => {
+                    const vName = `${v.make || ''} ${v.model || ''}`.trim() || 'Vehicle';
+                    return (
+                      <option key={v.id} value={v.id}>
+                        {vName} {v.rego ? `(Rego: ${v.rego})` : ''}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
+
             <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
               <button onClick={() => setIsTransferLoadModalOpen(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">
                 Cancel
               </button>
               <button 
-                onClick={() => {
-                  setIsTransferLoadModalOpen(false);
-                  triggerToast(`Load ${selectedLoadId} transferred & reassigned!`);
-                }} 
-                className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                onClick={handleConfirmAssignment} 
+                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
               >
-                Confirm Transfer
+                Confirm Assignment
               </button>
             </div>
           </div>
