@@ -24,6 +24,7 @@ export default function DispatcherLoads() {
   const [selectedLoadId, setSelectedLoadId] = useState('LD-10583');
   const [activeDetailsTab, setActiveDetailsTab] = useState('Overview');
   const [showDetailsDrawer, setShowDetailsDrawer] = useState(true);
+  const [isFullPageDetailsView, setIsFullPageDetailsView] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [availableDrivers, setAvailableDrivers] = useState([]);
   const [availableVehicles, setAvailableVehicles] = useState([]);
