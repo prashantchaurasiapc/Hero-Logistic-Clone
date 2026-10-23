@@ -145,15 +145,20 @@ export default function CommandCentre() {
         statusStyle = 'bg-blue-50 text-blue-600';
       }
 
+      const custName = typeof l.customer === 'object' ? (l.customer?.name || l.customer?.companyName || 'Customer') : (l.customer || 'Customer');
+      const startLoc = typeof l.routeFrom === 'object' ? (l.routeFrom?.name || l.routeFrom?.city || 'Sydney') : (l.routeFrom || 'Sydney');
+      const endLoc = typeof l.routeTo === 'object' ? (l.routeTo?.name || l.routeTo?.city || 'Melbourne') : (l.routeTo || 'Melbourne');
+      const drvName = typeof l.driver === 'object' ? (l.driver?.name || `${l.driver?.firstName || ''} ${l.driver?.lastName || ''}`.trim() || 'Driver') : (l.driver || 'Driver');
+
       columns[depot].cards.push({
-        id: l.id,
-        status: l.status,
+        id: l.id || l.loadRef || 'LD-000',
+        status: l.status || 'Pending Dispatch',
         statusStyle,
         borderStyle,
-        customer: l.customer,
-        routeFrom: l.routeFrom,
-        routeTo: l.routeTo,
-        driverDate: `${l.date} • ${l.driver}`,
+        customer: custName,
+        routeFrom: startLoc,
+        routeTo: endLoc,
+        driverDate: `${l.date || 'Today'} • ${drvName}`,
         users: l.passengers || 1,
         packages: l.itemsCount || 8
       });
@@ -733,8 +738,17 @@ export default function CommandCentre() {
                     className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-[11.5px] font-medium text-slate-700 hover:bg-slate-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs truncate"
                   >
                     <option value="All Customers">All Customers</option>
-                    {Array.from(new Set(loads.map(l => l.customer).filter(Boolean))).map(c => (
-                      <option key={c} value={c}>{c}</option>
+                    {Array.from(
+                      new Set(
+                        loads.map(l => {
+                          if (!l.customer) return null;
+                          if (typeof l.customer === 'string') return l.customer;
+                          if (typeof l.customer === 'object') return l.customer.name || l.customer.companyName || null;
+                          return String(l.customer);
+                        }).filter(Boolean)
+                      )
+                    ).map(customerName => (
+                      <option key={customerName} value={customerName}>{customerName}</option>
                     ))}
                   </select>
                 </div>
@@ -748,7 +762,17 @@ export default function CommandCentre() {
                     className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-[11.5px] font-medium text-slate-700 hover:bg-slate-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs truncate"
                   >
                     <option value="All Destinations">All Destinations</option>
-                    {Array.from(new Set(['Sydney', 'Melbourne', 'Brisbane', 'Adelaide', 'Perth', ...loads.map(l => l.routeTo).filter(Boolean)])).map(dest => (
+                    {Array.from(
+                      new Set([
+                        'Sydney', 'Melbourne', 'Brisbane', 'Adelaide', 'Perth',
+                        ...loads.map(l => {
+                          if (!l.routeTo) return null;
+                          if (typeof l.routeTo === 'string') return l.routeTo;
+                          if (typeof l.routeTo === 'object') return l.routeTo.name || l.routeTo.city || l.routeTo.address || null;
+                          return String(l.routeTo);
+                        }).filter(Boolean)
+                      ])
+                    ).map(dest => (
                       <option key={dest} value={dest}>{dest}</option>
                     ))}
                   </select>
