@@ -1917,73 +1917,123 @@ const Vehicles = () => {
 
           {/* 4. Maintenance Preferences */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-[13px] font-black text-gray-900">4. Maintenance Preferences</h3>
+              {['Trailer', 'Car Trailer'].includes(formVehicleType) && (
+                <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200/60">
+                  Trailer Profile (Routes & Engine Mechanic Excluded)
+                </span>
+              )}
             </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY MECHANIC</label>
-                <input 
-                  name="primaryMechanic" 
-                  type="text" 
-                  placeholder="e.g. Volvo Workshop / Main Depot" 
-                  defaultValue={isEdit ? (editVehicleModal.primaryMechanic || '') : ''}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
-                />
-              </div>
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED ROUTES</label>
-                <input 
-                  name="preferredRoutes" 
-                  type="text" 
-                  placeholder="e.g. Sydney - Melbourne" 
-                  defaultValue={isEdit ? (editVehicleModal.preferredRoutes || '') : ''}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
-                />
-              </div>
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED REGIONS</label>
-                <input 
-                  name="preferredRegions" 
-                  type="text" 
-                  placeholder="e.g. East Coast" 
-                  defaultValue={isEdit ? (editVehicleModal.preferredRegions || '') : ''}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
-                />
-              </div>
-              
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MAXIMUM DISTANCE PER TRIP (KM)</label>
-                <input 
-                  name="maxDist" 
-                  type="number" 
-                  placeholder="e.g. 1000" 
-                  defaultValue={isEdit ? (editVehicleModal.maxDistPerTripKm || '') : ''}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
-                />
-              </div>
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">DANGEROUS GOODS CERTIFIED</label>
-                <select 
-                  name="dgCertified" 
-                  defaultValue={isEdit ? (editVehicleModal.dgCertified ? 'Yes' : 'No') : 'No'}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
-                >
-                  <option value="No">No</option>
-                  <option value="Yes">Yes</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">HEAVY VEHICLE CERTIFIED</label>
-                <select 
-                  name="hvCertified" 
-                  defaultValue={isEdit ? (editVehicleModal.hvCertified ? 'Yes' : 'No') : 'Yes'}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
-                >
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </div>
+            <div className="p-6">
+              {['Trailer', 'Car Trailer'].includes(formVehicleType) ? (
+                <div className="space-y-6">
+                  {/* Informational banner explaining why routes/mechanic aren't needed for trailer */}
+                  <div className="p-4 rounded-xl bg-purple-50/70 border border-purple-100 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                      <Truck size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-purple-900">Non-Motorized Trailer Asset</h4>
+                      <p className="text-[11px] text-purple-700/80 font-medium mt-0.5">
+                        Operating routes, service regions, maximum trip distances, and engine mechanics belong to the Prime Mover (Truck), not the trailer. Trailers move across the network attached to any assigned vehicle.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Applicable Trailer Compliance Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    <div>
+                      <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">DANGEROUS GOODS (DG) CERTIFIED</label>
+                      <select 
+                        name="dgCertified" 
+                        defaultValue={isEdit ? (editVehicleModal.dgCertified ? 'Yes' : 'No') : 'No'}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
+                      >
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">HEAVY VEHICLE CERTIFIED</label>
+                      <select 
+                        name="hvCertified" 
+                        defaultValue={isEdit ? (editVehicleModal.hvCertified ? 'Yes' : 'No') : 'Yes'}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
+                      >
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY SERVICE WORKSHOP</label>
+                    <input 
+                      name="primaryMechanic" 
+                      type="text" 
+                      placeholder="e.g. Volvo Sydney Workshop / Main Depot" 
+                      defaultValue={isEdit ? (editVehicleModal.primaryMechanic || '') : ''}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED ROUTES</label>
+                    <input 
+                      name="preferredRoutes" 
+                      type="text" 
+                      placeholder="e.g. Sydney - Melbourne" 
+                      defaultValue={isEdit ? (editVehicleModal.preferredRoutes || '') : ''}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED REGIONS</label>
+                    <input 
+                      name="preferredRegions" 
+                      type="text" 
+                      placeholder="e.g. East Coast" 
+                      defaultValue={isEdit ? (editVehicleModal.preferredRegions || '') : ''}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MAXIMUM DISTANCE PER TRIP (KM)</label>
+                    <input 
+                      name="maxDist" 
+                      type="number" 
+                      placeholder="e.g. 1000" 
+                      defaultValue={isEdit ? (editVehicleModal.maxDistPerTripKm || '') : ''}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">DANGEROUS GOODS CERTIFIED</label>
+                    <select 
+                      name="dgCertified" 
+                      defaultValue={isEdit ? (editVehicleModal.dgCertified ? 'Yes' : 'No') : 'No'}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
+                    >
+                      <option value="No">No</option>
+                      <option value="Yes">Yes</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">HEAVY VEHICLE CERTIFIED</label>
+                    <select 
+                      name="hvCertified" 
+                      defaultValue={isEdit ? (editVehicleModal.hvCertified ? 'Yes' : 'No') : 'Yes'}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white"
+                    >
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
