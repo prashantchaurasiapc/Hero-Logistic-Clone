@@ -223,13 +223,24 @@ export default function DispatcherLoads() {
 
     const matchesStatusTab =
       activeStatusTab.includes('All') ? true :
-        activeStatusTab.includes('In Transit') ? load.status === 'In Transit' :
-          activeStatusTab.includes('En Route') ? load.status === 'En Route' :
-            activeStatusTab.includes('At Pickup') ? load.status === 'At Pickup' :
-              activeStatusTab.includes('At Delivery') ? load.status === 'At Delivery' :
-                activeStatusTab.includes('On Hold') ? load.status === 'On Hold' : true;
+        activeStatusTab.includes('Draft') ? (load.status === 'Draft' || load.status === 'DRAFT') :
+          activeStatusTab.includes('In Transit') ? load.status === 'In Transit' :
+            activeStatusTab.includes('En Route') ? load.status === 'En Route' :
+              activeStatusTab.includes('At Pickup') ? load.status === 'At Pickup' :
+                activeStatusTab.includes('At Delivery') ? load.status === 'At Delivery' :
+                  activeStatusTab.includes('On Hold') ? load.status === 'On Hold' : true;
 
-    return matchesSearch && matchesStatusTab;
+    const matchesDropdownStatus =
+      !statusFilter || statusFilter === 'All Statuses' || statusFilter === 'Active' ? true :
+        statusFilter === 'Draft' ? (load.status === 'Draft' || load.status === 'DRAFT') :
+          load.status.toLowerCase().includes(statusFilter.toLowerCase());
+
+    const matchesDriverFilter =
+      !driverFilter || driverFilter === 'All Drivers' ? true :
+        driverFilter === 'Unassigned' ? load.driver === 'Unassigned' :
+          load.driver.toLowerCase().includes(driverFilter.toLowerCase());
+
+    return matchesSearch && matchesStatusTab && matchesDropdownStatus && matchesDriverFilter;
   });
 
   // Action Handlers
@@ -1029,6 +1040,7 @@ export default function DispatcherLoads() {
             >
               <option value="Active">Active</option>
               <option value="All Statuses">All Statuses</option>
+              <option value="Draft">Draft</option>
               <option value="In Transit">In Transit</option>
               <option value="En Route">En Route</option>
               <option value="At Pickup">At Pickup</option>
@@ -1493,6 +1505,7 @@ export default function DispatcherLoads() {
           <div className="flex items-center gap-4 border-b border-slate-200 pb-2 overflow-x-auto">
             {[
               `All (${masterLoads.length})`,
+              `Draft (${masterLoads.filter(l => l.status === 'Draft' || l.status === 'DRAFT').length})`,
               `In Transit (${masterLoads.filter(l => l.status === 'In Transit').length})`,
               `En Route to Pickup (${masterLoads.filter(l => l.status === 'En Route').length})`,
               `At Pickup (${masterLoads.filter(l => l.status === 'At Pickup').length})`,
