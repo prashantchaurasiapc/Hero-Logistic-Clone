@@ -44,7 +44,7 @@ export default function CommandCentre() {
 
   // Tab States
   const [activeLoadTab, setActiveLoadTab] = useState('All');
-  const [activeDriverTab, setActiveDriverTab] = useState('All (23)');
+  const [activeDriverTab, setActiveDriverTab] = useState('All');
 
   // Planning Board Control States
   const [boardView, setBoardView] = useState('Board View');
@@ -59,20 +59,23 @@ export default function CommandCentre() {
   const [isMapMaximized, setIsMapMaximized] = useState(false);
   const [isMapToolsOpen, setIsMapToolsOpen] = useState(false);
 
-  // Active Movements / Master Loads state list
+  // Active Movements / Master Loads & Fleet state lists
   const [loads, setLoads] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
 
-  // Subscribe to dispatcherStore changes to ensure reactive database binding
+  // Subscribe to live database updates for Loads, Drivers, and Vehicles
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [loadsRes, driversRes] = await Promise.all([
-          api.get('/loads'),
-          api.get('/drivers')
+        const [loadsRes, driversRes, vehiclesRes] = await Promise.all([
+          api.get('/loads').catch(() => ({ data: [] })),
+          api.get('/drivers').catch(() => ({ data: [] })),
+          api.get('/vehicles').catch(() => ({ data: [] }))
         ]);
-        setLoads(loadsRes.data?.data || []);
-        setDrivers(driversRes.data?.data || []);
+        setLoads(loadsRes.data?.data || loadsRes.data || []);
+        setDrivers(driversRes.data?.data || driversRes.data || []);
+        setVehicles(vehiclesRes.data?.data || vehiclesRes.data || []);
       } catch (error) {
         console.error('Error fetching command centre data:', error);
       }
@@ -82,6 +85,27 @@ export default function CommandCentre() {
     const interval = setInterval(fetchDashboardData, 30000); // 30s polling
     return () => clearInterval(interval);
   }, []);
+
+  // Live computed fleet & driver metrics from database (strictly 0 if none)
+  const availableDriversCount = drivers.filter(d => 
+    ['On Duty', 'AVAILABLE', 'ACTIVE', 'En Route', 'On Shift'].includes(d.status) || !d.status
+  ).length;
+
+  const availableTrucksCount = vehicles.filter(v => {
+    const isTrailer = v.category === 'TRAILER' || 
+      ['Trailer', 'Car Trailer'].includes(v.type) || 
+      String(v.type || '').toLowerCase().includes('trailer') ||
+      String(v.regType || '').toLowerCase().includes('trailer');
+    return !isTrailer && (v.status === 'IDLE' || v.status === 'ACTIVE' || !v.status);
+  }).length;
+
+  const availableTrailersCount = vehicles.filter(v => {
+    const isTrailer = v.category === 'TRAILER' || 
+      ['Trailer', 'Car Trailer'].includes(v.type) || 
+      String(v.type || '').toLowerCase().includes('trailer') ||
+      String(v.regType || '').toLowerCase().includes('trailer');
+    return isTrailer && (!v.assignedTruckId || v.status === 'IDLE');
+  }).length;
 
   // Handle Create Load Submit
   const handleCreateLoadSubmit = async (e) => {
@@ -180,7 +204,7 @@ export default function CommandCentre() {
     setSelectedWorker('All');
     setSearchQuery('');
     setActiveLoadTab('All');
-    setActiveDriverTab('All (23)');
+    setActiveDriverTab('All');
     triggerToast('Filters reset to default.');
   };
 
@@ -497,13 +521,14 @@ export default function CommandCentre() {
       if (selectedWorker === 'Shift A' && driver.shift && !driver.shift.toLowerCase().includes('a') && !driver.shift.toLowerCase().includes('morning')) return false;
       if (selectedWorker === 'Shift B' && driver.shift && !driver.shift.toLowerCase().includes('b') && !driver.shift.toLowerCase().includes('evening')) return false;
     }
-    if (activeDriverTab.includes('All')) return true;
-    if (activeDriverTab.includes('On Duty')) return driver.status === 'On Duty';
-    if (activeDriverTab.includes('En Route')) return driver.status === 'En Route';
-    if (activeDriverTab.includes('At Pickup')) return driver.status === 'At Pickup';
-    if (activeDriverTab.includes('Break')) return driver.status === 'Break';
-    if (activeDriverTab.includes('Off Duty')) return driver.status === 'Off Duty';
-    if (activeDriverTab.includes('Unavailable')) return driver.status === 'Unavailable' || driver.status === 'Delayed';
+    const status = driver.status || 'ACTIVE';
+    if (activeDriverTab === 'All') return true;
+    if (activeDriverTab === 'On Duty') return ['On Duty', 'ACTIVE', 'AVAILABLE', 'On Shift'].includes(status);
+    if (activeDriverTab === 'En Route') return status === 'En Route' || status === 'IN_TRANSIT';
+    if (activeDriverTab === 'At Pickup') return status === 'At Pickup' || status === 'AT_PICKUP';
+    if (activeDriverTab === 'Break') return status === 'Break' || status === 'ON_BREAK';
+    if (activeDriverTab === 'Off Duty') return status === 'Off Duty' || status === 'INACTIVE' || status === 'OFF_DUTY';
+    if (activeDriverTab === 'Unavailable') return status === 'Unavailable' || status === 'Delayed' || status === 'UNAVAILABLE';
     return true;
   });
 
@@ -608,7 +633,7 @@ export default function CommandCentre() {
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Available Drivers</span>
                   <h3 className="text-lg font-bold text-slate-900 leading-tight">
-                    {drivers.filter(d => d.status === 'On Duty' || d.status === 'En Route').length || 6}
+                    {availableDriversCount}
                   </h3>
                   <span className="text-[9.5px] font-semibold text-emerald-600 block mt-0.5">On duty</span>
                 </div>
@@ -622,7 +647,7 @@ export default function CommandCentre() {
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Available Trucks</span>
                   <h3 className="text-lg font-bold text-slate-900 leading-tight">
-                    {loads.filter(l => l.status !== 'Completed').map(l => l.vehicle).filter((v, i, self) => self.indexOf(v) === i).length || 4}
+                    {availableTrucksCount}
                   </h3>
                   <span className="text-[9.5px] font-semibold text-teal-600 block mt-0.5">Ready to go</span>
                 </div>
@@ -635,7 +660,9 @@ export default function CommandCentre() {
                 </div>
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Available Trailers</span>
-                  <h3 className="text-lg font-bold text-slate-900 leading-tight">9</h3>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                    {availableTrailersCount}
+                  </h3>
                   <span className="text-[9.5px] font-semibold text-indigo-600 block mt-0.5">Ready to go</span>
                 </div>
               </div>
@@ -688,12 +715,12 @@ export default function CommandCentre() {
                     className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-[11.5px] font-medium text-slate-700 hover:bg-slate-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs truncate"
                   >
                     <option value="All Drivers">All Drivers</option>
-                    <option value="John Doe">John Doe</option>
-                    <option value="Chris Lee">Chris Lee</option>
-                    <option value="Michael Tan">Michael Tan</option>
-                    <option value="David Brown">David Brown</option>
-                    <option value="Ben Hall">Ben Hall</option>
-                    <option value="Sarah Connor">Sarah Connor</option>
+                    {drivers.map(d => {
+                      const name = `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || d.name || 'Driver';
+                      return (
+                        <option key={d.id} value={name}>{name}</option>
+                      );
+                    })}
                   </select>
                 </div>
 
@@ -706,11 +733,9 @@ export default function CommandCentre() {
                     className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-[11.5px] font-medium text-slate-700 hover:bg-slate-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs truncate"
                   >
                     <option value="All Customers">All Customers</option>
-                    <option value="BMW Australia">BMW Australia</option>
-                    <option value="Pickles Auctions">Pickles Auctions</option>
-                    <option value="Toyota Finance">Toyota Finance</option>
-                    <option value="Hertz Australia">Hertz Australia</option>
-                    <option value="Copart Australia">Copart Australia</option>
+                    {Array.from(new Set(loads.map(l => l.customer).filter(Boolean))).map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -723,11 +748,9 @@ export default function CommandCentre() {
                     className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-[11.5px] font-medium text-slate-700 hover:bg-slate-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs truncate"
                   >
                     <option value="All Destinations">All Destinations</option>
-                    <option value="Sydney">Sydney</option>
-                    <option value="Melbourne">Melbourne</option>
-                    <option value="Brisbane">Brisbane</option>
-                    <option value="Adelaide">Adelaide</option>
-                    <option value="Perth">Perth</option>
+                    {Array.from(new Set(['Sydney', 'Melbourne', 'Brisbane', 'Adelaide', 'Perth', ...loads.map(l => l.routeTo).filter(Boolean)])).map(dest => (
+                      <option key={dest} value={dest}>{dest}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -768,10 +791,15 @@ export default function CommandCentre() {
                     onChange={(e) => setSelectedVehicle(e.target.value)}
                     className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-[11.5px] font-medium text-slate-700 hover:bg-slate-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs truncate"
                   >
-                    <option value="All">All</option>
-                    <option value="MAN TGX 26.580">MAN TGX 26.580</option>
-                    <option value="Volvo FH16 750">Volvo FH16 750</option>
-                    <option value="Scania R650">Scania R650</option>
+                    <option value="All">All Vehicles</option>
+                    {vehicles.map(v => {
+                      const label = `${v.rego || v.plate || v.id} – ${v.make || ''} ${v.model || ''}`.trim();
+                      return (
+                        <option key={v.id} value={v.rego || v.plate || v.make || v.id}>
+                          {label}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
@@ -857,50 +885,58 @@ export default function CommandCentre() {
 
                 {/* Scrollable Load Cards List */}
                 <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
-                  {filteredLoads.map((load) => (
-                    <div 
-                      key={load.id}
-                      onClick={() => {
-                        setSelectedLoadId(load.id);
-                        setView('manage-load');
-                      }}
-                      className="p-2.5 border border-slate-200/80 rounded-lg bg-white hover:border-blue-300 hover:shadow-2xs transition-all cursor-pointer text-left space-y-1"
-                    >
-                      <div className="flex justify-between items-center gap-1">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-xs font-bold text-slate-900 whitespace-nowrap">{load.id}</span>
-                          <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold whitespace-nowrap shrink-0 ${
-                            load.status === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                            load.status === 'Pending Dispatch' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-                            load.status === 'Delayed' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                            load.status === 'Planned' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                            'bg-slate-100 text-slate-600 border border-slate-200'
-                          }`}>
-                            {load.status}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <span className="text-[9.5px] text-slate-400 font-medium whitespace-nowrap">{load.date}</span>
-                          <button className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer">
-                            <MoreVertical className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="text-[11.5px] font-semibold text-slate-800">{typeof load.customer === 'object' ? load.customer?.name : load.customer}</div>
-
-                      <div className="flex items-center gap-1 text-[11px] text-slate-600">
-                        <span>{load.routeFrom}</span>
-                        <ArrowRight className="w-3 h-3 text-slate-400" />
-                        <span>{load.routeTo}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 pt-1 border-t border-slate-100">
-                        <Truck className="w-3 h-3 text-slate-400 shrink-0" />
-                        <span>{load.vehicle}</span>
-                      </div>
+                  {filteredLoads.length === 0 ? (
+                    <div className="py-12 text-center text-slate-400">
+                      <Truck className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                      <p className="text-xs font-medium text-slate-600">No loads found</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Loads created in the system will appear here.</p>
                     </div>
-                  ))}
+                  ) : (
+                    filteredLoads.map((load) => (
+                      <div 
+                        key={load.id}
+                        onClick={() => {
+                          setSelectedLoadId(load.id);
+                          setView('manage-load');
+                        }}
+                        className="p-2.5 border border-slate-200/80 rounded-lg bg-white hover:border-blue-300 hover:shadow-2xs transition-all cursor-pointer text-left space-y-1"
+                      >
+                        <div className="flex justify-between items-center gap-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-xs font-bold text-slate-900 whitespace-nowrap">{load.id}</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold whitespace-nowrap shrink-0 ${
+                              load.status === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                              load.status === 'Pending Dispatch' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                              load.status === 'Delayed' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                              load.status === 'Planned' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                              'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}>
+                              {load.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-[9.5px] text-slate-400 font-medium whitespace-nowrap">{load.date}</span>
+                            <button className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer">
+                              <MoreVertical className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="text-[11.5px] font-semibold text-slate-800">{typeof load.customer === 'object' ? load.customer?.name : load.customer}</div>
+
+                        <div className="flex items-center gap-1 text-[11px] text-slate-600">
+                          <span>{load.routeFrom}</span>
+                          <ArrowRight className="w-3 h-3 text-slate-400" />
+                          <span>{load.routeTo}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                          <Truck className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span>{load.vehicle}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -1159,24 +1195,24 @@ export default function CommandCentre() {
                 {/* Tabs */}
                 <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
                   {[
-                    { name: 'All (23)' },
-                    { name: 'On Duty (18)' },
-                    { name: 'En Route (9)' },
-                    { name: 'At Pickup (2)' },
-                    { name: 'Break (1)' },
-                    { name: 'Off Duty (3)' },
-                    { name: 'Unavailable (2)' }
+                    { id: 'All', label: 'All', count: drivers.length },
+                    { id: 'On Duty', label: 'On Duty', count: drivers.filter(d => ['On Duty', 'ACTIVE', 'AVAILABLE', 'On Shift'].includes(d.status) || !d.status).length },
+                    { id: 'En Route', label: 'En Route', count: drivers.filter(d => d.status === 'En Route' || d.status === 'IN_TRANSIT').length },
+                    { id: 'At Pickup', label: 'At Pickup', count: drivers.filter(d => d.status === 'At Pickup' || d.status === 'AT_PICKUP').length },
+                    { id: 'Break', label: 'Break', count: drivers.filter(d => d.status === 'Break' || d.status === 'ON_BREAK').length },
+                    { id: 'Off Duty', label: 'Off Duty', count: drivers.filter(d => d.status === 'Off Duty' || d.status === 'INACTIVE' || d.status === 'OFF_DUTY').length },
+                    { id: 'Unavailable', label: 'Unavailable', count: drivers.filter(d => d.status === 'Unavailable' || d.status === 'Delayed' || d.status === 'UNAVAILABLE').length }
                   ].map((tab) => (
                     <button
-                      key={tab.name}
-                      onClick={() => setActiveDriverTab(tab.name)}
+                      key={tab.id}
+                      onClick={() => setActiveDriverTab(tab.id)}
                       className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors whitespace-nowrap cursor-pointer ${
-                        activeDriverTab === tab.name 
+                        activeDriverTab === tab.id 
                           ? 'bg-blue-50 text-blue-700 border border-blue-200' 
                           : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                       }`}
                     >
-                      {tab.name}
+                      {tab.label} ({tab.count})
                     </button>
                   ))}
                 </div>
@@ -1193,89 +1229,107 @@ export default function CommandCentre() {
 
             {/* Horizontal Scrollable Cards List */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1">
-              {filteredDrivers.map((driver) => (
-                <div 
-                  key={driver.id}
-                  className="p-2.5 border border-slate-200/80 rounded-xl bg-white shadow-2xs hover:border-blue-300 transition-all text-left space-y-2 flex flex-col justify-between"
-                >
-                  <div className="space-y-1.5">
-                    {/* Header: Photo + Name + Status */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="relative">
-                          <img 
-                            src={driver.avatar} 
-                            alt={driver.name} 
-                            className="w-7 h-7 rounded-full object-cover border border-slate-200"
-                          />
-                          <span className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white ${
-                            driver.status === 'On Duty' ? 'bg-emerald-500' :
-                            driver.status === 'En Route' ? 'bg-blue-500' :
-                            driver.status === 'At Pickup' ? 'bg-amber-500' :
-                            driver.status === 'Delayed' ? 'bg-rose-500' :
-                            'bg-slate-400'
-                          }`} />
-                        </div>
-                        <div>
-                          <h4 className="text-[11.5px] font-bold text-slate-900 leading-none">{driver.name}</h4>
-                          <span className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded mt-0.5 inline-block ${
-                            driver.status === 'On Duty' ? 'bg-emerald-50 text-emerald-700' :
-                            driver.status === 'En Route' ? 'bg-blue-50 text-blue-700' :
-                            driver.status === 'At Pickup' ? 'bg-amber-50 text-amber-700' :
-                            driver.status === 'Delayed' ? 'bg-rose-50 text-rose-700' :
-                            'bg-slate-100 text-slate-600'
-                          }`}>
-                            {driver.status}
-                          </span>
-                        </div>
-                      </div>
-
-                      <button className="text-slate-400 hover:text-slate-600 cursor-pointer">
-                        <MoreVertical className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {/* Details */}
-                    <div className="space-y-1 text-[10px] text-slate-600 pt-1 border-t border-slate-100">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400 font-medium">Vehicle:</span>
-                        <span className="font-semibold text-slate-800 truncate max-w-[80px]">{driver.vehicle}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400 font-medium">Load ID:</span>
-                        <span className="font-semibold text-slate-800">{driver.loadId}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400 font-medium">Location:</span>
-                        <span className="font-semibold text-slate-800 truncate max-w-[80px]">{driver.location}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400 font-medium">Telemetry:</span>
-                        <span className={`font-bold flex items-center gap-0.5 ${driver.isDelay ? 'text-rose-600' : 'text-blue-600'}`}>
-                          {driver.isSpeed && <Zap className="w-3 h-3 text-blue-600 fill-blue-600" />}
-                          {driver.telemetry}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 pt-1.5 border-t border-slate-100">
-                    <button 
-                      onClick={() => triggerToast(`Sending message to ${driver.name}...`)}
-                      className="flex-1 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-md text-[9.5px] font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                    >
-                      <MessageSquare className="w-3 h-3 text-slate-500" />
-                    </button>
-                    <button 
-                      onClick={() => triggerToast(`Initiating call with ${driver.name}...`)}
-                      className="flex-1 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-md text-[9.5px] font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                    >
-                      <Phone className="w-3 h-3 text-slate-500" />
-                    </button>
-                  </div>
+              {filteredDrivers.length === 0 ? (
+                <div className="col-span-full py-8 text-center text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                  <Users className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                  <p className="text-xs font-medium text-slate-600">No drivers currently match the selected status.</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Drivers registered in the system will automatically appear here.</p>
                 </div>
-              ))}
+              ) : (
+                filteredDrivers.map((driver) => {
+                  const driverName = driver.name || `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || driver.driverCode || 'Driver';
+                  const driverVehicle = driver.assignedTruck?.rego || driver.assignedTruck?.plate || driver.vehicle || 'Unassigned';
+                  const linkedLoad = loads.find(l => l.driverId === driver.id && l.status !== 'DELIVERED');
+                  const loadRef = linkedLoad?.loadRef || linkedLoad?.id || driver.loadId || 'None';
+                  const location = driver.city || driver.currentLocation || driver.location || 'Depot';
+                  const telemetry = driver.telemetry || (linkedLoad ? '68 km/h • GPS Sync' : 'Stationary');
+                  const avatar = driver.avatar || driver.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(driverName)}&background=0284c7&color=fff&bold=true`;
+
+                  return (
+                    <div 
+                      key={driver.id}
+                      className="p-2.5 border border-slate-200/80 rounded-xl bg-white shadow-2xs hover:border-blue-300 transition-all text-left space-y-2 flex flex-col justify-between"
+                    >
+                      <div className="space-y-1.5">
+                        {/* Header: Photo + Name + Status */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="relative">
+                              <img 
+                                src={avatar} 
+                                alt={driverName} 
+                                className="w-7 h-7 rounded-full object-cover border border-slate-200"
+                              />
+                              <span className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white ${
+                                ['On Duty', 'ACTIVE', 'AVAILABLE', 'On Shift'].includes(driver.status) || !driver.status ? 'bg-emerald-500' :
+                                driver.status === 'En Route' ? 'bg-blue-500' :
+                                driver.status === 'At Pickup' ? 'bg-amber-500' :
+                                driver.status === 'Delayed' ? 'bg-rose-500' :
+                                'bg-slate-400'
+                              }`} />
+                            </div>
+                            <div>
+                              <h4 className="text-[11.5px] font-bold text-slate-900 leading-none">{driverName}</h4>
+                              <span className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded mt-0.5 inline-block ${
+                                ['On Duty', 'ACTIVE', 'AVAILABLE', 'On Shift'].includes(driver.status) || !driver.status ? 'bg-emerald-50 text-emerald-700' :
+                                driver.status === 'En Route' ? 'bg-blue-50 text-blue-700' :
+                                driver.status === 'At Pickup' ? 'bg-amber-50 text-amber-700' :
+                                driver.status === 'Delayed' ? 'bg-rose-50 text-rose-700' :
+                                'bg-slate-100 text-slate-600'
+                              }`}>
+                                {driver.status || 'On Duty'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <button className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Details */}
+                        <div className="space-y-1 text-[10px] text-slate-600 pt-1 border-t border-slate-100">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400 font-medium">Vehicle:</span>
+                            <span className="font-semibold text-slate-800 truncate max-w-[80px]">{driverVehicle}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400 font-medium">Load ID:</span>
+                            <span className="font-semibold text-slate-800">{loadRef}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400 font-medium">Location:</span>
+                            <span className="font-semibold text-slate-800 truncate max-w-[80px]">{location}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-400 font-medium">Telemetry:</span>
+                            <span className={`font-bold flex items-center gap-0.5 ${driver.isDelay ? 'text-rose-600' : 'text-blue-600'}`}>
+                              {driver.isSpeed && <Zap className="w-3 h-3 text-blue-600 fill-blue-600" />}
+                              {telemetry}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 pt-1.5 border-t border-slate-100">
+                        <button 
+                          onClick={() => triggerToast(`Sending message to ${driverName}...`)}
+                          className="flex-1 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-md text-[9.5px] font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <MessageSquare className="w-3 h-3 text-slate-500" />
+                        </button>
+                        <button 
+                          onClick={() => triggerToast(`Initiating call with ${driverName}...`)}
+                          className="flex-1 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-md text-[9.5px] font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <Phone className="w-3 h-3 text-slate-500" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </>
