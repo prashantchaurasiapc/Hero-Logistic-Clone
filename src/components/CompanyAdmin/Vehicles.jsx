@@ -417,6 +417,9 @@ const Vehicles = () => {
 
   // Current Trailer Assignment & Modal States
   const [currentTrailer, setCurrentTrailer] = React.useState(null);
+  const [attachedTruck, setAttachedTruck] = React.useState(null);
+  const [showAssignToTruckModal, setShowAssignToTruckModal] = React.useState(false);
+  const [selectedTruckIdForTrailer, setSelectedTruckIdForTrailer] = React.useState('');
   const [showSwapTrailerModal, setShowSwapTrailerModal] = React.useState(false);
   const [showUnassignTrailerModal, setShowUnassignTrailerModal] = React.useState(false);
   const [showViewTrailerModal, setShowViewTrailerModal] = React.useState(false);
@@ -457,6 +460,39 @@ const Vehicles = () => {
 
   const [isEditingVehicle, setIsEditingVehicle] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState('OVERVIEW');
+
+  // Check if current managing vehicle is a trailer asset
+  const isManagingTrailer = Boolean(
+    managingVehicle && (
+      ['Trailer', 'Car Trailer'].includes(managingVehicle?.type) ||
+      managingVehicle?.category === 'TRAILER' ||
+      String(managingVehicle?.type || '').toLowerCase().includes('trailer') ||
+      String(managingVehicle?.make || '').toLowerCase().includes('trailer')
+    )
+  );
+
+  React.useEffect(() => {
+    if (!managingVehicle) {
+      setAttachedTruck(null);
+      return;
+    }
+    const vKey = managingVehicle.reg || managingVehicle.rego || managingVehicle.id;
+    if (isManagingTrailer) {
+      const savedTruckRaw = localStorage.getItem(`hero_trailer_truck_${vKey}`);
+      if (savedTruckRaw) {
+        try {
+          setAttachedTruck(JSON.parse(savedTruckRaw));
+        } catch {
+          setAttachedTruck(null);
+        }
+      } else {
+        setAttachedTruck(null);
+      }
+    } else {
+      // It's a truck, check if any trailer in localStorage is attached to it
+      setAttachedTruck(null);
+    }
+  }, [managingVehicle, isManagingTrailer]);
 
   // Quick Actions Modal States
   const [showAddMaintenanceModal, setShowAddMaintenanceModal] = React.useState(false);
@@ -2401,188 +2437,290 @@ const Vehicles = () => {
           <div className="lg:col-span-3 flex flex-col gap-6 h-full">
             <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex flex-col flex-grow">
             {activeTab === 'DOCUMENTS & COMPLIANCE' || activeTab === 'MAINTENANCE & SERVICE' || activeTab === 'COSTS & EXPENSES' || activeTab === 'ACTIVITY HISTORY' ? (
-              <>
-                <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest mb-6">Linked Trailer</h3>
-                {currentTrailer ? (
-                  <div className="flex flex-col gap-4 text-[13px] font-medium h-full justify-between">
-                     <div className="flex flex-col items-center justify-center text-center">
-                       <div className="w-[120px] h-[80px] rounded-lg overflow-hidden border border-gray-200 mb-3 shadow-sm">
-                          <img 
-                            src={currentTrailer.img} 
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
-                            }}
-                            className="w-full h-full object-cover" 
-                            alt="Linked Trailer" 
-                          />
+              isManagingTrailer ? (
+                <>
+                  <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest mb-6">Assigned Prime Mover</h3>
+                  {attachedTruck ? (
+                    <div className="flex flex-col gap-4 text-[13px] font-medium h-full justify-between">
+                       <div className="flex flex-col items-center justify-center text-center">
+                         <div className="w-[120px] h-[80px] rounded-lg overflow-hidden border border-gray-200 mb-3 shadow-sm bg-purple-50 flex items-center justify-center text-purple-700">
+                            <Truck size={36} />
+                         </div>
+                         <p className="font-bold text-gray-900 text-sm mb-1">{attachedTruck.make} {attachedTruck.model}</p>
+                         <p className="text-xs text-gray-500 font-semibold mb-2">Plate: {attachedTruck.reg || attachedTruck.rego || attachedTruck.id}</p>
+                         <span className="px-2 py-0.5 bg-green-50 text-green-600 border border-green-200 rounded text-[10px] font-bold uppercase tracking-widest">Hitched</span>
                        </div>
-                       <p className="font-bold text-gray-900 text-sm mb-1">{currentTrailer.name}</p>
-                       <span className="px-2 py-0.5 bg-green-50 text-green-600 border border-green-200 rounded text-[10px] font-bold uppercase tracking-widest">Assigned</span>
-                     </div>
-                     <button 
-                       onClick={() => setShowViewTrailerModal(true)}
-                       className="w-full mt-4 border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 py-2 rounded-lg font-bold shadow-sm transition-colors cursor-pointer"
-                     >
-                       View Trailer Details
-                     </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
-                     <Truck size={28} className="text-slate-400" />
-                     <p className="font-bold text-slate-800 text-xs">No Trailer Connected</p>
-                     <p className="text-[10px] text-slate-500 font-medium">Vehicle operating standalone.</p>
-                     <button 
-                       onClick={() => setShowSwapTrailerModal(true)}
-                       className="mt-2 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition-all"
-                     >
-                       + Assign Trailer
-                     </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest mb-6">Vehicle Status</h3>
-                <div className="flex flex-col gap-4 text-[13px] font-medium">
-                   <div className="flex justify-between items-center pb-3 border-b border-gray-50">
-                      <span className="text-gray-600">Compliance</span>
-                      <span className="font-bold text-gray-400">—</span>
-                   </div>
-                   <div className="flex justify-between items-center pb-3 border-b border-gray-50">
-                      <span className="text-gray-600">Maintenance</span>
-                      <span className="font-bold text-gray-400">—</span>
-                   </div>
-                   <div className="flex justify-between items-center pb-3 border-b border-gray-50">
-                      <span className="text-gray-600">Insurance</span>
-                      <span className="font-bold text-gray-400">—</span>
-                   </div>
-                   <div className="flex justify-between items-center pb-3 border-b border-gray-50">
-                      <span className="text-gray-600">Registration</span>
-                      <div className="flex items-center gap-1.5 text-gray-600"><span className="font-bold">{managingVehicle.reg ? 'Pending Check' : '—'}</span></div>
-                   </div>
-                   <div className="flex justify-between items-center pb-3 border-b border-gray-50">
-                      <span className="text-gray-600">Roadworthy</span>
-                      <span className="font-bold text-gray-400">—</span>
-                   </div>
-                   <div className="flex justify-between items-center pb-2">
-                      <span className="text-gray-600">GPS Tracking</span>
-                      <span className="font-bold text-gray-400">—</span>
-                   </div>
-                </div>
-              </>
-            )}
+                       <button 
+                         onClick={() => {
+                           const vKey = managingVehicle.reg || managingVehicle.rego || managingVehicle.id;
+                           localStorage.removeItem(`hero_trailer_truck_${vKey}`);
+                           setAttachedTruck(null);
+                           showToast('Trailer unhitched from truck');
+                         }}
+                         className="w-full mt-4 border border-rose-200 text-rose-600 hover:bg-rose-50 py-2 rounded-lg font-bold shadow-sm transition-colors cursor-pointer text-xs"
+                       >
+                         Unhitch from Truck
+                       </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
+                       <Truck size={28} className="text-slate-400" />
+                       <p className="font-bold text-slate-800 text-xs">Parked in Depot (Yard)</p>
+                       <p className="text-[10px] text-slate-500 font-medium">Standalone trailer available for trip.</p>
+                       <button 
+                         onClick={() => setShowAssignToTruckModal(true)}
+                         className="mt-2 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition-all"
+                       >
+                         + Hitch to Truck
+                       </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest mb-6">Linked Trailer</h3>
+                  {currentTrailer ? (
+                    <div className="flex flex-col gap-4 text-[13px] font-medium h-full justify-between">
+                       <div className="flex flex-col items-center justify-center text-center">
+                         <div className="w-[120px] h-[80px] rounded-lg overflow-hidden border border-gray-200 mb-3 shadow-sm">
+                            <img 
+                              src={currentTrailer.img} 
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
+                              }}
+                              className="w-full h-full object-cover" 
+                              alt="Linked Trailer" 
+                            />
+                         </div>
+                         <p className="font-bold text-gray-900 text-sm mb-1">{currentTrailer.name}</p>
+                         <span className="px-2 py-0.5 bg-green-50 text-green-600 border border-green-200 rounded text-[10px] font-bold uppercase tracking-widest">Assigned</span>
+                       </div>
+                       <button 
+                         onClick={() => setShowViewTrailerModal(true)}
+                         className="w-full mt-4 border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 py-2 rounded-lg font-bold shadow-sm transition-colors cursor-pointer"
+                       >
+                         View Trailer Details
+                       </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
+                       <Truck size={28} className="text-slate-400" />
+                       <p className="font-bold text-slate-800 text-xs">No Trailer Connected</p>
+                       <p className="text-[10px] text-slate-500 font-medium">Vehicle operating standalone.</p>
+                       <button 
+                         onClick={() => setShowSwapTrailerModal(true)}
+                         className="mt-2 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition-all"
+                       >
+                         + Assign Trailer
+                       </button>
+                    </div>
+                  )}
+                </>
+              )
+            ) : null}
             </div>
           </div>
         </div>
 
-        {/* Middle Section */}
         {activeTab === 'OVERVIEW' && (
           <div className="space-y-6 mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* Current Trailer Assignment (Left) */}
+          {/* Current Assignment Card: Smart Display for Trailer vs Truck */}
           <div className="lg:col-span-9 bg-white border border-gray-100 rounded-2xl shadow-sm p-6 relative flex flex-col h-full">
              <div className="flex items-center gap-3 mb-6">
-                <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest">CURRENT TRAILER ASSIGNMENT</h3>
+                <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest">
+                  {isManagingTrailer ? 'ATTACHED PRIME MOVER & DRIVER' : 'CURRENT TRAILER ASSIGNMENT'}
+                </h3>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest shrink-0 ${
-                  currentTrailer ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-slate-100 text-slate-500 border border-slate-200'
+                  (isManagingTrailer ? attachedTruck : currentTrailer)
+                    ? 'bg-green-50 text-green-600 border border-green-200' 
+                    : 'bg-slate-100 text-slate-500 border border-slate-200'
                 }`}>
-                  {currentTrailer ? 'Assigned' : 'Unassigned'}
+                  {isManagingTrailer 
+                    ? (attachedTruck ? 'Hitched / In Use' : 'Available (In Yard)')
+                    : (currentTrailer ? 'Assigned' : 'Unassigned')}
                 </span>
              </div>
              
-             {currentTrailer ? (
-               <div className="flex flex-col sm:flex-row gap-6 items-start mb-auto">
-                  <div className="w-full sm:w-[220px] h-[150px] rounded-xl overflow-hidden shadow-sm shrink-0 border border-gray-100">
-                     <img 
-                       src={currentTrailer.img} 
-                       onError={(e) => {
-                         e.target.onerror = null;
-                         e.target.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
-                       }}
-                       alt="Trailer" 
-                       className="w-full h-full object-cover" 
-                     />
-                  </div>
-                  
-                  <div className="flex-grow grid grid-cols-2 sm:grid-cols-3 gap-y-5 gap-x-4 w-full">
-                     <div className="col-span-2 sm:col-span-3 flex items-center gap-3 mb-1">
-                        <h4 className="text-[17px] font-bold text-gray-900 tracking-tight">{currentTrailer.name}</h4>
-                        {currentTrailer.isPrimary && (
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded text-[10px] font-bold shrink-0">Primary Trailer</span>
-                        )}
-                     </div>
-                     
-                     <div>
-                        <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Type</p>
-                        <p className="text-sm font-bold text-gray-900">{currentTrailer.type}</p>
-                     </div>
-                     <div>
-                        <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Registration</p>
-                        <p className="text-sm font-bold text-gray-900 uppercase">{currentTrailer.reg}</p>
-                     </div>
-                     <div className="col-span-2 sm:col-span-1 sm:row-span-3 flex flex-col gap-2.5 justify-center border-l-0 sm:border-l border-gray-100 pt-4 sm:pt-0 sm:pl-6 mt-2 sm:mt-0">
-                        <button 
-                          onClick={() => setShowSwapTrailerModal(true)}
-                          className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[12px] font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm h-10"
-                        >
-                           <ArrowUpDown size={14} /> Swap Trailer
-                        </button>
-                        <button 
-                          onClick={() => setShowUnassignTrailerModal(true)}
-                          className="w-full px-4 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-[12px] font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm h-10"
-                        >
-                           <Trash2 size={14} /> Unassign Trailer
-                        </button>
-                        <button 
-                          onClick={() => setShowViewTrailerModal(true)}
-                          className="w-full px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-[12px] font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm h-10"
-                        >
-                           <ArrowUpRight size={14} /> View Trailer
-                        </button>
-                     </div>
-                     
-                     <div>
-                        <p className="text-[11px] font-semibold text-gray-500 mb-0.5">VIN / Chassis No.</p>
-                        <p className="text-[12px] font-bold text-gray-900 uppercase break-all">{currentTrailer.vin}</p>
-                     </div>
-                     <div>
-                        <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Axles</p>
-                        <p className="text-sm font-bold text-gray-900">{currentTrailer.axles}</p>
-                     </div>
-                     
-                     <div>
-                        <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Depot / Base</p>
-                        <p className="text-sm font-bold text-gray-900">{currentTrailer.depot}</p>
-                     </div>
-                     <div>
-                        <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Status</p>
-                        <p className="text-[11px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-200 inline-block">{currentTrailer.status}</p>
-                     </div>
-                  </div>
-               </div>
+             {isManagingTrailer ? (
+               /* Trailer View: Shows which Truck it is hitched to, or Available in Yard */
+               attachedTruck ? (
+                 <div className="flex flex-col sm:flex-row gap-6 items-start mb-auto">
+                    <div className="w-full sm:w-[220px] h-[150px] rounded-xl overflow-hidden shadow-sm shrink-0 border border-gray-100 bg-purple-50/50 flex flex-col items-center justify-center">
+                       <Truck size={54} className="text-purple-600 mb-1" />
+                       <span className="text-xs font-bold text-purple-900">{attachedTruck.reg || attachedTruck.id}</span>
+                    </div>
+                    
+                    <div className="flex-grow grid grid-cols-2 sm:grid-cols-3 gap-y-5 gap-x-4 w-full">
+                       <div className="col-span-2 sm:col-span-3 flex items-center gap-3 mb-1">
+                          <h4 className="text-[17px] font-bold text-gray-900 tracking-tight">{attachedTruck.make} {attachedTruck.model}</h4>
+                          <span className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[10px] font-bold shrink-0">Assigned Prime Mover</span>
+                       </div>
+                       
+                       <div>
+                          <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Assigned Driver</p>
+                          <p className="text-sm font-bold text-gray-900">{attachedTruck.driver || 'Main Fleet Driver'}</p>
+                       </div>
+                       <div>
+                          <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Truck Plate / Rego</p>
+                          <p className="text-sm font-bold text-gray-900 uppercase">{attachedTruck.reg || attachedTruck.rego || attachedTruck.id}</p>
+                       </div>
+                       <div className="col-span-2 sm:col-span-1 sm:row-span-3 flex flex-col gap-2.5 justify-center border-l-0 sm:border-l border-gray-100 pt-4 sm:pt-0 sm:pl-6 mt-2 sm:mt-0">
+                          <button 
+                            onClick={() => {
+                              const vKey = managingVehicle.reg || managingVehicle.rego || managingVehicle.id;
+                              localStorage.removeItem(`hero_trailer_truck_${vKey}`);
+                              setAttachedTruck(null);
+                              showToast('Trailer unhitched from truck');
+                            }}
+                            className="w-full px-4 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-[12px] font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm h-10"
+                          >
+                             <Trash2 size={14} /> Unhitch from Truck
+                          </button>
+                          <button 
+                            onClick={() => setShowAssignToTruckModal(true)}
+                            className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[12px] font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm h-10"
+                          >
+                             <ArrowUpDown size={14} /> Reassign Truck
+                          </button>
+                       </div>
+                       
+                       <div>
+                          <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Base Depot</p>
+                          <p className="text-sm font-bold text-gray-900">{attachedTruck.branch || managingVehicle.branch || 'Sydney Depot'}</p>
+                       </div>
+                       <div>
+                          <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Trailer Coupling</p>
+                          <p className="text-sm font-bold text-green-600">Fifth Wheel Hitched</p>
+                       </div>
+                       
+                       <div>
+                          <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Status</p>
+                          <p className="text-[11px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-200 inline-block">Active On Trip</p>
+                       </div>
+                    </div>
+                 </div>
+               ) : (
+                 <div className="border border-dashed border-slate-200 bg-slate-50/50 rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-3 mb-auto">
+                   <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
+                     <Truck size={24} />
+                   </div>
+                   <div>
+                     <h4 className="text-sm font-bold text-slate-800">Available in Yard / Depot</h4>
+                     <p className="text-xs text-slate-500 font-medium">This trailer is standalone in the yard and available for dispatch.</p>
+                   </div>
+                   <button 
+                     onClick={() => setShowAssignToTruckModal(true)} 
+                     className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-2"
+                   >
+                     <Plus size={14} /> Hitch / Assign to Truck
+                   </button>
+                 </div>
+               )
              ) : (
-               <div className="border border-dashed border-slate-200 bg-slate-50/50 rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-3 mb-auto">
-                 <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
-                   <Truck size={24} />
+               /* Truck View: Shows attached trailer */
+               currentTrailer ? (
+                 <div className="flex flex-col sm:flex-row gap-6 items-start mb-auto">
+                    <div className="w-full sm:w-[220px] h-[150px] rounded-xl overflow-hidden shadow-sm shrink-0 border border-gray-100">
+                       <img 
+                         src={currentTrailer.img} 
+                         onError={(e) => {
+                           e.target.onerror = null;
+                           e.target.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
+                         }}
+                         alt="Trailer" 
+                         className="w-full h-full object-cover" 
+                       />
+                    </div>
+                    
+                    <div className="flex-grow grid grid-cols-2 sm:grid-cols-3 gap-y-5 gap-x-4 w-full">
+                       <div className="col-span-2 sm:col-span-3 flex items-center gap-3 mb-1">
+                          <h4 className="text-[17px] font-bold text-gray-900 tracking-tight">{currentTrailer.name}</h4>
+                          {currentTrailer.isPrimary && (
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded text-[10px] font-bold shrink-0">Primary Trailer</span>
+                          )}
+                       </div>
+                       
+                       <div>
+                          <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Type</p>
+                          <p className="text-sm font-bold text-gray-900">{currentTrailer.type}</p>
+                       </div>
+                       <div>
+                          <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Registration</p>
+                          <p className="text-sm font-bold text-gray-900 uppercase">{currentTrailer.reg}</p>
+                       </div>
+                       <div className="col-span-2 sm:col-span-1 sm:row-span-3 flex flex-col gap-2.5 justify-center border-l-0 sm:border-l border-gray-100 pt-4 sm:pt-0 sm:pl-6 mt-2 sm:mt-0">
+                          <button 
+                            onClick={() => setShowSwapTrailerModal(true)}
+                            className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[12px] font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm h-10"
+                          >
+                             <ArrowUpDown size={14} /> Swap Trailer
+                          </button>
+                          <button 
+                            onClick={() => setShowUnassignTrailerModal(true)}
+                            className="w-full px-4 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-[12px] font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm h-10"
+                          >
+                             <Trash2 size={14} /> Unassign Trailer
+                          </button>
+                          <button 
+                            onClick={() => setShowViewTrailerModal(true)}
+                            className="w-full px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-[12px] font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm h-10"
+                          >
+                             <ArrowUpRight size={14} /> View Trailer
+                          </button>
+                       </div>
+                       
+                       <div>
+                          <p className="text-[11px] font-semibold text-gray-500 mb-0.5">VIN / Chassis No.</p>
+                          <p className="text-[12px] font-bold text-gray-900 uppercase break-all">{currentTrailer.vin}</p>
+                       </div>
+                       <div>
+                          <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Axles</p>
+                          <p className="text-sm font-bold text-gray-900">{currentTrailer.axles}</p>
+                       </div>
+                       
+                       <div>
+                          <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Depot / Base</p>
+                          <p className="text-sm font-bold text-gray-900">{currentTrailer.depot}</p>
+                       </div>
+                       <div>
+                          <p className="text-[11px] font-semibold text-gray-500 mb-0.5">Status</p>
+                          <p className="text-[11px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-200 inline-block">{currentTrailer.status}</p>
+                       </div>
+                    </div>
                  </div>
-                 <div>
-                   <h4 className="text-sm font-bold text-slate-800">No Trailer Currently Assigned</h4>
-                   <p className="text-xs text-slate-500 font-medium">This vehicle is operating standalone without an attached trailer.</p>
+               ) : (
+                 <div className="border border-dashed border-slate-200 bg-slate-50/50 rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-3 mb-auto">
+                   <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+                     <Truck size={24} />
+                   </div>
+                   <div>
+                     <h4 className="text-sm font-bold text-slate-800">No Trailer Currently Assigned</h4>
+                     <p className="text-xs text-slate-500 font-medium">This vehicle is operating standalone without an attached trailer.</p>
+                   </div>
+                   <button 
+                     onClick={() => setShowSwapTrailerModal(true)} 
+                     className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-2"
+                   >
+                     <Plus size={14} /> Assign New Trailer
+                   </button>
                  </div>
-                 <button 
-                   onClick={() => setShowSwapTrailerModal(true)} 
-                   className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-2"
-                 >
-                   <Plus size={14} /> Assign New Trailer
-                 </button>
-               </div>
+               )
              )}
              
              <div className="mt-6 flex items-center gap-3 bg-blue-50/50 p-3 rounded-lg border border-blue-100/60 text-left">
                 <Info size={16} className="text-blue-500 shrink-0" />
-                <p className="text-[12px] text-gray-600 font-medium leading-relaxed">This trailer is currently assigned to this vehicle. You can swap, unassign or view trailer details.</p>
+                <p className="text-[12px] text-gray-600 font-medium leading-relaxed">
+                  {isManagingTrailer 
+                    ? (attachedTruck 
+                        ? 'This trailer is currently attached to an active prime mover. It will be dispatched alongside this truck.' 
+                        : 'Trailers save independently as standalone assets. They remain available in depot until hitched to an active prime mover.')
+                    : (currentTrailer 
+                        ? 'This trailer is currently assigned to this vehicle. You can swap, unassign or view trailer details.' 
+                        : 'This prime mover operates standalone (bobtail). You can attach an available trailer at any time.')}
+                </p>
              </div>
           </div>
 
@@ -4771,6 +4909,91 @@ const Vehicles = () => {
                 className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${deactivateConfirmText === 'DEACTIVATE' && deactivateReason ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer shadow-sm' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
               >
                 <Trash2 size={15} /> Deactivate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HITCH TO TRUCK MODAL (FOR TRAILERS) */}
+      {showAssignToTruckModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4" onClick={() => setShowAssignToTruckModal(false)}>
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden text-left border border-slate-100 animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-purple-900 text-white">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                  <Truck size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base">Hitch Trailer to Prime Mover (Truck)</h3>
+                  <p className="text-[10px] text-purple-200">Select an active truck to attach this trailer to</p>
+                </div>
+              </div>
+              <button onClick={() => setShowAssignToTruckModal(false)} className="text-purple-200 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer border-0 bg-transparent">
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="bg-purple-50/60 border border-purple-200/80 rounded-xl p-3 flex items-center gap-3">
+                <div className="w-12 h-10 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                  <Truck size={22} />
+                </div>
+                <div>
+                  <span className="text-[9px] font-black uppercase text-purple-700 tracking-wider">Trailer Selected</span>
+                  <h4 className="text-xs font-bold text-slate-800">{managingVehicle?.make} {managingVehicle?.model}</h4>
+                  <p className="text-[10px] text-slate-500 font-medium">Plate: {managingVehicle?.reg || managingVehicle?.rego || managingVehicle?.id}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Prime Mover (Truck) *</label>
+                <select 
+                  value={selectedTruckIdForTrailer} 
+                  onChange={(e) => setSelectedTruckIdForTrailer(e.target.value)} 
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer"
+                >
+                  <option value="">-- Choose an Available Truck --</option>
+                  {vehicles
+                    .filter(v => !['Trailer', 'Car Trailer'].includes(v.type) && v.category !== 'TRAILER')
+                    .map(trk => (
+                      <option key={trk.id} value={trk.id}>
+                        {trk.reg || trk.rego || trk.id} – {trk.make} {trk.model} ({trk.branch || 'Sydney Depot'})
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-500 leading-relaxed">
+                💡 <span className="font-semibold text-slate-700">Notice:</span> Hitching will link this trailer to the selected prime mover. Dispatches and trip telematics will reflect this combination.
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+              <button 
+                type="button" 
+                onClick={() => setShowAssignToTruckModal(false)} 
+                className="px-4 py-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                disabled={!selectedTruckIdForTrailer}
+                onClick={() => {
+                  const targetTruck = vehicles.find(v => String(v.id) === String(selectedTruckIdForTrailer));
+                  if (targetTruck && managingVehicle) {
+                    const vKey = managingVehicle.reg || managingVehicle.rego || managingVehicle.id;
+                    localStorage.setItem(`hero_trailer_truck_${vKey}`, JSON.stringify(targetTruck));
+                    setAttachedTruck(targetTruck);
+                    setShowAssignToTruckModal(false);
+                    setSelectedTruckIdForTrailer('');
+                    showToast(`Trailer hitched to ${targetTruck.reg || targetTruck.id} successfully!`);
+                  }
+                }} 
+                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <Check size={14} /> Confirm Hitch to Truck
               </button>
             </div>
           </div>
