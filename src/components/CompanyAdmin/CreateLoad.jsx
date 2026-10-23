@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   ArrowLeft, Save, Zap, Plus, Trash2, GripVertical,
-  MapPin, User, Calendar, Clock, Package, Truck,
+  MapPin, User, Phone, Calendar, Clock, Package, Truck,
   Upload, ChevronDown, ChevronLeft, AlertCircle, CheckCircle, Info,
   Camera, X, Search, Flag, MoreVertical, DollarSign
 } from 'lucide-react';
@@ -12,6 +12,14 @@ import { dispatcherStore } from '../../services/dispatcherStore';
 const STOP_TYPES = ['Pickup', 'Drop-off'];
 const PRIORITIES  = ['Normal', 'Urgent', 'High'];
 const LOAD_TYPES  = ['Car Carrying', 'General Freight', 'Dangerous Goods'];
+
+const getTodayLocalDate = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 function SectionHeader({ number, title, subtitle, action, colorCls = "bg-indigo-600" }) {
   return (
@@ -509,7 +517,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
     loadType: 'General Freight',
     loadRef: `PO-${Math.floor(100000 + Math.random() * 900000)}`,
     priority: 'Normal',
-    loadDate: new Date().toISOString().split('T')[0],
+    loadDate: getTodayLocalDate(),
     truck: '',
     trailer: '',
     driver: '',
@@ -1027,7 +1035,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
       addressDetails: null,
       contactName: '',
       contactPhone: '',
-      date: formData.loadDate || new Date().toISOString().split('T')[0],
+      date: formData.loadDate || getTodayLocalDate(),
       time: '',
       instructions: ''
     });
@@ -1497,6 +1505,20 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                                 const newPrimary = newBilled.length > 0 ? newBilled[0] : '';
                                 setFormData({ ...formData, billedCustomerIds: newBilled, customer: newPrimary });
                                 setItems(prev => prev.map(item => ({ ...item, customer: item.customer || newPrimary })));
+
+                                // Auto-populate customer site contact into Drop-off stop if empty
+                                if (e.target.checked && (c.contactName || c.phone)) {
+                                  setStops(prev => prev.map(s => {
+                                    if (s.type === 'Drop-off' && !s.contactName && !s.contactPhone) {
+                                      return {
+                                        ...s,
+                                        contactName: c.contactName || s.contactName,
+                                        contactPhone: c.phone || s.contactPhone
+                                      };
+                                    }
+                                    return s;
+                                  }));
+                                }
                               }}
                               className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer shadow-xs"
                             />
@@ -1576,11 +1598,24 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
               <div className="relative">
                 <input
                   type="date"
-                  value={formData.loadDate || '2025-07-08'}
+                  value={formData.loadDate || ''}
+                  onClick={(e) => { try { e.currentTarget.showPicker(); } catch (err) {} }}
                   onChange={e => setFormData({ ...formData, loadDate: e.target.value })}
-                  className={`${inputCls} relative z-10 bg-transparent pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                  className={`${inputCls} pr-10 cursor-pointer`}
                 />
-                <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-0 pointer-events-none" />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    const input = e.currentTarget.parentElement?.querySelector('input[type="date"]');
+                    try { input?.showPicker(); } catch (err) {}
+                    input?.focus();
+                  }}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors z-20 cursor-pointer p-0.5"
+                  title="Select Date"
+                >
+                  <Calendar className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
@@ -1785,10 +1820,23 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                       <input
                         type="date"
                         value={stop.date || ''}
+                        onClick={(e) => { try { e.currentTarget.showPicker(); } catch (err) {} }}
                         onChange={e => updateStop(stop.id, 'date', e.target.value)}
-                        className={`${inputCls} text-xs py-2 pr-8 relative z-10 bg-white [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                        className={`${inputCls} text-xs py-2 pr-8 relative z-10 bg-white cursor-pointer`}
                       />
-                      <Calendar className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-20" />
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        onClick={(e) => {
+                          const input = e.currentTarget.parentElement?.querySelector('input[type="date"]');
+                          try { input?.showPicker(); } catch (err) {}
+                          input?.focus();
+                        }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer z-20 p-0.5"
+                        title="Select Date"
+                      >
+                        <Calendar className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                   <div>
@@ -1797,10 +1845,23 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                       <input
                         type="time"
                         value={stop.time || ''}
+                        onClick={(e) => { try { e.currentTarget.showPicker(); } catch (err) {} }}
                         onChange={e => updateStop(stop.id, 'time', e.target.value)}
-                        className={`${inputCls} text-xs py-2 pr-8 relative z-10 bg-white [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                        className={`${inputCls} text-xs py-2 pr-8 relative z-10 bg-white cursor-pointer`}
                       />
-                      <Clock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-20" />
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        onClick={(e) => {
+                          const input = e.currentTarget.parentElement?.querySelector('input[type="time"]');
+                          try { input?.showPicker(); } catch (err) {}
+                          input?.focus();
+                        }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer z-20 p-0.5"
+                        title="Select Time"
+                      >
+                        <Clock className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1816,7 +1877,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                 <div className="w-8 shrink-0 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">#</div>
                 <div className="w-32 shrink-0 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Type</div>
                 <div className="flex-1 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Address / Suburb</div>
-                <div className="w-36 shrink-0 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Contact</div>
+                <div className="w-44 shrink-0 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Contact</div>
                 <div className="w-36 shrink-0 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Date</div>
                 <div className="w-32 shrink-0 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Time</div>
                 <div className="w-8 shrink-0 text-right text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Actions</div>
@@ -1891,21 +1952,27 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                     </div>
 
                     {/* Contact */}
-                    <div className="w-36 shrink-0 flex flex-col gap-1 px-1">
-                      <input
-                        type="text"
-                        value={stop.contactName || ''}
-                        onChange={e => updateStop(stop.id, 'contactName', e.target.value)}
-                        className="w-full bg-transparent border-none p-0 text-[10.5px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none leading-none"
-                        placeholder="Contact Name"
-                      />
-                      <input
-                        type="text"
-                        value={stop.contactPhone || ''}
-                        onChange={e => updateStop(stop.id, 'contactPhone', e.target.value)}
-                        className="w-full bg-transparent border-none p-0 text-[9.5px] font-bold text-slate-500 focus:ring-0 placeholder-slate-300 outline-none leading-none"
-                        placeholder="Phone Number"
-                      />
+                    <div className="w-44 shrink-0 flex flex-col gap-1 px-2 py-1 bg-slate-50/80 border border-slate-200/90 rounded-lg hover:border-indigo-300 focus-within:border-indigo-500 focus-within:bg-white transition-all shadow-xs">
+                      <div className="flex items-center gap-1.5">
+                        <User className="w-3 h-3 text-slate-400 shrink-0" />
+                        <input
+                          type="text"
+                          value={stop.contactName || ''}
+                          onChange={e => updateStop(stop.id, 'contactName', e.target.value)}
+                          className="w-full bg-transparent border-none p-0 text-[11px] font-bold text-slate-800 placeholder-slate-400 focus:ring-0 outline-none leading-none"
+                          placeholder={stop.type === 'Pickup' ? "Shipper / Yard Contact" : "Receiver Contact"}
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5 border-t border-slate-100/80 pt-0.5">
+                        <Phone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                        <input
+                          type="text"
+                          value={stop.contactPhone || ''}
+                          onChange={e => updateStop(stop.id, 'contactPhone', e.target.value)}
+                          className="w-full bg-transparent border-none p-0 text-[10px] font-semibold text-slate-600 placeholder-slate-400 focus:ring-0 outline-none leading-none"
+                          placeholder="Phone / Mobile"
+                        />
+                      </div>
                     </div>
 
                     {/* Date */}
@@ -1914,10 +1981,23 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                         <input
                           type="date"
                           value={stop.date || ''}
+                          onClick={(e) => { try { e.currentTarget.showPicker(); } catch (err) {} }}
                           onChange={e => updateStop(stop.id, 'date', e.target.value)}
-                          className={`${inputCls} text-[11px] py-2 pl-2.5 pr-8 relative z-10 bg-white [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                          className={`${inputCls} text-[11px] py-2 pl-2.5 pr-8 relative z-10 bg-white cursor-pointer`}
                         />
-                        <Calendar className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-20" />
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          onClick={(e) => {
+                            const input = e.currentTarget.parentElement?.querySelector('input[type="date"]');
+                            try { input?.showPicker(); } catch (err) {}
+                            input?.focus();
+                          }}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer z-20 p-0.5"
+                          title="Select Date"
+                        >
+                          <Calendar className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
 
@@ -1927,10 +2007,23 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                         <input
                           type="time"
                           value={stop.time || ''}
+                          onClick={(e) => { try { e.currentTarget.showPicker(); } catch (err) {} }}
                           onChange={e => updateStop(stop.id, 'time', e.target.value)}
-                          className={`${inputCls} text-[11px] py-2 pl-2.5 pr-8 relative z-10 bg-white [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                          className={`${inputCls} text-[11px] py-2 pl-2.5 pr-8 relative z-10 bg-white cursor-pointer`}
                         />
-                        <Clock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-20" />
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          onClick={(e) => {
+                            const input = e.currentTarget.parentElement?.querySelector('input[type="time"]');
+                            try { input?.showPicker(); } catch (err) {}
+                            input?.focus();
+                          }}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer z-20 p-0.5"
+                          title="Select Time"
+                        >
+                          <Clock className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
 
@@ -3268,11 +3361,24 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                   <div className="relative">
                     <input
                       type="date"
-                      value={newStopForm.date}
+                      value={newStopForm.date || ''}
+                      onClick={(e) => { try { e.currentTarget.showPicker(); } catch (err) {} }}
                       onChange={e => setNewStopForm(f => ({ ...f, date: e.target.value }))}
-                      className={`${inputCls} pr-10`}
+                      className={`${inputCls} pr-10 cursor-pointer`}
                     />
-                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={(e) => {
+                        const input = e.currentTarget.parentElement?.querySelector('input[type="date"]');
+                        try { input?.showPicker(); } catch (err) {}
+                        input?.focus();
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-0.5"
+                      title="Select Date"
+                    >
+                      <Calendar className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
                 <div>
@@ -3280,11 +3386,24 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                   <div className="relative">
                     <input
                       type="time"
-                      value={newStopForm.time}
+                      value={newStopForm.time || ''}
+                      onClick={(e) => { try { e.currentTarget.showPicker(); } catch (err) {} }}
                       onChange={e => setNewStopForm(f => ({ ...f, time: e.target.value }))}
-                      className={`${inputCls} pr-10`}
+                      className={`${inputCls} pr-10 cursor-pointer`}
                     />
-                    <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={(e) => {
+                        const input = e.currentTarget.parentElement?.querySelector('input[type="time"]');
+                        try { input?.showPicker(); } catch (err) {}
+                        input?.focus();
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-0.5"
+                      title="Select Time"
+                    >
+                      <Clock className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
