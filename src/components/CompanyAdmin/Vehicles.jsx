@@ -507,6 +507,68 @@ const Vehicles = () => {
   const [viewingDocModal, setViewingDocModal] = React.useState(null);
   const [editingDocModal, setEditingDocModal] = React.useState(null);
   const [viewingMaintenanceModal, setViewingMaintenanceModal] = React.useState(null);
+  const [maintenanceList, setMaintenanceList] = React.useState([]);
+  const [maintenanceSearchQuery, setMaintenanceSearchQuery] = React.useState('');
+  const [maintenanceFilterStatus, setMaintenanceFilterStatus] = React.useState('All');
+  const [showLogMaintenanceModal, setShowLogMaintenanceModal] = React.useState(false);
+  const [newMaintenanceForm, setNewMaintenanceForm] = React.useState({
+    date: new Date().toISOString().split('T')[0],
+    type: 'Scheduled Service',
+    description: '',
+    workshop: '',
+    odometer: '',
+    cost: '',
+    nextDue: '',
+    status: 'Completed'
+  });
+
+  const handleLogMaintenance = (e) => {
+    e.preventDefault();
+    if (!newMaintenanceForm.description || !newMaintenanceForm.cost) return;
+    const newEntry = {
+      id: Date.now(),
+      date: newMaintenanceForm.date || new Date().toISOString().split('T')[0],
+      type: newMaintenanceForm.type || 'Scheduled Service',
+      description: newMaintenanceForm.description,
+      workshop: newMaintenanceForm.workshop || 'Internal Workshop',
+      odometer: newMaintenanceForm.odometer ? `${Number(newMaintenanceForm.odometer).toLocaleString()} km` : (managingVehicle?.odometer ? `${managingVehicle.odometer} km` : '0 km'),
+      cost: `${Number(newMaintenanceForm.cost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      costRaw: Number(newMaintenanceForm.cost) || 0,
+      nextDue: newMaintenanceForm.nextDue ? `${Number(newMaintenanceForm.nextDue).toLocaleString()} km` : '--',
+      status: newMaintenanceForm.status || 'Completed'
+    };
+    setMaintenanceList(prev => [newEntry, ...prev]);
+    setShowLogMaintenanceModal(false);
+    setNewMaintenanceForm({
+      date: new Date().toISOString().split('T')[0],
+      type: 'Scheduled Service',
+      description: '',
+      workshop: '',
+      odometer: '',
+      cost: '',
+      nextDue: '',
+      status: 'Completed'
+    });
+    showDocToast(`Maintenance record "${newEntry.description}" logged successfully!`);
+  };
+
+  const filteredMaintenance = React.useMemo(() => {
+    return maintenanceList.filter(item => {
+      if (maintenanceFilterStatus !== 'All' && item.status !== maintenanceFilterStatus) return false;
+      if (maintenanceSearchQuery.trim()) {
+        const q = maintenanceSearchQuery.toLowerCase();
+        const mDesc = (item.description || '').toLowerCase().includes(q);
+        const mType = (item.type || '').toLowerCase().includes(q);
+        const mShop = (item.workshop || '').toLowerCase().includes(q);
+        if (!mDesc && !mType && !mShop) return false;
+      }
+      return true;
+    });
+  }, [maintenanceList, maintenanceFilterStatus, maintenanceSearchQuery]);
+
+  const totalMaintenanceCost = React.useMemo(() => {
+    return maintenanceList.reduce((acc, cur) => acc + (cur.costRaw || 0), 0);
+  }, [maintenanceList]);
   const [showUploadDocModal, setShowUploadDocModal] = React.useState(false);
   const [isComplianceModalOpen, setIsComplianceModalOpen] = React.useState(false);
   const [isAIInsightsModalOpen, setIsAIInsightsModalOpen] = React.useState(false);
@@ -3073,23 +3135,27 @@ const Vehicles = () => {
                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <div className="flex flex-col gap-1">
                                <div className="flex items-center gap-1.5 text-purple-700 font-bold text-[11px]"><Wrench size={12} /> Next Service (Km)</div>
-                               <div className="text-[15px] font-black text-gray-900">270,000 km</div>
-                               <div className="text-[10px] font-bold text-green-600">In 13,211 km</div>
+                               <div className="text-[15px] font-black text-gray-900">
+                                  {maintenanceList.length > 0 && maintenanceList[0].nextDue && maintenanceList[0].nextDue !== '--' ? maintenanceList[0].nextDue : '--'}
+                                </div>
+                               <div className="text-[10px] font-bold text-slate-400">
+                                  {maintenanceList.length > 0 && maintenanceList[0].nextDue && maintenanceList[0].nextDue !== '--' ? 'Scheduled' : 'Not scheduled'}
+                               </div>
                             </div>
                             <div className="flex flex-col gap-1 sm:pl-3 border-none sm:border-solid border-l border-gray-100">
                                <div className="flex items-center gap-1.5 text-purple-700 font-bold text-[11px]"><Calendar size={12} /> Next Service (Date)</div>
-                               <div className="text-[15px] font-black text-gray-900">22 Aug 2025</div>
-                               <div className="text-[10px] font-bold text-green-600">In 28 days</div>
+                               <div className="text-[15px] font-black text-gray-900">--</div>
+                               <div className="text-[10px] font-bold text-slate-400">Not scheduled</div>
                             </div>
                             <div className="flex flex-col gap-1 sm:pl-3 border-none sm:border-solid border-l border-gray-100">
                                <div className="flex items-center gap-1.5 text-purple-700 font-bold text-[11px]"><ShieldAlert size={12} /> Next Inspection</div>
-                               <div className="text-[15px] font-black text-gray-900">5 Aug 2025</div>
-                               <div className="text-[10px] font-bold text-orange-500">In 11 days</div>
+                               <div className="text-[15px] font-black text-gray-900">--</div>
+                               <div className="text-[10px] font-bold text-slate-400">Not scheduled</div>
                             </div>
                             <div className="flex flex-col gap-1 sm:pl-3 border-none sm:border-solid border-l border-gray-100">
                                <div className="flex items-center gap-1.5 text-purple-700 font-bold text-[11px]"><RefreshCw size={12} /> Tyre Rotation</div>
-                               <div className="text-[15px] font-black text-gray-900">15 Aug 2025</div>
-                               <div className="text-[10px] font-bold text-green-600">In 21 days</div>
+                               <div className="text-[15px] font-black text-gray-900">--</div>
+                               <div className="text-[10px] font-bold text-slate-400">Not scheduled</div>
                             </div>
                          </div>
                       </div>
@@ -3100,8 +3166,10 @@ const Vehicles = () => {
                                <Gauge size={18} />
                             </div>
                             <div className="flex flex-col min-w-0">
-                               <div className="text-[17px] font-black text-gray-900 tracking-tight truncate">256,789 km</div>
-                               <div className="text-[10px] font-medium text-gray-500 truncate">Last Updated: Today, 07:35 AM</div>
+                               <div className="text-[17px] font-black text-gray-900 tracking-tight truncate">
+                                  {managingVehicle?.odometer ? `${Number(managingVehicle.odometer).toLocaleString()} km` : '0 km'}
+                               </div>
+                               <div className="text-[10px] font-medium text-gray-500 truncate">Registered reading</div>
                             </div>
                          </div>
                       </div>
@@ -3110,18 +3178,28 @@ const Vehicles = () => {
                   {/* Maintenance History */}
                   <div className="bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col">
                      <div className="p-6 pb-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest">MAINTENANCE HISTORY</h3>
                         <div className="flex items-center gap-3">
-                           <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-[12px] font-bold shadow-sm hover:bg-gray-50 cursor-pointer">
-                              <Filter size={14} /> Filters
+                           <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest">MAINTENANCE HISTORY</h3>
+                           <span className="px-2.5 py-0.5 bg-purple-700 text-white rounded-md text-[11px] font-bold">{filteredMaintenance.length}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                           <button 
+                             type="button"
+                             onClick={() => setShowLogMaintenanceModal(true)}
+                             className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-[12px] font-bold shadow-sm transition-all cursor-pointer"
+                           >
+                              <Plus size={14} /> Log Service
                            </button>
                            <div className="relative hidden sm:block">
                               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                              <input type="text" placeholder="Search maintenance..." className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-[12px] focus:outline-none focus:border-purple-300 shadow-sm w-48" />
+                              <input 
+                                type="text" 
+                                value={maintenanceSearchQuery}
+                                onChange={e => setMaintenanceSearchQuery(e.target.value)}
+                                placeholder="Search maintenance..." 
+                                className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-[12px] focus:outline-none focus:border-purple-300 shadow-sm w-48 text-slate-800" 
+                              />
                            </div>
-                           <button className="flex items-center justify-center w-9 h-9 bg-white border border-gray-200 text-gray-600 rounded-lg shadow-sm hover:bg-gray-50 cursor-pointer">
-                              <Download size={14} />
-                           </button>
                         </div>
                      </div>
                      <div className="overflow-x-auto min-w-0">
@@ -3140,249 +3218,56 @@ const Vehicles = () => {
                               </tr>
                            </thead>
                            <tbody className="divide-y divide-gray-50 text-gray-700 font-medium">
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">15 May 2025</td>
-                                 <td className="py-3 px-4 whitespace-nowrap"><div className="flex items-center gap-1.5 text-blue-600 font-bold"><div className="w-5 h-5 rounded bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0"><Settings size={12} /></div> Major Service</div></td>
-                                 <td className="py-3 px-4 whitespace-nowrap text-gray-900 font-bold">250,000 km Service</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">Volvo Truck Centre Sydney</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">250,100 km</td>
-                                 <td className="py-3 px-4 whitespace-nowrap font-bold text-gray-900">$1,850.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">270,000 km</td>
-                                 <td className="py-3 px-4 whitespace-nowrap"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Completed</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '15 May 2025', type: 'Major Service', description: '250,000 km Service', workshop: 'Volvo Truck Centre Sydney', odometer: '250,100 km', cost: '$1,850.00', nextDue: '270,000 km', status: 'Completed' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">10 Apr 2025</td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-green-600 font-bold"><div className="w-5 h-5 rounded bg-green-50 flex items-center justify-center border border-green-100 shrink-0"><Droplet size={12} /></div> Oil Change</div></td>
-                                 <td className="py-3 px-4 text-gray-900 font-bold truncate max-w-[200px]">Engine Oil & Filter Change</td>
-                                 <td className="py-3 px-4 truncate max-w-[180px]">Volvo Truck Centre Sydney</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">246,800 km</td>
-                                 <td className="py-3 px-4 font-bold text-gray-900">$320.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">256,800 km</td>
-                                 <td className="py-3 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Completed</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '10 Apr 2025', type: 'Oil Change', description: 'Engine Oil & Filter Change', workshop: 'Volvo Truck Centre Sydney', odometer: '246,800 km', cost: '$320.00', nextDue: '256,800 km', status: 'Completed' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">25 Mar 2025</td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-gray-600 font-bold"><div className="w-5 h-5 rounded bg-gray-50 flex items-center justify-center border border-gray-200 shrink-0"><AlertCircle size={12} /></div> Brake Inspection</div></td>
-                                 <td className="py-3 px-4 text-gray-900 font-bold truncate max-w-[200px]">Brake System Inspection</td>
-                                 <td className="py-3 px-4 truncate max-w-[180px]">Volvo Truck Centre Sydney</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">242,900 km</td>
-                                 <td className="py-3 px-4 font-bold text-gray-900">$210.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">260,000 km</td>
-                                 <td className="py-3 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Completed</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '25 Mar 2025', type: 'Brake Inspection', description: 'Brake System Inspection', workshop: 'Volvo Truck Centre Sydney', odometer: '242,900 km', cost: '$210.00', nextDue: '260,000 km', status: 'Completed' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">20 Feb 2025</td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-gray-600 font-bold"><div className="w-5 h-5 rounded bg-gray-50 flex items-center justify-center border border-gray-200 shrink-0"><RefreshCw size={12} /></div> Tyre Rotation</div></td>
-                                 <td className="py-3 px-4 text-gray-900 font-bold truncate max-w-[200px]">Rotate Tyres</td>
-                                 <td className="py-3 px-4 truncate max-w-[180px]">Tyre Right Campbelltown</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">239,450 km</td>
-                                 <td className="py-3 px-4 font-bold text-gray-900">$180.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">260,000 km</td>
-                                 <td className="py-3 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Completed</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '20 Feb 2025', type: 'Tyre Rotation', description: 'Rotate Tyres', workshop: 'Tyre Right Campbelltown', odometer: '239,450 km', cost: '$180.00', nextDue: '260,000 km', status: 'Completed' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">05 Jan 2025</td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-orange-500 font-bold"><div className="w-5 h-5 rounded bg-orange-50 flex items-center justify-center border border-orange-100 shrink-0"><Droplet size={12} /></div> Coolant Flush</div></td>
-                                 <td className="py-3 px-4 text-gray-900 font-bold truncate max-w-[200px]">Cooling System Flush</td>
-                                 <td className="py-3 px-4 truncate max-w-[180px]">Volvo Truck Centre Sydney</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">233,000 km</td>
-                                 <td className="py-3 px-4 font-bold text-gray-900">$540.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">260,000 km</td>
-                                 <td className="py-3 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200">Attention</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '05 Jan 2025', type: 'Coolant Flush', description: 'Cooling System Flush', workshop: 'Volvo Truck Centre Sydney', odometer: '233,000 km', cost: '$540.00', nextDue: '260,000 km', status: 'Attention' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">12 Dec 2024</td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-green-600 font-bold"><div className="w-5 h-5 rounded bg-green-50 flex items-center justify-center border border-green-100 shrink-0"><Zap size={12} /></div> Battery Check</div></td>
-                                 <td className="py-3 px-4 text-gray-900 font-bold truncate max-w-[200px]">Battery Load Test</td>
-                                 <td className="py-3 px-4 truncate max-w-[180px]">Volvo Truck Centre Sydney</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">228,500 km</td>
-                                 <td className="py-3 px-4 font-bold text-gray-900">$95.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">240,000 km</td>
-                                 <td className="py-3 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Completed</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '12 Dec 2024', type: 'Battery Check', description: 'Battery Load Test', workshop: 'Volvo Truck Centre Sydney', odometer: '228,500 km', cost: '$95.00', nextDue: '240,000 km', status: 'Completed' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">18 Nov 2024</td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-blue-600 font-bold"><div className="w-5 h-5 rounded bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0"><Wind size={12} /></div> Air Filter</div></td>
-                                 <td className="py-3 px-4 text-gray-900 font-bold truncate max-w-[200px]">Air Filter Replacement</td>
-                                 <td className="py-3 px-4 truncate max-w-[180px]">Volvo Truck Centre Sydney</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">223,200 km</td>
-                                 <td className="py-3 px-4 font-bold text-gray-900">$140.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">243,200 km</td>
-                                 <td className="py-3 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Completed</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '18 Nov 2024', type: 'Air Filter', description: 'Air Filter Replacement', workshop: 'Volvo Truck Centre Sydney', odometer: '223,200 km', cost: '$140.00', nextDue: '243,200 km', status: 'Completed' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
+                              {filteredMaintenance.length === 0 ? (
+                                 <tr>
+                                    <td colSpan="9" className="py-12 text-center text-slate-400 font-medium">
+                                       <div className="flex flex-col items-center gap-2">
+                                          <Wrench size={32} className="text-slate-300" />
+                                          <p className="text-xs font-bold text-slate-600">No maintenance records found</p>
+                                          <p className="text-[11px] text-slate-400">No service history has been recorded for this vehicle yet.</p>
+                                       </div>
+                                    </td>
+                                 </tr>
+                              ) : (
+                                 filteredMaintenance.map((item) => (
+                                    <tr key={item.id} className="hover:bg-gray-50/50">
+                                       <td className="py-3 px-6 whitespace-nowrap">{item.date}</td>
+                                       <td className="py-3 px-4 whitespace-nowrap">
+                                          <div className="flex items-center gap-1.5 text-blue-600 font-bold">
+                                             <div className="w-5 h-5 rounded bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0"><Settings size={12} /></div> {item.type}
+                                          </div>
+                                       </td>
+                                       <td className="py-3 px-4 whitespace-nowrap text-gray-900 font-bold">{item.description}</td>
+                                       <td className="py-3 px-4 whitespace-nowrap">{item.workshop}</td>
+                                       <td className="py-3 px-4 whitespace-nowrap">{item.odometer}</td>
+                                       <td className="py-3 px-4 whitespace-nowrap font-bold text-gray-900">{item.cost}</td>
+                                       <td className="py-3 px-4 whitespace-nowrap">{item.nextDue}</td>
+                                       <td className="py-3 px-4 whitespace-nowrap">
+                                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${item.status === 'Completed' ? 'text-green-600 bg-green-50 border border-green-200' : 'text-orange-600 bg-orange-50 border border-orange-200'}`}>{item.status}</span>
+                                       </td>
+                                       <td className="py-3 px-6">
+                                           <div className="flex justify-center items-center gap-2">
+                                              <button 
+                                                 type="button"
+                                                 onClick={() => setViewingMaintenanceModal(item)} 
+                                                 className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
+                                                 title="View Details"
+                                              >
+                                                 <Eye size={13} />
+                                                 <span>View</span>
+                                              </button>
+                                           </div>
+                                        </td>
+                                    </tr>
+                                 ))
+                              )}
                            </tbody>
                         </table>
                      </div>
                      <div className="px-6 py-4 border-t border-gray-100 flex flex-wrap justify-between items-center bg-gray-50/50 mt-auto gap-4 rounded-b-2xl">
-                        <span className="text-[12px] font-medium text-gray-500">Showing 1 to 7 of 27 records</span>
-                        <div className="flex items-center gap-3">
-                           <div className="flex bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm">
-                              <button className="px-2.5 py-1 text-gray-400 border-r border-gray-200 cursor-not-allowed bg-gray-50"><ChevronLeft size={14} /></button>
-                              <button className="px-3 py-1 text-purple-700 font-bold border-r border-gray-200 bg-purple-50/50 cursor-pointer">1</button>
-                              <button className="px-3 py-1 text-gray-600 font-bold border-r border-gray-200 hover:bg-gray-50 cursor-pointer">2</button>
-                              <button className="px-3 py-1 text-gray-600 font-bold border-r border-gray-200 hover:bg-gray-50 cursor-pointer">3</button>
-                              <button className="px-3 py-1 text-gray-600 font-bold border-r border-gray-200 hover:bg-gray-50 cursor-pointer">4</button>
-                              <button className="px-2.5 py-1 text-gray-600 cursor-pointer hover:bg-gray-50"><ChevronRight size={14} /></button>
-                           </div>
-                           <select className="border border-gray-200 bg-white rounded-md px-2.5 py-1 text-[12px] font-medium text-gray-700 focus:outline-none cursor-pointer shadow-sm">
-                              <option>10 / page</option>
-                           </select>
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* Developer Notes */}
-                  <div className="bg-[#f8f9fc] border border-purple-100 rounded-2xl p-6">
-                     <h3 className="text-[12px] font-black text-purple-900 uppercase tracking-widest flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 rounded bg-purple-100 flex items-center justify-center shrink-0"><Terminal size={14} className="text-purple-700" /></div>
-                        DEVELOPER NOTES – VEHICLE MAINTENANCE & SERVICE
-                     </h3>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] text-gray-700">
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Info size={12}/> 1. PURPOSE</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Centralised maintenance tracking for trucks and linked trailers.</li>
-                              <li>Ensure preventive maintenance is scheduled and completed.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Settings size={12}/> 2. KEY FEATURES</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Schedule by date or odometer.</li>
-                              <li>Track service history and costs.</li>
-                              <li>Upload invoices / receipts.</li>
-                              <li>AI predicts next service intervals.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Cpu size={12}/> 3. AUTOMATION & AI (ADD-ON)</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>AI reads invoices to auto-capture data.</li>
-                              <li>Predicts wear & tear based on usage.</li>
-                              <li>Alerts for overdue / upcoming services.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Shield size={12}/> 4. PERMISSIONS</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li><strong>Admin:</strong> Full access.</li>
-                              <li><strong>Dispatcher:</strong> View, add, edit.</li>
-                              <li><strong>Driver:</strong> View (in app), add service request.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Database size={12}/> 5. DATA SOURCES</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Workshop invoices (upload OCR).</li>
-                              <li>Odometer (manual / telematics).</li>
-                              <li>Manufacturer service intervals.</li>
-                           </ul>
-                        </div>
+                        <span className="text-[12px] font-medium text-gray-500">
+                           Showing {filteredMaintenance.length === 0 ? 0 : 1} to {filteredMaintenance.length} of {filteredMaintenance.length} records
+                        </span>
                      </div>
                   </div>
                </div>
@@ -3395,19 +3280,21 @@ const Vehicles = () => {
                      <div className="flex flex-col gap-4 text-[13px] font-medium">
                         <div className="flex justify-between items-center pb-3 border-b border-gray-50">
                            <span className="text-gray-600">Total Maintenance Cost</span>
-                           <span className="font-bold text-gray-900">$12,450.00</span>
+                           <span className="font-bold text-gray-900">
+                              {totalMaintenanceCost > 0 ? `$${totalMaintenanceCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
+                           </span>
                         </div>
                         <div className="flex justify-between items-center pb-3 border-b border-gray-50">
                            <span className="text-gray-600">Total Labour Cost</span>
-                           <span className="font-bold text-gray-900">$4,230.00</span>
+                           <span className="font-bold text-gray-900">$0.00</span>
                         </div>
                         <div className="flex justify-between items-center pb-3 border-b border-gray-50">
                            <span className="text-gray-600">Total Parts Cost</span>
-                           <span className="font-bold text-gray-900">$8,220.00</span>
+                           <span className="font-bold text-gray-900">$0.00</span>
                         </div>
                         <div className="flex justify-between items-center pt-1">
                            <span className="text-purple-700 font-bold">Next 12 Months (Est.)</span>
-                           <span className="font-bold text-purple-700">$6,750.00</span>
+                           <span className="font-bold text-purple-700">$0.00</span>
                         </div>
                      </div>
                   </div>
@@ -3419,24 +3306,22 @@ const Vehicles = () => {
                         <div className="relative w-32 h-32 mb-6">
                            <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
                               <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f3f4f6" strokeWidth="6" />
-                              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#22c55e" strokeWidth="6" strokeDasharray="92, 100" />
-                              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f97316" strokeWidth="6" strokeDasharray="6, 100" strokeDashoffset="-92" />
-                              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#ef4444" strokeWidth="6" strokeDasharray="2, 100" strokeDashoffset="-98" />
+                              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#22c55e" strokeWidth="6" strokeDasharray="100, 100" />
                            </svg>
                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                              <span className="text-[28px] font-black text-gray-900 leading-none">92%</span>
-                              <span className="text-[12px] font-bold text-gray-500 mt-1">Good</span>
+                              <span className="text-[28px] font-black text-gray-900 leading-none">100%</span>
+                              <span className="text-[11px] font-bold text-emerald-600 mt-1">Optimal</span>
                            </div>
                         </div>
                         <div className="flex flex-col gap-3 text-[12px] font-bold w-full max-w-[200px]">
                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2.5"><div className="w-2.5 h-2.5 rounded-full bg-green-500"></div> <span className="text-gray-700">Good (92%)</span></div>
+                              <div className="flex items-center gap-2.5"><div className="w-2.5 h-2.5 rounded-full bg-green-500"></div> <span className="text-gray-700">Good (100%)</span></div>
                            </div>
                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2.5"><div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div> <span className="text-gray-700">Attention (6%)</span></div>
+                              <div className="flex items-center gap-2.5"><div className="w-2.5 h-2.5 rounded-full bg-orange-400"></div> <span className="text-gray-400">Attention (0%)</span></div>
                            </div>
                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2.5"><div className="w-2.5 h-2.5 rounded-full bg-red-500"></div> <span className="text-gray-700">Critical (2%)</span></div>
+                              <div className="flex items-center gap-2.5"><div className="w-2.5 h-2.5 rounded-full bg-red-400"></div> <span className="text-gray-400">Critical (0%)</span></div>
                            </div>
                         </div>
                      </div>
@@ -3446,45 +3331,124 @@ const Vehicles = () => {
                   <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex flex-col">
                      <div className="flex justify-between items-center mb-6 border-b border-gray-50 pb-4">
                         <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest">SERVICE REMINDERS</h3>
-                        <a href="#" className="text-[11px] font-bold text-purple-700 hover:underline">Manage</a>
+                        <span className="text-[11px] font-bold text-slate-400">0 Active</span>
                      </div>
-                     <div className="flex flex-col gap-4">
-                        <div className="flex items-start gap-3 border-b border-gray-50 pb-4">
-                           <div className="mt-0.5 w-6 h-6 rounded bg-gray-50 border border-gray-200 flex items-center justify-center shrink-0"><Bell size={12} className="text-gray-600" /></div>
-                           <div className="flex-grow min-w-0">
-                              <div className="text-[12px] font-bold text-gray-900 truncate">Next Service Due</div>
-                              <div className="text-[11px] text-gray-500 font-medium">22/08/2025</div>
-                           </div>
-                           <span className="px-2 py-0.5 rounded text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200 whitespace-nowrap">28 days</span>
-                        </div>
-                        <div className="flex items-start gap-3 border-b border-gray-50 pb-4">
-                           <div className="mt-0.5 w-6 h-6 rounded bg-gray-50 border border-gray-200 flex items-center justify-center shrink-0"><Bell size={12} className="text-gray-600" /></div>
-                           <div className="flex-grow min-w-0">
-                              <div className="text-[12px] font-bold text-gray-900 truncate">Annual Inspection</div>
-                              <div className="text-[11px] text-gray-500 font-medium">05/08/2025</div>
-                           </div>
-                           <span className="px-2 py-0.5 rounded text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200 whitespace-nowrap">11 days</span>
-                        </div>
-                        <div className="flex items-start gap-3 border-b border-gray-50 pb-4">
-                           <div className="mt-0.5 w-6 h-6 rounded bg-gray-50 border border-gray-200 flex items-center justify-center shrink-0"><Bell size={12} className="text-gray-600" /></div>
-                           <div className="flex-grow min-w-0">
-                              <div className="text-[12px] font-bold text-gray-900 truncate">Brake Test</div>
-                              <div className="text-[11px] text-gray-500 font-medium">10/08/2025</div>
-                           </div>
-                           <span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200 whitespace-nowrap">16 days</span>
-                        </div>
-                        <div className="flex items-start gap-3">
-                           <div className="mt-0.5 w-6 h-6 rounded bg-gray-50 border border-gray-200 flex items-center justify-center shrink-0"><Bell size={12} className="text-gray-600" /></div>
-                           <div className="flex-grow min-w-0">
-                              <div className="text-[12px] font-bold text-gray-900 truncate">Registration Check</div>
-                              <div className="text-[11px] text-gray-500 font-medium">15/08/2025</div>
-                           </div>
-                           <span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200 whitespace-nowrap">21 days</span>
-                        </div>
+                     <div className="py-6 text-center text-slate-400 text-xs font-medium flex flex-col items-center gap-2">
+                        <Bell size={24} className="text-slate-300" />
+                        <span>No active service reminders for this vehicle</span>
                      </div>
                   </div>
                </div>
             </div>
+
+            {/* LOG SERVICE / MAINTENANCE MODAL */}
+            {showLogMaintenanceModal && (
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-[99999] p-4 overflow-y-auto" onClick={() => setShowLogMaintenanceModal(false)}>
+                <div className="relative bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden text-left border border-slate-100 max-h-[90vh] my-auto flex flex-col animate-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-100/60 flex items-center justify-center shrink-0">
+                        <Wrench size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-base leading-snug">Log Service / Maintenance</h3>
+                        <p className="text-xs text-slate-400 font-medium mt-0.5">{managingVehicle?.reg || managingVehicle?.id} – Record vehicle maintenance</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setShowLogMaintenanceModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer shrink-0"><X size={18} /></button>
+                  </div>
+                  <form onSubmit={handleLogMaintenance} className="p-6 space-y-4 text-xs font-sans overflow-y-auto">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1.5">Date *</label>
+                        <input type="date" required value={newMaintenanceForm.date} onChange={e => setNewMaintenanceForm(p => ({...p, date: e.target.value}))} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-purple-500" />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1.5">Service Type *</label>
+                        <select value={newMaintenanceForm.type} onChange={e => setNewMaintenanceForm(p => ({...p, type: e.target.value}))} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-purple-500 cursor-pointer">
+                          {['Scheduled Service', 'Oil Change', 'Brake Inspection', 'Tyre Rotation', 'Coolant Flush', 'Battery Check', 'Air Filter', 'Major Overhaul', 'Other Repair'].map(t => <option key={t}>{t}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1.5">Description *</label>
+                      <input type="text" required placeholder="e.g. 50,000 km Scheduled Service & Inspection" value={newMaintenanceForm.description} onChange={e => setNewMaintenanceForm(p => ({...p, description: e.target.value}))} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-purple-500" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1.5">Workshop / Supplier</label>
+                        <input type="text" placeholder="e.g. Authorized Service Center" value={newMaintenanceForm.workshop} onChange={e => setNewMaintenanceForm(p => ({...p, workshop: e.target.value}))} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-purple-500" />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1.5">Odometer at Service (km)</label>
+                        <input type="number" placeholder="e.g. 50000" value={newMaintenanceForm.odometer} onChange={e => setNewMaintenanceForm(p => ({...p, odometer: e.target.value}))} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-purple-500" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1.5">Cost (AUD) *</label>
+                        <input type="number" step="0.01" required placeholder="e.g. 450.00" value={newMaintenanceForm.cost} onChange={e => setNewMaintenanceForm(p => ({...p, cost: e.target.value}))} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-purple-500" />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1.5">Next Service Due (km)</label>
+                        <input type="number" placeholder="e.g. 70000" value={newMaintenanceForm.nextDue} onChange={e => setNewMaintenanceForm(p => ({...p, nextDue: e.target.value}))} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-purple-500" />
+                      </div>
+                    </div>
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                      <button type="button" onClick={() => setShowLogMaintenanceModal(false)} className="px-5 py-2.5 border border-slate-200 text-slate-700 font-bold rounded-xl text-xs bg-white hover:bg-slate-50 transition-all cursor-pointer">Cancel</button>
+                      <button type="submit" className="px-5 py-2.5 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-sm cursor-pointer"><Save size={15} /> Save Record</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW MAINTENANCE MODAL */}
+            {viewingMaintenanceModal && (
+              <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[99999] p-4 overflow-y-auto" onClick={() => setViewingMaintenanceModal(null)}>
+                <div className="relative bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden text-left border border-slate-100 max-h-[85vh] my-auto flex flex-col" onClick={e => e.stopPropagation()}>
+                  <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-100/60 flex items-center justify-center shrink-0">
+                        <Wrench size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-base leading-snug">{viewingMaintenanceModal.type}</h3>
+                        <p className="text-xs text-slate-400 font-medium mt-0.5">{viewingMaintenanceModal.date} • {viewingMaintenanceModal.workshop}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setViewingMaintenanceModal(null)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer shrink-0"><X size={18} /></button>
+                  </div>
+                  <div className="p-6 space-y-4 text-xs font-sans overflow-y-auto">
+                    <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+                      <div>
+                        <span className="block text-[11px] font-semibold text-slate-400">Date</span>
+                        <span className="font-bold text-slate-800 text-xs">{viewingMaintenanceModal.date}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] font-semibold text-slate-400">Cost</span>
+                        <span className="font-bold text-slate-800 text-xs">{viewingMaintenanceModal.cost}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] font-semibold text-slate-400">Odometer</span>
+                        <span className="font-bold text-slate-800 text-xs">{viewingMaintenanceModal.odometer}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[11px] font-semibold text-slate-400">Next Service Due</span>
+                        <span className="font-bold text-slate-800 text-xs">{viewingMaintenanceModal.nextDue}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[11px] font-semibold text-slate-400 mb-1">Description</span>
+                      <p className="text-slate-800 font-medium bg-slate-50 p-3 rounded-xl border border-slate-200/60">{viewingMaintenanceModal.description}</p>
+                    </div>
+                  </div>
+                  <div className="px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+                    <button type="button" onClick={() => setViewingMaintenanceModal(null)} className="px-5 py-2.5 border border-slate-200 text-slate-700 font-bold rounded-xl text-xs bg-white hover:bg-slate-50 transition-all cursor-pointer">Close</button>
+                  </div>
+                </div>
+              </div>
+            )}
          </div>
        )}
 
