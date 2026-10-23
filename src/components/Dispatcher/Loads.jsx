@@ -77,6 +77,7 @@ export default function DispatcherLoads() {
   const [hiddenCols, setHiddenCols] = useState([]);
   const [isInstructionsModalOpen, setIsInstructionsModalOpen] = useState(false);
   const [isSwapTrailerModalOpen, setIsSwapTrailerModalOpen] = useState(false);
+  const [swapTrailerInput, setSwapTrailerInput] = useState('');
   const [isTransferLoadModalOpen, setIsTransferLoadModalOpen] = useState(false);
   const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
   const [newNoteText, setNewNoteText] = useState('');
@@ -1332,114 +1333,382 @@ export default function DispatcherLoads() {
               </div>
 
               {/* Detail Navigation Tabs */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-                <div className="flex border-b border-slate-200 bg-slate-50/50 px-4 pt-3 gap-6">
-                  {['Overview', 'Stops (2)', 'Items / Cars (8)', 'Documents', 'Notes'].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveDetailsTab(tab.split(' ')[0])}
-                      className={`pb-3 text-xs font-extrabold transition-colors cursor-pointer border-b-2 ${
-                        activeDetailsTab === tab.split(' ')[0]
-                          ? 'border-purple-600 text-purple-700'
-                          : 'border-transparent text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
+              {(() => {
+                const rawLoad = activeLoadDetails.rawLoad || {};
+                const stopsList = Array.isArray(rawLoad.stops) ? [...rawLoad.stops].sort((a, b) => (a.sequenceIndex || 0) - (b.sequenceIndex || 0)) : [];
+                const itemsList = Array.isArray(rawLoad.items) ? rawLoad.items : [];
+                const docsList = Array.isArray(rawLoad.documents) ? rawLoad.documents : [];
+                const cleanNotes = (rawLoad.notes || '').replace(/\[(AGREED_RATE|DRIVER_PAY|SCHEDULE):[^\]]+\]/g, '').trim();
 
-                <div className="p-5">
-                  {activeDetailsTab === 'Overview' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Driver Card */}
-                      <div className="p-4 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Driver</span>
-                          <button
-                            onClick={openAssignModal}
-                            className="text-xs font-bold text-purple-600 hover:text-purple-800 cursor-pointer flex items-center gap-1"
-                          >
-                            <Edit3 size={12} />
-                            <span>{activeLoadDetails.driver === 'Unassigned' ? 'Assign' : 'Reassign'}</span>
-                          </button>
-                        </div>
-                        {activeLoadDetails.driver === 'Unassigned' ? (
-                          <div className="flex items-center justify-between p-3 bg-amber-50/80 border border-amber-200 rounded-xl">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">
-                                <User size={16} />
+                const pickupStop = stopsList.find(s => (s.type || '').toUpperCase().includes('PICKUP')) || stopsList[0];
+                const deliveryStop = stopsList.find(s => (s.type || '').toUpperCase().includes('DROP') || (s.type || '').toUpperCase().includes('DELIV')) || (stopsList.length > 1 ? stopsList[stopsList.length - 1] : null);
+
+                const detailTabs = [
+                  { id: 'Overview', label: 'Overview' },
+                  { id: 'Stops', label: `Stops (${stopsList.length})` },
+                  { id: 'Cargo', label: `Items / Cargo (${itemsList.length})` },
+                  { id: 'Documents', label: `Documents (${docsList.length})` },
+                  { id: 'Notes', label: 'Notes' }
+                ];
+
+                return (
+                  <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+                    <div className="flex border-b border-slate-200 bg-slate-50/50 px-4 pt-3 gap-6 overflow-x-auto">
+                      {detailTabs.map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveDetailsTab(tab.id)}
+                          className={`pb-3 text-xs font-extrabold transition-colors cursor-pointer border-b-2 whitespace-nowrap ${
+                            activeDetailsTab === tab.id
+                              ? 'border-purple-600 text-purple-700'
+                              : 'border-transparent text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="p-5">
+                      {/* OVERVIEW TAB */}
+                      {activeDetailsTab === 'Overview' && (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Driver Card */}
+                            <div className="p-4 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Driver</span>
+                                <button
+                                  onClick={openAssignModal}
+                                  className="text-xs font-bold text-purple-600 hover:text-purple-800 cursor-pointer flex items-center gap-1"
+                                >
+                                  <Edit3 size={12} />
+                                  <span>{activeLoadDetails.driver === 'Unassigned' ? 'Assign' : 'Reassign'}</span>
+                                </button>
                               </div>
-                              <div>
-                                <div className="font-extrabold text-xs text-amber-900">No Driver Assigned</div>
-                                <div className="text-[10.5px] text-amber-700">Load is unassigned in draft</div>
+                              {activeLoadDetails.driver === 'Unassigned' ? (
+                                <div className="flex items-center justify-between p-3 bg-amber-50/80 border border-amber-200 rounded-xl">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">
+                                      <User size={16} />
+                                    </div>
+                                    <div>
+                                      <div className="font-extrabold text-xs text-amber-900">No Driver Assigned</div>
+                                      <div className="text-[10.5px] text-amber-700">Load is unassigned in draft</div>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={openAssignModal}
+                                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                                  >
+                                    + Assign
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-3">
+                                  <img src={activeLoadDetails.driverAvatar} alt="" className="w-10 h-10 rounded-full border border-slate-200 object-cover" />
+                                  <div>
+                                    <div className="font-extrabold text-sm text-slate-900">{activeLoadDetails.driver}</div>
+                                    <div className="text-xs text-slate-500 font-medium">
+                                      {activeLoadDetails.driverRole} {activeLoadDetails.driverPhone && activeLoadDetails.driverPhone !== 'N/A' ? `• ${activeLoadDetails.driverPhone}` : ''}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Vehicle Card */}
+                            <div className="p-4 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Vehicle</span>
+                                <button
+                                  onClick={openAssignModal}
+                                  className="text-xs font-bold text-purple-600 hover:text-purple-800 cursor-pointer flex items-center gap-1"
+                                >
+                                  <Edit3 size={12} />
+                                  <span>{activeLoadDetails.vehicle === 'Unassigned' ? 'Assign' : 'Change'}</span>
+                                </button>
+                              </div>
+                              {activeLoadDetails.vehicle === 'Unassigned' ? (
+                                <div className="flex items-center justify-between p-3 bg-amber-50/80 border border-amber-200 rounded-xl">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">
+                                      <Truck size={16} />
+                                    </div>
+                                    <div>
+                                      <div className="font-extrabold text-xs text-amber-900">No Truck Assigned</div>
+                                      <div className="text-[10.5px] text-amber-700">Assign vehicle when ready</div>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={openAssignModal}
+                                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                                  >
+                                    + Assign
+                                  </button>
+                                </div>
+                              ) : (
+                                <div>
+                                  <div className="font-extrabold text-sm text-slate-900">{activeLoadDetails.vehicle}</div>
+                                  <div className="text-xs text-slate-500 font-medium">Trailer: {activeLoadDetails.trailer} • Rego: {activeLoadDetails.rego}</div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Quick Specs & Delivery Instructions Summary */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="p-4 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Cargo Specifications</span>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                  <span className="text-slate-400 block text-[11px]">Load Type</span>
+                                  <span className="font-bold text-slate-800">{rawLoad.type || 'General Freight'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 block text-[11px]">Priority</span>
+                                  <span className="font-bold text-slate-800">{rawLoad.priority || 'Standard'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 block text-[11px]">Total Items</span>
+                                  <span className="font-bold text-slate-800">{itemsList.length} items</span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 block text-[11px]">Total Weight</span>
+                                  <span className="font-bold text-slate-800">
+                                    {itemsList.reduce((acc, i) => acc + (Number(i.weight) || 0), 0) > 0 
+                                      ? `${itemsList.reduce((acc, i) => acc + (Number(i.weight) || 0), 0)} kg` 
+                                      : '—'}
+                                  </span>
+                                </div>
                               </div>
                             </div>
+
+                            <div className="p-4 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Delivery Instructions & Contact</span>
+                              <div className="text-xs space-y-1">
+                                <div>
+                                  <span className="text-slate-400 text-[11px] block">Delivery Stop:</span>
+                                  <span className="font-semibold text-slate-800">
+                                    {deliveryStop?.address || activeLoadDetails.routeTo}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 text-[11px] block">Instructions:</span>
+                                  {deliveryStop?.instructions ? (
+                                    <span className="font-medium text-slate-700">{deliveryStop.instructions}</span>
+                                  ) : (
+                                    <span className="text-slate-400 italic text-[11px]">No special instructions specified</span>
+                                  )}
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 text-[11px] block">On-Site Contact:</span>
+                                  {deliveryStop?.contactName ? (
+                                    <span className="font-semibold text-slate-800">
+                                      {deliveryStop.contactName} {deliveryStop.contactPhone ? `(${deliveryStop.contactPhone})` : ''}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400 italic text-[11px]">No contact person specified</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* STOPS TAB */}
+                      {activeDetailsTab === 'Stops' && (
+                        <div>
+                          {stopsList.length === 0 ? (
+                            <div className="py-10 px-4 flex flex-col items-center justify-center text-center space-y-2">
+                              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                <MapPin size={22} />
+                              </div>
+                              <div className="font-extrabold text-sm text-slate-800">No Custom Stops Added</div>
+                              <p className="text-xs text-slate-500 max-w-sm">
+                                Direct route: <span className="font-bold text-slate-700">{activeLoadDetails.routeFrom}</span> ➔ <span className="font-bold text-slate-700">{activeLoadDetails.routeTo}</span>.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {stopsList.map((stop, sIdx) => {
+                                const isPickup = (stop.type || '').toUpperCase().includes('PICKUP');
+                                return (
+                                  <div key={stop.id || sIdx} className="p-4 bg-slate-50/80 border border-slate-200/80 rounded-xl space-y-2.5">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                                          isPickup ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-blue-100 text-blue-800 border border-blue-200'
+                                        }`}>
+                                          Stop {sIdx + 1} • {isPickup ? 'Pickup' : 'Drop-off / Delivery'}
+                                        </span>
+                                        <span className="text-xs font-black text-slate-900">{stop.address || 'Address not specified'}</span>
+                                      </div>
+                                      {(stop.date || stop.time) && (
+                                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold bg-white px-2 py-0.5 rounded border border-slate-200">
+                                          <Clock size={12} className="text-slate-400" />
+                                          <span>{stop.date ? new Date(stop.date).toLocaleDateString('en-GB') : ''} {stop.time || ''}</span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                      <div className="bg-white p-2.5 rounded-lg border border-slate-200/70">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Site Contact</span>
+                                        {stop.contactName ? (
+                                          <span className="font-bold text-slate-800">
+                                            {stop.contactName} {stop.contactPhone ? <span className="font-normal text-slate-500">• {stop.contactPhone}</span> : ''}
+                                          </span>
+                                        ) : (
+                                          <span className="text-slate-400 italic text-[11px]">No contact person specified</span>
+                                        )}
+                                      </div>
+
+                                      <div className="bg-white p-2.5 rounded-lg border border-slate-200/70">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Special Instructions</span>
+                                        {stop.instructions ? (
+                                          <span className="font-medium text-slate-800">{stop.instructions}</span>
+                                        ) : (
+                                          <span className="text-slate-400 italic text-[11px]">No specific instructions</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* CARGO / ITEMS TAB */}
+                      {activeDetailsTab === 'Cargo' && (
+                        <div>
+                          {itemsList.length === 0 ? (
+                            <div className="py-10 px-4 flex flex-col items-center justify-center text-center space-y-2">
+                              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                <Package size={22} />
+                              </div>
+                              <div className="font-extrabold text-sm text-slate-800">No Cargo Items Attached</div>
+                              <p className="text-xs text-slate-500 max-w-sm">
+                                No vehicles or freight items have been attached to load {activeLoadDetails.id}. You can add items by editing this load.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                  <tr className="border-b border-slate-200 bg-slate-50/80 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
+                                    <th className="py-2.5 px-3">#</th>
+                                    <th className="py-2.5 px-3">Description / Vehicle</th>
+                                    <th className="py-2.5 px-3">VIN / Serial</th>
+                                    <th className="py-2.5 px-3">Rego</th>
+                                    <th className="py-2.5 px-3">Qty</th>
+                                    <th className="py-2.5 px-3">Weight</th>
+                                    <th className="py-2.5 px-3">Handling / Notes</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {itemsList.map((item, idx) => {
+                                    const title = item.description || item.name || `${item.make || ''} ${item.model || ''}`.trim() || `Cargo Item #${idx + 1}`;
+                                    return (
+                                      <tr key={item.id || idx} className="hover:bg-slate-50/60 transition-colors">
+                                        <td className="py-2.5 px-3 font-bold text-slate-400">{idx + 1}</td>
+                                        <td className="py-2.5 px-3 font-extrabold text-slate-900">{title}</td>
+                                        <td className="py-2.5 px-3 font-mono text-slate-600">{item.vin || item.serialNumber || '—'}</td>
+                                        <td className="py-2.5 px-3 font-bold text-slate-700">{item.rego || '—'}</td>
+                                        <td className="py-2.5 px-3 font-semibold text-slate-700">{item.quantity || 1}</td>
+                                        <td className="py-2.5 px-3 font-semibold text-slate-700">{item.weight ? `${item.weight} kg` : '—'}</td>
+                                        <td className="py-2.5 px-3 text-slate-500">{item.specialHandling || item.notes || '—'}</td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* DOCUMENTS TAB */}
+                      {activeDetailsTab === 'Documents' && (
+                        <div>
+                          {docsList.length === 0 ? (
+                            <div className="py-10 px-4 flex flex-col items-center justify-center text-center space-y-2">
+                              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                <FileText size={22} />
+                              </div>
+                              <div className="font-extrabold text-sm text-slate-800">No Documents Uploaded</div>
+                              <p className="text-xs text-slate-500 max-w-sm">
+                                Proof of Delivery (POD), Bill of Lading (BOL), and inspection slips will automatically appear here once captured or uploaded.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {docsList.map((doc, dIdx) => (
+                                <div key={doc.id || dIdx} className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                      <FileText size={18} />
+                                    </div>
+                                    <div>
+                                      <div className="font-bold text-xs text-slate-900">{doc.name || `Document #${dIdx + 1}`}</div>
+                                      <div className="text-[11px] text-slate-500">{doc.type || 'Attachment'} {doc.size ? `• ${doc.size}` : ''}</div>
+                                    </div>
+                                  </div>
+                                  {doc.url && (
+                                    <a
+                                      href={doc.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-3 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 flex items-center gap-1.5 transition-colors"
+                                    >
+                                      <Download size={12} />
+                                      <span>View</span>
+                                    </a>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* NOTES TAB */}
+                      {activeDetailsTab === 'Notes' && (
+                        <div className="space-y-4">
+                          {cleanNotes ? (
+                            <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Internal Dispatch Notes</span>
+                                <span className="text-[10px] text-slate-400 font-semibold">Active Record</span>
+                              </div>
+                              <p className="text-xs text-slate-800 font-medium whitespace-pre-line leading-relaxed">
+                                {cleanNotes}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-500 italic">
+                              No notes or dispatch instructions entered for this load yet.
+                            </div>
+                          )}
+
+                          <div className="pt-2 border-t border-slate-100">
                             <button
-                              onClick={openAssignModal}
-                              className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                              onClick={() => setIsAddNoteModalOpen(true)}
+                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
                             >
-                              + Assign
+                              <FileCheck size={14} />
+                              <span>{cleanNotes ? 'Add / Update Note' : '+ Add Note'}</span>
                             </button>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            <img src={activeLoadDetails.driverAvatar} alt="" className="w-10 h-10 rounded-full border border-slate-200 object-cover" />
-                            <div>
-                              <div className="font-extrabold text-sm text-slate-900">{activeLoadDetails.driver}</div>
-                              <div className="text-xs text-slate-500 font-medium">{activeLoadDetails.driverRole}</div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Vehicle Card */}
-                      <div className="p-4 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Assigned Vehicle</span>
-                          <button
-                            onClick={openAssignModal}
-                            className="text-xs font-bold text-purple-600 hover:text-purple-800 cursor-pointer flex items-center gap-1"
-                          >
-                            <Edit3 size={12} />
-                            <span>{activeLoadDetails.vehicle === 'Unassigned' ? 'Assign' : 'Change'}</span>
-                          </button>
                         </div>
-                        {activeLoadDetails.vehicle === 'Unassigned' ? (
-                          <div className="flex items-center justify-between p-3 bg-amber-50/80 border border-amber-200 rounded-xl">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">
-                                <Truck size={16} />
-                              </div>
-                              <div>
-                                <div className="font-extrabold text-xs text-amber-900">No Truck Assigned</div>
-                                <div className="text-[10.5px] text-amber-700">Assign vehicle when ready</div>
-                              </div>
-                            </div>
-                            <button
-                              onClick={openAssignModal}
-                              className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                            >
-                              + Assign
-                            </button>
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="font-extrabold text-sm text-slate-900">{activeLoadDetails.vehicle}</div>
-                            <div className="text-xs text-slate-500 font-medium">Trailer: {activeLoadDetails.trailer} • Rego: {activeLoadDetails.rego}</div>
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  )}
-
-                  {activeDetailsTab !== 'Overview' && (
-                    <div className="py-8 text-center text-slate-500 text-xs font-semibold">
-                      Displaying {activeDetailsTab} details for load {activeLoadDetails.id}...
-                    </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Right Quick Actions Sidebar (4 cols) */}
@@ -1449,8 +1718,15 @@ export default function DispatcherLoads() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => {
-                      window.location.href = "tel:+61400123456";
-                      triggerToast(`Initiating direct call to ${activeLoadDetails.driver}...`);
+                      const phone = activeLoadDetails.driverPhone && activeLoadDetails.driverPhone !== 'N/A' 
+                        ? activeLoadDetails.driverPhone 
+                        : (activeLoadDetails.rawLoad?.driver?.phone || null);
+                      if (phone) {
+                        window.location.href = `tel:${phone}`;
+                        triggerToast(`Initiating call to ${activeLoadDetails.driver} (${phone})...`);
+                      } else {
+                        triggerToast(`No contact phone number on file for ${activeLoadDetails.driver}`);
+                      }
                     }}
                     className="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
                   >
@@ -1776,39 +2052,106 @@ export default function DispatcherLoads() {
       {/* =========================================================================
          VIEW INSTRUCTIONS MODAL
          ========================================================================= */}
-      {isInstructionsModalOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
-          onClick={() => setIsInstructionsModalOpen(false)}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 text-left font-sans animate-scale-up" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <FileText className="text-purple-600" size={18} />
-                <h3 className="text-sm font-black text-slate-900">Dispatch Special Instructions</h3>
+      {isInstructionsModalOpen && (() => {
+        const raw = activeLoadDetails.rawLoad || {};
+        const stops = Array.isArray(raw.stops) ? [...raw.stops].sort((a, b) => (a.sequenceIndex || 0) - (b.sequenceIndex || 0)) : [];
+        const pickup = stops.find(s => (s.type || '').toUpperCase().includes('PICKUP')) || stops[0];
+        const delivery = stops.find(s => (s.type || '').toUpperCase().includes('DROP') || (s.type || '').toUpperCase().includes('DELIV')) || (stops.length > 1 ? stops[stops.length - 1] : null);
+        const notes = (raw.notes || '').replace(/\[(AGREED_RATE|DRIVER_PAY|SCHEDULE):[^\]]+\]/g, '').trim();
+
+        return (
+          <div 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+            onClick={() => setIsInstructionsModalOpen(false)}
+          >
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 text-left font-sans animate-scale-up" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <FileText className="text-purple-600" size={18} />
+                  <h3 className="text-sm font-black text-slate-900">Dispatch Special Instructions</h3>
+                </div>
+                <button onClick={() => setIsInstructionsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                  <X size={16} />
+                </button>
               </div>
-              <button onClick={() => setIsInstructionsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-                <X size={16} />
-              </button>
-            </div>
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-purple-50 border border-purple-100 rounded-xl">
-                <span className="font-extrabold text-purple-900 block mb-1">Pickup Site Rules ({selectedLoadId})</span>
-                <p className="text-[11px] text-purple-700 font-medium">Driver must wear full PPE (High-Vis Vest, Steel-Cap Boots, Hard Hat). Call site contact 30 mins prior to arrival.</p>
+
+              <div className="space-y-3 text-xs">
+                {/* Pickup Instructions */}
+                <div className="p-3 bg-purple-50/80 border border-purple-200/80 rounded-xl space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-purple-950 uppercase tracking-wider text-[10.5px]">
+                      Pickup Instructions ({activeLoadDetails.id})
+                    </span>
+                    <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded">
+                      {pickup?.address ? pickup.address.split(',')[0] : activeLoadDetails.routeFrom}
+                    </span>
+                  </div>
+                  {pickup?.instructions ? (
+                    <p className="text-xs text-purple-900 font-medium leading-relaxed mt-1">
+                      {pickup.instructions}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-purple-600/80 italic font-medium mt-1">
+                      No special instructions provided for pickup.
+                    </p>
+                  )}
+                  {pickup?.contactName && (
+                    <div className="pt-2 mt-2 border-t border-purple-200/60 text-[11px] text-purple-800 font-medium">
+                      <span className="font-bold">Site Contact:</span> {pickup.contactName} {pickup.contactPhone ? `• ${pickup.contactPhone}` : ''}
+                    </div>
+                  )}
+                </div>
+
+                {/* Delivery Instructions */}
+                <div className="p-3 bg-blue-50/80 border border-blue-200/80 rounded-xl space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-blue-950 uppercase tracking-wider text-[10.5px]">
+                      Delivery Instructions ({activeLoadDetails.id})
+                    </span>
+                    <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">
+                      {delivery?.address ? delivery.address.split(',')[0] : activeLoadDetails.routeTo}
+                    </span>
+                  </div>
+                  {delivery?.instructions ? (
+                    <p className="text-xs text-blue-900 font-medium leading-relaxed mt-1">
+                      {delivery.instructions}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-blue-600/80 italic font-medium mt-1">
+                      No special instructions provided for delivery.
+                    </p>
+                  )}
+                  {delivery?.contactName ? (
+                    <div className="pt-2 mt-2 border-t border-blue-200/60 text-[11px] text-blue-800 font-medium">
+                      <span className="font-bold">Delivery Contact:</span> {delivery.contactName} {delivery.contactPhone ? `• ${delivery.contactPhone}` : ''}
+                    </div>
+                  ) : (
+                    <div className="pt-2 mt-2 border-t border-blue-200/60 text-[11px] text-blue-600/80 italic font-medium">
+                      No on-site delivery contact specified.
+                    </div>
+                  )}
+                </div>
+
+                {/* Dispatch Notes if any */}
+                {notes && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <span className="font-extrabold text-slate-800 uppercase tracking-wider text-[10.5px] block">General Load Notes</span>
+                    <p className="text-xs text-slate-700 font-medium whitespace-pre-line leading-relaxed">
+                      {notes}
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                <span className="font-bold text-slate-800 block mb-1">Delivery Contact</span>
-                <p className="text-[11px] text-slate-600">Contact: John Smith • Phone: +61 400 987 654</p>
+
+              <div className="pt-2 border-t border-slate-100 flex justify-end">
+                <button onClick={() => setIsInstructionsModalOpen(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">
+                  Close Instructions
+                </button>
               </div>
-            </div>
-            <div className="pt-2 border-t border-slate-100 flex justify-end">
-              <button onClick={() => setIsInstructionsModalOpen(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">
-                Close Instructions
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* =========================================================================
          SWAP TRAILER MODAL
@@ -1822,7 +2165,7 @@ export default function DispatcherLoads() {
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <RefreshCcw className="text-amber-600" size={18} />
-                <h3 className="text-sm font-black text-slate-900">Swap Trailer for {selectedLoadId}</h3>
+                <h3 className="text-sm font-black text-slate-900">Assign / Swap Trailer ({activeLoadDetails.id})</h3>
               </div>
               <button onClick={() => setIsSwapTrailerModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
                 <X size={16} />
@@ -1830,26 +2173,58 @@ export default function DispatcherLoads() {
             </div>
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Select New Trailer</label>
-                <select className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800">
-                  <option>TRL-201 | 8 Car Carrier (Available)</option>
-                  <option>TRL-202 | Flatbed B-Double (Available)</option>
-                  <option>TRL-203 | Enclosed Carrier (Depot Yard)</option>
-                </select>
+                <label className="block font-bold text-slate-700 mb-1">Trailer Number / Unit ID</label>
+                <input
+                  type="text"
+                  value={swapTrailerInput}
+                  onChange={e => setSwapTrailerInput(e.target.value)}
+                  placeholder="e.g. TRL-108 or Trailer Registration"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-amber-500"
+                />
               </div>
+              {availableVehicles.length > 0 && (
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Or Pick From Fleet Equipment</label>
+                  <select 
+                    value={swapTrailerInput} 
+                    onChange={e => setSwapTrailerInput(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 bg-white focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="">-- Choose from Registered Fleet --</option>
+                    {availableVehicles.map(v => (
+                      <option key={v.id} value={v.rego || `${v.make || ''} ${v.model || ''}`.trim()}>
+                        {v.make} {v.model} {v.rego ? `(Rego: ${v.rego})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
             <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
               <button onClick={() => setIsSwapTrailerModalOpen(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">
                 Cancel
               </button>
               <button 
-                onClick={() => {
+                onClick={async () => {
+                  const val = swapTrailerInput.trim();
+                  if (!val) {
+                    triggerToast('Please enter or select a trailer');
+                    return;
+                  }
+                  const targetId = activeLoadDetails.dbId || activeLoadDetails.id;
+                  try {
+                    await api.patch(`/company-admin/loads/${targetId}`, { trailerId: val }).catch(() => {});
+                  } catch (err) {
+                    console.warn(err);
+                  }
+                  setMasterLoads(prev => prev.map(l => (l.id === activeLoadDetails.id || l.dbId === targetId) ? { ...l, trailer: val } : l));
                   setIsSwapTrailerModalOpen(false);
-                  triggerToast(`Trailer swapped successfully for load ${selectedLoadId}!`);
+                  setSwapTrailerInput('');
+                  triggerToast(`Trailer updated to "${val}" for load ${activeLoadDetails.id}!`);
                 }} 
                 className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
               >
-                Confirm Swap
+                Confirm Trailer
               </button>
             </div>
           </div>
@@ -1965,10 +2340,37 @@ export default function DispatcherLoads() {
                 Cancel
               </button>
               <button 
-                onClick={() => {
+                onClick={async () => {
+                  const noteContent = newNoteText.trim();
+                  if (!noteContent) {
+                    triggerToast('Please type a note before saving');
+                    return;
+                  }
+                  const targetId = activeLoadDetails.dbId || activeLoadDetails.id;
+                  const currentNotes = activeLoadDetails.rawLoad?.notes || '';
+                  const updatedNotes = currentNotes 
+                    ? `${currentNotes}\n[Note ${new Date().toLocaleDateString('en-GB')}]: ${noteContent}`
+                    : `[Note ${new Date().toLocaleDateString('en-GB')}]: ${noteContent}`;
+                  
+                  try {
+                    await api.patch(`/company-admin/loads/${targetId}`, { notes: updatedNotes }).catch(() => {});
+                  } catch (err) {
+                    console.warn(err);
+                  }
+
+                  setMasterLoads(prev => prev.map(l => {
+                    if (l.id === activeLoadDetails.id || l.dbId === targetId) {
+                      return {
+                        ...l,
+                        rawLoad: { ...(l.rawLoad || {}), notes: updatedNotes }
+                      };
+                    }
+                    return l;
+                  }));
+
                   setIsAddNoteModalOpen(false);
                   setNewNoteText('');
-                  triggerToast(`Dispatch note saved for load ${selectedLoadId}!`);
+                  triggerToast(`Dispatch note saved for load ${activeLoadDetails.id}!`);
                 }} 
                 className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
               >

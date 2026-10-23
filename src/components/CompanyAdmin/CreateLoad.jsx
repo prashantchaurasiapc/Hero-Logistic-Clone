@@ -327,7 +327,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
   // Pre-populate fields if editing an existing load
   useEffect(() => {
     if (editMode && loadToEdit) {
-      const loadIdToFetch = loadToEdit.rawId || loadToEdit.dbId || loadToEdit.id;
+      const loadIdToFetch = loadToEdit.rawId || loadToEdit.id;
       api.get(`/company-admin/loads/${loadIdToFetch}`).then(res => {
         const lData = res.data?.data || res.data;
         if (lData) {
@@ -1322,8 +1322,8 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
       };
 
       let res;
-      if (editMode && (loadToEdit?.rawId || loadToEdit?.dbId || loadToEdit?.id)) {
-        const targetId = loadToEdit.rawId || loadToEdit.dbId || loadToEdit.id;
+      if (editMode && (loadToEdit?.rawId || loadToEdit?.id)) {
+        const targetId = loadToEdit.rawId || loadToEdit.id;
         res = await api.put(`/company-admin/loads/${targetId}`, payload);
       } else {
         res = await api.post('/company-admin/loads', payload);
