@@ -333,15 +333,27 @@ const Vehicles = () => {
             .replace(/Photo:[^|]*/gi, '')
             .trim();
 
+          const drv = v.currentDriver || v.driver;
+          const driverDisplayName = drv ? `${drv.firstName || ''} ${drv.lastName || ''}`.trim() || drv.driverCode || drv.name : '—';
+          const isTrailerCat = v.category === 'TRAILER' || String(v.regType || v.type || '').toUpperCase().includes('TRAILER');
+
           return {
             id: v.id,
             displayId: v.rego || v.plate || (v.id && String(v.id).includes('-') ? v.id.split('-')[0].toUpperCase() : String(v.id)),
             reg: v.rego || v.plate || '—',
+            rego: v.rego || v.plate || '—',
             branch: v.branch || 'N/A',
-            driver: v.driver ? `${v.driver.firstName || ''} ${v.driver.lastName || ''}`.trim() || v.driver.driverCode : '—',
-            driverId: v.driver?.driverCode || '',
-            driverImg: v.driver?.avatarUrl || '',
-            type: v.regType || v.category || v.type || 'Vehicle',
+            driver: driverDisplayName,
+            driverId: drv?.driverCode || drv?.id || '',
+            driverImg: drv?.avatarUrl || '',
+            currentDriver: drv || null,
+            currentDriverId: v.currentDriverId || drv?.id || null,
+            category: isTrailerCat ? 'TRAILER' : 'TRUCK',
+            assignedTrailerId: v.assignedTrailerId || null,
+            assignedTruckId: v.assignedTruckId || null,
+            assignedTrailer: v.assignedTrailer || null,
+            assignedTruck: v.assignedTruck || null,
+            type: v.regType || (isTrailerCat ? 'Trailer' : 'Prime Mover'),
             make: v.make ? `${v.make} ${v.model || ''}`.trim() : v.model || 'Unknown',
             year: extractedYear,
             status: v.status || 'ACTIVE',
@@ -474,25 +486,90 @@ const Vehicles = () => {
   React.useEffect(() => {
     if (!managingVehicle) {
       setAttachedTruck(null);
+      setCurrentTrailer(null);
       return;
     }
-    const vKey = managingVehicle.reg || managingVehicle.rego || managingVehicle.id;
+
     if (isManagingTrailer) {
-      const savedTruckRaw = localStorage.getItem(`hero_trailer_truck_${vKey}`);
-      if (savedTruckRaw) {
-        try {
-          setAttachedTruck(JSON.parse(savedTruckRaw));
-        } catch {
-          setAttachedTruck(null);
+      // It's a trailer asset. It stays standalone (Available in Yard) until attached to a Prime Mover.
+      setCurrentTrailer(null);
+      
+      const targetTruckId = managingVehicle.assignedTruckId || managingVehicle._raw?.assignedTruckId;
+      if (targetTruckId) {
+        const foundTruck = vehicles.find(v => String(v.id) === String(targetTruckId)) || managingVehicle.assignedTruck;
+        if (foundTruck) {
+          setAttachedTruck({
+            id: foundTruck.id,
+            make: foundTruck.make || 'Prime Mover',
+            model: foundTruck.model || '',
+            reg: foundTruck.reg || foundTruck.rego || foundTruck.plate || foundTruck.id,
+            rego: foundTruck.reg || foundTruck.rego || foundTruck.plate || foundTruck.id,
+            driver: foundTruck.driver && foundTruck.driver !== '—' ? foundTruck.driver : (foundTruck.currentDriver ? `${foundTruck.currentDriver.firstName || ''} ${foundTruck.currentDriver.lastName || ''}`.trim() : 'Main Fleet Driver'),
+            branch: foundTruck.branch || 'Sydney Depot'
+          });
+        } else {
+          api.get(`/vehicles/${targetTruckId}`).then(res => {
+            const trk = res.data?.data || res.data;
+            if (trk) {
+              setAttachedTruck({
+                id: trk.id,
+                make: trk.make,
+                model: trk.model,
+                reg: trk.rego || trk.plate || trk.id,
+                rego: trk.rego || trk.plate || trk.id,
+                driver: trk.currentDriver ? `${trk.currentDriver.firstName || ''} ${trk.currentDriver.lastName || ''}`.trim() : 'Main Fleet Driver',
+                branch: trk.branch || 'Sydney Depot'
+              });
+            }
+          }).catch(() => setAttachedTruck(null));
         }
       } else {
         setAttachedTruck(null);
       }
     } else {
-      // It's a truck, check if any trailer in localStorage is attached to it
+      // It's a Prime Mover / Truck. It operates standalone (bobtail) until attached to a trailer.
       setAttachedTruck(null);
+
+      const targetTrailerId = managingVehicle.assignedTrailerId || managingVehicle._raw?.assignedTrailerId;
+      if (targetTrailerId) {
+        const foundTrailer = vehicles.find(v => String(v.id) === String(targetTrailerId)) || managingVehicle.assignedTrailer;
+        if (foundTrailer) {
+          setCurrentTrailer({
+            id: foundTrailer.id,
+            name: `${foundTrailer.reg || foundTrailer.rego || foundTrailer.id} – ${foundTrailer.make || 'Heavy'} ${foundTrailer.model || 'Trailer'}`,
+            type: foundTrailer.regType || foundTrailer.type || 'Trailer',
+            reg: foundTrailer.reg || foundTrailer.rego || foundTrailer.plate || foundTrailer.id,
+            vin: foundTrailer.vin || 'N/A',
+            axles: '3',
+            depot: foundTrailer.branch || 'Sydney Depot',
+            status: foundTrailer.status === 'IN_TRANSIT' ? 'In Transit' : 'Available',
+            isPrimary: true,
+            img: foundTrailer.photoUrl || foundTrailer.img || 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60'
+          });
+        } else {
+          api.get(`/vehicles/${targetTrailerId}`).then(res => {
+            const trl = res.data?.data || res.data;
+            if (trl) {
+              setCurrentTrailer({
+                id: trl.id,
+                name: `${trl.rego || trl.plate || trl.id} – ${trl.make || 'Heavy'} ${trl.model || 'Trailer'}`,
+                type: trl.regType || trl.type || 'Trailer',
+                reg: trl.rego || trl.plate || trl.id,
+                vin: trl.vin || 'N/A',
+                axles: '3',
+                depot: trl.branch || 'Sydney Depot',
+                status: trl.status === 'IN_TRANSIT' ? 'In Transit' : 'Available',
+                isPrimary: true,
+                img: trl.photoUrl || 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60'
+              });
+            }
+          }).catch(() => setCurrentTrailer(null));
+        }
+      } else {
+        setCurrentTrailer(null);
+      }
     }
-  }, [managingVehicle, isManagingTrailer]);
+  }, [managingVehicle, isManagingTrailer, vehicles]);
 
   // Quick Actions Modal States
   const [showAddMaintenanceModal, setShowAddMaintenanceModal] = React.useState(false);
@@ -1089,59 +1166,65 @@ const Vehicles = () => {
     }
   };
 
-  const handleSwapTrailer = (trailerId, reason) => {
-    const trailerList = {
-      'TRL105': { id: 'TRL105', name: 'TRL105 – Flatbed Heavy Trailer', type: 'Flatbed Trailer', reg: 'TRL105', vin: '6T9T25A21NOTR1105', axles: '3', depot: 'Sydney Depot', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60' },
-      'TRL409': { id: 'TRL409', name: 'TRL409 – Low Loader Heavy Duty', type: 'Low Loader', reg: 'TRL409', vin: '6T9T25A21NOTR1409', axles: '4', depot: 'Brisbane Hub', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60' },
-      'TRL512': { id: 'TRL512', name: 'TRL512 – Curtainsider 45ft Trailer', type: 'Curtainsider', reg: 'TRL512', vin: '6T9T25A21NOTR1512', axles: '3', depot: 'Sydney Depot', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60' },
-      'TRL608': { id: 'TRL608', name: 'TRL608 – Liquid Tanker Trailer', type: 'Tanker', reg: 'TRL608', vin: '6T9T25A21NOTR1608', axles: '3', depot: 'Adelaide Depot', status: 'Available', isPrimary: true, img: 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60' }
-    };
+  const handleSwapTrailer = async (trailerId, reason) => {
+    if (!managingVehicle || !trailerId) return;
+    try {
+      await api.post(`/vehicles/${managingVehicle.id}/attach-trailer`, {
+        trailerId,
+        reason
+      });
 
-    const selected = trailerList[trailerId];
-    if (selected) {
-      const now = new Date();
-      const formattedDate = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const selected = vehicles.find(v => String(v.id) === String(trailerId));
+      if (selected) {
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-      setAssignmentHistory(prev => {
-        const updated = prev.map((item, idx) => {
-          if (idx === 0 && item.toDate === '- Current -') {
-            return { ...item, toDate: formattedDate };
-          }
-          return item;
-        });
-        return [
+        setAssignmentHistory(prev => [
           {
             fromDate: formattedDate,
             toDate: '- Current -',
-            trailer: `${selected.id} - ${selected.name.split(' – ')[1] || selected.name}`,
-            type: selected.type,
-            reg: selected.reg,
+            trailer: `${selected.reg || selected.rego || selected.id} - ${selected.make} ${selected.model || ''}`.trim(),
+            type: selected.regType || selected.type || 'Trailer',
+            reg: selected.reg || selected.rego || selected.id,
             assignedBy: 'Admin User',
             reason: reason || 'Swap Assignment',
             notes: '-'
           },
-          ...updated
-        ];
-      });
+          ...prev.map((item, idx) => idx === 0 && item.toDate === '- Current -' ? { ...item, toDate: formattedDate } : item)
+        ]);
 
-      setCurrentTrailer(selected);
+        setCurrentTrailer({
+          id: selected.id,
+          name: `${selected.reg || selected.rego || selected.id} – ${selected.make} ${selected.model || 'Trailer'}`,
+          type: selected.regType || selected.type || 'Trailer',
+          reg: selected.reg || selected.rego || selected.id,
+          vin: selected.vin || 'N/A',
+          axles: '3',
+          depot: selected.branch || 'Sydney Depot',
+          status: 'Available',
+          isPrimary: true,
+          img: selected.photoUrl || selected.img || 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60'
+        });
+      }
+
+      setManagingVehicle(prev => prev ? ({ ...prev, assignedTrailerId: trailerId }) : null);
+      showToast('Trailer attached to truck successfully!');
+      fetchVehicles();
+    } catch (err) {
+      console.error('Error attaching trailer:', err);
+      showToast(err.response?.data?.message || err.message || 'Failed to attach trailer', 'error');
     }
   };
 
-  const handleUnassignTrailer = (reason) => {
-    if (!currentTrailer) return;
+  const handleUnassignTrailer = async (reason) => {
+    if (!managingVehicle) return;
+    try {
+      await api.post(`/vehicles/${managingVehicle.id}/detach-trailer`, { reason });
 
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-    setAssignmentHistory(prev => {
-      const updated = prev.map((item, idx) => {
-        if (idx === 0 && item.toDate === '- Current -') {
-          return { ...item, toDate: formattedDate };
-        }
-        return item;
-      });
-      return [
+      setAssignmentHistory(prev => [
         {
           fromDate: formattedDate,
           toDate: '- Current -',
@@ -1152,11 +1235,17 @@ const Vehicles = () => {
           reason: reason || 'Unassigned',
           notes: '-'
         },
-        ...updated
-      ];
-    });
+        ...prev.map((item, idx) => idx === 0 && item.toDate === '- Current -' ? { ...item, toDate: formattedDate } : item)
+      ]);
 
-    setCurrentTrailer(null);
+      setCurrentTrailer(null);
+      setManagingVehicle(prev => prev ? ({ ...prev, assignedTrailerId: null }) : null);
+      showToast('Trailer unhitched successfully. Status: Available in Yard.');
+      fetchVehicles();
+    } catch (err) {
+      console.error('Error detaching trailer:', err);
+      showToast(err.response?.data?.message || err.message || 'Failed to detach trailer', 'error');
+    }
   };
 
   const handleDuplicateVehicle = (vehicle) => {
@@ -1321,23 +1410,26 @@ const Vehicles = () => {
       const primaryMechanicWithYear = [origMech, yearTag].filter(Boolean).join(' | ');
       const notesWithYear = [origNotes, yearTag].filter(Boolean).join(' | ');
 
+      const isTrailerType = formVehicleType === 'Trailer' || String(formVehicleType || '').toLowerCase().includes('trailer');
+
       const payload = {
         rego: regVal,
         make: fd.get('make') || '',
         model: fd.get('model') || '',
         year: yearVal,
-        category: fd.get('type') || 'TRUCK',
+        category: isTrailerType ? 'TRAILER' : 'TRUCK',
         color: fd.get('color') || '',
         vin: fd.get('vin') || '',
-        engineNumber: fd.get('engine') || '',
+        engineNumber: isTrailerType ? null : (fd.get('engine') || ''),
         odometerKm: fd.get('odometer') ? parseInt(String(fd.get('odometer')).replace(/[^0-9]/g, '')) : 0,
-        fuelType: fd.get('fuelType') || 'Diesel',
-        regType: fd.get('regType') || '',
-        regState: fd.get('regState') || '',
-        primaryMechanic: primaryMechanicWithYear,
-        preferredRoutes: fd.get('preferredRoutes') || '',
-        preferredRegions: fd.get('preferredRegions') || '',
-        maxDistPerTripKm: fd.get('maxDist') ? parseInt(fd.get('maxDist')) : undefined,
+        fuelType: isTrailerType ? null : (fd.get('fuelType') || 'Diesel'),
+        regType: fd.get('regType') || formVehicleType || (isTrailerType ? 'Trailer' : 'Prime Mover'),
+        regState: fd.get('regState') || formRegState || '',
+        status: 'IDLE',
+        primaryMechanic: isTrailerType ? null : primaryMechanicWithYear,
+        preferredRoutes: isTrailerType ? null : (fd.get('preferredRoutes') || ''),
+        preferredRegions: isTrailerType ? null : (fd.get('preferredRegions') || ''),
+        maxDistPerTripKm: isTrailerType ? null : (fd.get('maxDist') ? parseInt(fd.get('maxDist')) : undefined),
         dgCertified: fd.get('dgCertified') === 'Yes',
         photoUrl: photoVal,
         notes: notesWithYear
@@ -2569,11 +2661,17 @@ const Vehicles = () => {
                        </div>
                        <div className="col-span-2 sm:col-span-1 sm:row-span-3 flex flex-col gap-2.5 justify-center border-l-0 sm:border-l border-gray-100 pt-4 sm:pt-0 sm:pl-6 mt-2 sm:mt-0">
                           <button 
-                            onClick={() => {
-                              const vKey = managingVehicle.reg || managingVehicle.rego || managingVehicle.id;
-                              localStorage.removeItem(`hero_trailer_truck_${vKey}`);
-                              setAttachedTruck(null);
-                              showToast('Trailer unhitched from truck');
+                            onClick={async () => {
+                              try {
+                                await api.post(`/vehicles/${managingVehicle.id}/detach-trailer`);
+                                setAttachedTruck(null);
+                                setManagingVehicle(prev => prev ? ({ ...prev, assignedTruckId: null }) : null);
+                                showToast('Trailer unhitched successfully. Status: Available in Yard.');
+                                fetchVehicles();
+                              } catch (err) {
+                                console.error('Error unhitching trailer:', err);
+                                showToast(err.response?.data?.message || 'Failed to unhitch trailer', 'error');
+                              }
                             }}
                             className="w-full px-4 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-[12px] font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm h-10"
                           >
@@ -4953,14 +5051,18 @@ const Vehicles = () => {
                   onChange={(e) => setSelectedTruckIdForTrailer(e.target.value)} 
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer"
                 >
-                  <option value="">-- Choose an Available Truck --</option>
+                  <option value="">-- Choose an Available Prime Mover (Truck) --</option>
                   {vehicles
-                    .filter(v => !['Trailer', 'Car Trailer'].includes(v.type) && v.category !== 'TRAILER')
-                    .map(trk => (
-                      <option key={trk.id} value={trk.id}>
-                        {trk.reg || trk.rego || trk.id} – {trk.make} {trk.model} ({trk.branch || 'Sydney Depot'})
-                      </option>
-                    ))}
+                    .filter(v => v.category !== 'TRAILER' && !['Trailer', 'Car Trailer'].includes(v.type) && !String(v.type || '').toLowerCase().includes('trailer'))
+                    .map(trk => {
+                      const isHitched = trk.assignedTrailerId && trk.assignedTrailerId !== managingVehicle?.id;
+                      const hitchedTrailer = isHitched ? vehicles.find(x => x.id === trk.assignedTrailerId) : null;
+                      return (
+                        <option key={trk.id} value={trk.id}>
+                          {trk.reg || trk.rego || trk.id} – {trk.make} {trk.model || ''} ({trk.branch || 'Sydney Depot'}) {isHitched ? `[⚠️ Hitched to ${hitchedTrailer?.reg || hitchedTrailer?.rego || trk.assignedTrailerId}]` : '[✅ Standalone / Available]'}
+                        </option>
+                      );
+                    })}
                 </select>
               </div>
 
@@ -4980,15 +5082,23 @@ const Vehicles = () => {
               <button 
                 type="button" 
                 disabled={!selectedTruckIdForTrailer}
-                onClick={() => {
-                  const targetTruck = vehicles.find(v => String(v.id) === String(selectedTruckIdForTrailer));
-                  if (targetTruck && managingVehicle) {
-                    const vKey = managingVehicle.reg || managingVehicle.rego || managingVehicle.id;
-                    localStorage.setItem(`hero_trailer_truck_${vKey}`, JSON.stringify(targetTruck));
-                    setAttachedTruck(targetTruck);
+                onClick={async () => {
+                  try {
+                    await api.post(`/vehicles/${managingVehicle.id}/attach-trailer`, {
+                      truckId: selectedTruckIdForTrailer
+                    });
+                    const targetTruck = vehicles.find(v => String(v.id) === String(selectedTruckIdForTrailer));
+                    if (targetTruck) {
+                      setAttachedTruck(targetTruck);
+                    }
+                    setManagingVehicle(prev => prev ? ({ ...prev, assignedTruckId: selectedTruckIdForTrailer }) : null);
                     setShowAssignToTruckModal(false);
                     setSelectedTruckIdForTrailer('');
-                    showToast(`Trailer hitched to ${targetTruck.reg || targetTruck.id} successfully!`);
+                    showToast(`Trailer hitched to ${targetTruck?.reg || targetTruck?.rego || 'prime mover'} successfully!`);
+                    fetchVehicles();
+                  } catch (err) {
+                    console.error('Error hitching trailer to truck:', err);
+                    showToast(err.response?.data?.message || err.message || 'Failed to hitch trailer to truck', 'error');
                   }
                 }} 
                 className="px-5 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
@@ -5037,10 +5147,18 @@ const Vehicles = () => {
                   onChange={(e) => setSelectedSwapTrailer(e.target.value)} 
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer"
                 >
-                  <option value="TRL105">TRL105 – Flatbed Heavy Trailer (Available)</option>
-                  <option value="TRL409">TRL409 – Low Loader Heavy Duty (Available)</option>
-                  <option value="TRL512">TRL512 – Curtainsider 45ft Trailer (Available)</option>
-                  <option value="TRL608">TRL608 – Liquid Tanker Trailer (Available)</option>
+                  <option value="">-- Choose an Available Trailer --</option>
+                  {vehicles
+                    .filter(v => (v.category === 'TRAILER' || ['Trailer', 'Car Trailer'].includes(v.type) || String(v.type || '').toLowerCase().includes('trailer')) && v.id !== managingVehicle?.id)
+                    .map(trl => {
+                      const isHitched = trl.assignedTruckId && trl.assignedTruckId !== managingVehicle?.id;
+                      const hitchedTruck = isHitched ? vehicles.find(x => x.id === trl.assignedTruckId) : null;
+                      return (
+                        <option key={trl.id} value={trl.id}>
+                          {trl.reg || trl.rego || trl.id} – {trl.make} {trl.model || ''} ({isHitched ? `[⚠️ Hitched to ${hitchedTruck?.reg || hitchedTruck?.rego || trl.assignedTruckId}]` : '[✅ Available in Yard]'})
+                        </option>
+                      );
+                    })}
                 </select>
               </div>
 
@@ -5065,12 +5183,14 @@ const Vehicles = () => {
               </button>
               <button 
                 type="button" 
-                onClick={() => {
-                  handleSwapTrailer(selectedSwapTrailer, swapReason);
+                disabled={!selectedSwapTrailer}
+                onClick={async () => {
+                  await handleSwapTrailer(selectedSwapTrailer, swapReason);
                   setShowSwapTrailerModal(false);
                   setSwapReason('');
+                  setSelectedSwapTrailer('');
                 }} 
-                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
               >
                 <ArrowUpDown size={14} /> Confirm Swap Trailer
               </button>
