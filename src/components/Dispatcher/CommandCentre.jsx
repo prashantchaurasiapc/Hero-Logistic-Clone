@@ -49,7 +49,10 @@ export default function CommandCentre() {
   // Planning Board Control States
   const [boardView, setBoardView] = useState('Board View');
   const [dayView, setDayView] = useState('Day');
-  const [kanbanDate, setKanbanDate] = useState('22 May 2026');
+  const getFormattedDate = (d = new Date()) => {
+    return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+  const [kanbanDate, setKanbanDate] = useState(getFormattedDate());
 
   // Leaflet Map Refs
   const mapContainerRef = useRef(null);
@@ -86,7 +89,27 @@ export default function CommandCentre() {
     return () => clearInterval(interval);
   }, []);
 
-  // Live computed fleet & driver metrics from database (strictly 0 if none)
+  // Live computed load & fleet metrics from database (normalized for uppercase DB statuses)
+  const activeLoadsCount = loads.filter(l => {
+    const s = String(l.status || '').toUpperCase().replace(/[\s-]/g, '_');
+    return s === 'IN_TRANSIT' || s === 'ACTIVE' || s === 'ON_THE_ROAD';
+  }).length;
+
+  const plannedLoadsCount = loads.filter(l => {
+    const s = String(l.status || '').toUpperCase().replace(/[\s-]/g, '_');
+    return s === 'PLANNED' || s === 'PENDING' || s === 'PENDING_DISPATCH' || s === 'SCHEDULED' || s === 'READY_FOR_PICKUP';
+  }).length;
+
+  const completedLoadsCount = loads.filter(l => {
+    const s = String(l.status || '').toUpperCase().replace(/[\s-]/g, '_');
+    return s === 'COMPLETED' || s === 'DELIVERED';
+  }).length;
+
+  const delayedLoadsCount = loads.filter(l => {
+    const s = String(l.status || '').toUpperCase().replace(/[\s-]/g, '_');
+    return s === 'DELAYED' || s === 'ISSUE' || s === 'FLAGGED';
+  }).length;
+
   const availableDriversCount = drivers.filter(d => 
     ['On Duty', 'AVAILABLE', 'ACTIVE', 'En Route', 'On Shift'].includes(d.status) || !d.status
   ).length;
@@ -127,40 +150,66 @@ export default function CommandCentre() {
     };
 
     loads.forEach(l => {
-      let depot = 'SYDNEY DEPOT';
-      if (l.routeFrom === 'Melbourne' || l.routeTo === 'Melbourne') depot = 'MELBOURNE DEPOT';
-      else if (l.routeFrom === 'Brisbane' || l.routeTo === 'Brisbane') depot = 'BRISBANE DEPOT';
-      else if (l.routeFrom === 'Adelaide' || l.routeTo === 'Adelaide') depot = 'ADELAIDE DEPOT';
+      const pickup = l.stops?.find(s => s.type === 'PICKUP') || l.stops?.[0];
+      const drop = l.stops?.slice().reverse().find(s => s.type === 'DELIVERY' || s.type === 'DROP') || l.stops?.[l.stops?.length - 1];
+      const startLoc = l.routeFrom || pickup?.city || pickup?.address?.split(',')?.[0] || l.originCity || 'Sydney Depot';
+      const endLoc = l.routeTo || drop?.city || drop?.address?.split(',')?.[0] || l.destCity || 'Melbourne Depot';
 
-      let borderStyle = 'border-l-amber-500';
-      let statusStyle = 'bg-amber-50 text-amber-700';
-      if (l.status === 'In Transit') {
+      const fromStr = String(startLoc).toLowerCase();
+      const toStr = String(endLoc).toLowerCase();
+
+      let depot = 'SYDNEY DEPOT';
+      if (fromStr.includes('melbourne') || toStr.includes('melbourne')) depot = 'MELBOURNE DEPOT';
+      else if (fromStr.includes('brisbane') || toStr.includes('brisbane')) depot = 'BRISBANE DEPOT';
+      else if (fromStr.includes('adelaide') || toStr.includes('adelaide')) depot = 'ADELAIDE DEPOT';
+      else if (l.branch?.name && columns[`${l.branch.name.toUpperCase()} DEPOT`]) {
+        depot = `${l.branch.name.toUpperCase()} DEPOT`;
+      }
+
+      const norm = String(l.status || '').toUpperCase().replace(/[\s-]/g, '_');
+      let borderStyle = 'border-l-blue-500';
+      let statusStyle = 'bg-blue-50 text-blue-700';
+      let statusLabel = 'Pending Dispatch';
+
+      if (norm === 'IN_TRANSIT' || norm === 'ACTIVE') {
         borderStyle = 'border-l-emerald-500';
         statusStyle = 'bg-emerald-50 text-emerald-700';
-      } else if (l.status === 'Delayed') {
+        statusLabel = 'In Transit';
+      } else if (norm === 'DELAYED') {
         borderStyle = 'border-l-rose-500';
         statusStyle = 'bg-rose-50 text-rose-700';
-      } else if (l.status === 'Pending Dispatch') {
-        borderStyle = 'border-l-blue-500';
-        statusStyle = 'bg-blue-50 text-blue-600';
+        statusLabel = 'Delayed';
+      } else if (norm === 'DELIVERED' || norm === 'COMPLETED') {
+        borderStyle = 'border-l-purple-500';
+        statusStyle = 'bg-purple-50 text-purple-700';
+        statusLabel = 'Delivered';
+      } else if (norm === 'CANCELLED') {
+        borderStyle = 'border-l-slate-400';
+        statusStyle = 'bg-slate-100 text-slate-600';
+        statusLabel = 'Cancelled';
+      } else if (norm === 'PLANNED') {
+        borderStyle = 'border-l-amber-500';
+        statusStyle = 'bg-amber-50 text-amber-700';
+        statusLabel = 'Planned';
       }
 
       const custName = typeof l.customer === 'object' ? (l.customer?.name || l.customer?.companyName || 'Customer') : (l.customer || 'Customer');
-      const startLoc = typeof l.routeFrom === 'object' ? (l.routeFrom?.name || l.routeFrom?.city || 'Sydney') : (l.routeFrom || 'Sydney');
-      const endLoc = typeof l.routeTo === 'object' ? (l.routeTo?.name || l.routeTo?.city || 'Melbourne') : (l.routeTo || 'Melbourne');
       const drvName = typeof l.driver === 'object' ? (l.driver?.name || `${l.driver?.firstName || ''} ${l.driver?.lastName || ''}`.trim() || 'Driver') : (l.driver || 'Driver');
+      const loadRefId = l.loadRef || `LD-${(l.id || '').substring(0, 8).toUpperCase()}`;
+      const unitsCount = l.items?.length || l.vehicles?.length || 1;
+      const displayDate = l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }) : 'Today';
 
       columns[depot].cards.push({
-        id: l.id || l.loadRef || 'LD-000',
-        status: l.status || 'Pending Dispatch',
+        id: loadRefId,
+        rawId: l.id,
+        status: statusLabel,
         statusStyle,
         borderStyle,
         customer: custName,
         routeFrom: startLoc,
         routeTo: endLoc,
-        driverDate: `${l.date || 'Today'} • ${drvName}`,
-        users: l.passengers || 1,
-        packages: l.itemsCount || 8
+        driverDate: `${displayDate} • ${drvName}`,
+        cargoUnits: unitsCount
       });
       columns[depot].count++;
     });
@@ -228,9 +277,9 @@ export default function CommandCentre() {
     });
     mapRef.current = map;
 
-    // Crisp voyager tile layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO'
+    // Clean OpenStreetMap tile layer (no watermark, free)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
     // Route polyline (East Coast Logistics Hubs)
@@ -250,32 +299,35 @@ export default function CommandCentre() {
       opacity: 0.7
     }).addTo(map);
 
-    // Live Vehicle Callout Markers based on actual drivers and loads data
-    const vehicleMarkers = drivers.map((d, index) => {
-      const activeLoad = loads.find(l => l.driverId === d.id && l.status !== 'DELIVERED');
-      if (!activeLoad) return null; // Only show drivers with an active load on the CommandCentre map
+    // Live Vehicle Callout Markers based on active movements
+    const activeLoads = loads.filter(l => ['IN_TRANSIT', 'ACTIVE'].includes(String(l.status || '').toUpperCase()));
+    const vehicleMarkers = (activeLoads.length > 0 ? activeLoads : loads.filter(l => l.status !== 'CANCELLED').slice(0, 3)).map((activeLoad, index) => {
+      const d = activeLoad.driver || drivers.find(drv => drv.id === activeLoad.driverId) || {};
+      const driverName = (typeof d === 'object' ? `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || d.name : d) || 'Assigned Driver';
+      const vehicleName = activeLoad.truck ? `${activeLoad.truck.make || ''} ${activeLoad.truck.model || ''}`.trim() || activeLoad.truck.rego : (activeLoad.vehicle || 'Active Fleet');
+      const loadRefId = activeLoad.loadRef || `LD-${(activeLoad.id || '').substring(0, 8).toUpperCase()}`;
 
-      // Deterministic pseudo-locations if real GPS isn't available
       const baseLat = index % 2 === 0 ? -33.8688 : -37.8136;
       const baseLng = index % 2 === 0 ? 151.2093 : 144.9631;
-      const latOffset = (index * 0.07) % 0.4;
-      const lngOffset = (index * 0.05) % 0.4;
+      const latOffset = (index * 0.12) % 0.5;
+      const lngOffset = (index * 0.08) % 0.5;
 
       let badgeBg = '#16a34a'; // Emerald
-      if (activeLoad.status === 'DELAYED') badgeBg = '#ea580c'; // Orange
-      else if (activeLoad.status === 'PLANNED') badgeBg = '#2563eb'; // Blue
-      else if (activeLoad.status === 'CANCELLED') badgeBg = '#dc2626'; // Red
+      const s = String(activeLoad.status || '').toUpperCase();
+      if (s === 'DELAYED') badgeBg = '#ea580c';
+      else if (s === 'PLANNED') badgeBg = '#2563eb';
+      else if (s === 'CANCELLED') badgeBg = '#dc2626';
 
       return {
-        id: activeLoad.loadRef || activeLoad.id.substring(0, 8),
-        driver: d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : (d.driverCode || 'Driver'),
-        vehicle: activeLoad.truck?.make ? `${activeLoad.truck.make} ${activeLoad.truck.model}` : 'Unknown Vehicle',
-        speed: `${60 + (index * 5) % 30} km/h`,
+        id: loadRefId,
+        driver: driverName,
+        vehicle: vehicleName,
+        speed: `${68 + (index * 4) % 20} km/h`,
         lat: baseLat + latOffset,
         lng: baseLng + lngOffset,
         badgeBg
       };
-    }).filter(Boolean);
+    });
 
     vehicleMarkers.forEach(v => {
       const customHtml = `
@@ -344,8 +396,9 @@ export default function CommandCentre() {
     });
     fullMapRef.current = fullMap;
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO'
+    // Clean OpenStreetMap tile layer (no watermark, free)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
     }).addTo(fullMap);
 
     const routeCoords = [
@@ -364,30 +417,35 @@ export default function CommandCentre() {
       opacity: 0.8
     }).addTo(fullMap);
 
-    const vehicleMarkers = drivers.map((d, index) => {
-      const activeLoad = loads.find(l => l.driverId === d.id && l.status !== 'DELIVERED');
-      if (!activeLoad) return null;
+    // Live Vehicle Callout Markers based on active movements
+    const activeLoads = loads.filter(l => ['IN_TRANSIT', 'ACTIVE'].includes(String(l.status || '').toUpperCase()));
+    const vehicleMarkers = (activeLoads.length > 0 ? activeLoads : loads.filter(l => l.status !== 'CANCELLED').slice(0, 3)).map((activeLoad, index) => {
+      const d = activeLoad.driver || drivers.find(drv => drv.id === activeLoad.driverId) || {};
+      const driverName = (typeof d === 'object' ? `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || d.name : d) || 'Assigned Driver';
+      const vehicleName = activeLoad.truck ? `${activeLoad.truck.make || ''} ${activeLoad.truck.model || ''}`.trim() || activeLoad.truck.rego : (activeLoad.vehicle || 'Active Fleet');
+      const loadRefId = activeLoad.loadRef || `LD-${(activeLoad.id || '').substring(0, 8).toUpperCase()}`;
 
       const baseLat = index % 2 === 0 ? -33.8688 : -37.8136;
       const baseLng = index % 2 === 0 ? 151.2093 : 144.9631;
-      const latOffset = (index * 0.07) % 0.4;
-      const lngOffset = (index * 0.05) % 0.4;
+      const latOffset = (index * 0.12) % 0.5;
+      const lngOffset = (index * 0.08) % 0.5;
 
       let badgeBg = '#16a34a'; // Emerald
-      if (activeLoad.status === 'DELAYED') badgeBg = '#ea580c'; // Orange
-      else if (activeLoad.status === 'PLANNED') badgeBg = '#2563eb'; // Blue
-      else if (activeLoad.status === 'CANCELLED') badgeBg = '#dc2626'; // Red
+      const s = String(activeLoad.status || '').toUpperCase();
+      if (s === 'DELAYED') badgeBg = '#ea580c';
+      else if (s === 'PLANNED') badgeBg = '#2563eb';
+      else if (s === 'CANCELLED') badgeBg = '#dc2626';
 
       return {
-        id: activeLoad.loadRef || activeLoad.id.substring(0, 8),
-        driver: d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : (d.driverCode || 'Driver'),
-        vehicle: activeLoad.truck?.make ? `${activeLoad.truck.make} ${activeLoad.truck.model}` : 'Unknown Vehicle',
-        speed: `${60 + (index * 5) % 30} km/h`,
+        id: loadRefId,
+        driver: driverName,
+        vehicle: vehicleName,
+        speed: `${68 + (index * 4) % 20} km/h`,
         lat: baseLat + latOffset,
         lng: baseLng + lngOffset,
         badgeBg
       };
-    }).filter(Boolean);
+    });
 
     vehicleMarkers.forEach(v => {
       const customHtml = `
@@ -510,12 +568,13 @@ export default function CommandCentre() {
     const matchesNiche = selectedNiche === 'All Types' || String(load.type || '').toLowerCase().includes(selectedNiche.toLowerCase());
     const matchesVehicle = selectedVehicle === 'All' || (selectedVehicle && vehicleStr.includes(selectedVehicle.toLowerCase()));
 
+    const normLoadStatus = String(load.status || '').toUpperCase().replace(/[\s-]/g, '_');
     const matchesTab = 
       activeLoadTab === 'All' ? true :
-      activeLoadTab === 'Active' ? (load.status === 'In Transit' || load.status === 'Delayed') :
-      activeLoadTab === 'Planned' ? (load.status === 'Planned' || load.status === 'Pending Dispatch') :
-      activeLoadTab === 'Completed' ? load.status === 'Completed' :
-      activeLoadTab === 'On Hold' ? load.status === 'On Hold' : true;
+      activeLoadTab === 'Active' ? ['IN_TRANSIT', 'ACTIVE', 'DELAYED'].includes(normLoadStatus) :
+      activeLoadTab === 'Planned' ? ['PLANNED', 'PENDING', 'PENDING_DISPATCH', 'READY_FOR_PICKUP'].includes(normLoadStatus) :
+      activeLoadTab === 'Completed' ? ['COMPLETED', 'DELIVERED'].includes(normLoadStatus) :
+      activeLoadTab === 'On Hold' ? ['ON_HOLD', 'CANCELLED', 'HOLD'].includes(normLoadStatus) : true;
 
     return matchesSearch && matchesBranch && matchesStatus && matchesDriver && matchesCustomer && matchesDestination && matchesNiche && matchesVehicle && matchesTab;
   });
@@ -582,7 +641,7 @@ export default function CommandCentre() {
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Active Loads</span>
                   <h3 className="text-lg font-bold text-slate-900 leading-tight">
-                    {loads.filter(l => l.status === 'In Transit').length || 0}
+                    {activeLoadsCount}
                   </h3>
                   <span className="text-[9.5px] font-semibold text-emerald-600 block mt-0.5">On the road</span>
                 </div>
@@ -596,7 +655,7 @@ export default function CommandCentre() {
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Planned Loads</span>
                   <h3 className="text-lg font-bold text-slate-900 leading-tight">
-                    {loads.filter(l => l.status === 'Planned' || l.status === 'Pending Dispatch').length}
+                    {plannedLoadsCount}
                   </h3>
                   <span className="text-[9.5px] font-semibold text-amber-600 block mt-0.5">Scheduled</span>
                 </div>
@@ -610,7 +669,7 @@ export default function CommandCentre() {
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Completed Today</span>
                   <h3 className="text-lg font-bold text-slate-900 leading-tight">
-                    {loads.filter(l => l.status === 'Completed').length}
+                    {completedLoadsCount}
                   </h3>
                   <span className="text-[9.5px] font-semibold text-purple-600 block mt-0.5">Delivered</span>
                 </div>
@@ -624,7 +683,7 @@ export default function CommandCentre() {
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Delayed Loads</span>
                   <h3 className="text-lg font-bold text-slate-900 leading-tight">
-                    {loads.filter(l => l.status === 'Delayed').length}
+                    {delayedLoadsCount}
                   </h3>
                   <span className="text-[9.5px] font-semibold text-rose-600 block mt-0.5">Requires attention</span>
                 </div>
@@ -916,50 +975,81 @@ export default function CommandCentre() {
                       <p className="text-[11px] text-slate-400 mt-0.5">Loads created in the system will appear here.</p>
                     </div>
                   ) : (
-                    filteredLoads.map((load) => (
-                      <div 
-                        key={load.id}
-                        onClick={() => {
-                          setSelectedLoadId(load.id);
-                          setView('manage-load');
-                        }}
-                        className="p-2.5 border border-slate-200/80 rounded-lg bg-white hover:border-blue-300 hover:shadow-2xs transition-all cursor-pointer text-left space-y-1"
-                      >
-                        <div className="flex justify-between items-center gap-1">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-xs font-bold text-slate-900 whitespace-nowrap">{load.id}</span>
-                            <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold whitespace-nowrap shrink-0 ${
-                              load.status === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                              load.status === 'Pending Dispatch' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-                              load.status === 'Delayed' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                              load.status === 'Planned' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                              'bg-slate-100 text-slate-600 border border-slate-200'
-                            }`}>
-                              {load.status}
-                            </span>
+                    filteredLoads.map((load) => {
+                      const pickup = load.stops?.find(s => s.type === 'PICKUP') || load.stops?.[0];
+                      const drop = load.stops?.slice().reverse().find(s => s.type === 'DELIVERY' || s.type === 'DROP') || load.stops?.[load.stops?.length - 1];
+                      const originCity = load.routeFrom || pickup?.city || pickup?.address?.split(',')?.[0] || load.originCity || 'Sydney Depot';
+                      const destCity = load.routeTo || drop?.city || drop?.address?.split(',')?.[0] || load.destCity || 'Melbourne Depot';
+                      const loadRef = load.loadRef || `LD-${(load.id || '').substring(0, 8).toUpperCase()}`;
+                      const customerName = (typeof load.customer === 'object' ? load.customer?.name : load.customer) || 'Commercial Freight';
+                      const vehicleName = load.truck 
+                        ? `${load.truck.make || ''} ${load.truck.model || ''} (${load.truck.rego || load.truck.plate})`.trim()
+                        : (load.vehicle || (load.trailer ? `Trailer (${load.trailer.rego})` : 'Fleet Pending'));
+                      const loadDate = load.createdAt ? new Date(load.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }) : (load.date || 'Today');
+
+                      const norm = String(load.status || '').toUpperCase().replace(/[\s-]/g, '_');
+                      let statusBadgeClass = 'bg-slate-100 text-slate-700 border border-slate-200';
+                      let statusText = load.status || 'Active';
+
+                      if (norm === 'IN_TRANSIT' || norm === 'ACTIVE') {
+                        statusBadgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+                        statusText = 'In Transit';
+                      } else if (norm === 'PENDING_DISPATCH' || norm === 'READY_FOR_PICKUP') {
+                        statusBadgeClass = 'bg-blue-50 text-blue-700 border border-blue-200';
+                        statusText = 'Pending Dispatch';
+                      } else if (norm === 'PLANNED') {
+                        statusBadgeClass = 'bg-amber-50 text-amber-700 border border-amber-200';
+                        statusText = 'Planned';
+                      } else if (norm === 'DELIVERED' || norm === 'COMPLETED') {
+                        statusBadgeClass = 'bg-purple-50 text-purple-700 border border-purple-200';
+                        statusText = 'Delivered';
+                      } else if (norm === 'DELAYED') {
+                        statusBadgeClass = 'bg-rose-50 text-rose-700 border border-rose-200';
+                        statusText = 'Delayed';
+                      } else if (norm === 'CANCELLED') {
+                        statusBadgeClass = 'bg-slate-100 text-slate-600 border border-slate-200';
+                        statusText = 'Cancelled';
+                      }
+
+                      return (
+                        <div 
+                          key={load.id}
+                          onClick={() => {
+                            setSelectedLoadId(load.id);
+                            setView('manage-load');
+                          }}
+                          className="p-2.5 border border-slate-200/80 rounded-lg bg-white hover:border-blue-300 hover:shadow-2xs transition-all cursor-pointer text-left space-y-1"
+                        >
+                          <div className="flex justify-between items-center gap-1">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-xs font-bold text-slate-900 whitespace-nowrap">{loadRef}</span>
+                              <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold whitespace-nowrap shrink-0 ${statusBadgeClass}`}>
+                                {statusText}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="text-[9.5px] text-slate-400 font-medium whitespace-nowrap">{loadDate}</span>
+                              <button className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer">
+                                <MoreVertical className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <span className="text-[9.5px] text-slate-400 font-medium whitespace-nowrap">{load.date}</span>
-                            <button className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer">
-                              <MoreVertical className="w-3.5 h-3.5" />
-                            </button>
+
+                          <div className="text-[11.5px] font-semibold text-slate-800 truncate" title={customerName}>{customerName}</div>
+
+                          <div className="flex items-center gap-1 text-[11px] text-slate-600">
+                            <span className="truncate max-w-[105px]">{originCity}</span>
+                            <ArrowRight className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate max-w-[105px]">{destCity}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                            <Truck className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate">{vehicleName}</span>
                           </div>
                         </div>
-
-                        <div className="text-[11.5px] font-semibold text-slate-800">{typeof load.customer === 'object' ? load.customer?.name : load.customer}</div>
-
-                        <div className="flex items-center gap-1 text-[11px] text-slate-600">
-                          <span>{load.routeFrom}</span>
-                          <ArrowRight className="w-3 h-3 text-slate-400" />
-                          <span>{load.routeTo}</span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 pt-1 border-t border-slate-100">
-                          <Truck className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>{load.vehicle}</span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -1008,7 +1098,7 @@ export default function CommandCentre() {
                     </div>
 
                     <button 
-                      onClick={() => setKanbanDate('22 May 2026')}
+                      onClick={() => setKanbanDate(getFormattedDate())}
                       className="px-2 py-1 border border-slate-200 hover:bg-slate-50 rounded-md text-[11px] font-medium text-slate-600 cursor-pointer"
                     >
                       Today
@@ -1043,7 +1133,7 @@ export default function CommandCentre() {
                             <div 
                               key={card.id}
                               onClick={() => {
-                                setSelectedLoadId(card.id);
+                                setSelectedLoadId(card.rawId || card.id);
                                 setView('manage-load');
                               }}
                               className={`p-2 bg-white rounded-lg border border-slate-200/80 shadow-2xs border-l-3 ${card.borderStyle} hover:shadow-xs transition-all cursor-pointer text-left space-y-1`}
@@ -1065,9 +1155,9 @@ export default function CommandCentre() {
 
                               <div className="text-[9px] text-slate-400 font-medium pt-1 border-t border-slate-100 flex items-center justify-between gap-1">
                                 <span className="truncate text-[8.5px] text-slate-500 font-medium">{card.driverDate}</span>
-                                <div className="flex items-center gap-1.5 text-slate-500 font-medium shrink-0 text-[8.5px]">
-                                  <span>👤 {card.users}</span>
-                                  <span>📦 {card.packages}</span>
+                                <div className="flex items-center gap-1 text-slate-600 font-medium shrink-0 text-[8.5px]">
+                                  <Truck className="w-2.5 h-2.5 text-slate-400" />
+                                  <span>{card.cargoUnits || 1} unit{(card.cargoUnits || 1) > 1 ? 's' : ''}</span>
                                 </div>
                               </div>
                             </div>
@@ -1262,11 +1352,21 @@ export default function CommandCentre() {
               ) : (
                 filteredDrivers.map((driver) => {
                   const driverName = driver.name || `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || driver.driverCode || 'Driver';
-                  const driverVehicle = driver.assignedTruck?.rego || driver.assignedTruck?.plate || driver.vehicle || 'Unassigned';
-                  const linkedLoad = loads.find(l => l.driverId === driver.id && l.status !== 'DELIVERED');
-                  const loadRef = linkedLoad?.loadRef || linkedLoad?.id || driver.loadId || 'None';
-                  const location = driver.city || driver.currentLocation || driver.location || 'Depot';
-                  const telemetry = driver.telemetry || (linkedLoad ? '68 km/h • GPS Sync' : 'Stationary');
+                  const linkedLoad = loads.find(l => 
+                    (l.driverId === driver.id || l.driver?.id === driver.id) && 
+                    !['DELIVERED', 'CANCELLED'].includes(String(l.status || '').toUpperCase())
+                  );
+                  const linkedTruck = linkedLoad?.truck || vehicles.find(v => 
+                    v.assignedDriverId === driver.id || v.driverId === driver.id || v.assignedDriver?.id === driver.id
+                  );
+                  const driverVehicle = linkedTruck 
+                    ? `${linkedTruck.make || ''} ${linkedTruck.model || ''} (${linkedTruck.rego || linkedTruck.plate})`.trim()
+                    : (driver.assignedTruck?.rego || driver.vehicle || 'Available Fleet');
+                  const loadRef = linkedLoad ? (linkedLoad.loadRef || `LD-${(linkedLoad.id || '').substring(0, 8).toUpperCase()}`) : 'None';
+                  const pickup = linkedLoad?.stops?.find(s => s.type === 'PICKUP') || linkedLoad?.stops?.[0];
+                  const location = linkedLoad ? (linkedLoad.routeFrom || pickup?.city || 'In Transit') : (driver.city || driver.currentLocation || 'Sydney Depot');
+                  const isMoving = linkedLoad && ['IN_TRANSIT', 'ACTIVE'].includes(String(linkedLoad.status || '').toUpperCase());
+                  const telemetry = isMoving ? '74 km/h • GPS Sync' : 'Standby in Depot';
                   const avatar = driver.avatar || driver.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(driverName)}&background=0284c7&color=fff&bold=true`;
 
                   return (
