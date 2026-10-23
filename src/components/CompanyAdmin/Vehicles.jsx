@@ -449,6 +449,46 @@ const Vehicles = () => {
   const [activeExpenseMenuId, setActiveExpenseMenuId] = React.useState(null);
 
   const [expensesList, setExpensesList] = React.useState([]);
+  const [activityList, setActivityList] = React.useState([]);
+  const [activitySubTab, setActivitySubTab] = React.useState('All Activity');
+  const [activitySearchQuery, setActivitySearchQuery] = React.useState('');
+
+  const totalExpenseSpend = React.useMemo(() => {
+    return expensesList.reduce((acc, cur) => acc + (parseFloat(String(cur.amount || 0).replace(/[^0-9.-]+/g, '')) || 0), 0);
+  }, [expensesList]);
+
+  const fuelExpenseSpend = React.useMemo(() => {
+    return expensesList.filter(e => e.category === 'Fuel').reduce((acc, cur) => acc + (parseFloat(String(cur.amount || 0).replace(/[^0-9.-]+/g, '')) || 0), 0);
+  }, [expensesList]);
+
+  const maintenanceExpenseSpend = React.useMemo(() => {
+    return expensesList.filter(e => e.category === 'Maintenance').reduce((acc, cur) => acc + (parseFloat(String(cur.amount || 0).replace(/[^0-9.-]+/g, '')) || 0), 0);
+  }, [expensesList]);
+
+  const repairsExpenseSpend = React.useMemo(() => {
+    return expensesList.filter(e => e.category === 'Repairs').reduce((acc, cur) => acc + (parseFloat(String(cur.amount || 0).replace(/[^0-9.-]+/g, '')) || 0), 0);
+  }, [expensesList]);
+
+  const registrationExpenseSpend = React.useMemo(() => {
+    return expensesList.filter(e => e.category === 'Registration').reduce((acc, cur) => acc + (parseFloat(String(cur.amount || 0).replace(/[^0-9.-]+/g, '')) || 0), 0);
+  }, [expensesList]);
+
+  const insuranceExpenseSpend = React.useMemo(() => {
+    return expensesList.filter(e => e.category === 'Insurance').reduce((acc, cur) => acc + (parseFloat(String(cur.amount || 0).replace(/[^0-9.-]+/g, '')) || 0), 0);
+  }, [expensesList]);
+
+  const tollsExpenseSpend = React.useMemo(() => {
+    return expensesList.filter(e => e.category === 'Tolls').reduce((acc, cur) => acc + (parseFloat(String(cur.amount || 0).replace(/[^0-9.-]+/g, '')) || 0), 0);
+  }, [expensesList]);
+
+  const otherExpenseSpend = React.useMemo(() => {
+    return expensesList.filter(e => !['Fuel', 'Maintenance', 'Repairs', 'Registration', 'Insurance', 'Tolls'].includes(e.category)).reduce((acc, cur) => acc + (parseFloat(String(cur.amount || 0).replace(/[^0-9.-]+/g, '')) || 0), 0);
+  }, [expensesList]);
+
+  const highestExpenseAmount = React.useMemo(() => {
+    if (expensesList.length === 0) return 0;
+    return Math.max(...expensesList.map(e => parseFloat(String(e.amount || 0).replace(/[^0-9.-]+/g, '')) || 0));
+  }, [expensesList]);
 
   const filteredExpenses = React.useMemo(() => {
     return expensesList.filter(item => {
@@ -3464,41 +3504,51 @@ const Vehicles = () => {
                         <div className="flex items-start gap-3">
                            <div className="w-8 h-8 rounded bg-purple-50 flex items-center justify-center border border-purple-100 shrink-0"><FileText size={14} className="text-purple-600" /></div>
                            <div className="min-w-0">
-                              <div className="text-[16px] font-black text-gray-900">$28,450</div>
+                              <div className="text-[16px] font-black text-gray-900">
+                                 {totalExpenseSpend > 0 ? `$${totalExpenseSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'}
+                              </div>
                               <div className="text-[11px] font-bold text-gray-700 mt-0.5">Total Spend</div>
-                              <div className="text-[10px] text-gray-500 font-medium truncate">All categories</div>
+                              <div className="text-[10px] text-gray-500 font-medium truncate">{expensesList.length} expenses recorded</div>
                            </div>
                         </div>
                         <div className="flex items-start gap-3 md:pl-4 border-none md:border-solid border-l border-gray-100">
                            <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0"><Wrench size={14} className="text-blue-600" /></div>
                            <div className="min-w-0">
-                              <div className="text-[16px] font-black text-gray-900">$2.37</div>
+                              <div className="text-[16px] font-black text-gray-900">
+                                 {totalExpenseSpend > 0 && Number(managingVehicle?.odometer) > 0 ? `$${(totalExpenseSpend / Number(managingVehicle.odometer)).toFixed(2)}` : '$0.00'}
+                              </div>
                               <div className="text-[11px] font-bold text-gray-700 mt-0.5">Cost per km</div>
-                              <div className="text-[10px] text-gray-500 font-medium truncate">Based on 12,000 km</div>
+                              <div className="text-[10px] text-gray-500 font-medium truncate">Based on vehicle reading</div>
                            </div>
                         </div>
                         <div className="flex items-start gap-3 md:pl-4 border-none md:border-solid border-l border-gray-100">
                            <div className="w-8 h-8 rounded bg-green-50 flex items-center justify-center border border-green-100 shrink-0"><MapPin size={14} className="text-green-600" /></div>
                            <div className="min-w-0">
-                              <div className="text-[16px] font-black text-gray-900">12,000 km</div>
+                              <div className="text-[16px] font-black text-gray-900">
+                                 {managingVehicle?.odometer ? `${Number(managingVehicle.odometer).toLocaleString()} km` : '0 km'}
+                              </div>
                               <div className="text-[11px] font-bold text-gray-700 mt-0.5">Distance Driven</div>
-                              <div className="text-[10px] text-gray-500 font-medium truncate">This year</div>
+                              <div className="text-[10px] text-gray-500 font-medium truncate">Registered odometer</div>
                            </div>
                         </div>
                         <div className="flex items-start gap-3 md:pl-4 border-none md:border-solid border-l border-gray-100">
                            <div className="w-8 h-8 rounded bg-orange-50 flex items-center justify-center border border-orange-100 shrink-0"><Calendar size={14} className="text-orange-600" /></div>
                            <div className="min-w-0">
-                              <div className="text-[16px] font-black text-gray-900">$350</div>
+                              <div className="text-[16px] font-black text-gray-900">
+                                 {totalExpenseSpend > 0 ? `$${(totalExpenseSpend / 12).toFixed(2)}` : '$0.00'}
+                              </div>
                               <div className="text-[11px] font-bold text-gray-700 mt-0.5">Avg. Monthly Spend</div>
-                              <div className="text-[10px] text-gray-500 font-medium truncate">All categories</div>
+                              <div className="text-[10px] text-gray-500 font-medium truncate">This year</div>
                            </div>
                         </div>
                         <div className="flex items-start gap-3 md:pl-4 border-none md:border-solid border-l border-gray-100">
                            <div className="w-8 h-8 rounded bg-purple-50 flex items-center justify-center border border-purple-100 shrink-0"><FileText size={14} className="text-purple-600" /></div>
                            <div className="min-w-0">
-                              <div className="text-[16px] font-black text-gray-900">$150</div>
+                              <div className="text-[16px] font-black text-gray-900">
+                                 {highestExpenseAmount > 0 ? `$${highestExpenseAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'}
+                              </div>
                               <div className="text-[11px] font-bold text-gray-700 mt-0.5">Highest Expense</div>
-                              <div className="text-[10px] text-gray-500 font-medium truncate">Fuel - 15 May 2025</div>
+                              <div className="text-[10px] text-gray-500 font-medium truncate">{highestExpenseAmount > 0 ? 'Single transaction' : 'None recorded'}</div>
                            </div>
                         </div>
                      </div>
@@ -3701,35 +3751,51 @@ const Vehicles = () => {
                      <div className="flex flex-col gap-4 text-[12px] font-medium">
                         <div className="flex justify-between items-center">
                            <span className="text-gray-700">Fuel</span>
-                           <span className="font-bold text-gray-900">$12,450</span>
+                           <span className="font-bold text-gray-900">
+                              {fuelExpenseSpend > 0 ? `$${fuelExpenseSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
+                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                            <span className="text-gray-700">Maintenance</span>
-                           <span className="font-bold text-gray-900">$6,280</span>
+                           <span className="font-bold text-gray-900">
+                              {maintenanceExpenseSpend > 0 ? `$${maintenanceExpenseSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
+                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                            <span className="text-gray-700">Repairs</span>
-                           <span className="font-bold text-gray-900">$4,950</span>
+                           <span className="font-bold text-gray-900">
+                              {repairsExpenseSpend > 0 ? `$${repairsExpenseSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
+                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                            <span className="text-gray-700">Registration</span>
-                           <span className="font-bold text-gray-900">$1,320</span>
+                           <span className="font-bold text-gray-900">
+                              {registrationExpenseSpend > 0 ? `$${registrationExpenseSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
+                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                            <span className="text-gray-700">Insurance</span>
-                           <span className="font-bold text-gray-900">$1,100</span>
+                           <span className="font-bold text-gray-900">
+                              {insuranceExpenseSpend > 0 ? `$${insuranceExpenseSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
+                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                            <span className="text-gray-700">Tolls</span>
-                           <span className="font-bold text-gray-900">$980</span>
+                           <span className="font-bold text-gray-900">
+                              {tollsExpenseSpend > 0 ? `$${tollsExpenseSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
+                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                            <span className="text-gray-700">Other</span>
-                           <span className="font-bold text-gray-900">$3,450</span>
+                           <span className="font-bold text-gray-900">
+                              {otherExpenseSpend > 0 ? `$${otherExpenseSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
+                           </span>
                         </div>
                         <div className="flex justify-between items-center pt-3 border-t border-gray-100">
                            <span className="font-black text-purple-700 text-[13px]">Total</span>
-                           <span className="font-black text-purple-700 text-[14px]">$28,450</span>
+                           <span className="font-black text-purple-700 text-[14px]">
+                              {totalExpenseSpend > 0 ? `$${totalExpenseSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '$0.00'}
+                           </span>
                         </div>
                      </div>
                   </div>
@@ -3738,49 +3804,26 @@ const Vehicles = () => {
                   <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex flex-col">
                      <div className="flex justify-between items-center mb-6 border-b border-gray-50 pb-4">
                         <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest">RECENT EXPENSES</h3>
-                        <a href="#" className="text-[11px] font-bold text-purple-700 flex items-center gap-1 hover:underline">View All <ArrowRight size={12} /></a>
+                        <span className="text-[11px] font-bold text-slate-400">{expensesList.length} Total</span>
                      </div>
                      <div className="flex flex-col gap-4">
-                        <div className="flex items-start gap-3 border-b border-gray-50 pb-4">
-                           <div className="mt-0.5 w-6 h-6 rounded bg-purple-50 flex items-center justify-center shrink-0 border border-purple-100"><FileText size={12} className="text-purple-600" /></div>
-                           <div className="flex-grow min-w-0">
-                              <div className="text-[12px] font-bold text-gray-900 truncate">Fuel - BP Eastern Creek</div>
-                              <div className="text-[11px] text-gray-500 font-medium">15 May 2025</div>
+                        {expensesList.length === 0 ? (
+                           <div className="py-6 text-center text-slate-400 text-xs font-medium flex flex-col items-center gap-2">
+                              <FileText size={24} className="text-slate-300" />
+                              <span>No recent expenses recorded</span>
                            </div>
-                           <span className="text-[11px] font-bold text-green-600 whitespace-nowrap">$764.75</span>
-                        </div>
-                        <div className="flex items-start gap-3 border-b border-gray-50 pb-4">
-                           <div className="mt-0.5 w-6 h-6 rounded bg-purple-50 flex items-center justify-center shrink-0 border border-purple-100"><Wrench size={12} className="text-purple-600" /></div>
-                           <div className="flex-grow min-w-0">
-                              <div className="text-[12px] font-bold text-gray-900 truncate">Routine Service</div>
-                              <div className="text-[11px] text-gray-500 font-medium">10 May 2025</div>
-                           </div>
-                           <span className="text-[11px] font-bold text-green-600 whitespace-nowrap">$350.00</span>
-                        </div>
-                        <div className="flex items-start gap-3 border-b border-gray-50 pb-4">
-                           <div className="mt-0.5 w-6 h-6 rounded bg-purple-50 flex items-center justify-center shrink-0 border border-purple-100"><Settings size={12} className="text-purple-600" /></div>
-                           <div className="flex-grow min-w-0">
-                              <div className="text-[12px] font-bold text-gray-900 truncate">Brake Pads Replacement</div>
-                              <div className="text-[11px] text-gray-500 font-medium">01 May 2025</div>
-                           </div>
-                           <span className="text-[11px] font-bold text-green-600 whitespace-nowrap">$1,250.00</span>
-                        </div>
-                        <div className="flex items-start gap-3 border-b border-gray-50 pb-4">
-                           <div className="mt-0.5 w-6 h-6 rounded bg-purple-50 flex items-center justify-center shrink-0 border border-purple-100"><Shield size={12} className="text-purple-600" /></div>
-                           <div className="flex-grow min-w-0">
-                              <div className="text-[12px] font-bold text-gray-900 truncate">Insurance Premium - Q2</div>
-                              <div className="text-[11px] text-gray-500 font-medium">28 Apr 2025</div>
-                           </div>
-                           <span className="text-[11px] font-bold text-green-600 whitespace-nowrap">$1,100.00</span>
-                        </div>
-                        <div className="flex items-start gap-3">
-                           <div className="mt-0.5 w-6 h-6 rounded bg-purple-50 flex items-center justify-center shrink-0 border border-purple-100"><FileText size={12} className="text-purple-600" /></div>
-                           <div className="flex-grow min-w-0">
-                              <div className="text-[12px] font-bold text-gray-900 truncate">Truck Wash</div>
-                              <div className="text-[11px] text-gray-500 font-medium">15 Apr 2025</div>
-                           </div>
-                           <span className="text-[11px] font-bold text-green-600 whitespace-nowrap">$55.00</span>
-                        </div>
+                        ) : (
+                           expensesList.slice(0, 5).map((item) => (
+                              <div key={item.id} className="flex items-start gap-3 border-b border-gray-50 pb-4 last:border-b-0 last:pb-0">
+                                 <div className="mt-0.5 w-6 h-6 rounded bg-purple-50 flex items-center justify-center shrink-0 border border-purple-100"><FileText size={12} className="text-purple-600" /></div>
+                                 <div className="flex-grow min-w-0">
+                                    <div className="text-[12px] font-bold text-gray-900 truncate">{item.description}</div>
+                                    <div className="text-[11px] text-gray-500 font-medium">{item.date}</div>
+                                 </div>
+                                 <span className="text-[11px] font-bold text-green-600 whitespace-nowrap">{item.amount}</span>
+                              </div>
+                           ))
+                        )}
                      </div>
                   </div>
                </div>
@@ -3793,22 +3836,23 @@ const Vehicles = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                {/* Left Column */}
                <div className="lg:col-span-9 flex flex-col gap-6">
-                  {/* Filters Row */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                     <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-[13px] font-bold shadow-sm hover:bg-gray-50 cursor-pointer">
-                        15 Apr 2025 - 15 May 2025 <Calendar size={14} className="text-gray-500 ml-1" />
-                     </button>
+                  {/* Top Bar with Date Range and Filters */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                     <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                        <Calendar size={14} className="text-purple-600" />
+                        <span>All Recorded Activities</span>
+                     </div>
                      <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-[13px] font-bold shadow-sm hover:bg-gray-50 cursor-pointer">
-                           <Filter size={14} /> Filters
-                        </button>
                         <div className="relative flex-grow sm:w-64">
                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                           <input type="text" placeholder="Search activity..." className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-purple-300 shadow-sm w-full" />
+                           <input 
+                             type="text" 
+                             value={activitySearchQuery}
+                             onChange={e => setActivitySearchQuery(e.target.value)}
+                             placeholder="Search activity..." 
+                             className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-purple-300 shadow-sm w-full text-slate-800" 
+                           />
                         </div>
-                        <button className="flex items-center justify-center w-10 h-10 bg-white border border-gray-200 text-gray-600 rounded-lg shadow-sm hover:bg-gray-50 cursor-pointer shrink-0">
-                           <Download size={14} />
-                        </button>
                      </div>
                   </div>
 
@@ -3816,7 +3860,11 @@ const Vehicles = () => {
                   <div className="bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col">
                      <div className="flex gap-6 min-w-max px-6 pt-2 border-b border-gray-100 overflow-x-auto min-w-0 w-full">
                         {['All Activity', 'Assignments', 'Maintenance', 'Documents', 'Compliance', 'Costs', 'Driver', 'Location', 'System'].map(tab => (
-                           <button key={tab} className={`pb-4 pt-4 text-[13px] font-bold tracking-wide relative whitespace-nowrap cursor-pointer ${tab === 'All Activity' ? 'text-purple-700 border-b-2 border-purple-700' : 'text-gray-500 hover:text-gray-700'}`}>
+                           <button 
+                             key={tab} 
+                             onClick={() => setActivitySubTab(tab)}
+                             className={`pb-4 pt-4 text-[13px] font-bold tracking-wide relative whitespace-nowrap cursor-pointer ${activitySubTab === tab ? 'text-purple-700 border-b-2 border-purple-700' : 'text-gray-500 hover:text-gray-700'}`}
+                           >
                               {tab}
                            </button>
                         ))}
@@ -3835,105 +3883,39 @@ const Vehicles = () => {
                               </tr>
                            </thead>
                            <tbody className="divide-y divide-gray-50 text-gray-700 font-medium">
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap"><div className="text-[12px] font-bold text-gray-900">15 May 2025</div><div className="text-[10px] text-gray-500">08:15 AM</div></td>
-                                 <td className="py-3 px-4 whitespace-nowrap"><div className="flex items-center gap-1.5 text-gray-700 font-bold"><div className="w-6 h-6 rounded bg-green-50 flex items-center justify-center border border-green-100 shrink-0"><User size={12} className="text-green-600" /></div> Driver Assigned</div></td>
-                                 <td className="py-3 px-4 whitespace-nowrap"><div className="text-gray-900 truncate font-medium">Driver Mike Thompson (DR001)</div><div className="text-[11px] text-gray-500">assigned to vehicle</div></td>
-                                 <td className="py-3 px-4 whitespace-nowrap"><div className="text-gray-900 font-medium">Admin User</div></td>
-                                 <td className="py-3 px-4 whitespace-nowrap"><div className="text-gray-500">Assignment ID: ASG-7781</div></td>
-                                 <td className="py-3 px-4 whitespace-nowrap"><div className="text-gray-500">Sydney Depot</div></td>
-                                 <td className="py-3 px-6 whitespace-nowrap"><div className="flex justify-center text-gray-400"><Eye size={14} className="hover:text-purple-600 cursor-pointer" /></div></td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap"><div className="text-[12px] font-bold text-gray-900">15 May 2025</div><div className="text-[10px] text-gray-500">07:50 AM</div></td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-gray-700 font-bold"><div className="w-6 h-6 rounded bg-purple-50 flex items-center justify-center border border-purple-100 shrink-0"><Truck size={12} className="text-purple-600" /></div> Trailer Assigned</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 truncate font-medium">Trailer TRL201 – 8 Car Carrier</div><div className="text-[11px] text-gray-500">assigned to vehicle</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 font-medium">Admin User</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">Assignment ID: ASG-7780</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">Sydney Depot</div></td>
-                                 <td className="py-3 px-6"><div className="flex justify-center text-gray-400"><Eye size={14} className="hover:text-purple-600 cursor-pointer" /></div></td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap"><div className="text-[12px] font-bold text-gray-900">15 May 2025</div><div className="text-[10px] text-gray-500">06:45 AM</div></td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-gray-700 font-bold"><div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0"><Wrench size={12} className="text-blue-600" /></div> Service Completed</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 truncate font-medium">Routine Service – Oil & Filter Change</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 font-medium">Mike Thompson</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">SRV-10458</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">Sydney Depot</div></td>
-                                 <td className="py-3 px-6"><div className="flex justify-center text-gray-400"><Eye size={14} className="hover:text-purple-600 cursor-pointer" /></div></td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap"><div className="text-[12px] font-bold text-gray-900">14 May 2025</div><div className="text-[10px] text-gray-500">04:30 PM</div></td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-gray-700 font-bold"><div className="w-6 h-6 rounded bg-orange-50 flex items-center justify-center border border-orange-100 shrink-0"><FileText size={12} className="text-orange-600" /></div> Fuel Expense</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 truncate font-medium">Fuel purchase at BP Eastern Creek</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 font-medium">Mike Thompson</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">BP-INV-55421 | $764.75</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">Eastern Creek, NSW</div></td>
-                                 <td className="py-3 px-6"><div className="flex justify-center text-gray-400"><Eye size={14} className="hover:text-purple-600 cursor-pointer" /></div></td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap"><div className="text-[12px] font-bold text-gray-900">12 May 2025</div><div className="text-[10px] text-gray-500">09:10 AM</div></td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-gray-700 font-bold"><div className="w-6 h-6 rounded bg-green-50 flex items-center justify-center border border-green-100 shrink-0"><FileText size={12} className="text-green-600" /></div> Document Uploaded</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 truncate font-medium">Registration Certificate uploaded</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 font-medium">Mike Thompson</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">REG-ABC123</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">Sydney Depot</div></td>
-                                 <td className="py-3 px-6"><div className="flex justify-center text-gray-400"><Eye size={14} className="hover:text-purple-600 cursor-pointer" /></div></td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap"><div className="text-[12px] font-bold text-gray-900">10 May 2025</div><div className="text-[10px] text-gray-500">10:20 PM</div></td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-gray-700 font-bold"><div className="w-6 h-6 rounded bg-red-50 flex items-center justify-center border border-red-100 shrink-0"><AlertTriangle size={12} className="text-red-600" /></div> Compliance Expiry Alert</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 truncate font-medium">Roadworthy Certificate</div><div className="text-[11px] text-gray-500">expires in 28 days</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 font-medium">System</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">RWC-TRK-8899</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-400">—</div></td>
-                                 <td className="py-3 px-6"><div className="flex justify-center text-gray-400"><Eye size={14} className="hover:text-purple-600 cursor-pointer" /></div></td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap"><div className="text-[12px] font-bold text-gray-900">08 May 2025</div><div className="text-[10px] text-gray-500">11:05 AM</div></td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-gray-700 font-bold"><div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0"><MapPin size={12} className="text-blue-600" /></div> Location Update</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 truncate font-medium">GPS location update</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 font-medium">System</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">Lat: -33.8688, Lng: 151.2093</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">Moorebank, NSW</div></td>
-                                 <td className="py-3 px-6"><div className="flex justify-center text-gray-400"><Eye size={14} className="hover:text-purple-600 cursor-pointer" /></div></td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap"><div className="text-[12px] font-bold text-gray-900">05 May 2025</div><div className="text-[10px] text-gray-500">02:15 PM</div></td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-gray-700 font-bold"><div className="w-6 h-6 rounded bg-orange-50 flex items-center justify-center border border-orange-100 shrink-0"><FileText size={12} className="text-orange-600" /></div> Expense Recorded</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 truncate font-medium">Brake Pads Replacement</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-900 font-medium">Admin User</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">RPR-7788 | $1,250.00</div></td>
-                                 <td className="py-3 px-4"><div className="text-gray-500">Sydney Depot</div></td>
-                                 <td className="py-3 px-6"><div className="flex justify-center text-gray-400"><Eye size={14} className="hover:text-purple-600 cursor-pointer" /></div></td>
-                              </tr>
+                              {activityList.length === 0 ? (
+                                 <tr>
+                                    <td colSpan="7" className="py-12 text-center text-slate-400 font-medium">
+                                       <div className="flex flex-col items-center gap-2">
+                                          <Clipboard size={32} className="text-slate-300" />
+                                          <p className="text-xs font-bold text-slate-600">No activity recorded yet</p>
+                                          <p className="text-[11px] text-slate-400">Activity history will appear automatically as drivers are assigned, maintenance is logged, or documents are updated.</p>
+                                       </div>
+                                    </td>
+                                 </tr>
+                              ) : (
+                                 activityList.map((act) => (
+                                    <tr key={act.id} className="hover:bg-gray-50/50">
+                                       <td className="py-3 px-6 whitespace-nowrap">{act.dateTime}</td>
+                                       <td className="py-3 px-4 whitespace-nowrap">{act.type}</td>
+                                       <td className="py-3 px-4">{act.description}</td>
+                                       <td className="py-3 px-4 whitespace-nowrap">{act.performedBy}</td>
+                                       <td className="py-3 px-4 whitespace-nowrap">{act.details}</td>
+                                       <td className="py-3 px-4 whitespace-nowrap">{act.location}</td>
+                                       <td className="py-3 px-6 whitespace-nowrap text-center">
+                                          <Eye size={14} className="hover:text-purple-600 cursor-pointer inline" />
+                                       </td>
+                                    </tr>
+                                 ))
+                              )}
                            </tbody>
                         </table>
                      </div>
-                     <div className="px-6 py-4 flex flex-wrap justify-between items-center mt-auto gap-4">
-                        <span className="text-[12px] font-medium text-gray-500">Showing 1 to 8 of 68 activities</span>
-                        <div className="flex items-center gap-3">
-                           <div className="flex bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm">
-                              <button className="px-2.5 py-1 text-gray-400 border-r border-gray-200 cursor-not-allowed bg-gray-50"><ChevronLeft size={14} /></button>
-                              <button className="px-3 py-1 text-purple-700 font-bold border-r border-gray-200 bg-purple-50/50 cursor-pointer">1</button>
-                              <button className="px-3 py-1 text-gray-600 font-bold border-r border-gray-200 hover:bg-gray-50 cursor-pointer">2</button>
-                              <button className="px-3 py-1 text-gray-600 font-bold border-r border-gray-200 hover:bg-gray-50 cursor-pointer">3</button>
-                              <button className="px-2.5 py-1 text-gray-400 border-r border-gray-200 bg-white">...</button>
-                              <button className="px-3 py-1 text-gray-600 font-bold border-r border-gray-200 hover:bg-gray-50 cursor-pointer">9</button>
-                              <button className="px-2.5 py-1 text-gray-600 cursor-pointer hover:bg-gray-50"><ChevronRight size={14} /></button>
-                           </div>
-                           <select className="border border-gray-200 bg-white rounded-md px-2.5 py-1 text-[12px] font-medium text-gray-700 focus:outline-none cursor-pointer shadow-sm">
-                              <option>10 / page</option>
-                           </select>
-                        </div>
+                     <div className="px-6 py-4 flex flex-wrap justify-between items-center mt-auto gap-4 border-t border-gray-100">
+                        <span className="text-[12px] font-medium text-gray-500">
+                           Showing {activityList.length === 0 ? 0 : 1} to {activityList.length} of {activityList.length} activities
+                        </span>
                      </div>
-                  </div>
-
-
-                  
-                  <div className="text-right text-[11px] text-gray-500 font-medium pb-4">
-                     <span className="mr-8">All times shown in your local time (AEST)</span>
-                     <span>• Data auto-refreshes every 5 minutes</span>
                   </div>
                </div>
 
@@ -3945,35 +3927,35 @@ const Vehicles = () => {
                      <div className="flex flex-col gap-4 text-[12px] font-medium">
                         <div className="flex justify-between items-center">
                            <div className="flex items-center gap-2"><User size={14} className="text-green-600" /> <span className="text-gray-700">Assignments</span></div>
-                           <span className="font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded text-[11px]">12</span>
+                           <span className="font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded text-[11px]">{activityList.filter(a => a.type === 'Assignment').length}</span>
                         </div>
                         <div className="flex justify-between items-center">
                            <div className="flex items-center gap-2"><Wrench size={14} className="text-blue-600" /> <span className="text-gray-700">Maintenance</span></div>
-                           <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-[11px]">9</span>
+                           <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-[11px]">{activityList.filter(a => a.type === 'Maintenance').length}</span>
                         </div>
                         <div className="flex justify-between items-center">
                            <div className="flex items-center gap-2"><FileText size={14} className="text-purple-600" /> <span className="text-gray-700">Documents</span></div>
-                           <span className="font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded text-[11px]">8</span>
+                           <span className="font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded text-[11px]">{activityList.filter(a => a.type === 'Document').length}</span>
                         </div>
                         <div className="flex justify-between items-center">
                            <div className="flex items-center gap-2"><AlertTriangle size={14} className="text-red-500" /> <span className="text-gray-700">Compliance Alerts</span></div>
-                           <span className="font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded text-[11px]">3</span>
+                           <span className="font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded text-[11px]">{activityList.filter(a => a.type === 'Compliance').length}</span>
                         </div>
                         <div className="flex justify-between items-center">
                            <div className="flex items-center gap-2"><FileText size={14} className="text-orange-500" /> <span className="text-gray-700">Costs & Expenses</span></div>
-                           <span className="font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded text-[11px]">18</span>
+                           <span className="font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded text-[11px]">{activityList.filter(a => a.type === 'Expense').length}</span>
                         </div>
                         <div className="flex justify-between items-center">
                            <div className="flex items-center gap-2"><MapPin size={14} className="text-blue-500" /> <span className="text-gray-700">Location Updates</span></div>
-                           <span className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-[11px]">18</span>
+                           <span className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-[11px]">{activityList.filter(a => a.type === 'Location').length}</span>
                         </div>
                         <div className="flex justify-between items-center">
                            <div className="flex items-center gap-2"><Settings size={14} className="text-gray-500" /> <span className="text-gray-700">System Events</span></div>
-                           <span className="font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded text-[11px]">2</span>
+                           <span className="font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded text-[11px]">{activityList.filter(a => a.type === 'System').length}</span>
                         </div>
                         <div className="flex justify-between items-center pt-3 border-t border-gray-100 mt-2">
                            <span className="font-black text-purple-700 text-[13px]">Total Activities</span>
-                           <span className="font-black text-purple-700 text-[14px]">68</span>
+                           <span className="font-black text-purple-700 text-[14px]">{activityList.length}</span>
                         </div>
                      </div>
                   </div>
@@ -3982,39 +3964,27 @@ const Vehicles = () => {
                   <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex flex-col">
                      <div className="flex justify-between items-center mb-6 border-b border-gray-50 pb-4">
                         <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest">RECENT DRIVERS</h3>
-                        <a href="#" className="text-[11px] font-bold text-purple-700 flex items-center gap-1 hover:underline">View All <ArrowRight size={12} /></a>
+                        <span className="text-[11px] font-bold text-slate-400">Assignment</span>
                      </div>
                      <div className="flex flex-col gap-4">
-                        <div className="flex items-start gap-3 border-b border-gray-50 pb-4">
-                           <div className="mt-0.5 w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200"><User size={14} className="text-gray-500" /></div>
-                           <div className="flex-grow min-w-0">
-                              <div className="flex items-center gap-2">
-                                 <div className="text-[12px] font-bold text-gray-900 truncate">Mike Thompson (DR001)</div>
-                                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-green-600 bg-green-50 border border-green-200">Active</span>
+                        {managingVehicle?.assignedDriver || managingVehicle?.driver ? (
+                           <div className="flex items-start gap-3 border-b border-gray-50 pb-4 last:border-b-0 last:pb-0">
+                              <div className="mt-0.5 w-7 h-7 rounded-full bg-purple-50 flex items-center justify-center shrink-0 border border-purple-100 text-purple-600"><User size={14} /></div>
+                              <div className="flex-grow min-w-0">
+                                 <div className="flex items-center gap-2">
+                                    <div className="text-[12px] font-bold text-gray-900 truncate">{managingVehicle.assignedDriver || managingVehicle.driver}</div>
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-green-600 bg-green-50 border border-green-200">Active</span>
+                                 </div>
+                                 <div className="text-[10px] text-gray-500 font-medium mt-0.5">Assigned to this vehicle</div>
                               </div>
-                              <div className="text-[10px] text-gray-500 font-medium mt-0.5">Since 15/05/2025 08:15 AM</div>
                            </div>
-                        </div>
-                        <div className="flex items-start gap-3 border-b border-gray-50 pb-4">
-                           <div className="mt-0.5 w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200"><User size={14} className="text-gray-500" /></div>
-                           <div className="flex-grow min-w-0">
-                              <div className="flex items-center gap-2">
-                                 <div className="text-[12px] font-bold text-gray-900 truncate">James Patel (DR008)</div>
-                                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-gray-600 bg-gray-100 border border-gray-200">Inactive</span>
-                              </div>
-                              <div className="text-[10px] text-gray-500 font-medium mt-0.5">15/05/2025 06:10 AM</div>
+                        ) : (
+                           <div className="py-6 text-center text-slate-400 font-medium flex flex-col items-center gap-2">
+                              <User size={24} className="text-slate-300" />
+                              <p className="text-xs font-bold text-slate-600">No driver assigned</p>
+                              <p className="text-[10px] text-slate-400">Assign a driver to this vehicle from Fleet overview</p>
                            </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                           <div className="mt-0.5 w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200"><User size={14} className="text-gray-500" /></div>
-                           <div className="flex-grow min-w-0">
-                              <div className="flex items-center gap-2">
-                                 <div className="text-[12px] font-bold text-gray-900 truncate">Liam Smith (DR004)</div>
-                                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-gray-600 bg-gray-100 border border-gray-200">Inactive</span>
-                              </div>
-                              <div className="text-[10px] text-gray-500 font-medium mt-0.5">14/05/2025 09:22 PM</div>
-                           </div>
-                        </div>
+                        )}
                      </div>
                   </div>
 
@@ -4022,7 +3992,7 @@ const Vehicles = () => {
                   <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex flex-col">
                      <div className="flex justify-between items-center mb-6 border-b border-gray-50 pb-4">
                         <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest">ACTIVITY REMINDERS</h3>
-                        <a href="#" className="text-[11px] font-bold text-purple-700 flex items-center gap-1 hover:underline">Manage Reminders <ArrowRight size={12} /></a>
+                        <span className="text-[11px] font-bold text-purple-700">Notifications</span>
                      </div>
                      <div className="flex flex-col gap-4 text-[12px] font-medium">
                         <div className="flex justify-between items-center">
