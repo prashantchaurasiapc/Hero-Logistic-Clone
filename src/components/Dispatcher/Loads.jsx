@@ -10,6 +10,7 @@ import {
   RefreshCcw, FileCheck, Layers, Package, Flag, Edit3, Trash2
 } from 'lucide-react';
 import L from 'leaflet';
+import CreateLoad from '../CompanyAdmin/CreateLoad';
 
 export default function DispatcherLoads() {
   const location = useLocation();
@@ -30,8 +31,10 @@ export default function DispatcherLoads() {
   // Dropdown 3-dot action menu state
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
 
-  // Modal States
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(isCreateLoadPage);
+  // Full Page and Modal States
+  const [fullPageEditLoad, setFullPageEditLoad] = useState(null);
+  const [fullPageCreateLoad, setFullPageCreateLoad] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingLoad, setEditingLoad] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -39,7 +42,7 @@ export default function DispatcherLoads() {
 
   useEffect(() => {
     if (location.pathname.includes('create-load')) {
-      setIsCreateModalOpen(true);
+      setFullPageCreateLoad(true);
     }
   }, [location.pathname]);
 
@@ -220,8 +223,9 @@ export default function DispatcherLoads() {
   };
 
   const handleEditLoadClick = (load) => {
-    setEditingLoad({ ...load });
-    setIsEditModalOpen(true);
+    setFullPageEditLoad(load);
+    setIsEditModalOpen(false);
+    setIsViewModalOpen(false);
     setOpenActionMenuId(null);
   };
 
@@ -366,6 +370,30 @@ export default function DispatcherLoads() {
     };
   }, [selectedLoadId]);
 
+  if (fullPageEditLoad) {
+    return (
+      <CreateLoad
+        editMode={true}
+        loadToEdit={fullPageEditLoad}
+        onBack={() => {
+          setFullPageEditLoad(null);
+          fetchLoads();
+        }}
+      />
+    );
+  }
+
+  if (fullPageCreateLoad) {
+    return (
+      <CreateLoad
+        onBack={() => {
+          setFullPageCreateLoad(false);
+          fetchLoads();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="w-full min-h-screen bg-[#F8FAFC] p-4 sm:p-5 space-y-3.5 text-left font-sans antialiased text-slate-800">
 
@@ -377,278 +405,7 @@ export default function DispatcherLoads() {
         </div>
       )}
 
-      {/* ============================================================
-         CREATE LOAD MODAL FORM
-         ============================================================ */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95">
-            <div className="flex justify-between items-center px-5 py-4 border-b border-slate-100 bg-slate-50/50">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                  <Plus className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">Create New Load</h3>
-                  <p className="text-[11px] text-slate-500 font-medium">Fill in details to dispatch a new active load</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <form onSubmit={handleCreateLoadSubmit} className="p-5 space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Customer</label>
-                  <input
-                    type="text"
-                    required
-                    value={newLoadForm.customer}
-                    onChange={(e) => setNewLoadForm({ ...newLoadForm, customer: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Status</label>
-                  <select
-                    value={newLoadForm.status}
-                    onChange={(e) => setNewLoadForm({ ...newLoadForm, status: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium cursor-pointer"
-                  >
-                    <option value="In Transit">In Transit</option>
-                    <option value="En Route">En Route</option>
-                    <option value="At Pickup">At Pickup</option>
-                    <option value="On Hold">On Hold</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Route Pickup (From)</label>
-                  <input
-                    type="text"
-                    required
-                    value={newLoadForm.routeFrom}
-                    onChange={(e) => setNewLoadForm({ ...newLoadForm, routeFrom: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Route Delivery (To)</label>
-                  <input
-                    type="text"
-                    required
-                    value={newLoadForm.routeTo}
-                    onChange={(e) => setNewLoadForm({ ...newLoadForm, routeTo: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Assigned Driver</label>
-                  <select
-                    value={newLoadForm.driver}
-                    onChange={(e) => setNewLoadForm({ ...newLoadForm, driver: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium cursor-pointer"
-                  >
-                    <option value="John Doe">John Doe</option>
-                    <option value="Chris Lee">Chris Lee</option>
-                    <option value="Michael Tan">Michael Tan</option>
-                    <option value="David Brown">David Brown</option>
-                    <option value="Ben Hall">Ben Hall</option>
-                    <option value="Sarah Connor">Sarah Connor</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Vehicle / Trailer</label>
-                  <input
-                    type="text"
-                    required
-                    value={newLoadForm.vehicle}
-                    onChange={(e) => setNewLoadForm({ ...newLoadForm, vehicle: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Required Date</label>
-                  <input
-                    type="text"
-                    value={newLoadForm.reqDate}
-                    onChange={(e) => setNewLoadForm({ ...newLoadForm, reqDate: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Required Time</label>
-                  <input
-                    type="text"
-                    value={newLoadForm.reqTime}
-                    onChange={(e) => setNewLoadForm({ ...newLoadForm, reqTime: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 font-semibold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-xs cursor-pointer"
-                >
-                  Create Load
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================
-         EDIT LOAD MODAL FORM
-         ============================================================ */}
-      {isEditModalOpen && editingLoad && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95">
-            <div className="flex justify-between items-center px-5 py-4 border-b border-slate-100 bg-slate-50/50">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-                  <Edit3 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">Edit Load ({editingLoad.id})</h3>
-                  <p className="text-[11px] text-slate-500 font-medium">Update operational dispatch information</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleEditLoadSave} className="p-5 space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Customer</label>
-                  <input
-                    type="text"
-                    value={editingLoad.customer}
-                    onChange={(e) => setEditingLoad({ ...editingLoad, customer: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Status</label>
-                  <select
-                    value={editingLoad.status}
-                    onChange={(e) => setEditingLoad({
-                      ...editingLoad,
-                      status: e.target.value,
-                      statusStyle: e.target.value === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                        e.target.value === 'En Route' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                          e.target.value === 'At Pickup' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                            'bg-slate-100 text-slate-700 border-slate-200',
-                      accentColor: e.target.value === 'In Transit' ? 'border-l-emerald-500' :
-                        e.target.value === 'En Route' ? 'border-l-blue-500' :
-                          e.target.value === 'At Pickup' ? 'border-l-amber-500' : 'border-l-slate-400'
-                    })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium cursor-pointer"
-                  >
-                    <option value="In Transit">In Transit</option>
-                    <option value="En Route">En Route</option>
-                    <option value="At Pickup">At Pickup</option>
-                    <option value="At Delivery">At Delivery</option>
-                    <option value="On Hold">On Hold</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Route From</label>
-                  <input
-                    type="text"
-                    value={editingLoad.routeFrom}
-                    onChange={(e) => setEditingLoad({ ...editingLoad, routeFrom: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Route To</label>
-                  <input
-                    type="text"
-                    value={editingLoad.routeTo}
-                    onChange={(e) => setEditingLoad({ ...editingLoad, routeTo: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Driver</label>
-                  <input
-                    type="text"
-                    value={editingLoad.driver}
-                    onChange={(e) => setEditingLoad({ ...editingLoad, driver: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Vehicle / Trailer</label>
-                  <input
-                    type="text"
-                    value={editingLoad.vehicle}
-                    onChange={(e) => setEditingLoad({ ...editingLoad, vehicle: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 font-semibold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-xs cursor-pointer"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ============================================================
          VIEW LOAD DETAILS MODAL
@@ -1050,7 +807,7 @@ export default function DispatcherLoads() {
           </div>
 
           <button
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => setFullPageCreateLoad(true)}
             className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center cursor-pointer active:scale-95 transition-transform"
           >
             <span>Create Load</span>
