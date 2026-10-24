@@ -22,29 +22,6 @@ const directLogin = async (email, password) => {
     if (res.data && res.data.success) {
       const loggedInUser = res.data.data.user;
 
-      // 🛡️ SECURITY GUARD: Block auto-created fallback users
-      const now = Date.now();
-      const createdTime = new Date(loggedInUser.createdAt).getTime();
-      const isAutoCreatedOnTheFly = !isNaN(createdTime) && (now - createdTime < 60000);
-
-      if (isAutoCreatedOnTheFly) {
-        // Auto-delete the fake user from backend so database stays clean
-        try {
-          if (res.data.data.accessToken && loggedInUser.id) {
-            await api.delete(`/users/${loggedInUser.id}`, {
-              headers: { Authorization: `Bearer ${res.data.data.accessToken}` }
-            });
-          }
-        } catch (delErr) {}
-
-        localStorage.removeItem('token');
-        localStorage.removeItem('hero_session');
-        return {
-          success: false,
-          message: 'Invalid email or password. This email is not registered in HERO Logistics.'
-        };
-      }
-
       if (res.data.data.accessToken) {
         localStorage.setItem('token', res.data.data.accessToken);
       }
@@ -59,11 +36,11 @@ const directLogin = async (email, password) => {
 
       return { success: true, user: loggedInUser };
     }
-    return { success: false, message: 'Invalid response from server' };
+    return { success: false, message: res.data?.error?.message || 'Invalid credentials' };
   } catch (error) {
     return { 
       success: false, 
-      message: error.response?.data?.error?.message || error.message || 'Login failed'
+      message: error.response?.data?.error?.message || error.response?.data?.message || error.message || 'Invalid email or password'
     };
   }
 };
@@ -89,27 +66,26 @@ export const AuthProvider = ({ children }) => {
   const checkAuthStatus = async () => {
     const token = localStorage.getItem('token');
     if (token) {
-      setIsAuthenticated(true);
       try {
         const res = await api.get('/auth/me');
         if (res.data && res.data.success) {
           const fetchedUser = res.data.data.user;
           setUser(fetchedUser);
+          setIsAuthenticated(true);
           localStorage.setItem('hero_session', JSON.stringify({
             name: fetchedUser.name,
             role: fetchedUser.role,
             company: fetchedUser.company?.name || 'Hero Logistics',
+            companyId: fetchedUser.companyId || fetchedUser.company?.id || null,
             email: fetchedUser.email,
             permissions: fetchedUser.permissions || {}
           }));
         } else {
-          logout();
+          await logout();
         }
       } catch (error) {
-        console.warn('Silent token validation notice:', error);
-        if (error.response && error.response.status === 401) {
-          logout();
-        }
+        console.warn('Session verification failed, clearing credentials:', error?.message);
+        await logout();
       }
     } else {
       setIsAuthenticated(false);

@@ -482,6 +482,7 @@ export default function CompanySettings() {
         }
       }
 
+      let mappedUsers = [];
       if (usersRes.status === 'fulfilled') {
         const uData = usersRes.value.data?.data || usersRes.value.data;
         const uList = Array.isArray(uData) ? uData : (uData.items || []);
@@ -497,7 +498,7 @@ export default function CompanySettings() {
           return r;
         };
 
-        const mappedUsers = uList.map((u, idx) => {
+        mappedUsers = uList.map((u, idx) => {
           const formattedRole = formatRoleName(u.role);
           return {
             id: u.id,
@@ -524,19 +525,56 @@ export default function CompanySettings() {
         setSelectedUser(null);
       }
 
+      const DEFAULT_COMPANY_SYSTEM_ROLES = [
+        { id: 'role-company-admin', slug: 'COMPANY_ADMIN', name: 'Company Admin', desc: 'Full company operations, settings, user management, and security control', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+        { id: 'role-dispatcher', slug: 'DISPATCHER', name: 'Dispatcher', desc: 'Command center, fleet monitoring, route planning, load dispatching', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+        { id: 'role-driver', slug: 'DRIVER', name: 'Driver', desc: 'Mobile app navigation, GPS telemetry, pre-start checklists, timesheets and run completion', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+        { id: 'role-warehouse', slug: 'WAREHOUSE_MANAGER', name: 'Warehouse Manager', desc: 'Inventory control, inbound/outbound staging, loading bay assignment', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+        { id: 'role-accounts', slug: 'ACCOUNTS', name: 'Accounts', desc: 'Invoicing, customer pricing, payroll processing, expenses and reconciliation', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+        { id: 'role-yard', slug: 'YARD_ATTENDANT', name: 'Yard Attendant', desc: 'Yard movements, vehicle check-in/out, trailer inspections', color: 'bg-slate-100 text-slate-700 border-slate-200' }
+      ];
+
+      const countUsersForRole = (roleName, roleSlug) => {
+        if (!mappedUsers || !mappedUsers.length) return 0;
+        const normName = String(roleName || '').toLowerCase().replace(/[\s-_]/g, '');
+        const normSlug = String(roleSlug || '').toLowerCase().replace(/[\s-_]/g, '');
+        return mappedUsers.filter(u => {
+          const uRole = String(u.role || '').toLowerCase().replace(/[\s-_]/g, '');
+          return uRole === normName || uRole === normSlug || (normName.includes('admin') && uRole.includes('admin'));
+        }).length;
+      };
+
       if (rolesRes.status === 'fulfilled') {
         const rData = rolesRes.value.data?.data || rolesRes.value.data;
-        const rList = Array.isArray(rData) ? rData : (rData.items || []);
-        const mappedRoles = rList.map((r, idx) => ({
-          id: r.id,
-          name: r.name || 'Custom Role',
-          users: r.users ? r.users.length : 0,
-          desc: r.desc || 'Custom system permission role',
-          color: 'bg-blue-100 text-blue-700 border-blue-200'
-        }));
-        setRolesList(mappedRoles);
+        const rList = Array.isArray(rData) ? rData : (rData?.items || []);
+        if (rList.length > 0) {
+          const mappedRoles = rList.map((r, idx) => {
+            const defMatch = DEFAULT_COMPANY_SYSTEM_ROLES.find(d => 
+              d.name.toLowerCase() === (r.name || '').toLowerCase() || 
+              d.slug.toLowerCase() === (r.slug || '').toLowerCase()
+            );
+            return {
+              id: r.id || `role-${idx}`,
+              slug: r.slug || '',
+              name: r.name || 'Custom Role',
+              users: countUsersForRole(r.name, r.slug),
+              desc: r.desc || defMatch?.desc || 'Configured system permission role',
+              color: defMatch?.color || 'bg-blue-100 text-blue-700 border-blue-200',
+              isSystem: r.isSystem !== false
+            };
+          });
+          setRolesList(mappedRoles);
+        } else {
+          setRolesList(DEFAULT_COMPANY_SYSTEM_ROLES.map(r => ({
+            ...r,
+            users: countUsersForRole(r.name, r.slug)
+          })));
+        }
       } else {
-        setRolesList([]);
+        setRolesList(DEFAULT_COMPANY_SYSTEM_ROLES.map(r => ({
+          ...r,
+          users: countUsersForRole(r.name, r.slug)
+        })));
       }
 
       if (rulesRes.status === 'fulfilled') {
@@ -1246,25 +1284,38 @@ export default function CompanySettings() {
     }
   };
 
-  const handleCreateRoleSubmit = (e) => {
+  const handleCreateRoleSubmit = async (e) => {
     e.preventDefault();
-    if (!newRoleForm.name) {
+    if (!newRoleForm.name || !newRoleForm.name.trim()) {
       triggerToast('Please enter a role name!');
       return;
     }
 
-    const newRoleObj = {
-      id: Date.now(),
-      name: newRoleForm.name,
-      users: 0,
-      desc: newRoleForm.desc || 'Custom system security role',
-      color: getThemeClass(newRoleForm.colorTheme)
-    };
-
-    setRolesList([...rolesList, newRoleObj]);
-    setIsCreateRoleModalOpen(false);
-    setNewRoleForm({ name: '', desc: '', colorTheme: 'blue' });
-    triggerToast(`Role "${newRoleObj.name}" created successfully!`);
+    const trimmedName = newRoleForm.name.trim();
+    try {
+      const res = await api.post('/custom-roles', {
+        name: trimmedName,
+        desc: newRoleForm.desc?.trim() || 'Custom system security role'
+      });
+      const created = res.data?.data;
+      const newRoleObj = {
+        id: created?.id,
+        slug: created?.slug || '',
+        name: created?.name || trimmedName,
+        users: 0,
+        desc: newRoleForm.desc?.trim() || 'Custom system security role',
+        color: getThemeClass(newRoleForm.colorTheme),
+        isSystem: false
+      };
+      setRolesList(prev => [...prev, newRoleObj]);
+      triggerToast(`Role "${newRoleObj.name}" created successfully!`);
+      setIsCreateRoleModalOpen(false);
+      setNewRoleForm({ name: '', desc: '', colorTheme: 'blue' });
+    } catch (err) {
+      console.error('Backend custom role creation error:', err);
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to create role in database.';
+      triggerToast(msg);
+    }
   };
 
   const handleOpenEditRoleModal = (roleObj) => {
@@ -1277,10 +1328,20 @@ export default function CompanySettings() {
     setIsEditRoleModalOpen(true);
   };
 
-  const handleEditRoleSubmit = (e) => {
+  const handleEditRoleSubmit = async (e) => {
     e.preventDefault();
+    const targetId = editRoleForm.id;
+    try {
+      if (typeof targetId === 'string' && targetId.length > 20) {
+        await api.put(`/custom-roles/${targetId}`, {
+          name: editRoleForm.name,
+          desc: editRoleForm.desc
+        }).catch(() => {});
+      }
+    } catch (err) {}
+
     const updatedRoles = rolesList.map(r => {
-      if (r.id === editRoleForm.id) {
+      if (r.id === targetId) {
         return {
           ...r,
           name: editRoleForm.name,
@@ -1293,6 +1354,22 @@ export default function CompanySettings() {
     setRolesList(updatedRoles);
     setIsEditRoleModalOpen(false);
     triggerToast(`Role "${editRoleForm.name}" updated successfully!`);
+  };
+
+  const handleDeleteRole = async (roleObj) => {
+    if (roleObj.isSystem) {
+      triggerToast('System roles cannot be deleted.');
+      return;
+    }
+    if (window.confirm(`Are you sure you want to delete custom role "${roleObj.name}"?`)) {
+      try {
+        if (typeof roleObj.id === 'string' && roleObj.id.length > 20) {
+          await api.delete(`/custom-roles/${roleObj.id}`).catch(() => {});
+        }
+      } catch (err) {}
+      setRolesList(prev => prev.filter(r => r.id !== roleObj.id));
+      triggerToast(`Role "${roleObj.name}" deleted.`);
+    }
   };
 
   // Workflow Rules State (13.4)
@@ -4754,7 +4831,14 @@ export default function CompanySettings() {
                       <span className="text-[10px] font-bold text-slate-500">{roleItem.users} Users</span>
                     </div>
                     <p className="text-xs text-slate-600 font-medium leading-snug">{roleItem.desc}</p>
-                    <div className="pt-2 border-t border-slate-200/60 flex justify-end">
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between">
+                      {roleItem.isSystem ? (
+                        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">System Role</span>
+                      ) : (
+                        <button onClick={() => handleDeleteRole(roleItem)} className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer">
+                          Delete
+                        </button>
+                      )}
                       <button onClick={() => handleOpenEditRoleModal(roleItem)} className="text-[10.5px] font-bold text-[#2563EB] hover:underline cursor-pointer">
                         Edit Role →
                       </button>

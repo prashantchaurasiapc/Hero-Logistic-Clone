@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Building2, UserCheck, ShieldCheck, ArrowLeft, Check, AlertCircle, Loader2, Home, ChevronRight,
-  Key, Mail, RefreshCw, Eye, EyeOff
+  Key, Mail, RefreshCw, Eye, EyeOff, Copy, CheckCircle2
 } from 'lucide-react';
 import api from '../../services/api';
 import CustomSelect from '../common/CustomSelect';
@@ -15,6 +15,8 @@ export default function CreateCompany({ onBack, onCreated }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [availablePlans, setAvailablePlans] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
+  const [createdCredentialsModal, setCreatedCredentialsModal] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   // Form State containing ONLY the required fields, empty by default
   const [formData, setFormData] = useState({
@@ -107,13 +109,19 @@ export default function CreateCompany({ onBack, onCreated }) {
       const res = await api.post('/companys', payload);
 
       if (res.data?.success) {
-        if (onCreated) {
-          onCreated(res.data.data || payload);
-        } else if (onBack) {
-          onBack();
-        } else {
-          navigate('/admin/companies');
-        }
+        const createdData = res.data.data;
+        const creds = createdData?.credentials || {
+          email: formData.adminEmail,
+          password: formData.adminPassword || payload.adminPassword || 'Hero@123456',
+          role: 'COMPANY_ADMIN'
+        };
+        setCreatedCredentialsModal({
+          companyName: createdData?.name || formData.tenantName,
+          tenantId: createdData?.tenantId || formData.tenantId || 'Auto-Assigned',
+          email: creds.email,
+          password: creds.password,
+          fullData: createdData
+        });
       }
     } catch (err) {
       console.error('Failed to create company:', err);
@@ -514,6 +522,76 @@ export default function CreateCompany({ onBack, onCreated }) {
         </form>
 
       </div>
+
+      {/* SUCCESS CREDENTIALS MODAL */}
+      {createdCredentialsModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            
+            <h3 className="text-lg font-black text-slate-900 text-center">Company & Admin Created!</h3>
+            <p className="text-xs text-slate-500 text-center mt-1 mb-6">
+              The workspace and company administrator account have been provisioned successfully.
+            </p>
+
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-3 mb-6">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 font-bold">Company Name:</span>
+                <span className="text-slate-800 font-black">{createdCredentialsModal.companyName}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 font-bold">Tenant ID:</span>
+                <span className="text-slate-800 font-mono font-bold">{createdCredentialsModal.tenantId}</span>
+              </div>
+              <div className="border-t border-slate-200 pt-3 flex justify-between items-center text-xs">
+                <span className="text-slate-500 font-bold">Admin Email:</span>
+                <span className="text-blue-600 font-mono font-bold">{createdCredentialsModal.email}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 font-bold">Password:</span>
+                <span className="text-emerald-700 font-mono font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  {createdCredentialsModal.password}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(`HERO Logistics Workspace Credentials\nCompany: ${createdCredentialsModal.companyName}\nEmail: ${createdCredentialsModal.email}\nPassword: ${createdCredentialsModal.password}\nLogin Portal: ${window.location.origin}/login`);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2500);
+                }}
+                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-xs"
+              >
+                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                <span>{copied ? 'Credentials Copied!' : 'Copy Credentials to Clipboard'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const dataToReturn = createdCredentialsModal.fullData;
+                  setCreatedCredentialsModal(null);
+                  if (onCreated) {
+                    onCreated(dataToReturn);
+                  } else if (onBack) {
+                    onBack();
+                  } else {
+                    navigate('/admin/companies');
+                  }
+                }}
+                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center cursor-pointer transition-colors shadow-xs"
+              >
+                Continue to Companies List
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

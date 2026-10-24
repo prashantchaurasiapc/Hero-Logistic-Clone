@@ -238,7 +238,24 @@ const Login = () => {
             <p className="welcome-desc">Click any dashboard below for instant access, or sign in manually</p>
 
             <form className="login-form" onSubmit={handleLogin}>
-              {errorMsg && <div style={{ color: '#ef4444', marginBottom: '12px', fontSize: '13px', fontWeight: 'bold' }}>{errorMsg}</div>}
+              {errorMsg && (
+                <div style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  color: '#f87171',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  marginBottom: '16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <FiShield size={16} style={{ flexShrink: 0, color: '#ef4444' }} />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
               <div className="form-group">
                 <label>EMAIL ADDRESS</label>
                 <div className="input-wrapper">

@@ -46,14 +46,17 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     );
   }
 
-  // Not authenticated and no token -> redirect to login
-  if (!isAuthenticated && !token) {
+  // Must be strictly authenticated by auth context and have an active token
+  if (!isAuthenticated || !token) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   const storedSession = JSON.parse(localStorage.getItem('hero_session') || '{}');
   const user = auth?.user || storedSession;
-  const userRole = (user?.role || storedSession?.role || '').toUpperCase().replace(/-/g, '_');
+  if (!user || !user.role) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  const userRole = (user.role || '').toUpperCase().replace(/-/g, '_');
 
   // Check explicit allowedRoles prop if provided
   if (allowedRoles && allowedRoles.length > 0) {

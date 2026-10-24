@@ -1308,11 +1308,32 @@ const Vehicles = () => {
     const fd = new FormData(formEl || e.target);
     
     try {
-      const photoVal = editVehiclePhoto || fd.get('photoUrl') || editVehicleModal.img || editVehicleModal.photoUrl || null;
-      const yearRaw = fd.get('year');
+      const makeVal = (fd.get('make') || formMake || editVehicleModal.make || '').trim();
+      const modelVal = (fd.get('model') || formModel || editVehicleModal.model || '').trim();
+      const yearRaw = fd.get('year') || formYear || editVehicleModal.year;
       const yearVal = yearRaw ? parseInt(String(yearRaw).replace(/[^0-9]/g, '')) : undefined;
+      const vinVal = (fd.get('vin') || formVin || editVehicleModal.vin || '').trim();
+      const vehicleTypeVal = (fd.get('type') || formVehicleType || editVehicleModal.type || editVehicleModal.category || '').trim();
       const regVal = (regoInput || fd.get('reg') || editVehicleModal.reg || editVehicleModal.rego || '').toUpperCase().trim();
-      
+      const regStateVal = (fd.get('regState') || formRegState || editVehicleModal.regState || '').trim();
+      const expiryDateVal = (fd.get('expiryDate') || formExpiryDate || editVehicleModal.regExpiryDate || '').trim();
+
+      const missingFields = [];
+      if (!makeVal) missingFields.push('Make');
+      if (!modelVal) missingFields.push('Model');
+      if (!yearVal || isNaN(yearVal) || yearVal < 1900 || yearVal > 2100) missingFields.push('Year');
+      if (!vinVal) missingFields.push('VIN Number');
+      if (!vehicleTypeVal) missingFields.push('Vehicle Type');
+      if (!regVal) missingFields.push('Registration Number (Rego)');
+      if (!regStateVal) missingFields.push('Registration State');
+      if (!expiryDateVal) missingFields.push('Expiry Date');
+
+      if (missingFields.length > 0) {
+        showToast(`Please fill all mandatory fields: ${missingFields.join(', ')}`, 'error');
+        return;
+      }
+
+      const photoVal = editVehiclePhoto || fd.get('photoUrl') || editVehicleModal.img || editVehicleModal.photoUrl || null;
       const origMech = (fd.get('primaryMechanic') || editVehicleModal.primaryMechanic || '').replace(/\|\s*Year:[^|]*/gi, '').replace(/Year:[^|]*/gi, '').trim();
       const origNotes = (fd.get('notes') || editVehicleModal.notes || '').replace(/\|\s*Year:[^|]*/gi, '').replace(/Year:[^|]*/gi, '').split('Photo:')[0].trim();
       const yearTag = yearVal ? `Year:${yearVal}` : '';
@@ -1325,25 +1346,33 @@ const Vehicles = () => {
         localStorage.setItem(`hero_veh_year_${vKey}`, String(yearVal));
       }
 
+      const isTrailerType = vehicleTypeVal === 'Trailer' || String(vehicleTypeVal || '').toLowerCase().includes('trailer');
+
       const payload = {
         rego: regVal,
-        make: fd.get('make') || editVehicleModal.make || '',
-        model: fd.get('model') || editVehicleModal.model || '',
+        make: makeVal,
+        model: modelVal,
         year: yearVal,
         status: fd.get('status') || editVehicleModal.status || 'ACTIVE',
-        category: fd.get('type') || editVehicleModal.type || 'TRUCK',
-        type: fd.get('type') || editVehicleModal.type || 'TRUCK',
-        regType: fd.get('regType') || fd.get('type') || editVehicleModal.regType || '',
-        regState: fd.get('regState') || editVehicleModal.regState || '',
+        category: isTrailerType ? 'TRAILER' : 'TRUCK',
+        type: vehicleTypeVal,
+        regType: fd.get('regType') || vehicleTypeVal || editVehicleModal.regType || '',
+        regState: regStateVal,
+        regExpiryDate: expiryDateVal,
+        regIssueDate: fd.get('issueDate') || formIssueDate || null,
         color: fd.get('color') || editVehicleModal.color || '',
-        vin: fd.get('vin') || editVehicleModal.vin || '',
-        engineNumber: fd.get('engine') || editVehicleModal.engineNumber || '',
+        vin: vinVal,
+        engineNumber: isTrailerType ? null : (fd.get('engine') || editVehicleModal.engineNumber || ''),
         odometerKm: fd.get('odometer') ? parseInt(String(fd.get('odometer')).replace(/[^0-9]/g, '')) : (editVehicleModal.odometerKm || 0),
-        fuelType: fd.get('fuelType') || editVehicleModal.fuelType || 'Diesel',
-        primaryMechanic: primaryMechanicWithYear,
-        preferredRoutes: fd.get('preferredRoutes') || editVehicleModal.preferredRoutes || '',
-        preferredRegions: fd.get('preferredRegions') || editVehicleModal.preferredRegions || '',
-        maxDistPerTripKm: fd.get('maxDist') ? parseInt(fd.get('maxDist')) : undefined,
+        fuelType: isTrailerType ? null : (fd.get('fuelType') || editVehicleModal.fuelType || 'Diesel'),
+        primaryDepot: fd.get('primaryDepot') || editVehicleModal.branch || '',
+        branch: fd.get('primaryDepot') || editVehicleModal.branch || '',
+        city: fd.get('city') || editVehicleModal.city || '',
+        postalCode: fd.get('postalCode') || editVehicleModal.postalCode || '',
+        primaryMechanic: isTrailerType ? null : primaryMechanicWithYear,
+        preferredRoutes: isTrailerType ? null : (fd.get('preferredRoutes') || editVehicleModal.preferredRoutes || ''),
+        preferredRegions: isTrailerType ? null : (fd.get('preferredRegions') || editVehicleModal.preferredRegions || ''),
+        maxDistPerTripKm: isTrailerType ? null : (fd.get('maxDist') ? parseInt(fd.get('maxDist')) : undefined),
         dgCertified: fd.get('dgCertified') === 'Yes',
         hvCertified: fd.get('hvCertified') === 'Yes',
         photoUrl: photoVal,
@@ -1367,6 +1396,11 @@ const Vehicles = () => {
         engineNumber: payload.engineNumber,
         odometerKm: payload.odometerKm,
         odometer: payload.odometerKm ? `${payload.odometerKm.toLocaleString()} km` : '—',
+        regExpiryDate: payload.regExpiryDate,
+        regIssueDate: payload.regIssueDate,
+        regState: payload.regState,
+        regType: payload.regType,
+        branch: payload.primaryDepot || editVehicleModal.branch,
         primaryMechanic: origMech,
         img: resolveVehiclePhoto(photoVal),
         photoUrl: resolveVehiclePhoto(photoVal),
@@ -1398,11 +1432,32 @@ const Vehicles = () => {
     e.preventDefault();
     const fd = new FormData(e.target);
     try {
-      const photoVal = fd.get('photoUrl') || null;
-      const yearRaw = fd.get('year');
+      const makeVal = (fd.get('make') || formMake || '').trim();
+      const modelVal = (fd.get('model') || formModel || '').trim();
+      const yearRaw = fd.get('year') || formYear;
       const yearVal = yearRaw ? parseInt(String(yearRaw).replace(/[^0-9]/g, '')) : undefined;
+      const vinVal = (fd.get('vin') || formVin || '').trim();
+      const vehicleTypeVal = (fd.get('type') || formVehicleType || '').trim();
       const regVal = (regoInput || fd.get('reg') || fd.get('regSection2') || '').toUpperCase().trim();
-      
+      const regStateVal = (fd.get('regState') || formRegState || '').trim();
+      const expiryDateVal = (fd.get('expiryDate') || formExpiryDate || '').trim();
+
+      const missingFields = [];
+      if (!makeVal) missingFields.push('Make');
+      if (!modelVal) missingFields.push('Model');
+      if (!yearVal || isNaN(yearVal) || yearVal < 1900 || yearVal > 2100) missingFields.push('Year');
+      if (!vinVal) missingFields.push('VIN Number');
+      if (!vehicleTypeVal) missingFields.push('Vehicle Type');
+      if (!regVal) missingFields.push('Registration Number (Rego)');
+      if (!regStateVal) missingFields.push('Registration State');
+      if (!expiryDateVal) missingFields.push('Expiry Date');
+
+      if (missingFields.length > 0) {
+        showToast(`Please fill all mandatory fields: ${missingFields.join(', ')}`, 'error');
+        return;
+      }
+
+      const photoVal = fd.get('photoUrl') || null;
       const origMech = fd.get('primaryMechanic') || '';
       const origNotes = fd.get('notes') || '';
       const yearTag = yearVal ? `Year:${yearVal}` : '';
@@ -1410,22 +1465,32 @@ const Vehicles = () => {
       const primaryMechanicWithYear = [origMech, yearTag].filter(Boolean).join(' | ');
       const notesWithYear = [origNotes, yearTag].filter(Boolean).join(' | ');
 
-      const isTrailerType = formVehicleType === 'Trailer' || String(formVehicleType || '').toLowerCase().includes('trailer');
+      const isTrailerType = vehicleTypeVal === 'Trailer' || String(vehicleTypeVal || '').toLowerCase().includes('trailer');
+
+      const customId = fd.get('id')?.trim();
 
       const payload = {
+        ...(customId ? { id: customId } : {}),
         rego: regVal,
-        make: fd.get('make') || '',
-        model: fd.get('model') || '',
+        make: makeVal,
+        model: modelVal,
         year: yearVal,
         category: isTrailerType ? 'TRAILER' : 'TRUCK',
+        type: vehicleTypeVal,
         color: fd.get('color') || '',
-        vin: fd.get('vin') || '',
+        vin: vinVal,
         engineNumber: isTrailerType ? null : (fd.get('engine') || ''),
         odometerKm: fd.get('odometer') ? parseInt(String(fd.get('odometer')).replace(/[^0-9]/g, '')) : 0,
         fuelType: isTrailerType ? null : (fd.get('fuelType') || 'Diesel'),
-        regType: fd.get('regType') || formVehicleType || (isTrailerType ? 'Trailer' : 'Prime Mover'),
-        regState: fd.get('regState') || formRegState || '',
-        status: 'IDLE',
+        regType: fd.get('regType') || vehicleTypeVal || (isTrailerType ? 'Trailer' : 'Prime Mover'),
+        regState: regStateVal,
+        regExpiryDate: expiryDateVal,
+        regIssueDate: fd.get('issueDate') || formIssueDate || null,
+        primaryDepot: fd.get('primaryDepot') || '',
+        branch: fd.get('primaryDepot') || '',
+        city: fd.get('city') || '',
+        postalCode: fd.get('postalCode') || '',
+        status: fd.get('status') || 'ACTIVE',
         primaryMechanic: isTrailerType ? null : primaryMechanicWithYear,
         preferredRoutes: isTrailerType ? null : (fd.get('preferredRoutes') || ''),
         preferredRegions: isTrailerType ? null : (fd.get('preferredRegions') || ''),
@@ -1446,7 +1511,7 @@ const Vehicles = () => {
       showToast('Vehicle added successfully!');
     } catch (err) {
       console.error('Error creating vehicle:', err);
-      showToast('Failed to save vehicle to database.', 'error');
+      showToast(err.response?.data?.message || 'Failed to save vehicle to database.', 'error');
     }
   };
 
@@ -1470,6 +1535,13 @@ const Vehicles = () => {
       (v.driver && String(v.driver).toLowerCase().includes(search.toLowerCase()));
 
     if (statusFilter === 'ALL') return matchesSearch;
+
+    if (statusFilter === 'TRAILERS') {
+      return matchesSearch && (v.category === 'TRAILER' || ['Trailer', 'Car Trailer'].includes(v.type) || String(v.type || '').toLowerCase().includes('trailer'));
+    }
+    if (statusFilter === 'TRUCKS') {
+      return matchesSearch && v.category !== 'TRAILER' && !['Trailer', 'Car Trailer'].includes(v.type) && !String(v.type || '').toLowerCase().includes('trailer');
+    }
 
     const vStatus = String(v.status || '').toUpperCase().replace(/\s+/g, '_');
     if (statusFilter === 'ACTIVE') {
@@ -1607,7 +1679,7 @@ const Vehicles = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VEHICLE ID * (MANUAL EDIT OPTION)</label>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VEHICLE ID (MANUAL EDIT OPTION)</label>
                   <input 
                     name="id" 
                     type="text" 
@@ -1631,7 +1703,7 @@ const Vehicles = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">COLOR *</label>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">COLOR</label>
                   <select 
                     name="color" 
                     defaultValue={isEdit ? (editVehicleModal.color || '') : ''}
@@ -1680,7 +1752,7 @@ const Vehicles = () => {
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
-                    ENGINE NUMBER {['Trailer', 'Car Trailer'].includes(formVehicleType) ? <span className="text-gray-400 font-normal lowercase">(not applicable)</span> : '*'}
+                    ENGINE NUMBER {['Trailer', 'Car Trailer'].includes(formVehicleType) && <span className="text-gray-400 font-normal lowercase">(not applicable)</span>}
                   </label>
                   <input 
                     name="engine" 
@@ -1693,7 +1765,7 @@ const Vehicles = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ODOMETER *</label>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ODOMETER</label>
                   <input 
                     name="odometer" 
                     type="text" 
@@ -1704,7 +1776,7 @@ const Vehicles = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY DEPOT *</label>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY DEPOT</label>
                   <input 
                     name="primaryDepot" 
                     type="text" 
@@ -1786,7 +1858,7 @@ const Vehicles = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION TYPE *</label>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION TYPE</label>
                   <select 
                     name="regType" 
                     value={formRegType}
@@ -1849,7 +1921,7 @@ const Vehicles = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">EXPIRY DATE</label>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">EXPIRY DATE *</label>
                   <div className="relative">
                     <input 
                       name="expiryDate" 
@@ -5140,27 +5212,79 @@ const Vehicles = () => {
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Replacement Trailer *</label>
-                <select 
-                  value={selectedSwapTrailer} 
-                  onChange={(e) => setSelectedSwapTrailer(e.target.value)} 
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer"
-                >
-                  <option value="">-- Choose an Available Trailer --</option>
-                  {vehicles
-                    .filter(v => (v.category === 'TRAILER' || ['Trailer', 'Car Trailer'].includes(v.type) || String(v.type || '').toLowerCase().includes('trailer')) && v.id !== managingVehicle?.id)
-                    .map(trl => {
-                      const isHitched = trl.assignedTruckId && trl.assignedTruckId !== managingVehicle?.id;
-                      const hitchedTruck = isHitched ? vehicles.find(x => x.id === trl.assignedTruckId) : null;
-                      return (
-                        <option key={trl.id} value={trl.id}>
-                          {trl.reg || trl.rego || trl.id} – {trl.make} {trl.model || ''} ({isHitched ? `[⚠️ Hitched to ${hitchedTruck?.reg || hitchedTruck?.rego || trl.assignedTruckId}]` : '[✅ Available in Yard]'})
-                        </option>
-                      );
-                    })}
-                </select>
-              </div>
+              {(() => {
+                const trailerOptions = vehicles.filter(v => (v.category === 'TRAILER' || ['Trailer', 'Car Trailer'].includes(v.type) || String(v.type || '').toLowerCase().includes('trailer')) && v.id !== managingVehicle?.id);
+                
+                if (trailerOptions.length === 0) {
+                  return (
+                    <div className="p-4 bg-amber-50 border border-amber-200/90 rounded-xl space-y-2.5 text-left">
+                      <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs">
+                        <AlertCircle size={16} className="text-amber-600 shrink-0" />
+                        <span>No Standalone Trailers in Fleet</span>
+                      </div>
+                      <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
+                        Your company has not registered any trailers yet. Before a trailer can be attached to this truck, it must be created in your fleet database.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSwapTrailerModal(false);
+                          setManagingVehicle(null);
+                          setFormVehicleType('Trailer');
+                          setFormMake('');
+                          setFormModel('');
+                          setFormEngine('N/A');
+                          setRegoInput('');
+                          setShowAddModal(true);
+                        }}
+                        className="w-full py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                      >
+                        <Plus size={14} /> Create New Trailer Now
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-slate-700">Select Replacement Trailer *</label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSwapTrailerModal(false);
+                          setManagingVehicle(null);
+                          setFormVehicleType('Trailer');
+                          setFormMake('');
+                          setFormModel('');
+                          setFormEngine('N/A');
+                          setRegoInput('');
+                          setShowAddModal(true);
+                        }}
+                        className="text-[11px] font-bold text-purple-700 hover:text-purple-900 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus size={12} /> Add Another Trailer
+                      </button>
+                    </div>
+                    <select 
+                      value={selectedSwapTrailer} 
+                      onChange={(e) => setSelectedSwapTrailer(e.target.value)} 
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer"
+                    >
+                      <option value="">-- Choose an Available Trailer --</option>
+                      {trailerOptions.map(trl => {
+                        const isHitched = trl.assignedTruckId && trl.assignedTruckId !== managingVehicle?.id;
+                        const hitchedTruck = isHitched ? vehicles.find(x => x.id === trl.assignedTruckId) : null;
+                        return (
+                          <option key={trl.id} value={trl.id}>
+                            {trl.reg || trl.rego || trl.id} – {trl.make} {trl.model || ''} ({isHitched ? `[⚠️ Hitched to ${hitchedTruck?.reg || hitchedTruck?.rego || trl.assignedTruckId}]` : '[✅ Available in Yard]'})
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                );
+              })()}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">Reason for Swap (Optional)</label>
@@ -5362,7 +5486,7 @@ const Vehicles = () => {
                 setRegoInput('');
                 setFormVehicleType('Prime Mover');
                 setFormRegState('');
-                setFormRegType('Heavy Vehicle Registration');
+                setFormRegType('');
                 setFormIssueDate('');
                 setFormExpiryDate('');
                 setFormVin('');
@@ -5522,7 +5646,9 @@ const Vehicles = () => {
              <div className="px-5 pt-3 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4">
                 <div className="flex gap-6 overflow-x-auto min-w-0">
                    {[
-                      { label: 'All Vehicles', value: 'ALL' },
+                      { label: 'All Equipment', value: 'ALL' },
+                      { label: 'Trucks / Prime Movers', value: 'TRUCKS' },
+                      { label: 'Trailers', value: 'TRAILERS' },
                       { label: 'Active', value: 'ACTIVE' },
                       { label: 'In Maintenance', value: 'MAINTENANCE' },
                       { label: 'Out of Service', value: 'OUT OF SERVICE' },
