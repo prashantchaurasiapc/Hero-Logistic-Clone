@@ -900,7 +900,7 @@ export default function Drivers() {
   // Dynamic Company Masters (Branches, Managers & Roles fetched from User Management)
   const [companyBranches, setCompanyBranches] = useState([]);
   const [companyManagers, setCompanyManagers] = useState([]);
-  const [companyRoles, setCompanyRoles] = useState(['Driver']);
+  const [companyRoles, setCompanyRoles] = useState([]);
   const [selectedBranches, setSelectedBranches] = useState([]);
 
   const fetchCompanyMasters = useCallback(async () => {
@@ -948,29 +948,28 @@ export default function Drivers() {
       const rData = rolesRes.data?.data || rolesRes.data || [];
       const rList = Array.isArray(rData) ? rData : (rData?.items || []);
       if (Array.isArray(rList) && rList.length > 0) {
-        // Extract all custom roles created by the company in Custom Roles
+        // Extract all custom roles created by the company in Custom Roles (strictly exclude 'Driver' and system roles)
         const customRoles = rList
           .filter(r => {
             if (!r) return false;
             const slug = (r.slug || '').toUpperCase();
             const nameLower = (r.name || '').toLowerCase().trim();
-            // Exclude platform administrative roles
-            if (slug === 'SUPER_ADMIN' || slug === 'COMPANY_ADMIN' || nameLower === 'super admin' || nameLower === 'company admin') return false;
+            // Exclude platform administrative roles and base system driver
+            if (slug === 'SUPER_ADMIN' || slug === 'COMPANY_ADMIN' || slug === 'DRIVER' || nameLower === 'super admin' || nameLower === 'company admin' || nameLower === 'driver') return false;
             // Include custom created roles
             return r.isSystem === false || (r.companyId && !r.isSystem);
           })
           .map(r => r.name || r.slug)
           .filter(Boolean);
 
-        // Combined roles: 'Driver' first, followed by all custom roles created by the company
-        const combined = ['Driver', ...customRoles];
-        const uniqueRoles = Array.from(new Set(combined.map(r => r.trim()).filter(Boolean)));
+        // ONLY custom roles created by the company (no default 'Driver')
+        const uniqueRoles = Array.from(new Set(customRoles.map(r => r.trim()).filter(Boolean)));
         setCompanyRoles(uniqueRoles);
       } else {
-        setCompanyRoles(['Driver']);
+        setCompanyRoles([]);
       }
     } catch (err) {
-      setCompanyRoles(['Driver']);
+      setCompanyRoles([]);
     }
   }, []);
 
@@ -4825,7 +4824,7 @@ export default function Drivers() {
       licenseExpiry: selectedDriver?.licenseExpiry || '',
       licenceClass: selectedDriver?.licenseClass || '',
       branch: selectedDriver?.branch && selectedDriver?.branch !== '—' ? selectedDriver.branch : '',
-      role: selectedDriver?.role || selectedDriver?.driverRole || 'Driver',
+      role: selectedDriver?.role || selectedDriver?.driverRole || (companyRoles[0] || ''),
       reportsTo: selectedDriver?.reportsTo || (selectedDriver?.manager ? (selectedDriver.manager.name || selectedDriver.manager.email) : (selectedDriver?.managerId || '')) || '',
       category: selectedDriver?.category || '',
       employmentType: (() => {
@@ -4922,7 +4921,7 @@ export default function Drivers() {
           const state = fd.get('State') || driverFormState || '';
           const postalCode = fd.get('PostalCode') || driverFormPostalCode || '';
 
-          const role = fd.get('DriverRole') || 'Driver';
+          const role = fd.get('DriverRole') || (companyRoles[0] || '');
           const reportsTo = fd.get('ReportsTo') || fd.get('reportsTo') || '';
           const employmentType = fd.get('EmploymentType') || '';
           const branch = (fd.get('Branch') || selectedBranches.join(', ') || '').trim();
@@ -5553,8 +5552,9 @@ export default function Drivers() {
                   name="DriverRole"
                   type="select" 
                   optional={false}
-                  options={companyRoles?.length > 0 ? companyRoles : ['Driver']} 
-                  defaultValue={isEditMode ? (defaultData.role || 'Driver') : 'Driver'} 
+                  placeholder={companyRoles?.length === 0 ? "No custom roles created yet" : "Select Driver Role"}
+                  options={companyRoles} 
+                  defaultValue={isEditMode ? (defaultData.role || (companyRoles[0] || '')) : (companyRoles[0] || '')} 
                 />
                 <InputField 
                   label="Reports To" 
