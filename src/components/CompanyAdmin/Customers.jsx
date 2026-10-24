@@ -959,6 +959,12 @@ Exported On: ${new Date().toLocaleString()}`;
         type: editCustomerForm.type
       } : c));
 
+      try {
+        const existing = JSON.parse(localStorage.getItem('hero_customers_list') || '[]');
+        const updated = existing.map(c => c.id === editCustomerForm.id ? { ...c, ...payload, transportModules: arrayModules } : c);
+        localStorage.setItem('hero_customers_list', JSON.stringify(updated));
+      } catch (e) {}
+
       if (selectedCustomer && selectedCustomer.id === editCustomerForm.id) {
         setSelectedCustomer(prev => ({
           ...prev,
@@ -1539,6 +1545,11 @@ Exported On: ${new Date().toLocaleString()}`;
       console.warn('Customer API save fallback:', err);
     } finally {
       setCustomersList(prev => [newCustomerObj, ...prev.filter(c => c.id !== newCustomerObj.id)]);
+      try {
+        const existing = JSON.parse(localStorage.getItem('hero_customers_list') || '[]');
+        const updated = [newCustomerObj, ...existing.filter(c => c.id !== newCustomerObj.id && c.name !== newCustomerObj.name)];
+        localStorage.setItem('hero_customers_list', JSON.stringify(updated));
+      } catch (e) {}
       setNewCustomerForm({
         name: '',
         abn: '',

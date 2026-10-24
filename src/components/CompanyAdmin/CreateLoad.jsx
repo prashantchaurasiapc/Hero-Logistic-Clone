@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   ArrowLeft, Save, Zap, Plus, Trash2, GripVertical,
   MapPin, User, Users, Phone, Calendar, Clock, Package, Truck,
-  Upload, ChevronDown, ChevronLeft, AlertCircle, CheckCircle, Info,
+  Upload, ChevronDown, ChevronLeft, AlertCircle, CheckCircle, Check, Info,
   Camera, X, Search, Flag, MoreVertical, DollarSign
 } from 'lucide-react';
 import api from '../../services/api';
@@ -11,7 +11,92 @@ import { dispatcherStore } from '../../services/dispatcherStore';
 
 const STOP_TYPES = ['Pickup', 'Drop-off'];
 const PRIORITIES  = ['Normal', 'Urgent', 'High'];
-const LOAD_TYPES  = ['Car Carrying', 'General Freight', 'Dangerous Goods'];
+const LOAD_TYPES  = ['General Freight', 'Car Carrying', 'Dangerous Goods', 'Refrigerated Freight', 'Heavy Haulage'];
+
+export const resolveCustomerLoadType = (custObj) => {
+  if (!custObj) return null;
+
+  const normalize = (val) => {
+    if (!val || typeof val !== 'string') return null;
+    const clean = val.trim();
+    const lower = clean.toLowerCase();
+
+    if (lower.includes('car') || lower.includes('vehicle') || lower.includes('auto') || lower.includes('motor')) {
+      return 'Car Carrying';
+    }
+    if (lower.includes('danger') || lower.includes('dg') || lower.includes('hazchem') || lower.includes('hazmat')) {
+      return 'Dangerous Goods';
+    }
+    if (lower.includes('refrigerat') || lower.includes('cold') || lower.includes('chilled') || lower.includes('reefer')) {
+      return 'Refrigerated Freight';
+    }
+    if (lower.includes('heavy') || lower.includes('haulage') || lower.includes('oversize') || lower.includes('machinery')) {
+      return 'Heavy Haulage';
+    }
+    if (lower.includes('general') || lower.includes('freight') || lower.includes('dry') || lower.includes('pallet') || lower.includes('parcel')) {
+      return 'General Freight';
+    }
+    const exact = LOAD_TYPES.find(t => t.toLowerCase() === lower);
+    if (exact) return exact;
+
+    return null;
+  };
+
+  // Collect all raw load type candidate values from customer object
+  const candidates = [];
+
+  // Direct fields
+  [
+    custObj.loadType,
+    custObj.serviceType,
+    custObj.cargoType,
+    custObj.freightType,
+    custObj.defaultLoadType,
+    custObj.service,
+    custObj.transportType,
+    custObj.module
+  ].forEach(f => { if (f) candidates.push(f); });
+
+  // transportModules (can be Array, JSON string, or comma-separated string)
+  let modules = custObj.transportModules;
+  if (typeof modules === 'string') {
+    try {
+      modules = JSON.parse(modules);
+    } catch (e) {
+      if (modules.includes(',')) modules = modules.split(',').map(s => s.trim());
+      else modules = [modules];
+    }
+  }
+  if (Array.isArray(modules)) {
+    modules.forEach(m => { if (m) candidates.push(m); });
+  }
+
+  // Pass 1: Prioritize specialized load types over generic 'General Freight'
+  for (const c of candidates) {
+    const norm = normalize(c);
+    if (norm && norm !== 'General Freight') return norm;
+  }
+
+  // Pass 2: Accept 'General Freight' if specified
+  for (const c of candidates) {
+    const norm = normalize(c);
+    if (norm === 'General Freight') return norm;
+  }
+
+  // Pass 3: Fallback to localStorage saved customer data if backend stripped columns
+  try {
+    const saved1 = JSON.parse(localStorage.getItem('hero_customers_list') || '[]');
+    const saved2 = JSON.parse(localStorage.getItem('customers') || '[]');
+    const allSaved = [...(Array.isArray(saved1) ? saved1 : []), ...(Array.isArray(saved2) ? saved2 : [])];
+    const found = allSaved.find(sc => String(sc.id) === String(custObj.id) || (sc.name && sc.name.toLowerCase() === (custObj.name || '').toLowerCase()));
+    if (found && found !== custObj) {
+      const resolvedLocal = resolveCustomerLoadType(found);
+      if (resolvedLocal) return resolvedLocal;
+    }
+  } catch (e) {}
+
+  return null;
+};
 
 const getTodayLocalDate = () => {
   const d = new Date();
@@ -259,19 +344,49 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
     const loadMasterData = async () => {
       // 1. Customers
       try {
-        const res = await api.get('/company-admin/customers');
-        const list = res.data?.data || res.data;
+        let list = [];
+        try {
+          const portalRes = await api.get('/customers/portal').catch(() => api.get('/company-admin/customers-portal'));
+          const portalCusts = portalRes?.data?.data?.customers || portalRes?.data?.customers;
+          if (Array.isArray(portalCusts) && portalCusts.length > 0) {
+            list = portalCusts;
+          }
+        } catch (e) {}
+
+        if (!list || list.length === 0) {
+          const res = await api.get('/customers?pageSize=200').catch(() => api.get('/company-admin/customers'));
+          const raw = res?.data?.data || res?.data;
+          list = Array.isArray(raw) ? raw : (Array.isArray(raw?.customers) ? raw.customers : []);
+        }
+
+        // Also merge local storage customer records to retain transportModules if created client-side
+        try {
+          const saved1 = JSON.parse(localStorage.getItem('hero_customers_list') || '[]');
+          const saved2 = JSON.parse(localStorage.getItem('customers') || '[]');
+          const allSaved = [...(Array.isArray(saved1) ? saved1 : []), ...(Array.isArray(saved2) ? saved2 : [])];
+          if (allSaved.length > 0) {
+            const map = new Map();
+            list.forEach(c => map.set(String(c.id), c));
+            allSaved.forEach(sc => {
+              const ex = map.get(String(sc.id));
+              if (ex) {
+                map.set(String(sc.id), {
+                  ...ex,
+                  ...sc,
+                  transportModules: sc.transportModules || ex.transportModules
+                });
+              } else if (sc.id) {
+                map.set(String(sc.id), sc);
+              }
+            });
+            list = Array.from(map.values());
+          }
+        } catch (e) {}
+
         if (Array.isArray(list)) setDbCustomers(list);
         else setDbCustomers([]);
       } catch {
-        try {
-          const res2 = await api.get('/customers');
-          const list2 = res2.data?.data || res2.data;
-          if (Array.isArray(list2)) setDbCustomers(list2);
-          else setDbCustomers([]);
-        } catch {
-          setDbCustomers([]);
-        }
+        setDbCustomers([]);
       }
 
       // 2. Drivers
@@ -315,14 +430,56 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
   // Pre-populate customer if passed via initialCustomerId
   useEffect(() => {
     if (initialCustomerId) {
+      const custObj = dbCustomers.find(c => String(c.id) === String(initialCustomerId));
+      const autoLoadType = custObj ? resolveCustomerLoadType(custObj) : null;
+
       setFormData(prev => ({
         ...prev,
         customer: initialCustomerId,
-        billedCustomerIds: [initialCustomerId]
+        billedCustomerIds: [initialCustomerId],
+        ...(autoLoadType ? { loadType: autoLoadType } : {})
       }));
-      setItems(prev => prev.map(item => ({ ...item, customer: item.customer || initialCustomerId })));
+      setItems(prev => prev.map(item => ({
+        ...item,
+        customer: item.customer || initialCustomerId,
+        ...(autoLoadType === 'Car Carrying' && !item.vin ? {
+          make: item.make || 'Toyota',
+          model: item.model || 'Hilux',
+          year: item.year || '2023',
+          colour: item.colour || 'White',
+          vehicleType: item.vehicleType || 'Ute / Utility',
+          keys: 'Yes',
+          damageReport: 'Yes'
+        } : {})
+      })));
     }
-  }, [initialCustomerId]);
+  }, [initialCustomerId, dbCustomers]);
+
+  // Auto-sync loadType when customer or dbCustomers changes (for new loads)
+  useEffect(() => {
+    if (!formData.customer || editMode) return;
+    const custObj = dbCustomers.find(c => String(c.id) === String(formData.customer));
+    if (custObj) {
+      const autoType = resolveCustomerLoadType(custObj);
+      if (autoType && autoType !== formData.loadType) {
+        setFormData(prev => (String(prev.customer) === String(formData.customer) ? { ...prev, loadType: autoType } : prev));
+        if (autoType === 'Car Carrying') {
+          setItems(prev => prev.map(item => ({
+            ...item,
+            ...(item.vin ? {} : {
+              make: item.make || 'Toyota',
+              model: item.model || 'Hilux',
+              year: item.year || '2023',
+              colour: item.colour || 'White',
+              vehicleType: item.vehicleType || 'Ute / Utility',
+              keys: 'Yes',
+              damageReport: 'Yes'
+            })
+          })));
+        }
+      }
+    }
+  }, [formData.customer, dbCustomers, editMode]);
 
   // Pre-populate fields if editing an existing load
   useEffect(() => {
@@ -1576,13 +1733,43 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                       value={formData.customer || ''}
                       onChange={e => {
                         const newCust = e.target.value;
+                        const custObj = dbCustomers.find(c => String(c.id) === String(newCust));
+                        const autoLoadType = custObj ? resolveCustomerLoadType(custObj) : null;
+
                         setFormData(prev => ({
                           ...prev,
                           customer: newCust,
                           billedCustomerIds: newCust ? [newCust] : [],
-                          selectedPricingRuleId: ''
+                          selectedPricingRuleId: '',
+                          ...(autoLoadType ? { loadType: autoLoadType } : {})
                         }));
-                        setItems(prev => prev.map(item => ({ ...item, customer: newCust })));
+
+                        setItems(prev => prev.map(item => ({
+                          ...item,
+                          customer: newCust,
+                          ...(autoLoadType === 'Car Carrying' && !item.vin ? {
+                            make: item.make || 'Toyota',
+                            model: item.model || 'Hilux',
+                            year: item.year || '2023',
+                            colour: item.colour || 'White',
+                            vehicleType: item.vehicleType || 'Ute / Utility',
+                            keys: 'Yes',
+                            damageReport: 'Yes'
+                          } : {})
+                        })));
+
+                        // Async fetch if customer has detailed info not yet in dbCustomers
+                        if (newCust && !autoLoadType) {
+                          api.get(`/customers/${newCust}`).then(res => {
+                            const cData = res.data?.data || res.data;
+                            if (cData) {
+                              const fetchedType = resolveCustomerLoadType(cData);
+                              if (fetchedType) {
+                                setFormData(curr => (String(curr.customer) === String(newCust)) ? { ...curr, loadType: fetchedType } : curr);
+                              }
+                            }
+                          }).catch(() => {});
+                        }
                       }}
                       className={`${selectCls} pl-10 font-medium`}
                     >
@@ -1666,6 +1853,16 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                 </select>
                 <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
+              {(() => {
+                const curCust = dbCustomers.find(c => String(c.id) === String(formData.customer));
+                const resolved = curCust ? resolveCustomerLoadType(curCust) : null;
+                if (!resolved) return null;
+                return (
+                  <p className="text-[10px] font-bold text-emerald-600 mt-1 flex items-center gap-1">
+                    <Check className="w-3 h-3 text-emerald-500 inline shrink-0" /> Auto-filled ({resolved})
+                  </p>
+                );
+              })()}
             </div>
 
             <div className="col-span-1">
