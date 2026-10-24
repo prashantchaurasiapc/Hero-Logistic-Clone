@@ -331,9 +331,21 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
       api.get(`/company-admin/loads/${loadIdToFetch}`).then(res => {
         const lData = res.data?.data || res.data;
         if (lData) {
+          const billedList = Array.isArray(lData.billedCustomerIds) ? lData.billedCustomerIds : (lData.customerId ? [lData.customerId] : []);
+          const itemsList = Array.isArray(lData.items) ? lData.items : [];
+          const distinctCusts = new Set(itemsList.map(it => {
+            let pNotes = {};
+            try { pNotes = JSON.parse(it.notes); } catch (e) {}
+            return it.customerId || pNotes.customer;
+          }).filter(Boolean));
+          const isMulti = lData.customerMode === 'MULTIPLE' || billedList.length > 1 || distinctCusts.size > 1;
+
           setFormData(prev => ({
             ...prev,
+            customerMode: isMulti ? 'MULTIPLE' : 'ONE',
             customer: lData.customerId || lData.customer?.id || (typeof lData.customer === 'string' ? lData.customer : prev.customer),
+            billedCustomerIds: billedList,
+            selectedPricingRuleId: '',
             loadType: lData.type || prev.loadType,
             loadRef: lData.loadRef || lData.id || prev.loadRef,
             priority: lData.priority ? lData.priority.charAt(0).toUpperCase() + lData.priority.slice(1).toLowerCase() : prev.priority,
@@ -387,7 +399,9 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
               }
               return {
                 id: i.id || Date.now() + idx,
-                customer: i.customerId || parsedNotes.customer || '',
+                customer: i.customerId || parsedNotes.customer || (!isMulti ? (lData.customerId || '') : ''),
+                pricingRuleId: parsedNotes.pricingRuleId || '',
+                itemCharge: parsedNotes.itemCharge ? String(parsedNotes.itemCharge) : (parsedNotes.rate ? String(parsedNotes.rate) : ''),
                 pickupStop: parsedNotes.pickupStop || '',
                 dropStop: parsedNotes.dropStop || '',
                 rcog: i.rego || parsedNotes.rcog || '',
@@ -499,7 +513,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
 
   const [items, setItems] = useState([
     {
-      id: 1, customer: '', pickupStop: '', dropStop: '',
+      id: 1, customer: '', pricingRuleId: '', itemCharge: '', pickupStop: '', dropStop: '',
       // Car Carrying
       rcog: '', vin: '', stockRec: '', make: 'Ford', model: 'Hilux', year: '2023', colour: 'Black', 
       length: '5,325', width: '1,955', height: '1,875', weight: '2,050', vehicleType: 'Ute / Utility', 
@@ -512,7 +526,9 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
   ]);
 
   const [formData, setFormData] = useState({
+    customerMode: 'ONE', // 'ONE' (Single customer for whole load) or 'MULTIPLE' (Multiple customers configured per item)
     customer: '',
+    selectedPricingRuleId: '',
     billedCustomerIds: [],
     loadType: 'General Freight',
     loadRef: `PO-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -807,6 +823,59 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
     setMatchedPricingRule(manualRule);
 
     showSaveToast(`Applied ${rule.name || 'Pricing Rule'} - Rate set to $${rateAmount.toFixed(2)}`, 'success');
+  };
+
+  const handleSelectOneCustomerPricingRule = (ruleId) => {
+    setFormData(prev => ({ ...prev, selectedPricingRuleId: ruleId }));
+    if (!ruleId || ruleId === 'custom') return;
+    const rule = customerPricingRules.find(r => String(r.id) === String(ruleId));
+    if (rule) {
+      handleApplyPricingRule(rule);
+    }
+  };
+
+  const handleItemPricingRuleChange = (itemId, ruleId) => {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+    const custId = item.customer || formData.customer;
+    const custRules = (multiCustomerPricingRules[custId] || []).filter(r => !r.isDefaultSample);
+    const selectedRule = custRules.find(r => String(r.id) === String(ruleId));
+    let calculatedCharge = '';
+    if (selectedRule) {
+      const base = parseFloat(selectedRule.baseRate) || 0;
+      const fuelPct = parseFloat(selectedRule.fuelLevy) || 0;
+      const fuelAmt = fuelPct > 0 ? (base * fuelPct / 100) : 0;
+      calculatedCharge = (base + fuelAmt).toFixed(2);
+    }
+
+    setItems(prev => {
+      const next = prev.map(it => it.id === itemId ? {
+        ...it,
+        pricingRuleId: ruleId,
+        itemCharge: calculatedCharge || it.itemCharge
+      } : it);
+
+      if (formData.customerMode === 'MULTIPLE') {
+        const sum = next.reduce((acc, it) => acc + (parseFloat(it.itemCharge) || 0), 0);
+        if (sum > 0) {
+          setFormData(f => ({ ...f, rate: sum.toFixed(2) }));
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleItemChargeChange = (itemId, val) => {
+    setItems(prev => {
+      const next = prev.map(it => it.id === itemId ? { ...it, itemCharge: val } : it);
+      if (formData.customerMode === 'MULTIPLE') {
+        const sum = next.reduce((acc, it) => acc + (parseFloat(it.itemCharge) || 0), 0);
+        if (sum > 0) {
+          setFormData(f => ({ ...f, rate: sum.toFixed(2) }));
+        }
+      }
+      return next;
+    });
   };
 
   const getDriverSchedules = (driverId = null) => {
@@ -1225,7 +1294,11 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
 
   const addItem = () => {
     setItems(prev => [...prev, {
-      id: Date.now(), customer: '', pickupStop: '', dropStop: '', 
+      id: Date.now(),
+      customer: formData.customerMode === 'ONE' ? formData.customer : '',
+      pricingRuleId: '',
+      itemCharge: '',
+      pickupStop: '', dropStop: '', 
       // Car Carrying
       rcog: '', vin: '', stockRec: '', make: '', model: '', year: '', colour: '', 
       length: '', width: '', height: '', weight: '', vehicleType: '', keys: 'Yes', damageReport: 'Yes', notes: '',
@@ -1272,7 +1345,8 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
           if (formData.loadScheduleTitle) n += ` [SCHEDULE:${formData.loadScheduleTitle}]`;
           return n;
         })(),
-        customerId: formData.customer && formData.customer.length > 5 ? formData.customer : null,
+        customerMode: formData.customerMode || 'ONE',
+        customerId: formData.customerMode === 'ONE' && formData.customer && formData.customer.length > 5 ? formData.customer : null,
         driverId: formData.driver && formData.driver.length > 5 ? formData.driver : null,
         truckId: formData.truck && formData.truck.length > 5 ? formData.truck : null,
         rate: formData.rate ? parseFloat(formData.rate) : undefined,
@@ -1298,16 +1372,28 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
             const resolved = dbCustomers.find(c => c.id === item.customer || c.name === item.customer);
             if (resolved?.id) return resolved.id;
             if (item.customer && item.customer.length > 5) return item.customer;
-            const primResolved = dbCustomers.find(c => c.id === formData.customer || c.name === formData.customer);
-            if (primResolved?.id) return primResolved.id;
-            return formData.customer && formData.customer.length > 5 ? formData.customer : null;
+            if (formData.customerMode === 'ONE') {
+              const primResolved = dbCustomers.find(c => c.id === formData.customer || c.name === formData.customer);
+              if (primResolved?.id) return primResolved.id;
+              return formData.customer && formData.customer.length > 5 ? formData.customer : null;
+            }
+            return null;
           })(),
-          notes: JSON.stringify(item)
+          notes: JSON.stringify({
+            ...item,
+            pricingRuleId: item.pricingRuleId || '',
+            itemCharge: item.itemCharge || ''
+          })
         })),
-        // Phase 7A: send all selected billed customer IDs so backend can connect them to this load
-        billedCustomerIds: Array.isArray(formData.billedCustomerIds) && formData.billedCustomerIds.length > 0
-          ? formData.billedCustomerIds
-          : (formData.customer && formData.customer.length > 5 ? [formData.customer] : []),
+        billedCustomerIds: (() => {
+          if (formData.customerMode === 'MULTIPLE') {
+            const multiCusts = Array.from(new Set(items.map(it => it.customer).filter(Boolean)));
+            if (multiCusts.length > 0) return multiCusts;
+          }
+          return Array.isArray(formData.billedCustomerIds) && formData.billedCustomerIds.length > 0
+            ? formData.billedCustomerIds
+            : (formData.customer && formData.customer.length > 5 ? [formData.customer] : []);
+        })(),
         billingSnapshots: multiCustomerBreakdown,
         ...(Object.keys(uploadedPhotos).length > 0 && {
           documents: {
@@ -1452,95 +1538,110 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6">
           <SectionHeader number="1" title="Load Information & Customer Revenue" subtitle="Customer Pricing (Inbound Revenue)" colorCls="bg-indigo-600" />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-            <div className="col-span-1" onMouseLeave={() => setIsCustomerDropdownOpen(false)}>
-              <FieldLabel>Booking Customer (Optional)</FieldLabel>
+          {/* Row 1: Customer Selection & Pricing Flow */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 pb-4 border-b border-slate-100">
+            <div>
+              <FieldLabel required>Customer Selection</FieldLabel>
               <div className="relative">
-                <div 
-                  className={`${selectCls} pl-4 pr-8 font-normal flex items-center cursor-pointer min-h-[40px]`}
-                  onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
+                <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-600" />
+                <select
+                  value={formData.customerMode || 'ONE'}
+                  onChange={e => {
+                    const newMode = e.target.value;
+                    setFormData(prev => ({
+                      ...prev,
+                      customerMode: newMode,
+                      ...(newMode === 'MULTIPLE' ? { selectedPricingRuleId: '' } : {})
+                    }));
+                  }}
+                  className={`${selectCls} pl-10 font-bold`}
                 >
-                  <span className="truncate w-full block text-left">
-                    {formData.billedCustomerIds?.length > 0 
-                      ? formData.billedCustomerIds.map(id => dbCustomers.find(c => c.id === id)?.name || 'Unknown').join(', ') 
-                      : <span className="text-slate-400">Select Customer...</span>}
-                  </span>
-                </div>
-                <ChevronDown className={`absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-transform duration-200 pointer-events-none ${isCustomerDropdownOpen ? 'rotate-180' : ''}`} />
-                
-                {isCustomerDropdownOpen && (
-                  <div className="absolute z-50 top-full left-0 right-0 mt-1 max-h-72 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl custom-scrollbar p-2 flex flex-col gap-1 animate-fadeIn">
-                    <div className="sticky top-0 z-10 bg-white pb-1.5 pt-0.5 border-b border-slate-100" onClick={e => e.stopPropagation()}>
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                        <input
-                          type="text"
-                          value={customerSearchQuery}
-                          onChange={e => setCustomerSearchQuery(e.target.value)}
-                          placeholder="Search customer (e.g. Jess...)"
-                          className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none focus:border-indigo-500 bg-slate-50/50"
-                          onClick={e => e.stopPropagation()}
-                        />
-                      </div>
-                    </div>
-                    {dbCustomers
-                      .filter(c => (c.name || '').toLowerCase().includes(customerSearchQuery.toLowerCase()))
-                      .map((c, idx) => {
-                        const isChecked = (formData.billedCustomerIds || []).includes(c.id);
-                        return (
-                          <label 
-                            key={c.id || idx} 
-                            className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors border border-transparent ${isChecked ? 'bg-indigo-50/80 border-indigo-100' : 'hover:bg-slate-50 hover:border-slate-100'}`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={e => {
-                                let newBilled = [...(formData.billedCustomerIds || [])];
-                                if (e.target.checked) {
-                                  if (!newBilled.includes(c.id)) newBilled.push(c.id);
-                                } else {
-                                  newBilled = newBilled.filter(id => id !== c.id);
-                                }
-                                const newPrimary = newBilled.length > 0 ? newBilled[0] : '';
-                                setFormData({ ...formData, billedCustomerIds: newBilled, customer: newPrimary });
-                                setItems(prev => prev.map(item => ({ ...item, customer: item.customer || newPrimary })));
-
-                                // Auto-populate customer site contact into Drop-off stop if empty
-                                if (e.target.checked && (c.contactName || c.phone)) {
-                                  setStops(prev => prev.map(s => {
-                                    if (s.type === 'Drop-off' && !s.contactName && !s.contactPhone) {
-                                      return {
-                                        ...s,
-                                        contactName: c.contactName || s.contactName,
-                                        contactPhone: c.phone || s.contactPhone
-                                      };
-                                    }
-                                    return s;
-                                  }));
-                                }
-                              }}
-                              className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer shadow-xs"
-                            />
-                            <div className="flex flex-col">
-                              <span className={`text-xs truncate ${isChecked ? 'font-black text-indigo-900' : 'font-bold text-slate-700'}`}>
-                                {c.name || `Customer #${idx + 1}`}
-                              </span>
-                            </div>
-                          </label>
-                        );
-                      })}
-                    {dbCustomers.filter(c => (c.name || '').toLowerCase().includes(customerSearchQuery.toLowerCase())).length === 0 && (
-                      <p className="text-center py-3 text-xs text-slate-400 font-medium">No matching customer found</p>
-                    )}
-                  </div>
-                )}
+                  <option value="ONE">ONE Customer (Whole Load)</option>
+                  <option value="MULTIPLE">MULTIPLE Customers (Item Billed)</option>
+                </select>
+                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
-              <p className="text-[10.5px] font-bold text-emerald-500 mt-1.5 leading-snug">
-                Auto-finds Pricing Rule
+              <p className="text-[10px] font-bold text-slate-400 mt-1">
+                {formData.customerMode === 'ONE' ? 'Billed to one customer for whole load' : 'Customers selected per item in Section 3'}
               </p>
             </div>
 
+            {formData.customerMode === 'ONE' ? (
+              <>
+                <div>
+                  <FieldLabel required>Booking Customer</FieldLabel>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <select
+                      value={formData.customer || ''}
+                      onChange={e => {
+                        const newCust = e.target.value;
+                        setFormData(prev => ({
+                          ...prev,
+                          customer: newCust,
+                          billedCustomerIds: newCust ? [newCust] : [],
+                          selectedPricingRuleId: ''
+                        }));
+                        setItems(prev => prev.map(item => ({ ...item, customer: newCust })));
+                      }}
+                      className={`${selectCls} pl-10 font-medium`}
+                    >
+                      <option value="">Select Customer...</option>
+                      {dbCustomers.map(c => (
+                        <option key={c.id} value={c.id}>{c.name || `Customer #${c.id}`}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  </div>
+                  <p className="text-[10px] font-bold text-emerald-600 mt-1">
+                    Whole load billed to this customer
+                  </p>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <FieldLabel>Pricing Structure (Whole Load Dropdown)</FieldLabel>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
+                    <select
+                      value={formData.selectedPricingRuleId || ''}
+                      disabled={!formData.customer}
+                      onChange={e => handleSelectOneCustomerPricingRule(e.target.value)}
+                      className={`${selectCls} pl-10 text-xs font-semibold`}
+                    >
+                      <option value="">
+                        {!formData.customer ? 'Select customer first' : customerPricingRules.filter(r => !r.isDefaultSample).length > 0 ? 'Select Pricing Rule Dropdown...' : 'No saved rules (Enter rate manually)'}
+                      </option>
+                      {customerPricingRules.filter(r => !r.isDefaultSample).map(rule => (
+                        <option key={rule.id} value={rule.id}>
+                          {rule.name || 'Lane Rate'} — ${parseFloat(rule.baseRate || 0).toFixed(2)} {rule.method || 'Per Load'}{rule.fuelLevy ? ` (+${rule.fuelLevy}% Fuel)` : ''} {rule.from && rule.to ? `(${rule.from} → ${rule.to})` : ''}
+                        </option>
+                      ))}
+                      {formData.customer && <option value="custom">Custom / Manual Pricing</option>}
+                    </select>
+                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 mt-1">
+                    Compact space-saving dropdown for whole load pricing
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="sm:col-span-3 flex items-center p-3 bg-indigo-50/70 border border-indigo-200/60 rounded-xl">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-indigo-600 mt-1.5 shrink-0 animate-pulse"></span>
+                  <div>
+                    <h5 className="text-xs font-black text-indigo-950 uppercase tracking-tight">Multiple Customers Mode Active</h5>
+                    <p className="text-[11px] font-medium text-indigo-800 leading-snug mt-0.5">
+                      Assign each item to its respective customer and select their individual compact Pricing Structure in <span className="font-bold underline">Section 3 (Items)</span>. Overall load revenue below will be calculated automatically.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Row 2: Standard Load Fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="col-span-1">
               <FieldLabel required>Load Type / Service</FieldLabel>
               <div className="relative">
@@ -1551,7 +1652,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                     const newType = e.target.value;
                     setFormData({ ...formData, loadType: newType });
                     setItems([{
-                      id: Date.now(), customer: '', pickupStop: '', dropStop: '',
+                      id: Date.now(), customer: formData.customerMode === 'ONE' ? formData.customer : '', pricingRuleId: '', itemCharge: '', pickupStop: '', dropStop: '',
                       rcog: '', vin: '', stockRec: '', make: 'Ford', model: 'Hilux', year: '2023', colour: 'Black', 
                       length: '5,325', width: '1,955', height: '1,875', weight: '2,050', vehicleType: 'Ute / Utility', 
                       keys: 'Yes', damageReport: 'Yes', notes: '',
@@ -1632,10 +1733,15 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                   placeholder="Enter rate (e.g. 500.00)"
                 />
               </div>
+              {formData.customerMode === 'MULTIPLE' && (
+                <p className="text-[9.5px] font-bold text-indigo-600 mt-1 truncate">
+                  Auto-summed from items
+                </p>
+              )}
             </div>
           </div>
 
-          {matchedPricingRule && matchedPricingRule.hasRule ? (
+          {matchedPricingRule && matchedPricingRule.hasRule && formData.customerMode === 'ONE' ? (
             <div className="mt-4 p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-emerald-950 font-semibold shadow-2xs">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shrink-0"></span>
@@ -1648,49 +1754,12 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                 Invoice automatically created on Load Save (${matchedPricingRule.amount.toFixed(2)})
               </span>
             </div>
-          ) : matchedPricingRule && !matchedPricingRule.hasRule ? (
+          ) : matchedPricingRule && !matchedPricingRule.hasRule && formData.customerMode === 'ONE' ? (
             <div className="mt-4 p-3 bg-amber-50/70 border border-amber-200 rounded-xl flex items-center gap-2 text-xs text-amber-900 font-semibold shadow-2xs">
               <Info className="w-4 h-4 text-amber-600 shrink-0" />
               <span>{matchedPricingRule.ruleName}</span>
             </div>
           ) : null}
-
-          {/* Applicable Customer Pricing Rules UI */}
-          {formData.customer && (
-            <div className="mt-6 border-t border-slate-100 pt-5">
-              <h4 className="text-xs font-bold text-slate-800 mb-3 uppercase tracking-wider flex items-center gap-2">
-                <DollarSign size={14} className="text-emerald-600" /> Applicable Pricing Rules
-              </h4>
-              {customerPricingRules.filter(r => !r.isDefaultSample).length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {customerPricingRules.filter(r => !r.isDefaultSample).map(rule => (
-                    <div key={rule.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-emerald-300 transition-colors">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-bold text-slate-900">{rule.name || 'Lane Rate'}</span>
-                        <span className="text-xs font-black text-emerald-700">${parseFloat(rule.baseRate).toFixed(2)}</span>
-                      </div>
-                      <div className="text-[10px] text-slate-500 mb-3 space-y-1">
-                        <p><span className="font-semibold text-slate-600">Route:</span> {rule.from || 'Any'} → {rule.to || 'Any'}</p>
-                        <p><span className="font-semibold text-slate-600">Type:</span> {rule.type || 'General'}</p>
-                        <p><span className="font-semibold text-slate-600">Method:</span> {rule.method || 'Per Load'}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleApplyPricingRule(rule)}
-                        className="w-full py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                      >
-                        <CheckCircle size={12} /> Apply Rule
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-500 italic text-center">
-                  No pricing rules configured for this customer.
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* ═══════ Section 2: Route Stops ═══════════ */}
@@ -2126,54 +2195,148 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                   {/* Left: Item Fields */}
                   <div className="flex-1 space-y-4 min-w-0">
                     {/* Row 1 */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <FieldLabel required>Customer / Owner</FieldLabel>
-                        <div className="relative">
-                          <select 
-                            value={(dbCustomers.find(c => c.id === item.customer || c.name === item.customer)?.id) || item.customer || ''} 
-                            onChange={e => updateItem(item.id, 'customer', e.target.value)}
-                            className={selectCls}
-                          >
-                            <option value="">Select Customer...</option>
-                            {dbCustomers.map((c, i) => (
-                              <option key={c.id || i} value={c.id}>{c.name || `Customer #${i + 1}`}</option>
-                            ))}
-                          </select>
-                          <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    {formData.customerMode === 'MULTIPLE' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        <div>
+                          <FieldLabel required>Customer / Owner</FieldLabel>
+                          <div className="relative">
+                            <select 
+                              value={(dbCustomers.find(c => c.id === item.customer || c.name === item.customer)?.id) || item.customer || ''} 
+                              onChange={e => {
+                                const newCust = e.target.value;
+                                setItems(prev => prev.map(it => it.id === item.id ? { ...it, customer: newCust, pricingRuleId: '', itemCharge: '' } : it));
+                              }}
+                              className={selectCls}
+                            >
+                              <option value="">Select Customer...</option>
+                              {dbCustomers.map((c, i) => (
+                                <option key={c.id || i} value={c.id}>{c.name || `Customer #${i + 1}`}</option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <FieldLabel>Pickup Stop *</FieldLabel>
-                        <div className="relative">
-                          <select value={item.pickupStop} onChange={e => updateItem(item.id, 'pickupStop', e.target.value)}
-                            className={selectCls}>
-                            <option value="">Select pickup stop...</option>
-                            {stops.filter(s => s.type === 'Pickup').map((s, i) => (
-                              <option key={s.id} value={`Stop#${i+1} - Pickup (${s.address.slice(0,12)}...)`}>
-                                Stop#{i+1} - Pickup ({s.address.slice(0, 12)}...)
+
+                        <div>
+                          <FieldLabel required>Pricing Structure</FieldLabel>
+                          <div className="relative">
+                            <select
+                              value={item.pricingRuleId || ''}
+                              disabled={!item.customer}
+                              onChange={e => handleItemPricingRuleChange(item.id, e.target.value)}
+                              className={`${selectCls} text-xs`}
+                            >
+                              <option value="">
+                                {!item.customer ? 'Select customer first' : (multiCustomerPricingRules[item.customer] || []).filter(r => !r.isDefaultSample).length > 0 ? 'Select Pricing Dropdown...' : 'No rules (Enter rate)'}
                               </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                              {(multiCustomerPricingRules[item.customer] || []).filter(r => !r.isDefaultSample).map(r => (
+                                <option key={r.id} value={r.id}>
+                                  {r.name || 'Lane Rate'} — ${parseFloat(r.baseRate || 0).toFixed(2)}{r.fuelLevy ? ` (+${r.fuelLevy}% Fuel)` : ''}
+                                </option>
+                              ))}
+                              {item.customer && <option value="custom">Custom / Manual Rate</option>}
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                          </div>
+                        </div>
+
+                        <div>
+                          <FieldLabel required>Item Charge ($)</FieldLabel>
+                          <div className="relative">
+                            <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-600" />
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={item.itemCharge || ''}
+                              onChange={e => handleItemChargeChange(item.id, e.target.value)}
+                              placeholder="0.00"
+                              className={`${inputCls} pl-7 font-bold text-emerald-700 bg-emerald-50/30 border-emerald-300 focus:border-emerald-500`}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <FieldLabel>Pickup Stop *</FieldLabel>
+                          <div className="relative">
+                            <select value={item.pickupStop} onChange={e => updateItem(item.id, 'pickupStop', e.target.value)}
+                              className={selectCls}>
+                              <option value="">Select pickup stop...</option>
+                              {stops.filter(s => s.type === 'Pickup').map((s, i) => (
+                                <option key={s.id} value={`Stop#${i+1} - Pickup (${s.address.slice(0,12)}...)`}>
+                                  Stop#{i+1} - Pickup ({s.address.slice(0, 12)}...)
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                          </div>
+                        </div>
+
+                        <div>
+                          <FieldLabel>Drop-off Stop *</FieldLabel>
+                          <div className="relative">
+                            <select value={item.dropStop} onChange={e => updateItem(item.id, 'dropStop', e.target.value)}
+                              className={selectCls}>
+                              <option value="">Select drop-off stop...</option>
+                              {stops.filter(s => s.type === 'Drop-off').map((s, i) => (
+                                <option key={s.id} value={`Stop#${i+1} - Drop-off (${s.address.slice(0,12)}...)`}>
+                                  Stop#{i+1} - Drop-off ({s.address.slice(0, 12)}...)
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <FieldLabel>Drop-off Stop *</FieldLabel>
-                        <div className="relative">
-                          <select value={item.dropStop} onChange={e => updateItem(item.id, 'dropStop', e.target.value)}
-                            className={selectCls}>
-                            <option value="">Select drop-off stop...</option>
-                            {stops.filter(s => s.type === 'Drop-off').map((s, i) => (
-                              <option key={s.id} value={`Stop#${i+1} - Drop-off (${s.address.slice(0,12)}...)`}>
-                                Stop#{i+1} - Drop-off ({s.address.slice(0, 12)}...)
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <FieldLabel>Customer / Owner</FieldLabel>
+                          <div className="relative">
+                            <select 
+                              value={(dbCustomers.find(c => c.id === item.customer || c.name === item.customer)?.id) || item.customer || formData.customer || ''} 
+                              onChange={e => updateItem(item.id, 'customer', e.target.value)}
+                              className={selectCls}
+                            >
+                              <option value="">Select Customer...</option>
+                              {dbCustomers.map((c, i) => (
+                                <option key={c.id || i} value={c.id}>{c.name || `Customer #${i + 1}`}</option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                          </div>
+                        </div>
+                        <div>
+                          <FieldLabel>Pickup Stop *</FieldLabel>
+                          <div className="relative">
+                            <select value={item.pickupStop} onChange={e => updateItem(item.id, 'pickupStop', e.target.value)}
+                              className={selectCls}>
+                              <option value="">Select pickup stop...</option>
+                              {stops.filter(s => s.type === 'Pickup').map((s, i) => (
+                                <option key={s.id} value={`Stop#${i+1} - Pickup (${s.address.slice(0,12)}...)`}>
+                                  Stop#{i+1} - Pickup ({s.address.slice(0, 12)}...)
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                          </div>
+                        </div>
+                        <div>
+                          <FieldLabel>Drop-off Stop *</FieldLabel>
+                          <div className="relative">
+                            <select value={item.dropStop} onChange={e => updateItem(item.id, 'dropStop', e.target.value)}
+                              className={selectCls}>
+                              <option value="">Select drop-off stop...</option>
+                              {stops.filter(s => s.type === 'Drop-off').map((s, i) => (
+                                <option key={s.id} value={`Stop#${i+1} - Drop-off (${s.address.slice(0,12)}...)`}>
+                                  Stop#{i+1} - Drop-off ({s.address.slice(0, 12)}...)
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Dynamic Fields based on Load Type */}
                     {formData.loadType === 'Car Carrying' && (
@@ -2674,7 +2837,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <FieldLabel required>Truck</FieldLabel>
+              <FieldLabel>Truck (Optional)</FieldLabel>
               <div className="relative">
                 <Truck className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <select
@@ -2682,7 +2845,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                   onChange={e => setFormData({ ...formData, truck: e.target.value })}
                   className={`${selectCls} pl-8`}
                 >
-                  <option value="">Select Truck...</option>
+                  <option value="">Select Truck (Optional)...</option>
                   {dbTrucks
                     .filter(t => {
                       const tType = String(t.category || t.regType || t.type || '').toUpperCase();
@@ -2722,7 +2885,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
             </div>
 
             <div>
-              <FieldLabel required>Driver</FieldLabel>
+              <FieldLabel>Driver (Optional)</FieldLabel>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <select
@@ -2778,7 +2941,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                   }}
                   className={`${selectCls} pl-8`}
                 >
-                  <option value="">Select Driver...</option>
+                  <option value="">Select Driver (Optional)...</option>
                   {dbDrivers.map((d, idx) => {
                     const val = d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.userCode || `Driver #${idx + 1}`;
                     return <option key={d.id || idx} value={d.id}>{val}</option>;
