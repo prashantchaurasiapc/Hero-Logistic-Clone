@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiCheckCircle, FiCamera, FiAlertTriangle, FiFileText,
-  FiMessageSquare, FiCheck, FiX, FiMinus, FiHelpCircle, FiChevronRight
+  FiMessageSquare, FiCheck, FiX, FiMinus, FiHelpCircle, FiChevronRight,
+  FiLock
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
