@@ -28,8 +28,10 @@ export default function DispatcherLoads() {
   const [toastMsg, setToastMsg] = useState('');
   const [availableDrivers, setAvailableDrivers] = useState([]);
   const [availableVehicles, setAvailableVehicles] = useState([]);
+  const [availableTrailers, setAvailableTrailers] = useState([]);
   const [selectedAssignDriverId, setSelectedAssignDriverId] = useState('');
   const [selectedAssignVehicleId, setSelectedAssignVehicleId] = useState('');
+  const [selectedAssignTrailerId, setSelectedAssignTrailerId] = useState('');
 
   // Dropdown 3-dot action menu state
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
@@ -78,6 +80,9 @@ export default function DispatcherLoads() {
   const [isInstructionsModalOpen, setIsInstructionsModalOpen] = useState(false);
   const [isSwapTrailerModalOpen, setIsSwapTrailerModalOpen] = useState(false);
   const [swapTrailerInput, setSwapTrailerInput] = useState('');
+  const [swapSelectedTrailerId, setSwapSelectedTrailerId] = useState('');
+  const [swapReason, setSwapReason] = useState('Breakdown / Roadside Failure');
+  const [swapLocation, setSwapLocation] = useState('');
   const [isTransferLoadModalOpen, setIsTransferLoadModalOpen] = useState(false);
   const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
   const [newNoteText, setNewNoteText] = useState('');
@@ -171,6 +176,19 @@ export default function DispatcherLoads() {
           const list = r.data?.data || r.data;
           if (Array.isArray(list)) setAvailableVehicles(list);
         }).catch(() => {});
+      }
+
+      // Populate available trailers for hitching / swapping
+      if (Array.isArray(payload.trailers) && payload.trailers.length > 0) {
+        setAvailableTrailers(payload.trailers);
+      } else if (Array.isArray(payload.vehicles)) {
+        const trls = payload.vehicles.filter(v => 
+          v.category === 'TRAILER' || 
+          String(v.make || '').toLowerCase().includes('trailer') || 
+          String(v.model || '').toLowerCase().includes('trailer') ||
+          String(v.rego || '').toUpperCase().startsWith('TRL')
+        );
+        setAvailableTrailers(trls);
       }
     } catch (error) {
       console.error('Error fetching active loads:', error);
@@ -335,9 +353,139 @@ export default function DispatcherLoads() {
 
   const openAssignModal = () => {
     const raw = activeLoadDetails.rawLoad || {};
-    setSelectedAssignDriverId(raw.driverId || '');
-    setSelectedAssignVehicleId(raw.truckId || '');
+    const dId = raw.driverId || '';
+    const vId = raw.truckId || '';
+    const trId = raw.trailerId || '';
+    setSelectedAssignDriverId(dId);
+    setSelectedAssignVehicleId(vId);
+    setSelectedAssignTrailerId(trId);
+
+    // If driver already has a current paired vehicle, auto-select it
+    if (dId && !vId) {
+      const drv = availableDrivers.find(d => String(d.id) === String(dId));
+      if (drv?.currentVehicle?.[0]) {
+        setSelectedAssignVehicleId(drv.currentVehicle[0].id);
+        if (drv.currentVehicle[0].assignedTrailerId) {
+          setSelectedAssignTrailerId(drv.currentVehicle[0].assignedTrailerId);
+        }
+      }
+    }
     setIsTransferLoadModalOpen(true);
+  };
+
+  const handleDriverSelectionChange = (driverId) => {
+    setSelectedAssignDriverId(driverId);
+    if (driverId) {
+      const drv = availableDrivers.find(d => String(d.id) === String(driverId));
+      const linkedTruck = drv?.currentVehicle?.[0] || availableVehicles.find(v => String(v.currentDriverId) === String(driverId));
+      if (linkedTruck) {
+        setSelectedAssignVehicleId(linkedTruck.id);
+        if (linkedTruck.assignedTrailerId) {
+          setSelectedAssignTrailerId(linkedTruck.assignedTrailerId);
+        }
+      }
+    }
+  };
+
+  const handleTruckSelectionChange = (truckId) => {
+    setSelectedAssignVehicleId(truckId);
+    if (truckId) {
+      const trk = availableVehicles.find(v => String(v.id) === String(truckId));
+      if (trk?.assignedTrailerId) {
+        setSelectedAssignTrailerId(trk.assignedTrailerId);
+      }
+    }
+  };
+
+  const handleConfirmTrailerSwap = async () => {
+    const chosenTrl = availableTrailers.find(t => String(t.id) === String(swapSelectedTrailerId)) ||
+                      availableVehicles.find(v => String(v.id) === String(swapSelectedTrailerId));
+    const manualVal = swapTrailerInput.trim();
+
+    if (!chosenTrl && !manualVal) {
+      triggerToast('Please select or enter a replacement trailer');
+      return;
+    }
+
+    const replacementId = chosenTrl?.id || manualVal;
+    const replacementLabel = chosenTrl ? (chosenTrl.rego || chosenTrl.plate || `${chosenTrl.make || ''} ${chosenTrl.model || ''}`.trim()) : manualVal;
+
+    const raw = activeLoadDetails.rawLoad || {};
+    const loadId = activeLoadDetails.dbId || activeLoadDetails.id;
+
+    // Resolve truck ID
+    let truckId = raw.truckId;
+    if (!truckId && activeLoadDetails.vehicle && activeLoadDetails.vehicle !== 'Unassigned') {
+      const matchedVeh = availableVehicles.find(v => 
+        (v.rego && v.rego === activeLoadDetails.rego) ||
+        `${v.make || ''} ${v.model || ''}`.trim().toLowerCase() === activeLoadDetails.vehicle.toLowerCase()
+      );
+      if (matchedVeh) truckId = matchedVeh.id;
+    }
+
+    // Resolve driver ID
+    let driverId = raw.driverId;
+    if (!driverId && activeLoadDetails.driver && activeLoadDetails.driver !== 'Unassigned') {
+      const matchedDrv = availableDrivers.find(d => 
+        (d.name && d.name === activeLoadDetails.driver) ||
+        `${d.firstName || ''} ${d.lastName || ''}`.trim().toLowerCase() === activeLoadDetails.driver.toLowerCase()
+      );
+      if (matchedDrv) driverId = matchedDrv.id;
+    }
+
+    try {
+      // 1. If truck exists, call attach-trailer endpoint on backend (auto-syncs all active loads on that truck/driver!)
+      if (truckId) {
+        try {
+          await api.post(`/vehicles/${truckId}/attach-trailer`, {
+            trailerId: replacementId,
+            reason: swapReason,
+            notes: `Roadside / Breakdown Swap at: ${swapLocation || 'In Transit'}`
+          });
+        } catch (e) {
+          console.warn('Vehicle attach-trailer warning:', e);
+        }
+      }
+
+      // 2. Direct load assignment update
+      try {
+        await api.post(`/loads/${loadId}/assignments`, {
+          trailerId: replacementId,
+          truckId: truckId || undefined,
+          driverId: driverId || undefined
+        });
+      } catch {
+        await api.patch(`/company-admin/loads/${loadId}`, { trailerId: replacementId }).catch(() => {});
+      }
+
+      // 3. Auto-sync all loads in masterLoads that belong to this driver or truck
+      setMasterLoads(prev => prev.map(l => {
+        const matchesTruck = (truckId && l.rawLoad?.truckId === truckId) || (l.vehicle && l.vehicle === activeLoadDetails.vehicle && l.vehicle !== 'Unassigned');
+        const matchesDriver = (driverId && l.rawLoad?.driverId === driverId) || (l.driver && l.driver === activeLoadDetails.driver && l.driver !== 'Unassigned');
+        const isCurrentLoad = l.id === activeLoadDetails.id || l.dbId === loadId;
+
+        if (isCurrentLoad || matchesTruck || matchesDriver) {
+          return {
+            ...l,
+            trailer: replacementLabel,
+            rawLoad: {
+              ...(l.rawLoad || {}),
+              trailerId: replacementId
+            }
+          };
+        }
+        return l;
+      }));
+
+      setIsSwapTrailerModalOpen(false);
+      setSwapTrailerInput('');
+      setSwapSelectedTrailerId('');
+      setSwapLocation('');
+      triggerToast(`Trailer swapped to "${replacementLabel}" for Driver ${activeLoadDetails.driver} & Truck ${activeLoadDetails.vehicle}!`);
+    } catch (err) {
+      console.error('Error swapping trailer:', err);
+      triggerToast('Error swapping trailer. Please try again.');
+    }
   };
 
   const handleConfirmAssignment = async () => {
@@ -349,20 +497,40 @@ export default function DispatcherLoads() {
     try {
       const chosenDrv = availableDrivers.find(d => String(d.id) === String(selectedAssignDriverId));
       const chosenVeh = availableVehicles.find(v => String(v.id) === String(selectedAssignVehicleId));
+      const chosenTrl = availableTrailers.find(t => String(t.id) === String(selectedAssignTrailerId)) || 
+                        availableVehicles.find(v => String(v.id) === String(selectedAssignTrailerId));
+
       const drvName = chosenDrv ? (chosenDrv.name || `${chosenDrv.firstName || ''} ${chosenDrv.lastName || ''}`.trim() || chosenDrv.driverCode) : 'Assigned Driver';
       const vehName = chosenVeh ? `${chosenVeh.make || ''} ${chosenVeh.model || ''}`.trim() : 'Assigned Truck';
+      const trlName = chosenTrl ? (chosenTrl.rego || chosenTrl.plate || `${chosenTrl.make || ''} ${chosenTrl.model || ''}`.trim()) : (chosenVeh?.assignedTrailerId ? 'Trailer Attached' : 'None');
       const regoName = chosenVeh?.rego || '—';
 
+      // 1. Assign to Load
       try {
         await api.post(`/loads/${loadId}/assignments`, {
           driverId: selectedAssignDriverId,
-          vehicleId: selectedAssignVehicleId || undefined
+          vehicleId: selectedAssignVehicleId || undefined,
+          truckId: selectedAssignVehicleId || undefined,
+          trailerId: selectedAssignTrailerId || undefined
         });
       } catch (err1) {
         await api.put(`/company-admin/loads/${loadId}`, {
           driverId: selectedAssignDriverId,
-          truckId: selectedAssignVehicleId || undefined
+          truckId: selectedAssignVehicleId || undefined,
+          trailerId: selectedAssignTrailerId || undefined
         });
+      }
+
+      // 2. If trailer was chosen and truck didn't have it hitched, hitch it now
+      if (selectedAssignVehicleId && selectedAssignTrailerId) {
+        try {
+          await api.post(`/vehicles/${selectedAssignVehicleId}/attach-trailer`, {
+            trailerId: selectedAssignTrailerId,
+            reason: 'Load Dispatch Consist Assignment'
+          }).catch(() => {});
+        } catch {
+          // non-fatal
+        }
       }
 
       setMasterLoads(prev => prev.map(l => {
@@ -373,20 +541,28 @@ export default function DispatcherLoads() {
             driverRole: 'Car Carrier',
             driverStatus: 'On Duty',
             driverAvatar: chosenDrv?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(drvName)}&background=e2e8f0&color=0f172a`,
+            driverPhone: chosenDrv?.phone || l.driverPhone,
             vehicle: vehName,
+            trailer: trlName,
             rego: regoName,
-            status: l.status === 'Draft' ? 'Planned' : l.status,
-            activeDotsCount: l.activeDotsCount === 0 ? 1 : l.activeDotsCount
+            status: (l.status === 'Draft' || l.status === 'DRAFT') ? 'Planned' : l.status,
+            activeDotsCount: l.activeDotsCount === 0 ? 1 : l.activeDotsCount,
+            rawLoad: {
+              ...(l.rawLoad || {}),
+              driverId: selectedAssignDriverId,
+              truckId: selectedAssignVehicleId,
+              trailerId: selectedAssignTrailerId
+            }
           };
         }
         return l;
       }));
 
       setIsTransferLoadModalOpen(false);
-      triggerToast(`Load ${activeLoadDetails.id} assigned to ${drvName}!`);
+      triggerToast(`Driver ${drvName} with Truck ${vehName} & Trailer ${trlName} assigned to load ${activeLoadDetails.id}!`);
     } catch (err) {
-      console.error('Error assigning driver:', err);
-      triggerToast('Error assigning driver. Please try again.');
+      console.error('Error assigning consist to load:', err);
+      triggerToast('Error assigning driver & unit. Please try again.');
     }
   };
 
@@ -1743,8 +1919,18 @@ export default function DispatcherLoads() {
                   </button>
 
                   <button
-                    onClick={() => setIsSwapTrailerModalOpen(true)}
+                    onClick={() => {
+                      if (activeLoadDetails.driver === 'Unassigned' || activeLoadDetails.vehicle === 'Unassigned') {
+                        triggerToast('Please assign a Driver & Equipment consist first before swapping trailers');
+                        openAssignModal();
+                        return;
+                      }
+                      setSwapSelectedTrailerId(activeLoadDetails.rawLoad?.trailerId || '');
+                      setSwapTrailerInput('');
+                      setIsSwapTrailerModalOpen(true);
+                    }}
                     className="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
+                    title="Swap trailer on assigned driver/truck unit for breakdown or defect"
                   >
                     <RefreshCcw className="w-4 h-4 text-amber-600" />
                     <span>Swap Trailer</span>
@@ -1755,7 +1941,7 @@ export default function DispatcherLoads() {
                     className="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors"
                   >
                     <Truck className="w-4 h-4 text-sky-600" />
-                    <span>Assign / Transfer</span>
+                    <span>Assign Driver & Unit</span>
                   </button>
                 </div>
 
@@ -2154,77 +2340,131 @@ export default function DispatcherLoads() {
       })()}
 
       {/* =========================================================================
-         SWAP TRAILER MODAL
+         SWAP TRAILER MODAL (DRIVER & TRUCK CONSIST BREAKDOWN WORKFLOW)
          ========================================================================= */}
       {isSwapTrailerModalOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
           onClick={() => setIsSwapTrailerModalOpen(false)}
         >
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 text-left font-sans animate-scale-up" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4 text-left font-sans animate-scale-up" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <RefreshCcw className="text-amber-600" size={18} />
-                <h3 className="text-sm font-black text-slate-900">Assign / Swap Trailer ({activeLoadDetails.id})</h3>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600">
+                  <RefreshCcw size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Equipment Breakdown & Trailer Swap</h3>
+                  <p className="text-[11px] font-semibold text-slate-500">Load Ref: <span className="font-bold text-slate-800">{activeLoadDetails.id}</span></p>
+                </div>
               </div>
-              <button onClick={() => setIsSwapTrailerModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+              <button onClick={() => setIsSwapTrailerModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                 <X size={16} />
               </button>
             </div>
-            <div className="space-y-3 text-xs">
+
+            {/* Current Consist Banner */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-xl p-3.5 space-y-2">
+              <div className="text-[11px] font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                <Truck size={13} className="text-amber-700" /> Current Assigned Equipment Consist
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="bg-white/80 rounded-lg p-2 border border-amber-100">
+                  <div className="text-[10px] text-slate-500 font-bold uppercase">Driver</div>
+                  <div className="font-extrabold text-slate-900 truncate">{activeLoadDetails.driver}</div>
+                </div>
+                <div className="bg-white/80 rounded-lg p-2 border border-amber-100">
+                  <div className="text-[10px] text-slate-500 font-bold uppercase">Truck (Rego)</div>
+                  <div className="font-extrabold text-slate-900 truncate">{activeLoadDetails.vehicle} ({activeLoadDetails.rego})</div>
+                </div>
+                <div className="bg-white/80 rounded-lg p-2 border border-amber-100">
+                  <div className="text-[10px] text-slate-500 font-bold uppercase">Current Trailer</div>
+                  <div className="font-extrabold text-rose-600 truncate">{activeLoadDetails.trailer || 'None'}</div>
+                </div>
+              </div>
+              <p className="text-[11px] text-amber-800/90 font-medium leading-relaxed">
+                ℹ️ Trailer swap updates the paired trailer for this Driver & Truck unit. All active loads on this unit will automatically sync to the new trailer.
+              </p>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Trailer Number / Unit ID</label>
+                <label className="block font-bold text-slate-700 mb-1">Reason for Trailer Swap <span className="text-rose-500">*</span></label>
+                <select
+                  value={swapReason}
+                  onChange={e => setSwapReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="Breakdown / Roadside Failure">Breakdown / Roadside Failure</option>
+                  <option value="Tire Damage / Puncture">Tire Damage / Puncture</option>
+                  <option value="Mechanical Defect (Brakes / Lights)">Mechanical Defect (Brakes / Lights)</option>
+                  <option value="Depot Yard Staging Swap">Depot Yard Staging Swap</option>
+                  <option value="Trailer Capacity / Type Change">Trailer Capacity / Type Change</option>
+                  <option value="Scheduled Maintenance Due">Scheduled Maintenance Due</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Breakdown / Swap Location (Optional)</label>
                 <input
                   type="text"
-                  value={swapTrailerInput}
-                  onChange={e => setSwapTrailerInput(e.target.value)}
-                  placeholder="e.g. TRL-108 or Trailer Registration"
+                  value={swapLocation}
+                  onChange={e => setSwapLocation(e.target.value)}
+                  placeholder="e.g. M1 Northbound Exit 24 or Brisbane Yard Bay 4"
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-amber-500"
                 />
               </div>
-              {availableVehicles.length > 0 && (
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Or Pick From Fleet Equipment</label>
-                  <select 
-                    value={swapTrailerInput} 
-                    onChange={e => setSwapTrailerInput(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 bg-white focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="">-- Choose from Registered Fleet --</option>
-                    {availableVehicles.map(v => (
-                      <option key={v.id} value={v.rego || `${v.make || ''} ${v.model || ''}`.trim()}>
-                        {v.make} {v.model} {v.rego ? `(Rego: ${v.rego})` : ''}
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Select Replacement Trailer From Fleet <span className="text-rose-500">*</span></label>
+                <select 
+                  value={swapSelectedTrailerId} 
+                  onChange={e => {
+                    setSwapSelectedTrailerId(e.target.value);
+                    if (e.target.value) setSwapTrailerInput('');
+                  }}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="">-- Choose Replacement Trailer Unit --</option>
+                  {(availableTrailers.length > 0 ? availableTrailers : availableVehicles).map(v => {
+                    const label = v.rego ? `${v.rego} (${v.make || ''} ${v.model || ''}`.trim() + ')' : `${v.make || ''} ${v.model || 'Trailer'}`.trim();
+                    const statusTag = v.status ? ` • ${v.status}` : '';
+                    return (
+                      <option key={v.id} value={v.id}>
+                        {label} {statusTag}
                       </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+                    );
+                  })}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Or Enter 3rd Party / Manual Trailer Unit ID</label>
+                <input
+                  type="text"
+                  value={swapTrailerInput}
+                  onChange={e => {
+                    setSwapTrailerInput(e.target.value);
+                    if (e.target.value) setSwapSelectedTrailerId('');
+                  }}
+                  placeholder="e.g. TRL-902 or Custom Rego"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-amber-500"
+                />
+              </div>
             </div>
-            <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
-              <button onClick={() => setIsSwapTrailerModalOpen(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">
+
+            <div className="pt-3 border-t border-slate-100 flex justify-end gap-2.5">
+              <button 
+                onClick={() => setIsSwapTrailerModalOpen(false)} 
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors"
+              >
                 Cancel
               </button>
               <button 
-                onClick={async () => {
-                  const val = swapTrailerInput.trim();
-                  if (!val) {
-                    triggerToast('Please enter or select a trailer');
-                    return;
-                  }
-                  const targetId = activeLoadDetails.dbId || activeLoadDetails.id;
-                  try {
-                    await api.patch(`/company-admin/loads/${targetId}`, { trailerId: val }).catch(() => {});
-                  } catch (err) {
-                    console.warn(err);
-                  }
-                  setMasterLoads(prev => prev.map(l => (l.id === activeLoadDetails.id || l.dbId === targetId) ? { ...l, trailer: val } : l));
-                  setIsSwapTrailerModalOpen(false);
-                  setSwapTrailerInput('');
-                  triggerToast(`Trailer updated to "${val}" for load ${activeLoadDetails.id}!`);
-                }} 
-                className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                onClick={handleConfirmTrailerSwap}
+                className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
               >
-                Confirm Trailer
+                <RefreshCcw size={13} /> Confirm Equipment Swap
               </button>
             </div>
           </div>
@@ -2232,38 +2472,78 @@ export default function DispatcherLoads() {
       )}
 
       {/* =========================================================================
-         TRANSFER LOAD MODAL
+         TRANSFER LOAD MODAL (ASSIGN DRIVER & EQUIPMENT UNIT)
          ========================================================================= */}
       {isTransferLoadModalOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
           onClick={() => setIsTransferLoadModalOpen(false)}
         >
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 space-y-4 text-left font-sans animate-scale-up" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4 text-left font-sans animate-scale-up" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Truck className="text-purple-600" size={18} />
-                <h3 className="text-sm font-black text-slate-900">Assign Driver & Vehicle ({activeLoadDetails.id})</h3>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600">
+                  <Truck size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Assign Driver & Equipment Consist</h3>
+                  <p className="text-[11px] font-semibold text-slate-500">Load Ref: <span className="font-bold text-slate-800">{activeLoadDetails.id}</span></p>
+                </div>
               </div>
-              <button onClick={() => setIsTransferLoadModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+              <button onClick={() => setIsTransferLoadModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                 <X size={16} />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            {/* Live Consist Flow Indicator */}
+            {(() => {
+              const curDrv = availableDrivers.find(d => String(d.id) === String(selectedAssignDriverId));
+              const curVeh = availableVehicles.find(v => String(v.id) === String(selectedAssignVehicleId));
+              const curTrl = availableTrailers.find(t => String(t.id) === String(selectedAssignTrailerId)) || 
+                             availableVehicles.find(v => String(v.id) === String(selectedAssignTrailerId));
+              
+              const drvTitle = curDrv ? (curDrv.name || `${curDrv.firstName || ''} ${curDrv.lastName || ''}`.trim() || curDrv.driverCode) : 'Select Driver';
+              const vehTitle = curVeh ? `${curVeh.make || ''} ${curVeh.model || ''}`.trim() : 'Select Truck';
+              const trlTitle = curTrl ? (curTrl.rego || curTrl.plate || `${curTrl.make || ''} ${curTrl.model || ''}`.trim()) : 'Select Trailer';
+
+              return (
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1.5">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-slate-500">Live Consist Pairings</div>
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800 gap-1.5">
+                    <div className={`flex-1 p-2 rounded-lg border text-center truncate ${selectedAssignDriverId ? 'bg-purple-50 border-purple-200 text-purple-900' : 'bg-white border-slate-200 text-slate-400'}`}>
+                      <div className="text-[9px] uppercase tracking-wider text-slate-400 font-extrabold">1. Driver</div>
+                      <div className="truncate">{drvTitle}</div>
+                    </div>
+                    <span className="text-slate-400 font-bold">➔</span>
+                    <div className={`flex-1 p-2 rounded-lg border text-center truncate ${selectedAssignVehicleId ? 'bg-sky-50 border-sky-200 text-sky-900' : 'bg-white border-slate-200 text-slate-400'}`}>
+                      <div className="text-[9px] uppercase tracking-wider text-slate-400 font-extrabold">2. Truck</div>
+                      <div className="truncate">{vehTitle}</div>
+                    </div>
+                    <span className="text-slate-400 font-bold">➔</span>
+                    <div className={`flex-1 p-2 rounded-lg border text-center truncate ${selectedAssignTrailerId ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-white border-slate-200 text-slate-400'}`}>
+                      <div className="text-[9px] uppercase tracking-wider text-slate-400 font-extrabold">3. Trailer</div>
+                      <div className="truncate">{trlTitle}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Select Driver <span className="text-rose-500">*</span></label>
+                <label className="block font-bold text-slate-700 mb-1">Step 1: Select Driver <span className="text-rose-500">*</span></label>
                 <select 
                   value={selectedAssignDriverId} 
-                  onChange={e => setSelectedAssignDriverId(e.target.value)}
+                  onChange={e => handleDriverSelectionChange(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-purple-500"
                 >
                   <option value="">-- Choose an Available Driver --</option>
                   {availableDrivers.map(d => {
                     const dName = d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || 'Driver';
+                    const hasPairedTruck = d.currentVehicle?.[0] ? ` • Truck: ${d.currentVehicle[0].rego || d.currentVehicle[0].make || 'Attached'}` : '';
                     return (
                       <option key={d.id} value={d.id}>
-                        {dName} {d.driverCode ? `(${d.driverCode})` : ''} {d.status ? `• ${d.status}` : ''}
+                        {dName} {d.driverCode ? `(${d.driverCode})` : ''} {hasPairedTruck} {d.status ? `• ${d.status}` : ''}
                       </option>
                     );
                   })}
@@ -2271,18 +2551,39 @@ export default function DispatcherLoads() {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Select Prime Mover / Truck (Optional)</label>
+                <label className="block font-bold text-slate-700 mb-1">Step 2: Select Prime Mover / Truck <span className="text-rose-500">*</span></label>
                 <select 
                   value={selectedAssignVehicleId} 
-                  onChange={e => setSelectedAssignVehicleId(e.target.value)}
+                  onChange={e => handleTruckSelectionChange(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-purple-500"
                 >
-                  <option value="">-- Choose Truck / Vehicle --</option>
-                  {availableVehicles.map(v => {
+                  <option value="">-- Choose Truck / Prime Mover --</option>
+                  {availableVehicles.filter(v => v.category !== 'TRAILER' && !String(v.make || '').toLowerCase().includes('trailer')).map(v => {
                     const vName = `${v.make || ''} ${v.model || ''}`.trim() || 'Vehicle';
+                    const trlAttached = v.assignedTrailerId ? ' • [Trailer Paired]' : '';
                     return (
                       <option key={v.id} value={v.id}>
-                        {vName} {v.rego ? `(Rego: ${v.rego})` : ''}
+                        {vName} {v.rego ? `(Rego: ${v.rego})` : ''} {trlAttached}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Step 3: Select or Confirm Trailer Unit</label>
+                <select 
+                  value={selectedAssignTrailerId} 
+                  onChange={e => setSelectedAssignTrailerId(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-purple-500"
+                >
+                  <option value="">-- No Trailer / Select Trailer --</option>
+                  {(availableTrailers.length > 0 ? availableTrailers : availableVehicles).map(v => {
+                    const label = v.rego ? `${v.rego} (${v.make || ''} ${v.model || ''}`.trim() + ')' : `${v.make || ''} ${v.model || 'Trailer'}`.trim();
+                    const statusTag = v.status ? ` • ${v.status}` : '';
+                    return (
+                      <option key={v.id} value={v.id}>
+                        {label} {statusTag}
                       </option>
                     );
                   })}
@@ -2290,15 +2591,18 @@ export default function DispatcherLoads() {
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
-              <button onClick={() => setIsTransferLoadModalOpen(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">
+            <div className="pt-3 border-t border-slate-100 flex justify-end gap-2.5">
+              <button 
+                onClick={() => setIsTransferLoadModalOpen(false)} 
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors"
+              >
                 Cancel
               </button>
               <button 
                 onClick={handleConfirmAssignment} 
-                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
               >
-                Confirm Assignment
+                <Truck size={14} /> Confirm Consist Assignment
               </button>
             </div>
           </div>

@@ -70,6 +70,7 @@ export default function Timesheets() {
   const [geofenceMapModalOpen, setGeofenceMapModalOpen] = useState(false);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   const [helpTitle, setHelpTitle] = useState('');
+  const [shiftSummaryModal, setShiftSummaryModal] = useState(null);
   const [timesheetSubmitted, setTimesheetSubmitted] = useState(false);
 
   // Timeline Data
@@ -172,9 +173,13 @@ export default function Timesheets() {
 
   const handleClockOut = async () => {
     try {
-      await api.post('/driver-portal/timesheets/clock-out', {});
+      const res = await api.post('/driver-portal/timesheets/clock-out', {});
       setClockStatus('Clocked Out');
       setTimerRunning(false);
+      const summary = res?.data?.data?.shiftSummary || res?.data?.shiftSummary;
+      if (summary) {
+        setShiftSummaryModal(summary);
+      }
       triggerToast('Clocked Out successfully! Shift ended.');
       fetchTimesheets();
     } catch (err) {
@@ -1024,6 +1029,94 @@ export default function Timesheets() {
               className="w-full bg-slate-900 text-white font-black text-xs py-3 rounded-xl cursor-pointer"
             >
               Got it
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SHIFT SUMMARY ON FINISH WORK MODAL */}
+      {shiftSummaryModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[160] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-left animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-emerald-100 text-emerald-800 rounded-xl text-base">🏁</span>
+                <div>
+                  <h3 className="font-black text-slate-900 text-base leading-tight">Shift Finished</h3>
+                  <span className="text-[11px] font-semibold text-slate-500">Live payment & time calculated</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShiftSummaryModal(null)}
+                className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Time Breakdown Cards */}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-2xl">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Shift</span>
+                <span className="font-mono font-black text-slate-900 text-sm">
+                  {Math.floor((shiftSummaryModal.totalShiftMinutes || 0) / 60)}h {(shiftSummaryModal.totalShiftMinutes || 0) % 60}m
+                </span>
+              </div>
+              <div className="bg-amber-50/70 border border-amber-200 p-2.5 rounded-2xl">
+                <span className="text-[10px] uppercase font-bold text-amber-600 block">Breaks</span>
+                <span className="font-mono font-black text-amber-900 text-sm">
+                  {shiftSummaryModal.totalBreakMinutes || 0}m
+                </span>
+              </div>
+              <div className="bg-emerald-50/70 border border-emerald-200 p-2.5 rounded-2xl">
+                <span className="text-[10px] uppercase font-bold text-emerald-600 block">Net Work</span>
+                <span className="font-mono font-black text-emerald-900 text-sm">
+                  {shiftSummaryModal.hoursWorked || 0} hrs
+                </span>
+              </div>
+            </div>
+
+            {/* Shift Financial Calculations Box */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2 text-xs">
+              <div className="flex justify-between items-center text-slate-700">
+                <span className="font-semibold">Gross Shift Earnings</span>
+                <span className="font-mono font-black text-emerald-700 text-sm">
+                  {shiftSummaryModal.formattedGross || `$${(shiftSummaryModal.grossPay || 0).toFixed(2)}`}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center text-slate-500 pt-1 border-t border-slate-200/60">
+                <span>PAYG Tax Withheld (ATO Scale)</span>
+                <span className="font-mono font-bold text-rose-600">
+                  -{shiftSummaryModal.formattedTax || `$${(shiftSummaryModal.paygTax || 0).toFixed(2)}`}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center text-slate-500">
+                <span>Superannuation Guarantee (11.5%)</span>
+                <span className="font-mono font-bold text-indigo-700">
+                  {shiftSummaryModal.formattedSuper || `$${(shiftSummaryModal.superAmount || 0).toFixed(2)}`}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-slate-900 font-black">
+                <span className="text-xs uppercase tracking-wide">Net Shift Earning</span>
+                <span className="font-mono text-base text-indigo-700">
+                  {shiftSummaryModal.formattedNet || `$${(shiftSummaryModal.netPay || 0).toFixed(2)}`}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 flex items-center gap-2 text-[11px] font-bold text-emerald-800">
+              <span>✓</span>
+              <span>Automatically credited to your active Pay Period and Timesheet history.</span>
+            </div>
+
+            <button
+              onClick={() => setShiftSummaryModal(null)}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3 rounded-xl cursor-pointer transition-colors shadow-xs"
+            >
+              Done & Close
             </button>
           </div>
         </div>

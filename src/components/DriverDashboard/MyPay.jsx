@@ -139,16 +139,18 @@ export default function MyPay() {
 
       const cp = payload.currentPeriod || {};
       setCurrentPeriod({
-        netPay: rawGross,
-        grossEarnings: rawGross,
-        totalDeductions: '$0.00',
-        superannuation: '$0.00',
+        netPay: cp.netPay || rawGross,
+        grossEarnings: cp.grossEarnings || rawGross,
+        totalDeductions: cp.totalDeductions || '$0.00',
+        paygTax: cp.paygTax || '$0.00',
+        superannuation: cp.superannuation || cp.employerSuper || '$0.00',
+        employerSuper: cp.employerSuper || cp.superannuation || '$0.00',
         payFrequency: cp.payFrequency || 'Fortnightly',
         nextPayment: {
           date: cp.nextPayment?.date || 'Next Scheduled Pay Cycle',
           daysLeft: cp.nextPayment?.daysLeft ?? 0,
           period: cp.nextPayment?.period || (activeLoadObj?.id !== '—' ? activeLoadObj.id : '—'),
-          estimatedNetPay: rawGross,
+          estimatedNetPay: cp.nextPayment?.estimatedNetPay || cp.netPay || rawGross,
           status: cp.nextPayment?.status || 'Scheduled'
         }
       });
@@ -158,31 +160,31 @@ export default function MyPay() {
         totalEarnings: ytd.totalEarnings && ytd.totalEarnings !== '$0.00' ? ytd.totalEarnings : rawGross,
         netPayReceived: ytd.netPayReceived && ytd.netPayReceived !== '$0.00' ? ytd.netPayReceived : rawGross,
         pendingPayments: ytd.pendingPayments && ytd.pendingPayments !== '$0.00' ? ytd.pendingPayments : '$0.00',
-        totalDeductions: '$0.00',
-        totalSuperannuation: '$0.00'
+        totalDeductions: ytd.totalDeductions || cp.totalDeductions || '$0.00',
+        totalSuperannuation: ytd.totalSuperannuation || cp.superannuation || '$0.00'
       });
 
       const bkd = payload.currentPayBreakdown || {};
       setCurrentPayBreakdown({
         earnings: {
-          basePay: bkd.earnings?.basePay && bkd.earnings?.basePay !== '$0.00' ? bkd.earnings.basePay : rawGross,
+          basePay: bkd.earnings?.basePay || rawGross,
           loadAllowance: bkd.earnings?.loadAllowance || '$0.00',
           distanceAllowance: bkd.earnings?.distanceAllowance || '$0.00',
-          otherAllowances: '$0.00',
-          totalEarnings: bkd.earnings?.totalEarnings && bkd.earnings?.totalEarnings !== '$0.00' ? bkd.earnings.totalEarnings : rawGross
+          otherAllowances: bkd.earnings?.otherAllowances || '$0.00',
+          totalEarnings: bkd.earnings?.totalEarnings || rawGross
         },
         deductions: {
-          paygTax: '$0.00',
-          superannuation: '$0.00',
-          unionFees: '$0.00',
-          otherDeductions: '$0.00',
-          totalDeductions: '$0.00'
+          paygTax: bkd.deductions?.paygTax || cp.paygTax || '$0.00',
+          superannuation: bkd.deductions?.superannuation || '$0.00',
+          unionFees: bkd.deductions?.unionFees || '$0.00',
+          otherDeductions: bkd.deductions?.otherDeductions || '$0.00',
+          totalDeductions: bkd.deductions?.totalDeductions || cp.totalDeductions || '$0.00'
         },
         employerContributions: {
-          superannuationGuarantee: '$0.00'
+          superannuationGuarantee: bkd.employerContributions?.superannuationGuarantee || cp.superannuation || '$0.00'
         },
-        estimatedNetPay: rawGross,
-        paySummaryTotalDeductions: '$0.00'
+        estimatedNetPay: bkd.estimatedNetPay || cp.netPay || rawGross,
+        paySummaryTotalDeductions: bkd.paySummaryTotalDeductions || cp.totalDeductions || '$0.00'
       });
 
       let records = [];
@@ -469,9 +471,16 @@ export default function MyPay() {
 
     y += 7;
 
+    const taxVal = payslip.paygTax || payslip.tax || currentPeriod?.paygTax || '$0.00';
+    const superVal = payslip.superAmount || payslip.super || currentPeriod?.superannuation || '$0.00';
+    const totalDedVal = payslip.totalDeductions || currentPeriod?.totalDeductions || taxVal;
+    const formattedTax = typeof taxVal === 'number' ? `$${taxVal.toFixed(2)}` : String(taxVal);
+    const formattedSuper = typeof superVal === 'number' ? `$${superVal.toFixed(2)}` : String(superVal);
+    const formattedTotalDed = typeof totalDedVal === 'number' ? `$${totalDedVal.toFixed(2)}` : String(totalDedVal);
+
     const deductionsList = [
-      { name: 'PAYG Withholding Tax', type: 'ATO Statutory Withholding', amount: '$0.00' },
-      { name: 'Superannuation Guarantee', type: `Employer 11.5% (${payslip.superannuation?.fundName || 'AustralianSuper'})`, amount: '$0.00 (Exempt/Included)' },
+      { name: 'PAYG Withholding Tax', type: 'ATO Statutory Withholding', amount: formattedTax },
+      { name: 'Superannuation Guarantee', type: `Employer 11.5% (${payslip.superannuation?.fundName || 'AustralianSuper'})`, amount: `${formattedSuper} (Employer SG)` },
       { name: 'Union / Other Deductions', type: 'Voluntary', amount: '$0.00' }
     ];
 
@@ -504,7 +513,7 @@ export default function MyPay() {
     doc.setFontSize(8.5);
     doc.setTextColor(15, 23, 42);
     doc.text('TOTAL DEDUCTIONS', margin + 3, y + 5);
-    doc.text('$0.00', pageWidth - margin - 3, y + 5, { align: 'right' });
+    doc.text(formattedTotalDed, pageWidth - margin - 3, y + 5, { align: 'right' });
 
     y += 14;
 
@@ -544,7 +553,7 @@ export default function MyPay() {
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
     doc.text(`Gross Earnings: ${ytdSummary?.totalEarnings || grossDisplay}`, margin + 4, y + 12);
-    doc.text(`Tax Withheld: $0.00`, margin + 65, y + 12);
+    doc.text(`Tax Withheld: ${formattedTax}`, margin + 65, y + 12);
     doc.text(`Net Pay Received: ${ytdSummary?.netPayReceived || netDisplay}`, margin + 125, y + 12);
 
     // Bottom Notice & Footer
@@ -1132,6 +1141,14 @@ export default function MyPay() {
                 <span className="font-sans text-slate-600">Gross Earnings</span>
                 <span className="text-emerald-700 font-black">{currentPeriod?.grossEarnings || '$0.00'}</span>
               </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-sans text-slate-500">PAYG Tax (ATO)</span>
+                <span className="text-rose-600 font-bold">-{currentPeriod?.paygTax || '$0.00'}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-sans text-slate-500">Super Guarantee (11.5%)</span>
+                <span className="text-indigo-700 font-bold">{currentPeriod?.superannuation || '$0.00'}</span>
+              </div>
             </div>
 
             <div className="flex justify-between items-center pt-1 font-black text-sm">
@@ -1451,10 +1468,18 @@ export default function MyPay() {
             <div className="space-y-3 text-xs font-semibold">
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 space-y-1">
                 <div className="font-black text-sm">Gross Earnings: {currentPeriod?.grossEarnings || '$0.00'}</div>
-                <div className="text-[11px] text-emerald-700">Calculated from completed trips and approved allowances for this period.</div>
+                <div className="text-[11px] text-emerald-700">Calculated dynamically based on pay type (Hourly, Per Load, or Per Km).</div>
               </div>
 
+              <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-900 space-y-1">
+                <div className="font-black text-sm">PAYG Withholding Tax: -{currentPeriod?.paygTax || '$0.00'}</div>
+                <div className="text-[11px] text-rose-700">Statutory withholding calculated in compliance with ATO weekly tax schedules (Scale 1 / Scale 2).</div>
+              </div>
 
+              <div className="p-4 bg-purple-50 border border-purple-200 rounded-2xl text-purple-900 space-y-1">
+                <div className="font-black text-sm">Superannuation Guarantee (11.5% SG): {currentPeriod?.superannuation || '$0.00'}</div>
+                <div className="text-[11px] text-purple-700">Mandatory employer superannuation contribution credited to your nominated super fund.</div>
+              </div>
 
               <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-2xl text-indigo-900 space-y-1">
                 <div className="font-black text-sm">Net Payable: {currentPeriod?.netPay || currentPeriod?.grossEarnings || '$0.00'}</div>
