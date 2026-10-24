@@ -64,7 +64,23 @@ const DriverDashboard = () => {
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+
+    // Step 1: Pre-start checklist check on login - 24hr validity
+    try {
+      const stored = localStorage.getItem(`hero_driver_checklist_24h_${user?.id || 'current'}`);
+      if (!stored) {
+        navigate('/driver/start-work');
+      } else {
+        const parsed = JSON.parse(stored);
+        const hoursPassed = (Date.now() - (parsed.timestamp || 0)) / (1000 * 60 * 60);
+        if (hoursPassed >= 24) {
+          navigate('/driver/start-work');
+        }
+      }
+    } catch (e) {
+      console.error('Error verifying 24h checklist:', e);
+    }
+  }, [user]);
 
   const handleStatusChange = async (newStatus) => {
     try {
@@ -471,10 +487,11 @@ const DriverDashboard = () => {
 
               <div className="grid grid-cols-2 gap-2 mt-4">
                 <button
-                  onClick={() => navigate('/driver/active-run')}
+                  onClick={() => navigate('/driver/pickup-loading')}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
                 >
-                  <span>View Active Run</span>
+                  <FiPackage className="text-white" />
+                  <span>Pickup</span>
                   <FiChevronRight />
                 </button>
                 <button

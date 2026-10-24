@@ -303,27 +303,46 @@ export default function DeliveryPOD() {
   const handleConfirmDropDelivery = async () => {
     const deliveredCarsCount = cars.filter(c => c.delivered).length;
     if (deliveredCarsCount === 0) {
-      triggerToast('⚠️ Please mark at least 1 car as Delivered before confirming.');
+      triggerToast('⚠️ Please mark at least 1 item as Delivered before confirming.');
       return;
     }
+
+    const allDelivered = cars.length > 0 && cars.every(c => c.delivered);
+    const targetId = loadInfo?.dbId || loadInfo?.id;
 
     // Save completed delivery state locally
     const updatedLoadInfo = {
       ...loadInfo,
-      status: 'DELIVERED',
-      deliveredCars: cars.length,
-      remainingCars: 0,
-      cars: cars.map(c => ({ ...c, delivered: true }))
+      status: allDelivered ? 'DELIVERED' : 'IN_TRANSIT',
+      deliveredCars: deliveredCarsCount,
+      remainingCars: Math.max(0, cars.length - deliveredCarsCount),
+      cars: cars
     };
     try {
       localStorage.setItem('hero_last_delivered_load', JSON.stringify(updatedLoadInfo));
 
+      if (allDelivered) {
+        const deliveredLoads = JSON.parse(localStorage.getItem('hero_driver_delivered_loads') || '[]');
+        deliveredLoads.unshift({
+          id: targetId,
+          dbId: targetId,
+          loadRef: loadInfo?.id || targetId,
+          origin: loadInfo?.origin,
+          destination: loadInfo?.destination,
+          loadType: loadType,
+          status: 'DELIVERED',
+          deliveredAt: new Date().toISOString(),
+          itemsCount: cars.length
+        });
+        localStorage.setItem('hero_driver_delivered_loads', JSON.stringify(deliveredLoads));
+      }
+
       // Record driver pay from completed load schedule
       const earnedAmount = parseFloat(loadInfo?.driverPay || loadInfo?.amount || 0);
-      if (earnedAmount > 0) {
+      if (earnedAmount > 0 && allDelivered) {
         const completedEarnings = JSON.parse(localStorage.getItem('hero_driver_completed_earnings') || '[]');
         completedEarnings.push({
-          loadId: loadInfo?.id || loadInfo?.dbId,
+          loadId: targetId,
           scheduleTitle: loadInfo?.loadScheduleTitle || `${loadInfo?.origin || 'Origin'} to ${loadInfo?.destination || 'Destination'}`,
           driverPay: earnedAmount,
           deliveredAt: new Date().toISOString()
@@ -341,19 +360,32 @@ export default function DeliveryPOD() {
       ];
 
       await api.post('/driver-portal/delivery-pod/confirm-delivery', {
-        loadId: loadInfo?.dbId || loadInfo?.id,
+        loadId: targetId,
         mode: deliveryOption,
         notes: deliveryNotes,
         signature: digitalSig,
         signatureName: signatureName || 'Customer Signed',
         photos: defaultPhotos
       });
-      triggerToast('Stop confirmed as Delivered! Redirecting to Active Run...');
-      setTimeout(() => navigate('/driver/active-run'), 1200);
+
+      if (allDelivered && targetId) {
+        await api.put(`/company-admin/loads/${targetId}`, { status: 'DELIVERED' }).catch(() => {});
+      }
+
+      if (allDelivered) {
+        triggerToast('🎉 Load fully delivered! Saved to Delivered Loads in Driver & Company panels.');
+        setTimeout(() => navigate('/driver/dashboard'), 1200);
+      } else {
+        triggerToast('Stop confirmed! Redirecting to Next Destination route...');
+        setTimeout(() => navigate('/driver/active-run'), 1200);
+      }
     } catch (err) {
       console.error('Confirm delivery error:', err);
-      triggerToast('Delivery confirmed with server!');
-      setTimeout(() => navigate('/driver/active-run'), 1000);
+      if (allDelivered && targetId) {
+        await api.put(`/company-admin/loads/${targetId}`, { status: 'DELIVERED' }).catch(() => {});
+      }
+      triggerToast('Delivery saved successfully!');
+      setTimeout(() => navigate(allDelivered ? '/driver/dashboard' : '/driver/active-run'), 1000);
     }
   };
 
@@ -721,6 +753,13 @@ export default function DeliveryPOD() {
                           Not Delivered
                         </span>
                       )}
+                      <button
+                        onClick={() => { setSelectedCarForModal(car); setPhotoModalOpen(true); }}
+                        className="text-indigo-600 hover:text-indigo-800 p-1.5 rounded-lg hover:bg-indigo-50 border border-indigo-200 transition-colors cursor-pointer"
+                        title="Attach delivery photo (optional)"
+                      >
+                        <FiCamera className="text-xs" />
+                      </button>
                     </div>
                   </div>
                 ))
@@ -890,17 +929,42 @@ export default function DeliveryPOD() {
               </div>
             </div>
 
-            {/* BIG CONFIRM BUTTON */}
-            <button
-              onClick={handleConfirmDropDelivery}
-              className="w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white font-black text-sm py-3.5 px-4 rounded-xl shadow-md transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer mt-2"
-            >
-              <div className="flex items-center gap-2">
-                <FiCheckCircle className="text-base" />
-                <span>Confirm Stop as Delivered</span>
-              </div>
-            </button>
-            <p className="text-center text-[10px] text-slate-400 font-semibold">This will complete this stop and update your run.</p>
+            {/* ACTION BUTTONS (Step 5) */}
+            <div className="space-y-2.5 mt-2">
+              {cars.length > 0 && cars.every(c => c.delivered) ? (
+                <button
+                  onClick={handleConfirmDropDelivery}
+                  className="w-full bg-[#10B981] hover:bg-[#059669] text-white font-black text-sm py-3.5 px-4 rounded-xl shadow-md transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer uppercase tracking-wider"
+                >
+                  <div className="flex items-center gap-2">
+                    <FiCheckCircle className="text-base" />
+                    <span>All Items Delivered • Complete & Save Load</span>
+                  </div>
+                </button>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <button
+                    onClick={() => navigate('/driver/active-run')}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs py-3 px-3 rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Next Destination (View Routes)</span>
+                    <FiChevronRight />
+                  </button>
+                  <button
+                    onClick={handleConfirmDropDelivery}
+                    className="bg-[#4F46E5] hover:bg-[#4338CA] text-white font-black text-xs py-3 px-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <FiCheckCircle className="text-sm" />
+                    <span>Confirm Stop as Delivered</span>
+                  </button>
+                </div>
+              )}
+              <p className="text-center text-[10px] text-slate-400 font-semibold">
+                {cars.length > 0 && cars.every(c => c.delivered)
+                  ? 'All items delivered. Saves to Delivered Loads in driver panel and company panel.'
+                  : 'Delivering item-by-item. Select Next Destination if items remain for other locations.'}
+              </p>
+            </div>
           </div>
 
         </div>

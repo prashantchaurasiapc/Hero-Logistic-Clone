@@ -431,64 +431,78 @@ export default function ActiveRun() {
               )}
             </div>
 
-            {/* NEXT STOP CARD */}
-            <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 sm:p-5 space-y-4">
+            {/* MULTI-DESTINATION ROUTE MAPPING (Step 4) */}
+            <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <FiMapPin className="text-indigo-600 text-base" />
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">NEXT STOP</span>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">MULTI-DESTINATION ROUTE MAPPING</span>
                 </div>
                 <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
-                  IN 112 KM
+                  DESTINATION 1 ➔ DESTINATION 2
                 </span>
               </div>
 
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <div>
-                  <h3 className="text-base font-black text-slate-900">{runData?.destination || 'Destination Drop'}</h3>
-                  <p className="text-xs font-medium text-slate-600">{runData?.destinationAddress || 'Destination Address'}</p>
-                </div>
-
-                <div className="text-right text-xs">
-                  <div className="text-[10px] font-extrabold text-slate-400 uppercase">ETA</div>
-                  <div className="font-mono font-black text-slate-900 text-sm">{runData?.finishTime || '02:30 PM'}</div>
-                  <div className="text-[11px] font-bold text-slate-500">In 1h 45m (112 km)</div>
-                </div>
-              </div>
-
-              {/* Directions & Call Buttons */}
+              {/* Sequential Destination Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  onClick={() => setDirectionsModalOpen(true)}
-                  className="bg-white hover:bg-slate-100 border border-indigo-200 text-indigo-700 font-extrabold text-xs py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <FiNavigation className="text-indigo-600" />
-                  <span>Directions</span>
-                </button>
-
-                <button
-                  onClick={() => triggerToast('Dialing contact: Mark Wilson (0411 987 654)...')}
-                  className="bg-white hover:bg-slate-100 border border-indigo-200 text-indigo-700 font-extrabold text-xs py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <FiPhone className="text-indigo-600" />
-                  <span>Call Contact</span>
-                </button>
-              </div>
-
-              {/* Contact & Instructions snippet */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-200/60 text-xs">
-                <div>
-                  <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Contact</span>
-                  <div className="font-bold text-slate-900">Mark Wilson</div>
-                  <div className="text-slate-500 font-mono">0411 987 654</div>
+                {/* Destination 1 */}
+                <div className="bg-white border border-emerald-200 rounded-xl p-3 shadow-2xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                      Destination 1 (Origin)
+                    </span>
+                    <span className="text-emerald-600 text-xs font-black flex items-center gap-1">
+                      <FiCheck className="stroke-[3]" /> Picked Up
+                    </span>
+                  </div>
+                  <div className="font-black text-slate-900 text-sm">{runData?.origin || 'Pickup Location'}</div>
+                  <div className="text-[11px] text-slate-500 font-medium truncate">{runData?.originAddress || 'Initial Yard'}</div>
                 </div>
 
-                <div>
-                  <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Instructions</span>
-                  <div className="font-semibold text-slate-700 flex items-center justify-between cursor-pointer hover:text-indigo-600">
-                    <span>Please confirm delivery bay on arrival.</span>
-                    <FiChevronRight className="text-slate-400" />
+                {/* Destination 2 */}
+                <div className="bg-white border border-indigo-200 rounded-xl p-3 shadow-2xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold text-indigo-700 uppercase bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                      Destination 2 (Drop-Off)
+                    </span>
+                    <span className="text-indigo-600 text-xs font-black">
+                      {isDispatched ? 'En Route' : 'Next Route'}
+                    </span>
                   </div>
+                  <div className="font-black text-slate-900 text-sm">{runData?.destination || 'Delivery Location'}</div>
+                  <div className="text-[11px] text-slate-500 font-medium truncate">{runData?.destinationAddress || 'Central Destination'}</div>
+                </div>
+              </div>
+
+              {/* Route Mapping Visual & Directions */}
+              <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Route Mapping from Destination 1 to 2</span>
+                  <div className="text-xs font-extrabold text-slate-800 flex items-center gap-2">
+                    <span>ETA: <strong className="text-indigo-600 font-mono">{runData?.finishTime || '02:30 PM'}</strong></span>
+                    <span>•</span>
+                    <span>Est. Distance: <strong className="text-slate-900 font-mono">112 km (1h 45m)</strong></span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => {
+                      const query = encodeURIComponent(runData?.destinationAddress || runData?.destination || 'Central Warehouse, NSW');
+                      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+                    }}
+                    className="flex-1 sm:flex-initial bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs px-3 py-2 rounded-xl border border-indigo-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <FiNavigation className="text-indigo-600" />
+                    <span>View Route Map</span>
+                  </button>
+                  <button
+                    onClick={() => triggerToast('Dialing contact: Mark Wilson (0411 987 654)...')}
+                    className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 cursor-pointer"
+                    title="Call Contact"
+                  >
+                    <FiPhone />
+                  </button>
                 </div>
               </div>
 
@@ -500,29 +514,41 @@ export default function ActiveRun() {
             }`}>
               <div>
                 <div className={`text-xs font-black uppercase tracking-wide ${isDispatched ? 'text-emerald-950' : 'text-indigo-950'}`}>
-                  {isDispatched ? '✅ DISPATCH CONFIRMED & EN ROUTE' : 'READY TO DISPATCH?'}
+                  {isDispatched ? '✅ DISPATCH CONFIRMED TO DESTINATION 2' : 'READY TO DISPATCH TO DESTINATION 2?'}
                 </div>
                 <p className={`text-xs font-semibold mt-0.5 ${isDispatched ? 'text-emerald-800' : 'text-indigo-800'}`}>
                   {isDispatched 
-                    ? `Departure logged at ${dispatchTime}. GPS location saved & customer notified.` 
-                    : `You have verified all assigned ${itemLabel.toLowerCase()}. When you leave the yard, tap DISPATCH.`}
+                    ? `Departure logged at ${dispatchTime}. Route mapping to Destination 2 active.` 
+                    : `Items picked up at Destination 1. Tap DISPATCH to begin transit to Destination 2 drop-off routes.`}
                 </p>
               </div>
 
-              <button
-                onClick={() => isDispatched ? setDispatchDetailsModalOpen(true) : setDispatchYardModalOpen(true)}
-                className={`w-full max-w-md mx-auto font-black text-sm py-3.5 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 cursor-pointer ${
-                  isDispatched 
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white transform hover:scale-[1.01]' 
-                    : 'bg-[#4338ca] hover:bg-[#3730a3] text-white transform hover:scale-[1.01]'
-                }`}
-              >
-                <FiTruck className="text-xl shrink-0" />
-                <span>{isDispatched ? '✓ DISPATCHED (En Route) • Tap for Details' : 'DISPATCH • I am leaving the yard'}</span>
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2.5 justify-center max-w-md mx-auto">
+                <button
+                  onClick={() => isDispatched ? setDispatchDetailsModalOpen(true) : setDispatchYardModalOpen(true)}
+                  className={`flex-1 font-black text-xs sm:text-sm py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    isDispatched 
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                      : 'bg-[#4338ca] hover:bg-[#3730a3] text-white'
+                  }`}
+                >
+                  <FiTruck className="text-lg shrink-0" />
+                  <span>{isDispatched ? '✓ Dispatched to Dest 2' : 'DISPATCH to Destination 2'}</span>
+                </button>
+
+                {isDispatched && (
+                  <button
+                    onClick={() => navigate('/driver/delivery-pod')}
+                    className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-black text-xs sm:text-sm py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
+                  >
+                    <span>Proceed to Drop-Off Route</span>
+                    <FiChevronRight className="stroke-[3]" />
+                  </button>
+                )}
+              </div>
 
               <div className="text-[11px] font-bold text-slate-500 flex items-center justify-center gap-1">
-                <span>{isDispatched ? '🔒 Departure recorded • Tap button anytime to view status & confirmation log' : '🔒 Dispatch will record your time and location and notify the customer.'}</span>
+                <span>{isDispatched ? '🔒 Dispatched to Destination 2 • Driver ready for drop-off' : '🔒 Dispatch records departure timestamp and unlocks delivery drop-off routes.'}</span>
               </div>
             </div>
 
