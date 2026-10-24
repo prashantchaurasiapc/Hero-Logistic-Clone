@@ -455,32 +455,6 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
     }
   }, [initialCustomerId, dbCustomers]);
 
-  // Auto-sync loadType when customer or dbCustomers changes (for new loads)
-  useEffect(() => {
-    if (!formData.customer || editMode) return;
-    const custObj = dbCustomers.find(c => String(c.id) === String(formData.customer));
-    if (custObj) {
-      const autoType = resolveCustomerLoadType(custObj);
-      if (autoType && autoType !== formData.loadType) {
-        setFormData(prev => (String(prev.customer) === String(formData.customer) ? { ...prev, loadType: autoType } : prev));
-        if (autoType === 'Car Carrying') {
-          setItems(prev => prev.map(item => ({
-            ...item,
-            ...(item.vin ? {} : {
-              make: item.make || 'Toyota',
-              model: item.model || 'Hilux',
-              year: item.year || '2023',
-              colour: item.colour || 'White',
-              vehicleType: item.vehicleType || 'Ute / Utility',
-              keys: 'Yes',
-              damageReport: 'Yes'
-            })
-          })));
-        }
-      }
-    }
-  }, [formData.customer, dbCustomers, editMode]);
-
   // Pre-populate fields if editing an existing load
   useEffect(() => {
     if (editMode && loadToEdit) {
@@ -708,6 +682,32 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
 
   const [multiCustomerPricingRules, setMultiCustomerPricingRules] = useState({});
   const itemCustomersStr = items.map(i => i.customer).join(',');
+
+  // Auto-sync loadType when customer or dbCustomers changes (for new loads)
+  useEffect(() => {
+    if (!formData.customer || editMode) return;
+    const custObj = dbCustomers.find(c => String(c.id) === String(formData.customer));
+    if (custObj) {
+      const autoType = resolveCustomerLoadType(custObj);
+      if (autoType && autoType !== formData.loadType) {
+        setFormData(prev => (String(prev.customer) === String(formData.customer) ? { ...prev, loadType: autoType } : prev));
+        if (autoType === 'Car Carrying') {
+          setItems(prev => prev.map(item => ({
+            ...item,
+            ...(item.vin ? {} : {
+              make: item.make || 'Toyota',
+              model: item.model || 'Hilux',
+              year: item.year || '2023',
+              colour: item.colour || 'White',
+              vehicleType: item.vehicleType || 'Ute / Utility',
+              keys: 'Yes',
+              damageReport: 'Yes'
+            })
+          })));
+        }
+      }
+    }
+  }, [formData.customer, dbCustomers, editMode]);
 
   // Fetch Pricing Profiles for all unique customers
   useEffect(() => {
