@@ -441,16 +441,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
       }));
       setItems(prev => prev.map(item => ({
         ...item,
-        customer: item.customer || initialCustomerId,
-        ...(autoLoadType === 'Car Carrying' && !item.vin ? {
-          make: item.make || 'Toyota',
-          model: item.model || 'Hilux',
-          year: item.year || '2023',
-          colour: item.colour || 'White',
-          vehicleType: item.vehicleType || 'Ute / Utility',
-          keys: 'Yes',
-          damageReport: 'Yes'
-        } : {})
+        customer: item.customer || initialCustomerId
       })));
     }
   }, [initialCustomerId, dbCustomers]);
@@ -646,8 +637,8 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
     {
       id: 1, customer: '', pricingRuleId: '', itemCharge: '', pickupStop: '', dropStop: '',
       // Car Carrying
-      rcog: '', vin: '', stockRec: '', make: 'Ford', model: 'Hilux', year: '2023', colour: 'Black', 
-      length: '5,325', width: '1,955', height: '1,875', weight: '2,050', vehicleType: 'Ute / Utility', 
+      rcog: '', vin: '', stockRec: '', make: '', model: '', year: '', colour: '', 
+      length: '', width: '', height: '', weight: '', vehicleType: '', 
       keys: 'Yes', damageReport: 'Yes', notes: '',
       // General Freight
       itemDescription: '', quantity: '1', pallets: '', cubicMetres: '', fragile: 'No', stackable: 'No', specialHandling: '',
@@ -691,20 +682,6 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
       const autoType = resolveCustomerLoadType(custObj);
       if (autoType && autoType !== formData.loadType) {
         setFormData(prev => (String(prev.customer) === String(formData.customer) ? { ...prev, loadType: autoType } : prev));
-        if (autoType === 'Car Carrying') {
-          setItems(prev => prev.map(item => ({
-            ...item,
-            ...(item.vin ? {} : {
-              make: item.make || 'Toyota',
-              model: item.model || 'Hilux',
-              year: item.year || '2023',
-              colour: item.colour || 'White',
-              vehicleType: item.vehicleType || 'Ute / Utility',
-              keys: 'Yes',
-              damageReport: 'Yes'
-            })
-          })));
-        }
       }
     }
   }, [formData.customer, dbCustomers, editMode]);
@@ -1746,16 +1723,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
 
                         setItems(prev => prev.map(item => ({
                           ...item,
-                          customer: newCust,
-                          ...(autoLoadType === 'Car Carrying' && !item.vin ? {
-                            make: item.make || 'Toyota',
-                            model: item.model || 'Hilux',
-                            year: item.year || '2023',
-                            colour: item.colour || 'White',
-                            vehicleType: item.vehicleType || 'Ute / Utility',
-                            keys: 'Yes',
-                            damageReport: 'Yes'
-                          } : {})
+                          customer: newCust
                         })));
 
                         // Async fetch if customer has detailed info not yet in dbCustomers
@@ -1840,8 +1808,8 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                     setFormData({ ...formData, loadType: newType });
                     setItems([{
                       id: Date.now(), customer: formData.customerMode === 'ONE' ? formData.customer : '', pricingRuleId: '', itemCharge: '', pickupStop: '', dropStop: '',
-                      rcog: '', vin: '', stockRec: '', make: 'Ford', model: 'Hilux', year: '2023', colour: 'Black', 
-                      length: '5,325', width: '1,955', height: '1,875', weight: '2,050', vehicleType: 'Ute / Utility', 
+                      rcog: '', vin: '', stockRec: '', make: '', model: '', year: '', colour: '', 
+                      length: '', width: '', height: '', weight: '', vehicleType: '', 
                       keys: 'Yes', damageReport: 'Yes', notes: '',
                       itemDescription: '', quantity: '1', pallets: '', cubicMetres: '', fragile: 'No', stackable: 'No', specialHandling: '',
                       unNumber: '', dgClass: '', packingGroup: '', hazchemCode: '', msdsUploaded: 'No', emergencyContact: '', complianceChecklist: 'No', placarding: 'No'
@@ -2571,71 +2539,77 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                           <div>
                             <FieldLabel>Make</FieldLabel>
-                            <div className="relative">
-                              <select value={item.make} onChange={e => updateItem(item.id, 'make', e.target.value)} className={selectCls}>
-                                <option>Toyota</option><option>Ford</option>
-                              </select>
-                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-                            </div>
+                            <input 
+                              type="text" 
+                              value={item.make || ''} 
+                              onChange={e => updateItem(item.id, 'make', e.target.value)} 
+                              className={inputCls} 
+                              placeholder="e.g. Toyota" 
+                            />
                           </div>
                           <div>
                             <FieldLabel>Model</FieldLabel>
-                            <div className="relative">
-                              <select value={item.model} onChange={e => updateItem(item.id, 'model', e.target.value)} className={selectCls}>
-                                <option>Hilux</option><option>Ranger</option>
-                              </select>
-                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-                            </div>
+                            <input 
+                              type="text" 
+                              value={item.model || ''} 
+                              onChange={e => updateItem(item.id, 'model', e.target.value)} 
+                              className={inputCls} 
+                              placeholder="e.g. Hilux" 
+                            />
                           </div>
                           <div>
                             <FieldLabel>Year</FieldLabel>
-                            <div className="relative">
-                              <select value={item.year} onChange={e => updateItem(item.id, 'year', e.target.value)} className={selectCls}>
-                                <option>2024</option><option>2023</option>
-                              </select>
-                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-                            </div>
+                            <input 
+                              type="text" 
+                              value={item.year || ''} 
+                              onChange={e => updateItem(item.id, 'year', e.target.value)} 
+                              className={inputCls} 
+                              placeholder="e.g. 2024" 
+                            />
                           </div>
                           <div>
                             <FieldLabel>Colour</FieldLabel>
-                            <div className="relative">
-                              <select value={item.colour} onChange={e => updateItem(item.id, 'colour', e.target.value)} className={selectCls}>
-                                <option>White</option><option>Black</option>
-                              </select>
-                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-                            </div>
+                            <input 
+                              type="text" 
+                              value={item.colour || ''} 
+                              onChange={e => updateItem(item.id, 'colour', e.target.value)} 
+                              className={inputCls} 
+                              placeholder="e.g. White" 
+                            />
                           </div>
                         </div>
 
-                        {/* VIN auto-fill notice */}
-                        <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3">
-                          <Info className="w-4 h-4 text-blue-500 shrink-0" />
-                          <p className="text-[11px] font-bold text-blue-700">
-                            Vehicle details auto-filled from Rego/VIN. Please verify and edit if needed.
-                          </p>
-                        </div>
+                        {/* VIN auto-fill notice (shown only when specs are actually entered or looked up) */}
+                        {Boolean((item.vin || item.rcog) && (item.length || item.make)) && (
+                          <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3">
+                            <Info className="w-4 h-4 text-blue-500 shrink-0" />
+                            <p className="text-[11px] font-bold text-blue-700">
+                              Vehicle details entered for Rego/VIN. Please verify and edit if needed.
+                            </p>
+                          </div>
+                        )}
 
                         {/* Row 4: Dimensions */}
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 bg-[#F8FAFC] border border-slate-100 rounded-xl p-4">
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[10.5px] font-black text-slate-600 tracking-wide">Length (mm)</label>
-                            <input type="text" value={item.length} onChange={e => updateItem(item.id, 'length', e.target.value)}
-                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none" placeholder="5,325" />
+                            <input type="text" value={item.length || ''} onChange={e => updateItem(item.id, 'length', e.target.value)}
+                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none" placeholder="e.g. 5,325" />
                           </div>
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[10.5px] font-black text-slate-600 tracking-wide">Width (mm)</label>
-                            <input type="text" value={item.width} onChange={e => updateItem(item.id, 'width', e.target.value)}
-                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none" placeholder="1,855" />
+                            <input type="text" value={item.width || ''} onChange={e => updateItem(item.id, 'width', e.target.value)}
+                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none" placeholder="e.g. 1,955" />
                           </div>
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[10.5px] font-black text-slate-600 tracking-wide">Height (mm)</label>
-                            <input type="text" value={item.height} onChange={e => updateItem(item.id, 'height', e.target.value)}
-                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none" placeholder="1,815" />
+                            <input type="text" value={item.height || ''} onChange={e => updateItem(item.id, 'height', e.target.value)}
+                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none" placeholder="e.g. 1,875" />
                           </div>
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[10.5px] font-black text-slate-600 tracking-wide">Weight (kg)</label>
-                            <input type="text" value={item.weight} onChange={e => updateItem(item.id, 'weight', e.target.value)}
-                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none" placeholder="2,050" />
+                            <input type="text" value={item.weight || ''} onChange={e => updateItem(item.id, 'weight', e.target.value)}
+                              className="w-full bg-transparent border-none p-0 text-[13px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none" placeholder="e.g. 2,050" />
                           </div>
                           <div className="flex flex-col gap-1.5">
                             <label className="text-[10.5px] font-black text-slate-600 tracking-wide">Vehicle Type</label>
