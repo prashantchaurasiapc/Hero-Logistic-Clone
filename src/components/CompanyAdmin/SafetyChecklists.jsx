@@ -27,6 +27,14 @@ export default function SafetyChecklists() {
   const [editingItem, setEditingItem] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [defectAlerts, setDefectAlerts] = useState([]);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('hero_company_defect_alerts') || '[]');
+      setDefectAlerts(stored);
+    } catch (e) {}
+  }, []);
 
   const [newChecklist, setNewChecklist] = useState({
     name: '',
@@ -239,6 +247,62 @@ export default function SafetyChecklists() {
         </div>
         <span className="text-[9px] font-black tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md uppercase">LIVE</span>
       </div>
+
+      {/* Driver Pre-Start Defect & Issue Alerts (Real-Time) */}
+      {defectAlerts.length > 0 && (
+        <div className="bg-rose-50/70 border border-rose-200 rounded-2xl p-4.5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-rose-900">
+              <ShieldAlert size={18} className="text-rose-600" />
+              <h4 className="text-xs font-black uppercase tracking-wider">
+                Driver Defect & Inspection Alerts ({defectAlerts.length})
+              </h4>
+            </div>
+            <span className="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded-full">
+              Requires Admin Review
+            </span>
+          </div>
+
+          <div className="divide-y divide-rose-100 bg-white rounded-xl border border-rose-200/80 overflow-hidden text-xs">
+            {defectAlerts.map(alert => (
+              <div key={alert.id} className="p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-slate-900">{alert.driverName || 'Driver'}</span>
+                    <span className="text-slate-400 font-bold">•</span>
+                    <span className="font-mono text-slate-600 text-[11px] font-bold">Vehicle: {alert.vehicleRef || alert.itemRef || 'Assigned Truck'}</span>
+                    <span className="text-[9px] font-black px-2 py-0.5 rounded-md uppercase bg-rose-100 text-rose-800">
+                      {alert.type === 'CHECKLIST_DEFECT' ? 'Inspection Defect (Fail / NA)' : 'Compromised Item'}
+                    </span>
+                  </div>
+                  <div className="text-rose-700 font-semibold text-[11px] mt-1">
+                    {alert.reason || `${alert.failedCount || 0} items failed inspection: ${alert.failedItems || ''}`}
+                    {alert.notes ? ` — Notes: "${alert.notes}"` : ''}
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] font-mono text-slate-400 font-bold block">
+                    {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = defectAlerts.filter(a => a.id !== alert.id);
+                      setDefectAlerts(updated);
+                      localStorage.setItem('hero_company_defect_alerts', JSON.stringify(updated));
+                      triggerToast('Alert marked as resolved by Company Admin');
+                    }}
+                    className="text-[10px] font-extrabold text-indigo-600 hover:text-indigo-800 underline mt-0.5 cursor-pointer"
+                  >
+                    Mark Resolved
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* List cards */}
       <div className="space-y-4">
