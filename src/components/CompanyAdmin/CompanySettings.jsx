@@ -405,7 +405,7 @@ export default function CompanySettings() {
       const [settingsRes, usersRes, rolesRes, auditRes, rulesRes, integrationsRes, aiModelsRes, templatesRes, notifRulesRes, recipientGroupsRes, customersRes, branchesRes] = await Promise.allSettled([
         api.get('/company-admin/settings'),
         api.get('/users'),
-        api.get('/custom-roles'),
+        api.get('/custom-roles?customOnly=true'),
         api.get('/company-admin/audit-logs'),
         api.get('/workflow-rules'),
         api.get('/company-integrations'),
@@ -525,56 +525,33 @@ export default function CompanySettings() {
         setSelectedUser(null);
       }
 
-      const DEFAULT_COMPANY_SYSTEM_ROLES = [
-        { id: 'role-company-admin', slug: 'COMPANY_ADMIN', name: 'Company Admin', desc: 'Full company operations, settings, user management, and security control', color: 'bg-purple-100 text-purple-700 border-purple-200' },
-        { id: 'role-dispatcher', slug: 'DISPATCHER', name: 'Dispatcher', desc: 'Command center, fleet monitoring, route planning, load dispatching', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-        { id: 'role-driver', slug: 'DRIVER', name: 'Driver', desc: 'Mobile app navigation, GPS telemetry, pre-start checklists, timesheets and run completion', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-        { id: 'role-warehouse', slug: 'WAREHOUSE_MANAGER', name: 'Warehouse Manager', desc: 'Inventory control, inbound/outbound staging, loading bay assignment', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-        { id: 'role-accounts', slug: 'ACCOUNTS', name: 'Accounts', desc: 'Invoicing, customer pricing, payroll processing, expenses and reconciliation', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-        { id: 'role-yard', slug: 'YARD_ATTENDANT', name: 'Yard Attendant', desc: 'Yard movements, vehicle check-in/out, trailer inspections', color: 'bg-slate-100 text-slate-700 border-slate-200' }
-      ];
-
       const countUsersForRole = (roleName, roleSlug) => {
         if (!mappedUsers || !mappedUsers.length) return 0;
         const normName = String(roleName || '').toLowerCase().replace(/[\s-_]/g, '');
         const normSlug = String(roleSlug || '').toLowerCase().replace(/[\s-_]/g, '');
         return mappedUsers.filter(u => {
           const uRole = String(u.role || '').toLowerCase().replace(/[\s-_]/g, '');
-          return uRole === normName || uRole === normSlug || (normName.includes('admin') && uRole.includes('admin'));
+          return uRole === normName || uRole === normSlug;
         }).length;
       };
 
       if (rolesRes.status === 'fulfilled') {
         const rData = rolesRes.value.data?.data || rolesRes.value.data;
         const rList = Array.isArray(rData) ? rData : (rData?.items || []);
-        if (rList.length > 0) {
-          const mappedRoles = rList.map((r, idx) => {
-            const defMatch = DEFAULT_COMPANY_SYSTEM_ROLES.find(d => 
-              d.name.toLowerCase() === (r.name || '').toLowerCase() || 
-              d.slug.toLowerCase() === (r.slug || '').toLowerCase()
-            );
-            return {
-              id: r.id || `role-${idx}`,
-              slug: r.slug || '',
-              name: r.name || 'Custom Role',
-              users: countUsersForRole(r.name, r.slug),
-              desc: r.desc || defMatch?.desc || 'Configured system permission role',
-              color: defMatch?.color || 'bg-blue-100 text-blue-700 border-blue-200',
-              isSystem: r.isSystem !== false
-            };
-          });
-          setRolesList(mappedRoles);
-        } else {
-          setRolesList(DEFAULT_COMPANY_SYSTEM_ROLES.map(r => ({
-            ...r,
-            users: countUsersForRole(r.name, r.slug)
-          })));
-        }
+        // Strictly filter to ONLY user-created custom roles (exclude all system roles)
+        const customRolesOnly = rList.filter(r => r.isSystem === false || (r.companyId && !r.isSystem));
+        const mappedRoles = customRolesOnly.map((r, idx) => ({
+          id: r.id || `custom-role-${idx}`,
+          slug: r.slug || '',
+          name: r.name || 'Custom Role',
+          users: countUsersForRole(r.name, r.slug),
+          desc: r.desc || r.description || 'Custom company role',
+          color: r.colorTheme ? getThemeClass(r.colorTheme) : 'bg-blue-100 text-blue-700 border-blue-200',
+          isSystem: false
+        }));
+        setRolesList(mappedRoles);
       } else {
-        setRolesList(DEFAULT_COMPANY_SYSTEM_ROLES.map(r => ({
-          ...r,
-          users: countUsersForRole(r.name, r.slug)
-        })));
+        setRolesList([]);
       }
 
       if (rulesRes.status === 'fulfilled') {
@@ -4812,40 +4789,57 @@ export default function CompanySettings() {
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-[#2563EB]" /> PREDEFINED & CUSTOM SYSTEM ROLES
+                    <Shield className="w-4 h-4 text-[#2563EB]" /> CUSTOM SYSTEM ROLES
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-1">Configure role capabilities, user counts, and default security profiles.</p>
+                  <p className="text-xs text-slate-500 font-medium mt-1">Configure custom role capabilities, user counts, and default security profiles.</p>
                 </div>
                 <button onClick={() => setIsCreateRoleModalOpen(true)} className="px-3 py-1.5 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer">
                   <Plus size={13} /> Create Role
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {rolesList.map((roleItem) => (
-                  <div key={roleItem.id} className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-white hover:border-blue-200 transition-all shadow-2xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className={`px-2.5 py-0.5 rounded-md text-xs font-extrabold ${roleItem.color}`}>
-                        {roleItem.name}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-500">{roleItem.users} Users</span>
-                    </div>
-                    <p className="text-xs text-slate-600 font-medium leading-snug">{roleItem.desc}</p>
-                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between">
-                      {roleItem.isSystem ? (
-                        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">System Role</span>
-                      ) : (
+              {rolesList.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {rolesList.map((roleItem) => (
+                    <div key={roleItem.id} className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-white hover:border-blue-200 transition-all shadow-2xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className={`px-2.5 py-0.5 rounded-md text-xs font-extrabold ${roleItem.color}`}>
+                          {roleItem.name}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-500">{roleItem.users} Users</span>
+                      </div>
+                      <p className="text-xs text-slate-600 font-medium leading-snug">{roleItem.desc}</p>
+                      <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between">
                         <button onClick={() => handleDeleteRole(roleItem)} className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer">
                           Delete
                         </button>
-                      )}
-                      <button onClick={() => handleOpenEditRoleModal(roleItem)} className="text-[10.5px] font-bold text-[#2563EB] hover:underline cursor-pointer">
-                        Edit Role →
-                      </button>
+                        <button onClick={() => handleOpenEditRoleModal(roleItem)} className="text-[10.5px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                          Edit Role →
+                        </button>
+                      </div>
                     </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 px-6 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 space-y-3">
+                  <div className="w-12 h-12 mx-auto rounded-full bg-blue-50 text-[#2563EB] flex items-center justify-center">
+                    <Shield size={24} />
                   </div>
-                ))}
-              </div>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-slate-800">No Custom Roles Added Yet</h4>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto">
+                      Only roles you add will be displayed here. Click &quot;+ Create Role&quot; above to add a role.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateRoleModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+                  >
+                    <Plus size={14} /> Create Role
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
