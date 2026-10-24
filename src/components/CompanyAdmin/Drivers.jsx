@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users, Truck, Coffee, Clock, AlertTriangle, Calendar,
@@ -141,6 +141,249 @@ const InputField = ({ label, name, type = "text", placeholder, defaultValue, opt
           className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
         />
       )}
+    </div>
+  );
+};
+
+const AUSTRALIAN_LOCATIONS = [
+  // NSW
+  { address: '120 George St', city: 'Sydney', state: 'NSW', postalCode: '2000' },
+  { address: '45 Macquarie St', city: 'Parramatta', state: 'NSW', postalCode: '2150' },
+  { address: '88 High St', city: 'Penrith', state: 'NSW', postalCode: '2750' },
+  { address: '15 Elizabeth St', city: 'Liverpool', state: 'NSW', postalCode: '2170' },
+  { address: '220 Pacific Hwy', city: 'North Sydney', state: 'NSW', postalCode: '2060' },
+  { address: '10 Hunter St', city: 'Newcastle', state: 'NSW', postalCode: '2300' },
+  { address: '55 Crown St', city: 'Wollongong', state: 'NSW', postalCode: '2500' },
+  { address: '30 Victoria Rd', city: 'Chatswood', state: 'NSW', postalCode: '2067' },
+  { address: '14 Campbelltown Rd', city: 'Campbelltown', state: 'NSW', postalCode: '2560' },
+  { address: '62 Main St', city: 'Blacktown', state: 'NSW', postalCode: '2148' },
+  { address: '100 Hume Hwy', city: 'Chullora', state: 'NSW', postalCode: '2190' },
+  { address: '25 Western Rd', city: 'Eastern Creek', state: 'NSW', postalCode: '2766' },
+  { address: '50 Wallgrove Rd', city: 'Horsley Park', state: 'NSW', postalCode: '2175' },
+  { address: '18 Kurrajong Rd', city: 'Prestons', state: 'NSW', postalCode: '2170' },
+
+  // VIC
+  { address: '150 Collins St', city: 'Melbourne', state: 'VIC', postalCode: '3000' },
+  { address: '75 Moorabool St', city: 'Geelong', state: 'VIC', postalCode: '3220' },
+  { address: '12 Sturt St', city: 'Ballarat', state: 'VIC', postalCode: '3350' },
+  { address: '40 Pall Mall', city: 'Bendigo', state: 'VIC', postalCode: '3550' },
+  { address: '22 Princes Hwy', city: 'Dandenong', state: 'VIC', postalCode: '3175' },
+  { address: '180 Sunshine Rd', city: 'Tottenham', state: 'VIC', postalCode: '3012' },
+  { address: '85 Boundary Rd', city: 'Laverton North', state: 'VIC', postalCode: '3026' },
+  { address: '60 Clayton Rd', city: 'Clayton', state: 'VIC', postalCode: '3168' },
+  { address: '99 Bridge Rd', city: 'Richmond', state: 'VIC', postalCode: '3121' },
+  { address: '50 Wells St', city: 'Frankston', state: 'VIC', postalCode: '3199' },
+  { address: '350 Somerville Rd', city: 'Brooklyn', state: 'VIC', postalCode: '3012' },
+  { address: '15 Paramount Dr', city: 'Derrimut', state: 'VIC', postalCode: '3026' },
+
+  // QLD
+  { address: '200 Queen St', city: 'Brisbane', state: 'QLD', postalCode: '4000' },
+  { address: '50 Surfers Paradise Blvd', city: 'Gold Coast', state: 'QLD', postalCode: '4217' },
+  { address: '18 Aerodrome Rd', city: 'Maroochydore', state: 'QLD', postalCode: '4558' },
+  { address: '10 Brisbane St', city: 'Ipswich', state: 'QLD', postalCode: '4305' },
+  { address: '320 Flinders St', city: 'Townsville', state: 'QLD', postalCode: '4810' },
+  { address: '14 Abbott St', city: 'Cairns', state: 'QLD', postalCode: '4870' },
+  { address: '65 Ruthven St', city: 'Toowoomba', state: 'QLD', postalCode: '4350' },
+  { address: '80 Victoria St', city: 'Mackay', state: 'QLD', postalCode: '4740' },
+  { address: '45 Kingsford Smith Dr', city: 'Eagle Farm', state: 'QLD', postalCode: '4009' },
+  { address: '120 Boundary Rd', city: 'Rocklea', state: 'QLD', postalCode: '4106' },
+
+  // WA
+  { address: '100 St Georges Terrace', city: 'Perth', state: 'WA', postalCode: '6000' },
+  { address: '25 Adelaide St', city: 'Fremantle', state: 'WA', postalCode: '6160' },
+  { address: '12 Boas Ave', city: 'Joondalup', state: 'WA', postalCode: '6027' },
+  { address: '40 Mandurah Terrace', city: 'Mandurah', state: 'WA', postalCode: '6210' },
+  { address: '75 Victoria St', city: 'Bunbury', state: 'WA', postalCode: '6230' },
+  { address: '180 Abernethy Rd', city: 'Kewdale', state: 'WA', postalCode: '6105' },
+  { address: '90 Welshpool Rd', city: 'Welshpool', state: 'WA', postalCode: '6106' },
+
+  // SA
+  { address: '80 King William St', city: 'Adelaide', state: 'SA', postalCode: '5000' },
+  { address: '15 Commercial Rd', city: 'Salisbury', state: 'SA', postalCode: '5108' },
+  { address: '50 Commercial St', city: 'Mount Gambier', state: 'SA', postalCode: '5290' },
+  { address: '28 Murray St', city: 'Gawler', state: 'SA', postalCode: '5118' },
+  { address: '110 South Rd', city: 'Wingfield', state: 'SA', postalCode: '5013' },
+  { address: '45 Port Wakefield Rd', city: 'Gepps Cross', state: 'SA', postalCode: '5094' },
+
+  // TAS
+  { address: '110 Elizabeth St', city: 'Hobart', state: 'TAS', postalCode: '7000' },
+  { address: '45 St John St', city: 'Launceston', state: 'TAS', postalCode: '7250' },
+  { address: '20 Rooke St', city: 'Devonport', state: 'TAS', postalCode: '7310' },
+
+  // ACT
+  { address: '60 London Circuit', city: 'Canberra', state: 'ACT', postalCode: '2601' },
+  { address: '15 Benjamin Way', city: 'Belconnen', state: 'ACT', postalCode: '2617' },
+  { address: '30 Anketell St', city: 'Tuggeranong', state: 'ACT', postalCode: '2900' },
+
+  // NT
+  { address: '40 Mitchell St', city: 'Darwin', state: 'NT', postalCode: '0800' },
+  { address: '15 Todd Mall', city: 'Alice Springs', state: 'NT', postalCode: '0870' }
+];
+
+const AddressAutocompleteField = ({
+  addressValue,
+  onAddressChange,
+  cityValue,
+  onCityChange,
+  stateValue,
+  onStateChange,
+  postalCodeValue,
+  onPostalCodeChange
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [justSelected, setJustSelected] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    onAddressChange(val);
+    setJustSelected(false);
+
+    if (val.trim().length >= 2) {
+      const q = val.toLowerCase().trim();
+      const filtered = AUSTRALIAN_LOCATIONS.filter(item =>
+        item.address.toLowerCase().includes(q) ||
+        item.city.toLowerCase().includes(q) ||
+        item.state.toLowerCase().includes(q) ||
+        item.postalCode?.includes(q)
+      ).slice(0, 8);
+      setSuggestions(filtered);
+      setIsOpen(filtered.length > 0);
+    } else {
+      setSuggestions([]);
+      setIsOpen(false);
+    }
+  };
+
+  const handleSelectSuggestion = (item) => {
+    onAddressChange(item.address);
+    onCityChange(item.city);
+    onStateChange(item.state);
+    onPostalCodeChange(item.postalCode || '');
+    setIsOpen(false);
+    setJustSelected(true);
+  };
+
+  return (
+    <div className="col-span-1 sm:col-span-2 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
+      {/* Residential Address with Typeahead Autocomplete */}
+      <div className="sm:col-span-2 relative" ref={containerRef}>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+            Residential Address <span className="text-rose-500">*</span>
+          </label>
+          {justSelected && (
+            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+              ✓ Suburb, State & Postcode Auto-filled
+            </span>
+          )}
+        </div>
+        <div className="relative">
+          <input
+            type="text"
+            name="ResidentialAddress"
+            autoComplete="off"
+            value={addressValue}
+            onChange={handleInputChange}
+            onFocus={() => {
+              if (addressValue && addressValue.trim().length >= 2 && suggestions.length > 0) {
+                setIsOpen(true);
+              }
+            }}
+            placeholder="Start typing street address, suburb or postcode..."
+            className="w-full bg-white border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 shadow-xs"
+          />
+          <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        </div>
+
+        {/* Suggestion Dropdown */}
+        {isOpen && suggestions.length > 0 && (
+          <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+            <div className="p-1.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-[10px] text-slate-500 font-semibold px-3">
+              <span>Suggested Australian Locations</span>
+              <span className="text-purple-600 text-[9px] font-bold">Auto-fills City, State, Postcode</span>
+            </div>
+            {suggestions.map((s, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleSelectSuggestion(s)}
+                className="w-full text-left px-3 py-2 hover:bg-purple-50 transition-colors flex items-center justify-between border-b border-slate-50 last:border-0 cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <MapPin size={12} className="text-purple-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-slate-800">{s.address}</p>
+                    <p className="text-[10px] text-slate-400 font-medium">{s.city}, {s.state} {s.postalCode}</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-extrabold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                  {s.state}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* City (Auto-filled / Editable) */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+          City / Suburb
+        </label>
+        <input
+          type="text"
+          name="City"
+          value={cityValue}
+          onChange={(e) => onCityChange(e.target.value)}
+          placeholder="e.g. Sydney"
+          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 shadow-xs"
+        />
+      </div>
+
+      {/* State & Postal Code */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+            State
+          </label>
+          <select
+            name="State"
+            value={stateValue}
+            onChange={(e) => onStateChange(e.target.value)}
+            className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 shadow-xs cursor-pointer"
+          >
+            <option value="">State</option>
+            {['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT'].map(st => (
+              <option key={st} value={st}>{st}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+            Postcode
+          </label>
+          <input
+            type="text"
+            name="PostalCode"
+            value={postalCodeValue}
+            onChange={(e) => onPostalCodeChange(e.target.value)}
+            placeholder="e.g. 2000"
+            className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 shadow-xs"
+          />
+        </div>
+      </div>
     </div>
   );
 };
@@ -652,56 +895,88 @@ export default function Drivers() {
   const [activeConfigTab, setActiveConfigTab] = useState('standard');
   const [tempFieldsConfig, setTempFieldsConfig] = useState(DEFAULT_PERSONAL_FIELDS_CONFIG);
   const [newCustomFieldInput, setNewCustomFieldInput] = useState({ label: '', type: 'text', required: false, options: '' });
-  const [newRoleInput, setNewRoleInput] = useState('');
   const [isSavingFieldConfig, setIsSavingFieldConfig] = useState(false);
 
-  // Dynamic Company Masters (Branches & Managers fetched from backend)
+  // Dynamic Company Masters (Branches, Managers & Roles fetched from User Management)
   const [companyBranches, setCompanyBranches] = useState([]);
   const [companyManagers, setCompanyManagers] = useState([]);
+  const [companyRoles, setCompanyRoles] = useState(['Driver']);
   const [selectedBranches, setSelectedBranches] = useState([]);
 
-  useEffect(() => {
-    const fetchCompanyMasters = async () => {
-      // 1. Fetch real company branches from database
-      try {
-        const branchRes = await api.get('/branches');
-        const bList = branchRes.data?.data || branchRes.data || [];
-        if (Array.isArray(bList) && bList.length > 0) {
-          const names = bList.map(b => b.name || b.branchName).filter(Boolean);
-          setCompanyBranches(names);
-        } else {
-          setCompanyBranches([]);
-        }
-      } catch (err) {
+  const fetchCompanyMasters = useCallback(async () => {
+    // 1. Fetch real company branches from database
+    try {
+      const branchRes = await api.get('/branches');
+      const bList = branchRes.data?.data || branchRes.data || [];
+      if (Array.isArray(bList) && bList.length > 0) {
+        const names = bList.map(b => b.name || b.branchName).filter(Boolean);
+        setCompanyBranches(names);
+      } else {
         setCompanyBranches([]);
       }
+    } catch (err) {
+      setCompanyBranches([]);
+    }
 
-      // 2. Fetch real company staff for Reports To
-      try {
-        const usersRes = await api.get('/users');
-        const uList = usersRes.data?.data || usersRes.data || [];
-        if (Array.isArray(uList) && uList.length > 0) {
-          const names = uList.filter(u => u.role !== 'DRIVER').map(u => u.name || u.email).filter(Boolean);
-          setCompanyManagers(names);
-        } else {
-          const uStr = localStorage.getItem('user');
-          if (uStr) {
-            const u = JSON.parse(uStr);
-            if (u.name || u.email) setCompanyManagers([u.name || u.email]);
-          }
-        }
-      } catch (err) {
+    // 2. Fetch real company staff for Reports To
+    try {
+      const usersRes = await api.get('/users');
+      const uList = usersRes.data?.data || usersRes.data || [];
+      if (Array.isArray(uList) && uList.length > 0) {
+        const names = uList.filter(u => u.role !== 'DRIVER').map(u => u.name || u.email).filter(Boolean);
+        setCompanyManagers(names);
+      } else {
         const uStr = localStorage.getItem('user');
         if (uStr) {
-          try {
-            const u = JSON.parse(uStr);
-            if (u.name || u.email) setCompanyManagers([u.name || u.email]);
-          } catch (e) {}
+          const u = JSON.parse(uStr);
+          if (u.name || u.email) setCompanyManagers([u.name || u.email]);
         }
       }
-    };
-    fetchCompanyMasters();
+    } catch (err) {
+      const uStr = localStorage.getItem('user');
+      if (uStr) {
+        try {
+          const u = JSON.parse(uStr);
+          if (u.name || u.email) setCompanyManagers([u.name || u.email]);
+        } catch (e) {}
+      }
+    }
+
+    // 3. Fetch real company roles strictly from User Management (Single Source of Truth)
+    try {
+      const rolesRes = await api.get('/custom-roles');
+      const rData = rolesRes.data?.data || rolesRes.data || [];
+      const rList = Array.isArray(rData) ? rData : (rData?.items || []);
+      if (Array.isArray(rList) && rList.length > 0) {
+        // Extract all custom roles created by the company in Custom Roles
+        const customRoles = rList
+          .filter(r => {
+            if (!r) return false;
+            const slug = (r.slug || '').toUpperCase();
+            const nameLower = (r.name || '').toLowerCase().trim();
+            // Exclude platform administrative roles
+            if (slug === 'SUPER_ADMIN' || slug === 'COMPANY_ADMIN' || nameLower === 'super admin' || nameLower === 'company admin') return false;
+            // Include custom created roles
+            return r.isSystem === false || (r.companyId && !r.isSystem);
+          })
+          .map(r => r.name || r.slug)
+          .filter(Boolean);
+
+        // Combined roles: 'Driver' first, followed by all custom roles created by the company
+        const combined = ['Driver', ...customRoles];
+        const uniqueRoles = Array.from(new Set(combined.map(r => r.trim()).filter(Boolean)));
+        setCompanyRoles(uniqueRoles);
+      } else {
+        setCompanyRoles(['Driver']);
+      }
+    } catch (err) {
+      setCompanyRoles(['Driver']);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchCompanyMasters();
+  }, [fetchCompanyMasters]);
 
   const getCompanyStorageKey = () => {
     try {
@@ -721,9 +996,13 @@ export default function Drivers() {
       try {
         const parsed = JSON.parse(localCached);
         if (parsed?.fields) {
+          if (Array.isArray(parsed.roles)) {
+            parsed.roles = parsed.roles.filter(r => r && r.toLowerCase() !== 'asdf');
+          }
           if (!parsed.roles || parsed.roles.length === 0) parsed.roles = ['Driver'];
           setPersonalFieldsConfig(parsed);
           setTempFieldsConfig(parsed);
+          localStorage.setItem(storageKey, JSON.stringify(parsed));
         }
       } catch (e) {}
     }
@@ -733,6 +1012,9 @@ export default function Drivers() {
       if (res.data?.success && res.data.data?.company?.defaultBusinessHours?.driverFormConfig) {
         const remoteCfg = res.data.data.company.defaultBusinessHours.driverFormConfig;
         if (remoteCfg?.fields) {
+          if (Array.isArray(remoteCfg.roles)) {
+            remoteCfg.roles = remoteCfg.roles.filter(r => r && r.toLowerCase() !== 'asdf');
+          }
           if (!remoteCfg.roles || remoteCfg.roles.length === 0) remoteCfg.roles = ['Driver'];
           setPersonalFieldsConfig(remoteCfg);
           setTempFieldsConfig(remoteCfg);
@@ -798,36 +1080,6 @@ export default function Drivers() {
     setTempFieldsConfig(prev => ({
       ...prev,
       customFields: (prev.customFields || []).filter(f => f.id !== fieldId)
-    }));
-  };
-
-  const handleAddCustomRole = () => {
-    const trimmed = newRoleInput.trim();
-    if (!trimmed) {
-      showToast('Please enter a role name.', 'error');
-      return;
-    }
-    const currentRoles = tempFieldsConfig.roles || ['Driver'];
-    if (currentRoles.some(r => r.toLowerCase() === trimmed.toLowerCase())) {
-      showToast('This role already exists.', 'error');
-      return;
-    }
-    setTempFieldsConfig(prev => ({
-      ...prev,
-      roles: [...(prev.roles || ['Driver']), trimmed]
-    }));
-    setNewRoleInput('');
-    showToast(`Added role "${trimmed}"`);
-  };
-
-  const handleDeleteCustomRole = (roleToDelete) => {
-    if (roleToDelete === 'Driver') {
-      showToast('Cannot delete default Driver role.', 'error');
-      return;
-    }
-    setTempFieldsConfig(prev => ({
-      ...prev,
-      roles: (prev.roles || ['Driver']).filter(r => r !== roleToDelete)
     }));
   };
 
@@ -956,9 +1208,14 @@ export default function Drivers() {
       employmentType: formattedEmp,
       status: formattedStatus,
       role: d.role || 'Driver',
+      reportsTo: d.manager ? (d.manager.name || d.manager.email) : (d.managerId || ''),
+      managerId: d.managerId || '',
+      manager: d.manager || null,
       category: d.category || '',
       shift: d.shift || '',
       branch: branchName,
+      tfn: d.taxNumber || '',
+      bankAccount: d.accountNumber || '',
       payType: d.payType === 'Per Kilometer' ? 'Per Km' : (d.payType || ''),
       payRate: d.payRate ? String(d.payRate) : '',
       loadPaySchedule: d.loadPaySchedule || '',
@@ -1050,6 +1307,7 @@ export default function Drivers() {
   };
 
   const handleSelectDriverForEdit = async (driver) => {
+    fetchCompanyMasters();
     setSelectedDriver(driver);
     try {
       const res = await api.get(`/drivers/${driver.id}`);
@@ -1272,6 +1530,85 @@ export default function Drivers() {
   const [editDriverModal, setEditDriverModal] = useState(null);
   const [selectedDriver, setSelectedDriver] = useState(null);
 
+  const [isAssignTruckModalOpen, setIsAssignTruckModalOpen] = useState(false);
+  const [availableTrucksList, setAvailableTrucksList] = useState([]);
+  const [selectedTruckIdToAssign, setSelectedTruckIdToAssign] = useState('');
+  const [isAssigningTruck, setIsAssigningTruck] = useState(false);
+
+  const fetchAvailableTrucks = async () => {
+    try {
+      const res = await api.get('/vehicles');
+      const list = res.data?.data || res.data || [];
+      if (Array.isArray(list)) {
+        const trucks = list.filter(v => v.category !== 'TRAILER' && !['Trailer', 'Car Trailer'].includes(v.type) && !String(v.type || '').toLowerCase().includes('trailer'));
+        setAvailableTrucksList(trucks);
+      }
+    } catch (err) {
+      console.error('Error fetching available trucks:', err);
+    }
+  };
+
+  const handleAssignTruckToDriver = async (truckId) => {
+    if (!truckId || !selectedDriver?.id) return;
+    setIsAssigningTruck(true);
+    try {
+      await api.post(`/vehicles/${truckId}/assign-driver`, { driverId: selectedDriver.id });
+      
+      const chosenTruck = availableTrucksList.find(t => String(t.id) === String(truckId));
+      
+      setSelectedDriver(prev => ({
+        ...prev,
+        currentVehicle: chosenTruck ? {
+          id: chosenTruck.id,
+          rego: chosenTruck.rego || chosenTruck.plate || chosenTruck.id,
+          make: chosenTruck.make,
+          model: chosenTruck.model,
+          category: chosenTruck.category || chosenTruck.type || 'Prime Mover',
+          status: 'ASSIGNED',
+          assignedTrailerId: chosenTruck.assignedTrailerId,
+          assignedTrailer: chosenTruck.assignedTrailer
+        } : prev.currentVehicle
+      }));
+
+      setDrivers(prev => prev.map(d => d.id === selectedDriver.id ? {
+        ...d,
+        currentVehicle: chosenTruck || d.currentVehicle
+      } : d));
+
+      setIsAssignTruckModalOpen(false);
+      setSelectedTruckIdToAssign('');
+      showToast(`Truck ${chosenTruck?.rego || 'Prime Mover'} assigned to ${selectedDriver.name || selectedDriver.firstName || 'Driver'}!`);
+    } catch (err) {
+      console.error('Error assigning truck to driver:', err);
+      showToast(err.response?.data?.message || 'Failed to assign truck to driver', 'error');
+    } finally {
+      setIsAssigningTruck(false);
+    }
+  };
+
+  const handleUnassignTruckFromDriver = async () => {
+    const curTruckId = selectedDriver?.currentVehicle?.id;
+    if (!curTruckId) return;
+    setIsAssigningTruck(true);
+    try {
+      await api.post(`/vehicles/${curTruckId}/assign-driver`, { driverId: null });
+      setSelectedDriver(prev => ({
+        ...prev,
+        currentVehicle: null
+      }));
+      setDrivers(prev => prev.map(d => d.id === selectedDriver.id ? {
+        ...d,
+        currentVehicle: null
+      } : d));
+      showToast('Truck unassigned from driver.');
+    } catch (err) {
+      console.error('Error unassigning truck:', err);
+      showToast('Failed to unassign truck', 'error');
+    } finally {
+      setIsAssigningTruck(false);
+    }
+  };
+
   useEffect(() => {
     if (selectedDriver && selectedDriver.id) {
       fetchDriverDocuments(selectedDriver.id);
@@ -1299,6 +1636,7 @@ export default function Drivers() {
   const [formResetKey, setFormResetKey] = useState(0);
 
   const handleOpenAddDriver = () => {
+    fetchCompanyMasters();
     setSelectedDriver(null);
     setIsEditingDriver(false);
     setPhotoPreview('');
@@ -1317,6 +1655,10 @@ export default function Drivers() {
     setSelectedBranches([]);
     setComplianceDocs(createInitialComplianceDocs());
     setDriverLicenceDoc(null);
+    setDriverFormAddress('');
+    setDriverFormCity('');
+    setDriverFormState('');
+    setDriverFormPostalCode('');
     setFormResetKey(prev => prev + 1);
   };
 
@@ -1454,12 +1796,20 @@ export default function Drivers() {
   const [isEditingDriver, setIsEditingDriver] = useState(false);
   const [driverFormEmail, setDriverFormEmail] = useState('');
   const [driverFormPayType, setDriverFormPayType] = useState('');
+  const [driverFormAddress, setDriverFormAddress] = useState('');
+  const [driverFormCity, setDriverFormCity] = useState('');
+  const [driverFormState, setDriverFormState] = useState('');
+  const [driverFormPostalCode, setDriverFormPostalCode] = useState('');
 
   useEffect(() => {
     if (isEditingDriver && selectedDriver) {
       setDriverFormEmail(selectedDriver.email && selectedDriver.email !== '—' ? selectedDriver.email : '');
       const rawPayType = selectedDriver.payType || 'Hourly';
       setDriverFormPayType(rawPayType === 'Per Kilometer' ? 'Per Km' : rawPayType);
+      setDriverFormAddress(selectedDriver.address && selectedDriver.address !== '—' ? selectedDriver.address : '');
+      setDriverFormCity(selectedDriver.city || '');
+      setDriverFormState(selectedDriver.state || '');
+      setDriverFormPostalCode(selectedDriver.postalCode || '');
       const bStr = selectedDriver.branch && selectedDriver.branch !== '—' ? selectedDriver.branch : '';
       const bArr = bStr.split(',').map(s => s.trim()).filter(Boolean);
       setSelectedBranches(bArr);
@@ -1484,6 +1834,10 @@ export default function Drivers() {
     } else if (showAddDriver) {
       setDriverFormEmail('');
       setDriverFormPayType('');
+      setDriverFormAddress('');
+      setDriverFormCity('');
+      setDriverFormState('');
+      setDriverFormPostalCode('');
       setSelectedBranches([]);
       setComplianceDocs(createInitialComplianceDocs());
       setDriverLicenceDoc(null);
@@ -3055,6 +3409,89 @@ export default function Drivers() {
           </div>
         </div>
       )}
+
+      {/* ASSIGN TRUCK TO DRIVER MODAL */}
+      {isAssignTruckModalOpen && selectedDriver && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsAssignTruckModalOpen(false)}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4 text-left font-sans animate-scale-up" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600">
+                  <Truck size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Assign Truck to Driver</h3>
+                  <p className="text-[11px] font-semibold text-slate-500">Driver: <span className="font-bold text-slate-800">{selectedDriver.name || `${selectedDriver.firstName || ''} ${selectedDriver.lastName || ''}`.trim() || selectedDriver.driverCode || 'Driver'}</span></p>
+                </div>
+              </div>
+              <button onClick={() => setIsAssignTruckModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1.5">Select Prime Mover / Truck *</label>
+                <select
+                  value={selectedTruckIdToAssign}
+                  onChange={e => setSelectedTruckIdToAssign(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 cursor-pointer"
+                >
+                  <option value="">-- Choose a Truck from Fleet --</option>
+                  {availableTrucksList.map(trk => {
+                    const trkName = `${trk.make || ''} ${trk.model || ''}`.trim() || 'Truck';
+                    const isCurDriver = trk.currentDriverId === selectedDriver?.id;
+                    const hasOtherDriver = trk.currentDriverId && !isCurDriver;
+                    const hasTrailer = trk.assignedTrailerId ? ' • [Trailer Attached]' : '';
+                    return (
+                      <option key={trk.id} value={trk.id}>
+                        {trk.rego || trk.plate || trk.id} – {trkName} {hasTrailer} {isCurDriver ? ' (Currently Assigned)' : (hasOtherDriver ? ' (⚠️ Assigned to another driver)' : ' (Available)')}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {selectedTruckIdToAssign && (() => {
+                const trk = availableTrucksList.find(t => String(t.id) === String(selectedTruckIdToAssign));
+                if (!trk) return null;
+                return (
+                  <div className="bg-purple-50/70 border border-purple-200/80 rounded-xl p-3 space-y-1 text-[11px]">
+                    <div className="font-black text-purple-900 uppercase tracking-wider text-[10px]">Consist Preview</div>
+                    <div className="text-slate-800 font-bold">{trk.make} {trk.model} ({trk.rego || trk.plate || trk.id})</div>
+                    <div className="text-slate-500">Status: <span className="font-semibold text-slate-700">{trk.status || 'Active'}</span> • Type: <span className="font-semibold text-slate-700">{trk.category || trk.type || 'Prime Mover'}</span></div>
+                    {trk.assignedTrailerId && (
+                      <div className="text-emerald-700 font-bold mt-1">✅ This truck already has an attached trailer that will be linked to the driver.</div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex justify-end gap-2.5">
+              <button 
+                type="button"
+                onClick={() => setIsAssignTruckModalOpen(false)} 
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button"
+                disabled={!selectedTruckIdToAssign || isAssigningTruck}
+                onClick={() => handleAssignTruckToDriver(selectedTruckIdToAssign)}
+                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+              >
+                <Truck size={14} /> Confirm Truck Assignment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PAYROLL DYNAMIC MODALS */}
       {payrollModal === 'edit_rates' && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[999] flex items-center justify-center p-4" onClick={() => setPayrollModal(null)}>
@@ -4108,16 +4545,6 @@ export default function Drivers() {
                     {tempFieldsConfig.customFields?.length || 0}
                   </span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveConfigTab('roles')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${activeConfigTab === 'roles' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/60'}`}
-                >
-                  <span>Driver Roles</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${activeConfigTab === 'roles' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
-                    {tempFieldsConfig.roles?.length || 1}
-                  </span>
-                </button>
               </div>
 
               <button
@@ -4217,7 +4644,7 @@ export default function Drivers() {
                     })}
                   </div>
                 </>
-              ) : activeConfigTab === 'custom' ? (
+              ) : (
                 <>
                   <div className="p-3 bg-indigo-50/70 border border-indigo-200/70 rounded-2xl flex items-start gap-2.5">
                     <Plus size={16} className="text-indigo-600 shrink-0 mt-0.5" />
@@ -4339,77 +4766,6 @@ export default function Drivers() {
                     )}
                   </div>
                 </>
-              ) : (
-                <>
-                  {/* Driver Roles Management Tab */}
-                  <div className="p-3 bg-purple-50/70 border border-purple-200/70 rounded-2xl flex items-start gap-2.5">
-                    <Sliders size={16} className="text-purple-600 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-purple-900 font-medium leading-relaxed">
-                      Manage company-specific driver roles. You can create custom roles (e.g. <em>Senior Driver</em>, <em>Linehaul Specialist</em>, <em>Team Lead</em>) for your company. New companies start with only the standard <strong>Driver</strong> role.
-                    </p>
-                  </div>
-
-                  {/* Add New Role Box */}
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                    <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider block">Add Custom Driver Role</span>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newRoleInput}
-                        onChange={(e) => setNewRoleInput(e.target.value)}
-                        placeholder="e.g. Senior Driver, Linehaul Specialist, Team Lead..."
-                        className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddCustomRole();
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddCustomRole}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs shrink-0"
-                      >
-                        <Plus size={14} />
-                        <span>Add Role</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Existing Roles List */}
-                  <div className="space-y-2">
-                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">Active Driver Roles</span>
-                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
-                      {(tempFieldsConfig.roles?.length ? tempFieldsConfig.roles : ['Driver']).map((role, idx) => (
-                        <div key={idx} className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-2 h-2 rounded-full bg-purple-600"></div>
-                            <div>
-                              <span className="font-extrabold text-slate-900 text-xs">{role}</span>
-                              {role === 'Driver' && (
-                                <span className="ml-2 px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold uppercase">System Base Role</span>
-                              )}
-                            </div>
-                          </div>
-
-                          <div>
-                            {role !== 'Driver' && (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteCustomRole(role)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                title={`Delete ${role}`}
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
               )}
             </div>
 
@@ -4469,6 +4825,9 @@ export default function Drivers() {
       licenseExpiry: selectedDriver?.licenseExpiry || '',
       licenceClass: selectedDriver?.licenseClass || '',
       branch: selectedDriver?.branch && selectedDriver?.branch !== '—' ? selectedDriver.branch : '',
+      role: selectedDriver?.role || selectedDriver?.driverRole || 'Driver',
+      reportsTo: selectedDriver?.reportsTo || (selectedDriver?.manager ? (selectedDriver.manager.name || selectedDriver.manager.email) : (selectedDriver?.managerId || '')) || '',
+      category: selectedDriver?.category || '',
       employmentType: (() => {
         const raw = selectedDriver?.employmentType;
         if (!raw || raw === '—') return 'FULL_TIME';
@@ -4558,12 +4917,13 @@ export default function Drivers() {
           const emergencyContactName = fd.get('EmergencyContactName') || '';
           const emergencyContactNumber = fd.get('EmergencyContactNumber') || '';
           const emergencyContact = emergencyContactName ? `${emergencyContactName} ${emergencyContactNumber}`.trim() : emergencyContactNumber;
-          const address = fd.get('ResidentialAddress') || fd.get('address') || '';
-          const city = fd.get('City') || '';
-          const state = fd.get('State') || '';
-          const postalCode = fd.get('PostalCode') || '';
+          const address = fd.get('ResidentialAddress') || fd.get('address') || driverFormAddress || '';
+          const city = fd.get('City') || driverFormCity || '';
+          const state = fd.get('State') || driverFormState || '';
+          const postalCode = fd.get('PostalCode') || driverFormPostalCode || '';
 
           const role = fd.get('DriverRole') || 'Driver';
+          const reportsTo = fd.get('ReportsTo') || fd.get('reportsTo') || '';
           const employmentType = fd.get('EmploymentType') || '';
           const branch = (fd.get('Branch') || selectedBranches.join(', ') || '').trim();
           const status = fd.get('DriverStatus') || 'Available';
@@ -4635,13 +4995,14 @@ export default function Drivers() {
           const taxDeclReceived = rawTaxDecl ? rawTaxDecl === 'Yes' : (isEditMode && defaultData.taxDeclReceived !== undefined ? defaultData.taxDeclReceived : true);
           const residencyStatus = fd.get('residencyStatus') || (isEditMode ? defaultData.residencyStatus : '') || 'Australian Resident';
           const paygCalcMethod = fd.get('paygCalcMethod') || (isEditMode ? defaultData.paygCalcMethod : '') || 'ATO Scale';
-          const formEmploymentType = fd.get('employmentType') || (isEditMode ? defaultData.employmentType : '') || employmentType || 'FULL_TIME';
+          const resolvedEmploymentType = fd.get('EmploymentType') || fd.get('employmentType') || employmentType || (isEditMode ? defaultData.employmentType : '') || 'FULL_TIME';
+          const formEmploymentType = resolvedEmploymentType;
           const defaultBreakMinutes = fd.get('defaultBreakMinutes') ? parseInt(fd.get('defaultBreakMinutes'), 10) : (isEditMode && defaultData.defaultBreakMinutes ? defaultData.defaultBreakMinutes : 30);
           const tfnStatus = fd.get('tfnStatus') || (isEditMode ? defaultData.tfnStatus : '') || 'Provided';
 
           if (driverFormPayType === 'Hourly' && !isEditMode) {
-            if (!fd.get('employmentType')) {
-              showToast("Please select an Employment Type in Payroll Information.", "error");
+            if (!resolvedEmploymentType) {
+              showToast("Please select an Employment Type in Employment or Payroll Information.", "error");
               return;
             }
             if (!fd.get('tfnStatus')) {
@@ -4670,29 +5031,83 @@ export default function Drivers() {
             }
           }
 
-          // Validate mandatory personal fields based on company configuration
-          const fnMeta = getFieldMeta('firstName');
-          if (fnMeta.visible && fnMeta.required && !firstName.trim()) {
-            showToast("First Name is required by company policy.", "error");
+          // 1. Mandatory Personal fields
+          if (!firstName || !firstName.trim()) {
+            showToast("First Name is mandatory.", "error");
             return;
           }
-          const lnMeta = getFieldMeta('lastName');
-          if (lnMeta.visible && lnMeta.required && !lastName.trim()) {
-            showToast("Last Name is required by company policy.", "error");
+          if (!lastName || !lastName.trim()) {
+            showToast("Last Name is mandatory.", "error");
             return;
           }
-          const natMeta = getFieldMeta('nationality');
-          if (natMeta.visible && natMeta.required && !nationality.trim()) {
-            showToast("Nationality is required by company policy.", "error");
+          if (!dob) {
+            showToast("Date of Birth is mandatory.", "error");
             return;
           }
-          const phoneMeta = getFieldMeta('phone');
-          if (phoneMeta.visible && phoneMeta.required && !phone.trim()) {
-            showToast("Phone Number is required by company policy.", "error");
+          if (!gender || !gender.trim()) {
+            showToast("Gender is mandatory.", "error");
+            return;
+          }
+          if (!phone || !phone.trim()) {
+            showToast("Phone Number is mandatory.", "error");
+            return;
+          }
+          if (!email || !email.trim()) {
+            showToast("Email Address is mandatory for driver login.", "error");
+            return;
+          }
+          if (!emergencyContactName || !emergencyContactName.trim()) {
+            showToast("Emergency Contact Name is mandatory.", "error");
+            return;
+          }
+          if (!emergencyContactNumber || !emergencyContactNumber.trim()) {
+            showToast("Emergency Contact Number is mandatory.", "error");
             return;
           }
 
-          // Collect company custom fields
+          // 2. Mandatory Employment fields
+          if (!role || !role.trim()) {
+            showToast("Driver Role is mandatory.", "error");
+            return;
+          }
+          if (!reportsTo || !reportsTo.trim() || reportsTo === '—') {
+            showToast("Reports To (Manager) is mandatory.", "error");
+            return;
+          }
+          if (!employmentType && !formEmploymentType) {
+            showToast("Employment Type is mandatory.", "error");
+            return;
+          }
+
+          // 3. Mandatory Licence fields
+          if (!selectedLicenceClass || !selectedLicenceClass.trim()) {
+            showToast("Licence Class is mandatory.", "error");
+            return;
+          }
+          if (!licenceNumber || !licenceNumber.trim()) {
+            showToast("Licence Number is mandatory.", "error");
+            return;
+          }
+          if (!licenseIssueDate) {
+            showToast("Licence Issue Date is mandatory.", "error");
+            return;
+          }
+          if (!licenseExpiry) {
+            showToast("Licence Expiry Date is mandatory.", "error");
+            return;
+          }
+
+          // 4. Mandatory Licence Document Upload
+          const hasLicenceDoc = Boolean(
+            (driverLicenceDoc && (driverLicenceDoc.fileUrl || driverLicenceDoc.file)) ||
+            (isEditMode && (selectedDriver?.licenseDocUrl || (selectedDriver?.documents && selectedDriver.documents.some(d => d.type?.toLowerCase().includes('licence')))))
+          );
+          if (!hasLicenceDoc) {
+            showToast("Driver Licence Document upload is mandatory.", "error");
+            return;
+          }
+
+          // Collect company custom fields if any
           const customFieldsData = {};
           let missingRequiredCustom = null;
           (personalFieldsConfig.customFields || []).forEach(cf => {
@@ -4724,7 +5139,9 @@ export default function Drivers() {
             state,
             postalCode,
             role,
-            employmentType: formEmploymentType,
+            reportsTo,
+            managerId: reportsTo,
+            employmentType: formEmploymentType || employmentType,
             branch,
             status,
             shift,
@@ -4873,7 +5290,9 @@ export default function Drivers() {
                   issueDate: safeDateToLocale(licenseIssueDate, 'en-AU', '—'),
                   licenseIssueDate: safeDateToYMD(licenseIssueDate),
                   licenseExpiry: safeDateToYMD(licenseExpiry),
-                  employmentType: employmentType,
+                  employmentType: createdDriver.employmentType || formEmploymentType || employmentType,
+                  reportsTo: reportsTo,
+                  managerId: reportsTo,
                   status: status,
                   role: role,
                   category: category,
@@ -5084,51 +5503,29 @@ export default function Drivers() {
                   />
                 </div>
                 <div className="col-span-1 md:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
-                  {getFieldMeta('firstName').visible && (
-                    <InputField label="First Name" optional={!getFieldMeta('firstName').required} defaultValue={isEditMode ? defaultData.firstName : ''} />
-                  )}
-                  {getFieldMeta('lastName').visible && (
-                    <InputField label="Last Name" optional={!getFieldMeta('lastName').required} defaultValue={isEditMode ? defaultData.lastName : ''} />
-                  )}
-                  {getFieldMeta('empId').visible && (
-                    <InputField label="Employee ID (Manual Edit Option)" optional={!getFieldMeta('empId').required} defaultValue={isEditMode ? defaultData.empId : ''} placeholder="e.g. DRV-009" />
-                  )}
-                  {getFieldMeta('dob').visible && (
-                    <InputField label="Date of Birth" type="date" optional={!getFieldMeta('dob').required} defaultValue={isEditMode ? defaultData.dob : ''} />
-                  )}
-                  {getFieldMeta('age').visible && (
-                    <InputField label="Age" type="text" optional={!getFieldMeta('age').required} defaultValue={isEditMode ? defaultData.age : ''} placeholder="e.g. 34" />
-                  )}
-                  {getFieldMeta('gender').visible && (
-                    <InputField label="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} optional={!getFieldMeta('gender').required} defaultValue={isEditMode ? (defaultData.gender || '') : ''} />
-                  )}
-                  {getFieldMeta('nationality').visible && (
-                    <InputField label="Nationality" optional={!getFieldMeta('nationality').required} defaultValue={isEditMode ? defaultData.nationality : ''} />
-                  )}
-                  {getFieldMeta('phone').visible && (
-                    <InputField label="Phone Number" optional={!getFieldMeta('phone').required} defaultValue={isEditMode ? defaultData.phone : ''} />
-                  )}
-                  {getFieldMeta('email').visible && (
-                    <InputField label="Email Address" optional={!getFieldMeta('email').required} value={driverFormEmail} onChange={(e) => setDriverFormEmail(e.target.value)} defaultValue={isEditMode ? defaultData.email : ''} placeholder="e.g. driver@gmail.com (Login Email)" />
-                  )}
-                  {getFieldMeta('emergencyContactName').visible && (
-                    <InputField label="Emergency Contact Name" optional={!getFieldMeta('emergencyContactName').required} defaultValue={isEditMode ? defaultData.emergencyContactName : ''} />
-                  )}
-                  {getFieldMeta('emergencyContactPhone').visible && (
-                    <InputField label="Emergency Contact Number" optional={!getFieldMeta('emergencyContactPhone').required} defaultValue={isEditMode ? defaultData.emergencyContactPhone : ''} />
-                  )}
-                  {getFieldMeta('address').visible && (
-                    <InputField label="Residential Address" className="sm:col-span-2" optional={!getFieldMeta('address').required} defaultValue={isEditMode ? defaultData.address : ''} />
-                  )}
-                  {getFieldMeta('city').visible && (
-                    <InputField label="City" optional={!getFieldMeta('city').required} defaultValue={isEditMode ? defaultData.city : ''} />
-                  )}
-                  {getFieldMeta('state').visible && (
-                    <InputField label="State" optional={!getFieldMeta('state').required} defaultValue={isEditMode ? defaultData.state : ''} />
-                  )}
-                  {getFieldMeta('postalCode').visible && (
-                    <InputField label="Postal Code" optional={!getFieldMeta('postalCode').required} defaultValue={isEditMode ? defaultData.postalCode : ''} />
-                  )}
+                  <InputField label="First Name" name="FirstName" optional={false} defaultValue={isEditMode ? defaultData.firstName : ''} placeholder="e.g. John" />
+                  <InputField label="Last Name" name="LastName" optional={false} defaultValue={isEditMode ? defaultData.lastName : ''} placeholder="e.g. Smith" />
+                  <InputField label="Employee ID (Manual Edit Option)" name="EmployeeIDManualEditOption" optional={true} defaultValue={isEditMode ? defaultData.empId : ''} placeholder="e.g. DRV-009" />
+                  <InputField label="Date of Birth" name="DateofBirth" type="date" optional={false} defaultValue={isEditMode ? defaultData.dob : ''} />
+                  <InputField label="Age" name="Age" type="text" optional={true} defaultValue={isEditMode ? defaultData.age : ''} placeholder="e.g. 34" />
+                  <InputField label="Gender" name="Gender" type="select" options={['Male', 'Female', 'Other', 'Prefer not to say']} optional={false} defaultValue={isEditMode ? (defaultData.gender || 'Male') : 'Male'} />
+                  <InputField label="Nationality" name="Nationality" optional={true} defaultValue={isEditMode ? defaultData.nationality : ''} placeholder="e.g. Australian" />
+                  <InputField label="Phone Number" name="PhoneNumber" optional={false} defaultValue={isEditMode ? defaultData.phone : ''} placeholder="e.g. 0412 345 678" />
+                  <InputField label="Email Address" name="EmailAddress" optional={false} value={driverFormEmail} onChange={(e) => setDriverFormEmail(e.target.value)} defaultValue={isEditMode ? defaultData.email : ''} placeholder="e.g. driver@gmail.com (Login Email)" />
+                  <InputField label="Emergency Contact Name" name="EmergencyContactName" optional={false} defaultValue={isEditMode ? defaultData.emergencyContactName : ''} placeholder="e.g. Sarah Smith (Spouse)" />
+                  <InputField label="Emergency Contact Number" name="EmergencyContactNumber" optional={false} defaultValue={isEditMode ? defaultData.emergencyContactPhone : ''} placeholder="e.g. 0412 999 888" />
+
+                  {/* Residential Address with Auto-suggest & Prefill for Address, City, State, Postcode */}
+                  <AddressAutocompleteField
+                    addressValue={driverFormAddress}
+                    onAddressChange={setDriverFormAddress}
+                    cityValue={driverFormCity}
+                    onCityChange={setDriverFormCity}
+                    stateValue={driverFormState}
+                    onStateChange={setDriverFormState}
+                    postalCodeValue={driverFormPostalCode}
+                    onPostalCodeChange={setDriverFormPostalCode}
+                  />
 
                   {/* Company Custom Fields */}
                   {personalFieldsConfig.customFields?.filter(cf => cf.visible !== false).map(cf => (
@@ -5153,15 +5550,28 @@ export default function Drivers() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
                 <InputField 
                   label="Driver Role" 
+                  name="DriverRole"
                   type="select" 
-                  options={personalFieldsConfig.roles?.length > 0 ? personalFieldsConfig.roles : ['Driver']} 
-                  defaultValue={isEditMode ? (defaultData.role || '') : ''} 
+                  optional={false}
+                  options={companyRoles?.length > 0 ? companyRoles : ['Driver']} 
+                  defaultValue={isEditMode ? (defaultData.role || 'Driver') : 'Driver'} 
+                />
+                <InputField 
+                  label="Reports To" 
+                  name="ReportsTo"
+                  type="select" 
+                  optional={false}
+                  options={companyManagers} 
+                  placeholder={companyManagers.length === 0 ? "No managers assigned yet" : "Select Reports To"}
+                  defaultValue={isEditMode ? (defaultData.reportsTo || '') : ''} 
                 />
                 <InputField 
                   label="Employment Type" 
+                  name="EmploymentType"
                   type="select" 
+                  optional={false}
                   options={['Full Time', 'Part Time', 'Casual', 'Contractor']} 
-                  defaultValue={isEditMode ? (defaultData.employmentType || '') : ''} 
+                  defaultValue={isEditMode ? (defaultData.employmentType || 'Full Time') : 'Full Time'} 
                 />
                 <MultiSelectField 
                   label="Branch" 
@@ -5170,40 +5580,37 @@ export default function Drivers() {
                   selectedValues={selectedBranches}
                   onChange={setSelectedBranches}
                   placeholder={companyBranches.length === 0 ? "No branches created yet" : "Select Branch (Multiple)"}
-                  optional={false}
+                  optional={true}
                 />
-                <InputField 
-                  label="Reports To" 
-                  type="select" 
-                  options={companyManagers} 
-                  placeholder={companyManagers.length === 0 ? "No managers assigned yet" : "Select Reports To"}
-                  defaultValue={isEditMode ? (defaultData.reportsTo || '') : ''} 
-                />
-                <InputField label="Joining Date" type="date" defaultValue={isEditMode ? defaultData.joiningDate : ''} />
-                <InputField label="Driver Status" type="select" options={['Available', 'On Duty', 'Off Duty', 'On Leave', 'Unavailable']} defaultValue={isEditMode ? (selectedDriver?.status || '') : ''} />
-                <InputField label="Shift" type="select" options={['Morning', 'Afternoon', 'Night', 'Rotating']} defaultValue={isEditMode ? defaultData.shift : ''} />
-                <InputField label="Driver Category" type="select" options={['Heavy Rig', 'Medium Rig', 'Light Rig', 'Multi Combination']} defaultValue={isEditMode ? defaultData.category : ''} />
+                <InputField label="Shift" name="Shift" type="select" options={['Morning', 'Afternoon', 'Night', 'Rotating']} optional={true} defaultValue={isEditMode ? defaultData.shift : ''} />
+                <InputField label="Driver Category" name="DriverCategory" type="select" options={['Heavy Rig', 'Medium Rig', 'Light Rig', 'Multi Combination']} optional={true} defaultValue={isEditMode ? defaultData.category : ''} />
+                <InputField label="Joining Date" name="JoiningDate" type="date" optional={true} defaultValue={isEditMode ? defaultData.joiningDate : ''} />
+                <InputField label="Driver Status" name="DriverStatus" type="select" options={['Available', 'On Duty', 'Off Duty', 'On Leave', 'Unavailable']} optional={true} defaultValue={isEditMode ? (selectedDriver?.status || 'Available') : 'Available'} />
               </div>
             </div>
 
             {/* 3. Licence Information */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
               <h2 className="text-sm font-black text-slate-900 mb-6">3. Licence Information</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-5 mb-6">
                 <InputField 
                   label="Licence Class" 
                   name="LicenceClass"
                   type="select" 
+                  optional={false}
                   options={['HR (Heavy Rigid)', 'MR (Medium Rigid)', 'LR (Light Rigid)', 'HC (Heavy Combination)', 'MC (Multi Combination)', 'Car (C)', 'R (Rider)']} 
                   defaultValue={isEditMode ? (defaultData.licenceClass || defaultData.licenceType || "") : ""} 
                 />
-                <InputField label="Licence Number" name="LicenceNumber" defaultValue={isEditMode ? defaultData.licenceNo : ""} placeholder="e.g. LIC-998822" />
-                <InputField label="Licence State" name="LicenceState" type="select" options={['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT']} defaultValue={isEditMode ? defaultData.licenceState : ""} />
-                <InputField label="Expiry Date" name="ExpiryDate" type="date" defaultValue={isEditMode ? defaultData.licenseExpiry : ""} />
+                <InputField label="Licence Number" name="LicenceNumber" optional={false} defaultValue={isEditMode ? defaultData.licenceNo : ""} placeholder="e.g. LIC-998822" />
+                <InputField label="Licence State" name="LicenceState" type="select" options={['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT']} defaultValue={isEditMode ? defaultData.licenceState : "NSW"} optional={true} />
+                <InputField label="Issue Date" name="IssueDate" type="date" optional={false} defaultValue={isEditMode ? defaultData.licenseIssueDate : ""} />
+                <InputField label="Expiry Date" name="ExpiryDate" type="date" optional={false} defaultValue={isEditMode ? defaultData.licenseExpiry : ""} />
               </div>
 
               <div className="w-full">
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">Licence Document Upload (Optional)</label>
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-2">
+                  Licence Document Upload <span className="text-rose-500">* (Mandatory)</span>
+                </label>
                 <LicenceFileUploadBox value={driverLicenceDoc} onChange={setDriverLicenceDoc} />
               </div>
             </div>
@@ -6056,7 +6463,16 @@ export default function Drivers() {
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                   <div className="flex justify-between items-center mb-4">
                     <SectionHeading title="Current Assignment" />
-                    <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors">View Assignments &rarr;</button>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        fetchAvailableTrucks();
+                        setIsAssignTruckModalOpen(true);
+                      }}
+                      className="text-[10px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      {selectedDriver.currentVehicle ? 'Change Truck ➔' : '+ Assign Truck ➔'}
+                    </button>
                   </div>
                   {selectedDriver.currentVehicle ? (
                     <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100">
@@ -6067,15 +6483,48 @@ export default function Drivers() {
                         <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[9px] font-black uppercase tracking-widest">Assigned</span>
                       </div>
                       <div className="space-y-1">
-                        <DataRow label="Vehicle Type" value={selectedDriver.currentVehicle.category || '—'} />
-                        <DataRow label="Status" value={selectedDriver.currentVehicle.status || '—'} />
+                        <DataRow label="Vehicle Type" value={selectedDriver.currentVehicle.category || selectedDriver.currentVehicle.type || 'Prime Mover'} />
+                        <DataRow label="Status" value={selectedDriver.currentVehicle.status || 'ASSIGNED'} />
+                        {selectedDriver.currentVehicle.assignedTrailer && (
+                          <DataRow label="Attached Trailer" value={selectedDriver.currentVehicle.assignedTrailer.rego || selectedDriver.currentVehicle.assignedTrailer.make || 'Trailer Paired'} />
+                        )}
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-indigo-100 flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            fetchAvailableTrucks();
+                            setIsAssignTruckModalOpen(true);
+                          }}
+                          className="px-2.5 py-1 bg-white hover:bg-slate-50 text-indigo-700 font-bold text-[10px] rounded-lg border border-indigo-200 transition-colors cursor-pointer"
+                        >
+                          Change Truck
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleUnassignTruckFromDriver}
+                          disabled={isAssigningTruck}
+                          className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[10px] rounded-lg border border-rose-200 transition-colors cursor-pointer"
+                        >
+                          Unassign
+                        </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                      <Truck size={24} className="mx-auto mb-2 text-slate-300" />
+                    <div className="text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
+                      <Truck size={24} className="mx-auto text-slate-300" />
                       <p className="text-[11px] font-bold text-slate-700">No Vehicle Currently Assigned</p>
-                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">This driver has no active assignment.</p>
+                      <p className="text-[10px] text-slate-400 font-medium">This driver has no active truck assigned.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          fetchAvailableTrucks();
+                          setIsAssignTruckModalOpen(true);
+                        }}
+                        className="mt-2 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                      >
+                        <Plus size={13} /> Assign Truck to Driver
+                      </button>
                     </div>
                   )}
                 </div>
@@ -6097,8 +6546,8 @@ export default function Drivers() {
                     <DataRow label="Pay Rate" value={formatPayRate(selectedDriver.payRate, selectedDriver.payType)} />
                     <DataRow label="Pay Type" value={selectedDriver.payType || '—'} />
                     <DataRow label="Super Fund" value={selectedDriver.superFund || superInfo.fundName || '—'} />
-                    <DataRow label="TFN" value={selectedDriver.tfn ? `*** *** ${String(selectedDriver.tfn).slice(-3)}` : '—'} />
-                    <DataRow label="Bank Account" value={selectedDriver.bankAccount ? `**** ${String(selectedDriver.bankAccount).slice(-4)}` : '—'} />
+                    <DataRow label="TFN" value={(selectedDriver.tfn || selectedDriver.taxNumber) ? `*** *** ${String(selectedDriver.tfn || selectedDriver.taxNumber).slice(-3)}` : '—'} />
+                    <DataRow label="Bank Account" value={(selectedDriver.bankAccount || selectedDriver.accountNumber) ? `**** ${String(selectedDriver.bankAccount || selectedDriver.accountNumber).slice(-4)}` : '—'} />
                     <DataRow label="Days Worked (YTD)" value={selectedDriver.daysWorkedYTD ? `${selectedDriver.daysWorkedYTD} days` : '—'} />
                   </div>
                 </div>
