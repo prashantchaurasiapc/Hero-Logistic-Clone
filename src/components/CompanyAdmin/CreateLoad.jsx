@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   ArrowLeft, Save, Zap, Plus, Trash2, GripVertical,
-  MapPin, User, Phone, Calendar, Clock, Package, Truck,
+  MapPin, User, Users, Phone, Calendar, Clock, Package, Truck,
   Upload, ChevronDown, ChevronLeft, AlertCircle, CheckCircle, Info,
   Camera, X, Search, Flag, MoreVertical, DollarSign
 } from 'lucide-react';

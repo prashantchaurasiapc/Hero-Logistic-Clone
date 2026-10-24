@@ -3000,10 +3000,10 @@ export default function Loads() {
 
   const filtered = currentLoadsData.filter(l => {
     const q = search.toLowerCase();
-    const searchMatch = !q || l.id.toLowerCase().includes(q) || (l.customer || '').toLowerCase().includes(q)
-      || (l.driver || '').toLowerCase().includes(q) || l.from.toLowerCase().includes(q) || l.to.toLowerCase().includes(q);
+    const searchMatch = !q || (l.id || '').toLowerCase().includes(q) || (l.customer || '').toLowerCase().includes(q)
+      || (l.driver || '').toLowerCase().includes(q) || (l.from || '').toLowerCase().includes(q) || (l.to || '').toLowerCase().includes(q);
 
-    const tabStatus = tabs[activeTab].status;
+    const tabStatus = tabs[activeTab]?.status || 'ALL';
     const tabMatch = tabStatus === 'ALL'
       || l.status === tabStatus
       || (tabStatus === 'DRAFT' && l.status === 'ASSIGNED')
@@ -3016,7 +3016,7 @@ export default function Loads() {
     const customerMatch = customerFilter === 'All Customer' || l.customer === customerFilter;
     const driverMatch = driverFilter === 'All Drivers' || l.driver === driverFilter;
     const vehicleMatch = vehicleFilter === 'All Vehicles' || (l.truck && l.truck.includes(vehicleFilter));
-    const locationMatch = locationFilter === 'All Locations' || l.from === locationFilter || l.to === locationFilter;
+    const locationMatch = locationFilter === 'All Locations' || (l.from && l.from === locationFilter) || (l.to && l.to === locationFilter);
     
     const dateMatch = (!dateFrom || (l.date && l.date >= dateFrom)) && (!dateTo || (l.date && l.date <= dateTo));
 
