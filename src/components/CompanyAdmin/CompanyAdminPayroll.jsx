@@ -111,7 +111,57 @@ export default function CompanyAdminPayroll() {
         params: searchVal ? { search: searchVal } : {}
       });
       const arr = res.data?.data || res.data || [];
-      setDriverPay(Array.isArray(arr) ? arr : []);
+      let baseList = Array.isArray(arr) ? [...arr] : [];
+
+      // Merge auto-calculated driver load pay from completed deliveries
+      try {
+        const completedLoads = JSON.parse(
+          localStorage.getItem('hero_company_driver_load_payroll') || 
+          localStorage.getItem('hero_driver_completed_earnings') || '[]'
+        );
+        if (Array.isArray(completedLoads) && completedLoads.length > 0) {
+          const loadPayItems = completedLoads.map((c, i) => ({
+            id: c.id || `LOAD-PAY-${c.loadId || i}`,
+            driver: {
+              firstName: c.driverName?.split(' ')[0] || 'Assigned',
+              lastName: c.driverName?.split(' ').slice(1).join(' ') || 'Driver',
+              driverCode: `LOAD-${c.loadRef || c.loadId}`,
+              licenseClass: 'HC / MC Heavy Combination'
+            },
+            periodStart: c.deliveredAt || new Date().toISOString(),
+            periodEnd: c.deliveredAt || new Date().toISOString(),
+            basePay: parseFloat(c.driverPay) || 0,
+            loadAllowance: parseFloat(c.driverPay) || 0,
+            distanceAllow: 0,
+            otherAllowance: 0,
+            grossEarnings: parseFloat(c.driverPay) || 0,
+            paygTax: 0,
+            superAmount: 0,
+            netPay: parseFloat(c.driverPay) || 0,
+            status: 'APPROVED',
+            notes: c.scheduleTitle || 'Delivered load auto-calculated pay'
+          }));
+
+          const existingCodes = new Set(baseList.map(b => b.driver?.driverCode || b.id));
+          loadPayItems.forEach(item => {
+            if (!existingCodes.has(item.driver?.driverCode) && !existingCodes.has(item.id)) {
+              baseList.unshift(item);
+            }
+          });
+        }
+      } catch (e) {}
+
+      if (searchVal.trim()) {
+        const q = searchVal.toLowerCase();
+        baseList = baseList.filter(row => 
+          (row.driver?.firstName || '').toLowerCase().includes(q) ||
+          (row.driver?.lastName || '').toLowerCase().includes(q) ||
+          (row.driver?.driverCode || '').toLowerCase().includes(q) ||
+          (row.notes || '').toLowerCase().includes(q)
+        );
+      }
+
+      setDriverPay(baseList);
     } catch (err) {
       console.error('Driver pay fetch error:', err);
     }
