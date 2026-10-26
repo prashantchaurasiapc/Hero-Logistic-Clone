@@ -1164,6 +1164,31 @@ Exported On: ${new Date().toLocaleString()}`;
           setCustomerInvoices(initialInvs);
           localStorage.setItem(`hero_customer_invoices_${selectedCustomer.id}`, JSON.stringify(initialInvs));
         }
+
+        // Fetch real backend invoices for this customer dynamically
+        api.get(`/accounts/invoices?customerId=${selectedCustomer.id}`)
+          .catch(() => api.get(`/finance/invoices?customerId=${selectedCustomer.id}`))
+          .then(res => {
+            const apiInvs = res?.data?.data || res?.data || [];
+            if (Array.isArray(apiInvs) && apiInvs.length > 0) {
+              const mapped = apiInvs.map(inv => ({
+                id: inv.id || inv.invoiceNumber,
+                invoiceNo: inv.invoiceNumber || inv.id,
+                loadRef: inv.load?.loadRef || inv.loadRef || `Load #${inv.loadId || 'General'}`,
+                issueDate: inv.issueDate ? new Date(inv.issueDate).toISOString().split('T')[0] : (inv.createdAt ? new Date(inv.createdAt).toISOString().split('T')[0] : 'Today'),
+                dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : 'Net 14 Days',
+                pricingBasis: inv.pricingBasis || 'Customer Pricing Structure',
+                subtotal: parseFloat(inv.subtotal || inv.amount || 0),
+                gst: parseFloat(inv.gst || (inv.amount ? inv.amount * 0.1 : 0)),
+                total: parseFloat(inv.total || inv.amount || 0),
+                status: inv.status || 'PENDING',
+                notes: inv.notes || 'Generated per Customer Billing Rules'
+              }));
+              setCustomerInvoices(mapped);
+              localStorage.setItem(`hero_customer_invoices_${selectedCustomer.id}`, JSON.stringify(mapped));
+            }
+          })
+          .catch(() => {});
       } catch (e) {}
 
       api.get(`/company-admin/customers/${selectedCustomer.id}/surcharges`)

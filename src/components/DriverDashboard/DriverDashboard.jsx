@@ -72,7 +72,8 @@ const DriverDashboard = () => {
         navigate('/driver/start-work');
       } else {
         const parsed = JSON.parse(stored);
-        const hoursPassed = (Date.now() - (parsed.timestamp || 0)) / (1000 * 60 * 60);
+        const subTime = parsed.submittedAt || parsed.timestamp || 0;
+        const hoursPassed = (Date.now() - subTime) / (1000 * 60 * 60);
         if (hoursPassed >= 24) {
           navigate('/driver/start-work');
         }

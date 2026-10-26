@@ -952,24 +952,24 @@ const Vehicles = () => {
     setTimeout(() => {
       try {
         const lowerName = (originalName || '').toLowerCase();
-        let detectedName = 'Vehicle Registration Certificate';
+        let detectedName = '';
         let detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
         let detectedNo = '';
         let detectedIssueDate = '';
         let detectedExpiryDate = '';
 
-        // Check if phone/camera timestamp filename (e.g. 20170808_130333.jpg or IMG_20230514_...)
+        // Check if phone/camera timestamp filename (e.g. 20170606_120333.jpg or IMG_20230514_...)
         const timestampMatch = originalName.match(/(20\d{2})[-_]?(\d{2})[-_]?(\d{2})[_-](\d{2})(\d{2})?/);
         if (timestampMatch) {
-          const [_, y, m, d, hh] = timestampMatch;
+          const [_, y, m, d, hh, mm] = timestampMatch;
           const monthNum = parseInt(m, 10);
           const dayNum = parseInt(d, 10);
           if (monthNum >= 1 && monthNum <= 12 && dayNum >= 1 && dayNum <= 31) {
             detectedIssueDate = `${y}-${m}-${d}`;
             const expYear = parseInt(y, 10) + 1;
             detectedExpiryDate = `${expYear}-${m}-${d}`;
-            detectedNo = `DOC-${y}${m}${d}-${hh || '01'}`;
-            detectedName = `Vehicle Registration & Compliance (${originalName.split('.')[0]})`;
+            detectedNo = `DOC-${y}${m}${d}-${hh || '12'}${mm || '01'}`;
+            detectedName = `Vehicle Registration & Compliance (${originalName.replace(/\.[^.]+$/, '')})`;
             detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
           }
         }
@@ -979,10 +979,10 @@ const Vehicles = () => {
             detectedName = 'Commercial Motor Vehicle Insurance Policy';
             detectedCategory = 'Insurance';
             detectedNo = `POL-${Math.floor(200000 + Math.random() * 700000)}`;
-          } else if (lowerName.includes('inspection') || lowerName.includes('roadworthy') || lowerName.includes('safety') || lowerName.includes('pink') || lowerName.includes('brown')) {
-            detectedName = 'Certificate of Roadworthiness';
+          } else if (lowerName.includes('inspection') || lowerName.includes('roadworthy') || lowerName.includes('safety') || lowerName.includes('pink') || lowerName.includes('brown') || lowerName.includes('rwc')) {
+            detectedName = 'Certificate of Roadworthiness & Safety';
             detectedCategory = 'Compliance & Licences';
-            detectedNo = `RW-${Math.floor(300000 + Math.random() * 600000)}`;
+            detectedNo = `RWC-${Math.floor(300000 + Math.random() * 600000)}`;
           } else if (lowerName.includes('trailer') || lowerName.includes('trl')) {
             detectedName = 'Trailer Safety & Compliance Certificate';
             detectedCategory = 'Trailer Documents';
@@ -993,15 +993,18 @@ const Vehicles = () => {
             detectedNo = `NHVR-${Math.floor(500000 + Math.random() * 400000)}`;
           } else if (lowerName.includes('rego') || lowerName.includes('registration')) {
             detectedName = 'Vehicle Registration Certificate';
-            detectedCategory = 'Truck Documents';
-            detectedNo = (managingVehicle?.reg && !managingVehicle.reg.startsWith('VEH-'))
-              ? managingVehicle.reg 
-              : `REG-${Math.floor(100000 + Math.random() * 900000)}`;
+            detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
+            detectedNo = `REG-${Math.floor(100000 + Math.random() * 900000)}`;
           } else {
             const cleanBase = originalName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').trim();
-            detectedName = cleanBase.length > 3 ? cleanBase.charAt(0).toUpperCase() + cleanBase.slice(1) : 'Vehicle Compliance Document';
+            const formatted = cleanBase.length > 2 
+              ? cleanBase.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+              : 'Vehicle Compliance Document';
+            detectedName = formatted;
             detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
-            detectedNo = `DOC-${Math.floor(100000 + Math.random() * 900000)}`;
+            // Dynamic hash from filename so each file gets its own distinct document number
+            const hash = Math.abs(originalName.split('').reduce((acc, char) => ((acc << 5) - acc) + char.charCodeAt(0), 0));
+            detectedNo = `DOC-${String(hash).slice(0, 6)}`;
           }
         }
 
@@ -1019,7 +1022,7 @@ const Vehicles = () => {
 
         setNewDocForm(prev => ({
           ...prev,
-          docName: detectedName,
+          docName: detectedName || 'Vehicle Compliance Document',
           docNo: detectedNo,
           category: detectedCategory,
           asset: matchedAsset,
