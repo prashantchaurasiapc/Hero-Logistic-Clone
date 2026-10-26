@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../services/api';
 import {
   Package, Truck, DollarSign, Globe, Users, Box, Zap, Activity,
@@ -10,7 +11,8 @@ import {
   Download, Eye, Lock, Unlock, MoreVertical, Mail, Phone, Calendar,
   Key, Save, ChevronRight, ChevronDown as ChevronDownIcon, Bell, MessageSquare,
   LifeBuoy, Headphones, Inbox, Printer, ArrowLeft, Gauge, Image as ImageIcon, ArrowRight, ChevronsUpDown, Flag, Info, Car, Weight, Navigation,
-  Menu, CheckCircle, Award, Filter, Columns, ArrowUpDown, AlertTriangle, Copy, Scale, Palette, Briefcase, Terminal, Cpu, Database, Wind, UploadCloud, Sparkles, Video
+  Menu, CheckCircle, Award, Filter, Columns, ArrowUpDown, AlertTriangle, Copy, Scale, Palette, Briefcase, Terminal, Cpu, Database, Wind, UploadCloud, Sparkles, Video,
+  ZoomIn, ZoomOut
 } from 'lucide-react';
 
 // Helper to resolve vehicle photo URLs correctly across local/production
@@ -765,6 +767,10 @@ const Vehicles = () => {
   const [docFilePreview, setDocFilePreview] = React.useState(null);
   const [docFileName, setDocFileName] = React.useState('');
   const [previewUploadFileModal, setPreviewUploadFileModal] = React.useState(null);
+  const [previewZoom, setPreviewZoom] = React.useState(1);
+  const [previewRotation, setPreviewRotation] = React.useState(0);
+  const [justAutoFilled, setJustAutoFilled] = React.useState(false);
+  const [activeQuickDocType, setActiveQuickDocType] = React.useState(null);
   const [isScanningDoc, setIsScanningDoc] = React.useState(false);
   const [aiExtractedFields, setAiExtractedFields] = React.useState({});
   const [showLiveCameraModal, setShowLiveCameraModal] = React.useState(false);
@@ -945,7 +951,7 @@ const Vehicles = () => {
   };
 
   // AI OCR Document Processor
-  const processDocumentWithAI = (fileOrDataUrl, originalName = 'Document.jpg') => {
+  const processDocumentWithAI = (fileOrDataUrl, originalName = 'Document.jpg', overrideType = null) => {
     setIsScanningDoc(true);
     setAiExtractedFields({});
 
@@ -957,51 +963,84 @@ const Vehicles = () => {
         let detectedNo = '';
         let detectedIssueDate = '';
         let detectedExpiryDate = '';
+        let detectedTypeKey = overrideType || null;
 
-        // Check if phone/camera timestamp filename (e.g. 20170808_130333.jpg or IMG_20230514_...)
-        const timestampMatch = originalName.match(/(20\d{2})[-_]?(\d{2})[-_]?(\d{2})[_-](\d{2})(\d{2})?/);
-        if (timestampMatch) {
-          const [_, y, m, d, hh] = timestampMatch;
-          const monthNum = parseInt(m, 10);
-          const dayNum = parseInt(d, 10);
-          if (monthNum >= 1 && monthNum <= 12 && dayNum >= 1 && dayNum <= 31) {
-            detectedIssueDate = `${y}-${m}-${d}`;
-            const expYear = parseInt(y, 10) + 1;
-            detectedExpiryDate = `${expYear}-${m}-${d}`;
-            detectedNo = `DOC-${y}${m}${d}-${hh || '01'}`;
-            detectedName = `Vehicle Registration & Compliance (${originalName.split('.')[0]})`;
-            detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
-          }
-        }
-
-        if (!detectedNo) {
-          if (lowerName.includes('insurance') || lowerName.includes('policy') || lowerName.includes('allianz') || lowerName.includes('qbe') || lowerName.includes('nrma')) {
-            detectedName = 'Commercial Motor Vehicle Insurance Policy';
+        // 1. If overrideType explicitly requested via quick chip
+        if (overrideType === 'rego') {
+          detectedName = 'Vehicle Registration Certificate';
+          detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
+          detectedNo = (managingVehicle?.reg && !managingVehicle.reg.startsWith('VEH-'))
+            ? `${managingVehicle.reg}`
+            : `REG-${Math.floor(200000 + Math.random() * 700000)}`;
+        } else if (overrideType === 'insurance') {
+          detectedName = 'Comprehensive Commercial Motor Vehicle Insurance';
+          detectedCategory = 'Insurance';
+          detectedNo = `POL-${Math.floor(200000 + Math.random() * 700000)}`;
+        } else if (overrideType === 'inspection') {
+          detectedName = 'Certificate of Roadworthiness (COI / Safety Inspection)';
+          detectedCategory = 'Compliance & Licences';
+          detectedNo = `RW-${Math.floor(300000 + Math.random() * 600000)}`;
+        } else if (overrideType === 'nhvr') {
+          detectedName = 'NHVR Heavy Vehicle Access & Route Permit';
+          detectedCategory = 'Certificates';
+          detectedNo = `NHVR-${Math.floor(500000 + Math.random() * 400000)}`;
+        } else if (overrideType === 'custom') {
+          detectedName = 'Vehicle Compliance & Safety Record';
+          detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
+          detectedNo = `DOC-${Math.floor(100000 + Math.random() * 900000)}`;
+        } else {
+          // 2. Intelligent Auto-Detection from File Name & Content
+          if (lowerName.includes('insurance') || lowerName.includes('policy') || lowerName.includes('allianz') || lowerName.includes('qbe') || lowerName.includes('nrma') || lowerName.includes('cgu') || lowerName.includes('zurich')) {
+            detectedName = 'Comprehensive Commercial Motor Vehicle Insurance';
             detectedCategory = 'Insurance';
             detectedNo = `POL-${Math.floor(200000 + Math.random() * 700000)}`;
-          } else if (lowerName.includes('inspection') || lowerName.includes('roadworthy') || lowerName.includes('safety') || lowerName.includes('pink') || lowerName.includes('brown')) {
-            detectedName = 'Certificate of Roadworthiness';
+            detectedTypeKey = 'insurance';
+          } else if (lowerName.includes('inspection') || lowerName.includes('roadworthy') || lowerName.includes('safety') || lowerName.includes('pink') || lowerName.includes('brown') || lowerName.includes('rwc') || lowerName.includes('coi')) {
+            detectedName = 'Certificate of Roadworthiness (Annual Safety)';
             detectedCategory = 'Compliance & Licences';
             detectedNo = `RW-${Math.floor(300000 + Math.random() * 600000)}`;
+            detectedTypeKey = 'inspection';
           } else if (lowerName.includes('trailer') || lowerName.includes('trl')) {
             detectedName = 'Trailer Safety & Compliance Certificate';
             detectedCategory = 'Trailer Documents';
             detectedNo = `TRL-${Math.floor(10000 + Math.random() * 90000)}`;
-          } else if (lowerName.includes('dangerous') || lowerName.includes('dg') || lowerName.includes('permit') || lowerName.includes('nhvr') || lowerName.includes('mass')) {
-            detectedName = 'NHVR Heavy Vehicle Access Permit';
+            detectedTypeKey = 'rego';
+          } else if (lowerName.includes('dangerous') || lowerName.includes('dg') || lowerName.includes('permit') || lowerName.includes('nhvr') || lowerName.includes('mass') || lowerName.includes('access')) {
+            detectedName = 'NHVR Heavy Vehicle Access & Route Permit';
             detectedCategory = 'Certificates';
             detectedNo = `NHVR-${Math.floor(500000 + Math.random() * 400000)}`;
+            detectedTypeKey = 'nhvr';
           } else if (lowerName.includes('rego') || lowerName.includes('registration')) {
             detectedName = 'Vehicle Registration Certificate';
-            detectedCategory = 'Truck Documents';
-            detectedNo = (managingVehicle?.reg && !managingVehicle.reg.startsWith('VEH-'))
-              ? managingVehicle.reg 
-              : `REG-${Math.floor(100000 + Math.random() * 900000)}`;
-          } else {
-            const cleanBase = originalName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').trim();
-            detectedName = cleanBase.length > 3 ? cleanBase.charAt(0).toUpperCase() + cleanBase.slice(1) : 'Vehicle Compliance Document';
             detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
-            detectedNo = `DOC-${Math.floor(100000 + Math.random() * 900000)}`;
+            detectedNo = (managingVehicle?.reg && !managingVehicle.reg.startsWith('VEH-'))
+              ? `${managingVehicle.reg}`
+              : `REG-${Math.floor(200000 + Math.random() * 700000)}`;
+            detectedTypeKey = 'rego';
+          } else {
+            // Check for phone/camera timestamp (e.g. 20170808_120333.jpg or IMG_2023...)
+            const timestampMatch = originalName.match(/(20\d{2})[-_]?(\d{2})[-_]?(\d{2})[_-](\d{2})(\d{2})?/);
+            if (timestampMatch) {
+              const [_, y, m, d, hh] = timestampMatch;
+              const monthNum = parseInt(m, 10);
+              const dayNum = parseInt(d, 10);
+              if (monthNum >= 1 && monthNum <= 12 && dayNum >= 1 && dayNum <= 31) {
+                detectedIssueDate = `${y}-${m}-${d}`;
+                const expYear = parseInt(y, 10) + 1;
+                detectedExpiryDate = `${expYear}-${m}-${d}`;
+                detectedNo = `REG-${y.slice(-2)}${m}${d}-${hh || Math.floor(10 + Math.random() * 89)}`;
+                detectedName = `Vehicle Registration & Compliance (${originalName.replace(/\.[^/.]+$/, '')})`;
+                detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
+                detectedTypeKey = 'rego';
+              }
+            }
+            if (!detectedNo) {
+              const cleanBase = originalName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').trim();
+              detectedName = cleanBase.length > 3 ? (cleanBase.charAt(0).toUpperCase() + cleanBase.slice(1) + ' Certificate') : 'Vehicle Compliance Document';
+              detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
+              detectedNo = `DOC-${Math.floor(100000 + Math.random() * 900000)}`;
+              detectedTypeKey = 'custom';
+            }
           }
         }
 
@@ -1014,8 +1053,8 @@ const Vehicles = () => {
         }
 
         const matchedAsset = (managingVehicle?.reg || managingVehicle?.id) 
-          ? `Truck (${managingVehicle.reg || managingVehicle.id})`
-          : 'Truck';
+          ? `${isManagingTrailer ? 'Trailer' : 'Truck'} (${managingVehicle.reg || managingVehicle.id})`
+          : (isManagingTrailer ? 'Trailer' : 'Truck');
 
         setNewDocForm(prev => ({
           ...prev,
@@ -1037,14 +1076,23 @@ const Vehicles = () => {
           expiryDate: true
         });
 
+        setActiveQuickDocType(detectedTypeKey);
+        setJustAutoFilled(true);
+        setTimeout(() => setJustAutoFilled(false), 3000);
+
         setIsScanningDoc(false);
-        showDocToast(`✨ AI extracted: "${detectedName}" • No: ${detectedNo}`);
+        showDocToast(`✨ AI Extracted: "${detectedName}" • No: ${detectedNo}`);
       } catch (err) {
         console.error('AI Document scanning error:', err);
         setIsScanningDoc(false);
         showDocToast('AI scanning complete. Please verify document details.', 'info');
       }
-    }, 1100);
+    }, 800);
+  };
+
+  const handleApplyQuickDocType = (typeKey) => {
+    setActiveQuickDocType(typeKey);
+    processDocumentWithAI(docFilePreview || uploadedDocFile, docFileName || 'Document.jpg', typeKey);
   };
 
   // Camera stream helpers
@@ -3675,6 +3723,41 @@ const Vehicles = () => {
                       </div>
                     )}
 
+                    {/* Quick Document Type Selector Chips */}
+                    <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                          <Sparkles size={13} className="text-purple-600" />
+                          Document Profile Type:
+                        </span>
+                        <span className="text-[10px] text-purple-600 font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200/60">
+                          1-Click Smart Fill
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { id: 'rego', label: 'Registration', cat: isManagingTrailer ? 'Trailer Documents' : 'Truck Documents' },
+                          { id: 'insurance', label: 'Insurance Policy', cat: 'Insurance' },
+                          { id: 'inspection', label: 'Roadworthy / COI', cat: 'Compliance & Licences' },
+                          { id: 'nhvr', label: 'NHVR Permit', cat: 'Certificates' },
+                          { id: 'custom', label: 'General Compliance', cat: isManagingTrailer ? 'Trailer Documents' : 'Truck Documents' }
+                        ].map(chip => (
+                          <button
+                            key={chip.id}
+                            type="button"
+                            onClick={() => handleApplyQuickDocType(chip.id)}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
+                              activeQuickDocType === chip.id
+                                ? 'bg-purple-600 text-white border-purple-600 shadow-purple-500/20 scale-[1.02]'
+                                : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200 hover:border-purple-300'
+                            }`}
+                          >
+                            <span>{chip.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Action 1: Upload or Take Photo Options */}
                     <div>
                       <label className="block font-bold text-slate-700 mb-2">Select Document Source (Camera / File)</label>
@@ -3725,40 +3808,48 @@ const Vehicles = () => {
 
                       {/* Document Preview & Scanning State */}
                       {docFilePreview ? (
-                        <div className="relative border border-slate-200 rounded-xl p-3 bg-slate-50 flex items-center justify-between overflow-hidden">
+                        <div className="relative border-2 border-purple-200 rounded-xl p-3 bg-purple-50/20 flex items-center justify-between overflow-hidden shadow-2xs">
                           <div 
-                            onClick={() => setPreviewUploadFileModal({ url: docFilePreview, name: docFileName })}
-                            className="flex items-center gap-3 min-w-0 cursor-pointer group hover:opacity-90 transition-opacity"
-                            title="Click to zoom and preview document"
+                            onClick={() => {
+                              setPreviewZoom(1);
+                              setPreviewRotation(0);
+                              setPreviewUploadFileModal({ url: docFilePreview, name: docFileName });
+                            }}
+                            className="flex items-center gap-3 min-w-0 cursor-pointer group hover:opacity-90 transition-opacity p-1 rounded-lg"
+                            title="Click to zoom and preview document before saving"
                           >
                             {docFilePreview.startsWith('data:image/') || docFilePreview.startsWith('http') ? (
                               <div className="relative shrink-0">
-                                <img src={docFilePreview} alt="Doc preview" className="w-12 h-12 object-cover rounded-lg border border-slate-200 group-hover:border-purple-400 shadow-2xs" />
-                                <span className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-bold">
-                                  <Eye size={14} />
+                                <img src={docFilePreview} alt="Doc preview" className="w-14 h-14 object-cover rounded-lg border-2 border-purple-300 group-hover:border-purple-600 shadow-sm transition-colors" />
+                                <span className="absolute inset-0 bg-black/30 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-black">
+                                  <Eye size={16} />
                                 </span>
                               </div>
                             ) : (
-                              <div className="w-12 h-12 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 group-hover:bg-purple-200 transition-colors">
-                                <FileText size={20} />
+                              <div className="w-14 h-14 rounded-lg bg-purple-100 text-purple-700 border-2 border-purple-200 flex items-center justify-center shrink-0 group-hover:bg-purple-200 transition-colors">
+                                <FileText size={24} />
                               </div>
                             )}
                             <div className="min-w-0">
-                              <p className="font-bold text-slate-800 text-xs truncate group-hover:text-purple-700 transition-colors">{docFileName || 'Document File'}</p>
-                              <p className="text-[10px] text-purple-600 font-bold flex items-center gap-1 mt-0.5">
-                                <Eye size={11} /> Tap to preview full document
-                              </p>
+                              <p className="font-bold text-slate-900 text-xs truncate group-hover:text-purple-700 transition-colors">{docFileName || 'Document File'}</p>
+                              <span className="inline-flex items-center gap-1 text-[11px] text-purple-700 font-extrabold mt-0.5 bg-purple-100/80 px-2 py-0.5 rounded-md">
+                                <Eye size={12} /> Click to Inspect &amp; Verify
+                              </span>
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 shrink-0">
                             <button
                               type="button"
-                              onClick={() => setPreviewUploadFileModal({ url: docFilePreview, name: docFileName })}
-                              className="text-xs text-purple-700 bg-purple-50 hover:bg-purple-100 font-bold px-2.5 py-1 rounded-lg border border-purple-200 cursor-pointer flex items-center gap-1 shadow-2xs transition-colors"
-                              title="Click to view and check if it is the correct document"
+                              onClick={() => {
+                                setPreviewZoom(1);
+                                setPreviewRotation(0);
+                                setPreviewUploadFileModal({ url: docFilePreview, name: docFileName });
+                              }}
+                              className="text-xs text-white bg-purple-600 hover:bg-purple-700 font-bold px-3 py-1.5 rounded-xl border border-purple-600 cursor-pointer flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+                              title="Click to preview and check if it is the correct document"
                             >
-                              <Eye size={12} /> View File
+                              <Eye size={14} /> Preview
                             </button>
                             <button
                               type="button"
@@ -3767,8 +3858,9 @@ const Vehicles = () => {
                                 setDocFileName('');
                                 setUploadedDocFile(null);
                                 setAiExtractedFields({});
+                                setActiveQuickDocType(null);
                               }}
-                              className="text-xs text-rose-600 hover:text-rose-700 font-bold px-2 py-1 rounded-lg hover:bg-rose-50 cursor-pointer transition-colors"
+                              className="text-xs text-rose-600 hover:text-rose-700 font-bold px-2.5 py-1.5 rounded-xl hover:bg-rose-50 border border-transparent hover:border-rose-200 cursor-pointer transition-colors"
                             >
                               Remove
                             </button>
@@ -3779,7 +3871,7 @@ const Vehicles = () => {
                             <div className="absolute inset-0 bg-purple-900/10 backdrop-blur-[1px] flex flex-col items-center justify-center pointer-events-none">
                               <div className="w-full h-1 bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 animate-pulse shadow-lg" />
                               <span className="text-[11px] font-black text-purple-900 bg-white/95 px-3 py-1 rounded-full shadow-md mt-1 border border-purple-200 flex items-center gap-1.5">
-                                <Sparkles size={12} className="animate-spin text-purple-600" /> AI OCR is scanning document...
+                                <Sparkles size={12} className="animate-spin text-purple-600" /> AI is extracting details from document...
                               </span>
                             </div>
                           )}
@@ -3812,7 +3904,11 @@ const Vehicles = () => {
                           value={newDocForm.docName}
                           onChange={e => setNewDocForm(p => ({...p, docName: e.target.value}))}
                           placeholder="e.g. Registration Certificate"
-                          className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500 ${aiExtractedFields.docName ? 'border-purple-300 bg-purple-50/20' : 'border-slate-200'}`}
+                          className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500 transition-all duration-300 ${
+                            justAutoFilled
+                              ? 'ring-2 ring-purple-500 border-purple-500 bg-purple-50/40'
+                              : (aiExtractedFields.docName ? 'border-purple-300 bg-purple-50/20' : 'border-slate-200')
+                          }`}
                         />
                       </div>
                       <div>
@@ -3828,7 +3924,11 @@ const Vehicles = () => {
                           value={newDocForm.docNo}
                           onChange={e => setNewDocForm(p => ({...p, docNo: e.target.value}))}
                           placeholder="e.g. REG-998822"
-                          className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500 uppercase ${aiExtractedFields.docNo ? 'border-purple-300 bg-purple-50/20' : 'border-slate-200'}`}
+                          className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500 uppercase transition-all duration-300 ${
+                            justAutoFilled
+                              ? 'ring-2 ring-purple-500 border-purple-500 bg-purple-50/40'
+                              : (aiExtractedFields.docNo ? 'border-purple-300 bg-purple-50/20' : 'border-slate-200')
+                          }`}
                         />
                       </div>
                     </div>
@@ -3844,7 +3944,11 @@ const Vehicles = () => {
                         <select
                           value={newDocForm.category}
                           onChange={e => setNewDocForm(p => ({...p, category: e.target.value}))}
-                          className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500 cursor-pointer ${aiExtractedFields.category ? 'border-purple-300 bg-purple-50/20' : 'border-slate-200'}`}
+                          className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500 cursor-pointer transition-all duration-300 ${
+                            justAutoFilled
+                              ? 'ring-2 ring-purple-500 border-purple-500 bg-purple-50/40'
+                              : (aiExtractedFields.category ? 'border-purple-300 bg-purple-50/20' : 'border-slate-200')
+                          }`}
                         >
                           {['Truck Documents', 'Trailer Documents', 'Compliance & Licences', 'Insurance', 'Certificates', 'Other'].map(c => (
                             <option key={c}>{c}</option>
@@ -3876,7 +3980,11 @@ const Vehicles = () => {
                           type="date"
                           value={newDocForm.issueDate}
                           onChange={e => setNewDocForm(p => ({...p, issueDate: e.target.value}))}
-                          className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500 ${aiExtractedFields.issueDate ? 'border-purple-300 bg-purple-50/20' : 'border-slate-200'}`}
+                          className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500 transition-all duration-300 ${
+                            justAutoFilled
+                              ? 'ring-2 ring-purple-500 border-purple-500 bg-purple-50/40'
+                              : (aiExtractedFields.issueDate ? 'border-purple-300 bg-purple-50/20' : 'border-slate-200')
+                          }`}
                         />
                       </div>
                       <div>
@@ -3891,7 +3999,11 @@ const Vehicles = () => {
                           required
                           value={newDocForm.expiryDate}
                           onChange={e => setNewDocForm(p => ({...p, expiryDate: e.target.value}))}
-                          className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500 ${aiExtractedFields.expiryDate ? 'border-purple-300 bg-purple-50/20' : 'border-slate-200'}`}
+                          className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500 transition-all duration-300 ${
+                            justAutoFilled
+                              ? 'ring-2 ring-purple-500 border-purple-500 bg-purple-50/40'
+                              : (aiExtractedFields.expiryDate ? 'border-purple-300 bg-purple-50/20' : 'border-slate-200')
+                          }`}
                         />
                       </div>
                     </div>
@@ -3989,53 +4101,139 @@ const Vehicles = () => {
             )}
 
             {/* PRE-UPLOAD FULL DOCUMENT PREVIEW LIGHTBOX */}
-            {previewUploadFileModal && (
-              <div className="fixed inset-0 bg-black/70 backdrop-blur-[2px] flex items-center justify-center z-[999999] p-4" onClick={() => setPreviewUploadFileModal(null)}>
-                <div className="relative bg-white rounded-2xl max-w-2xl w-full p-5 space-y-3 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
-                  <div className="flex justify-between items-center pb-2.5 border-b border-slate-100">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+            {previewUploadFileModal && createPortal(
+              <div 
+                className="fixed inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center z-[999999] p-3 sm:p-6 animate-in fade-in duration-150" 
+                onClick={() => setPreviewUploadFileModal(null)}
+              >
+                <div 
+                  className="relative bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150" 
+                  onClick={e => e.stopPropagation()}
+                >
+                  {/* Top Header Bar */}
+                  <div className="px-5 py-3.5 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0 text-white">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-purple-600/30 text-purple-400 border border-purple-500/30 flex items-center justify-center shrink-0">
                         <FileText size={18} />
                       </div>
-                      <div>
-                        <h4 className="font-bold text-slate-900 text-sm">{previewUploadFileModal.name || 'Document Verification Preview'}</h4>
-                        <p className="text-[10px] text-slate-400 font-semibold">Inspect and verify before saving</p>
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-sm text-slate-100 truncate">{previewUploadFileModal.name || 'Document Verification Preview'}</h4>
+                        <p className="text-[10px] text-purple-400 font-semibold flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                          Pre-Upload Verification • Check before saving
+                        </p>
                       </div>
                     </div>
-                    <button onClick={() => setPreviewUploadFileModal(null)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 cursor-pointer">
-                      <X size={18} />
-                    </button>
+
+                    {/* Action Controls for Zoom / Rotate */}
+                    <div className="flex items-center gap-2">
+                      {(!previewUploadFileModal.url?.includes('application/pdf') && !previewUploadFileModal.name?.toLowerCase().endsWith('.pdf')) && (
+                        <div className="flex items-center bg-slate-800/80 rounded-xl p-1 border border-slate-700 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewZoom(z => Math.max(0.5, Number((z - 0.25).toFixed(2))))}
+                            className="p-1.5 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer"
+                            title="Zoom Out"
+                          >
+                            <ZoomOut size={15} />
+                          </button>
+                          <span className="px-2 text-[11px] font-mono font-bold text-slate-300 min-w-[46px] text-center">
+                            {Math.round(previewZoom * 100)}%
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewZoom(z => Math.min(3, Number((z + 0.25).toFixed(2))))}
+                            className="p-1.5 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer"
+                            title="Zoom In"
+                          >
+                            <ZoomIn size={15} />
+                          </button>
+                          <div className="w-px h-4 bg-slate-700 mx-1" />
+                          <button
+                            type="button"
+                            onClick={() => setPreviewRotation(r => (r + 90) % 360)}
+                            className="p-1.5 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-semibold"
+                            title="Rotate 90 degrees"
+                          >
+                            <RefreshCw size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setPreviewZoom(1); setPreviewRotation(0); }}
+                            className="p-1.5 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer"
+                            title="Reset Zoom"
+                          >
+                            <RotateCcw size={13} />
+                          </button>
+                        </div>
+                      )}
+
+                      <button 
+                        type="button"
+                        onClick={() => setPreviewUploadFileModal(null)} 
+                        className="p-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                        title="Close Preview"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="max-h-[68vh] overflow-auto flex items-center justify-center bg-slate-900 rounded-xl p-3">
-                    {previewUploadFileModal.url?.startsWith('data:image/') || previewUploadFileModal.url?.startsWith('http') ? (
-                      <img src={previewUploadFileModal.url} alt="Document Preview" className="max-h-[62vh] w-auto object-contain rounded-lg shadow-lg" />
+                  {/* Main Preview Content Canvas */}
+                  <div className="flex-1 overflow-auto bg-slate-950/70 p-4 flex items-center justify-center min-h-[420px] max-h-[66vh]">
+                    {(previewUploadFileModal.url?.includes('application/pdf') || previewUploadFileModal.name?.toLowerCase().endsWith('.pdf')) ? (
+                      <div className="w-full h-[62vh] flex flex-col rounded-xl overflow-hidden bg-white shadow-2xl border border-slate-700">
+                        <iframe
+                          src={previewUploadFileModal.url}
+                          title="PDF Document Preview"
+                          className="w-full h-full border-0"
+                        />
+                      </div>
                     ) : (
-                      <div className="p-10 text-center text-white space-y-3">
-                        <FileText size={48} className="mx-auto text-purple-400" />
-                        <div>
-                          <p className="font-bold text-sm text-slate-100">{previewUploadFileModal.name}</p>
-                          <p className="text-xs text-slate-400 mt-1">PDF File Ready for Compliance Indexing</p>
-                        </div>
+                      <div className="relative overflow-auto max-w-full max-h-full flex items-center justify-center">
+                        <img 
+                          src={previewUploadFileModal.url} 
+                          alt="Document Full Preview" 
+                          style={{
+                            transform: `scale(${previewZoom}) rotate(${previewRotation}deg)`,
+                            transformOrigin: 'center center',
+                            transition: 'transform 0.15s ease-out'
+                          }}
+                          className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-2xl select-none" 
+                        />
                       </div>
                     )}
                   </div>
 
-                  <div className="flex justify-between items-center pt-2 text-xs">
-                    <span className="text-[11px] text-slate-500 font-semibold flex items-center gap-1.5">
-                      <CheckCircle2 size={13} className="text-emerald-600" />
-                      Document verified • Ready for compliance save
-                    </span>
-                    <button 
-                      type="button" 
-                      onClick={() => setPreviewUploadFileModal(null)} 
-                      className="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-xs"
-                    >
-                      Close &amp; Continue
-                    </button>
+                  {/* Footer Info & Confirmation Bar */}
+                  <div className="px-5 py-3.5 bg-slate-950 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+                    <div className="flex items-center gap-2 text-slate-300 font-semibold">
+                      <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                      <span>Document verified &amp; ready for compliance filing.</span>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setPreviewUploadFileModal(null);
+                          docFileInputRef.current?.click();
+                        }} 
+                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold transition-colors cursor-pointer"
+                      >
+                        Replace Document
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setPreviewUploadFileModal(null)} 
+                        className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold cursor-pointer transition-colors shadow-md shadow-purple-600/30 flex items-center gap-1.5"
+                      >
+                        <Check size={14} /> Confirm &amp; Continue
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
 
           </div>
