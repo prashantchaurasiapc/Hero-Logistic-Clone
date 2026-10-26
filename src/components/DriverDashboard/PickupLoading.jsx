@@ -27,6 +27,12 @@ export default function PickupLoading() {
   const [editingCar, setEditingCar] = useState(null);
   const [pickupNotes, setPickupNotes] = useState('');
 
+  // Flag Compromised Item State (Step 3)
+  const [flagModalOpen, setFlagModalOpen] = useState(false);
+  const [selectedCarForFlag, setSelectedCarForFlag] = useState(null);
+  const [flagReason, setFlagReason] = useState('Damaged / Compromised Item');
+  const [flagNotes, setFlagNotes] = useState('');
+
   // New Car Form State
   const [newVin, setNewVin] = useState('');
   const [newModel, setNewModel] = useState('');
@@ -539,6 +545,48 @@ export default function PickupLoading() {
     setScanVinInput('');
   };
 
+  const handleFlagItemSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedCarForFlag) return;
+    const itemRef = selectedCarForFlag.vin || selectedCarForFlag.description || selectedCarForFlag.makeModel;
+
+    try {
+      const existingAlerts = JSON.parse(localStorage.getItem('hero_company_defect_alerts') || '[]');
+      const userStr = localStorage.getItem('user');
+      const currentUser = userStr ? JSON.parse(userStr) : {};
+
+      const newAlert = {
+        id: Date.now(),
+        type: 'COMPROMISED_ITEM',
+        severity: 'HIGH',
+        status: 'PENDING_ADMIN_ACTION',
+        driverName: currentUser.name || 'Driver',
+        driverId: currentUser.id,
+        loadId: loadInfo?.dbId || loadInfo?.id,
+        loadRef: loadInfo?.id || loadInfo?.loadRef,
+        itemRef,
+        reason: flagReason || 'Damaged / Compromised Item',
+        notes: flagNotes || '',
+        timestamp: new Date().toISOString()
+      };
+      existingAlerts.unshift(newAlert);
+      localStorage.setItem('hero_company_defect_alerts', JSON.stringify(existingAlerts));
+
+      await api.post('/driver-portal/messages', {
+        message: `[ALERT - COMPROMISED ITEM] Item ${itemRef} flagged: ${flagReason}. Notes: ${flagNotes || 'None'}`
+      }).catch(() => {});
+    } catch (err) {
+      console.warn('Error recording alert:', err);
+    }
+
+    setCars(cars.map(c => c.id === selectedCarForFlag.id ? { ...c, isFlagged: true, flagReason: flagReason || 'Compromised' } : c));
+    triggerToast(`⚠️ Item flagged as compromised. Notification sent to Company Admin.`);
+    setFlagModalOpen(false);
+    setSelectedCarForFlag(null);
+    setFlagReason('Damaged / Compromised Item');
+    setFlagNotes('');
+  };
+
   const handleConfirmPickup = async () => {
     try {
       await api.post('/driver-portal/pickup-load/confirm-pickup', {
@@ -951,7 +999,12 @@ export default function PickupLoading() {
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2.5 shrink-0">
+                              <div className="flex items-center gap-2 shrink-0">
+                                {car.isFlagged && (
+                                  <span className="bg-amber-100 text-amber-800 border border-amber-300 text-[9.5px] font-black px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1 shadow-2xs">
+                                    ⚠️ {car.flagReason || 'Reported'}
+                                  </span>
+                                )}
                                 {car.pickedUp ? (
                                   <span className="bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] text-[9.5px] font-black px-2.5 py-0.5 rounded-full whitespace-nowrap">
                                     Picked Up {car.time || 'Completed'}
@@ -961,7 +1014,14 @@ export default function PickupLoading() {
                                     Not Picked Up
                                   </span>
                                 )}
-                                <button onClick={() => { setSelectedCarForModal(car); setPhotoModalOpen(true); }} className="text-indigo-500 hover:text-indigo-700 p-1 cursor-pointer rounded-md hover:bg-indigo-50" title="Manage item photos">
+                                <button 
+                                  onClick={() => { setSelectedCarForFlag(car); setFlagModalOpen(true); }} 
+                                  className="text-amber-500 hover:text-amber-700 p-1 cursor-pointer rounded-md hover:bg-amber-50 transition-colors" 
+                                  title="Flag compromised / cannot pick up (Notifies company)"
+                                >
+                                  <FiAlertTriangle className="text-xs" />
+                                </button>
+                                <button onClick={() => { setSelectedCarForModal(car); setPhotoModalOpen(true); }} className="text-indigo-500 hover:text-indigo-700 p-1 cursor-pointer rounded-md hover:bg-indigo-50" title="Manage item photos (optional)">
                                   <FiCamera className="text-xs" />
                                 </button>
                                 <button onClick={() => { setEditingCar(car); setEditCarModalOpen(true); }} className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer rounded-md hover:bg-slate-100" title="Edit item details">
@@ -1560,6 +1620,90 @@ export default function PickupLoading() {
               Save Changes
             </button>
 
+          </div>
+        </div>
+      )}
+
+      {/* Flag / Compromised Item Modal (Step 3) */}
+      {flagModalOpen && selectedCarForFlag && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[100] animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl border border-slate-200">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <FiAlertTriangle className="text-base" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Report Compromised / Issue</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Notifies Company Admin & Dispatch</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setFlagModalOpen(false); setSelectedCarForFlag(null); }}
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              >
+                <FiX className="text-base" />
+              </button>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs">
+              <span className="text-[10px] font-bold text-slate-400 uppercase block">Target Item</span>
+              <div className="font-extrabold text-slate-900 mt-0.5">
+                {selectedCarForFlag.makeModel || selectedCarForFlag.description || 'Freight Item'}
+              </div>
+              <div className="font-mono text-slate-500 text-[11px] font-bold">
+                REF: {selectedCarForFlag.vin || selectedCarForFlag.plate || selectedCarForFlag.id}
+              </div>
+            </div>
+
+            <form onSubmit={handleFlagItemSubmit} className="space-y-3.5 text-xs">
+              <div>
+                <label className="text-slate-700 font-bold block mb-1.5">Issue Type / Reason</label>
+                <select
+                  value={flagReason}
+                  onChange={(e) => setFlagReason(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-bold focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="Damaged / Compromised Item">Damaged / Compromised Item</option>
+                  <option value="Cannot Pick Up (Not Found / Missing in Yard)">Cannot Pick Up (Not Found / Missing in Yard)</option>
+                  <option value="Blocked / Inaccessible">Blocked / Inaccessible</option>
+                  <option value="Wrong Specs / Incorrect Freight">Wrong Specs / Incorrect Freight</option>
+                  <option value="Refused by Yard Personnel">Refused by Yard Personnel</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-700 font-bold block mb-1.5">Details / Notes for Company Admin</label>
+                <textarea
+                  rows={3}
+                  value={flagNotes}
+                  onChange={(e) => setFlagNotes(e.target.value)}
+                  placeholder="Describe the issue, damage condition, or why it cannot be picked up..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 font-medium focus:outline-none focus:border-indigo-500 text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    deleteCar(selectedCarForFlag.id);
+                    setFlagModalOpen(false);
+                    setSelectedCarForFlag(null);
+                    triggerToast('Item removed from load after company review.');
+                  }}
+                  className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold py-2.5 rounded-xl transition-all cursor-pointer text-center text-xs"
+                >
+                  Remove Item
+                </button>
+                <button
+                  type="submit"
+                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-2.5 rounded-xl transition-all cursor-pointer shadow-xs text-center text-xs uppercase"
+                >
+                  Submit Alert
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

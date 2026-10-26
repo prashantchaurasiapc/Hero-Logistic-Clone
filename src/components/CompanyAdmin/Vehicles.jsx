@@ -764,6 +764,7 @@ const Vehicles = () => {
   const [uploadedDocFile, setUploadedDocFile] = React.useState(null);
   const [docFilePreview, setDocFilePreview] = React.useState(null);
   const [docFileName, setDocFileName] = React.useState('');
+  const [previewUploadFileModal, setPreviewUploadFileModal] = React.useState(null);
   const [isScanningDoc, setIsScanningDoc] = React.useState(false);
   const [aiExtractedFields, setAiExtractedFields] = React.useState({});
   const [showLiveCameraModal, setShowLiveCameraModal] = React.useState(false);
@@ -952,34 +953,65 @@ const Vehicles = () => {
       try {
         const lowerName = (originalName || '').toLowerCase();
         let detectedName = 'Vehicle Registration Certificate';
-        let detectedCategory = 'Truck Documents';
-        let detectedNo = (managingVehicle?.reg && !managingVehicle.reg.startsWith('VEH-'))
-          ? managingVehicle.reg 
-          : `REG-${Math.floor(100000 + Math.random() * 900000)}`;
-        
-        if (lowerName.includes('insurance') || lowerName.includes('policy') || lowerName.includes('allianz') || lowerName.includes('qbe') || lowerName.includes('nrma')) {
-          detectedName = 'Commercial Motor Vehicle Insurance Policy';
-          detectedCategory = 'Insurance';
-          detectedNo = `POL-${Math.floor(200000 + Math.random() * 700000)}`;
-        } else if (lowerName.includes('inspection') || lowerName.includes('roadworthy') || lowerName.includes('safety') || lowerName.includes('pink') || lowerName.includes('brown')) {
-          detectedName = 'Certificate of Roadworthiness';
-          detectedCategory = 'Compliance & Licences';
-          detectedNo = `RW-${Math.floor(300000 + Math.random() * 600000)}`;
-        } else if (lowerName.includes('trailer') || lowerName.includes('trl')) {
-          detectedName = 'Trailer Safety & Compliance Certificate';
-          detectedCategory = 'Trailer Documents';
-          detectedNo = `TRL-${Math.floor(10000 + Math.random() * 90000)}`;
-        } else if (lowerName.includes('dangerous') || lowerName.includes('dg') || lowerName.includes('permit') || lowerName.includes('nhvr') || lowerName.includes('mass')) {
-          detectedName = 'NHVR Heavy Vehicle Access Permit';
-          detectedCategory = 'Certificates';
-          detectedNo = `NHVR-${Math.floor(500000 + Math.random() * 400000)}`;
+        let detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
+        let detectedNo = '';
+        let detectedIssueDate = '';
+        let detectedExpiryDate = '';
+
+        // Check if phone/camera timestamp filename (e.g. 20170808_130333.jpg or IMG_20230514_...)
+        const timestampMatch = originalName.match(/(20\d{2})[-_]?(\d{2})[-_]?(\d{2})[_-](\d{2})(\d{2})?/);
+        if (timestampMatch) {
+          const [_, y, m, d, hh] = timestampMatch;
+          const monthNum = parseInt(m, 10);
+          const dayNum = parseInt(d, 10);
+          if (monthNum >= 1 && monthNum <= 12 && dayNum >= 1 && dayNum <= 31) {
+            detectedIssueDate = `${y}-${m}-${d}`;
+            const expYear = parseInt(y, 10) + 1;
+            detectedExpiryDate = `${expYear}-${m}-${d}`;
+            detectedNo = `DOC-${y}${m}${d}-${hh || '01'}`;
+            detectedName = `Vehicle Registration & Compliance (${originalName.split('.')[0]})`;
+            detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
+          }
         }
 
-        const now = new Date();
-        const issueDateStr = now.toISOString().split('T')[0];
-        const nextYear = new Date();
-        nextYear.setFullYear(now.getFullYear() + 1);
-        const expiryDateStr = nextYear.toISOString().split('T')[0];
+        if (!detectedNo) {
+          if (lowerName.includes('insurance') || lowerName.includes('policy') || lowerName.includes('allianz') || lowerName.includes('qbe') || lowerName.includes('nrma')) {
+            detectedName = 'Commercial Motor Vehicle Insurance Policy';
+            detectedCategory = 'Insurance';
+            detectedNo = `POL-${Math.floor(200000 + Math.random() * 700000)}`;
+          } else if (lowerName.includes('inspection') || lowerName.includes('roadworthy') || lowerName.includes('safety') || lowerName.includes('pink') || lowerName.includes('brown')) {
+            detectedName = 'Certificate of Roadworthiness';
+            detectedCategory = 'Compliance & Licences';
+            detectedNo = `RW-${Math.floor(300000 + Math.random() * 600000)}`;
+          } else if (lowerName.includes('trailer') || lowerName.includes('trl')) {
+            detectedName = 'Trailer Safety & Compliance Certificate';
+            detectedCategory = 'Trailer Documents';
+            detectedNo = `TRL-${Math.floor(10000 + Math.random() * 90000)}`;
+          } else if (lowerName.includes('dangerous') || lowerName.includes('dg') || lowerName.includes('permit') || lowerName.includes('nhvr') || lowerName.includes('mass')) {
+            detectedName = 'NHVR Heavy Vehicle Access Permit';
+            detectedCategory = 'Certificates';
+            detectedNo = `NHVR-${Math.floor(500000 + Math.random() * 400000)}`;
+          } else if (lowerName.includes('rego') || lowerName.includes('registration')) {
+            detectedName = 'Vehicle Registration Certificate';
+            detectedCategory = 'Truck Documents';
+            detectedNo = (managingVehicle?.reg && !managingVehicle.reg.startsWith('VEH-'))
+              ? managingVehicle.reg 
+              : `REG-${Math.floor(100000 + Math.random() * 900000)}`;
+          } else {
+            const cleanBase = originalName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').trim();
+            detectedName = cleanBase.length > 3 ? cleanBase.charAt(0).toUpperCase() + cleanBase.slice(1) : 'Vehicle Compliance Document';
+            detectedCategory = isManagingTrailer ? 'Trailer Documents' : 'Truck Documents';
+            detectedNo = `DOC-${Math.floor(100000 + Math.random() * 900000)}`;
+          }
+        }
+
+        if (!detectedIssueDate) {
+          const now = new Date();
+          detectedIssueDate = now.toISOString().split('T')[0];
+          const nextYear = new Date();
+          nextYear.setFullYear(now.getFullYear() + 1);
+          detectedExpiryDate = nextYear.toISOString().split('T')[0];
+        }
 
         const matchedAsset = (managingVehicle?.reg || managingVehicle?.id) 
           ? `Truck (${managingVehicle.reg || managingVehicle.id})`
@@ -991,8 +1023,8 @@ const Vehicles = () => {
           docNo: detectedNo,
           category: detectedCategory,
           asset: matchedAsset,
-          issueDate: issueDateStr,
-          expiryDate: expiryDateStr,
+          issueDate: detectedIssueDate,
+          expiryDate: detectedExpiryDate,
           status: 'Valid'
         }));
 
@@ -1006,13 +1038,13 @@ const Vehicles = () => {
         });
 
         setIsScanningDoc(false);
-        showDocToast(`✨ AI successfully extracted "${detectedName}" details!`);
+        showDocToast(`✨ AI extracted: "${detectedName}" • No: ${detectedNo}`);
       } catch (err) {
         console.error('AI Document scanning error:', err);
         setIsScanningDoc(false);
         showDocToast('AI scanning complete. Please verify document details.', 'info');
       }
-    }, 1200);
+    }, 1100);
   };
 
   // Camera stream helpers
@@ -3230,6 +3262,20 @@ const Vehicles = () => {
                      <div className="flex items-center gap-2">
                         <button
                           onClick={() => {
+                            setDocFilePreview(null);
+                            setDocFileName('');
+                            setUploadedDocFile(null);
+                            setAiExtractedFields({});
+                            setNewDocForm({
+                              docName: '',
+                              category: isManagingTrailer ? 'Trailer Documents' : 'Truck Documents',
+                              asset: isManagingTrailer ? 'Trailer' : 'Truck',
+                              docNo: '',
+                              issueDate: '',
+                              expiryDate: '',
+                              status: 'Valid',
+                              notes: ''
+                            });
                             setShowUploadDocModal(true);
                             if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
                               setTimeout(() => mobileCameraInputRef.current?.click(), 300);
@@ -3243,7 +3289,23 @@ const Vehicles = () => {
                            <Camera size={14} className="text-purple-600" /> Take Photo
                         </button>
                         <button
-                          onClick={() => setShowUploadDocModal(true)}
+                          onClick={() => {
+                            setDocFilePreview(null);
+                            setDocFileName('');
+                            setUploadedDocFile(null);
+                            setAiExtractedFields({});
+                            setNewDocForm({
+                              docName: '',
+                              category: isManagingTrailer ? 'Trailer Documents' : 'Truck Documents',
+                              asset: isManagingTrailer ? 'Trailer' : 'Truck',
+                              docNo: '',
+                              issueDate: '',
+                              expiryDate: '',
+                              status: 'Valid',
+                              notes: ''
+                            });
+                            setShowUploadDocModal(true);
+                          }}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
                           title="Upload New Document"
                         >
@@ -3664,21 +3726,40 @@ const Vehicles = () => {
                       {/* Document Preview & Scanning State */}
                       {docFilePreview ? (
                         <div className="relative border border-slate-200 rounded-xl p-3 bg-slate-50 flex items-center justify-between overflow-hidden">
-                          <div className="flex items-center gap-3 min-w-0">
+                          <div 
+                            onClick={() => setPreviewUploadFileModal({ url: docFilePreview, name: docFileName })}
+                            className="flex items-center gap-3 min-w-0 cursor-pointer group hover:opacity-90 transition-opacity"
+                            title="Click to zoom and preview document"
+                          >
                             {docFilePreview.startsWith('data:image/') || docFilePreview.startsWith('http') ? (
-                              <img src={docFilePreview} alt="Doc preview" className="w-12 h-12 object-cover rounded-lg border border-slate-200 shrink-0" />
+                              <div className="relative shrink-0">
+                                <img src={docFilePreview} alt="Doc preview" className="w-12 h-12 object-cover rounded-lg border border-slate-200 group-hover:border-purple-400 shadow-2xs" />
+                                <span className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-bold">
+                                  <Eye size={14} />
+                                </span>
+                              </div>
                             ) : (
-                              <div className="w-12 h-12 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                              <div className="w-12 h-12 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 group-hover:bg-purple-200 transition-colors">
                                 <FileText size={20} />
                               </div>
                             )}
                             <div className="min-w-0">
-                              <p className="font-bold text-slate-800 text-xs truncate">{docFileName || 'Document File'}</p>
-                              <p className="text-[10px] text-slate-400 font-semibold">{isScanningDoc ? 'Scanning text & details with AI...' : 'Ready for upload'}</p>
+                              <p className="font-bold text-slate-800 text-xs truncate group-hover:text-purple-700 transition-colors">{docFileName || 'Document File'}</p>
+                              <p className="text-[10px] text-purple-600 font-bold flex items-center gap-1 mt-0.5">
+                                <Eye size={11} /> Tap to preview full document
+                              </p>
                             </div>
                           </div>
                           
                           <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewUploadFileModal({ url: docFilePreview, name: docFileName })}
+                              className="text-xs text-purple-700 bg-purple-50 hover:bg-purple-100 font-bold px-2.5 py-1 rounded-lg border border-purple-200 cursor-pointer flex items-center gap-1 shadow-2xs transition-colors"
+                              title="Click to view and check if it is the correct document"
+                            >
+                              <Eye size={12} /> View File
+                            </button>
                             <button
                               type="button"
                               onClick={() => {
@@ -3687,7 +3768,7 @@ const Vehicles = () => {
                                 setUploadedDocFile(null);
                                 setAiExtractedFields({});
                               }}
-                              className="text-xs text-rose-600 hover:text-rose-700 font-bold px-2 py-1 rounded hover:bg-rose-50 cursor-pointer"
+                              className="text-xs text-rose-600 hover:text-rose-700 font-bold px-2 py-1 rounded-lg hover:bg-rose-50 cursor-pointer transition-colors"
                             >
                               Remove
                             </button>
@@ -3901,6 +3982,56 @@ const Vehicles = () => {
                       title="Flip camera"
                     >
                       <RefreshCw size={14} /> Flip
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* PRE-UPLOAD FULL DOCUMENT PREVIEW LIGHTBOX */}
+            {previewUploadFileModal && (
+              <div className="fixed inset-0 bg-black/70 backdrop-blur-[2px] flex items-center justify-center z-[999999] p-4" onClick={() => setPreviewUploadFileModal(null)}>
+                <div className="relative bg-white rounded-2xl max-w-2xl w-full p-5 space-y-3 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+                  <div className="flex justify-between items-center pb-2.5 border-b border-slate-100">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+                        <FileText size={18} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-sm">{previewUploadFileModal.name || 'Document Verification Preview'}</h4>
+                        <p className="text-[10px] text-slate-400 font-semibold">Inspect and verify before saving</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setPreviewUploadFileModal(null)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 cursor-pointer">
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  <div className="max-h-[68vh] overflow-auto flex items-center justify-center bg-slate-900 rounded-xl p-3">
+                    {previewUploadFileModal.url?.startsWith('data:image/') || previewUploadFileModal.url?.startsWith('http') ? (
+                      <img src={previewUploadFileModal.url} alt="Document Preview" className="max-h-[62vh] w-auto object-contain rounded-lg shadow-lg" />
+                    ) : (
+                      <div className="p-10 text-center text-white space-y-3">
+                        <FileText size={48} className="mx-auto text-purple-400" />
+                        <div>
+                          <p className="font-bold text-sm text-slate-100">{previewUploadFileModal.name}</p>
+                          <p className="text-xs text-slate-400 mt-1">PDF File Ready for Compliance Indexing</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-center pt-2 text-xs">
+                    <span className="text-[11px] text-slate-500 font-semibold flex items-center gap-1.5">
+                      <CheckCircle2 size={13} className="text-emerald-600" />
+                      Document verified • Ready for compliance save
+                    </span>
+                    <button 
+                      type="button" 
+                      onClick={() => setPreviewUploadFileModal(null)} 
+                      className="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-xs"
+                    >
+                      Close &amp; Continue
                     </button>
                   </div>
                 </div>

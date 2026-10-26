@@ -335,6 +335,7 @@ function App() {
             <Route path="delivery/:id" element={<DeliveryPOD />} />
             <Route path="safety-checklist" element={<StartWorkFinish />} />
             <Route path="work-status" element={<StartWorkFinish />} />
+            <Route path="start-work" element={<StartWorkFinish />} />
             <Route path="assigned-jobs" element={<Jobs />} />
             <Route path="jobs" element={<Jobs />} />
             <Route path="nearby-services" element={<NearbyServices />} />

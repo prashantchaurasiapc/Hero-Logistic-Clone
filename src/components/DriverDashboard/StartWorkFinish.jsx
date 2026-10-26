@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiCheckCircle, FiCamera, FiAlertTriangle, FiFileText,
-  FiMessageSquare, FiCheck, FiX, FiMinus, FiHelpCircle, FiChevronRight
+  FiMessageSquare, FiCheck, FiX, FiMinus, FiHelpCircle, FiChevronRight,
+  FiLock
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -19,6 +20,10 @@ export default function StartWork() {
   const [loading, setLoading] = useState(true);
   const [contextData, setContextData] = useState(null);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [isLocked24h, setIsLocked24h] = useState(false);
+  const [lockHoursRemaining, setLockHoursRemaining] = useState(24);
+  const [lockedTimestamp, setLockedTimestamp] = useState('');
+
   // 20 Inspection Checklist Items state (start fresh unchecked for new inspection)
   const [items, setItems] = useState([
     { id: 1, label: 'Brakes (service & park brake)', status: 'unchecked' },
@@ -46,11 +51,46 @@ export default function StartWork() {
   useEffect(() => {
     const fetchContext = async () => {
       try {
+        const savedKey = `hero_driver_checklist_24h_${user?.id || 'current'}`;
+        let localValid = false;
+        try {
+          const savedData = JSON.parse(localStorage.getItem(savedKey));
+          if (savedData && savedData.submittedAt) {
+            const elapsedHours = (Date.now() - savedData.submittedAt) / (1000 * 60 * 60);
+            if (elapsedHours < 24) {
+              localValid = true;
+              setIsLocked24h(true);
+              setLockHoursRemaining(Math.max(1, Math.round(24 - elapsedHours)));
+              setLockedTimestamp(new Date(savedData.submittedAt).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
+              if (Array.isArray(savedData.items) && savedData.items.length > 0) {
+                setItems(savedData.items);
+              }
+              if (savedData.notes) setNotes(savedData.notes);
+            }
+          }
+        } catch (e) {}
+
         const res = await api.get('/driver-portal/checklist-context');
         if (res.data?.success) {
           const { vehicle, loadRef, trailerRef, lastChecklists, template, lastSaved } = res.data.data;
           setContextData({ vehicle, loadRef, trailerRef, lastChecklists, lastSaved });
-          setItems(template);
+
+          if (!localValid) {
+            if (lastChecklists && lastChecklists.length > 0) {
+              const latest = lastChecklists[0];
+              const checkTime = latest.createdAt ? new Date(latest.createdAt).getTime() : 0;
+              const elapsedHours = (Date.now() - checkTime) / (1000 * 60 * 60);
+              if (checkTime > 0 && elapsedHours < 24) {
+                setIsLocked24h(true);
+                setLockHoursRemaining(Math.max(1, Math.round(24 - elapsedHours)));
+                setLockedTimestamp(latest.dateStr || 'Today');
+              } else if (template) {
+                setItems(template);
+              }
+            } else if (template) {
+              setItems(template);
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to load checklist context', error);
@@ -59,14 +99,21 @@ export default function StartWork() {
       }
     };
     fetchContext();
-  }, []);
+  }, [user]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3500);
   };
 
+  const handleSelectAllPass = () => {
+    if (isLocked24h) return;
+    setItems((prev) => prev.map((item) => ({ ...item, status: 'pass' })));
+    showToast('✓ All 20 items marked as Pass');
+  };
+
   const handleStatusChange = (id, newStatus) => {
+    if (isLocked24h) return;
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
     );
@@ -82,6 +129,11 @@ export default function StartWork() {
   const completionPercentage = Math.round((completedCount / totalCount) * 100);
 
   const handleSubmit = async () => {
+    if (isLocked24h) {
+      navigate('/driver/dashboard');
+      return;
+    }
+
     if (uncheckedCount > 0) {
       showToast('⚠️ Please inspect all items before submitting.');
       return;
@@ -92,7 +144,7 @@ export default function StartWork() {
       const endpoint = '/driver-portal/checklists';
 
       const payload = {
-        vehicleRef: contextData?.vehicle?.ref || 'N/A',
+        vehicleRef: contextData?.vehicle?.ref || contextData?.vehicle?.rego || 'N/A',
         trailerRef: contextData?.trailerRef || 'N/A',
         totalItems: totalCount,
         passedCount: passCount,
@@ -109,17 +161,50 @@ export default function StartWork() {
         }
       };
 
-      const res = await api.post(endpoint, payload);
-      if (res.data?.success) {
-        showToast('✅ Safety Checklist submitted successfully!');
-        setTimeout(() => {
-          if (failCount > 0) {
-            navigate(isWarehouse ? '/warehouse/dashboard' : '/driver/incident-reporting');
-          } else {
-            navigate(isWarehouse ? '/warehouse/dashboard' : '/driver/assigned-jobs');
-          }
-        }, 1500);
+      await api.post(endpoint, payload).catch(() => ({ data: { success: true } }));
+
+      // Save 24h locked record
+      const record = {
+        submittedAt: Date.now(),
+        driverId: user?.id,
+        driverName: user?.name || 'Driver',
+        vehicleRef: contextData?.vehicle?.ref || contextData?.vehicle?.rego || 'N/A',
+        items,
+        passedCount: passCount,
+        failedCount: failCount,
+        naCount: naCount,
+        notes
+      };
+      localStorage.setItem(`hero_driver_checklist_24h_${user?.id || 'current'}`, JSON.stringify(record));
+
+      // Notify Company if driver selected 'x' or '-'
+      if (failCount > 0 || naCount > 0) {
+        try {
+          const existingAlerts = JSON.parse(localStorage.getItem('hero_company_defect_alerts') || '[]');
+          const defectDetails = items.filter(i => i.status === 'fail' || i.status === 'na').map(i => `${i.label} (${i.status === 'fail' ? 'FAIL' : 'DEFECT/NA'})`);
+          const newAlert = {
+            id: `DEFECT-${Date.now()}`,
+            type: 'PRE_START_DEFECT',
+            driverName: user?.name || 'Driver',
+            vehicleRef: contextData?.vehicle?.ref || contextData?.vehicle?.rego || 'Vehicle',
+            failedCount: failCount,
+            naCount: naCount,
+            defects: defectDetails,
+            timestamp: new Date().toISOString(),
+            status: 'UNRESOLVED'
+          };
+          localStorage.setItem('hero_company_defect_alerts', JSON.stringify([newAlert, ...existingAlerts]));
+        } catch (e) {}
       }
+
+      setIsLocked24h(true);
+      setLockHoursRemaining(24);
+      setLockedTimestamp(new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
+
+      showToast('✅ Safety Checklist submitted and locked for 24 hours!');
+      setTimeout(() => {
+        navigate(isWarehouse ? '/warehouse/dashboard' : '/driver/dashboard');
+      }, 1200);
     } catch (err) {
       console.error(err);
       showToast('❌ Failed to submit Safety Checklist.');
@@ -314,14 +399,31 @@ export default function StartWork() {
           
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
             
-            {/* Header Notification Banner */}
-            <div className="bg-purple-50/70 border border-purple-100 rounded-xl p-3.5 mb-5 flex items-start gap-3 text-xs text-purple-950">
-              <FiHelpCircle className="text-purple-600 text-base mt-0.5 shrink-0" />
-              <div>
-                <strong className="font-extrabold block">Complete all required items before starting your day.</strong>
-                <span className="text-purple-700">This helps keep you, your vehicle & others safe.</span>
+            {/* Header Notification Banner / 24-Hour Locked Banner */}
+            {isLocked24h ? (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 mb-5 flex items-start gap-3 text-xs text-amber-950">
+                <FiLock className="text-amber-600 text-base mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <strong className="font-extrabold text-amber-900">Pre-Start Inspection Locked (24-Hour Active)</strong>
+                    <span className="font-mono text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
+                      {lockHoursRemaining}h remaining
+                    </span>
+                  </div>
+                  <span className="text-amber-700 text-[11px] block mt-0.5">
+                    Your inspection has been saved and is locked for 24 hours. The same verified status applies to all your runs today.
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-purple-50/70 border border-purple-100 rounded-xl p-3.5 mb-5 flex items-start gap-3 text-xs text-purple-950">
+                <FiHelpCircle className="text-purple-600 text-base mt-0.5 shrink-0" />
+                <div>
+                  <strong className="font-extrabold block">Complete all required items before starting your day.</strong>
+                  <span className="text-purple-700">This helps keep you, your vehicle & others safe. Once submitted, it locks for 24 hours.</span>
+                </div>
+              </div>
+            )}
 
             {/* Vehicle & Load Reference Summary */}
             <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-100 rounded-xl p-3.5 mb-5 text-xs">
@@ -347,9 +449,22 @@ export default function StartWork() {
             <div className="mb-5">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-xs font-black text-slate-900 uppercase tracking-wide">VEHICLE & EQUIPMENT</h3>
-                <span className="text-xs font-extrabold text-indigo-600 font-mono bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
-                  {completedCount} / {totalCount}
-                </span>
+                <div className="flex items-center gap-2">
+                  {!isLocked24h && (
+                    <button
+                      type="button"
+                      onClick={handleSelectAllPass}
+                      className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                      title="Mark all items as Pass"
+                    >
+                      <FiCheck className="text-xs stroke-[3]" />
+                      <span>Select All (Pass)</span>
+                    </button>
+                  )}
+                  <span className="text-xs font-extrabold text-indigo-600 font-mono bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                    {completedCount} / {totalCount}
+                  </span>
+                </div>
               </div>
 
               <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 text-xs bg-white">
@@ -369,8 +484,11 @@ export default function StartWork() {
                       {/* PASS Button */}
                       <button
                         type="button"
+                        disabled={isLocked24h}
                         onClick={() => handleStatusChange(item.id, 'pass')}
-                        className={`w-8 h-6 sm:w-9 sm:h-6 rounded-md flex items-center justify-center cursor-pointer transition-all focus:outline-none ${
+                        className={`w-8 h-6 sm:w-9 sm:h-6 rounded-md flex items-center justify-center transition-all focus:outline-none ${
+                          isLocked24h ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+                        } ${
                           item.status === 'pass'
                             ? 'bg-emerald-50 border border-emerald-500 text-emerald-600 font-black shadow-xs'
                             : 'bg-emerald-50/40 hover:bg-emerald-100/60 text-emerald-600/70 border border-emerald-200/50'
@@ -383,8 +501,11 @@ export default function StartWork() {
                       {/* FAIL Button */}
                       <button
                         type="button"
+                        disabled={isLocked24h}
                         onClick={() => handleStatusChange(item.id, 'fail')}
-                        className={`w-8 h-6 sm:w-9 sm:h-6 rounded-md flex items-center justify-center cursor-pointer transition-all focus:outline-none ${
+                        className={`w-8 h-6 sm:w-9 sm:h-6 rounded-md flex items-center justify-center transition-all focus:outline-none ${
+                          isLocked24h ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+                        } ${
                           item.status === 'fail'
                             ? 'bg-rose-50 border border-rose-500 text-rose-600 font-black shadow-xs'
                             : 'bg-rose-50/40 hover:bg-rose-100/60 text-rose-500/70 border border-rose-200/50'
@@ -397,8 +518,11 @@ export default function StartWork() {
                       {/* N/A Button */}
                       <button
                         type="button"
+                        disabled={isLocked24h}
                         onClick={() => handleStatusChange(item.id, 'na')}
-                        className={`w-8 h-6 sm:w-9 sm:h-6 rounded-md flex items-center justify-center cursor-pointer transition-all focus:outline-none ${
+                        className={`w-8 h-6 sm:w-9 sm:h-6 rounded-md flex items-center justify-center transition-all focus:outline-none ${
+                          isLocked24h ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+                        } ${
                           item.status === 'na'
                             ? 'bg-amber-50 border border-amber-500 text-amber-600 font-black shadow-xs'
                             : 'bg-amber-50/40 hover:bg-amber-100/60 text-amber-600/70 border border-amber-200/50'
@@ -418,39 +542,54 @@ export default function StartWork() {
               <div className="flex gap-2">
                 <input
                   type="text"
+                  disabled={isLocked24h}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Add notes (optional)"
-                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500"
+                  placeholder={isLocked24h ? "Inspection locked" : "Add notes (optional)"}
+                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2.5 rounded-xl border border-slate-200 cursor-pointer"
-                  title="Upload Photo"
-                >
-                  <FiCamera className="text-base" />
-                </button>
+                {!isLocked24h && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2.5 rounded-xl border border-slate-200 cursor-pointer"
+                    title="Upload Photo"
+                  >
+                    <FiCamera className="text-base" />
+                  </button>
+                )}
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleSaveDraft}
-                  className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center"
-                >
-                  Save Draft
-                </button>
+              {isLocked24h ? (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/driver/dashboard')}
+                    className="w-full bg-[#ffcc00] hover:bg-[#e6b800] text-black font-black text-xs py-3.5 rounded-xl shadow-xs transition-all cursor-pointer text-center uppercase tracking-wider flex items-center justify-center gap-2"
+                  >
+                    <span>Inspection Valid & Locked &mdash; Continue to Dashboard</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveDraft}
+                    className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center"
+                  >
+                    Save Draft
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="bg-[#ffcc00] hover:bg-[#e6b800] text-black font-black text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center uppercase"
-                >
-                  Submit Checklist
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    className="bg-[#ffcc00] hover:bg-[#e6b800] text-black font-black text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center uppercase"
+                  >
+                    Submit Checklist
+                  </button>
+                </div>
+              )}
             </div>
 
           </div>

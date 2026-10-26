@@ -1812,6 +1812,22 @@ export default function CompanySettings() {
           accent: branding.accent
         }
       });
+
+      if (companyDetails.goodsTransported) {
+        let goodsArr = [];
+        const val = companyDetails.goodsTransported;
+        if (val === 'Car Carrying Only') goodsArr = ['Car Carrying'];
+        else if (val === 'General Freight Only') goodsArr = ['General Freight'];
+        else if (val === 'Dangerous Goods Only') goodsArr = ['Dangerous Goods'];
+        else if (val === 'Refrigerated Freight Only') goodsArr = ['Refrigerated Freight'];
+        else if (val === 'Heavy Haulage Only') goodsArr = ['Heavy Haulage'];
+        else goodsArr = ['General Freight', 'Car Carrying', 'Dangerous Goods', 'Refrigerated Freight', 'Heavy Haulage'];
+        
+        localStorage.setItem('hero_company_transport_goods', JSON.stringify({
+          goodsTypes: goodsArr,
+          primaryService: val
+        }));
+      }
       triggerToast('Company settings saved successfully!');
       fetchCompanySettings();
     } catch (err) {
@@ -3134,6 +3150,47 @@ export default function CompanySettings() {
                       onChange={e => setCompanyDetails({ ...companyDetails, description: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800"
                     />
+                  </div>
+
+                  <div>
+                    <label className="text-[10.5px] font-bold text-slate-700 block mb-1">
+                      Goods Transported / Permitted Services (Sets Allowed Load Types)
+                    </label>
+                    <select
+                      value={companyDetails.goodsTransported || (() => {
+                        try {
+                          const s = JSON.parse(localStorage.getItem('hero_company_transport_goods') || '{}');
+                          return s.primaryService || 'All Services';
+                        } catch(e) { return 'All Services'; }
+                      })()}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setCompanyDetails({ ...companyDetails, goodsTransported: val });
+                        let goodsArr = [];
+                        if (val === 'Car Carrying Only') goodsArr = ['Car Carrying'];
+                        else if (val === 'General Freight Only') goodsArr = ['General Freight'];
+                        else if (val === 'Dangerous Goods Only') goodsArr = ['Dangerous Goods'];
+                        else if (val === 'Refrigerated Freight Only') goodsArr = ['Refrigerated Freight'];
+                        else if (val === 'Heavy Haulage Only') goodsArr = ['Heavy Haulage'];
+                        else goodsArr = ['General Freight', 'Car Carrying', 'Dangerous Goods', 'Refrigerated Freight', 'Heavy Haulage'];
+                        
+                        localStorage.setItem('hero_company_transport_goods', JSON.stringify({
+                          goodsTypes: goodsArr,
+                          primaryService: val
+                        }));
+                      }}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="All Services">All Freight Services</option>
+                      <option value="Car Carrying Only">Car Carrying Only (Only Car Carrying will be shown)</option>
+                      <option value="General Freight Only">General Freight Only</option>
+                      <option value="Dangerous Goods Only">Dangerous Goods Only</option>
+                      <option value="Refrigerated Freight Only">Refrigerated Freight Only</option>
+                      <option value="Heavy Haulage Only">Heavy Haulage Only</option>
+                    </select>
+                    <p className="text-[10px] text-slate-400 font-semibold mt-1">
+                      If your company only carries one cargo type (e.g. Car Carrying Only), the Create Load console will automatically show only this cargo type.
+                    </p>
                   </div>
 
                 </div>

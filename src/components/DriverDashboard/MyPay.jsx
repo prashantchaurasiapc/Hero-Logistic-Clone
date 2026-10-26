@@ -91,7 +91,17 @@ export default function MyPay() {
       let activeLoadObj = payload.activeLoad || null;
       let rawGross = payload.currentPeriod?.grossEarnings || '$0.00';
 
-      if (!rawGross || rawGross === '$0.00') {
+      // Check for locally completed load earnings
+      let completedEarnings = [];
+      try {
+        const stored = localStorage.getItem('hero_driver_completed_earnings');
+        if (stored) completedEarnings = JSON.parse(stored);
+      } catch (e) {}
+
+      const totalCompletedPay = completedEarnings.reduce((acc, c) => acc + (parseFloat(c.driverPay) || 0), 0);
+      if (totalCompletedPay > 0) {
+        rawGross = `$${totalCompletedPay.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      } else if (!rawGross || rawGross === '$0.00') {
         const detected = payload.currentPayBreakdown?.earnings?.totalEarnings 
           || payload.totalSummary?.totalGrossEarnings 
           || payload.ytdSummary?.totalEarnings;
@@ -188,7 +198,17 @@ export default function MyPay() {
       });
 
       let records = [];
-      if (payload.payHistory && Array.isArray(payload.payHistory) && payload.payHistory.length > 0) {
+      if (completedEarnings.length > 0) {
+        records = completedEarnings.map((c, idx) => ({
+          id: c.id || `earn-${idx}`,
+          period: c.scheduleTitle || `Load ${c.loadRef || c.loadId}`,
+          payDate: `Delivered: ${c.deliveredAt ? new Date(c.deliveredAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Today'}`,
+          netPay: `$${parseFloat(c.driverPay).toFixed(2)}`,
+          status: 'Processed',
+          statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+          amount: parseFloat(c.driverPay) || 0
+        }));
+      } else if (payload.payHistory && Array.isArray(payload.payHistory) && payload.payHistory.length > 0) {
         records = payload.payHistory.map(rec => ({
           ...rec,
           netPay: rec.netPay && rec.netPay !== '$0.00' ? rec.netPay : rawGross
