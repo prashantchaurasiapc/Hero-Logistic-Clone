@@ -205,7 +205,6 @@ export default function Customers() {
   const [invoicesLoading, setInvoicesLoading] = useState(false);
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
   const [invoiceStatusFilter, setInvoiceStatusFilter] = useState('ALL');
-  const [showCreateInvoiceModal, setShowCreateInvoiceModal] = useState(false);
   const [selectedInvoiceForModal, setSelectedInvoiceForModal] = useState(null);
   const [newInvoiceData, setNewInvoiceData] = useState({
     invoiceNumber: '',
@@ -5843,41 +5842,6 @@ Exported On: ${new Date().toLocaleString()}`;
               </div>
             </div>
           </form>
-        </div>,
-        document.body
-      )}
-
-      {/* Create Invoice Modal */}
-      {showCreateInvoiceModal && createPortal(
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowCreateInvoiceModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-[460px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
-            {/* Header */}
-            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
-              <div>
-                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Create Invoice</h3>
-                <p className="text-[13px] font-normal text-slate-400 mt-2 leading-snug">Generate a new invoice for outstanding loads.</p>
-              </div>
-              <button onClick={() => setShowCreateInvoiceModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
-            </div>
-
-            {/* Body */}
-            <div className="px-7 py-6 space-y-6 overflow-y-auto">
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Invoice Date</label>
-                <input type="date" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-600" />
-              </div>
-              <div>
-                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Due Date</label>
-                <input type="date" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-600" />
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
-              <button onClick={() => setShowCreateInvoiceModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
-              <button onClick={() => setShowCreateInvoiceModal(false)} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
-            </div>
-          </div>
         </div>,
         document.body
       )}
