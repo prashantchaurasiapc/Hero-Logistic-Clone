@@ -217,72 +217,49 @@ export default function Customers() {
   });
 
   const fetchCustomerInvoices = async (customerId) => {
-    if (!customerId) return;
+    if (!customerId) {
+      setCustomerInvoices([]);
+      return;
+    }
     try {
       setInvoicesLoading(true);
       const res = await api.get(`/customer-invoices?customerId=${customerId}`).catch(() => null);
       const data = res?.data?.data || res?.data || [];
       if (Array.isArray(data) && data.length > 0) {
-        setCustomerInvoices(data.map(inv => ({
-          id: inv.id,
-          invoiceNumber: inv.invoiceNumber || `INV-${String(inv.id).slice(0, 6).toUpperCase()}`,
-          loadRef: inv.load?.loadRef || inv.loadRef || 'General Freight',
-          issueDate: inv.createdAt ? new Date(inv.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
-          description: inv.description || inv.notes || `Logistics Transport Service for ${selectedCustomer?.name || 'Customer'}`,
-          subtotal: parseFloat(inv.amount || inv.subtotal || 0),
-          tax: Math.round(parseFloat(inv.amount || 0) * 0.1 * 100) / 100,
-          total: Math.round(parseFloat(inv.amount || 0) * 1.1 * 100) / 100,
-          status: (inv.status || 'PENDING').toUpperCase(),
-          paymentMethod: inv.paymentMethod || 'EFT Direct Deposit'
-        })));
+        setCustomerInvoices(data.map(inv => {
+          const subtotal = parseFloat(inv.amount || inv.subtotal || 0);
+          const taxRate = parseFloat(inv.appliedTaxRate !== undefined ? inv.appliedTaxRate : 0.10);
+          const tax = Math.round(subtotal * taxRate * 100) / 100;
+          const total = Math.round((subtotal + tax) * 100) / 100;
+          const rawStatus = (inv.status || 'SENT').toUpperCase();
+          const displayStatus = rawStatus === 'PAID' ? 'PAID' : rawStatus === 'OVERDUE' ? 'OVERDUE' : 'PENDING';
+          
+          const firstItem = Array.isArray(inv.items) && inv.items.length > 0 ? inv.items[0] : null;
+          const description = inv.description || firstItem?.description || inv.notes || `Logistics Haulage Service for ${selectedCustomer?.name || 'Customer'}`;
+          const loadRef = inv.load?.loadRef || inv.loadRef || firstItem?.loadRef || 'General Freight';
+          const paymentMethod = inv.paymentMethod || firstItem?.paymentTerms || '14 Days EOM';
+
+          return {
+            id: inv.id,
+            invoiceNumber: inv.invoiceNumber || `INV-${String(inv.id).slice(0, 6).toUpperCase()}`,
+            loadRef,
+            issueDate: inv.createdAt ? new Date(inv.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+            description,
+            subtotal,
+            tax,
+            total,
+            status: displayStatus,
+            paymentMethod
+          };
+        }));
       } else {
-        const custName = selectedCustomer?.name || 'Customer';
-        const sampleInvoices = [
-          {
-            id: 'inv-sample-1',
-            invoiceNumber: 'INV-2026-0142',
-            loadRef: 'LD-8821',
-            issueDate: new Date(Date.now() - 14 * 86400000).toISOString().split('T')[0],
-            dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
-            description: `Interstate Linehaul Freight - Sydney to Brisbane (2 Trailers)`,
-            subtotal: 3850.00,
-            tax: 385.00,
-            total: 4235.00,
-            status: 'PAID',
-            paymentMethod: 'EFT Direct Deposit'
-          },
-          {
-            id: 'inv-sample-2',
-            invoiceNumber: 'INV-2026-0178',
-            loadRef: 'LD-8904',
-            issueDate: new Date(Date.now() - 5 * 86400000).toISOString().split('T')[0],
-            dueDate: new Date(Date.now() + 9 * 86400000).toISOString().split('T')[0],
-            description: `Metro Fleet Dispatch & Express Handling (${custName})`,
-            subtotal: 2150.00,
-            tax: 215.00,
-            total: 2365.00,
-            status: 'PENDING',
-            paymentMethod: '14 Days EOM'
-          },
-          {
-            id: 'inv-sample-3',
-            invoiceNumber: 'INV-2026-0205',
-            loadRef: 'LD-8950',
-            issueDate: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
-            dueDate: new Date(Date.now() + 26 * 86400000).toISOString().split('T')[0],
-            description: `Specialized Heavy Haulage Logistics - Regional NSW`,
-            subtotal: 5400.00,
-            tax: 540.00,
-            total: 5940.00,
-            status: 'PENDING',
-            paymentMethod: '30 Days Net'
-          }
-        ];
-        setCustomerInvoices(sampleInvoices);
+        // No hardcoded sample invoices! Clean zero-state for new customers and new companies
+        setCustomerInvoices([]);
       }
     } catch (err) {
       console.warn('Invoices fetch error:', err);
+      setCustomerInvoices([]);
     } finally {
       setInvoicesLoading(false);
     }
@@ -297,56 +274,74 @@ export default function Customers() {
     const amt = parseFloat(newInvoiceData.amount);
     const tax = Math.round(amt * 0.1 * 100) / 100;
     const tot = Math.round((amt + tax) * 100) / 100;
-    const invNum = newInvoiceData.invoiceNumber || `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const newInvObj = {
-      id: `inv-${Date.now()}`,
-      invoiceNumber: invNum,
-      loadRef: newInvoiceData.loadRef || 'General Transport',
-      issueDate: new Date().toISOString().split('T')[0],
-      dueDate: newInvoiceData.dueDate || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
-      description: newInvoiceData.description || `Logistics Delivery Service for ${selectedCustomer?.name || 'Customer'}`,
-      subtotal: amt,
-      tax: tax,
-      total: tot,
-      status: 'PENDING',
-      paymentMethod: newInvoiceData.paymentTerms || '14 Days EOM',
-      notes: newInvoiceData.notes || ''
-    };
+    const invNum = newInvoiceData.invoiceNumber.trim() || `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     try {
-      await api.post('/customer-invoices', {
+      const res = await api.post('/customer-invoices', {
         customerId: selectedCustomer?.id,
         invoiceNumber: invNum,
         amount: amt,
-        dueDate: newInvoiceData.dueDate || null,
-        notes: newInvoiceData.notes || newInvoiceData.description || null
-      }).catch(() => null);
-    } catch (e) {}
+        appliedTaxRate: 0.10,
+        status: 'SENT',
+        dueDate: newInvoiceData.dueDate ? new Date(newInvoiceData.dueDate).toISOString() : null,
+        notes: newInvoiceData.notes || newInvoiceData.description || null,
+        type: 'Freight',
+        items: [
+          {
+            description: newInvoiceData.description || `Freight Haulage Service for ${selectedCustomer?.name || 'Customer'}`,
+            loadRef: newInvoiceData.loadRef || 'General',
+            amount: amt,
+            tax,
+            total: tot,
+            paymentTerms: newInvoiceData.paymentTerms || '14 Days EOM'
+          }
+        ]
+      });
 
-    setCustomerInvoices(prev => [newInvObj, ...prev]);
-    setShowCreateInvoiceModal(false);
-    setNewInvoiceData({
-      invoiceNumber: '',
-      loadRef: '',
-      description: '',
-      amount: '',
-      dueDate: '',
-      paymentTerms: '14 Days EOM',
-      notes: ''
-    });
-    triggerToast(`Invoice ${invNum} created successfully!`);
+      setShowCreateInvoiceModal(false);
+      setNewInvoiceData({
+        invoiceNumber: '',
+        loadRef: '',
+        description: '',
+        amount: '',
+        dueDate: '',
+        paymentTerms: '14 Days EOM',
+        notes: ''
+      });
+      triggerToast(`Invoice ${invNum} created successfully!`);
+
+      // Re-fetch from database to guarantee persistence and fresh state
+      if (selectedCustomer?.id) {
+        await fetchCustomerInvoices(selectedCustomer.id);
+      }
+    } catch (err) {
+      console.error('Failed to create customer invoice:', err);
+      const errMsg = err?.response?.data?.message || err?.message || 'Error saving invoice to database';
+      triggerToast(`Failed to create invoice: ${errMsg}`);
+    }
   };
 
-  const handleToggleInvoicePaid = (invId) => {
-    setCustomerInvoices(prev => prev.map(inv => {
-      if (inv.id === invId) {
-        const nextStatus = inv.status === 'PAID' ? 'PENDING' : 'PAID';
-        triggerToast(`Invoice ${inv.invoiceNumber} marked as ${nextStatus}!`);
-        return { ...inv, status: nextStatus };
-      }
-      return inv;
-    }));
+  const handleToggleInvoicePaid = async (invId) => {
+    const inv = customerInvoices.find(i => i.id === invId);
+    if (!inv) return;
+
+    const nextStatus = inv.status === 'PAID' ? 'SENT' : 'PAID';
+    const nextDisplayStatus = inv.status === 'PAID' ? 'PENDING' : 'PAID';
+
+    // Optimistic UI update
+    setCustomerInvoices(prev => prev.map(item => item.id === invId ? { ...item, status: nextDisplayStatus } : item));
+
+    try {
+      await api.put(`/customer-invoices/${invId}`, {
+        status: nextStatus
+      });
+      triggerToast(`Invoice ${inv.invoiceNumber} marked as ${nextDisplayStatus}!`);
+    } catch (err) {
+      console.error('Failed to update invoice status:', err);
+      // Revert optimistic update on failure
+      setCustomerInvoices(prev => prev.map(item => item.id === invId ? { ...item, status: inv.status } : item));
+      triggerToast('Failed to update invoice status in database');
+    }
   };
 
   const [showBillingInvoicePreviewModal, setShowBillingInvoicePreviewModal] = useState(false);
@@ -2284,8 +2279,8 @@ Exported On: ${new Date().toLocaleString()}`;
                   )}
                 </div>
                 <div className="mt-5 pt-4 border-t border-slate-100">
-                  <button onClick={() => setActiveDetailsTab('Instructions')} className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
-                    View All Instructions <ArrowRight size={12} />
+                  <button onClick={() => { setDraftSpecialInstructions(specialInstructions); setShowEditSpecialInstructionsModal(true); }} className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+                    Edit Special Instructions <ArrowRight size={12} />
                   </button>
                 </div>
               </div>
