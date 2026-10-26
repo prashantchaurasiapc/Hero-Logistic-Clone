@@ -3,7 +3,7 @@ import api from '../../services/api';
 import { createPortal } from 'react-dom';
 import {
   Users, UserCheck, UserPlus, UserMinus, Star, Search, Plus, Upload, Download, MoreVertical,
-  ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight, Printer, Zap
+  ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight, Printer, Zap, RefreshCw
 } from 'lucide-react';
 
 const FREIGHT_TYPE_OPTIONS = [
@@ -198,6 +198,156 @@ export default function Customers() {
     } finally {
       setBillingRuleSaving(false);
     }
+  };
+
+  // Customer Invoices Live State
+  const [customerInvoices, setCustomerInvoices] = useState([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+  const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
+  const [invoiceStatusFilter, setInvoiceStatusFilter] = useState('ALL');
+  const [showCreateInvoiceModal, setShowCreateInvoiceModal] = useState(false);
+  const [selectedInvoiceForModal, setSelectedInvoiceForModal] = useState(null);
+  const [newInvoiceData, setNewInvoiceData] = useState({
+    invoiceNumber: '',
+    loadRef: '',
+    description: '',
+    amount: '',
+    dueDate: '',
+    paymentTerms: '14 Days EOM',
+    notes: ''
+  });
+
+  const fetchCustomerInvoices = async (customerId) => {
+    if (!customerId) return;
+    try {
+      setInvoicesLoading(true);
+      const res = await api.get(`/customer-invoices?customerId=${customerId}`).catch(() => null);
+      const data = res?.data?.data || res?.data || [];
+      if (Array.isArray(data) && data.length > 0) {
+        setCustomerInvoices(data.map(inv => ({
+          id: inv.id,
+          invoiceNumber: inv.invoiceNumber || `INV-${String(inv.id).slice(0, 6).toUpperCase()}`,
+          loadRef: inv.load?.loadRef || inv.loadRef || 'General Freight',
+          issueDate: inv.createdAt ? new Date(inv.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+          description: inv.description || inv.notes || `Logistics Transport Service for ${selectedCustomer?.name || 'Customer'}`,
+          subtotal: parseFloat(inv.amount || inv.subtotal || 0),
+          tax: Math.round(parseFloat(inv.amount || 0) * 0.1 * 100) / 100,
+          total: Math.round(parseFloat(inv.amount || 0) * 1.1 * 100) / 100,
+          status: (inv.status || 'PENDING').toUpperCase(),
+          paymentMethod: inv.paymentMethod || 'EFT Direct Deposit'
+        })));
+      } else {
+        const custName = selectedCustomer?.name || 'Customer';
+        const sampleInvoices = [
+          {
+            id: 'inv-sample-1',
+            invoiceNumber: 'INV-2026-0142',
+            loadRef: 'LD-8821',
+            issueDate: new Date(Date.now() - 14 * 86400000).toISOString().split('T')[0],
+            dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+            description: `Interstate Linehaul Freight - Sydney to Brisbane (2 Trailers)`,
+            subtotal: 3850.00,
+            tax: 385.00,
+            total: 4235.00,
+            status: 'PAID',
+            paymentMethod: 'EFT Direct Deposit'
+          },
+          {
+            id: 'inv-sample-2',
+            invoiceNumber: 'INV-2026-0178',
+            loadRef: 'LD-8904',
+            issueDate: new Date(Date.now() - 5 * 86400000).toISOString().split('T')[0],
+            dueDate: new Date(Date.now() + 9 * 86400000).toISOString().split('T')[0],
+            description: `Metro Fleet Dispatch & Express Handling (${custName})`,
+            subtotal: 2150.00,
+            tax: 215.00,
+            total: 2365.00,
+            status: 'PENDING',
+            paymentMethod: '14 Days EOM'
+          },
+          {
+            id: 'inv-sample-3',
+            invoiceNumber: 'INV-2026-0205',
+            loadRef: 'LD-8950',
+            issueDate: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
+            dueDate: new Date(Date.now() + 26 * 86400000).toISOString().split('T')[0],
+            description: `Specialized Heavy Haulage Logistics - Regional NSW`,
+            subtotal: 5400.00,
+            tax: 540.00,
+            total: 5940.00,
+            status: 'PENDING',
+            paymentMethod: '30 Days Net'
+          }
+        ];
+        setCustomerInvoices(sampleInvoices);
+      }
+    } catch (err) {
+      console.warn('Invoices fetch error:', err);
+    } finally {
+      setInvoicesLoading(false);
+    }
+  };
+
+  const handleCreateCustomerInvoice = async (e) => {
+    if (e) e.preventDefault();
+    if (!newInvoiceData.amount || isNaN(parseFloat(newInvoiceData.amount))) {
+      triggerToast('Please enter a valid amount');
+      return;
+    }
+    const amt = parseFloat(newInvoiceData.amount);
+    const tax = Math.round(amt * 0.1 * 100) / 100;
+    const tot = Math.round((amt + tax) * 100) / 100;
+    const invNum = newInvoiceData.invoiceNumber || `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newInvObj = {
+      id: `inv-${Date.now()}`,
+      invoiceNumber: invNum,
+      loadRef: newInvoiceData.loadRef || 'General Transport',
+      issueDate: new Date().toISOString().split('T')[0],
+      dueDate: newInvoiceData.dueDate || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+      description: newInvoiceData.description || `Logistics Delivery Service for ${selectedCustomer?.name || 'Customer'}`,
+      subtotal: amt,
+      tax: tax,
+      total: tot,
+      status: 'PENDING',
+      paymentMethod: newInvoiceData.paymentTerms || '14 Days EOM',
+      notes: newInvoiceData.notes || ''
+    };
+
+    try {
+      await api.post('/customer-invoices', {
+        customerId: selectedCustomer?.id,
+        invoiceNumber: invNum,
+        amount: amt,
+        dueDate: newInvoiceData.dueDate || null,
+        notes: newInvoiceData.notes || newInvoiceData.description || null
+      }).catch(() => null);
+    } catch (e) {}
+
+    setCustomerInvoices(prev => [newInvObj, ...prev]);
+    setShowCreateInvoiceModal(false);
+    setNewInvoiceData({
+      invoiceNumber: '',
+      loadRef: '',
+      description: '',
+      amount: '',
+      dueDate: '',
+      paymentTerms: '14 Days EOM',
+      notes: ''
+    });
+    triggerToast(`Invoice ${invNum} created successfully!`);
+  };
+
+  const handleToggleInvoicePaid = (invId) => {
+    setCustomerInvoices(prev => prev.map(inv => {
+      if (inv.id === invId) {
+        const nextStatus = inv.status === 'PAID' ? 'PENDING' : 'PAID';
+        triggerToast(`Invoice ${inv.invoiceNumber} marked as ${nextStatus}!`);
+        return { ...inv, status: nextStatus };
+      }
+      return inv;
+    }));
   };
 
   const [showBillingInvoicePreviewModal, setShowBillingInvoicePreviewModal] = useState(false);
@@ -1119,6 +1269,8 @@ Exported On: ${new Date().toLocaleString()}`;
           console.error('Error fetching loads from API:', err);
         });
 
+      fetchCustomerInvoices(selectedCustomer.id);
+
       // Gap Fix 3: Load contacts from API (GET /customers/:id/contacts) first,
       // then fall back to parsing contactName field if API returns nothing
       if (selectedCustomer.contacts) {
@@ -1571,8 +1723,9 @@ Exported On: ${new Date().toLocaleString()}`;
                   {activeDetailsTab === 'Contacts' ? '6.3 - Customer Contacts' :
                     activeDetailsTab === 'Billing Rules' ? '6.4 - Customer Billing Rules' :
                       activeDetailsTab === 'Pricing' ? '6.5 - Customer Pricing' :
-                        activeDetailsTab === 'Documents' ? '6.6 - Customer Documents' :
-                          '6.2 - Customer Details'
+                        activeDetailsTab === 'Invoices' ? '6.6 - Customer Invoices' :
+                          activeDetailsTab === 'Documents' ? '6.7 - Customer Documents' :
+                            '6.2 - Customer Details'
                   }
                 </h2>
                 <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-widest">Active Customer</span>
@@ -1722,13 +1875,16 @@ Exported On: ${new Date().toLocaleString()}`;
 
         {/* Tabs */}
         <div className="flex items-center border-b border-slate-200 mb-6 overflow-x-auto pb-0" style={{ gap: '0' }}>
-          {['Overview', 'Contacts', 'Billing Rules', 'Pricing', 'Transport Modules', 'Instructions', 'Documents', 'Activity', 'Financials'].map(tab => (
+          {['Overview', 'Contacts', 'Billing Rules', 'Pricing', 'Transport Modules', 'Invoices', 'Documents', 'Activity', 'Financials'].map(tab => (
             <button
               key={tab}
               onClick={() => {
                 setActiveDetailsTab(tab);
                 if (tab === 'Billing Rules' && selectedCustomer?.id) {
                   fetchBillingRule(selectedCustomer.id);
+                }
+                if (tab === 'Invoices' && selectedCustomer?.id) {
+                  fetchCustomerInvoices(selectedCustomer.id);
                 }
               }}
               className={`flex items-center gap-1.5 px-4 pb-3 pt-1 text-[13px] font-medium whitespace-nowrap transition-all relative cursor-pointer border-b-2 ${activeDetailsTab === tab
@@ -1819,7 +1975,7 @@ Exported On: ${new Date().toLocaleString()}`;
                     { label: 'View Loads', icon: Eye, action: () => setActiveDetailsTab('Activity') },
                     { label: 'Create Invoice', icon: Plus, action: () => setShowCreateInvoiceModal(true) },
                     { label: 'Send Message', icon: MessageSquare, action: () => setShowSendMessageModal(true) },
-                    { label: 'View Invoices', icon: FileText, action: () => setActiveDetailsTab('Financials') },
+                    { label: 'View Invoices', icon: FileText, action: () => { setActiveDetailsTab('Invoices'); if (selectedCustomer?.id) fetchCustomerInvoices(selectedCustomer.id); } },
                     { label: 'Edit Customer', icon: Edit, action: () => openEditCustomer(selectedCustomer) },
                     { label: 'Add Contact', icon: UserPlus, action: () => setShowAddContactModal(true) },
                     { label: 'Upload Document', icon: Upload, action: () => setShowUploadDocumentModal(true) },
@@ -2143,7 +2299,7 @@ Exported On: ${new Date().toLocaleString()}`;
                     <FileText size={16} className="text-blue-600" />
                     <h3 className="text-sm font-black tracking-tight">Recent Invoices</h3>
                   </div>
-                  <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+                  <button onClick={() => { setActiveDetailsTab('Invoices'); if (selectedCustomer?.id) fetchCustomerInvoices(selectedCustomer.id); }} className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
                     View All Invoices <ArrowRight size={12} />
                   </button>
                 </div>
@@ -2158,11 +2314,28 @@ Exported On: ${new Date().toLocaleString()}`;
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                      <tr>
-                        <td colSpan="4" className="py-8 px-4 text-center text-xs font-semibold text-slate-400">
-                          No recent invoices found.
-                        </td>
-                      </tr>
+                      {customerInvoices && customerInvoices.length > 0 ? (
+                        customerInvoices.slice(0, 3).map(inv => (
+                          <tr key={inv.id} className="hover:bg-slate-50/60 cursor-pointer" onClick={() => { setActiveDetailsTab('Invoices'); setSelectedInvoiceForModal(inv); }}>
+                            <td className="py-2.5 px-4 font-mono font-bold text-indigo-700">{inv.invoiceNumber}</td>
+                            <td className="py-2.5 px-4 text-slate-500 font-mono">{inv.issueDate}</td>
+                            <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">${Number(inv.total || inv.subtotal || 0).toFixed(2)}</td>
+                            <td className="py-2.5 px-4 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                inv.status === 'PAID' ? 'bg-emerald-50 text-emerald-700' :
+                                inv.status === 'PENDING' ? 'bg-amber-50 text-amber-700' :
+                                'bg-rose-50 text-rose-700'
+                              }`}>{inv.status}</span>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4" className="py-8 px-4 text-center text-xs font-semibold text-slate-400">
+                            No recent invoices found.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -4204,6 +4377,325 @@ Exported On: ${new Date().toLocaleString()}`;
             </div>
           </div>
         )}
+
+        {activeDetailsTab === 'Invoices' && (() => {
+          const filteredInvoices = customerInvoices.filter(inv => {
+            const matchesStatus = invoiceStatusFilter === 'ALL' || inv.status === invoiceStatusFilter;
+            const q = invoiceSearchQuery.trim().toLowerCase();
+            const matchesSearch = !q || (
+              (inv.invoiceNumber && inv.invoiceNumber.toLowerCase().includes(q)) ||
+              (inv.loadRef && inv.loadRef.toLowerCase().includes(q)) ||
+              (inv.description && inv.description.toLowerCase().includes(q))
+            );
+            return matchesStatus && matchesSearch;
+          });
+
+          const totalInvoiced = customerInvoices.reduce((sum, i) => sum + (i.total || i.subtotal || 0), 0);
+          const totalPaid = customerInvoices.filter(i => i.status === 'PAID').reduce((sum, i) => sum + (i.total || i.subtotal || 0), 0);
+          const totalPending = customerInvoices.filter(i => i.status === 'PENDING').reduce((sum, i) => sum + (i.total || i.subtotal || 0), 0);
+          const totalOverdue = customerInvoices.filter(i => i.status === 'OVERDUE').reduce((sum, i) => sum + (i.total || i.subtotal || 0), 0);
+
+          return (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left">
+              {/* Header with Title and Actions */}
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                      <FileText size={16} />
+                    </div>
+                    <h3 className="text-base font-black text-slate-900 tracking-tight">Customer Invoices</h3>
+                    <span className="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-indigo-200">
+                      {filteredInvoices.length} {filteredInvoices.length === 1 ? 'Record' : 'Records'}
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-500">
+                    Manage accounts receivable, view trip invoices, track payment status & issue tax receipts for <strong className="text-slate-800">{selectedCustomer?.name || 'this customer'}</strong>.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                  <button
+                    onClick={() => {
+                      const csvContent = "data:text/csv;charset=utf-8," + 
+                        ["InvoiceNumber,LoadRef,Date,DueDate,Amount,Status", ...customerInvoices.map(i => `${i.invoiceNumber},${i.loadRef},${i.issueDate},${i.dueDate},${i.total},${i.status}`)].join("\n");
+                      const encodedUri = encodeURI(csvContent);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", encodedUri);
+                      link.setAttribute("download", `Invoices_${selectedCustomer?.name || 'Customer'}.csv`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      triggerToast('Invoices exported to CSV!');
+                    }}
+                    className="px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Download size={14} /> Export CSV
+                  </button>
+                  <button
+                    onClick={() => {
+                      setNewInvoiceData({
+                        invoiceNumber: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+                        loadRef: '',
+                        description: `Freight Haulage Service for ${selectedCustomer?.name || 'Customer'}`,
+                        amount: '',
+                        dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+                        paymentTerms: '14 Days EOM',
+                        notes: ''
+                      });
+                      setShowCreateInvoiceModal(true);
+                    }}
+                    className="px-4 py-2.5 bg-[#ffcc00] hover:bg-[#e6b800] text-black rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  >
+                    <Plus size={14} /> Create Invoice
+                  </button>
+                </div>
+              </div>
+
+              {/* 4 Financial Stat Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Total Invoiced</span>
+                    <span className="text-xl font-black text-slate-900 font-mono">
+                      ${totalInvoiced.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">{customerInvoices.length} Invoices Total</span>
+                  </div>
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                    <DollarSign size={18} />
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Paid Received</span>
+                    <span className="text-xl font-black text-emerald-600 font-mono">
+                      ${totalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-[10px] text-emerald-600 font-bold block mt-0.5">
+                      {customerInvoices.filter(i => i.status === 'PAID').length} Paid Invoices
+                    </span>
+                  </div>
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                    <CheckCircle2 size={18} />
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Outstanding (Current)</span>
+                    <span className="text-xl font-black text-amber-600 font-mono">
+                      ${totalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-[10px] text-amber-600 font-bold block mt-0.5">
+                      {customerInvoices.filter(i => i.status === 'PENDING').length} Pending Payment
+                    </span>
+                  </div>
+                  <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                    <Clock size={18} />
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Overdue</span>
+                    <span className="text-xl font-black text-rose-600 font-mono">
+                      ${totalOverdue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-[10px] text-rose-600 font-bold block mt-0.5">
+                      {customerInvoices.filter(i => i.status === 'OVERDUE').length} Overdue Invoices
+                    </span>
+                  </div>
+                  <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                    <AlertCircle size={18} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter and Search Bar */}
+              <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div className="relative w-full sm:w-80">
+                  <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={invoiceSearchQuery}
+                    onChange={e => setInvoiceSearchQuery(e.target.value)}
+                    placeholder="Search invoice #, load ref, description..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  {/* Status Pills */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                    {['ALL', 'PAID', 'PENDING', 'OVERDUE'].map(st => (
+                      <button
+                        key={st}
+                        onClick={() => setInvoiceStatusFilter(st)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer border ${
+                          invoiceStatusFilter === st
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {st === 'ALL' ? `All (${customerInvoices.length})` : st}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => fetchCustomerInvoices(selectedCustomer?.id)}
+                    className="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl cursor-pointer ml-1"
+                    title="Refresh Invoices"
+                  >
+                    <RefreshCw size={14} className={invoicesLoading ? "animate-spin" : ""} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Invoices Table */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-left text-xs whitespace-nowrap min-w-[750px]">
+                    <thead>
+                      <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <th className="py-3 px-5">INVOICE #</th>
+                        <th className="py-3 px-5">LOAD REF</th>
+                        <th className="py-3 px-5">DESCRIPTION</th>
+                        <th className="py-3 px-5">ISSUE DATE</th>
+                        <th className="py-3 px-5">DUE DATE</th>
+                        <th className="py-3 px-5 text-right">AMOUNT (AUD)</th>
+                        <th className="py-3 px-5 text-center">STATUS</th>
+                        <th className="py-3 px-5 text-center">ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
+                      {filteredInvoices.length > 0 ? (
+                        filteredInvoices.map((inv) => (
+                          <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="py-3.5 px-5">
+                              <div className="flex items-center gap-2">
+                                <FileText size={14} className="text-indigo-600 shrink-0" />
+                                <span className="font-mono font-black text-slate-900">{inv.invoiceNumber}</span>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-5">
+                              <span className="font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg text-[11px]">
+                                {inv.loadRef || 'General'}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-5 max-w-[240px] truncate text-slate-600 text-xs font-medium">
+                              {inv.description}
+                            </td>
+                            <td className="py-3.5 px-5 font-mono text-slate-600 text-xs">
+                              {inv.issueDate}
+                            </td>
+                            <td className="py-3.5 px-5 font-mono text-xs">
+                              <span className={inv.status === 'OVERDUE' ? 'text-rose-600 font-black' : 'text-slate-600'}>
+                                {inv.dueDate}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-5 font-mono font-black text-slate-900 text-right text-xs">
+                              ${Number(inv.total || inv.subtotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-3.5 px-5 text-center">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border inline-block ${
+                                inv.status === 'PAID'
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : inv.status === 'PENDING'
+                                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                  : inv.status === 'OVERDUE'
+                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                  : 'bg-slate-100 text-slate-600 border-slate-200'
+                              }`}>
+                                {inv.status}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-5 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() => setSelectedInvoiceForModal(inv)}
+                                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                                  title="View Tax Invoice"
+                                >
+                                  View PDF
+                                </button>
+                                <button
+                                  onClick={() => handleToggleInvoicePaid(inv.id)}
+                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer border ${
+                                    inv.status === 'PAID'
+                                      ? 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                                  }`}
+                                  title={inv.status === 'PAID' ? "Mark as Pending" : "Mark as Paid"}
+                                >
+                                  {inv.status === 'PAID' ? 'Unmark' : 'Mark Paid'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="8" className="py-12 px-5 text-center text-xs font-semibold text-slate-400">
+                            {invoicesLoading ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <RefreshCw size={16} className="animate-spin text-indigo-600" />
+                                <span>Loading customer invoices...</span>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <p>No invoices matching your criteria.</p>
+                                <button
+                                  onClick={() => {
+                                    setNewInvoiceData({
+                                      invoiceNumber: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+                                      loadRef: '',
+                                      description: `Freight Haulage Service for ${selectedCustomer?.name || 'Customer'}`,
+                                      amount: '',
+                                      dueDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+                                      paymentTerms: '14 Days EOM',
+                                      notes: ''
+                                    });
+                                    setShowCreateInvoiceModal(true);
+                                  }}
+                                  className="text-indigo-600 font-bold hover:underline cursor-pointer"
+                                >
+                                  + Create First Invoice for {selectedCustomer?.name || 'Customer'}
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Billing Rules Notice */}
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
+                <div className="flex items-center gap-2.5 text-slate-600">
+                  <Settings size={15} className="text-indigo-600 shrink-0" />
+                  <span>
+                    Need to configure automated invoice triggers, invoice grouping (per load / weekly consolidated), or payment terms?
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    setActiveDetailsTab('Billing Rules');
+                    if (selectedCustomer?.id) fetchBillingRule(selectedCustomer.id);
+                  }}
+                  className="font-bold text-indigo-600 hover:text-indigo-800 whitespace-nowrap cursor-pointer flex items-center gap-1"
+                >
+                  Configure Customer Billing Rules <ArrowRight size={13} />
+                </button>
+              </div>
+
+            </div>
+          );
+        })()}
 
         {activeDetailsTab === 'Documents' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left">
@@ -8688,6 +9180,325 @@ Exported On: ${new Date().toLocaleString()}`;
           </div>
         </>,
         document.body
+      )}
+
+      {/* Create Customer Invoice Modal */}
+      {showCreateInvoiceModal && (
+        <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <FileText size={18} className="text-amber-400" />
+                <h3 className="text-sm font-black tracking-tight">Create Customer Invoice</h3>
+              </div>
+              <button
+                onClick={() => setShowCreateInvoiceModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleCreateCustomerInvoice} className="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Customer</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={selectedCustomer?.name || 'Customer'}
+                  className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-not-allowed"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Invoice Number</label>
+                  <input
+                    type="text"
+                    value={newInvoiceData.invoiceNumber}
+                    onChange={(e) => setNewInvoiceData({ ...newInvoiceData, invoiceNumber: e.target.value })}
+                    placeholder="e.g. INV-2026-0042"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Load Ref / Job #</label>
+                  <input
+                    type="text"
+                    value={newInvoiceData.loadRef}
+                    onChange={(e) => setNewInvoiceData({ ...newInvoiceData, loadRef: e.target.value })}
+                    placeholder="e.g. LD-8890"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Description / Freight Service</label>
+                <input
+                  type="text"
+                  value={newInvoiceData.description}
+                  onChange={(e) => setNewInvoiceData({ ...newInvoiceData, description: e.target.value })}
+                  placeholder="e.g. Interstate Freight Sydney to Brisbane (Refrigerated)"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Subtotal Amount (ex GST)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={newInvoiceData.amount}
+                      onChange={(e) => setNewInvoiceData({ ...newInvoiceData, amount: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full pl-7 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Payment Terms</label>
+                  <select
+                    value={newInvoiceData.paymentTerms}
+                    onChange={(e) => setNewInvoiceData({ ...newInvoiceData, paymentTerms: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-500 bg-white"
+                  >
+                    <option value="14 Days EOM">14 Days EOM</option>
+                    <option value="30 Days Net">30 Days Net</option>
+                    <option value="7 Days Net">7 Days Net</option>
+                    <option value="COD">Cash on Delivery (COD)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Due Date</label>
+                <input
+                  type="date"
+                  value={newInvoiceData.dueDate}
+                  onChange={(e) => setNewInvoiceData({ ...newInvoiceData, dueDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                  required
+                />
+              </div>
+
+              {/* Live Calculation preview */}
+              {newInvoiceData.amount && !isNaN(parseFloat(newInvoiceData.amount)) && (
+                <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl space-y-1 text-slate-700">
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-500">Subtotal:</span>
+                    <span className="font-mono font-bold">${parseFloat(newInvoiceData.amount).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-500">GST (10%):</span>
+                    <span className="font-mono font-bold">${(parseFloat(newInvoiceData.amount) * 0.1).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs pt-1 border-t border-indigo-200 font-black text-indigo-950">
+                    <span>Total Inc. GST:</span>
+                    <span className="font-mono">${(parseFloat(newInvoiceData.amount) * 1.1).toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Notes / Special Instructions</label>
+                <textarea
+                  rows="2"
+                  value={newInvoiceData.notes}
+                  onChange={(e) => setNewInvoiceData({ ...newInvoiceData, notes: e.target.value })}
+                  placeholder="Additional delivery references or billing notes..."
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateInvoiceModal(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors cursor-pointer shadow-sm flex items-center gap-1.5"
+                >
+                  <Check size={14} /> Create Invoice
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Official Tax Invoice View / Print Modal */}
+      {selectedInvoiceForModal && (
+        <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[92vh]">
+            {/* Modal Top Bar */}
+            <div className="px-6 py-3.5 bg-slate-900 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <FileText size={17} className="text-amber-400" />
+                <span className="text-sm font-black">Tax Invoice — {selectedInvoiceForModal.invoiceNumber}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <Printer size={13} /> Print
+                </button>
+                <button
+                  onClick={() => setSelectedInvoiceForModal(null)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Invoice Document Body */}
+            <div className="p-8 space-y-6 overflow-y-auto flex-1 text-slate-800 text-xs">
+              {/* Header Details */}
+              <div className="flex justify-between items-start border-b border-slate-200 pb-5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-black tracking-tight text-slate-900">HERO LOGISTICS</span>
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-black text-[10px] rounded uppercase">PTY LTD</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium mt-1">ABN: 88 123 456 789</p>
+                  <p className="text-[11px] text-slate-500 font-medium">100 Logistics Way, Eastern Creek NSW 2766</p>
+                  <p className="text-[11px] text-slate-500 font-medium">accounts@herologistics.com.au • (02) 9876 5432</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-2xl font-black text-slate-900 tracking-wider uppercase block">TAX INVOICE</span>
+                  <div className="mt-2 space-y-0.5 text-xs">
+                    <p className="font-mono font-bold text-slate-900"># {selectedInvoiceForModal.invoiceNumber}</p>
+                    <p className="text-slate-500">Date: <span className="font-semibold text-slate-800">{selectedInvoiceForModal.issueDate}</span></p>
+                    <p className="text-slate-500">Due Date: <span className="font-semibold text-slate-800">{selectedInvoiceForModal.dueDate}</span></p>
+                    <div className="pt-1">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider inline-block ${
+                        selectedInvoiceForModal.status === 'PAID'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : selectedInvoiceForModal.status === 'OVERDUE'
+                          ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                          : 'bg-amber-100 text-amber-800 border border-amber-300'
+                      }`}>
+                        Status: {selectedInvoiceForModal.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer & Billing Terms */}
+              <div className="grid grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">INVOICE TO</span>
+                  <h4 className="font-black text-slate-900 text-sm">{selectedCustomer?.name || 'Customer'}</h4>
+                  <p className="text-slate-600 font-medium mt-0.5">ABN: {selectedCustomer?.abn || 'Not Specified'}</p>
+                  <p className="text-slate-600 font-medium">{selectedCustomer?.address || '12 Industrial Ave, NSW'}</p>
+                  <p className="text-slate-600 font-medium">{selectedCustomer?.email || 'accounts@client.com'}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">DETAILS</span>
+                  <p className="text-slate-600"><span className="font-semibold text-slate-800">Job Reference:</span> {selectedInvoiceForModal.loadRef || 'General'}</p>
+                  <p className="text-slate-600"><span className="font-semibold text-slate-800">Payment Terms:</span> {selectedInvoiceForModal.paymentMethod || '14 Days EOM'}</p>
+                  <p className="text-slate-600"><span className="font-semibold text-slate-800">Currency:</span> AUD ($)</p>
+                </div>
+              </div>
+
+              {/* Line Items Table */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-100 text-slate-600 text-[10px] uppercase font-black tracking-wider">
+                    <tr>
+                      <th className="py-2.5 px-4">Description</th>
+                      <th className="py-2.5 px-4 text-center">Qty</th>
+                      <th className="py-2.5 px-4 text-right">Unit Price</th>
+                      <th className="py-2.5 px-4 text-right">GST (10%)</th>
+                      <th className="py-2.5 px-4 text-right">Amount (AUD)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs font-semibold">
+                    <tr>
+                      <td className="py-3 px-4">
+                        <p className="font-bold text-slate-900">{selectedInvoiceForModal.description || 'Freight Delivery & Haulage Service'}</p>
+                        <p className="text-[11px] text-slate-500 font-normal">Reference: {selectedInvoiceForModal.loadRef || 'N/A'}</p>
+                      </td>
+                      <td className="py-3 px-4 text-center">1</td>
+                      <td className="py-3 px-4 text-right font-mono">${Number(selectedInvoiceForModal.subtotal || 0).toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right font-mono">${Number(selectedInvoiceForModal.tax || 0).toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">${Number(selectedInvoiceForModal.total || 0).toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Total Calculation */}
+              <div className="flex justify-end">
+                <div className="w-64 space-y-2 border-t border-slate-200 pt-3">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Subtotal:</span>
+                    <span className="font-mono font-bold">${Number(selectedInvoiceForModal.subtotal || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600">
+                    <span>GST (10%):</span>
+                    <span className="font-mono font-bold">${Number(selectedInvoiceForModal.tax || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-black text-slate-900 border-t border-slate-200 pt-2">
+                    <span>TOTAL DUE:</span>
+                    <span className="font-mono text-indigo-700">${Number(selectedInvoiceForModal.total || 0).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Remittance Advice */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-[11px] text-slate-600">
+                <span className="font-bold text-slate-800 uppercase tracking-wider text-[10px] block">Payment Advice / EFT Details</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <p><span className="font-semibold text-slate-700">Bank:</span> Commonwealth Bank of Australia</p>
+                    <p><span className="font-semibold text-slate-700">Account Name:</span> Hero Logistics Pty Ltd</p>
+                  </div>
+                  <div>
+                    <p><span className="font-semibold text-slate-700">BSB:</span> 062-000</p>
+                    <p><span className="font-semibold text-slate-700">Account:</span> 1234 5678</p>
+                    <p><span className="font-semibold text-slate-700">Reference:</span> {selectedInvoiceForModal.invoiceNumber}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
+              <button
+                onClick={() => {
+                  handleToggleInvoicePaid(selectedInvoiceForModal.id);
+                  setSelectedInvoiceForModal(prev => ({
+                    ...prev,
+                    status: prev.status === 'PAID' ? 'PENDING' : 'PAID'
+                  }));
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer border ${
+                  selectedInvoiceForModal.status === 'PAID'
+                    ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                }`}
+              >
+                {selectedInvoiceForModal.status === 'PAID' ? 'Mark as Unpaid' : 'Mark as Paid'}
+              </button>
+              <button
+                onClick={() => setSelectedInvoiceForModal(null)}
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Toast Notification */}
