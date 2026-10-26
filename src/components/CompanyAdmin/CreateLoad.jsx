@@ -1469,16 +1469,9 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
         status: targetStatus,
         priority: (formData.priority || 'NORMAL').toUpperCase(),
         loadDate: formData.loadDate ? new Date(formData.loadDate).toISOString() : new Date().toISOString(),
-        notes: (() => {
-          const cleanBase = (formData.loadNotes || 'Created via Load Console')
-            .replace(/\[(AGREED_RATE|DRIVER_PAY|SCHEDULE):[^\]]+\]/g, '')
-            .trim();
-          let n = cleanBase;
-          if (formData.rate) n += ` [AGREED_RATE:${formData.rate}]`;
-          if (formData.driverPay) n += ` [DRIVER_PAY:${formData.driverPay}]`;
-          if (formData.loadScheduleTitle) n += ` [SCHEDULE:${formData.loadScheduleTitle}]`;
-          return n;
-        })(),
+        notes: (formData.loadNotes || 'Created via Load Console')
+          .replace(/\[(AGREED_RATE|DRIVER_PAY|SCHEDULE):[^\]]+\]/g, '')
+          .trim(),
         customerMode: formData.customerMode || 'ONE',
         customerId: formData.customerMode === 'ONE' && formData.customer && formData.customer.length > 5 ? formData.customer : null,
         driverId: formData.driver && formData.driver.length > 5 ? formData.driver : null,
@@ -1529,6 +1522,16 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
             : (formData.customer && formData.customer.length > 5 ? [formData.customer] : []);
         })(),
         billingSnapshots: multiCustomerBreakdown,
+        pricingSnapshot: {
+          totalExGst: formData.rate ? parseFloat(formData.rate) : 0,
+          driverPayConfig: {
+            driverId: formData.driver || null,
+            rate: formData.driverPay ? parseFloat(formData.driverPay) : 0,
+            payType: (formData.loadScheduleTitle || '').toLowerCase().includes('hour') || (formData.loadScheduleTitle || '').toLowerCase().includes('/hr') ? 'HOURLY' : 'FLAT',
+            scheduleTitle: formData.loadScheduleTitle || '',
+            unit: (formData.loadScheduleTitle || '').toLowerCase().includes('hour') ? '/hr' : 'flat'
+          }
+        },
         ...(Object.keys(uploadedPhotos).length > 0 && {
           documents: {
             create: Object.entries(uploadedPhotos).flatMap(([key, photos]) => 
@@ -1801,27 +1804,60 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
               <FieldLabel required>Load Type / Service</FieldLabel>
               <div className="relative">
                 <Truck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                <select
-                  value={formData.loadType}
-                  onChange={e => {
-                    const newType = e.target.value;
-                    setFormData({ ...formData, loadType: newType });
-                    setItems([{
-                      id: Date.now(), customer: formData.customerMode === 'ONE' ? formData.customer : '', pricingRuleId: '', itemCharge: '', pickupStop: '', dropStop: '',
-                      rcog: '', vin: '', stockRec: '', make: '', model: '', year: '', colour: '', 
-                      length: '', width: '', height: '', weight: '', vehicleType: '', 
-                      keys: 'Yes', damageReport: 'Yes', notes: '',
-                      itemDescription: '', quantity: '1', pallets: '', cubicMetres: '', fragile: 'No', stackable: 'No', specialHandling: '',
-                      unNumber: '', dgClass: '', packingGroup: '', hazchemCode: '', msdsUploaded: 'No', emergencyContact: '', complianceChecklist: 'No', placarding: 'No'
-                    }]);
-                  }}
-                  className={`${selectCls} pl-10`}
-                >
-                  {LOAD_TYPES.map(t => <option key={t}>{t}</option>)}
-                </select>
+                {(() => {
+                  let availableTypes = LOAD_TYPES;
+                  try {
+                    const saved = JSON.parse(localStorage.getItem('hero_company_transport_goods') || localStorage.getItem('hero_company_profile') || '{}');
+                    const cTypes = (Array.isArray(saved.goodsTypes) && saved.goodsTypes.length > 0)
+                      ? saved.goodsTypes
+                      : ((Array.isArray(saved.transportModules) && saved.transportModules.length > 0) ? saved.transportModules : (saved.primaryService ? [saved.primaryService] : null));
+                    if (cTypes && cTypes.length > 0) {
+                      const filtered = LOAD_TYPES.filter(t => cTypes.includes(t) || cTypes.some(g => t.toLowerCase().includes(g.toLowerCase()) || g.toLowerCase().includes(t.toLowerCase())));
+                      if (filtered.length > 0) availableTypes = filtered;
+                    }
+                  } catch(e) {}
+
+                  return (
+                    <select
+                      value={formData.loadType}
+                      onChange={e => {
+                        const newType = e.target.value;
+                        setFormData({ ...formData, loadType: newType });
+                        setItems([{
+                          id: Date.now(), customer: formData.customerMode === 'ONE' ? formData.customer : '', pricingRuleId: '', itemCharge: '', pickupStop: '', dropStop: '',
+                          rcog: '', vin: '', stockRec: '', make: '', model: '', year: '', colour: '', 
+                          length: '', width: '', height: '', weight: '', vehicleType: '', 
+                          keys: 'Yes', damageReport: 'Yes', notes: '',
+                          itemDescription: '', quantity: '1', pallets: '', cubicMetres: '', fragile: 'No', stackable: 'No', specialHandling: '',
+                          unNumber: '', dgClass: '', packingGroup: '', hazchemCode: '', msdsUploaded: 'No', emergencyContact: '', complianceChecklist: 'No', placarding: 'No'
+                        }]);
+                      }}
+                      className={`${selectCls} pl-10`}
+                    >
+                      {availableTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  );
+                })()}
                 <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
               {(() => {
+                let companyOnlyType = null;
+                try {
+                  const saved = JSON.parse(localStorage.getItem('hero_company_transport_goods') || localStorage.getItem('hero_company_profile') || '{}');
+                  const cTypes = (Array.isArray(saved.goodsTypes) && saved.goodsTypes.length > 0)
+                    ? saved.goodsTypes
+                    : ((Array.isArray(saved.transportModules) && saved.transportModules.length > 0) ? saved.transportModules : (saved.primaryService ? [saved.primaryService] : null));
+                  if (cTypes && cTypes.length === 1) companyOnlyType = cTypes[0];
+                } catch(e) {}
+
+                if (companyOnlyType) {
+                  return (
+                    <p className="text-[10px] font-bold text-indigo-600 mt-1 flex items-center gap-1">
+                      <Check className="w-3 h-3 text-indigo-500 inline shrink-0" /> Company Service ({companyOnlyType})
+                    </p>
+                  );
+                }
+
                 const curCust = dbCustomers.find(c => String(c.id) === String(formData.customer));
                 const resolved = curCust ? resolveCustomerLoadType(curCust) : null;
                 if (!resolved) return null;
@@ -3007,14 +3043,107 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
           <SectionHeader number="4" title="Assign Resources & Driver Pay" subtitle="Driver Compensation & Payroll (Outbound Expense)" colorCls="bg-purple-700" />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Field 1: Driver (First Field & Primary Selection) */}
             <div>
-              <FieldLabel>Truck (Optional)</FieldLabel>
+              <FieldLabel required>Driver *</FieldLabel>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-600" />
+                <select
+                  value={formData.driver}
+                  onChange={e => {
+                    const drvId = e.target.value;
+                    const schedules = getDriverSchedules(drvId);
+
+                    // 1. Auto-find assigned truck from driver profile or dbTrucks
+                    const drvObj = dbDrivers.find(d => String(d.id) === String(drvId));
+                    let matchedTruckId = drvObj?.vehicleId || drvObj?.truckId || drvObj?.currentVehicle?.id || drvObj?.vehicle?.id || '';
+                    if (!matchedTruckId && (drvObj?.vehicleRego || drvObj?.currentVehicle?.rego || drvObj?.vehicle?.rego)) {
+                      const regToMatch = (drvObj.vehicleRego || drvObj.currentVehicle?.rego || drvObj.vehicle?.rego || '').toUpperCase();
+                      const foundTruck = dbTrucks.find(t => (t.rego && t.rego.toUpperCase() === regToMatch) || (t.id && String(t.id).toUpperCase() === regToMatch) || (t.code && String(t.code).toUpperCase() === regToMatch));
+                      if (foundTruck) matchedTruckId = foundTruck.id;
+                    }
+                    if (!matchedTruckId && drvId) {
+                      const foundByDriver = dbTrucks.find(t => String(t.assignedDriverId || t.driverId || t.currentDriverId) === String(drvId));
+                      if (foundByDriver) matchedTruckId = foundByDriver.id;
+                    }
+
+                    // 2. Smart route auto-matching based on stops
+                    const pickupStop = stops.find(s => s.type === 'Pickup');
+                    const dropStop = stops.find(s => s.type === 'Drop-off');
+                    const pAddr = (pickupStop?.address || '').toLowerCase();
+                    const dAddr = (dropStop?.address || '').toLowerCase();
+
+                    let matchedSched = null;
+                    if (pAddr || dAddr) {
+                      matchedSched = schedules.find(s => {
+                        const titleLower = (s.title || '').toLowerCase();
+                        const pLoc = (s.origin || s.raw?.pickupLocation || '').toLowerCase();
+                        const dLoc = (s.destination || s.raw?.deliveryLocation || '').toLowerCase();
+                        return (pAddr && pLoc && (pAddr.includes(pLoc) || pLoc.includes(pAddr))) ||
+                               (dAddr && dLoc && (dAddr.includes(dLoc) || dLoc.includes(dAddr)));
+                      });
+                    }
+
+                    const activeSched = matchedSched || schedules.find(s => s.isSelected) || schedules[0];
+                    if (activeSched) {
+                      setSelectedScheduleId(activeSched.id);
+                      const defaultPay = String(activeSched.amount);
+                      setFormData(prev => ({
+                        ...prev,
+                        driver: drvId,
+                        ...(matchedTruckId ? { truck: matchedTruckId } : {}),
+                        driverPay: defaultPay,
+                        loadScheduleTitle: activeSched.title
+                      }));
+                    } else if (drvId) {
+                      setSelectedScheduleId('custom');
+                      setFormData(prev => ({
+                        ...prev,
+                        driver: drvId,
+                        ...(matchedTruckId ? { truck: matchedTruckId } : {}),
+                        driverPay: prev.driverPay || '',
+                        loadScheduleTitle: 'Custom Rate'
+                      }));
+                    } else {
+                      setSelectedScheduleId('');
+                      setFormData(prev => ({
+                        ...prev,
+                        driver: '',
+                        driverPay: '',
+                        loadScheduleTitle: ''
+                      }));
+                    }
+                  }}
+                  className={`${selectCls} pl-8 font-bold border-purple-300 focus:border-purple-600`}
+                >
+                  <option value="">Select Driver (Assign First)...</option>
+                  {dbDrivers.map((d, idx) => {
+                    const val = d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.userCode || `Driver #${idx + 1}`;
+                    return <option key={d.id || idx} value={d.id}>{val}</option>;
+                  })}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-purple-600 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Field 2: Truck (Auto-populated from Driver, Editable) */}
+            <div>
+              <FieldLabel>
+                <span>Truck</span>
+                {formData.driver && formData.truck ? (
+                  <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 ml-1.5">
+                    Auto-assigned (Editable)
+                  </span>
+                ) : (
+                  <span className="text-slate-400 font-normal text-[11px] ml-1">(Optional)</span>
+                )}
+              </FieldLabel>
               <div className="relative">
                 <Truck className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <select
                   value={formData.truck}
                   onChange={e => setFormData({ ...formData, truck: e.target.value })}
-                  className={`${selectCls} pl-8`}
+                  className={`${selectCls} pl-8 ${formData.driver && formData.truck ? 'bg-emerald-50/30 border-emerald-300' : ''}`}
                 >
                   <option value="">Select Truck (Optional)...</option>
                   {dbTrucks
@@ -3031,6 +3160,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
               </div>
             </div>
 
+            {/* Field 3: Trailer (Optional) */}
             <div>
               <FieldLabel>Trailer (Optional)</FieldLabel>
               <div className="relative">
@@ -3055,77 +3185,10 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
               </div>
             </div>
 
-            <div>
-              <FieldLabel>Driver (Optional)</FieldLabel>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                <select
-                  value={formData.driver}
-                  onChange={e => {
-                    const drvId = e.target.value;
-                    const schedules = getDriverSchedules(drvId);
-                    
-                    // Smart route auto-matching based on stops added in Section 2
-                    const pickupStop = stops.find(s => s.type === 'Pickup');
-                    const dropStop = stops.find(s => s.type === 'Drop-off');
-                    const pAddr = (pickupStop?.address || '').toLowerCase();
-                    const dAddr = (dropStop?.address || '').toLowerCase();
-
-                    let matchedSched = null;
-                    if (pAddr || dAddr) {
-                      matchedSched = schedules.find(s => {
-                        const titleLower = (s.title || '').toLowerCase();
-                        const pLoc = (s.origin || s.raw?.pickupLocation || '').toLowerCase();
-                        const dLoc = (s.destination || s.raw?.deliveryLocation || '').toLowerCase();
-                        return (pAddr && pLoc && (pAddr.includes(pLoc) || pLoc.includes(pAddr))) ||
-                               (dAddr && dLoc && (dAddr.includes(dLoc) || dLoc.includes(dAddr)));
-                      });
-                    }
-
-                    const activeSched = matchedSched || schedules.find(s => s.isSelected) || schedules[0];
-                    if (activeSched) {
-                      setSelectedScheduleId(activeSched.id);
-                      const defaultPay = String(activeSched.amount);
-                      setFormData(prev => ({
-                        ...prev,
-                        driver: drvId,
-                        driverPay: defaultPay,
-                        loadScheduleTitle: activeSched.title
-                      }));
-                    } else if (drvId) {
-                      setSelectedScheduleId('custom');
-                      setFormData(prev => ({
-                        ...prev,
-                        driver: drvId,
-                        driverPay: prev.driverPay || '',
-                        loadScheduleTitle: 'Custom Rate'
-                      }));
-                    } else {
-                      setSelectedScheduleId('');
-                      setFormData(prev => ({
-                        ...prev,
-                        driver: '',
-                        driverPay: '',
-                        loadScheduleTitle: ''
-                      }));
-                    }
-                  }}
-                  className={`${selectCls} pl-8`}
-                >
-                  <option value="">Select Driver (Optional)...</option>
-                  {dbDrivers.map((d, idx) => {
-                    const val = d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.userCode || `Driver #${idx + 1}`;
-                    return <option key={d.id || idx} value={d.id}>{val}</option>;
-                  })}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Dynamic Load Schedule Dropdown when Driver is selected */}
+            {/* Field 4: Driver Pay Rule (Optional, auto-populates from driver) */}
             {formData.driver ? (
               <div>
-                <FieldLabel required>Load Schedule (Driver Pay Rule)</FieldLabel>
+                <FieldLabel>Load Schedule (Driver Pay Rule)</FieldLabel>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-600" />
                   <select
@@ -3174,12 +3237,13 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
               </div>
             )}
 
-            {/* Extra Driver Pay & Load Notes fields if Driver is selected */}
+            {/* Row 2: Pay Rate/Amount & Load Notes */}
             {formData.driver && (
               <>
                 <div>
-                  <FieldLabel required={selectedScheduleId === 'custom'}>
-                    {selectedScheduleId === 'custom' ? 'Custom Amount ($)' : 'Driver Pay Amount ($)'}
+                  <FieldLabel>
+                    <span>{selectedScheduleId === 'custom' ? 'Custom Amount ($)' : 'Driver Pay Rate / Amount ($)'}</span>
+                    <span className="text-slate-400 font-normal text-[11px] ml-1">(Optional)</span>
                   </FieldLabel>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">$</span>
@@ -3213,14 +3277,14 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
                   </div>
                 </div>
 
-                <div className="col-span-1 sm:col-span-2 lg:col-span-2">
-                  <FieldLabel>Load Notes (Driver View)</FieldLabel>
+                <div className="col-span-1 sm:col-span-2 lg:col-span-3">
+                  <FieldLabel>Load Notes (Driver View) <span className="text-slate-400 font-normal text-[11px]">(Optional)</span></FieldLabel>
                   <input
                     type="text"
                     value={formData.loadNotes}
                     onChange={e => setFormData({ ...formData, loadNotes: e.target.value })}
                     className={inputCls}
-                    placeholder="Notes visible to driver..."
+                    placeholder="Enter clean operational notes visible to driver..."
                   />
                 </div>
               </>

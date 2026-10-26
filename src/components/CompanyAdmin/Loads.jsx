@@ -906,7 +906,7 @@ function LoadDetail({ load, onBack, onEdit }) {
                   </button>
                 </div>
                 <p className="text-[12px] text-slate-600 leading-relaxed">
-                  {currentLoad.notes}
+                  {(currentLoad.notes || '').replace(/\[(AGREED_RATE|DRIVER_PAY|SCHEDULE):[^\]]+\]/g, '').trim() || 'No notes provided'}
                 </p>
               </div>
 
@@ -1154,15 +1154,47 @@ function LoadDetail({ load, onBack, onEdit }) {
                     <span className="text-xs text-slate-600 font-semibold">Invoices</span>
                     <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] font-black rounded-full uppercase tracking-wider">SEE GENERATED</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-600 font-semibold">Driver Pay</span>
-                    <span className="text-xs font-bold text-slate-800">
-                      ${(() => {
-                        const match = (currentLoad.notes || '').match(/\[DRIVER_PAY:([0-9.]+)/);
-                        return match && match[1] ? parseFloat(match[1]).toFixed(2) : 'PENDING';
-                      })()}
-                    </span>
-                  </div>
+                  {(() => {
+                    const schedMatch = (currentLoad.notes || '').match(/\[SCHEDULE:([^\]]+)\]/);
+                    const schedTitle = currentLoad.pricingSnapshot?.driverPayConfig?.scheduleTitle || (schedMatch ? schedMatch[1] : '') || currentLoad.driver?.payType || '';
+                    const isHourly = schedTitle.toLowerCase().includes('hour') || schedTitle.toLowerCase().includes('/hr') || (currentLoad.driver?.payType || '').toLowerCase().includes('hour') || currentLoad.pricingSnapshot?.driverPayConfig?.payType === 'HOURLY';
+
+                    const dpMatch = (currentLoad.notes || '').match(/\[DRIVER_PAY:([0-9.]+)/);
+                    const payRate = currentLoad.pricingSnapshot?.driverPayConfig?.rate || (dpMatch && dpMatch[1] ? parseFloat(dpMatch[1]) : (currentLoad.driverPay ? parseFloat(currentLoad.driverPay) : 0));
+
+                    const actualHours = parseFloat(currentLoad.actualHours || currentLoad.approvedHours || 0);
+                    const estHours = parseFloat(currentLoad.estimatedHours || 0);
+
+                    if (isHourly) {
+                      return (
+                        <div className="space-y-2 pt-1 border-t border-slate-100">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-slate-600 font-semibold">Pay Rate</span>
+                            <span className="text-xs font-bold text-purple-700">${payRate.toFixed(2)}/hour</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-slate-600 font-semibold">
+                              {actualHours > 0 ? 'Total Driver Pay' : (estHours > 0 ? 'Estimated Driver Pay' : 'Total Driver Pay')}
+                            </span>
+                            <span className={`text-xs font-bold ${actualHours > 0 ? 'text-slate-800' : 'text-amber-600'}`}>
+                              {actualHours > 0 
+                                ? `$${(actualHours * payRate).toFixed(2)} (${actualHours} hrs)` 
+                                : (estHours > 0 ? `$${(estHours * payRate).toFixed(2)} (Est. ${estHours} hrs)` : 'Pending hours')}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-600 font-semibold">Driver Pay</span>
+                        <span className="text-xs font-bold text-slate-800">
+                          {payRate > 0 ? `$${payRate.toFixed(2)}` : 'PENDING'}
+                        </span>
+                      </div>
+                    );
+                  })()}
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-600 font-semibold">Expenses ({expensesList.length} items)</span>
                     <span className="text-xs font-bold text-slate-800">
@@ -1177,8 +1209,20 @@ function LoadDetail({ load, onBack, onEdit }) {
                    {(() => {
                       const revenue = currentLoad.pricingSnapshot ? parseFloat(currentLoad.pricingSnapshot.totalExGst || 0) : 0;
                       
+                      const schedMatch = (currentLoad.notes || '').match(/\[SCHEDULE:([^\]]+)\]/);
+                      const schedTitle = currentLoad.pricingSnapshot?.driverPayConfig?.scheduleTitle || (schedMatch ? schedMatch[1] : '') || currentLoad.driver?.payType || '';
+                      const isHourly = schedTitle.toLowerCase().includes('hour') || schedTitle.toLowerCase().includes('/hr') || (currentLoad.driver?.payType || '').toLowerCase().includes('hour') || currentLoad.pricingSnapshot?.driverPayConfig?.payType === 'HOURLY';
+
                       const dpMatch = (currentLoad.notes || '').match(/\[DRIVER_PAY:([0-9.]+)/);
-                      const driverCost = dpMatch && dpMatch[1] ? parseFloat(dpMatch[1]) : 0;
+                      const payRate = currentLoad.pricingSnapshot?.driverPayConfig?.rate || (dpMatch && dpMatch[1] ? parseFloat(dpMatch[1]) : (currentLoad.driverPay ? parseFloat(currentLoad.driverPay) : 0));
+
+                      const actualHours = parseFloat(currentLoad.actualHours || currentLoad.approvedHours || 0);
+                      const estHours = parseFloat(currentLoad.estimatedHours || 0);
+
+                      // For hourly drivers, do not deduct $38 flat as actual cost when hours are pending!
+                      const driverCost = isHourly 
+                        ? (actualHours > 0 ? (actualHours * payRate) : (estHours > 0 ? (estHours * payRate) : 0))
+                        : payRate;
                       
                       const expensesCost = expensesList.reduce((sum, e) => sum + parseFloat((e.amount || '$0').toString().replace(/[^0-9.]/g, '') || 0), 0);
                       
@@ -1194,7 +1238,12 @@ function LoadDetail({ load, onBack, onEdit }) {
                             </div>
                             <div className="flex justify-between text-[11px] text-rose-500">
                                <span>Total Costs (Driver + Expenses)</span>
-                               <span className="font-bold">-${(driverCost + expensesCost).toFixed(2)}</span>
+                               <span className="font-bold">
+                                 -${(driverCost + expensesCost).toFixed(2)}
+                                 {isHourly && actualHours === 0 && estHours === 0 && (
+                                   <span className="text-[9.5px] font-semibold text-amber-600 ml-1">(Driver pay pending hours)</span>
+                                 )}
+                               </span>
                             </div>
                             <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">
                                <span className="text-xs font-black text-slate-700">CONTRIBUTION</span>
