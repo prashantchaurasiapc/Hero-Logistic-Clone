@@ -429,12 +429,15 @@ function LoadDetail({ load, onBack, onEdit }) {
           if (lData && typeof lData === 'object') {
             setCurrentLoad(prev => ({
               ...prev,
+              ...lData,
               id: lData.loadRef || lData.id,
               rawId: lData.id,
               type: lData.type || prev.type,
               customer: lData.customer?.name || (typeof lData.customer === 'string' ? lData.customer : prev.customer),
+              driver: lData.driver || prev.driver,
+              driverPayInfo: lData.driverPayInfo || null,
               status: lData.status === 'IN_TRANSIT' ? 'ACTIVE' : lData.status === 'DELIVERED' ? 'COMPLETED' : (lData.status || prev.status),
-              notes: lData.notes || prev.notes,
+              notes: (lData.notes || '').replace(/\[(AGREED_RATE|DRIVER_PAY|SCHEDULE|PAYROLL_CREDITED):[^\]]+\]/g, '').trim(),
               pricingSnapshot: lData.pricingSnapshot || null,
               priceOverrideAudit: lData.priceOverrideAudit || null,
               createdAt: lData.createdAt ? new Date(lData.createdAt).toLocaleDateString('en-GB') : prev.createdAt,
@@ -895,7 +898,7 @@ function LoadDetail({ load, onBack, onEdit }) {
                           customer: currentLoad.customer,
                           priority: currentLoad.priority,
                           status: currentLoad.status,
-                          notes: currentLoad.notes
+                          notes: (currentLoad.notes || '').replace(/\[(AGREED_RATE|DRIVER_PAY|SCHEDULE|PAYROLL_CREDITED):[^\]]+\]/g, '').trim()
                         });
                         setShowEditLoadModal(true);
                       }
@@ -906,7 +909,7 @@ function LoadDetail({ load, onBack, onEdit }) {
                   </button>
                 </div>
                 <p className="text-[12px] text-slate-600 leading-relaxed">
-                  {(currentLoad.notes || '').replace(/\[(AGREED_RATE|DRIVER_PAY|SCHEDULE):[^\]]+\]/g, '').trim() || 'No notes provided'}
+                  {(currentLoad.notes || '').replace(/\[(AGREED_RATE|DRIVER_PAY|SCHEDULE|PAYROLL_CREDITED):[^\]]+\]/g, '').trim() || 'No notes provided'}
                 </p>
               </div>
 
@@ -1155,31 +1158,48 @@ function LoadDetail({ load, onBack, onEdit }) {
                     <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] font-black rounded-full uppercase tracking-wider">SEE GENERATED</span>
                   </div>
                   {(() => {
+                    const driverObj = currentLoad.driver || activeDriver;
+                    const payInfo = currentLoad.driverPayInfo;
                     const schedMatch = (currentLoad.notes || '').match(/\[SCHEDULE:([^\]]+)\]/);
-                    const schedTitle = currentLoad.pricingSnapshot?.driverPayConfig?.scheduleTitle || (schedMatch ? schedMatch[1] : '') || currentLoad.driver?.payType || '';
-                    const isHourly = schedTitle.toLowerCase().includes('hour') || schedTitle.toLowerCase().includes('/hr') || (currentLoad.driver?.payType || '').toLowerCase().includes('hour') || currentLoad.pricingSnapshot?.driverPayConfig?.payType === 'HOURLY';
+                    const schedTitle = currentLoad.pricingSnapshot?.driverPayConfig?.scheduleTitle || (schedMatch ? schedMatch[1] : '') || driverObj?.payType || '';
+                    const rawPayType = (driverObj?.payType || currentLoad.pricingSnapshot?.driverPayConfig?.payType || '').toLowerCase();
+                    const isHourly = rawPayType.includes('hour') || rawPayType.includes('/hr') || schedTitle.toLowerCase().includes('hour') || schedTitle.toLowerCase().includes('/hr') || currentLoad.pricingSnapshot?.driverPayConfig?.payType === 'HOURLY';
 
                     const dpMatch = (currentLoad.notes || '').match(/\[DRIVER_PAY:([0-9.]+)/);
-                    const payRate = currentLoad.pricingSnapshot?.driverPayConfig?.rate || (dpMatch && dpMatch[1] ? parseFloat(dpMatch[1]) : (currentLoad.driverPay ? parseFloat(currentLoad.driverPay) : 0));
+                    const payRate = payInfo?.payRate || currentLoad.pricingSnapshot?.driverPayConfig?.rate || (dpMatch && dpMatch[1] ? parseFloat(dpMatch[1]) : (parseFloat(driverObj?.payRate) || (currentLoad.driverPay ? parseFloat(currentLoad.driverPay) : 38)));
 
-                    const actualHours = parseFloat(currentLoad.actualHours || currentLoad.approvedHours || 0);
-                    const estHours = parseFloat(currentLoad.estimatedHours || 0);
+                    const actualHours = payInfo?.approvedHours !== undefined ? payInfo.approvedHours : parseFloat(currentLoad.actualHours || currentLoad.approvedHours || 0);
+                    const estHours = payInfo?.estimatedHours !== undefined ? payInfo.estimatedHours : parseFloat(currentLoad.estimatedHours || 0);
 
                     if (isHourly) {
+                      const totalPay = payInfo?.totalDriverPay !== undefined 
+                        ? payInfo.totalDriverPay 
+                        : (actualHours > 0 ? (actualHours * payRate) : (estHours > 0 ? (estHours * payRate) : 0));
+
                       return (
                         <div className="space-y-2 pt-1 border-t border-slate-100">
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-slate-600 font-semibold">Pay Rate</span>
-                            <span className="text-xs font-bold text-purple-700">${payRate.toFixed(2)}/hour</span>
+                            <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                              ${payRate.toFixed(2)}/hour
+                            </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-slate-600 font-semibold">
-                              {actualHours > 0 ? 'Total Driver Pay' : (estHours > 0 ? 'Estimated Driver Pay' : 'Total Driver Pay')}
+                              {actualHours > 0 
+                                ? 'Total Driver Pay' 
+                                : (estHours > 0 ? 'Estimated Driver Pay' : 'Total Driver Pay')}
                             </span>
                             <span className={`text-xs font-bold ${actualHours > 0 ? 'text-slate-800' : 'text-amber-600'}`}>
-                              {actualHours > 0 
-                                ? `$${(actualHours * payRate).toFixed(2)} (${actualHours} hrs)` 
-                                : (estHours > 0 ? `$${(estHours * payRate).toFixed(2)} (Est. ${estHours} hrs)` : 'Pending hours')}
+                              {actualHours > 0 ? (
+                                `$${totalPay.toFixed(2)} (${actualHours} hrs${payInfo?.shiftLoadsCount > 1 ? ` • allocated across ${payInfo.shiftLoadsCount} loads` : ''})`
+                              ) : estHours > 0 ? (
+                                `$${totalPay.toFixed(2)} (Est. ${estHours} hrs)`
+                              ) : (
+                                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md border border-amber-200 text-[11px] font-bold">
+                                  Pending hours
+                                </span>
+                              )}
                             </span>
                           </div>
                         </div>
@@ -1209,19 +1229,22 @@ function LoadDetail({ load, onBack, onEdit }) {
                    {(() => {
                       const revenue = currentLoad.pricingSnapshot ? parseFloat(currentLoad.pricingSnapshot.totalExGst || 0) : 0;
                       
+                      const driverObj = currentLoad.driver || activeDriver;
+                      const payInfo = currentLoad.driverPayInfo;
                       const schedMatch = (currentLoad.notes || '').match(/\[SCHEDULE:([^\]]+)\]/);
-                      const schedTitle = currentLoad.pricingSnapshot?.driverPayConfig?.scheduleTitle || (schedMatch ? schedMatch[1] : '') || currentLoad.driver?.payType || '';
-                      const isHourly = schedTitle.toLowerCase().includes('hour') || schedTitle.toLowerCase().includes('/hr') || (currentLoad.driver?.payType || '').toLowerCase().includes('hour') || currentLoad.pricingSnapshot?.driverPayConfig?.payType === 'HOURLY';
+                      const schedTitle = currentLoad.pricingSnapshot?.driverPayConfig?.scheduleTitle || (schedMatch ? schedMatch[1] : '') || driverObj?.payType || '';
+                      const rawPayType = (driverObj?.payType || currentLoad.pricingSnapshot?.driverPayConfig?.payType || '').toLowerCase();
+                      const isHourly = rawPayType.includes('hour') || rawPayType.includes('/hr') || schedTitle.toLowerCase().includes('hour') || schedTitle.toLowerCase().includes('/hr') || currentLoad.pricingSnapshot?.driverPayConfig?.payType === 'HOURLY';
 
                       const dpMatch = (currentLoad.notes || '').match(/\[DRIVER_PAY:([0-9.]+)/);
-                      const payRate = currentLoad.pricingSnapshot?.driverPayConfig?.rate || (dpMatch && dpMatch[1] ? parseFloat(dpMatch[1]) : (currentLoad.driverPay ? parseFloat(currentLoad.driverPay) : 0));
+                      const payRate = payInfo?.payRate || currentLoad.pricingSnapshot?.driverPayConfig?.rate || (dpMatch && dpMatch[1] ? parseFloat(dpMatch[1]) : (parseFloat(driverObj?.payRate) || (currentLoad.driverPay ? parseFloat(currentLoad.driverPay) : 38)));
 
-                      const actualHours = parseFloat(currentLoad.actualHours || currentLoad.approvedHours || 0);
-                      const estHours = parseFloat(currentLoad.estimatedHours || 0);
+                      const actualHours = payInfo?.approvedHours !== undefined ? payInfo.approvedHours : parseFloat(currentLoad.actualHours || currentLoad.approvedHours || 0);
+                      const estHours = payInfo?.estimatedHours !== undefined ? payInfo.estimatedHours : parseFloat(currentLoad.estimatedHours || 0);
 
                       // For hourly drivers, do not deduct $38 flat as actual cost when hours are pending!
                       const driverCost = isHourly 
-                        ? (actualHours > 0 ? (actualHours * payRate) : (estHours > 0 ? (estHours * payRate) : 0))
+                        ? (payInfo?.totalDriverPay !== undefined ? payInfo.totalDriverPay : (actualHours > 0 ? (actualHours * payRate) : (estHours > 0 ? (estHours * payRate) : 0)))
                         : payRate;
                       
                       const expensesCost = expensesList.reduce((sum, e) => sum + parseFloat((e.amount || '$0').toString().replace(/[^0-9.]/g, '') || 0), 0);
@@ -3829,9 +3852,31 @@ export default function Loads() {
                                           triggerToast(`Load ${load.id} cancelled.`, 'error');
                                         }
                                       }}
+                                      className="w-full px-4 py-2 text-left text-[12px] font-semibold text-amber-700 hover:bg-amber-50 flex items-center gap-2.5 cursor-pointer transition-colors"
+                                    >
+                                      <X className="w-3.5 h-3.5 text-amber-600" /> Cancel Load
+                                    </button>
+                                    <button
+                                      onClick={async (e) => {
+                                        e.stopPropagation(); setOpenMenu(null);
+                                        if (window.confirm(`Are you sure you want to permanently delete Load ${load.id}?`)) {
+                                          try {
+                                            await api.delete(`/company-admin/loads/${load.rawId || load.id}`);
+                                          } catch (err) {
+                                            console.warn('Delete load error:', err);
+                                          }
+                                          try {
+                                            const curDeleted = JSON.parse(localStorage.getItem('dispatcher_deleted_load_ids') || '[]');
+                                            curDeleted.push(load.id, load.rawId);
+                                            localStorage.setItem('dispatcher_deleted_load_ids', JSON.stringify([...new Set(curDeleted.filter(Boolean))]));
+                                          } catch (e) {}
+                                          setLoadsList(prev => prev.filter(l => l.id !== load.id && l.rawId !== load.rawId));
+                                          triggerToast(`Load ${load.id} deleted permanently.`, 'success');
+                                        }
+                                      }}
                                       className="w-full px-4 py-2 text-left text-[12px] font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 cursor-pointer transition-colors"
                                     >
-                                      <X className="w-3.5 h-3.5 text-rose-500" /> Cancel Load
+                                      <Trash2 className="w-3.5 h-3.5 text-rose-500" /> Delete Load
                                     </button>
                                   </div>
                                 </div>

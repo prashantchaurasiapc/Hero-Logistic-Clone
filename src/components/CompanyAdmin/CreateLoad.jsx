@@ -549,10 +549,24 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
     }
   }, [editMode, loadToEdit]);
 
-  const [stops, setStops] = useState([
-    { id: 1, type: 'Pickup', address: '', contactName: '', contactPhone: '', date: '', time: '', instructions: '' },
-    { id: 2, type: 'Drop-off', address: '', contactName: '', contactPhone: '', date: '', time: '', instructions: '' }
-  ]);
+  const [stops, setStops] = useState(() => {
+    if (editMode && loadToEdit && Array.isArray(loadToEdit.stops) && loadToEdit.stops.length > 0) {
+      return loadToEdit.stops.map((s, idx) => ({
+        id: s.id || Date.now() + idx,
+        type: (s.type === 'PICKUP' || s.type === 'Pickup') ? 'Pickup' : 'Drop-off',
+        address: s.address || '',
+        contactName: s.contactName || '',
+        contactPhone: s.contactPhone || '',
+        date: s.scheduledDate ? s.scheduledDate.split('T')[0] : (s.date ? s.date.split('T')[0] : ''),
+        time: s.scheduledTime || s.time || '',
+        instructions: s.instructions || ''
+      }));
+    }
+    return [
+      { id: 1, type: 'Pickup', address: '', contactName: '', contactPhone: '', date: '', time: '', instructions: '' },
+      { id: 2, type: 'Drop-off', address: '', contactName: '', contactPhone: '', date: '', time: '', instructions: '' }
+    ];
+  });
 
   // ── Drag & Drop state & handlers for Route Stops ─────────────────────────
   const [draggedStopIndex, setDraggedStopIndex] = useState(null);
@@ -633,35 +647,91 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
 
   const [activeStopMenu, setActiveStopMenu] = useState(null);
 
-  const [items, setItems] = useState([
-    {
-      id: 1, customer: '', pricingRuleId: '', itemCharge: '', pickupStop: '', dropStop: '',
-      // Car Carrying
-      rcog: '', vin: '', stockRec: '', make: '', model: '', year: '', colour: '', 
-      length: '', width: '', height: '', weight: '', vehicleType: '', 
-      keys: 'Yes', damageReport: 'Yes', notes: '',
-      // General Freight
-      itemDescription: '', quantity: '1', pallets: '', cubicMetres: '', fragile: 'No', stackable: 'No', specialHandling: '',
-      // Dangerous Goods
-      unNumber: '', dgClass: '', packingGroup: '', hazchemCode: '', msdsUploaded: 'No', emergencyContact: '', complianceChecklist: 'No', placarding: 'No'
+  const [items, setItems] = useState(() => {
+    if (editMode && loadToEdit && Array.isArray(loadToEdit.items) && loadToEdit.items.length > 0) {
+      return loadToEdit.items.map((i, idx) => {
+        let parsedNotes = {};
+        if (i.notes) {
+          try { parsedNotes = JSON.parse(i.notes); } catch (e) {}
+        }
+        return {
+          id: i.id || Date.now() + idx,
+          customer: i.customerId || parsedNotes.customer || (!loadToEdit.customerMode || loadToEdit.customerMode === 'ONE' ? (loadToEdit.customerId || loadToEdit.customer || '') : ''),
+          pricingRuleId: parsedNotes.pricingRuleId || '',
+          itemCharge: parsedNotes.itemCharge ? String(parsedNotes.itemCharge) : (parsedNotes.rate ? String(parsedNotes.rate) : ''),
+          pickupStop: parsedNotes.pickupStop || '',
+          dropStop: parsedNotes.dropStop || '',
+          rcog: i.rego || parsedNotes.rcog || '',
+          vin: i.vin || parsedNotes.vin || '',
+          stockRec: i.stockRef || parsedNotes.stockRec || '',
+          make: i.make || parsedNotes.make || '',
+          model: i.model || parsedNotes.model || '',
+          year: i.year ? String(i.year) : (parsedNotes.year || ''),
+          colour: i.color || parsedNotes.colour || '',
+          weight: i.weightKg ? String(i.weightKg) : (parsedNotes.weight || ''),
+          quantity: i.quantity ? String(i.quantity) : '1',
+          itemDescription: i.description || parsedNotes.itemDescription || '',
+          pallets: i.pallets ? String(i.pallets) : (parsedNotes.pallets || ''),
+          cubicMetres: i.cubicMetres ? String(i.cubicMetres) : (parsedNotes.cubicMetres || ''),
+          fragile: i.fragile ? 'Yes' : (parsedNotes.fragile || 'No'),
+          stackable: i.stackable ? 'Yes' : (parsedNotes.stackable || 'No'),
+          specialHandling: i.specialHandling || parsedNotes.specialHandling || ''
+        };
+      });
     }
-  ]);
+    return [
+      {
+        id: 1, customer: '', pricingRuleId: '', itemCharge: '', pickupStop: '', dropStop: '',
+        // Car Carrying
+        rcog: '', vin: '', stockRec: '', make: '', model: '', year: '', colour: '', 
+        length: '', width: '', height: '', weight: '', vehicleType: '', 
+        keys: 'Yes', damageReport: 'Yes', notes: '',
+        // General Freight
+        itemDescription: '', quantity: '1', pallets: '', cubicMetres: '', fragile: 'No', stackable: 'No', specialHandling: '',
+        // Dangerous Goods
+        unNumber: '', dgClass: '', packingGroup: '', hazchemCode: '', msdsUploaded: 'No', emergencyContact: '', complianceChecklist: 'No', placarding: 'No'
+      }
+    ];
+  });
 
-  const [formData, setFormData] = useState({
-    customerMode: 'ONE', // 'ONE' (Single customer for whole load) or 'MULTIPLE' (Multiple customers configured per item)
-    customer: '',
-    selectedPricingRuleId: '',
-    billedCustomerIds: [],
-    loadType: 'General Freight',
-    loadRef: `PO-${Math.floor(100000 + Math.random() * 900000)}`,
-    priority: 'Normal',
-    loadDate: getTodayLocalDate(),
-    truck: '',
-    trailer: '',
-    driver: '',
-    loadNotes: '',
-    rate: '',
-    driverPay: '',
+  const [formData, setFormData] = useState(() => {
+    if (editMode && loadToEdit) {
+      const editLoadRef = loadToEdit.loadRef || loadToEdit.id || `PO-${Math.floor(100000 + Math.random() * 900000)}`;
+      return {
+        customerMode: loadToEdit.customerMode || 'ONE',
+        customer: loadToEdit.customerId || loadToEdit.customer?.id || (typeof loadToEdit.customer === 'string' ? loadToEdit.customer : ''),
+        selectedPricingRuleId: '',
+        billedCustomerIds: Array.isArray(loadToEdit.billedCustomerIds) ? loadToEdit.billedCustomerIds : [],
+        loadType: loadToEdit.type || 'General Freight',
+        loadRef: editLoadRef,
+        priority: loadToEdit.priority ? (loadToEdit.priority.charAt(0).toUpperCase() + loadToEdit.priority.slice(1).toLowerCase()) : 'Normal',
+        loadDate: loadToEdit.date ? loadToEdit.date.split('T')[0] : (loadToEdit.loadDate ? loadToEdit.loadDate.split('T')[0] : getTodayLocalDate()),
+        truck: loadToEdit.truckId || loadToEdit.truck?.id || (typeof loadToEdit.truck === 'string' ? loadToEdit.truck : ''),
+        trailer: loadToEdit.trailerId || loadToEdit.trailer?.id || (typeof loadToEdit.trailer === 'string' ? loadToEdit.trailer : ''),
+        driver: loadToEdit.driverId || loadToEdit.driver?.id || (typeof loadToEdit.driver === 'string' ? loadToEdit.driver : ''),
+        loadNotes: loadToEdit.notes ? loadToEdit.notes.replace(/\[(AGREED_RATE|DRIVER_PAY|SCHEDULE):[^\]]+\]/g, '').trim() : '',
+        rate: loadToEdit.rate ? String(loadToEdit.rate) : '',
+        driverPay: loadToEdit.driverPay ? String(loadToEdit.driverPay) : '',
+        loadScheduleTitle: loadToEdit.loadScheduleTitle || ''
+      };
+    }
+    return {
+      customerMode: 'ONE', // 'ONE' (Single customer for whole load) or 'MULTIPLE' (Multiple customers configured per item)
+      customer: '',
+      selectedPricingRuleId: '',
+      billedCustomerIds: [],
+      loadType: 'General Freight',
+      loadRef: `PO-${Math.floor(100000 + Math.random() * 900000)}`,
+      priority: 'Normal',
+      loadDate: getTodayLocalDate(),
+      truck: '',
+      trailer: '',
+      driver: '',
+      loadNotes: '',
+      rate: '',
+      driverPay: '',
+      loadScheduleTitle: ''
+    };
   });
 
   const [selectedScheduleId, setSelectedScheduleId] = useState('');
@@ -1468,8 +1538,12 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
     }
     setSubmitting(true);
     try {
+      const effectiveLoadRef = (editMode && (loadToEdit?.loadRef || loadToEdit?.id))
+        ? (formData.loadRef?.trim() || loadToEdit.loadRef || loadToEdit.id)
+        : formData.loadRef.trim();
+
       const payload = {
-        loadRef: formData.loadRef.trim(),
+        loadRef: effectiveLoadRef,
         type: formData.loadType || 'General Freight',
         status: targetStatus,
         priority: (formData.priority || 'NORMAL').toUpperCase(),
@@ -1529,13 +1603,19 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
         billingSnapshots: multiCustomerBreakdown,
         pricingSnapshot: {
           totalExGst: formData.rate ? parseFloat(formData.rate) : 0,
-          driverPayConfig: {
-            driverId: formData.driver || null,
-            rate: formData.driverPay ? parseFloat(formData.driverPay) : 0,
-            payType: (formData.loadScheduleTitle || '').toLowerCase().includes('hour') || (formData.loadScheduleTitle || '').toLowerCase().includes('/hr') ? 'HOURLY' : 'FLAT',
-            scheduleTitle: formData.loadScheduleTitle || '',
-            unit: (formData.loadScheduleTitle || '').toLowerCase().includes('hour') ? '/hr' : 'flat'
-          }
+          driverPayConfig: (() => {
+            const selectedDrvObj = dbDrivers.find(d => String(d.id) === String(formData.driver));
+            const isHourlyType = (selectedDrvObj?.payType || '').toLowerCase().includes('hour') || (formData.loadScheduleTitle || '').toLowerCase().includes('hour') || (formData.loadScheduleTitle || '').toLowerCase().includes('/hr');
+            const driverRateVal = formData.driverPay ? parseFloat(formData.driverPay) : (parseFloat(selectedDrvObj?.payRate) || 0);
+            return {
+              driverId: formData.driver || null,
+              rate: driverRateVal,
+              payType: isHourlyType ? 'HOURLY' : 'FLAT',
+              scheduleTitle: formData.loadScheduleTitle || (isHourlyType ? 'Hourly Rate' : ''),
+              unit: isHourlyType ? '/hour' : 'flat',
+              status: isHourlyType ? 'PENDING_HOURS' : 'SET'
+            };
+          })()
         },
         ...(Object.keys(uploadedPhotos).length > 0 && {
           documents: {
