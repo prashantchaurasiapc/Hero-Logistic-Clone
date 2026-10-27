@@ -163,37 +163,70 @@ export default function StartWork() {
 
       await api.post(endpoint, payload).catch(() => ({ data: { success: true } }));
 
-      // Save 24h locked record
+      // Build complete inspection submission record
       const record = {
+        id: `CHK-${Date.now()}`,
         submittedAt: Date.now(),
-        driverId: user?.id,
+        timestamp: Date.now(),
+        createdAt: new Date().toISOString(),
+        driverId: user?.id || 'current',
         driverName: user?.name || 'Driver',
         vehicleRef: contextData?.vehicle?.ref || contextData?.vehicle?.rego || 'N/A',
+        trailerRef: contextData?.trailerRef || 'N/A',
+        loadRef: contextData?.loadRef || 'N/A',
         items,
+        totalItems: totalCount,
         passedCount: passCount,
         failedCount: failCount,
         naCount: naCount,
-        notes
+        status: (failCount === 0 && naCount === 0) ? 'PASSED' : 'DEFECTS_DETECTED',
+        notes: notes || ''
       };
+
+      // 1. Save 24h locked record for this driver
       localStorage.setItem(`hero_driver_checklist_24h_${user?.id || 'current'}`, JSON.stringify(record));
 
-      // Notify Company if driver selected 'x' or '-'
+      // 2. Save to Driver Profile inspection history
+      try {
+        const driverHistKey = `hero_driver_checklists_${user?.id || 'current'}`;
+        const driverHist = JSON.parse(localStorage.getItem(driverHistKey) || '[]');
+        localStorage.setItem(driverHistKey, JSON.stringify([record, ...driverHist.filter(r => r.id !== record.id)]));
+      } catch (e) {}
+
+      // 3. Save to Company Admin overview list
+      try {
+        const allKey = 'hero_all_submitted_checklists';
+        const allList = JSON.parse(localStorage.getItem(allKey) || '[]');
+        localStorage.setItem(allKey, JSON.stringify([record, ...allList.filter(r => r.id !== record.id)]));
+      } catch (e) {}
+
+      // 4. Notify Company Admin if driver selected 'x' (fail) or '-' (na/defect)
       if (failCount > 0 || naCount > 0) {
         try {
           const existingAlerts = JSON.parse(localStorage.getItem('hero_company_defect_alerts') || '[]');
-          const defectDetails = items.filter(i => i.status === 'fail' || i.status === 'na').map(i => `${i.label} (${i.status === 'fail' ? 'FAIL' : 'DEFECT/NA'})`);
+          const defectDetails = items
+            .filter(i => i.status === 'fail' || i.status === 'na')
+            .map(i => `${i.label} (${i.status === 'fail' ? '❌ FAIL' : '➖ DEFECT/NA'})`);
+
           const newAlert = {
             id: `DEFECT-${Date.now()}`,
-            type: 'PRE_START_DEFECT',
+            type: 'CHECKLIST_DEFECT',
+            driverId: user?.id,
             driverName: user?.name || 'Driver',
-            vehicleRef: contextData?.vehicle?.ref || contextData?.vehicle?.rego || 'Vehicle',
+            vehicleRef: contextData?.vehicle?.ref || contextData?.vehicle?.rego || 'Assigned Vehicle',
             failedCount: failCount,
             naCount: naCount,
+            failedItems: defectDetails.join(', '),
+            reason: `${failCount + naCount} defect(s) detected during daily safety inspection (${failCount} Fail, ${naCount} N/A)`,
             defects: defectDetails,
+            notes: notes || '',
             timestamp: new Date().toISOString(),
             status: 'UNRESOLVED'
           };
+
           localStorage.setItem('hero_company_defect_alerts', JSON.stringify([newAlert, ...existingAlerts]));
+          window.dispatchEvent(new Event('storage'));
+          window.dispatchEvent(new CustomEvent('hero_new_defect_alert', { detail: newAlert }));
         } catch (e) {}
       }
 
@@ -401,19 +434,28 @@ export default function StartWork() {
             
             {/* Header Notification Banner / 24-Hour Locked Banner */}
             {isLocked24h ? (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 mb-5 flex items-start gap-3 text-xs text-amber-950">
-                <FiLock className="text-amber-600 text-base mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <strong className="font-extrabold text-amber-900">Pre-Start Inspection Locked (24-Hour Active)</strong>
-                    <span className="font-mono text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
-                      {lockHoursRemaining}h remaining
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-950">
+                <div className="flex items-start gap-3 flex-1">
+                  <FiLock className="text-amber-600 text-base mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <strong className="font-extrabold text-amber-900">Pre-Start Inspection Locked (24-Hour Active)</strong>
+                      <span className="font-mono text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
+                        {lockHoursRemaining}h remaining
+                      </span>
+                    </div>
+                    <span className="text-amber-700 text-[11px] block mt-0.5">
+                      Your inspection has been saved and is locked for 24 hours. The same verified status applies to all your runs today.
                     </span>
                   </div>
-                  <span className="text-amber-700 text-[11px] block mt-0.5">
-                    Your inspection has been saved and is locked for 24 hours. The same verified status applies to all your runs today.
-                  </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/driver/dashboard')}
+                  className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs rounded-lg transition-colors cursor-pointer self-start sm:self-center shrink-0 shadow-2xs"
+                >
+                  Go to Dashboard &rarr;
+                </button>
               </div>
             ) : (
               <div className="bg-purple-50/70 border border-purple-100 rounded-xl p-3.5 mb-5 flex items-start gap-3 text-xs text-purple-950">

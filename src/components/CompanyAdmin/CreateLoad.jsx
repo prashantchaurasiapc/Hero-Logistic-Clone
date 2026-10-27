@@ -1461,6 +1461,11 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
       alert('Please enter a Load Reference (e.g. PO-12548).');
       return;
     }
+    if (!formData.driver) {
+      alert('Please select a Driver. Driver selection is mandatory to assign and save this load.');
+      showSaveToast('Please select a Driver. Driver selection is mandatory.', 'error');
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
@@ -3049,6 +3054,7 @@ export default function CreateLoad({ onBack, editMode = false, loadToEdit = null
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-purple-600" />
                 <select
+                  required
                   value={formData.driver}
                   onChange={e => {
                     const drvId = e.target.value;

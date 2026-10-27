@@ -1733,6 +1733,7 @@ export default function Drivers() {
   const [showMessageDriverModal, setShowMessageDriverModal] = useState(false);
   const [showDeactivateConfirmModal, setShowDeactivateConfirmModal] = useState(false);
   const [showDriverMoreFilters, setShowDriverMoreFilters] = useState(false);
+  const [viewingDriverChecklist, setViewingDriverChecklist] = useState(null);
 
   const handlePrintDriverProfile = () => {
     if (!selectedDriver) return;
@@ -2437,6 +2438,99 @@ export default function Drivers() {
           <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
           <span className="text-xs font-bold">{toast}</span>
           <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-white text-xs cursor-pointer">&times;</button>
+        </div>
+      )}
+
+      {/* VIEW DRIVER SAFETY CHECKLIST MODAL */}
+      {viewingDriverChecklist && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4" onClick={() => setViewingDriverChecklist(null)}>
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl ${(!viewingDriverChecklist.failedCount && !viewingDriverChecklist.naCount) ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-slate-900">
+                    Pre-Start Safety Inspection Details
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {viewingDriverChecklist.driverName} • {viewingDriverChecklist.vehicleRef} • {viewingDriverChecklist.submittedAt ? new Date(viewingDriverChecklist.submittedAt).toLocaleString('en-AU') : 'Today'}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setViewingDriverChecklist(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 text-lg font-bold cursor-pointer">
+                ✕
+              </button>
+            </div>
+
+            {/* Overview Stats */}
+            <div className="p-4 bg-slate-50/70 border-b border-slate-100 grid grid-cols-4 gap-2 text-center text-xs">
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200/70">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Items</span>
+                <span className="text-sm font-black text-slate-800">{viewingDriverChecklist.totalItems || 20}</span>
+              </div>
+              <div className="bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-200/60">
+                <span className="text-[10px] uppercase font-bold text-emerald-700 block">Passed</span>
+                <span className="text-sm font-black text-emerald-700">{viewingDriverChecklist.passedCount || 0}</span>
+              </div>
+              <div className="bg-rose-50/60 p-2.5 rounded-xl border border-rose-200/60">
+                <span className="text-[10px] uppercase font-bold text-rose-700 block">Failed</span>
+                <span className="text-sm font-black text-rose-700">{viewingDriverChecklist.failedCount || 0}</span>
+              </div>
+              <div className="bg-amber-50/60 p-2.5 rounded-xl border border-amber-200/60">
+                <span className="text-[10px] uppercase font-bold text-amber-700 block">N / A</span>
+                <span className="text-sm font-black text-amber-700">{viewingDriverChecklist.naCount || 0}</span>
+              </div>
+            </div>
+
+            {/* Checklist Items Breakdown */}
+            <div className="p-6 overflow-y-auto space-y-2 flex-1">
+              <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">20-Point Daily Pre-Start Items</h4>
+              {Array.isArray(viewingDriverChecklist.items) && viewingDriverChecklist.items.length > 0 ? (
+                <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white text-xs">
+                  {viewingDriverChecklist.items.map((it) => (
+                    <div key={it.id} className="p-2.5 flex items-center justify-between gap-3 hover:bg-slate-50/60">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-5 h-5 rounded-md bg-purple-50 text-purple-700 font-black text-[10px] flex items-center justify-center shrink-0">
+                          {it.id}
+                        </span>
+                        <span className="font-semibold text-slate-800">{it.label}</span>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase shrink-0 flex items-center gap-1 ${
+                        it.status === 'pass'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : it.status === 'fail'
+                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                          : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      }`}>
+                        <span>{it.status === 'pass' ? '✓ PASS' : it.status === 'fail' ? '✕ FAIL' : '— N/A'}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 italic">No itemized checks recorded.</p>
+              )}
+
+              {viewingDriverChecklist.notes && (
+                <div className="mt-4 p-3 bg-purple-50/50 border border-purple-100 rounded-xl">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-purple-700 block mb-1">Driver Remarks</span>
+                  <p className="text-xs text-slate-700 font-medium">{viewingDriverChecklist.notes}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setViewingDriverChecklist(null)}
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Close Report
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -6384,12 +6478,12 @@ export default function Drivers() {
           </div>
 
           {/* Tabs Navigation */}
-          <div className="flex items-center gap-8 border-b border-slate-200 mb-6">
-            {['Overview', 'Documents & Compliance', 'Assignments & Availability', 'Performance', 'Payroll', 'Activity Timeline'].map(tab => (
+          <div className="flex items-center gap-8 border-b border-slate-200 mb-6 overflow-x-auto">
+            {['Overview', 'Documents & Compliance', 'Assignments & Availability', 'Safety Checklists', 'Performance', 'Payroll', 'Activity Timeline'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`pb-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${activeTab === tab ? 'text-purple-700 border-purple-700' : 'text-slate-500 border-transparent hover:text-slate-800'}`}
+                className={`pb-3 text-xs font-bold transition-all border-b-2 cursor-pointer whitespace-nowrap ${activeTab === tab ? 'text-purple-700 border-purple-700' : 'text-slate-500 border-transparent hover:text-slate-800'}`}
               >
                 {tab}
               </button>
@@ -7059,6 +7153,136 @@ export default function Drivers() {
                     </div>
 
                   </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {activeTab === 'Safety Checklists' && (() => {
+            const specific = (() => {
+              try {
+                return JSON.parse(localStorage.getItem(`hero_driver_checklists_${selectedDriver?.id}`) || '[]');
+              } catch (e) {
+                return [];
+              }
+            })();
+
+            const allSub = (() => {
+              try {
+                return JSON.parse(localStorage.getItem('hero_all_submitted_checklists') || '[]');
+              } catch (e) {
+                return [];
+              }
+            })();
+
+            const matching = allSub.filter(c =>
+              (c.driverId && (c.driverId === selectedDriver?.id || String(c.driverId) === String(selectedDriver?.id))) ||
+              (c.driverName && selectedDriver?.name && c.driverName.toLowerCase() === selectedDriver.name.toLowerCase())
+            );
+
+            const map = new Map();
+            [...specific, ...matching].forEach(item => {
+              if (item.id && !map.has(item.id)) map.set(item.id, item);
+            });
+            const checklists = Array.from(map.values()).sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
+
+            const latest = checklists[0];
+            const is24hValid = latest && latest.submittedAt && ((Date.now() - latest.submittedAt) / (1000 * 60 * 60) < 24);
+            const hoursLeft = is24hValid ? Math.max(1, Math.round(24 - ((Date.now() - latest.submittedAt) / (1000 * 60 * 60)))) : 0;
+
+            return (
+              <div className="space-y-6">
+                {/* Status banner */}
+                <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                  is24hValid 
+                    ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
+                    : 'bg-amber-50/70 border-amber-200 text-amber-950'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl ${is24hValid ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                      <Shield size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider">
+                        {is24hValid ? '24-Hour Pre-Start Safety Inspection: ACTIVE & COMPLIANT' : 'Pre-Start Safety Inspection: EXPIRED OR PENDING'}
+                      </h4>
+                      <p className="text-[11px] font-medium mt-0.5 opacity-80">
+                        {is24hValid 
+                          ? `Driver completed 20-point checklist. Valid for the next ${hoursLeft} hours across all runs today.` 
+                          : 'Driver has not completed a safety inspection in the last 24 hours. Will be prompted automatically upon next login.'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full self-start sm:self-center font-mono ${
+                    is24hValid ? 'bg-emerald-200/80 text-emerald-800' : 'bg-amber-200/80 text-amber-800'
+                  }`}>
+                    {is24hValid ? `${hoursLeft}h Remaining` : 'Action Required'}
+                  </span>
+                </div>
+
+                {/* Submissions List */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <FileCheck size={18} className="text-purple-600" />
+                      <h3 className="text-sm font-black text-slate-800">
+                        Historical Daily Vehicle Safety Checklists ({checklists.length})
+                      </h3>
+                    </div>
+                    <span className="text-xs text-slate-400 font-semibold">
+                      Stored in Driver Profile
+                    </span>
+                  </div>
+
+                  {checklists.length === 0 ? (
+                    <div className="text-center py-10 text-slate-400">
+                      <Shield size={32} className="mx-auto mb-2 opacity-30 text-purple-600" />
+                      <p className="text-xs font-bold text-slate-700">No safety checklists submitted by this driver yet</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">When {selectedDriver?.name || 'this driver'} submits their daily pre-start inspection, it will appear here automatically.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden text-xs">
+                      {checklists.map((chk) => {
+                        const isClean = !chk.failedCount && !chk.naCount;
+                        return (
+                          <div key={chk.id} className="p-3.5 hover:bg-slate-50/80 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-start sm:items-center gap-3">
+                              <div className={`p-2 rounded-xl shrink-0 ${isClean ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                {isClean ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-extrabold text-slate-900">{chk.vehicleRef || 'Assigned Truck'}</span>
+                                  <span className="text-slate-300">•</span>
+                                  <span className="font-mono text-slate-500 text-[11px]">
+                                    {chk.submittedAt ? new Date(chk.submittedAt).toLocaleString('en-AU', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Today'}
+                                  </span>
+                                  <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase ${
+                                    isClean ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  }`}>
+                                    {isClean ? 'PASSED (100% OK)' : `${chk.failedCount || 0} FAIL / ${chk.naCount || 0} N/A`}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-slate-500 font-medium mt-1">
+                                  <span>{chk.passedCount || 0} Passed • {chk.failedCount || 0} Failed • {chk.naCount || 0} N/A</span>
+                                  {chk.notes && <span className="italic ml-2 text-slate-400">"{chk.notes}"</span>}
+                                </div>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => setViewingDriverChecklist(chk)}
+                              className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 self-end sm:self-center shrink-0"
+                            >
+                              <Eye size={13} />
+                              <span>View Inspection Report</span>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             );

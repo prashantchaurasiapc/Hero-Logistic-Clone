@@ -15,7 +15,15 @@ import {
   Eye,
   CheckCircle2,
   Smartphone,
-  RefreshCw
+  RefreshCw,
+  Truck,
+  Check,
+  CheckCircle,
+  XCircle,
+  MinusCircle,
+  Clock,
+  FileText,
+  Search
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -28,13 +36,41 @@ export default function SafetyChecklists() {
   const [toastMessage, setToastMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [defectAlerts, setDefectAlerts] = useState([]);
+  const [submittedInspections, setSubmittedInspections] = useState([]);
+  const [viewingInspection, setViewingInspection] = useState(null);
+  const [inspectionSearch, setInspectionSearch] = useState('');
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem('hero_company_defect_alerts') || '[]');
-      setDefectAlerts(stored);
+      const storedAlerts = JSON.parse(localStorage.getItem('hero_company_defect_alerts') || '[]');
+      setDefectAlerts(storedAlerts);
+    } catch (e) {}
+
+    try {
+      const storedInspections = JSON.parse(localStorage.getItem('hero_all_submitted_checklists') || '[]');
+      setSubmittedInspections(storedInspections);
     } catch (e) {}
   }, []);
+
+  useEffect(() => {
+    loadData();
+
+    const handleStorageChange = () => loadData();
+    const handleNewDefect = (e) => {
+      loadData();
+      if (e?.detail) {
+        setToastMessage(`🚨 New Pre-Start Defect Alert: ${e.detail.driverName} - ${e.detail.vehicleRef}`);
+        setTimeout(() => setToastMessage(''), 4500);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('hero_new_defect_alert', handleNewDefect);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('hero_new_defect_alert', handleNewDefect);
+    };
+  }, [loadData]);
 
   const [newChecklist, setNewChecklist] = useState({
     name: '',
@@ -303,6 +339,133 @@ export default function SafetyChecklists() {
           </div>
         </div>
       )}
+
+      {/* ── DRIVER PRE-START DAILY INSPECTION SUBMISSIONS (SAVED REPORTS) ── */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-black">
+              <FileText size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+                  Driver Daily Vehicle Safety Inspections
+                </h3>
+                <span className="text-[10px] font-black font-mono bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
+                  {submittedInspections.length} Reports Saved
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium">
+                Audited daily checklists submitted by drivers upon login before commencing shift
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search size={14} className="text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search driver or vehicle..."
+                value={inspectionSearch}
+                onChange={(e) => setInspectionSearch(e.target.value)}
+                className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 w-48 sm:w-56"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={loadData}
+              title="Refresh inspection submissions"
+              className="p-2 border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+            >
+              <RefreshCw size={14} />
+            </button>
+          </div>
+        </div>
+
+        {/* Inspections List */}
+        {submittedInspections.length === 0 ? (
+          <div className="p-8 text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+            <Shield size={32} className="mx-auto text-slate-300 mb-2" />
+            <p className="text-xs font-bold text-slate-700">No driver daily inspections submitted yet today</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">When drivers log in and submit their 20-point pre-start checklist, reports will appear here in real time.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 border border-slate-200/80 rounded-xl overflow-hidden text-xs">
+            {submittedInspections
+              .filter(ins => {
+                if (!inspectionSearch.trim()) return true;
+                const q = inspectionSearch.toLowerCase();
+                return (
+                  ins.driverName?.toLowerCase().includes(q) ||
+                  ins.vehicleRef?.toLowerCase().includes(q) ||
+                  ins.id?.toLowerCase().includes(q)
+                );
+              })
+              .map((ins) => {
+                const isPassed = !ins.failedCount && !ins.naCount;
+                return (
+                  <div key={ins.id} className="p-3.5 hover:bg-slate-50/80 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div className="flex items-start sm:items-center gap-3">
+                      <div className={`p-2.5 rounded-xl shrink-0 ${isPassed ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                        {isPassed ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{ins.driverName}</span>
+                          <span className="text-slate-300 font-bold">•</span>
+                          <span className="font-mono text-slate-600 font-bold text-[11px] bg-slate-100 px-2 py-0.5 rounded">
+                            {ins.vehicleRef}
+                          </span>
+                          {ins.trailerRef && ins.trailerRef !== 'N/A' && (
+                            <span className="font-mono text-slate-500 text-[11px]">
+                              Trailer: {ins.trailerRef}
+                            </span>
+                          )}
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase ${
+                            isPassed 
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                              : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          }`}>
+                            {isPassed ? 'PASSED (100% OK)' : `${ins.failedCount || 0} FAIL / ${ins.naCount || 0} NA`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[11px] text-slate-400 font-medium mt-1">
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} />
+                            {ins.submittedAt ? new Date(ins.submittedAt).toLocaleString('en-AU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Today'}
+                          </span>
+                          <span>•</span>
+                          <span className="text-slate-600 font-semibold">
+                            {ins.passedCount || 0} Passed, {ins.failedCount || 0} Failed, {ins.naCount || 0} N/A
+                          </span>
+                          {ins.notes && (
+                            <>
+                              <span>•</span>
+                              <span className="text-slate-500 italic max-w-xs truncate">"{ins.notes}"</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end md:self-center shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setViewingInspection(ins)}
+                        className="px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Eye size={13} />
+                        <span>View Inspection Report</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+      </div>
 
       {/* List cards */}
       <div className="space-y-4">
@@ -573,6 +736,101 @@ export default function SafetyChecklists() {
                 {saving ? 'Creating...' : 'CREATE & ACTIVATE CHECKLIST'}
               </button>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── VIEW INSPECTION REPORT MODAL ── */}
+      {viewingInspection && createPortal(
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[9999]" onClick={() => setViewingInspection(null)}>
+          <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden text-left flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl ${(!viewingInspection.failedCount && !viewingInspection.naCount) ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-slate-900">
+                    Pre-Start Safety Inspection Report
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {viewingInspection.driverName} • {viewingInspection.vehicleRef} • {viewingInspection.submittedAt ? new Date(viewingInspection.submittedAt).toLocaleString('en-AU') : 'Today'}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setViewingInspection(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Overview Stats */}
+            <div className="p-4 bg-slate-50/70 border-b border-slate-100 grid grid-cols-4 gap-2 text-center text-xs">
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200/70">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Items</span>
+                <span className="text-sm font-black text-slate-800">{viewingInspection.totalItems || 20}</span>
+              </div>
+              <div className="bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-200/60">
+                <span className="text-[10px] uppercase font-bold text-emerald-700 block">Passed</span>
+                <span className="text-sm font-black text-emerald-700">{viewingInspection.passedCount || 0}</span>
+              </div>
+              <div className="bg-rose-50/60 p-2.5 rounded-xl border border-rose-200/60">
+                <span className="text-[10px] uppercase font-bold text-rose-700 block">Failed</span>
+                <span className="text-sm font-black text-rose-700">{viewingInspection.failedCount || 0}</span>
+              </div>
+              <div className="bg-amber-50/60 p-2.5 rounded-xl border border-amber-200/60">
+                <span className="text-[10px] uppercase font-bold text-amber-700 block">N / A</span>
+                <span className="text-sm font-black text-amber-700">{viewingInspection.naCount || 0}</span>
+              </div>
+            </div>
+
+            {/* Checklist Items Breakdown */}
+            <div className="p-6 overflow-y-auto space-y-2 flex-1">
+              <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">20-Point Inspection Details</h4>
+              {Array.isArray(viewingInspection.items) && viewingInspection.items.length > 0 ? (
+                <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-white text-xs">
+                  {viewingInspection.items.map((it) => (
+                    <div key={it.id} className="p-2.5 flex items-center justify-between gap-3 hover:bg-slate-50/60">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-600 font-black text-[10px] flex items-center justify-center shrink-0">
+                          {it.id}
+                        </span>
+                        <span className="font-semibold text-slate-800">{it.label}</span>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase shrink-0 flex items-center gap-1 ${
+                        it.status === 'pass'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : it.status === 'fail'
+                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                          : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      }`}>
+                        {it.status === 'pass' ? <Check size={11} className="stroke-[3]" /> : it.status === 'fail' ? <X size={11} className="stroke-[3]" /> : '—'}
+                        <span>{it.status === 'pass' ? 'PASS' : it.status === 'fail' ? 'FAIL' : 'N/A'}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 italic">No itemized details recorded.</p>
+              )}
+
+              {viewingInspection.notes && (
+                <div className="mt-4 p-3 bg-purple-50/50 border border-purple-100 rounded-xl">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-purple-700 block mb-1">Driver Notes & Remarks</span>
+                  <p className="text-xs text-slate-700 font-medium">{viewingInspection.notes}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setViewingInspection(null)}
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Close Report
+              </button>
+            </div>
           </div>
         </div>,
         document.body
