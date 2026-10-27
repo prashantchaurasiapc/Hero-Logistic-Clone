@@ -477,12 +477,18 @@ export default function ActiveRun() {
               {/* Route Mapping Visual & Directions */}
               <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div className="space-y-0.5">
-                  <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Route Mapping from Destination 1 to 2</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Route Mapping to Destination 2</span>
+                    <span className="bg-slate-100 text-slate-600 text-[9px] font-bold px-2 py-0.5 rounded-full">Navigation Optional</span>
+                  </div>
                   <div className="text-xs font-extrabold text-slate-800 flex items-center gap-2">
                     <span>ETA: <strong className="text-indigo-600 font-mono">{runData?.finishTime || '02:30 PM'}</strong></span>
                     <span>•</span>
                     <span>Est. Distance: <strong className="text-slate-900 font-mono">112 km (1h 45m)</strong></span>
                   </div>
+                  <p className="text-[10.5px] text-slate-500 font-medium">
+                    Following route map is optional. You may choose your own preferred route to Destination 2.
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -491,10 +497,11 @@ export default function ActiveRun() {
                       const query = encodeURIComponent(runData?.destinationAddress || runData?.destination || 'Central Warehouse, NSW');
                       window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
                     }}
-                    className="flex-1 sm:flex-initial bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs px-3 py-2 rounded-xl border border-indigo-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 sm:flex-initial bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs px-3.5 py-2.5 rounded-xl border border-indigo-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                    title="Open Route Navigation in Google Maps (Optional)"
                   >
                     <FiNavigation className="text-indigo-600" />
-                    <span>View Route Map</span>
+                    <span>View Map (Optional)</span>
                   </button>
                   <button
                     onClick={() => triggerToast('Dialing contact: Mark Wilson (0411 987 654)...')}

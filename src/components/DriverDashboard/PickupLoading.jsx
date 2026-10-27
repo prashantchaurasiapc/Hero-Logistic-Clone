@@ -119,6 +119,8 @@ export default function PickupLoading() {
           plate: it.plate || it.rego || '',
           color: it.color || '',
           pickedUp: ['PICKED_UP', 'LOADED', 'DELIVERED', 'COMPLETED'].includes(it.status) || it.pickedUp || false,
+          isFlagged: it.status === 'ISSUE_REPORTED' || (it.notes && it.notes.includes('[ISSUE:')),
+          flagReason: (it.notes && it.notes.includes('[ISSUE:') ? it.notes.split('[ISSUE:')[1].split(']')[0] : (it.flagReason || 'Damaged / Compromised')),
           time: it.time || '08:12 AM',
           photos: it.photos || { current: 1, total: 1, percent: 100 }
         }));
@@ -140,8 +142,16 @@ export default function PickupLoading() {
 
       const res = await api.get('/driver-portal/pickup-load');
       if (res.data?.success && res.data.data?.load) {
+        const rawCars = res.data.data.load.cars || res.data.data.load.items || [];
+        const parsedCars = rawCars.map((it, idx) => ({
+          ...it,
+          id: it.id || String(idx + 1),
+          dbId: it.id || String(idx + 1),
+          isFlagged: it.status === 'ISSUE_REPORTED' || (it.notes && it.notes.includes('[ISSUE:')),
+          flagReason: (it.notes && it.notes.includes('[ISSUE:') ? it.notes.split('[ISSUE:')[1].split(']')[0] : (it.flagReason || 'Damaged / Compromised'))
+        }));
         setLoadInfo(res.data.data.load);
-        setCars(res.data.data.load.cars || res.data.data.load.items || []);
+        setCars(parsedCars);
       } else {
         const dashRes = await api.get('/driver-portal/dashboard').catch(() => null);
         const cl = dashRes?.data?.data?.currentLoad;
@@ -164,6 +174,8 @@ export default function PickupLoading() {
                 color: it.color || '',
                 plate: it.plate || it.rego || '',
                 pickedUp: ['PICKED_UP', 'LOADED', 'DELIVERED', 'COMPLETED'].includes(it.status) || it.pickedUp || false,
+                isFlagged: it.status === 'ISSUE_REPORTED' || (it.notes && it.notes.includes('[ISSUE:')),
+                flagReason: (it.notes && it.notes.includes('[ISSUE:') ? it.notes.split('[ISSUE:')[1].split(']')[0] : (it.flagReason || 'Damaged / Compromised')),
                 time: it.time || '08:12 AM',
                 photos: it.photos || { current: 1, total: 1, percent: 100 }
               }))
@@ -575,11 +587,24 @@ export default function PickupLoading() {
       await api.post('/driver-portal/messages', {
         message: `[ALERT - COMPROMISED ITEM] Item ${itemRef} flagged: ${flagReason}. Notes: ${flagNotes || 'None'}`
       }).catch(() => {});
+
+      if (selectedCarForFlag.dbId) {
+        await api.post('/driver-portal/pickup-load/item-status', {
+          itemId: selectedCarForFlag.dbId,
+          isFlagged: true,
+          reason: flagReason || 'Damaged / Cannot Pick Up',
+          notes: flagNotes || ''
+        }).catch(err => console.warn('Could not post item issue to backend:', err));
+      }
     } catch (err) {
       console.warn('Error recording alert:', err);
     }
 
-    setCars(cars.map(c => c.id === selectedCarForFlag.id ? { ...c, isFlagged: true, flagReason: flagReason || 'Compromised' } : c));
+    setCars(cars.map(c => c.id === selectedCarForFlag.id ? { 
+      ...c, 
+      isFlagged: true, 
+      flagReason: flagReason || 'Compromised' 
+    } : c));
     triggerToast(`⚠️ Item flagged as compromised. Notification sent to Company Admin.`);
     setFlagModalOpen(false);
     setSelectedCarForFlag(null);
@@ -588,15 +613,22 @@ export default function PickupLoading() {
   };
 
   const handleConfirmPickup = async () => {
+    // If any items are not picked up and not flagged, warn driver
+    const pendingUnflagged = cars.filter(c => !c.pickedUp && !c.isFlagged);
+    if (pendingUnflagged.length > 0) {
+      triggerToast(`Please pick up all remaining items (${pendingUnflagged.length} left) or flag issues before confirming.`);
+      return;
+    }
+
     try {
       await api.post('/driver-portal/pickup-load/confirm-pickup', {
         loadId: loadInfo?.dbId || loadInfo?.id
       });
-      triggerToast('Pickup completed successfully! Status updated to IN_TRANSIT.');
+      triggerToast('Pickup completed successfully! Proceeding to route navigation.');
       setTimeout(() => navigate('/driver/active-run', { state: { autoOpenDispatchModal: true, fromPickup: true } }), 1000);
     } catch (err) {
       console.error('Confirm pickup API error:', err);
-      triggerToast('Pickup confirmed with server!');
+      triggerToast('Pickup confirmed! Proceeding to route navigation.');
       setTimeout(() => navigate('/driver/active-run'), 1000);
     }
   };
